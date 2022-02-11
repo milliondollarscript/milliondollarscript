@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'type' => 'wordpress-plugin',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'reference' => 'e92c9562054ae8dd3ad1826adf111d94ff8436dc',
+        'name' => 'milliondollarscript/milliondollarscript-two',
+        'dev' => true,
+    ),
+    'versions' => array(
+        'htmlburger/carbon-fields' => array(
+            'pretty_version' => 'v3.4.0-beta.2',
+            'version' => '3.4.0.0-beta2',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../htmlburger/carbon-fields',
+            'aliases' => array(),
+            'reference' => '99948c42ff5a2126a4d944bf7acd26bfc3fad07e',
+            'dev_requirement' => true,
+        ),
+        'milliondollarscript/milliondollarscript-two' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'type' => 'wordpress-plugin',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'reference' => 'e92c9562054ae8dd3ad1826adf111d94ff8436dc',
+            'dev_requirement' => false,
+        ),
+        'yahnis-elsts/plugin-update-checker' => array(
+            'pretty_version' => 'v4.11',
+            'version' => '4.11.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../yahnis-elsts/plugin-update-checker',
+            'aliases' => array(),
+            'reference' => '3155f2d3f1ca5e7ed3f25b256f020e370515af43',
+            'dev_requirement' => true,
+        ),
+    ),
+);

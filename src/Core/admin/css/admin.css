@@ -1,0 +1,112 @@
+/*
+ * @package       mds
+ * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
+ * @author        Ryan Rhode, ryan@milliondollarscript.com
+ * @version       2022-01-30 17:07:25 EST
+ * @license       This program is free software; you can redistribute it and/or modify
+ *        it under the terms of the GNU General Public License as published by
+ *        the Free Software Foundation; either version 3 of the License, or
+ *        (at your option) any later version.
+ *
+ *        This program is distributed in the hope that it will be useful,
+ *        but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *        GNU General Public License for more details.
+ *
+ *        You should have received a copy of the GNU General Public License along
+ *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ *
+ *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *        Million Dollar Script
+ *        A pixel script for selling pixels on your website.
+ *
+ *        For instructions see README.txt
+ *
+ *        Visit our website for FAQs, documentation, a list team members,
+ *        to post any bugs or feature requests, and a community forum:
+ *        https://milliondollarscript.com/
+ *
+ */
+
+body {
+    margin: 0;
+    font-size: 13px;
+    font-weight: normal;
+    font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+
+.admin-container {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 8px;
+}
+
+.admin-menu {
+    flex: 0 1 170px;
+    background: #efefef;
+    margin: -8px;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.admin-content {
+    flex: 10 10 0;
+    padding: 8px;
+    margin: 8px;
+    max-width: calc(100% - 240px);
+}
+
+.admin-config {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: auto;
+    gap: 1px;
+}
+
+.admin-config div {
+    padding: 8px;
+    background-color: #f5f5f5;
+    border: 1px solid #dcdcdc;
+}
+
+.admin-config-heading {
+    margin-top: 1px;
+    font-weight: bold;
+    grid-column: 1 / span 2;
+}
+
+.admin-config-left {
+
+}
+
+.admin-config-right {
+
+}
+
+.admin-config-footer {
+    grid-column: 1 / span 2;
+}
+
+a {
+    text-decoration: none;
+    color: #008cd4;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #6000cd;
+}
+
+.admin-menu hr {
+    width: 170px !important;
+}
+
+.phpinfo-container table,
+.phpinfo-container hr {
+    width: 100%;
+}
+
+.system-info .v {
+    word-break: break-all;
+}

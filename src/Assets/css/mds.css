@@ -1,0 +1,33 @@
+iframe.usersframe,
+iframe.gridframe,
+iframe.validateframe,
+iframe.thankyouframe,
+iframe.statsframe,
+iframe.adslistframe,
+iframe.usersframe {
+	border: none;
+}
+
+.ajax-loader {
+	background-image: url("../images/ajax-loader.gif");
+	background-position: center;
+	width: 32px;
+	height: 32px;
+	display: block;
+	margin: auto;
+}
+
+/* fix for 2021 theme */
+.entry-content > iframe[style].usersframe,
+.entry-content > iframe[style].gridframe,
+.entry-content > iframe[style].validateframe,
+.entry-content > iframe[style].thankyouframe,
+.entry-content > iframe[style].statsframe,
+.entry-content > iframe[style].adslistframe,
+.entry-content > iframe[style].usersframe {
+	max-width: 100% !important;
+}
+
+body #login {
+	padding-top:20px !important;
+}
