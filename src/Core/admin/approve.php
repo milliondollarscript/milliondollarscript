@@ -284,7 +284,7 @@ if ( $count > $records_per_page ) {
 	// calculate number of pages & current page
 
 	echo "<center>";
-    global $label;
+	global $label;
 	$label["navigation_page"] = str_replace( "%CUR_PAGE%", $cur_page, $label["navigation_page"] );
 	$label["navigation_page"] = str_replace( "%PAGES%", $pages, $label["navigation_page"] );
 
@@ -293,6 +293,21 @@ if ( $count > $records_per_page ) {
 	$LINKS    = 40;
 	render_nav_pages( $nav, $LINKS, $q_string );
 	echo "</center>";
+}
+
+// Determine if auto publish should be checked
+
+// If all grids are selected (default) then not checked
+$do_it_now_checked = false;
+if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
+    // If do_it_now was just checked then check it
+	$do_it_now_checked = true;
+} else if ( ! empty( $BID ) ) {
+	// If a specific grid is selected check if auto publish is enabled for that grid
+	$banner_data = load_banner_constants( $BID );
+	if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
+		$do_it_now_checked = true;
+	}
 }
 ?>
 <form name="form1" method="post" action="<?php echo $_SERVER['PHP_SELF'] ?>">
@@ -305,7 +320,7 @@ if ( $count > $records_per_page ) {
             <td colspan="12">
                 With selected: <input type="submit" value='Approve' style="font-size: 9px; background-color: #33FF66 " onclick="if (!confirmLink(this, 'Approve for all selected, are you sure?')) return false" name='mass_approve'>
                 <input type="submit" value='Disapprove' style="font-size: 9px; background-color: #FF6600" onclick="if (!confirmLink(this, 'Disapprove all selected, are you sure?')) return false" name='mass_disapprove'>
-                <input type="checkbox" name="do_it_now" <?php if ( ( isset($_REQUEST['do_it_now']) && $_REQUEST['do_it_now'] == 'true' ) ) {
+                <input type="checkbox" name="do_it_now" <?php if ( $do_it_now_checked ) {
 					echo ' checked ';
 				} ?> value="true"> Process Grid Images immediately after approval / disapproval <br>
             </td>
