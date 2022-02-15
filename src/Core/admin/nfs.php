@@ -62,13 +62,13 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'save' ) {
 	//mysqli_query($GLOBALS['connection'], $sql) or die (mysqli_error($GLOBALS['connection']).$sql);
 
 	if ( isset( $_POST['addnfs'] ) && ( ! empty( $_POST['addnfs'] || $_POST['addnfs'] == 0 ) ) ) {
-		$addnfs = json_decode( $_POST['addnfs'] );
+		$addnfs = json_decode( html_entity_decode( stripslashes( $_POST['addnfs'] ) ) );
 	} else {
 		unset( $addnfs );
 	}
 
 	if ( isset( $_POST['remnfs'] ) && ( ! empty( $_POST['remnfs'] ) || $_POST['remnfs'] == 0 ) ) {
-		$remnfs = json_decode( $_POST['remnfs'] );
+		$remnfs = json_decode( html_entity_decode( stripslashes( $_POST['remnfs'] ) ) );
 	} else {
 		unset( $remnfs );
 	}
@@ -111,8 +111,8 @@ if ( OUTPUT_JPEG == 'Y' ) {
 ?>
 <script>
 	$(function () {
-		var addnfs = [];
-		var remnfs = [];
+		let addnfs = [];
+		let remnfs = [];
 
 		const $document = $(document);
 		const $grid = $('.grid');
@@ -125,70 +125,75 @@ if ( OUTPUT_JPEG == 'Y' ) {
 
 		function processBlock(block) {
 			let $block = $(block);
-			let blockid = $block.attr("data-block");
-			if ($block.hasClass("nfs") && !$block.hasClass("selected")) {
-				$block.removeClass("nfs").addClass("free");
-				remnfs.push(blockid);
-				let index = addnfs.indexOf(blockid);
-				if (index !== -1) {
-					addnfs.splice(index, 1);
-				}
-			} else if ($block.hasClass("free") && $block.hasClass("selected")) {
-				$block.removeClass("free").addClass("nfs");
+			let blockid;
+			if ($block.hasClass("nfs")) {
 				blockid = $block.attr("data-block");
 				addnfs.push(blockid);
 				let index = remnfs.indexOf(blockid);
 				if (index !== -1) {
 					remnfs.splice(index, 1);
 				}
-			} else if (!$block.hasClass("nfs") && !$block.hasClass("free") && $block.hasClass("selected")) {
-				$block.removeClass("selected");
+			} else if ($block.hasClass("free")) {
+				blockid = $block.attr("data-block");
+				remnfs.push(blockid);
+				let index = addnfs.indexOf(blockid);
+				if (index !== -1) {
+					addnfs.splice(index, 1);
+				}
+			}
+		}
+
+		function toggleBlock(el) {
+			let $block = $(el);
+			if ($block.hasClass('nfs')) {
+				$block.removeClass('nfs');
+			} else {
+				$block.addClass('nfs');
+			}
+			if ($block.hasClass('free')) {
+				$block.removeClass('free');
+			} else {
+				$block.addClass('free');
 			}
 		}
 
 		// https://github.com/Simonwep/selection
 		const selection = new SelectionArea({
-			document: window.document,
-			class: 'selection-area',
-			container: 'body',
 			selectables: ['span.block'],
 			startareas: ['.grid'],
 			boundaries: ['.grid'],
-			startThreshold: 10,
-			allowTouch: true,
-			intersect: 'touch',
-			overlap: 'invert',
-			singleTap: {
-				allow: true,
-				intersect: 'native'
-			},
-			scrolling: {
-				speedDivider: 10,
-				manualSpeed: 750
-			}
-		}).on('move', ({store: {changed: {added, removed}}}) => {
+		});
 
-			for (const el of added) {
-				el.classList.add('selected');
+		selection.on('beforestart', e => {
+			for (const el of e.store.stored) {
+				$(el).removeClass('selected');
+			}
+			selection.clearSelection(true);
+
+			// }).on('beforedrag', e => {
+			// }).on('start', e => {
+
+		}).on('move', e => {
+			for (const el of e.store.changed.added) {
+				$(el).addClass('selected');
 			}
 
-			for (const el of removed) {
-				el.classList.remove('selected');
+			for (const el of e.store.changed.removed) {
+				$(el).removeClass('selected');
 			}
 
-		}).on('stop', evt => {
-
-			selection.keepSelection();
-
-			for (const el of selection.getSelection()) {
+		}).on('stop', e => {
+			let els = e.store.selected;
+			for (const el of els) {
+				toggleBlock(el);
 				processBlock(el);
 			}
 
 		});
 
-		$document.off('click', '.block');
-		$document.on('click', '.block', function () {
-			processBlock($(this));
+		// selection object must be destroyed when the page is loaded
+		$(window).on('mds_page_loaded', function() {
+			selection.destroy();
 		});
 
 		let $save = $('.save');
@@ -234,7 +239,7 @@ if ( OUTPUT_JPEG == 'Y' ) {
 				modal: true,
 				width: 'auto',
 				resizable: false,
-				position: { my: "center top", at: "center top+1%", of: window },
+				position: {my: "center top", at: "center top+1%", of: window},
 				buttons: {
 					Yes: function () {
 
@@ -299,76 +304,76 @@ if ( OUTPUT_JPEG == 'Y' ) {
 			';
 	    }
 	?>
-    .grid {
-        position: relative;
+	.grid {
+		position: relative;
     <?php echo $grid_background; ?> background-size: contain;
-        z-index: 0;
-        width: <?php echo $banner_data['G_WIDTH']*$banner_data['BLK_WIDTH']; ?>px;
-        height: <?php echo $banner_data['G_HEIGHT']*$banner_data['BLK_HEIGHT']; ?>px;
-        user-select: none;
-    }
+		z-index: 0;
+		width: <?php echo $banner_data['G_WIDTH']*$banner_data['BLK_WIDTH']; ?>px;
+		height: <?php echo $banner_data['G_HEIGHT']*$banner_data['BLK_HEIGHT']; ?>px;
+		user-select: none;
+	}
 
-    .block_row {
-        clear: both;
-        display: block;
-    }
+	.block_row {
+		clear: both;
+		display: block;
+	}
 
-    .block {
-        white-space: nowrap;
-        width: <?php echo $banner_data['BLK_WIDTH']; ?>px;
-        height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-        float: left;
-        opacity: 0.5;
-        filter: alpha(opacity=50);
-    }
+	.block {
+		white-space: nowrap;
+		width: <?php echo $banner_data['BLK_WIDTH']; ?>px;
+		height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+		float: left;
+		opacity: 0.5;
+		filter: alpha(opacity=50);
+	}
 
-    .sold {
-        background: url("../images/sold_block.png") no-repeat;
-    }
+	.sold {
+		background: url("../images/sold_block.png") no-repeat;
+	}
 
-    .reserved {
-        background: url("../images/reserved_block.png") no-repeat;
-    }
+	.reserved {
+		background: url("../images/reserved_block.png") no-repeat;
+	}
 
-    .nfs {
-        background: url('data:image/png;base64,<?php echo $data; ?>') no-repeat;
-        cursor: pointer;
-    }
+	.nfs {
+		background: url('data:image/png;base64,<?php echo $data; ?>') no-repeat;
+		cursor: pointer;
+	}
 
-    .ordered {
-        background: url("../images/ordered_block.png") no-repeat;
-    }
+	.ordered {
+		background: url("../images/ordered_block.png") no-repeat;
+	}
 
-    .ordered {
-        background: url("../images/ordered_block.png") no-repeat;
-    }
+	.ordered {
+		background: url("../images/ordered_block.png") no-repeat;
+	}
 
-    .onorder {
-        background: url("../images/not_for_sale_block.png") no-repeat;
-    }
+	.onorder {
+		background: url("../images/not_for_sale_block.png") no-repeat;
+	}
 
-    .free {
-        background: url("../images/block.png") no-repeat;
-        cursor: pointer;
-    }
+	.free {
+		background: url("../images/block.png") no-repeat;
+		cursor: pointer;
+	}
 
-    .loading {
-        width: 32px;
-        height: 32px;
-        position: absolute;
-        top: 5%;
-        left: calc(50% - 16px);
-        z-index: 10000;
-    }
+	.loading {
+		width: 32px;
+		height: 32px;
+		position: absolute;
+		top: 5%;
+		left: calc(50% - 16px);
+		z-index: 10000;
+	}
 
-    .selection-area {
-        background: rgba(254, 202, 64, 0.33);
-        border: 1px solid rgba(135, 110, 42, 0.33);
-    }
+	.selection-area {
+		background: rgba(254, 202, 64, 0.33);
+		border: 1px solid rgba(135, 110, 42, 0.33);
+	}
 
-    .selected {
-        outline: 1px solid rgba(0, 0, 0, 0.45);
-    }
+	.selected {
+		outline: 1px solid rgba(0, 0, 0, 0.45);
+	}
 </style>
 
 <div class="outer_box">
