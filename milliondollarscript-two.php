@@ -61,6 +61,7 @@ defined( 'MDS_CORE_URL' ) or define( 'MDS_CORE_URL', MDS_BASE_URL . 'src/Core/' 
 global $wpdb;
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', 11 );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.3.2' );
 
 require_once ABSPATH . 'wp-includes/pluggable.php';
 
@@ -193,6 +194,12 @@ function milliondollarscript_two_activate() {
 	if ( $mdsdb->upgrade() ) {
 		add_option( 'milliondollarscript_redirect1', wp_get_current_user()->ID );
 	}
+
+	// Update version
+	global $wpdb;
+	require_once MDS_CORE_PATH . 'include/version.php';
+	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=%s WHERE `key`='VERSION_INFO'";
+	$wpdb->query( $wpdb->prepare( $sql, MDS_VERSION ) );
 }
 
 function milliondollarscript_two_activate_step_2() {
