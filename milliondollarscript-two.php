@@ -197,7 +197,6 @@ function milliondollarscript_two_activate() {
 
 	// Update version
 	global $wpdb;
-	require_once MDS_CORE_PATH . 'include/version.php';
 	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=%s WHERE `key`='VERSION_INFO'";
 	$wpdb->query( $wpdb->prepare( $sql, MDS_VERSION ) );
 }
