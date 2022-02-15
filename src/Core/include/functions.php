@@ -1023,10 +1023,14 @@ function send_confirmation_email( $email ) {
 
 	$code = substr( md5( $row['Email'] . $row['Password'] ), 0, 8 );
 
+	$verify_url = "";
 	if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
 		$validate_page = Options::get_option( 'validate-page' );
-		$verify_url    = trailingslashit( $validate_page ) . "?lang=" . get_lang() . "&email=" . $row['Email'] . "&code=$code";
-	} else {
+		if ( ! empty( $validate_page ) ) {
+			$verify_url = trailingslashit( $validate_page ) . "?lang=" . get_lang() . "&email=" . $row['Email'] . "&code=$code";
+		}
+	}
+	if ( ! empty( $verify_url ) ) {
 		$verify_url = BASE_HTTP_PATH . "users/validate.php?lang=" . get_lang() . "&email=" . $row['Email'] . "&code=$code";
 	}
 
@@ -2176,14 +2180,14 @@ function get_required_size( $x, $y, $banner_data ) {
 	$mod = ( $x % $block_width );
 
 	if ( $mod > 0 ) {
-        // width does not fit
+		// width does not fit
 		$size[0] = $x + ( $block_width - $mod );
 	}
 
 	$mod = ( $y % $block_height );
 
 	if ( $mod > 0 ) {
-        // height does not fit
+		// height does not fit
 		$size[1] = $y + ( $block_height - $mod );
 	}
 
