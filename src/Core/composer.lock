@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1e9088a35e3f7a1391398e31c03080e3",
+    "content-hash": "2a42137241542439bbcc4bdb2ef8fb4f",
     "packages": [
         {
             "name": "ckeditor/ckeditor",
-            "version": "4.17.1",
+            "version": "4.17.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ckeditor/ckeditor4-releases.git",
-                "reference": "b71b8bf724174f2feaf53f64ee424bf1f5ba61fa"
+                "reference": "0a402ca86b1821418e90cef026910fc723a930a6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ckeditor/ckeditor4-releases/zipball/b71b8bf724174f2feaf53f64ee424bf1f5ba61fa",
-                "reference": "b71b8bf724174f2feaf53f64ee424bf1f5ba61fa",
+                "url": "https://api.github.com/repos/ckeditor/ckeditor4-releases/zipball/0a402ca86b1821418e90cef026910fc723a930a6",
+                "reference": "0a402ca86b1821418e90cef026910fc723a930a6",
                 "shasum": ""
             },
             "type": "library",
@@ -52,7 +52,7 @@
                 "source": "https://github.com/ckeditor/ckeditor4",
                 "wiki": "https://ckeditor.com/docs/ckeditor4/latest/"
             },
-            "time": "2021-11-17T16:15:01+00:00"
+            "time": "2022-02-09T12:00:32+00:00"
         },
         {
             "name": "components/jquery",
@@ -105,16 +105,16 @@
         },
         {
             "name": "components/jqueryui",
-            "version": "1.11.4",
+            "version": "1.12.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components/jqueryui.git",
-                "reference": "c34f8dbf3ba57b3784b93f26119f436c0e8288e1"
+                "reference": "44ecf3794cc56b65954cc19737234a3119d036cc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components/jqueryui/zipball/c34f8dbf3ba57b3784b93f26119f436c0e8288e1",
-                "reference": "c34f8dbf3ba57b3784b93f26119f436c0e8288e1",
+                "url": "https://api.github.com/repos/components/jqueryui/zipball/44ecf3794cc56b65954cc19737234a3119d036cc",
+                "reference": "44ecf3794cc56b65954cc19737234a3119d036cc",
                 "shasum": ""
             },
             "require": {
@@ -190,7 +190,7 @@
                 "issues": "https://github.com/components/jqueryui/issues",
                 "source": "https://github.com/components/jqueryui/tree/master"
             },
-            "time": "2015-03-13T14:48:12+00:00"
+            "time": "2016-09-16T05:47:55+00:00"
         },
         {
             "name": "ezyang/htmlpurifier",

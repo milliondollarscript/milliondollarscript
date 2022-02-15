@@ -50,11 +50,11 @@ if ( WP_ENABLED == 'YES' ) {
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <title>Million Dollar Script Administration</title>
     <link rel="stylesheet" type="text/css" href="<?php echo $f2->value( BASE_HTTP_PATH ); ?>admin/css/admin.css?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/admin/css/admin.css" ); ?>">
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/jquery.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/jquery.min.js" ); ?>"></script>
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/jquery-ui.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/jquery-ui.min.js" ); ?>"></script>
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/selection.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/selection.min.js" ); ?>"></script>
-    <link rel="stylesheet" href="<?php echo $f2->value( BASE_HTTP_PATH ); ?>css/smoothness/jquery-ui.min.css?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/css/smoothness/jquery-ui.min.css" ); ?>" type="text/css"/>
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/jquery.form.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/jquery.form.min.js" ); ?>"></script>
+    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/components/jquery/jquery.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/components/jquery/jquery.min.js" ); ?>"></script>
+    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/components/jqueryui/jquery-ui.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/components/jqueryui/jquery-ui.min.js" ); ?>"></script>
+    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/viselect.cjs.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/viselect.cjs.js" ); ?>"></script>
+    <link rel="stylesheet" href="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/components/jqueryui/themes/smoothness/jquery-ui.min.css?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/components/jqueryui/themes/smoothness/jquery-ui.min.css" ); ?>" type="text/css"/>
+    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/jquery-form/form/dist/jquery.form.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/jquery-form/form/dist/jquery.form.min.js" ); ?>"></script>
 
     <script>
 		window.mds_data = {

@@ -1,22 +1,22 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '443ae88f152317029f69e62567551404ce8097ee',
+        'reference' => '4b4a254772ec879d0b2557774028b5db7d9e01cd',
         'name' => 'milliondollarscript/milliondollarscript',
         'dev' => true,
     ),
     'versions' => array(
         'ckeditor/ckeditor' => array(
-            'pretty_version' => '4.17.1',
-            'version' => '4.17.1.0',
+            'pretty_version' => '4.17.2',
+            'version' => '4.17.2.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ckeditor/ckeditor',
             'aliases' => array(),
-            'reference' => 'b71b8bf724174f2feaf53f64ee424bf1f5ba61fa',
+            'reference' => '0a402ca86b1821418e90cef026910fc723a930a6',
             'dev_requirement' => false,
         ),
         'components/jquery' => array(
@@ -29,12 +29,12 @@
             'dev_requirement' => false,
         ),
         'components/jqueryui' => array(
-            'pretty_version' => '1.11.4',
-            'version' => '1.11.4.0',
+            'pretty_version' => '1.12.1',
+            'version' => '1.12.1.0',
             'type' => 'component',
             'install_path' => __DIR__ . '/../components/jqueryui',
             'aliases' => array(),
-            'reference' => 'c34f8dbf3ba57b3784b93f26119f436c0e8288e1',
+            'reference' => '44ecf3794cc56b65954cc19737234a3119d036cc',
             'dev_requirement' => false,
         ),
         'ezyang/htmlpurifier' => array(
@@ -65,12 +65,12 @@
             'dev_requirement' => false,
         ),
         'milliondollarscript/milliondollarscript' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '443ae88f152317029f69e62567551404ce8097ee',
+            'reference' => '4b4a254772ec879d0b2557774028b5db7d9e01cd',
             'dev_requirement' => false,
         ),
         'phpmailer/phpmailer' => array(

@@ -51,7 +51,7 @@ if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
     <meta name="Description" content="<?php echo SITE_SLOGAN; ?>">
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=10.0, minimum-scale=0.1, user-scalable=yes"/>
-    <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/jquery.min.js?ver=<?php echo filemtime( BASE_PATH . "/js/third-party/jquery.min.js" ); ?>"></script>
+    <script src="<?php echo BASE_HTTP_PATH; ?>vendor/components/jquery/jquery.min.js?ver=<?php echo filemtime( BASE_PATH . "/vendor/components/jquery/jquery.min.js" ); ?>"></script>
     <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.min.js"></script>
     <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.min.js"></script>
     <link rel="stylesheet" type="text/css" href="<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css">
