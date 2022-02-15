@@ -46,7 +46,7 @@ function scroll_to_top() {
 function mds_load_page(page, force) {
 	// remove hashtag from page
 	if (window.location.hash !== "" && (page === undefined || (window.location.hash !== page && force !== true))) {
-		page = window.location.hash.substr(1);
+		page = window.location.hash.substring(1);
 	}
 
 	jQuery(".admin-content").load(page, function () {
@@ -147,6 +147,7 @@ jQuery(function () {
 				if (status === "success") {
 					scroll_to_top();
 					window.location.hash = '#' + url;
+					jQuery(window).trigger('mds_page_loaded');
 				}
 			});
 		}
