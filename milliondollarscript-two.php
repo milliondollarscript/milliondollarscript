@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.3.1
+  Version: 2.3.2
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -15,7 +15,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.1
+ * @version 2.3.2
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
