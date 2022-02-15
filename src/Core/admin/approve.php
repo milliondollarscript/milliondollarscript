@@ -143,7 +143,7 @@ if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) {
 
 <form name="bidselect" method="post" action="approve.php">
     <input type="hidden" name="old_order_id" value="<?php //echo $order_id; ?>">
-    <input type="hidden" value="<?php echo $_REQUEST['app']; ?>" name="app">
+    <input type="hidden" value="<?php echo $_REQUEST['app'] ?? ""; ?>" name="app">
     <label>
         Select Grid:
         <select name="BID" onchange="mds_submit(this)">
@@ -313,7 +313,7 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 <form name="form1" method="post" action="<?php echo $_SERVER['PHP_SELF'] ?>">
     <input type="hidden" name="offset" value="<?php echo $offset; ?>">
     <input type="hidden" name="BID" value="<?php echo $BID; ?>">
-    <input type="hidden" name="app" value="<?php echo $_REQUEST['app']; ?>">
+    <input type="hidden" name="app" value="<?php echo $_REQUEST['app'] ?? ""; ?>">
     <input type="hidden" name="all_go" value="">
     <table width="100%" cellSpacing="1" cellPadding="3" align="center" bgColor="#d9d9d9" border="0">
         <tr>
