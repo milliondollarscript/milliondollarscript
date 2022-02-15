@@ -723,7 +723,7 @@ function install_db() {
 		)
     	VALUES(
 				'BUILD_DATE',
-				" . get_mds_build_date() . "
+				'" . get_mds_build_date() . "'
 		)";
 
 		$sql[] = "INSERT INTO `$table_name` (
@@ -732,7 +732,7 @@ function install_db() {
 		)
     	VALUES(
 				'VERSION_INFO',
-				" . get_mds_version() . "
+				'" . get_mds_version() . "'
 		)";
 
 		$sql[] = "INSERT INTO `$table_name` (
