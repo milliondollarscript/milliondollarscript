@@ -63,46 +63,51 @@ $sql = "select * from " . MDS_DB_PREFIX . "users where ID='" . intval( $_SESSION
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 $user_row = mysqli_fetch_array( $result );
 
+if ( $user_row == null ) {
+	// user might not be logged in correctly so log them out
+	require_once MDS_BASE_PATH . 'src/Core/users/wplogout.php';
+}
+
 ?>
-    <h3><?php echo $label['advertiser_home_welcome']; ?></h3>
-    <p>
-		<?php echo $label['advertiser_home_line2'] . "<br>"; ?>
-    <p>
-    <p>
-		<?php
-		$label['advertiser_home_blkyouown'] = str_replace( "%PIXEL_COUNT%", $pixels, $label['advertiser_home_blkyouown'] );
-		$label['advertiser_home_blkyouown'] = str_replace( "%BLOCK_COUNT%", ($pixels / ($b_row['block_width'] * $b_row['block_height'])), $label['advertiser_home_blkyouown'] );
-		echo $label['advertiser_home_blkyouown'] . "<br>";
+<h3><?php echo $label['advertiser_home_welcome']; ?></h3>
+<p>
+	<?php echo $label['advertiser_home_line2'] . "<br>"; ?>
+<p>
+<p>
+	<?php
+	$label['advertiser_home_blkyouown'] = str_replace( "%PIXEL_COUNT%", $pixels, $label['advertiser_home_blkyouown'] );
+	$label['advertiser_home_blkyouown'] = str_replace( "%BLOCK_COUNT%", ( $pixels / ( $b_row['block_width'] * $b_row['block_height'] ) ), $label['advertiser_home_blkyouown'] );
+	echo $label['advertiser_home_blkyouown'] . "<br>";
 
-		$label['advertiser_home_blkonorder'] = str_replace( "%PIXEL_ORD_COUNT%", $ordered, $label['advertiser_home_blkonorder'] );
+	$label['advertiser_home_blkonorder'] = str_replace( "%PIXEL_ORD_COUNT%", $ordered, $label['advertiser_home_blkonorder'] );
 
-		if ( USE_AJAX == 'SIMPLE' ) {
-			$label['advertiser_home_blkonorder'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_blkonorder'] );
-		}
-		echo $label['advertiser_home_blkonorder'] . "<br>";
+	if ( USE_AJAX == 'SIMPLE' ) {
+		$label['advertiser_home_blkonorder'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_blkonorder'] );
+	}
+	echo $label['advertiser_home_blkonorder'] . "<br>";
 
-		$label['advertiser_home_click_count'] = str_replace( "%CLICK_COUNT%", number_format( $user_row['click_count'] ), $label['advertiser_home_click_count'] );
-		echo $label['advertiser_home_click_count'] . "<br>";
+	$label['advertiser_home_click_count'] = str_replace( "%CLICK_COUNT%", number_format( $user_row['click_count'] ), $label['advertiser_home_click_count'] );
+	echo $label['advertiser_home_click_count'] . "<br>";
 
-		$label['advertiser_home_view_count'] = str_replace( "%VIEW_COUNT%", number_format( $user_row['view_count'] ), $label['advertiser_home_view_count'] );
-		echo $label['advertiser_home_view_count'] . "<br>";
-		?>
-    </p>
+	$label['advertiser_home_view_count'] = str_replace( "%VIEW_COUNT%", number_format( $user_row['view_count'] ), $label['advertiser_home_view_count'] );
+	echo $label['advertiser_home_view_count'] . "<br>";
+	?>
+</p>
 
-    <h3><?php echo $label['advertiser_home_sub_head']; ?></h3>
-    <p>
-		<?php
+<h3><?php echo $label['advertiser_home_sub_head']; ?></h3>
+<p>
+	<?php
 
-		if ( USE_AJAX == 'SIMPLE' ) {
-			$label['advertiser_home_selectlink'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_selectlink'] );
-		}
+	if ( USE_AJAX == 'SIMPLE' ) {
+		$label['advertiser_home_selectlink'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_selectlink'] );
+	}
 
-		echo $label['advertiser_home_selectlink']; ?><br>
-		<?php echo $label['advertiser_home_managelink']; ?><br>
-		<?php echo $label['advertiser_home_ordlink']; ?><br>
-		<?php echo $label['advertiser_home_editlink']; ?><br>
-    </p>
-    <p>
-		<?php echo $label['advertiser_home_quest']; ?>
-    </p>
+	echo $label['advertiser_home_selectlink']; ?><br>
+	<?php echo $label['advertiser_home_managelink']; ?><br>
+	<?php echo $label['advertiser_home_ordlink']; ?><br>
+	<?php echo $label['advertiser_home_editlink']; ?><br>
+</p>
+<p>
+	<?php echo $label['advertiser_home_quest']; ?>
+</p>
 <?php require_once BASE_PATH . "/html/footer.php"; ?>
