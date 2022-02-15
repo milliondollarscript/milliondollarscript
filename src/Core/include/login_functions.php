@@ -117,7 +117,7 @@ function is_logged_in() {
 		// get user from MDS db
 		$result = mysqli_query( $GLOBALS['connection'], "SELECT * FROM `" . MDS_DB_PREFIX . "users` WHERE username='" . mysqli_real_escape_string( $GLOBALS['connection'], $user->user_login ) . "'" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		$row = mysqli_fetch_array( $result );
-		if ( ! $row['Username'] ) {
+		if ( isset( $row ) && ! $row['Username'] ) {
 			return false;
 		}
 
@@ -228,12 +228,12 @@ function create_new_account( $REMOTE_ADDR, $FirstName, $LastName, $CompName, $Us
 
 	$validated = 0;
 
-	if ( ( EM_NEEDS_ACTIVATION == "AUTO" ) ) {
+	if ( EM_NEEDS_ACTIVATION == "AUTO" ) {
 		$validated = 1;
 	}
 	$now = ( gmdate( "Y-m-d H:i:s" ) );
 	// everything Ok, create account and send out emails.
-	$sql = "Insert Into " . MDS_DB_PREFIX . "users(IP, SignupDate, FirstName, LastName, CompName, Username, Password, Email, Newsletter, Notification1, Notification2, Validated, Aboutme) values('" . mysqli_real_escape_string( $GLOBALS['connection'], $REMOTE_ADDR ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $now ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $FirstName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $LastName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $CompName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Username ) . "', '$Password', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Email ) . "', '" . intval( $Newsletter ) . "', '" . intval( $Notification1 ) . "', '" . intval( $Notification2 ) . "', '$validated', '')";
+	$sql = "Insert Into " . MDS_DB_PREFIX . "users(IP, SignupDate, FirstName, LastName, CompName, Username, Password, Email, Newsletter, Notification1, Notification2, Validated, Aboutme) values('" . mysqli_real_escape_string( $GLOBALS['connection'], $REMOTE_ADDR ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $now ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $FirstName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $LastName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $CompName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Username ) . "', '$Password', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Email ) . "', '$validated', '')";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die ( $sql . mysqli_error( $GLOBALS['connection'] ) );
 	$res = mysqli_affected_rows( $GLOBALS['connection'] );
 
@@ -244,7 +244,9 @@ function create_new_account( $REMOTE_ADDR, $FirstName, $LastName, $CompName, $Us
 		$success = false;
 		$error   = $label['advertiser_could_not_signup'];
 	}
-	$advertiser_signup_success = str_replace( "%FirstName%", stripslashes( $FirstName ), $label['advertiser_signup_success'] );
+
+	$advertiser_signup_success = $validated ? $label['advertiser_signup_success_1'] : $label['advertiser_signup_success_2'] ;
+	$advertiser_signup_success = str_replace( "%FirstName%", stripslashes( $FirstName ), $advertiser_signup_success );
 	$advertiser_signup_success = str_replace( "%LastName%", stripslashes( $LastName ), $advertiser_signup_success );
 	$advertiser_signup_success = str_replace( "%SITE_NAME%", SITE_NAME, $advertiser_signup_success );
 	$advertiser_signup_success = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $advertiser_signup_success );
@@ -389,13 +391,12 @@ function process_signup_form( $target_page = 'index.php' ) {
 	$error = validate_signup_form();
 
 	if ( $error != '' ) {
-        // error processing signup/
+		// error processing signup/
 
 		echo "<span class='error_msg_label'>" . $label["advertiser_signup_error"] . "</span><P>";
 		echo "<span ><b>" . $error . "</b></span>";
 
 		return false;
-
 	} else {
 
 		//$target_page="index.php";

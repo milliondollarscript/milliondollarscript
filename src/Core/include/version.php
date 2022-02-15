@@ -47,7 +47,7 @@ function get_mds_build_date() {
 function get_mds_version() {
 	global $wpdb;
 
-	$sql    = "SELECT `val` FROM `config` WHERE `key`='VERSION_INFO'";
+	$sql    = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='VERSION_INFO'";
 	$version = $wpdb->get_var($sql);
 	if ( $wpdb->num_rows == 0 || empty( $version ) ) {
 		$version = '2.3.1';
