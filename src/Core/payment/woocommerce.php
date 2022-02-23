@@ -293,7 +293,7 @@ class MdsWooCommercePaymentModule {
 				// Save order id in cookie for later
 				$_COOKIE['mds_order_id'] = $order_id;
 
-				$url = $f2->filter( WOOCOMMERCE_URL );
+				$url = esc_url_raw( WOOCOMMERCE_URL );
 
 				$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
 				$result = mysqli_query( $GLOBALS['connection'], $sql ) or payment_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql, 'woocommerce' );
