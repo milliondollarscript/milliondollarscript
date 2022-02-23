@@ -326,9 +326,7 @@ class MdsWooCommercePaymentModule {
 	}
 
 	function complete_order( $order_id ) {
-		global $f2;
-
-		$url = $f2->filter( WOOCOMMERCE_URL );
+		$url = esc_url_raw( WOOCOMMERCE_URL );
 
 		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $order_id ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or payment_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql, 'woocommerce' );
