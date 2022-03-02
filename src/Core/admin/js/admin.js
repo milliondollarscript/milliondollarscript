@@ -44,6 +44,12 @@ function scroll_to_top() {
 }
 
 function mds_load_page(page, force) {
+	if (!window.mds_admin_loading) {
+		window.mds_admin_loading = true;
+	} else {
+		return;
+	}
+
 	// remove hashtag from page
 	if (window.location.hash !== "" && (page === undefined || (window.location.hash !== page && force !== true))) {
 		page = window.location.hash.substring(1);
@@ -51,6 +57,7 @@ function mds_load_page(page, force) {
 
 	jQuery(".admin-content").load(page, function () {
 		scroll_to_top();
+		window.mds_admin_loading = false;
 	});
 }
 
@@ -112,6 +119,11 @@ function mds_submit(el) {
 }
 
 jQuery(function () {
+	window.mds_admin_loading = false;
+
+	jQuery(window).on('mds_admin_page_loaded', function() {
+		window.mds_admin_loading = false;
+	});
 
 	let admin_content = jQuery(".admin-content");
 
@@ -140,6 +152,7 @@ jQuery(function () {
 			return false;
 		}
 
+		window.mds_admin_loading = true;
 		if (url.endsWith('.txt')) {
 			admin_content.html('<embed style="width:100%;height:100%;" src="' + url + '" />');
 		} else {
@@ -147,7 +160,7 @@ jQuery(function () {
 				if (status === "success") {
 					scroll_to_top();
 					window.location.hash = '#' + url;
-					jQuery(window).trigger('mds_page_loaded');
+					jQuery(window).trigger('mds_admin_page_loaded');
 				}
 			});
 		}

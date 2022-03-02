@@ -33,8 +33,8 @@
 require_once __DIR__ . "/../include/init.php";
 require( 'admin_common.php' );
 
-ini_set( 'max_execution_time', 10000 );
-ini_set( 'max_input_vars', 10002 );
+@ini_set( 'max_execution_time', 10000 );
+@ini_set( 'max_input_vars', 10002 );
 
 global $f2;
 
@@ -111,6 +111,12 @@ if ( OUTPUT_JPEG == 'Y' ) {
 ?>
 <script>
 	$(function () {
+		if (!window.mds_admin_loading) {
+			window.mds_admin_loading = true;
+		} else {
+			return;
+		}
+
 		let addnfs = [];
 		let remnfs = [];
 
@@ -121,6 +127,7 @@ if ( OUTPUT_JPEG == 'Y' ) {
 			$(this).remove();
 			$('.loading').remove();
 			$grid.css('background-image', 'url("<?php echo $grid_img; ?>")');
+			window.mds_admin_loading = false;
 		});
 
 		function processBlock(block) {
@@ -164,6 +171,7 @@ if ( OUTPUT_JPEG == 'Y' ) {
 			boundaries: ['.grid'],
 		});
 
+		selection.off('beforestart').off('move').off('stop');
 		selection.on('beforestart', e => {
 			for (const el of e.store.stored) {
 				$(el).removeClass('selected');
@@ -192,7 +200,8 @@ if ( OUTPUT_JPEG == 'Y' ) {
 		});
 
 		// selection object must be destroyed when the page is loaded
-		$(window).on('mds_page_loaded', function() {
+		$(window).off('mds_admin_page_loaded');
+		$(window).on('mds_admin_page_loaded', function () {
 			selection.destroy();
 		});
 
@@ -325,6 +334,7 @@ if ( OUTPUT_JPEG == 'Y' ) {
 		float: left;
 		opacity: 0.5;
 		filter: alpha(opacity=50);
+		background-size: contain !important;
 	}
 
 	.sold {
