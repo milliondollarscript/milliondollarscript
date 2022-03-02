@@ -32,6 +32,19 @@
 
 use MillionDollarScript\Classes\Options;
 
+function mds_check_permission( $permission ) {
+	if ( defined( 'WP_ENABLED' ) && WP_ENABLED == 'YES' ) {
+		if (current_user_can( $permission )) {
+            return true;
+		} else {
+            return false;
+        }
+	} else {
+        // If WP isn't enabled allow permission
+        return true;
+    }
+}
+
 function process_login() {
 
 	global $f2, $label;
@@ -233,7 +246,7 @@ function create_new_account( $REMOTE_ADDR, $FirstName, $LastName, $CompName, $Us
 	}
 	$now = ( gmdate( "Y-m-d H:i:s" ) );
 	// everything Ok, create account and send out emails.
-	$sql = "Insert Into " . MDS_DB_PREFIX . "users(IP, SignupDate, FirstName, LastName, CompName, Username, Password, Email, Newsletter, Notification1, Notification2, Validated, Aboutme) values('" . mysqli_real_escape_string( $GLOBALS['connection'], $REMOTE_ADDR ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $now ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $FirstName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $LastName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $CompName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Username ) . "', '$Password', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Email ) . "', '$validated', '')";
+	$sql = "Insert Into " . MDS_DB_PREFIX . "users(IP, SignupDate, FirstName, LastName, CompName, Username, Password, Email, Validated, Aboutme) values('" . mysqli_real_escape_string( $GLOBALS['connection'], $REMOTE_ADDR ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $now ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $FirstName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $LastName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $CompName ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Username ) . "', '$Password', '" . mysqli_real_escape_string( $GLOBALS['connection'], $Email ) . "', '$validated', '')";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die ( $sql . mysqli_error( $GLOBALS['connection'] ) );
 	$res = mysqli_affected_rows( $GLOBALS['connection'] );
 
@@ -245,7 +258,7 @@ function create_new_account( $REMOTE_ADDR, $FirstName, $LastName, $CompName, $Us
 		$error   = $label['advertiser_could_not_signup'];
 	}
 
-	$advertiser_signup_success = $validated ? $label['advertiser_signup_success_1'] : $label['advertiser_signup_success_2'] ;
+	$advertiser_signup_success = $validated ? $label['advertiser_signup_success_1'] : $label['advertiser_signup_success_2'];
 	$advertiser_signup_success = str_replace( "%FirstName%", stripslashes( $FirstName ), $advertiser_signup_success );
 	$advertiser_signup_success = str_replace( "%LastName%", stripslashes( $LastName ), $advertiser_signup_success );
 	$advertiser_signup_success = str_replace( "%SITE_NAME%", SITE_NAME, $advertiser_signup_success );
