@@ -30,31 +30,29 @@
  *
  */
 
+use MillionDollarScript\Classes\Utility;
+
 require_once __DIR__ . "/../include/init.php";
 require( 'admin_common.php' );
 
+global $f2;
 $BID = $f2->bid();
 
 if ( isset( $_REQUEST['reset_image'] ) && $_REQUEST['reset_image'] != '' ) {
-
 	$default = get_default_image( $_REQUEST['reset_image'] );
-
-	$sql = "UPDATE " . MDS_DB_PREFIX . "banners SET `" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['reset_image'] ) . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $default ) . "' WHERE banner_id='" . $BID . "' ";
-
+	$sql     = "UPDATE " . MDS_DB_PREFIX . "banners SET `" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['reset_image'] ) . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $default ) . "' WHERE banner_id='" . $BID . "' ";
 	mysqli_query( $GLOBALS['connection'], $sql );
 }
 
 function display_reset_link( $BID, $image_name ) {
-
 	if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) {
 		?>
-        <a onclick="return confirmLink(this, 'Reset this image to deafult, are you sure?');" href='inventory.php?action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo $image_name; ?>'><font color='red'>x</font></a>
+        <a class="inventory-reset-link" title="Reset to default" onclick="if (! confirmLink(this, 'Reset this image to deafult, are you sure?')) return false;" href='inventory.php?action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>'>x</a>
 		<?php
 	}
 }
 
-function is_allowed_grid_file( $image_name ) {
-
+function is_allowed_grid_file( $image_name ): bool {
 	$ALLOWED_EXT = 'png';
 	$parts       = explode( '.', $_FILES[ $image_name ]['name'] );
 	$ext         = strtolower( array_pop( $parts ) );
@@ -66,7 +64,7 @@ function is_allowed_grid_file( $image_name ) {
 	}
 }
 
-function validate_input() {
+function validate_input(): string {
 
 	$error = "";
 
@@ -159,7 +157,7 @@ function validate_input() {
 	return $error;
 }
 
-function is_default() {
+function is_default(): bool {
 	if ( isset( $_REQUEST['BID'] ) && $_REQUEST['BID'] == 1 ) {
 		return true;
 	}
@@ -198,59 +196,85 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'delete' ) {
 				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 			}
 
-			@unlink( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/grid" . $BID . ".jpg" );
-			@unlink( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/grid" . $BID . ".png" );
-			@unlink( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/background" . $BID . ".png" );
+			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".jpg" );
+			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".png" );
+			@unlink( Utility::get_upload_path() . "grids/background" . $BID . ".png" );
 		} else {
-			echo "<font color='red'><b>Cannot delete</b></font> - this grid contains some orders in the database.<br>";
+			echo "<b>Cannot delete</b> - this grid contains some orders in the database.<br>";
 		}
 	}
 }
 
-function get_banner_image_data( $b_row, $image_name ) {
-
-	$uploaddir = \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/";
-//print_r($_FILES);
-	if ( $_FILES[ $image_name ]['tmp_name'] ) {
+function get_banner_image_data( $b_row, $image_name ): string {
+	$uploaddir = Utility::get_upload_path() . "grids/";
+	if ( isset( $_FILES ) && isset( $_FILES[ $image_name ] ) && isset( $_FILES[ $image_name ]['tmp_name'] ) && $_FILES[ $image_name ]['tmp_name'] ) {
 		// a new image was uploaded
 		$uploadfile = $uploaddir . md5( session_id() ) . $image_name . $_FILES[ $image_name ]['name'];
 		move_uploaded_file( $_FILES[ $image_name ]['tmp_name'], $uploadfile );
 		$fh       = fopen( $uploadfile, 'rb' );
 		$contents = fread( $fh, filesize( $uploadfile ) );
 		fclose( $fh );
-		//imagecreatefrompng($uploadfile); 
 		$contents = addslashes( base64_encode( $contents ) );
-		//echo "$image_name<b>$contents</b><br>";
 		unlink( $uploadfile );
-	} else if ( $b_row[ $image_name ] != '' ) {
+	} else if ( isset( $b_row[ $image_name ] ) && $b_row[ $image_name ] != '' ) {
 		// use the old image
 		$contents = addslashes( ( $b_row[ $image_name ] ) );
-//echo "using the old file<p>";
 	} else {
-//echo "using the default file $image_name<p>";
 		$contents = addslashes( get_default_image( $image_name ) );
 	}
 
-//echo "$image_name<b>$contents</b><br>";
 	return $contents;
 }
 
 function get_banner_image_sql_values( $BID ) {
-
-	# , grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block 
-
+	$row = "";
 	// get banner
 	if ( $BID ) {
 		$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`='" . intval( $BID ) . "' ";
-		//echo "<p>$sql</p>";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 		$row = mysqli_fetch_array( $result );
-		//print_r($row);
 	}
 
-	$sql_str = ", '" . get_banner_image_data( $row, 'grid_block' ) . "' , '" . get_banner_image_data( $row, 'nfs_block' ) . "', '" . get_banner_image_data( $row, 'tile' ) . "', '" . get_banner_image_data( $row, 'usr_grid_block' ) . "', '" . get_banner_image_data( $row, 'usr_nfs_block' ) . "', '" . get_banner_image_data( $row, 'usr_ord_block' ) . "', '" . get_banner_image_data( $row, 'usr_res_block' ) . "', '" . get_banner_image_data( $row, 'usr_sel_block' ) . "', '" . get_banner_image_data( $row, 'usr_sol_block' ) . "'";
+	return ", '" . get_banner_image_data( $row, 'grid_block' ) . "' , '" . get_banner_image_data( $row, 'nfs_block' ) . "', '" . get_banner_image_data( $row, 'tile' ) . "', '" . get_banner_image_data( $row, 'usr_grid_block' ) . "', '" . get_banner_image_data( $row, 'usr_nfs_block' ) . "', '" . get_banner_image_data( $row, 'usr_ord_block' ) . "', '" . get_banner_image_data( $row, 'usr_res_block' ) . "', '" . get_banner_image_data( $row, 'usr_sel_block' ) . "', '" . get_banner_image_data( $row, 'usr_sol_block' ) . "'";
+}
 
-	return $sql_str;
+function validate_block_size( $image_name, $BID ): bool {
+	if ( ! $BID ) {
+		// new grid...
+		return true;
+	}
+
+	$block_w = $_REQUEST['block_width'];
+	$block_h = $_REQUEST['block_height'];
+
+	$sql    = "SELECT * FROM " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $BID );
+	$result = mysqli_query( $GLOBALS['connection'], $sql );
+	$b_row  = mysqli_fetch_array( $result );
+
+	if ( $b_row[ $image_name ] == '' ) {
+		// no data, assume that the default image will be loaded..
+		return true;
+	}
+
+	$imagine = new Imagine\Gd\Imagine();
+
+	$img = $imagine->load( base64_decode( $b_row[ $image_name ] ) );
+
+	$temp_file = Utility::get_upload_path() . "temp_block" . md5( session_id() ) . ".png";
+	$img->save( $temp_file );
+	$size = $img->getSize();
+
+	unlink( $temp_file );
+
+	if ( $size->getWidth() != $block_w ) {
+		return false;
+	}
+
+	if ( $size->getHeight() != $block_h ) {
+		return false;
+	}
+
+	return true;
 }
 
 if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
@@ -259,15 +283,9 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 
 	if ( $error != '' ) {
 
-		echo "<font color='red'>Error: cannot save due to the following errors:</font><br>";
+		echo "Error: cannot save due to the following errors:<br>";
 		echo $error;
 	} else {
-
-		//	$sql = "REPLACE INTO currencies(code, name, rate, sign, decimal_places, decimal_point, thousands_sep) VALUES ('".$_REQUEST['code']."', '".$_REQUEST['name']."', '".$_REQUEST['rate']."',  '".$_REQUEST['sign']."', '".$_REQUEST['decimal_places']."', '".$_REQUEST['decimal_point']."', '".$_REQUEST['thousands_sep']."') ";
-
-		//echo $sql;grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block 
-
-		//$image_sql_fields = get_banner_image_sql_fields($BID);
 		$image_sql_fields = ', grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block ';
 		$image_sql_values = get_banner_image_sql_values( $BID );
 		$now              = ( gmdate( "Y-m-d H:i:s" ) );
@@ -287,8 +305,6 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 
 		$_REQUEST['new'] = '';
-		//	$_REQUEST['action'] = '';
-
 	}
 }
 
@@ -304,17 +320,15 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
     </ul>
 
 <?php } ?>
-<?php //if ((isset($_REQUEST['new']) && $_REQUEST['new']=='')) { ?>
 <input type="button" style="background-color:#66FF33" value="New Grid..." onclick="mds_load_page('inventory.php?action=new&new=1', true)"><br>
-<?php //} ?>
 
 <?php
 
 if ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] == '1' ) {
-	echo "<h4>New Grid:</h4>";
+	echo "<h4>New Grid</h4>";
 }
 if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) {
-	echo "<h4>Edit Grid:</h4>";
+	echo "<h4>Edit Grid</h4>";
 
 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE `banner_id`='" . $BID . "' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
@@ -338,437 +352,525 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) {
 
 if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) ) {
 
-	if ( isset( $_REQUEST['block_width'] ) && ! $_REQUEST['block_width'] ) {
-		$_REQUEST['block_width'] = 10;
+	function not_valid_grid_option( $option ) {
+		return ( ! isset( $_REQUEST[ $option ] ) || ! $_REQUEST[ $option ] ) && ( isset( $_REQUEST[ $option ] ) && $_REQUEST[ $option ] != "0" );
 	}
 
-	if ( isset( $_REQUEST['block_height'] ) && ! $_REQUEST['block_height'] ) {
-		$_REQUEST['block_height'] = 10;
+	if ( not_valid_grid_option( 'grid_width' ) ) {
+		$_REQUEST['grid_width'] = 100;
 	}
 
-	if ( isset( $_REQUEST['max_blocks'] ) && ! $_REQUEST['max_blocks'] ) {
-		$_REQUEST['max_blocks'] = '0';
+	if ( not_valid_grid_option( 'grid_height' ) ) {
+		$_REQUEST['grid_height'] = 100;
 	}
 
-	if ( isset( $_REQUEST['min_blocks'] ) && ! $_REQUEST['min_blocks'] ) {
-		$_REQUEST['min_blocks'] = '0';
+	if ( not_valid_grid_option( 'price_per_block' ) ) {
+		$_REQUEST['price_per_block'] = 1;
 	}
 
-	if ( isset( $_REQUEST['days_expire'] ) && ! $_REQUEST['days_expire'] ) {
+	if ( not_valid_grid_option( 'currency' ) ) {
+		$_REQUEST['currency'] = get_default_currency();
+	}
+
+	if ( not_valid_grid_option( 'days_expire' ) ) {
 		$_REQUEST['days_expire'] = '0';
 	}
 
-	if ( isset( $_REQUEST['max_orders'] ) && ! $_REQUEST['max_orders'] ) {
-		$_REQUEST['max_orders'] = '0';
+	if ( not_valid_grid_option( 'max_orders' ) ) {
+		$_REQUEST['max_orders'] = '1';
 	}
+
+	if ( not_valid_grid_option( 'max_blocks' ) ) {
+		$_REQUEST['max_blocks'] = '1';
+	}
+
+	if ( not_valid_grid_option( 'min_blocks' ) ) {
+		$_REQUEST['min_blocks'] = '1';
+	}
+
+	if ( not_valid_grid_option( 'auto_approve' ) ) {
+		$_REQUEST['auto_approve'] = 'N';
+	}
+
+	if ( not_valid_grid_option( 'auto_publish' ) ) {
+		$_REQUEST['auto_publish'] = 'Y';
+	}
+
+	if ( not_valid_grid_option( 'block_width' ) ) {
+		$_REQUEST['block_width'] = 10;
+	}
+
+	if ( not_valid_grid_option( 'block_height' ) ) {
+		$_REQUEST['block_height'] = 10;
+	}
+	$size_error_msg = "Error: Invalid size! Must be " . htmlspecialchars( $_REQUEST['block_width'] ) . "x" . htmlspecialchars( $_REQUEST['block_height'] );
 
 	?>
     <form enctype="multipart/form-data" action='inventory.php' method="post">
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['new'] ) ? $_REQUEST['new'] : "" ); ?>" name="new">
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['edit'] ) ? $_REQUEST['edit'] : "" ); ?>" name="edit">
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : "" ); ?>" name="action">
+        <input type="hidden" value="<?php echo( isset( $_REQUEST['new'] ) ? htmlspecialchars( $_REQUEST['new'] ) : "" ); ?>" name="new">
+        <input type="hidden" value="<?php echo( isset( $_REQUEST['edit'] ) ? htmlspecialchars( $_REQUEST['edit'] ) : "" ); ?>" name="edit">
+        <input type="hidden" value="<?php echo( isset( $_REQUEST['action'] ) ? htmlspecialchars( $_REQUEST['action'] ) : "" ); ?>" name="action">
         <input type="hidden" value="<?php echo( isset( $_REQUEST['BID'] ) ? $BID : "" ); ?>" name="BID">
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['edit_anyway'] ) ? $_REQUEST['edit_anyway'] : "" ); ?>" name="edit_anyway">
-        <table border="0" cellSpacing="0" cellPadding="0" width="100%" bgcolor="#ffffff">
+        <input type="hidden" value="<?php echo( isset( $_REQUEST['edit_anyway'] ) ? htmlspecialchars( $_REQUEST['edit_anyway'] ) : "" ); ?>" name="edit_anyway">
 
-            <tr>
-                <td width="50%" valign='top'><!-- start left column -->
+        <input class="inventory-save" type="submit" name="submit" value="Save Grid Settings">
 
-                    <table border='0' cellSpacing="1" cellPadding="3" bgColor="#d9d9d9">
-                        <tr>
-                            <td>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Grid Name</b></font></td>
-                            <td><input size="30" type="text" name="name" value="<?php echo( isset( $_REQUEST['name'] ) ? $_REQUEST['name'] : "" ); ?>"/> <font size="2">eg. My Million Pixel Grid</font></td>
-                        </tr>
-						<?php
-
-						$sql   = "SELECT * FROM " . MDS_DB_PREFIX . "blocks where banner_id=" . $BID . " AND status <> 'nfs' limit 1 ";
-						$b_res = mysqli_query( $GLOBALS['connection'], $sql );
-
-						if ( ( $row['banner_id'] != '' ) && ( mysqli_num_rows( $b_res ) > 0 ) ) {
-							$locked = true;
-						} else {
-							$locked = false;
-						}
-
-						if ( isset( $_REQUEST['edit_anyway'] ) && $_REQUEST['edit_anyway'] != '' ) {
-
-							$locked = false;
-						}
-
-						?>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Grid Width</b></font></td>
-                            <td>
-								<?php
-								$disabled = "";
-								if ( ! $locked ) {
-									?>
-                                    <input <?php echo $disabled; ?> size="2" type="text" name="grid_width" value="<?php echo $_REQUEST['grid_width']; ?>"/><font size="2"> Measured in blocks (default block size is 10x10 pixels)</font>
-								<?php } else {
-
-									echo "<b>" . $_REQUEST['grid_width'];
-									echo "<input type='hidden' value='" . $row['grid_width'] . "' name='grid_width'> Blocks.</b> <font size='1'>Note: Cannot change width because the grid is in use by an advertiser. [<a href='inventory.php?action=edit&BID=" . $BID . "&edit_anyway=1'>Edit Anyway</a>]</font>";
-								}
-								?>
-                            </td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea">
-                                <font size="2"><b>Grid Height</b></font></td>
-                            <td>
-								<?php
-
-								if ( ! $locked ) {
-									?>
-                                    <input <?php echo $disabled; ?> size="2" type="text" name="grid_height" value="<?php echo $_REQUEST['grid_height']; ?>"/><font size="2"> Measured in blocks (default block size is 10x10 pixels)</font>
-								<?php } else {
-
-									echo "<b>" . $_REQUEST['grid_height'];
-									echo "<input type='hidden' value='" . $row['grid_height'] . "' name='grid_height'> Blocks.</b> <font size='1'> Note: Cannot change height because the grid is in use by an advertiser.[<a href='inventory.php?action=edit&BID=" . $BID . "&edit_anyway=1'>Edit Anyway</a>]</font>";
-								}
-								?>
-                            </td>
-                        </tr>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Price per block</b></font></td>
-                            <td><input size="1" type="text" name="price_per_block" value="<?php echo $_REQUEST['price_per_block']; ?>"/><font size="2">(How much for 1 block of pixels?)</font></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Currency</b></font></td>
-                            <td>
-                                <select name="currency">
-									<?php
-									currency_option_list( $_REQUEST['currency'] );
-
-									?>
-                                </select>
-                            </td>
-                        </tr>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Days to Expire</b></font></td>
-                            <td><input <?php echo $disabled; ?> size="1" type="text" name="days_expire" value="<?php echo $_REQUEST['days_expire']; ?>"/><font size="2">(How many days until pixels expire? Enter 0 for unlimited.)</font></td>
-                        </tr>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Max orders Per Customer</b></font></td>
-                            <td><input <?php echo $disabled; ?> size="1" type="text" name="max_orders" value="<?php echo $_REQUEST['max_orders']; ?>"/><font size="2">(How many orders per 1 customer? Enter 0 for unlimited.)</font><br>
-                            </td>
-                        </tr>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Max blocks</b></font></td>
-                            <td><input size="1" type="text" name="max_blocks" value="<?php echo $_REQUEST['max_blocks']; ?>"/><font size="2">(Maximum amount of blocks the customer is allowerd to purchase? Enter 0 for unlimited.)</font><br>
-                            </td>
-                        </tr>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Min blocks</b></font></td>
-                            <td><input size="1" type="text" name="min_blocks" value="<?php echo $_REQUEST['min_blocks']; ?>"/><font size="2">(Minumum amount of blocks the customer has to purchase per order? Enter 1 or 0 for no limit.)</font><br>
-                            </td>
-                        </tr>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Approve Automatically?</b></font></td>
-                            <td>
-                                <font size="1" face="Verdana">
-                                    <input type="radio" name="auto_approve" value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
-										echo " checked ";
-									} ?> >Yes. Approve all pixels automatically as they are submitted.<br>
-                                    <input type="radio" name="auto_approve" value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
-										echo " checked ";
-									} ?> >No, approve manually from the Admin.<br>
-                                </font>
-                            </td>
-                        </tr>
-
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font size="2"><b>Publish Automatically?</b></font></td>
-                            <td>
-                                <font size="1" face="Verdana">
-                                    <input type="radio" name="auto_publish" value="Y" <?php if ( $_REQUEST['auto_publish'] == 'Y' ) {
-										echo " checked ";
-									} ?> >Yes. Process the grid image(s) automatically, every time when the pixels are approved, expired or dis-apprived.<br>
-                                    <input type="radio" name="auto_publish" value="N" <?php if ( $_REQUEST['auto_publish'] == 'N' ) {
-										echo " checked ";
-									} ?> >No, Process manually from the admin<br>
-                                </font>
-                            </td>
-                        </tr>
-                    </table>
-
+        <div class="inventory-container">
+            <div class="inventory-column">
+                <div class="inventory-entry">
+                    <div class="inventory-title">Grid Name</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input id="inventory-grid-name" autofocus tabindex="0" size="30" type="text" name="name" value="<?php echo( isset( $_REQUEST['name'] ) ? htmlspecialchars( $_REQUEST['name'] ) : "" ); ?>"/>
+                            <script>
+								jQuery(function () {
+									let grid_name = $("#inventory-grid-name");
+									if (grid_name.val().length === 0) {
+										grid_name.focus();
+									}
+								});
+                            </script>
+                        </label> eg. My Million Pixel Grid
+                    </div>
+                </div>
+                <div class="inventory-entry">
 					<?php
 
-					$size_error_style = "style='font-size:9px; color:#F7DAD5; border-color:#FF6600; border-style: solid'";
-					$size_error_msg   = "Error: Invalid size! Must be " . $_REQUEST['block_width'] . "x" . $_REQUEST['block_height'];
+					$sql   = "SELECT * FROM " . MDS_DB_PREFIX . "blocks where banner_id=" . $BID . " AND status <> 'nfs' limit 1 ";
+					$b_res = mysqli_query( $GLOBALS['connection'], $sql );
 
-					function validate_block_size( $image_name, $BID ) {
+					if ( isset( $row ) && isset( $row['banner_id'] ) && $row['banner_id'] != '' && mysqli_num_rows( $b_res ) > 0 ) {
+						$locked = true;
+					} else {
+						$locked = false;
+					}
 
-						if ( ! $BID ) {
-
-							return true; // new grid...
-
-						}
-
-						$block_w = $_REQUEST['block_width'];
-						$block_h = $_REQUEST['block_height'];
-
-						$sql    = "SELECT * FROM " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $BID );
-						$result = mysqli_query( $GLOBALS['connection'], $sql );
-						$b_row  = mysqli_fetch_array( $result );
-
-						if ( $b_row[ $image_name ] == '' ) { // no data, assume that the default image will be loaded..
-
-							return true;
-						}
-
-						$imagine = new Imagine\Gd\Imagine();
-
-						$img = $imagine->load( base64_decode( $b_row[ $image_name ] ) );
-
-						$temp_file = \MillionDollarScript\Classes\Utility::get_upload_path() . "temp_block" . md5( session_id() ) . ".png";
-						$img->save( $temp_file );
-						$size = $img->getSize();
-
-						unlink( $temp_file );
-
-						if ( $size->getWidth() != $block_w ) {
-							return false;
-						}
-
-						if ( $size->getHeight() != $block_h ) {
-							return false;
-						}
-
-						return true;
+					if ( isset( $_REQUEST['edit_anyway'] ) && $_REQUEST['edit_anyway'] != '' ) {
+						$locked = false;
 					}
 
 					?>
+                    <div class="inventory-title">Grid Width</div>
+                    <div class="inventory-content">
+						<?php
+						$disabled = "";
+						if ( ! $locked ) {
+							?>
+                            <label>
+                                <input <?php echo $disabled; ?> size="2" type="text" name="grid_width" value="<?php echo htmlspecialchars( $_REQUEST['grid_width'] ); ?>"/>
+                            </label> Measured in blocks (default block size is 10x10 pixels)
+						<?php } else {
+							echo "<b>" . htmlspecialchars( $_REQUEST['grid_width'] );
+							echo "<input type='hidden' value='" . ( isset( $row ) ? ( $row['grid_width'] ?? '' ) : '' ) . "' name='grid_width'> Blocks.</b> Note: Cannot change width because the grid is in use by an advertiser. [<a href='inventory.php?action=edit&BID=" . $BID . "&edit_anyway=1'>Edit Anyway</a>]";
+						}
+						?>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Grid Height</div>
+                    <div class="inventory-content">
+						<?php
 
-                </td>
-                <td valign='top' bgcolor="#ffffff">
-                    <table id="table1" border='0' cellSpacing="1" cellPadding="3" bgColor="#d9d9d9">
-                        <tr bgcolor="#ffffff">
-                            <td colspan="3" bgColor="#eaeaea"><b><font face="Arial" size="2">Block Configuration</font></b></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><b><font size="2" face="Arial">Block Size</font></b></td>
-                            <td colspan="2">
+						if ( ! $locked ) {
+							?>
+                            <label>
+                                <input <?php echo $disabled; ?> size="2" type="text" name="grid_height" value="<?php echo htmlspecialchars( $_REQUEST['grid_height'] ); ?>"/>
+                            </label> Measured in blocks (default block size is 10x10 pixels)
+						<?php } else {
+							echo "<b>" . htmlspecialchars( $_REQUEST['grid_height'] );
+							echo "<input type='hidden' value='" . ( isset( $row ) ? ( $row['grid_height'] ?? '' ) : '' ) . "' name='grid_height'> Blocks.</b>  Note: Cannot change height because the grid is in use by an advertiser. [<a href='inventory.php?action=edit&BID=" . $BID . "&edit_anyway=1'>Edit Anyway</a>]";
+						}
+						?>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Price per block</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input size="1" type="text" name="price_per_block" value="<?php echo htmlspecialchars( $_REQUEST['price_per_block'] ); ?>"/>
+                        </label>(How much for 1 block of pixels?)
+                    </div>
+                    <div class="inventory-title">Currency</div>
+                    <div class="inventory-content">
+                        <label>
+                            <select name="currency">
+								<?php
+								currency_option_list( $_REQUEST['currency'] );
 
-                                <p>
-                                    <input type="text" name="block_width" size="2" style="font-size: 18pt" value="<?php echo $_REQUEST['block_width']; ?>">
-                                    &nbsp;<font size="6">X</font>&nbsp;
-                                    <input type="text" name="block_height" size="2" style="font-size: 18pt" value="<?php echo $_REQUEST['block_height']; ?>"><br>
-                                    <font face="Arial" size="2">(Width X Height, default is 10x10 in pixels)</font></p>
+								?>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Days to Expire</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input <?php echo $disabled; ?> size="1" type="text" name="days_expire" value="<?php echo htmlspecialchars( $_REQUEST['days_expire'] ); ?>"/>
+                        </label>(How many days until pixels expire? Enter 0 for unlimited.)
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Max orders Per Customer</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input <?php echo $disabled; ?> size="1" type="text" name="max_orders" value="<?php echo htmlspecialchars( $_REQUEST['max_orders'] ); ?>"/>
+                        </label>(How many orders per 1 customer? Enter 0 for unlimited.)<br>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Max blocks</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input size="1" type="text" name="max_blocks" value="<?php echo htmlspecialchars( $_REQUEST['max_blocks'] ); ?>"/>
+                        </label>(Maximum amount of blocks the customer is allowerd to purchase? Enter 0 for unlimited.)<br>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Min blocks</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input size="1" type="text" name="min_blocks" value="<?php echo htmlspecialchars( $_REQUEST['min_blocks'] ); ?>"/>
+                        </label>(Minumum amount of blocks the customer has to purchase per order? Enter 1 or 0 for no limit.)<br>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Approve Automatically?</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input type="radio" name="auto_approve" value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
+								echo " checked ";
+							} ?> >
+                        </label>Yes. Approve all pixels automatically as they are submitted.<br>
+                        <label>
+                            <input type="radio" name="auto_approve" value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
+								echo " checked ";
+							} ?> >
+                        </label>No, approve manually from the Admin.<br>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Publish Automatically?</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input type="radio" name="auto_publish" value="Y" <?php if ( $_REQUEST['auto_publish'] == 'Y' ) {
+								echo " checked ";
+							} ?> >
+                        </label>Yes. Process the grid image(s) automatically, every time when the pixels are approved, expired or dis-apprived.<br>
+                        <label>
+                            <input type="radio" name="auto_publish" value="N" <?php if ( $_REQUEST['auto_publish'] == 'N' ) {
+								echo " checked ";
+							} ?> >
+                        </label>No, Process manually from the admin<br>
+                    </div>
+                </div>
+            </div>
+            <div class="inventory-column">
+                <div class="inventory-section-title">Block Configuration</div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Block Size</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input type="text" name="block_width" size="2" style="font-size: 18pt" value="<?php echo intval( $_REQUEST['block_width'] ); ?>">
+                        </label>
+                        &nbsp;X&nbsp;
+                        <label>
+                            <input type="text" name="block_height" size="2" style="font-size: 18pt" value="<?php echo intval( $_REQUEST['block_height'] ); ?>">
+                        </label>
+                        <br/>(Width X Height, default is 10x10 in pixels)
+                    </div>
+                </div>
+                <div class="inventory-section-title">Block Graphics - Displayed on the public Grid</div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Grid Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'grid_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'grid_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=grid_block" alt=""/>
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="grid_block" size="10"/>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Not For Sale Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'nfs_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'nfs_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=nfs_block" alt=""/>
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="nfs_block" size="10"/>
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Background Tile</div>
+                    <div class="inventory-content">
+						<?php display_reset_link( $BID, 'tile' ); ?>
+						<?php
+						$banner_data = load_banner_constants( $BID );
+						$bgstyle     = "";
+						if ( ! empty( $banner_data['G_BGCOLOR'] ) ) {
+							$bgstyle = ' style="background-color:' . $banner_data['G_BGCOLOR'] . ';"';
+						}
+						?>
+                        <img<?php echo $bgstyle; ?> src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=tile" alt=""/>
+                        <input type="file" name="tile" size="10"/>
+                        <br/>(This tile is used the fill the space behind the grid image. The tile will be seen before the grid image is loaded.)
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Background Color</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input type='text' name='bgcolor' size='7' value='<?php echo htmlspecialchars( $_REQUEST['bgcolor'] ); ?>'/>
+                        </label> eg. #ffffff
+                    </div>
+                </div>
+                <div class="inventory-section-title">
+                    Block Graphics - Displayed on the ordering Grid
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Grid Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'usr_grid_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'usr_grid_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_grid_block" alt="">
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="usr_grid_block" size="10">
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Not For Sale Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'usr_nfs_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'usr_nfs_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_nfs_block" alt="">
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="usr_nfs_block" size="10">
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Ordered Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'usr_ord_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'usr_ord_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_ord_block" alt="">
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="usr_ord_block" size="10">
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Reserved Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'usr_res_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'usr_res_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_res_block" alt="">
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="usr_res_block" size="10">
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Selected Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'usr_sel_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'usr_sel_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_sel_block" alt="">
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="usr_sel_block" size="10">
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Sold Block</div>
+                    <div class="inventory-content<?php
+					$valid = validate_block_size( 'usr_sol_block', $BID );
+					if ( ! $valid ) {
+						echo ' inventory-error';
+					}
+					?>">
+						<?php display_reset_link( $BID, 'usr_sol_block' ); ?>
+                        <img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_sol_block" alt="">
+						<?php
+						if ( ! $valid ) {
+							echo $size_error_msg;
+							unset( $valid );
+						}
+						?>
+                        <input type="file" name="usr_sol_block" size="10">
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td colspan="3" bgColor="#eaeaea"><font face="Arial" size="2"><b>Block Graphics -
-                                        Displayed on the public Grid</b></font></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font face="Arial" size="2"><b>Grid Block<?php display_reset_link( $BID, 'grid_block' ); ?></b></font></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'grid_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?> ><span><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=grid_block" border="0"><?php if ( ! $valid ) {
-										echo $size_error_msg;
-										$valid = '';
-									} ?></span></td>
-                            <td><input type="file" name="grid_block" size="10"></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><b><font size="2" face="Arial">Not For Sale Block<?php display_reset_link( $BID, 'nfs_block' ); ?></font></b></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'nfs_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?>><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=nfs_block" border="0"><?php if ( ! $valid ) {
-									echo $size_error_msg;
-									$valid = '';
-								} ?></td>
-                            <td><input type="file" name="nfs_block" size="10"></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><b><font size="2" face="Arial">Background Tile<?php display_reset_link( $BID, 'tile' ); ?></font></b></td>
-                            <td bgcolor='#867C6F'><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=tile" border="0"></td>
-                            <td><input type="file" name="tile" size="10">(<font size="1" face="Verdana">This tile is used the fill the space behind the grid image. The tile will be seen before the grid image is loaded.) <b>Background color:</b> <input type='text' name='bgcolor' size='7' value='<?php echo $_REQUEST['bgcolor']; ?>'> eg. #ffffff</font></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td colspan="3" bgColor="#eaeaea"><b><font size="2" face="Arial">Block Graphics -
-                                        Displayed on the ordering Grid</font></b></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font face="Arial" size="2"><b>Grid Block<?php display_reset_link( $BID, 'usr_grid_block' ); ?></b></font></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'usr_grid_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?>><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_grid_block" border="0"><?php if ( ! $valid ) {
-									echo $size_error_msg;
-									$valid = '';
-								} ?></td>
-                            <td><input type="file" name="usr_grid_block" size="10"></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><b><font size="2" face="Arial">Not For Sale Block<?php display_reset_link( $BID, 'usr_nfs_block' ); ?></font></b></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'usr_nfs_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?> ><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_nfs_block" border="0"><?php if ( ! $valid ) {
-									echo $size_error_msg;
-									$valid = '';
-								} ?></td>
-                            <td><input type="file" name="usr_nfs_block" size="10"></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font face="Arial" size="2"><b>Ordered Block<?php display_reset_link( $BID, 'usr_ord_block' ); ?></b></font></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'usr_ord_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?> ><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_ord_block" border="0"><?php if ( ! $valid ) {
-									echo $size_error_msg;
-									$valid = '';
-								} ?></td>
-                            <td><input type="file" name="usr_ord_block" size="10"></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font face="Arial" size="2"><b>Reserved Block<?php display_reset_link( $BID, 'usr_res_block' ); ?></b></font></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'usr_res_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?> ><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_res_block" border="0"><?php if ( ! $valid ) {
-									echo $size_error_msg;
-									$valid = '';
-								} ?></td>
-                            <td><input type="file" name="usr_res_block" size="10"></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><b><font size="2" face="Arial">Selected Block<?php display_reset_link( $BID, 'usr_sel_block' ); ?></font></b></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'usr_sel_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?> ><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_sel_block" border="0"><?php if ( ! $valid ) {
-									echo $size_error_msg;
-									$valid = '';
-								} ?></td>
-                            <td><input type="file" name="usr_sel_block" size="10"></td>
-                        </tr>
-                        <tr bgcolor="#ffffff">
-                            <td bgColor="#eaeaea"><font face="Arial" size="2"><b>Sold Block<?php display_reset_link( $BID, 'usr_sol_block' ); ?></b></font></td>
-                            <td bgcolor='#867C6F' <?php $valid = validate_block_size( 'usr_sol_block', $BID );
-							if ( ! $valid ) {
-								echo $size_error_style;
-							} ?> ><img src="get_block_image.php?t=<?php echo time(); ?>&BID=<?php echo $BID; ?>&image_name=usr_sol_block" border="0"><?php if ( ! $valid ) {
-									echo $size_error_msg;
-									$valid = '';
-								} ?></td>
-                            <td><input type="file" name="usr_sol_block" size="10"></td>
-                        </tr>
-                        <!--
-	<tr bgcolor="#ffffff">
-	<td colspan="3">
-<a href="inventory.php?action=edit&BID=<?php echo $BID ?>&default_all=yes" onclick="return confirmLink(this, 'Reset all blocks to default, are you sure?')"><font color='red' size=1>Reset all blocks to default</font></a></td>
-	<tr>
-	-->
-                    </table>
-
-                </td>
-
-            </tr>
-        </table>
-        <input type="submit" name="submit" value="Save Grid Settings" style="font-size: 21px;">
+        <input class="inventory-save" type="submit" name="submit" value="Save Grid Settings">
     </form>
     <hr>
 	<?php
 
 	if ( $locked ) {
-		echo "Note: The Grid Width and Grid Height fields are locked because this image has some pixels on order / sold";
+		?>
+        Note: The Grid Width and Grid Height fields are locked because this image has some pixels on order / sold.
+		<?php
 	}
 }
 
-function render_offer( $price, $currency, $max_orders, $days_expire, $package_id = 0 ) {
+function render_offer( $price, $currency, $max_orders, $days_expire ) {
 	?>
-    <font size="2">
-		<?php
-//		if ( $package_id != 0 ) {
-			//echo "<font color='#CC0033'>#$package_id </font>";
-//		}
-		?>
-        <small>Days:</small> <b><?php if ( $days_expire > 0 ) {
-				echo $days_expire;
-			} else {
-				echo "unlimited";
-			} ?></b></font><font size="2"> <small>Max Ord</small>: <b><?php if ( $max_orders > 0 ) {
-				echo $max_orders;
-			} else {
-				echo "unlimited";
-			} ?></b></font><font size="2"> <small>Price/100</small>: <b><?php echo $price; ?></font><font size="2"> <?php echo $currency; ?></b></font><br>
+
+	<?php
+
+	?>
+    <small>Days:</small> <b><?php if ( $days_expire > 0 ) {
+			echo $days_expire;
+		} else {
+			echo "unlimited";
+		} ?></b> <small>Max Ord</small>: <b><?php if ( $max_orders > 0 ) {
+			echo $max_orders;
+		} else {
+			echo "unlimited";
+		} ?></b> <small>Price/100</small>: <b><?php echo $price; ?><?php echo $currency; ?></b><br>
 
 	<?php
 }
 
 ?>
+<br/>
+Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to a larger value may affect the memory & performance of the script.<br/>
+<br/><br/>
 
-<font size='1'>Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to a larger value may affect the memory & performance of the script.</font><br>
+<div class="inventory2-container">
+    <div class="inventory2-title">
+        Grid ID
+    </div>
+    <div class="inventory2-title">
+        Name
+    </div>
+    <div class="inventory2-title">
+        Grid Width
+    </div>
+    <div class="inventory2-title">
+        Grid Height
+    </div>
+    <div class="inventory2-title">
+        Offer
+    </div>
+    <div class="inventory2-title">
+        Action
+    </div>
+    <div class="inventory2-title">
+        Today's Clicks
+    </div>
+    <div class="inventory2-title">
+        Total Clicks
+    </div>
 
-<table border="0" cellSpacing="1" cellPadding="3" bgColor="#d9d9d9">
-    <tr bgColor="#eaeaea">
-        <td><b><font size="2">Grid ID</b></font></td>
-        <td><b><font size="2">Name</b></font></td>
-        <td><b><font size="2">Grid Width</b></font></td>
-        <td><b><font size="2">Grid Height</b></font></td>
-        <!--
-		<td><b><font size="2">Days to Exp.</b></font></td>
-		<td><b><font size="2">Price /<br>Block</b></font></td>
-		<td><b><font size="2">Currency</b></font></td>
-		-->
-        <td><b><font size="2">Offer</b></font></td>
-
-        <td><b><font size="2">Action</b></font></td>
-        <td><b><font size="2">Today's Clicks</b></font></td>
-        <td><b><font size="2">Total Clicks</b></font></td>
-    </tr>
 	<?php
 	$result = mysqli_query( $GLOBALS['connection'], "select * FROM " . MDS_DB_PREFIX . "banners" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
-
 		?>
-        <tr bgcolor="#ffffff">
-            <td><font size="2"><?php echo $row['banner_id']; ?></font></td>
-            <td><font size="2"><?php echo $row['name']; ?></font></td>
-            <td><font size="2"><?php echo $row['grid_width']; ?> blocks</font></td>
-            <td><font size="2"><?php echo $row['grid_height']; ?> blocks</font></td>
-            <td nowrap>
-
+        <div class="inventory2-content">
+			<?php echo $row['banner_id']; ?>
+        </div>
+        <div class="inventory2-content">
+			<?php echo $row['name']; ?>
+        </div>
+        <div class="inventory2-content">
+			<?php echo $row['grid_width']; ?> blocks
+        </div>
+        <div class="inventory2-content">
+			<?php echo $row['grid_height']; ?> blocks
+        </div>
+        <div class="inventory2-content">
+			<?php
+			$banner_packages = banner_get_packages( $row['banner_id'] );
+			if ( ! $banner_packages ) {
+				// render the default offer
+				render_offer( $row['price_per_block'], $row['currency'], $row['max_orders'], $row['days_expire'] );
+			} else {
+				while ( $p_row = mysqli_fetch_array( $banner_packages ) ) {
+					render_offer( $p_row['price'], $p_row['currency'], $p_row['max_orders'], $p_row['days_expire'] );
+				}
+			}
+			?>
+        </div>
+        <div class="inventory2-content">
+            <a href='inventory.php?action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a> <a href="packs.php?BID=<?php echo $row['banner_id']; ?>"> Packages</a>
+			<?php
+			if ( $row['banner_id'] != '1' ) {
+				?>
+                <a href='inventory.php?action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
 				<?php
-
-				$banner_packages = banner_get_packages( $row['banner_id'] );
-
-				if ( ! $banner_packages ) {
-					// render the default offer
-					render_offer( $row['price_per_block'], $row['currency'], $row['max_orders'], $row['days_expire'] );
-				} else {
-
-					?>
-
-					<?php while ( $p_row = mysqli_fetch_array( $banner_packages ) ) {
-
-						render_offer( $p_row['price'], $p_row['currency'], $p_row['max_orders'], $p_row['days_expire'], $p_row['package_id'] );
-
-						?>
-
-					<?php }
-				} ?>
-            </td>
-            <td><font size="2"><a href='inventory.php?action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a> / <a href="packs.php?BID=<?php echo $row['banner_id']; ?>"> Packages</a><?php if ( $row['banner_id'] != '1' ) { ?> / <a href='inventory.php?action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a><?php } ?></font></td>
-            <td><font size="2"><?php echo get_clicks_for_today( $row['banner_id'] ); ?></font></td>
-            <td><font size="2"><?php echo get_clicks_for_banner( $row['banner_id'] ); ?></font></td>
-
-        </tr>
+			}
+			?>
+        </div>
+        <div class="inventory2-content">
+			<?php echo get_clicks_for_today( $row['banner_id'] ); ?>
+        </div>
+        <div class="inventory2-content">
+			<?php echo get_clicks_for_banner( $row['banner_id'] ); ?>
+        </div>
 		<?php
 	}
 	?>
-</table>
+</div>
