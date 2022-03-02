@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.2
+ * @version 2.3.3
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -115,6 +115,11 @@ class Options {
 				              )
 			              ) )
 			              ->set_help_text( __( 'Setting to Yes will automatically approve orders before payments are verified by an admin.', 'milliondollarscript' ) ),
+
+			         // Account page
+			         Field::make( 'text', self::prefix . 'account-page', __( 'Account Page', 'milliondollarscript' ) )
+			              ->set_default_value( get_edit_profile_url() )
+			              ->set_help_text( __( 'The page where users can modify their account details. If left empty will redirect to the default WP profile page. If WooCommerce integration is enabled it will go to the WooCommerce My Account page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here.', 'milliondollarscript' ) ),
 
 			         // Register page
 			         Field::make( 'text', self::prefix . 'register-page', __( 'Register Page', 'milliondollarscript' ) )

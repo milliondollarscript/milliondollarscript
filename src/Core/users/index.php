@@ -80,6 +80,7 @@ if ( $user_row == null ) {
 	echo $label['advertiser_home_blkyouown'] . "<br>";
 
 	$label['advertiser_home_blkonorder'] = str_replace( "%PIXEL_ORD_COUNT%", $ordered, $label['advertiser_home_blkonorder'] );
+	$label['advertiser_home_blkonorder'] = str_replace( "%BLOCK_ORD_COUNT%", ( $ordered / ( $b_row['block_width'] * $b_row['block_height'] ) ), $label['advertiser_home_blkonorder'] );
 
 	if ( USE_AJAX == 'SIMPLE' ) {
 		$label['advertiser_home_blkonorder'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_blkonorder'] );
@@ -100,6 +101,9 @@ if ( $user_row == null ) {
 
 	if ( USE_AJAX == 'SIMPLE' ) {
 		$label['advertiser_home_selectlink'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_selectlink'] );
+	}
+	if ( WP_ENABLED == 'YES' ) {
+		$label['advertiser_home_editlink'] = str_replace( [ 'edit.php', 'href' ], [ \MillionDollarScript\Classes\Options::get_option( 'account-page' ), 'target=\'_top\' href' ], $label['advertiser_home_editlink'] );
 	}
 
 	echo $label['advertiser_home_selectlink']; ?><br>
