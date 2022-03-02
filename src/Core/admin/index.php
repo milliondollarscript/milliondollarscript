@@ -30,6 +30,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Database;
+
 const MAIN_PHP = '1';
 
 require_once __DIR__ . "/../include/init.php";
@@ -141,6 +143,11 @@ if ( WP_ENABLED == 'YES' ) {
             Copyright <?php echo date( 'Y' ); ?>, see <a href="../LICENSE.txt">LICENSE.txt</a> for license information.<br/>
             <br/>
             MDS Version: <?php echo MDSConfig::get( 'VERSION_INFO' ); ?>
+            <br/>
+			<?php
+			$mdsdb = new Database();
+			?>
+            DB Version: <?php echo $mdsdb->get_dbver(); ?>
         </small>
     </div>
     <div class="admin-content"></div>

@@ -290,7 +290,7 @@ if ( $BID != '' ) {
                             </option>
                             <option value="white" <?php if ( isset( $_REQUEST['color'] ) && $_REQUEST['color'] == 'white' ) {
 								echo ' selected ';
-							} ?> style="background-color: #FFffFF">White
+							} ?> style="background-color: #ffffff">White
                             </option>
                         </select>
 
