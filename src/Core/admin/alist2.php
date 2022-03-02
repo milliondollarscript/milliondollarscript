@@ -61,7 +61,7 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'del' ) {
 	$result = mysqli_query( $GLOBALS['connection'], $sql );
 }
 
-if ( $_REQUEST['column_id'] != '' ) {
+if ( isset( $_REQUEST['column_id'] ) && $_REQUEST['column_id'] != '' ) {
 	$sql     = "SELECT * FROM " . MDS_DB_PREFIX . "form_lists WHERE column_id='" . intval( $_REQUEST['column_id'] ) . "' ";
 	$result  = mysqli_query( $GLOBALS['connection'], $sql );
 	$col_row = mysqli_fetch_array( $result );

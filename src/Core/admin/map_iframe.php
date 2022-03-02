@@ -43,7 +43,7 @@ $BID = $f2->bid();
 
 $banner_data = load_banner_constants( $BID );
 
-if(WP_ENABLED == 'YES') {
+if ( WP_ENABLED == 'YES' ) {
 	$mds_site_url = WP_URL;
 } else {
 	$mds_site_url = BASE_HTTP_PATH;
@@ -398,7 +398,7 @@ $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $G
 
 	<?php
 
-    // TODO: optimize this better
+	// TODO: optimize this better
 	while ( $row = mysqli_fetch_array( $result ) ) {
 		$size = get_pixel_image_size( $row['order_id'] );
 
@@ -410,7 +410,7 @@ $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $G
 		$res = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		$order_row = mysqli_fetch_array( $res );
 
-		if ( $order_row['days_expire'] > 0 ) {
+		if ( isset( $order_row['days_expire'] ) && $order_row['days_expire'] > 0 ) {
 
 			if ( $order_row['published'] != 'Y' ) {
 				$time_start = strtotime( gmdate( 'r' ) );
@@ -442,20 +442,20 @@ $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $G
 			$days = "Never";
 		}
 
-		$alt_text = "<b>Customer:</b> " . $user_row['FirstName'] . " " . $user_row['LastName'] . " <br><b>Username:</b> " . $user_row['Username'] . "<br><b>Email:</b> " . $user_row['Email'] . "<br><b>Order</b> # : " . $row['order_id'] . " <br> <b>Block Status:</b> " . $row['status'] . "<br><b>Published:</b> " . $order_row['published'] . "<br><b>Approved:</b> " . $order_row['published'] . "<br><b>Expires:</b> " . $days . "<br><b>Click Count:</b> " . $row['click_count'] . "<br><b>Block ID:</b> " . $row['block_id'] . "<br><b>Co-ordinate:</b> x:" . $row['x'] . ", y:" . $row['y'] . "";
+		$alt_text = "<b>Customer:</b> " . ( $user_row['FirstName'] ?? '' ) . " " . ( $user_row['LastName'] ?? '' ) . " <br><b>Username:</b> " . ( $user_row['Username'] ?? '' ) . "<br><b>Email:</b> " . ( $user_row['Email'] ?? '' ) . "<br><b>Order</b> # : " . ( $row['order_id'] ?? '' ) . " <br> <b>Block Status:</b> " . ( $row['status'] ?? '' ) . "<br><b>Published:</b> " . ( $order_row['published'] ?? '' ) . "<br><b>Approved:</b> " . ( $order_row['published'] ?? '' ) . "<br><b>Expires:</b> " . ( $days ?? '' ) . "<br><b>Click Count:</b> " . ( $row['click_count'] ?? '' ) . "<br><b>Block ID:</b> " . ( $row['block_id'] ?? '' ) . "<br><b>Co-ordinate:</b> x:" . ( $row['x'] ?? '' ) . ", y:" . ( $row['y'] ?? '' ) . "";
 
 		?>
 
         <area
-                href="<?php echo( $row['url'] ); ?>"
+                href="<?php echo( $row['url'] ?? '' ); ?>"
                 alt=""
                 shape="RECT"
-                coords="<?php echo $row['x']; ?>,<?php echo $row['y']; ?>,<?php echo $row['x'] + $banner_data['BLK_WIDTH']; ?>,<?php echo $row['y'] + $banner_data['BLK_HEIGHT']; ?>"
+                coords="<?php echo $row['x'] ?? ''; ?>,<?php echo $row['y'] ?? ''; ?>,<?php echo ( $row['x'] ?? 0 ) + $banner_data['BLK_WIDTH']; ?>,<?php echo ( $row['y'] ?? 0 ) + $banner_data['BLK_HEIGHT']; ?>"
                 target="_blank"
-                data-user_id="<?php echo( $row['user_id'] ); ?>"
-                data-order_id="<?php echo $row['order_id']; ?>"
-                data-order_width="<?php echo $size['x']; ?>"
-                data-order_height="<?php echo $size['y']; ?>"
+                data-user_id="<?php echo( $row['user_id'] ?? '' ); ?>"
+                data-order_id="<?php echo $row['order_id'] ?? ''; ?>"
+                data-order_width="<?php echo $size['x'] ?? ''; ?>"
+                data-order_height="<?php echo $size['y'] ?? ''; ?>"
         >
 	<?php } ?>
 

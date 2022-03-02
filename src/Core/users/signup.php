@@ -61,10 +61,10 @@ $label["advertiser_signup_heading1"] = str_replace( "%SITE_NAME%", SITE_NAME, $l
 					$success = process_signup_form();
 				} // end submit
 
-				if ( ! $success ) {
+				if ( isset( $success ) && ! $success ) {
 					//Signup form is shown below
 
-					display_signup_form( $_REQUEST['FirstName'], $_REQUEST['LastName'], $_REQUEST['CompName'], $_REQUEST['Username'], $_REQUEST['Password'], $_REQUEST['Password2'], $_REQUEST['Email'], $_REQUEST['Newsletter'], $_REQUEST['Notification1'], $_REQUEST['Notification2'], $_REQUEST['lang'] );
+					display_signup_form( $_REQUEST['FirstName'], $_REQUEST['LastName'], $_REQUEST['CompName'], $_REQUEST['Username'], $_REQUEST['Password'], $_REQUEST['Password2'], $_REQUEST['Email'] );
 //				} else {
 
 				}

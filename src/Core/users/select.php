@@ -49,9 +49,9 @@ if ( ! is_numeric( $BID ) ) {
 
 $banner_data = load_banner_constants( $BID );
 
-$sql          = "SELECT * from " . MDS_DB_PREFIX . "orders where user_id='" . intval( $_SESSION['MDS_ID'] ) . "' and status='new' and banner_id='$BID' ";
-$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
-$order_row    = mysqli_fetch_array( $order_result );
+$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where user_id='" . intval( $_SESSION['MDS_ID'] ) . "' and status='new' and banner_id='$BID' ";
+$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+$order_row = mysqli_fetch_array( $order_result );
 
 if ( $order_row != null ) {
 
@@ -126,7 +126,7 @@ if ( isset( $_REQUEST['select'] ) && ! empty( $_REQUEST['select'] ) ) {
 	}
 }
 
-$block_str = ( $order_row['blocks'] == "" ) ? "-1" : $order_row['blocks'];
+$block_str = ( ! isset( $order_row['blocks'] ) || $order_row['blocks'] == "" ) ? "-1" : $order_row['blocks'];
 
 // load any existing blocks for this order
 $order_blocks = array();
@@ -311,7 +311,7 @@ if ( ! isset( $_REQUEST['sel_mode'] ) ) {
         <form method="post" action="order.php" id="form1" name="form1">
             <input type="hidden" name="package" value="">
             <input type="hidden" name="selected_pixels" value=''>
-            <input type="hidden" name="order_id" value="<?php echo $order_row['order_id']; ?>">
+            <input type="hidden" name="order_id" value="<?php echo $order_row['order_id'] ?? ''; ?>">
             <input type="hidden" value="<?php echo $BID; ?>" name="BID">
             <input type="submit" name='submit_button2' id='submit_button2' value='<?php echo htmlspecialchars( $label['advertiser_buy_button'] ); ?>'>
             <hr>

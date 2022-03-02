@@ -107,7 +107,7 @@ if ( $_SESSION['MDS_ID'] == '' ) {
                     <h3><?php echo $label['confirm_instructions']; ?></h3>
 					<?php
 
-					display_signup_form( $_REQUEST['FirstName'], $_REQUEST['LastName'], $_REQUEST['CompName'], $_REQUEST['Username'], $_REQUEST['Password'], $_REQUEST['Password2'], $_REQUEST['Email'], $_REQUEST['Newsletter'], $_REQUEST['Notification1'], $_REQUEST['Notification2'], $_REQUEST['lang'] );
+					display_signup_form( $_REQUEST['FirstName'], $_REQUEST['LastName'], $_REQUEST['CompName'], $_REQUEST['Username'], $_REQUEST['Password'], $_REQUEST['Password2'], $_REQUEST['Email'] );
 				}
 				?>
             </td>

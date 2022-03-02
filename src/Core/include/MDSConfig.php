@@ -52,7 +52,7 @@ class MDSConfig {
 		$rootpathinfo = pathinfo( __DIR__ . '/../' );
 		$BASE_PATH    = $rootpathinfo['dirname'];
 
-		require_once __DIR__ . '/../include/version.php';
+		require_once realpath( __DIR__ . '/../include/version.php' );
 		$build_date = get_mds_build_date();
 		$version    = get_mds_version();
 
