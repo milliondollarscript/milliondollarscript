@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.2
+ * @version 2.3.3
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -45,8 +45,21 @@ class MillionDollarScript {
 		}
 
 		?>
-        <h1>Million Dollar Script Two - Fully embedded into a WordPress plugin.</h1>
-        <p>For more information <a href="https://milliondollarscript.com/new-wordpress-integration-plugin/" target="_blank">click here</a>.</p>
+        <h1><?php _e( 'Million Dollar Script Two - Fully embedded into a WordPress plugin.', 'milliondollarscript' ); ?></h1>
+        <p><?php _e( 'For more information', 'milliondollarscript' ); ?> <a href="https://milliondollarscript.com/new-wordpress-integration-plugin/" target="_blank"><?php _e( 'click here', 'milliondollarscript' ); ?></a>.</p>
+        <p><?php _e( 'Current status: ', 'milliondollarscript' ); ?><strong><?php
+		        $installed  = get_option( 'milliondollarscript-two-installed', false );
+		        $installing = get_option( 'milliondollarscript-two-installing', false );
+		        if ( $installed && !$installing ) {
+			        _e( 'Installed', 'milliondollarscript' );
+		        } else if ( !$installed && $installing ) {
+			        _e( 'Installing', 'milliondollarscript' );
+		        } else if ( $installed && $installing ) {
+			        _e( 'Installed and installing', 'milliondollarscript' );
+		        } else if ( !$installed && !$installing ) {
+			        _e( 'Not installed', 'milliondollarscript' );
+		        }
+		        ?></strong></p>
 		<?php
 	}
 
