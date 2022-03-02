@@ -36,6 +36,7 @@ function publish_image( $BID ) {
 		return;
 	}
 
+	$imagine = "";
 	if ( class_exists( 'Imagick' ) ) {
 		$imagine = new Imagine\Imagick\Imagine();
 	} else if ( function_exists( 'gd_info' ) ) {
@@ -54,14 +55,15 @@ function publish_image( $BID ) {
 	}
 
 	// output the tile image
+	if ( DISPLAY_PIXEL_BACKGROUND == "YES" ) {
+		$b_row = load_banner_row( $BID );
 
-	$b_row = load_banner_row( $BID );
-
-	if ( $b_row['tile'] == '' ) {
-		$b_row['tile'] = get_default_image( 'tile' );
+		if ( $b_row['tile'] == '' ) {
+			$b_row['tile'] = get_default_image( 'tile' );
+		}
+		$tile = $imagine->load( base64_decode( $b_row['tile'] ) );
+		$tile->save( $dest . "bg-main$BID.gif" );
 	}
-	$tile = $imagine->load( base64_decode( $b_row['tile'] ) );
-	$tile->save( $dest . "bg-main$BID.gif" );
 
 	// update the records
 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE approved='Y' AND status='sold' AND image_data <> '' AND banner_id='" . intval( $BID ) . "' ";
