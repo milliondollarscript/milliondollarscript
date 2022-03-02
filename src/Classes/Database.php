@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.2
+ * @version 2.3.3
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -511,6 +511,15 @@ class Database {
 			$wpdb->query( $sql );
 
 			$version = $this->up_dbver( 11 );
+		}
+
+		if ( $version <= 11 ) {
+
+			// Add DISPLAY_ORDER_HISTORY option
+			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "config` VALUES ('DISPLAY_ORDER_HISTORY', 'YES');";
+			$wpdb->query( $sql );
+
+			$version = $this->up_dbver( 12 );
 		}
 
 		// TODO: remember to update the DB version in /milliondollarscript-two.php

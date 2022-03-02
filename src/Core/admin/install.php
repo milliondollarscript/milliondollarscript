@@ -151,7 +151,7 @@ function install_db() {
 			1,
 			1,
 			'2007-02-17 10:48:32',
-			'#FFffFF',
+			'#FFFFFF',
 			'Y',
 			'Y',
 			1171775611
@@ -1300,6 +1300,15 @@ function install_db() {
     	VALUES(
 				'STATS_DISPLAY_MODE',
 				'PIXELS'
+		)";
+
+		$sql[] = "INSERT INTO `$table_name` (
+				`key`,
+				`val`
+		)
+    	VALUES(
+				'DISPLAY_ORDER_HISTORY',
+				'YES'
 		)";
 
 		$sql[] = "INSERT INTO `$table_name` (

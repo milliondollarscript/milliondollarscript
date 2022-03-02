@@ -97,6 +97,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != '' ) {
 			'MDS_AGRESSIVE_CACHE'         => "REPLACE INTO `" . MDS_DB_PREFIX . "config` VALUES ('MDS_AGRESSIVE_CACHE', ?);",
 			'BLOCK_SELECTION_MODE'        => "REPLACE INTO `" . MDS_DB_PREFIX . "config` VALUES ('BLOCK_SELECTION_MODE', ?);",
 			'STATS_DISPLAY_MODE'          => "REPLACE INTO `" . MDS_DB_PREFIX . "config` VALUES ('STATS_DISPLAY_MODE', ?);",
+			'DISPLAY_ORDER_HISTORY'       => "REPLACE INTO `" . MDS_DB_PREFIX . "config` VALUES ('DISPLAY_ORDER_HISTORY', ?);",
 			'WP_ENABLED'                  => "REPLACE INTO `" . MDS_DB_PREFIX . "config` VALUES ('WP_ENABLED', ?);",
 			'WP_URL'                      => "REPLACE INTO `" . MDS_DB_PREFIX . "config` VALUES ('WP_URL', ?);",
 			'WP_PATH'                     => "REPLACE INTO `" . MDS_DB_PREFIX . "config` VALUES ('WP_PATH', ?);",

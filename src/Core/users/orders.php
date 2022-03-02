@@ -34,6 +34,10 @@ require_once __DIR__ . "/../include/login_functions.php";
 mds_start_session();
 require_once __DIR__ . "/../include/init.php";
 
+if ( DISPLAY_ORDER_HISTORY !== "YES" ) {
+	exit;
+}
+
 process_login();
 
 require_once BASE_PATH . "/html/header.php";
