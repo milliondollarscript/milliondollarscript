@@ -149,6 +149,8 @@ function milliondollarscript_delete_mu_plugin( $plugin ) {
  * Activation
  */
 function milliondollarscript_two_activate() {
+	@ini_set( 'memory_limit', '512M' );
+
 	// Deactivates old MDS plugins to prevent conflicts.
 	$found_old_plugin = false;
 	$plugins          = get_plugins();
@@ -202,6 +204,7 @@ function milliondollarscript_two_activate() {
 }
 
 function milliondollarscript_two_activate_step_2() {
+	@ini_set( 'memory_limit', '512M' );
 
 	// Install MDS database
 	require_once MDS_CORE_PATH . 'admin/install.php';
