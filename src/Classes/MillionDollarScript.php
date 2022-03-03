@@ -39,27 +39,33 @@ class MillionDollarScript {
 	}
 
 	public static function html() {
-		if ( intval( get_option( 'milliondollarscript_redirect3', false ) ) === wp_get_current_user()->ID ) {
-			delete_option( 'milliondollarscript_redirect3' );
-			_e( 'Upgrade complete!', 'milliondollarscript' );
-		}
-
 		?>
         <h1><?php _e( 'Million Dollar Script Two - Fully embedded into a WordPress plugin.', 'milliondollarscript' ); ?></h1>
+		<?php
+		if ( intval( get_option( 'milliondollarscript_redirect3', false ) ) === wp_get_current_user()->ID ) {
+			delete_option( 'milliondollarscript_redirect3' );
+			delete_option( 'milliondollarscript-two-installing' );
+			?>
+            <p>
+				<?php _e( 'Upgrade complete!', 'milliondollarscript' ); ?>
+            </p>
+			<?php
+		}
+		?>
         <p><?php _e( 'For more information', 'milliondollarscript' ); ?> <a href="https://milliondollarscript.com/new-wordpress-integration-plugin/" target="_blank"><?php _e( 'click here', 'milliondollarscript' ); ?></a>.</p>
         <p><?php _e( 'Current status: ', 'milliondollarscript' ); ?><strong><?php
-		        $installed  = get_option( 'milliondollarscript-two-installed', false );
-		        $installing = get_option( 'milliondollarscript-two-installing', false );
-		        if ( $installed && !$installing ) {
-			        _e( 'Installed', 'milliondollarscript' );
-		        } else if ( !$installed && $installing ) {
-			        _e( 'Installing', 'milliondollarscript' );
-		        } else if ( $installed && $installing ) {
-			        _e( 'Installed and installing', 'milliondollarscript' );
-		        } else if ( !$installed && !$installing ) {
-			        _e( 'Not installed', 'milliondollarscript' );
-		        }
-		        ?></strong></p>
+				$installed  = get_option( 'milliondollarscript-two-installed', false );
+				$installing = get_option( 'milliondollarscript-two-installing', false );
+				if ( $installed && ! $installing ) {
+					_e( 'Installed', 'milliondollarscript' );
+				} else if ( ! $installed && $installing ) {
+					_e( 'Installing', 'milliondollarscript' );
+				} else if ( $installed && $installing ) {
+					_e( 'Installed and installing', 'milliondollarscript' );
+				} else if ( ! $installed && ! $installing ) {
+					_e( 'Not installed', 'milliondollarscript' );
+				}
+				?></strong></p>
 		<?php
 	}
 
