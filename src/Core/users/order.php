@@ -154,12 +154,12 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 
 		if ( ( $order_row['price'] == 0 ) || ( $u_row['Rank'] == 2 ) ) {
 			?>
-            <input type='button' value="<?php echo $label['advertiser_o_completebutton']; ?>" Onclick="window.location='publish.php?action=complete&order_id=<?php echo $order_row['order_id']; ?>&BID=<?php echo $BID; ?>&order_id=<?php echo $order_row['order_id']; ?>'">
+            <input id="mds-complete-button" type='button' value="<?php echo $label['advertiser_o_completebutton']; ?>" data-order-id="<?php echo $order_row['order_id']; ?>" data-grid="<?php echo $BID; ?>">
 			<?php
 		} else {
 
 			?>
-            <input type='button' value="<?php echo $label['advertiser_o_confpay_button']; ?>" Onclick="window.location='payment.php?action=confirm&order_id=<?php echo $order_row['order_id']; ?>&BID=<?php echo $BID; ?>'">
+            <input id="mds-confirm-button" type='button' value="<?php echo $label['advertiser_o_confpay_button']; ?>" data-order-id="<?php echo $order_row['order_id']; ?>" data-grid="<?php echo $BID; ?>">
             <hr>
 			<?php
 		}

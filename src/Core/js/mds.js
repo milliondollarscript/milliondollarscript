@@ -279,8 +279,25 @@ function rescale($el) {
 	});
 }
 
+function mds_loaded_event(el, scalemap, tippy, iframe, isgrid) {
+	if (window.mds_loaded === true) {
+		return;
+	}
+	window.mds_loaded = true;
+
+	jQuery(window).trigger({
+		type: 'mds-loaded',
+		el: el,
+		scalemap: scalemap,
+		tippy: tippy,
+		iframe: iframe,
+		isgrid: isgrid
+	});
+}
+
 function mds_init(el, scalemap, tippy, type, isgrid) {
 	let $el = jQuery(el);
+	window.mds_loaded = false;
 
 	if (isgrid && scalemap) {
 
@@ -401,10 +418,13 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 		});
 	}
 
+	let tooltips = false;
 	if (tippy && window.tippy_instance == undefined && window.mds_data.ENABLE_MOUSEOVER !== 'NO') {
+		tooltips = true;
 		defer('Popper', () => {
 			defer('tippy', () => {
 				add_tippy();
+				mds_loaded_event($el, scalemap, tippy, type, isgrid);
 			});
 		});
 	}
@@ -418,13 +438,18 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 	}
 
 	initialized = true;
+
+	if (!tooltips) {
+		mds_loaded_event($el, scalemap, tippy, type, isgrid);
+	}
 }
 
 jQuery(function () {
 	jQuery('.mds_upload_image').on('click', function (e) {
-		jQuery(this).prop('disabled', true);
-		jQuery(this).attr('value', 'Uploading...');
-		jQuery(this).parent('form').submit();
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Uploading...');
+		$el.parent('form').submit();
 	});
 
 	jQuery('.mds_pointer_graphic').on('load', function (e) {
@@ -433,8 +458,29 @@ jQuery(function () {
 	});
 
 	jQuery('.mds_save_ad_button').on('click', function () {
-		jQuery(this).prop('disabled', true);
-		jQuery(this).attr('value', 'Saving...');
-		jQuery(this).closest('form').submit();
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Saving...');
+		$el.closest('form').submit();
+	});
+
+	jQuery('#mds-complete-button').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Completing...');
+		window.location=window.mds_data.BASE_HTTP_PATH + 'users/publish.php?action=complete&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
+		return false;
+	});
+
+	jQuery('#mds-confirm-button').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Confirming...');
+		window.location=window.mds_data.BASE_HTTP_PATH + 'users/payment.php?action=confirm&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
+		return false;
 	});
 });
