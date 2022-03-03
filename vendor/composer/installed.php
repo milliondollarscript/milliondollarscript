@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'e92c9562054ae8dd3ad1826adf111d94ff8436dc',
+        'reference' => '503f231c9980f1511a2b64023bc2163018593ac5',
         'name' => 'milliondollarscript/milliondollarscript-two',
         'dev' => true,
     ),
@@ -20,12 +20,12 @@
             'dev_requirement' => true,
         ),
         'milliondollarscript/milliondollarscript-two' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'e92c9562054ae8dd3ad1826adf111d94ff8436dc',
+            'reference' => '503f231c9980f1511a2b64023bc2163018593ac5',
             'dev_requirement' => false,
         ),
         'yahnis-elsts/plugin-update-checker' => array(
