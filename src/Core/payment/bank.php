@@ -287,7 +287,7 @@ class bank {
 		$sql = "SELECT val from `" . MDS_DB_PREFIX . "config` where `key`='BANK_ENABLED' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		$row = mysqli_fetch_array( $result );
-		if ( isset($row['val']) && $row['val'] == 'Y' ) {
+		if ( isset( $row['val'] ) && $row['val'] == 'Y' ) {
 			return true;
 		} else {
 			return false;
@@ -338,53 +338,53 @@ class bank {
 
                 <div style='background-color: #ffffff; border-color:#C0C0C0; border-style:solid;padding:10px'>
                     <p align="center">
-                    <center>
-						<?php
+                        <center>
+							<?php
 
-						$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $_REQUEST['order_id'] ) . "' and user_id='" . intval( $_SESSION['MDS_ID'] ) . "'";
-						$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
-						$order_row = mysqli_fetch_array( $result );
+							$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $_REQUEST['order_id'] ) . "' and user_id='" . intval( $_SESSION['MDS_ID'] ) . "'";
+							$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
+							$order_row = mysqli_fetch_array( $result );
 
-						$bank_amount = convert_to_currency( $order_row['price'], $order_row['currency'], BANK_CURRENCY );
-						$bank_amount = format_currency( $bank_amount, BANK_CURRENCY, true );
+							$bank_amount = convert_to_currency( $order_row['price'], $order_row['currency'], BANK_CURRENCY );
+							$bank_amount = format_currency( $bank_amount, BANK_CURRENCY, true );
 
-						$label['payment_bank_heading'] = str_replace( "%INVOICE_AMOUNT%", $bank_amount, $label['payment_bank_heading'] );
-						$label['payment_bank_note']    = str_replace( "%CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $label['payment_bank_note'] );
-						$label['payment_bank_note']    = str_replace( "%INVOICE_CODE%", $_REQUEST['order_id'], $label['payment_bank_note'] );
+							$label['payment_bank_heading'] = str_replace( "%INVOICE_AMOUNT%", $bank_amount, $label['payment_bank_heading'] );
+							$label['payment_bank_note']    = str_replace( "%CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $label['payment_bank_note'] );
+							$label['payment_bank_note']    = str_replace( "%INVOICE_CODE%", $_REQUEST['order_id'], $label['payment_bank_note'] );
 
-						if ( get_default_currency() != BANK_CURRENCY ) {
-							echo convert_to_default_currency_formatted( $order_row[ 'currency' ], $order_row['price'] ) . " = " . $bank_amount;
-							echo "<br>";
-						} ?>
+							if ( get_default_currency() != BANK_CURRENCY ) {
+								echo convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] ) . " = " . $bank_amount;
+								echo "<br>";
+							} ?>
 
-                        <table width="70%">
-                            <tr>
-                                <td>
-                                    <b><?php echo $label['payment_bank_heading']; ?></b><br>
-									<?php if ( BANK_NAME != '' ) { ?>
-                                        <b><?php echo $label['payment_bank_name']; ?>:</b> <?php echo BANK_NAME; ?><br>
-									<?php } ?>
-									<?php if ( BANK_ADDRESS != '' ) { ?>
-                                        <b><?php echo $label['payment_bank_addr']; ?></b> <?php echo BANK_ADDRESS; ?><br>
-									<?php } ?>
-									<?php if ( BANK_ACCOUNT_NAME != '' ) { ?>
-                                        <b><?php echo $label['payment_bank_ac_name']; ?></b> <?php echo BANK_ACCOUNT_NAME; ?><br>
-									<?php } ?>
-									<?php if ( BANK_ACCOUNT_NUMBER != '' ) { ?>
-                                        <b><?php echo $label['payment_bank_ac_number']; ?></b> <?php echo BANK_ACCOUNT_NUMBER; ?><br>
-									<?php } ?>
-									<?php if ( BANK_BRANCH_NUMBER != '' ) { ?>
-                                        <b><?php echo $label['payment_bank_branch_number']; ?></b> <?php echo BANK_BRANCH_NUMBER; ?><br>
-									<?php } ?>
-									<?php if ( BANK_SWIFT != '' ) { ?>
+                    <table width="70%">
+                        <tr>
+                            <td>
+                                <b><?php echo $label['payment_bank_heading']; ?></b><br>
+								<?php if ( BANK_NAME != '' ) { ?>
+                                    <b><?php echo $label['payment_bank_name']; ?>:</b> <?php echo BANK_NAME; ?><br>
+								<?php } ?>
+								<?php if ( BANK_ADDRESS != '' ) { ?>
+                                    <b><?php echo $label['payment_bank_addr']; ?></b> <?php echo BANK_ADDRESS; ?><br>
+								<?php } ?>
+								<?php if ( BANK_ACCOUNT_NAME != '' ) { ?>
+                                    <b><?php echo $label['payment_bank_ac_name']; ?></b> <?php echo BANK_ACCOUNT_NAME; ?><br>
+								<?php } ?>
+								<?php if ( BANK_ACCOUNT_NUMBER != '' ) { ?>
+                                    <b><?php echo $label['payment_bank_ac_number']; ?></b> <?php echo BANK_ACCOUNT_NUMBER; ?><br>
+								<?php } ?>
+								<?php if ( BANK_BRANCH_NUMBER != '' ) { ?>
+                                    <b><?php echo $label['payment_bank_branch_number']; ?></b> <?php echo BANK_BRANCH_NUMBER; ?><br>
+								<?php } ?>
+								<?php if ( BANK_SWIFT != '' ) { ?>
 
-                                        <b><?php echo $label['payment_bank_swift']; ?></b> <?php echo BANK_SWIFT; ?><br>
+                                    <b><?php echo $label['payment_bank_swift']; ?></b> <?php echo BANK_SWIFT; ?><br>
 
-									<?php } ?>
-									<?php echo $label['payment_bank_note']; ?>
-                                </td>
-                            </tr>
-                        </table>
+								<?php } ?>
+								<?php echo $label['payment_bank_note']; ?>
+                            </td>
+                        </tr>
+                    </table>
 
                     </p>
                     </center>

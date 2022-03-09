@@ -328,6 +328,19 @@
         </div>
 
         <div class="admin-config-left">
+            Email Advertiser when an order is Completed?
+        </div>
+        <div class="admin-config-right">
+            <label>
+			    <?php
+			    $EMAIL_USER_ORDER_COMPLETED = MDSConfig::get( 'EMAIL_USER_ORDER_COMPLETED' );
+			    ?>
+                <input type="radio" name="EMAIL_USER_ORDER_COMPLETED" value="YES" <?php echo( $EMAIL_USER_ORDER_COMPLETED == 'YES' ? 'checked' : '' ); ?> /> Yes<br/>
+                <input type="radio" name="EMAIL_USER_ORDER_COMPLETED" value="NO" <?php echo( $EMAIL_USER_ORDER_COMPLETED == 'NO' ? 'checked' : '' ); ?> /> No
+            </label>
+        </div>
+
+        <div class="admin-config-left">
             Email Admin when an order is Completed?
         </div>
         <div class="admin-config-right">

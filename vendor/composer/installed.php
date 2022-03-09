@@ -5,7 +5,7 @@
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '503f231c9980f1511a2b64023bc2163018593ac5',
+        'reference' => '74dff32769a2c71170255455457dba35f34b0db7',
         'name' => 'milliondollarscript/milliondollarscript-two',
         'dev' => true,
     ),
@@ -25,7 +25,7 @@
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '503f231c9980f1511a2b64023bc2163018593ac5',
+            'reference' => '74dff32769a2c71170255455457dba35f34b0db7',
             'dev_requirement' => false,
         ),
         'yahnis-elsts/plugin-update-checker' => array(

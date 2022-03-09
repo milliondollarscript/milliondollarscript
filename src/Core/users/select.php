@@ -40,6 +40,13 @@ if ( WP_ENABLED == "YES" && WP_USERS_ENABLED == "YES" ) {
 require_once BASE_PATH . "/html/header.php";
 process_login();
 
+// check if user has permission to access this page
+if ( ! mds_check_permission( "mds_order_pixels" ) ) {
+	_e( "No Access", 'milliondollarscript' );
+	require_once BASE_PATH . "/html/footer.php";
+	exit;
+}
+
 global $f2;
 $BID = $f2->bid();
 

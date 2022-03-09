@@ -39,6 +39,8 @@ class Options {
 	 */
 	public static function register() {
 
+		$capabilities = Capabilities::get();
+
 		Container::make( 'theme_options', self::prefix . 'options', __( 'Million Dollar Script Options', 'milliondollarscript' ) )
 		         ->set_page_parent( 'MillionDollarScript' )
 		         ->set_page_file( self::prefix . 'options' )
@@ -146,6 +148,26 @@ class Options {
 			              ->set_default_value( wp_login_url() )
 			              ->set_help_text( __( 'The URL to redirect users to after login.', 'milliondollarscript' ) ),
 
+			         // Enable Permissions
+			         Field::make( 'checkbox', self::prefix . 'permissions', __( 'Enable Permissions?', 'milliondollarscript' ) )
+			              ->set_default_value( 'no' )
+			              ->set_option_value( 'yes' )
+			              ->set_help_text( __( 'Enable permission system for user roles and the following capabilities: mds_my_account, mds_order_pixels, mds_manage_pixels, mds_order_history, mds_logout', 'milliondollarscript' ) ),
+
+			         // Capabilities
+			         Field::make( 'multiselect', self::prefix . 'capabilities', __( 'Enable Capabilities' ) )
+			              ->set_default_value( $capabilities )
+			              ->add_options( $capabilities )
+			              ->set_conditional_logic( [
+				              'relation' => 'AND',
+				              [
+					              'field'   => self::prefix . 'permissions',
+					              'value'   => true,
+					              'compare' => '=',
+				              ]
+			              ] )
+			              ->set_help_text( __( 'Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability.', 'milliondollarscript' ) ),
+
 			         // Delete data on uninstall
 			         Field::make( 'checkbox', self::prefix . 'delete-data', __( 'Delete data on uninstall?', 'milliondollarscript' ) )
 			              ->set_default_value( 'no' )
@@ -209,12 +231,17 @@ class Options {
 	 * Get options from database
 	 *
 	 * @param $name
-	 * @param $container_id
+	 * @param bool $carbon_fields
+	 * @param string $container_id
 	 * @param null $default
 	 *
 	 * @return mixed
 	 */
-	public static function get_option( $name, $container_id = 'options', $default = null ) {
+	public static function get_option( $name, bool $carbon_fields = false, string $container_id = 'options', $default = null ) {
+		if ( $carbon_fields && function_exists( 'carbon_get_theme_option' ) ) {
+			return carbon_get_theme_option( self::prefix . $name );
+		}
+
 		$n = '_' . self::prefix . $name;
 		$c = '_' . self::prefix . $container_id;
 
@@ -236,7 +263,7 @@ class Options {
 	 * @return string
 	 */
 	public static function get_mds_path(): string {
-		return trailingslashit( Options::get_option( 'path', 'options', ABSPATH . 'milliondollarscript' ) );
+		return trailingslashit( Options::get_option( 'path', false, 'options', ABSPATH . 'milliondollarscript' ) );
 	}
 
 	/**

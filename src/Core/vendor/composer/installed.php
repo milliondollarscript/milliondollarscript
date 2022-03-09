@@ -5,20 +5,11 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '503f231c9980f1511a2b64023bc2163018593ac5',
+        'reference' => '74dff32769a2c71170255455457dba35f34b0db7',
         'name' => 'milliondollarscript/milliondollarscript',
         'dev' => true,
     ),
     'versions' => array(
-        'ckeditor/ckeditor' => array(
-            'pretty_version' => '4.17.2',
-            'version' => '4.17.2.0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../ckeditor/ckeditor',
-            'aliases' => array(),
-            'reference' => '0a402ca86b1821418e90cef026910fc723a930a6',
-            'dev_requirement' => false,
-        ),
         'components/jquery' => array(
             'pretty_version' => '3.6.0',
             'version' => '3.6.0.0',
@@ -70,7 +61,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '503f231c9980f1511a2b64023bc2163018593ac5',
+            'reference' => '74dff32769a2c71170255455457dba35f34b0db7',
             'dev_requirement' => false,
         ),
         'phpmailer/phpmailer' => array(

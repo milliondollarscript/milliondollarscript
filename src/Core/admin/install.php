@@ -696,7 +696,7 @@ function install_db() {
 		)
     	VALUES(
 				'dbver',
-				11
+				" . MDS_DB_VERSION . "
 		)";
 
 		$sql[] = "INSERT INTO `$table_name` (

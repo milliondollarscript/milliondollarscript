@@ -184,11 +184,46 @@ if ( $call_state == 2 || $call_state == 5 ) {
 
 				?>
                 <div class="users-menu-bar">
-                    <a href="<?php echo BASE_HTTP_PATH; ?>users/index.php"><?php echo $label['advertiser_header_nav1']; ?></a>
-                    <a href="<?php echo BASE_HTTP_PATH . "users/" . $order_page; ?>"><?php echo $label['advertiser_header_nav2']; ?></a>
-                    <a href="<?php echo BASE_HTTP_PATH; ?>users/publish.php"><?php echo $label['advertiser_header_nav3']; ?></a>
-					<?php echo $order_history_link; ?>
-                    <a target="_top" href="<?php echo BASE_HTTP_PATH; ?>users/<?php echo ( WP_ENABLED == "YES" && WP_USERS_ENABLED == "YES" ) ? "wp" : ""; ?>logout.php"><?php echo $label['advertiser_header_nav5']; ?></a>
+	                <?php
+	                // check if user has permission to access this page
+	                if ( mds_check_permission( "mds_my_account" ) ) {
+		                ?>
+                        <a href="<?php echo BASE_HTTP_PATH; ?>users/index.php"><?php echo $label['advertiser_header_nav1']; ?></a>
+		                <?php
+	                }
+	                ?>
+	                <?php
+	                // check if user has permission to access this page
+	                if ( mds_check_permission( "mds_order_pixels" ) ) {
+		                ?>
+                        <a href="<?php echo BASE_HTTP_PATH . "users/" . $order_page; ?>"><?php echo $label['advertiser_header_nav2']; ?></a>
+		                <?php
+	                }
+	                ?>
+	                <?php
+	                // check if user has permission to access this page
+	                if ( mds_check_permission( "mds_manage_pixels" ) ) {
+		                ?>
+                        <a href="<?php echo BASE_HTTP_PATH; ?>users/publish.php"><?php echo $label['advertiser_header_nav3']; ?></a>
+		                <?php
+	                }
+	                ?>
+	                <?php
+	                // check if user has permission to access this page
+	                if ( mds_check_permission( "mds_order_history" ) ) {
+		                ?>
+		                <?php echo $order_history_link; ?>
+		                <?php
+	                }
+	                ?>
+	                <?php
+	                // check if user has permission to access this page
+	                if ( mds_check_permission( "mds_logout" ) ) {
+		                ?>
+                        <a target="_top" href="<?php echo BASE_HTTP_PATH; ?>users/<?php echo ( WP_ENABLED == "YES" && WP_USERS_ENABLED == "YES" ) ? "wp" : ""; ?>logout.php"><?php echo $label['advertiser_header_nav5']; ?></a>
+		                <?php
+	                }
+	                ?>
                 </div>
 
 				<?php

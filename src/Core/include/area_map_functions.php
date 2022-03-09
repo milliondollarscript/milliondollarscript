@@ -89,34 +89,22 @@ function process_map( $BID, $map_file = '' ) {
 		die();
 	}
 
-	$sql  = "UPDATE " . MDS_DB_PREFIX . "orders SET published='N' where `status`='expired' ";
-	$stmt = mysqli_stmt_init( $GLOBALS['connection'] );
-	if ( ! mysqli_stmt_prepare( $stmt, $sql ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
-	mysqli_stmt_execute( $stmt );
-	$error = mysqli_stmt_error( $stmt );
-	if ( ! empty( $error ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
-	mysqli_stmt_close( $stmt );
+	global $wpdb;
 
-	$sql  = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`=? ";
-	$stmt = mysqli_stmt_init( $GLOBALS['connection'] );
-	if ( ! mysqli_stmt_prepare( $stmt, $sql ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
-	mysqli_stmt_bind_param( $stmt, "i", $var1 );
-	$var1 = intval( $BID );
-	mysqli_stmt_execute( $stmt ) or die( mds_sql_error( $sql ) );
-	$result = mysqli_stmt_get_result( $stmt );
-	$error  = mysqli_stmt_error( $stmt );
-	if ( ! empty( $error ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
-	mysqli_stmt_close( $stmt );
+	$wpdb->update( MDS_DB_PREFIX . "orders",
+		[ 'published' => 'N' ],
+		[ 'status' => 'expired' ],
+	);
 
-	$b_row = mysqli_fetch_array( $result );
+	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`=? ";
+
+	$b_row = $wpdb->get_row(
+		$wpdb->prepare(
+			"SELECT * FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`=%d",
+			intval( $BID )
+		),
+		ARRAY_A
+	);
 
 	if ( ! $b_row['block_width'] ) {
 		$b_row['block_width'] = 10;
@@ -148,26 +136,21 @@ function process_map( $BID, $map_file = '' ) {
 FROM " . MDS_DB_PREFIX . "blocks
 WHERE published = 'Y'
   AND `status` = 'sold'
-  AND banner_id = ?
+  AND banner_id = %d
   AND image_data != ''
 GROUP BY order_id, block_id, x, y, url, alt_text, ad_id";
 
-	$stmt = mysqli_stmt_init( $GLOBALS['connection'] );
-	if ( ! mysqli_stmt_prepare( $stmt, $sql ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
+	global $wpdb;
 
-	mysqli_stmt_bind_param( $stmt, "i", $var1 );
-	$var1 = intval( $BID );
-	mysqli_stmt_execute( $stmt );
-	$result = mysqli_stmt_get_result( $stmt );
-	$error  = mysqli_stmt_error( $stmt );
-	if ( ! empty( $error ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
-	mysqli_stmt_close( $stmt );
+	$results = $wpdb->get_results(
+		$wpdb->prepare(
+			$sql,
+			intval( $BID ),
+		),
+		ARRAY_A
+	);
 
-	while ( $row = mysqli_fetch_array( $result ) ) {
+	foreach($results as $row) {
 
 		$found = false;
 
@@ -192,29 +175,22 @@ GROUP BY order_id, block_id, x, y, url, alt_text, ad_id";
 FROM " . MDS_DB_PREFIX . "blocks
 WHERE (published = 'Y')
   AND (status = 'sold')
-  AND (banner_id = ?)
+  AND (banner_id = %d)
   AND (image_data > '')
   AND (image_data = image_data)
-  AND (order_id = ?)
+  AND (order_id = %d)
 GROUP BY y, x, block_id, ad_id, alt_text, image_data";
 
-			$stmt = mysqli_stmt_init( $GLOBALS['connection'] );
-			if ( ! mysqli_stmt_prepare( $stmt, $sql_i ) ) {
-				die ( mds_sql_error( $sql_i ) );
-			}
+			$results2 = $wpdb->get_results(
+				$wpdb->prepare(
+					$sql,
+					intval( $BID ),
+					intval( $row['order_id'] ),
+				),
+				ARRAY_A
+			);
 
-			mysqli_stmt_bind_param( $stmt, "ii", $var1, $var2 );
-			$var1 = intval( $BID );
-			$var2 = intval( $row['order_id'] );
-			mysqli_stmt_execute( $stmt );
-			$res_i = mysqli_stmt_get_result( $stmt );
-			$error = mysqli_stmt_error( $stmt );
-			if ( ! empty( $error ) ) {
-				die ( mds_sql_error( $sql_i ) );
-			}
-			mysqli_stmt_close( $stmt );
-
-			while ( $row_i = mysqli_fetch_array( $res_i ) ) {
+			foreach($results2 as $row_i) {
 
 				// If the min/max measure does not equal number of boxes, then we have to render this row's boxes individually
 				//$box_count = ( ( ( $row_i['x2'] + 10 ) - $row_i['x1'] ) / 10 );
@@ -233,30 +209,23 @@ GROUP BY y, x, block_id, ad_id, alt_text, image_data";
 FROM " . MDS_DB_PREFIX . "blocks
 WHERE (published = 'Y')
   AND (status = 'sold')
-  AND (banner_id = ?)
+  AND (banner_id = %d)
   AND (image_data > '')
   AND (image_data = image_data)
-  AND (order_id = ?)
-  AND (y = ?)";
+  AND (order_id = %d)
+  AND (y = %d)";
 
-					$stmt = mysqli_stmt_init( $GLOBALS['connection'] );
-					if ( ! mysqli_stmt_prepare( $stmt, $sql_r ) ) {
-						die ( mds_sql_error( $sql_r ) );
-					}
+					$results3 = $wpdb->get_results(
+						$wpdb->prepare(
+							$sql,
+							intval( $BID ),
+							intval( $row['order_id'] ),
+							intval( $row_i['y1'] ),
+						),
+						ARRAY_A
+					);
 
-					mysqli_stmt_bind_param( $stmt, "iii", $var1, $var2, $var3 );
-					$var1 = intval( $BID );
-					$var2 = intval( $row['order_id'] );
-					$var3 = intval( $row_i['y1'] );
-					mysqli_stmt_execute( $stmt );
-					$res_r = mysqli_stmt_get_result( $stmt );
-					$error = mysqli_stmt_error( $stmt );
-					if ( ! empty( $error ) ) {
-						die ( mds_sql_error( $sql_r ) );
-					}
-					mysqli_stmt_close( $stmt );
-
-					while ( $row_r = mysqli_fetch_array( $res_r ) ) {
+					foreach($results3 as $row_r) {
 						// render single block RECT
 						render_map_area( $fh, $row_r, $b_row );
 						$found = true;
@@ -316,25 +285,19 @@ function show_map( $BID = 1 ) {
 		die();
 	}
 
+	global $wpdb;
+
 	$sql = "SELECT grid_width, grid_height, block_width, block_height, bgcolor, time_stamp
 FROM " . MDS_DB_PREFIX . "banners
-WHERE (banner_id = ?)";
+WHERE (banner_id = %d)";
 
-	$stmt = mysqli_stmt_init( $GLOBALS['connection'] );
-	if ( ! mysqli_stmt_prepare( $stmt, $sql ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
-	mysqli_stmt_bind_param( $stmt, "i", $var1 );
-	$var1 = intval( $BID );
-	mysqli_stmt_execute( $stmt );
-	$result = mysqli_stmt_get_result( $stmt );
-	$error  = mysqli_stmt_error( $stmt );
-	if ( ! empty( $error ) ) {
-		die ( mds_sql_error( $sql ) );
-	}
-	mysqli_stmt_close( $stmt );
-
-	$b_row = mysqli_fetch_array( $result );
+	$b_row = $wpdb->get_results(
+		$wpdb->prepare(
+			$sql,
+			intval( $BID ),
+		),
+		ARRAY_A
+	);
 
 	if ( ! $b_row['block_width'] ) {
 		$b_row['block_width'] = 10;

@@ -37,7 +37,7 @@ class Functions {
 		wp_enqueue_script( 'mds-js', MDS_BASE_URL . 'src/Assets/js/mds.js', [ 'jquery' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
 
 		wp_add_inline_script( 'mds-js', 'const MDS = ' . json_encode( array(
-				'users' => Options::get_option( 'users', 'options', 'no' ),
+				'users' => Options::get_option( 'users', false, 'options', 'no' ),
 			) ), 'before' );
 	}
 

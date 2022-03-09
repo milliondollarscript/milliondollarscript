@@ -30,19 +30,29 @@
  *
  */
 
+use MillionDollarScript\Classes\Capabilities;
 use MillionDollarScript\Classes\Options;
 
 function mds_check_permission( $permission ) {
 	if ( defined( 'WP_ENABLED' ) && WP_ENABLED == 'YES' ) {
-		if (current_user_can( $permission )) {
-            return true;
+		$enabled = Capabilities::enabled( $permission );
+
+		// If capability is not enabled show the menu and enable the page.
+		if ( ! $enabled ) {
+			return true;
+		}
+
+		if ( current_user_can( $permission ) ) {
+			// User has permission
+			return true;
 		} else {
-            return false;
-        }
+			// No permission
+			return false;
+		}
 	} else {
-        // If WP isn't enabled allow permission
-        return true;
-    }
+		// If WP isn't enabled allow permission
+		return true;
+	}
 }
 
 function process_login() {

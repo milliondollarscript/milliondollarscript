@@ -34,6 +34,14 @@ require_once __DIR__ . "/../include/login_functions.php";
 mds_start_session();
 require_once __DIR__ . "/../include/init.php";
 
+// check if user has permission to access this page
+if ( ! mds_check_permission( "mds_order_pixels" ) ) {
+	require_once BASE_PATH . "/html/header.php";
+	_e( "No Access", 'milliondollarscript' );
+	require_once BASE_PATH . "/html/footer.php";
+	exit;
+}
+
 global $f2, $label;
 
 $BID             = $f2->bid();

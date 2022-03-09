@@ -38,6 +38,14 @@ require_once BASE_PATH . "/include/ads.inc.php";
 
 process_login();
 
+// check if user has permission to access this page
+if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
+	require_once BASE_PATH . "/html/header.php";
+	_e( "No Access", 'milliondollarscript' );
+	require_once BASE_PATH . "/html/footer.php";
+	exit;
+}
+
 require_once BASE_PATH . "/html/header.php";
 
 $gd_info = gd_info();

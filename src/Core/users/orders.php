@@ -40,6 +40,14 @@ if ( DISPLAY_ORDER_HISTORY !== "YES" ) {
 
 process_login();
 
+// check if user has permission to access this page
+if ( ! mds_check_permission( "mds_order_history" ) ) {
+	require_once BASE_PATH . "/html/header.php";
+	_e( "No Access", 'milliondollarscript' );
+	require_once BASE_PATH . "/html/footer.php";
+	exit;
+}
+
 require_once BASE_PATH . "/html/header.php";
 
 global $label;

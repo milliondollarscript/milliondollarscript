@@ -161,28 +161,12 @@ class MDSConfig {
 			return self::$config[ $key ];
 		}
 
-		$sql = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `key` = ?";
+		$sql = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `key` = %s";
 
-		$stmt = mysqli_stmt_init( $GLOBALS['connection'] );
-		if ( ! mysqli_stmt_prepare( $stmt, $sql ) ) {
-			die ( mds_sql_error( $sql ) );
-		}
+		global $wpdb;
+		$value = $wpdb->get_var( $wpdb->prepare( $sql, [ $key ] ) );
 
-		mysqli_stmt_bind_param( $stmt, "s", $key );
-		mysqli_stmt_execute( $stmt );
-
-		mysqli_stmt_bind_result( $stmt, $value );
-//		$result = mysqli_stmt_get_result( $stmt );
-//		$value  = mysqli_fetch_field( $result );
-
-		$error = mysqli_stmt_error( $stmt );
-		if ( ! empty( $error ) ) {
-			die ( mds_sql_error( $sql ) );
-		}
-
-		mysqli_stmt_close( $stmt );
-
-		if ( $format ) {
+		if ( $format && isset( $value ) ) {
 			return self::format( $value );
 		}
 

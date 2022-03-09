@@ -47,7 +47,7 @@ class Bootstrap {
 		add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Options', 'save' ] );
 
 		// Add Admin page
-		if ( Options::get_option( 'admin', 'options', 'no' ) == 'yes' ) {
+		if ( Options::get_option( 'admin', false, 'options', 'no' ) == 'yes' ) {
 			add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Admin', 'menu' ], 10 );
 		}
 
@@ -59,12 +59,12 @@ class Bootstrap {
 		add_shortcode( 'milliondollarscript', [ '\MillionDollarScript\Classes\Shortcode', 'shortcode' ] );
 
 		// load WooCommerce integration
-		if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) && Options::get_option( 'woocommerce', 'options', 'no' ) == 'yes' ) {
+		if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) && Options::get_option( 'woocommerce', false, 'options', 'no' ) == 'yes' ) {
 			new WooCommerce();
 		}
 
 		// return if user integration isn't enabled
-		if ( Options::get_option( 'users', 'options', 'no' ) == 'no' ) {
+		if ( Options::get_option( 'users', false, 'options', 'no' ) == 'no' ) {
 			return $this;
 		}
 

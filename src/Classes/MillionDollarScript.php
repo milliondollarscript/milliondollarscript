@@ -45,6 +45,7 @@ class MillionDollarScript {
 		if ( intval( get_option( 'milliondollarscript_redirect3', false ) ) === wp_get_current_user()->ID ) {
 			delete_option( 'milliondollarscript_redirect3' );
 			delete_option( 'milliondollarscript-two-installing' );
+			add_option( 'milliondollarscript-two-installed', true );
 			?>
             <p>
 				<?php _e( 'Upgrade complete!', 'milliondollarscript' ); ?>

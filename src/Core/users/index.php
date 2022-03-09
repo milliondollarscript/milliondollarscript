@@ -36,6 +36,14 @@ require_once __DIR__ . "/../include/init.php";
 
 process_login();
 
+// check if user has permission to access this page
+if ( ! mds_check_permission( "mds_my_account" ) ) {
+	require_once BASE_PATH . "/html/header.php";
+	_e( "No Access", 'milliondollarscript' );
+	require_once BASE_PATH . "/html/footer.php";
+	exit;
+}
+
 require_once BASE_PATH . "/html/header.php";
 
 global $f2, $label;

@@ -64,8 +64,11 @@ function mds_wp_login_check() {
 				// Get the login page option
 				$loginpage = \MillionDollarScript\Classes\Options::get_option( 'login-page' );
 
-				// If it doesn't contain the default wp-login.php and is a valid URL
-				if ( strpos( $loginpage, 'wp-login.php' ) === false && wp_http_validate_url( $loginpage ) ) {
+				$loginpage_host = parse_url( $loginpage, PHP_URL_HOST );
+				$siteurl_host   = parse_url( get_site_url(), PHP_URL_HOST );
+
+				// If on the same domain or it doesn't contain the default wp-login.php and is a valid URL
+				if ( ( $loginpage_host == $siteurl_host || strpos( $loginpage, 'wp-login.php' ) === false ) && wp_http_validate_url( $loginpage ) ) {
 
 					// If not in preview or customizer
 					if ( ! is_preview() && ! is_customize_preview() ) {
@@ -73,12 +76,14 @@ function mds_wp_login_check() {
 						// escape the URL
 						$loginhref = esc_url( $loginpage );
 
+						$login_redirect_url  = \MillionDollarScript\Classes\Options::get_option( 'login-redirect' );
 						$woocommerce_enabled = \MillionDollarScript\Classes\Options::get_option( 'woocommerce' );
 
 						if ( $woocommerce_enabled ) {
-							$login_redirect_url  = \MillionDollarScript\Classes\Options::get_option( 'login-redirect' );
-							$loginhref .= ( strpos( $loginhref, '?' ) !== false ? '&' : '?' ) . 'redirect_to=' . esc_url_raw( $login_redirect_url ) . '&redirect=' . esc_url_raw( $login_redirect_url );
+							$loginhref .= ( strpos( $loginhref, '?' ) !== false ? '&' : '?' ) . 'redirect_to=' . esc_url_raw( $login_redirect_url );
 						}
+
+						$loginhref .= ( strpos( $loginhref, '?' ) !== false ? '&' : '?' ) . 'redirect=' . esc_url_raw( $login_redirect_url );
 
 						// do a javascript redirect in the parent frame if it exists, otherwise just redirect in the current window
 						echo '
