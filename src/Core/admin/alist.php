@@ -46,15 +46,18 @@ $error = '';
 if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 
 	$gd_info = @gd_info();
-	if ( $gd_info['GIF Read Support'] ) {
+	$gif_support = '';
+	$jpeg_support = '';
+	$png_support = '';
+	if ( isset( $gd_info['GIF Read Support'] ) && ! empty( $gd_info['GIF Read Support'] ) ) {
 		$gif_support = "GIF";
-	};
-	if ( $gd_info['JPG Support'] ) {
+	}
+	if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || (isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] )) ) {
 		$jpeg_support = "JPG";
-	};
-	if ( $gd_info['PNG Support'] ) {
+	}
+	if ( isset( $gd_info['PNG Support'] ) && ! empty( $gd_info['PNG Support'] ) ) {
 		$png_support = "PNG";
-	};
+	}
 
 	$prams = load_ad_values( $_REQUEST['aid'] );
 

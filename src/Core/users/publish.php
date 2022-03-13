@@ -55,7 +55,7 @@ $png_support = '';
 if ( isset( $gd_info['GIF Read Support'] ) && ! empty( $gd_info['GIF Read Support'] ) ) {
 	$gif_support = "GIF";
 }
-if ( isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] ) ) {
+if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || (isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] )) ) {
 	$jpeg_support = "JPG";
 }
 if ( isset( $gd_info['PNG Support'] ) && ! empty( $gd_info['PNG Support'] ) ) {
