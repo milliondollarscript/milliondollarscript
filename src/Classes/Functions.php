@@ -70,8 +70,9 @@ class Functions {
 			] );
 
 			if ( $product_id ) {
+				global $wpdb;
 				add_post_meta( $product_id, '_regular_price', 1 );
-				add_post_meta( $product_id, '_price', 1 );
+				add_post_meta( $product_id, '_price', $wpdb->get_var('SELECT `price_per_block` FROM `' . MDS_DB_PREFIX . 'banners` WHERE `banner_id`=1') );
 				add_post_meta( $product_id, '_stock_status', 'instock' );
 				add_post_meta( $product_id, '_milliondollarscript', 'yes' );
 
