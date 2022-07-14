@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.4
+ * @version 2.3.5
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -174,6 +174,16 @@ class Options {
 			              ->set_option_value( 'yes' )
 			              ->set_help_text( __( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.', 'milliondollarscript' ) ),
 
+			         // Updates
+			         Field::make( 'select', self::prefix . 'updates', __( 'Plugin updates', 'milliondollarscript' ) )
+			              ->set_default_value( 'yes' )
+			              ->set_options( [
+				              'yes' => 'Update',
+				              'no'  => 'Don\'t update',
+				              'dev' => 'Development'
+			              ] )
+			              ->set_help_text( __( 'If Update then updates will be done normally like all other plugins. If Don\'t update then no updates will be looked for. If Development then updates will be checked for in the development branch.', 'milliondollarscript' ) ),
+
 		         ) );
 	}
 
@@ -228,6 +238,37 @@ class Options {
 	}
 
 	/**
+	 * Check if MDS folder and config were found in the set path
+	 *
+	 * @param null $mds_path Optional MDS path
+	 *
+	 * @return int Returns 0 if not found, 1 if path was found
+	 */
+	public static function mds_installed( $mds_path = null ): int {
+		$mds_found = 0;
+
+		if ( $mds_path == null ) {
+			$mds_path = self::get_mds_path();
+		}
+
+		if ( file_exists( $mds_path ) ) {
+			// path was found
+			$mds_found = 1;
+		}
+
+		return $mds_found;
+	}
+
+	/**
+	 * Get path to MDS install
+	 *
+	 * @return string
+	 */
+	public static function get_mds_path(): string {
+		return trailingslashit( Options::get_option( 'path', false, 'options', ABSPATH . 'milliondollarscript' ) );
+	}
+
+	/**
 	 * Get options from database
 	 *
 	 * @param $name
@@ -255,37 +296,6 @@ class Options {
 		}
 
 		return $val;
-	}
-
-	/**
-	 * Get path to MDS install
-	 *
-	 * @return string
-	 */
-	public static function get_mds_path(): string {
-		return trailingslashit( Options::get_option( 'path', false, 'options', ABSPATH . 'milliondollarscript' ) );
-	}
-
-	/**
-	 * Check if MDS folder and config were found in the set path
-	 *
-	 * @param null $mds_path Optional MDS path
-	 *
-	 * @return int Returns 0 if not found, 1 if path was found
-	 */
-	public static function mds_installed( $mds_path = null ): int {
-		$mds_found = 0;
-
-		if ( $mds_path == null ) {
-			$mds_path = self::get_mds_path();
-		}
-
-		if ( file_exists( $mds_path ) ) {
-			// path was found
-			$mds_found = 1;
-		}
-
-		return $mds_found;
 	}
 
 }

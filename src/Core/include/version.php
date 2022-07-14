@@ -45,13 +45,10 @@ function get_mds_build_date() {
 }
 
 function get_mds_version() {
-	global $wpdb;
-
-	$sql     = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='VERSION_INFO'";
-	$version = $wpdb->get_var( $sql );
-	if ( $wpdb->num_rows == 0 || empty( $version ) ) {
-		$version = MDS_VERSION;
+	if( ! function_exists('get_plugin_data') ){
+		require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 	}
+	$plugin_data = get_plugin_data( MDS_BASE_FILE );
 
-	return $version;
+	return $plugin_data['Version'];
 }

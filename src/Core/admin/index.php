@@ -143,7 +143,13 @@ if ( WP_ENABLED == 'YES' ) {
         <small>
             Copyright <?php echo date( 'Y' ); ?>, see <a href="../LICENSE.txt">LICENSE.txt</a> for license information.<br/>
             <br/>
-            MDS Version: <?php echo MDSConfig::get( 'VERSION_INFO' ); ?>
+            MDS Version: <?php
+	        if( WP_ENABLED == 'YES' && ! function_exists('get_plugin_data') ){
+		        require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+	        }
+	        $plugin_data = get_plugin_data( MDS_BASE_FILE );
+            echo $plugin_data['Version'];
+            ?>
             <br/>
 			<?php
 			$mdsdb = new Database();

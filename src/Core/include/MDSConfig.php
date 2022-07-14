@@ -123,6 +123,8 @@ class MDSConfig {
 			'REDIRECT_URL'                => 'https://www.example.com',
 			'MDS_AGRESSIVE_CACHE'         => 'NO',
 			'BLOCK_SELECTION_MODE'        => 'YES',
+			'DISPLAY_ORDER_HISTORY'       => 'YES',
+			'INVERT_PIXELS'               => 'YES',
 			'ERROR_REPORTING'             => 0,
 			'WP_ENABLED'                  => 'NO',
 			'WP_URL'                      => '',
@@ -131,17 +133,6 @@ class MDSConfig {
 			'WP_ADMIN_ENABLED'            => 'NO',
 			'WP_USE_MAIL'                 => 'NO',
 		);
-	}
-
-	/**
-	 * @param $value
-	 *
-	 * @return string
-	 */
-	public static function format( $value ): string {
-		global $f2;
-
-		return $f2->value( $value, false );
 	}
 
 	/**
@@ -171,6 +162,17 @@ class MDSConfig {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * @param $value
+	 *
+	 * @return string
+	 */
+	public static function format( $value ): string {
+		global $f2;
+
+		return $f2->value( $value, false );
 	}
 
 	/**

@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.4
+ * @version 2.3.5
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -496,11 +496,6 @@ class Database {
 		}
 
 		if ( $version <= 10 ) {
-			require_once MDS_CORE_PATH . 'include/version.php';
-
-			// Update initial version info that shows before config is saved the first time
-			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='" . get_mds_version() . "' WHERE `key`='VERSION_INFO'";
-			$wpdb->query( $sql );
 
 			// Add BUILD_DATE to config
 			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "config` VALUES ('BUILD_DATE', '" . get_mds_build_date() . "');";
@@ -529,7 +524,7 @@ class Database {
 			$wpdb->query( $sql );
 
 			// Update config value for DAYS_RENEW to MINUTES_RENEW
-			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=( SELECT SUM(val*1440) FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='MINUTES_RENEW' ) WHERE `key`='MINUTES_RENEW';";
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` c SET `val`=`val`*1440 WHERE `key`='MINUTES_RENEW';";
 			$wpdb->query( $sql );
 
 			// Update config key DAYS_CONFIRMED to MINUTES_CONFIRMED
@@ -537,7 +532,7 @@ class Database {
 			$wpdb->query( $sql );
 
 			// Update config value for DAYS_CONFIRMED to MINUTES_CONFIRMED
-			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=( SELECT SUM(val*1440) FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='MINUTES_CONFIRMED' ) WHERE `key`='MINUTES_CONFIRMED';";
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=`val`*1440 WHERE `key`='MINUTES_CONFIRMED';";
 			$wpdb->query( $sql );
 
 			// Update config key DAYS_CANCEL to MINUTES_CANCEL
@@ -545,7 +540,7 @@ class Database {
 			$wpdb->query( $sql );
 
 			// Update config value for DAYS_CANCEL to MINUTES_CANCEL
-			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=( SELECT SUM(val*1440) FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='MINUTES_CANCEL' ) WHERE `key`='MINUTES_CANCEL';";
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=`val`*1440 WHERE `key`='MINUTES_CANCEL';";
 			$wpdb->query( $sql );
 
 			// Add cancelled status for blocks
@@ -558,6 +553,12 @@ class Database {
 
 			$version = $this->up_dbver( 13 );
 		}
+
+		require_once MDS_CORE_PATH . 'include/version.php';
+
+		// Update version info
+		$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='" . get_mds_version() . "' WHERE `key`='VERSION_INFO'";
+		$wpdb->query( $sql );
 
 		// TODO: remember to update the DB version in /milliondollarscript-two.php
 

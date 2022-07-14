@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.4
+ * @version 2.3.5
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -25,11 +25,20 @@
 namespace MillionDollarScript\Classes;
 
 class Update {
-	public static function checker(){
-		$MDSUpdateChecker = \Puc_v4_Factory::buildUpdateChecker(
-			'https://updates.milliondollarscript.com/?plugin=milliondollarscript-two',
-			MDS_BASE_FILE,
-			'milliondollarscript-two'
-		);
+	public static function checker() {
+		$updates = Options::get_option( 'updates' );
+		if ( $updates == 'yes' ) {
+			$MDSUpdateChecker = \Puc_v4_Factory::buildUpdateChecker(
+				'https://updates.milliondollarscript.com/?plugin=milliondollarscript-two',
+				MDS_BASE_FILE,
+				'milliondollarscript-two'
+			);
+		} else if ( $updates == 'dev' ) {
+			$MDSUpdateChecker = \Puc_v4_Factory::buildUpdateChecker(
+				'https://updates.milliondollarscript.com/?plugin=milliondollarscript-two-dev',
+				MDS_BASE_FILE,
+				'milliondollarscript-two-dev'
+			);
+		}
 	}
 }

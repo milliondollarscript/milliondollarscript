@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.3.4
+  Version: 2.3.5
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -15,7 +15,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.4
+ * @version 2.3.5
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -61,7 +61,7 @@ defined( 'MDS_CORE_URL' ) or define( 'MDS_CORE_URL', MDS_BASE_URL . 'src/Core/' 
 global $wpdb;
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', 13 );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.3.4' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.3.5' );
 
 require_once ABSPATH . 'wp-includes/pluggable.php';
 
@@ -196,11 +196,6 @@ function milliondollarscript_two_activate() {
 	if ( $mdsdb->upgrade() ) {
 		add_option( 'milliondollarscript_redirect1', wp_get_current_user()->ID );
 	}
-
-	// Update version
-	global $wpdb;
-	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=%s WHERE `key`='VERSION_INFO'";
-	$wpdb->query( $wpdb->prepare( $sql, MDS_VERSION ) );
 }
 
 function milliondollarscript_two_activate_step_2() {
@@ -287,10 +282,19 @@ function milliondollarscript_two_uninstall() {
 	}
 }
 
+function milliondollarscript_two_update() {
+	// Check if database requires upgrades and do them before install deltas happen.
+	$mdsdb = new Database();
+	$mdsdb->upgrade();
+}
+
 // WP plugin activation actions
 register_activation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_activate' );
 register_deactivation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_deactivate' );
 register_uninstall_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_uninstall' );
+
+// Update plugin
+add_action( 'plugins_loaded', '\MillionDollarScript\milliondollarscript_two_update' );
 
 // Cron
 register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\Cron', 'schedule_cron' ] );
