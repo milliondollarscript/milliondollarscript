@@ -90,6 +90,7 @@ if ( WP_ENABLED == 'YES' ) {
         <span>Current orders:</span><br>
         - <a href="orders.php?show=WA">Orders: Waiting</a><br/>
         - <a href="orders.php?show=CO">Orders: Completed</a><br/>
+        - <a href="orders.php?show=RE">Orders: Reserved</a><br/>
         <span>Non-current orders:</span><br>
         - <a href="orders.php?show=EX">Orders: Expired</a><br/>
         - <a href="orders.php?show=CA">Orders: Cancelled</a><br/>

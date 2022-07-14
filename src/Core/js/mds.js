@@ -285,7 +285,7 @@ function mds_loaded_event(el, scalemap, tippy, iframe, isgrid) {
 	}
 	window.mds_loaded = true;
 
-	jQuery(window).trigger({
+	jQuery(document).trigger({
 		type: 'mds-loaded',
 		el: el,
 		scalemap: scalemap,
@@ -294,6 +294,12 @@ function mds_loaded_event(el, scalemap, tippy, iframe, isgrid) {
 		isgrid: isgrid
 	});
 }
+
+jQuery(document).on('mds-loaded', function (el, scalemap, tippy, iframe, isgrid) {
+	setTimeout(function () {
+		window.dispatchEvent(new Event('resize'));
+	}, 100);
+});
 
 function mds_init(el, scalemap, tippy, type, isgrid) {
 	let $el = jQuery(el);
@@ -401,10 +407,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 				dataType: 'html',
 				crossDomain: true,
 			}).done(function () {
-				let win = window.open($link.attr('href'), '_blank');
-				if (win) {
-					win.focus();
-				}
+				window.open($link.attr('href'), '_self');
 			});
 		});
 

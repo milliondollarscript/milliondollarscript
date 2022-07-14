@@ -145,7 +145,9 @@ function load_order() {
 	}
 
 	const form1 = document.getElementById('form1');
-	form1.addEventListener('submit', form1Submit);
+	if (form1 !== null) {
+		form1.addEventListener('submit', form1Submit);
+	}
 }
 
 function update_order() {
@@ -206,14 +208,16 @@ function add_block(block_id, block_x, block_y, loading) {
 		'height': BLK_HEIGHT + 'px',
 	});
 
-	$new_block.mousemove(function ($event) {
-		let offset = getOffset($event.originalEvent.pageX, $event.originalEvent.pageY);
-		if (offset == null) {
-			return false;
-		}
+	if (!has_touch()) {
+		$new_block.on('mousemove', function ($event) {
+			let offset = getOffset($event.originalEvent.pageX, $event.originalEvent.pageY);
+			if (offset == null) {
+				return false;
+			}
 
-		show_pointer(offset);
-	});
+			show_pointer(offset);
+		});
+	}
 
 	jQuery($new_block).data('blockid', block_id);
 
@@ -251,7 +255,7 @@ function invert_block(clicked_block) {
 	}
 }
 
-function invert_blocks(block, OffsetX, OffsetY) {
+function get_clicked_blocks(OffsetX, OffsetY, block) {
 	let clicked_blocks = [];
 	let x;
 	let y;
@@ -341,11 +345,22 @@ function invert_blocks(block, OffsetX, OffsetY) {
 			});
 		}
 	}
+	return clicked_blocks;
+}
 
-	for (const clicked of clicked_blocks) {
-
-		// invert block
-		invert_block(clicked);
+function do_blocks(block, OffsetX, OffsetY, op) {
+	let clicked_blocks = get_clicked_blocks(OffsetX, OffsetY, block);
+	for (const clicked_block of clicked_blocks) {
+		if (op === 'add') {
+			// add block
+			add_block(clicked_block.id, clicked_block.x, clicked_block.y);
+		} else if (op === 'remove') {
+			// remove block
+			remove_block(clicked_block.id);
+		} else if (op === 'invert') {
+			// invert block
+			invert_block(clicked_block);
+		}
 	}
 }
 
@@ -428,15 +443,33 @@ function change_block_state(OffsetX, OffsetY) {
 		ajaxing = true;
 
 		$.post("update_order.php?sel_mode=" + document.getElementsByName('pixel_form')[0].elements.sel_mode.value + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time, function (data) {
-			if (data === 'new') {
-				invert_blocks(clicked_block, OffsetX, OffsetY);
+			const erase = document.getElementById('erase');
+			const erasing = (erase !== null && erase.checked);
 
+			if (data === 'new') {
+				if (erasing) {
+					do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
+				} else {
+					if (select.INVERT_PIXELS === 'YES') {
+						do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
+					} else {
+						do_blocks(clicked_block, OffsetX, OffsetY, 'add');
+					}
+				}
 			} else {
 				if (IsNumeric(data)) {
 
 					// save order id
 					document.form1.order_id.value = data;
-					invert_blocks(clicked_block, OffsetX, OffsetY);
+					if (erasing) {
+						do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
+					} else {
+						if (select.INVERT_PIXELS === 'YES') {
+							do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
+						} else {
+							do_blocks(clicked_block, OffsetX, OffsetY, 'add');
+						}
+					}
 
 				} else {
 
@@ -516,8 +549,8 @@ function getOffset(x, y, touch) {
 	let scrollTop = 0;
 
 	if (touch) {
-		scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-		scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+		scrollLeft = document.documentElement.scrollLeft;
+		scrollTop = document.documentElement.scrollTop;
 	}
 
 	offset.x = x - pos.x + scrollLeft;
@@ -626,7 +659,6 @@ function center_block(coords) {
 
 function handle_click_events() {
 	let click = false;
-
 	jQuery(pixel_container).on('mousedown', function () {
 		click = true;
 	});
@@ -669,13 +701,12 @@ function handle_click_events() {
 }
 
 function handle_touch_events() {
-	let manager = new Hammer.Manager(pixel_container);
-	let Tap = new Hammer.Tap({
-		taps: 1
-	});
-	manager.add(Tap);
-	manager.on('tap', function (e) {
-		let offset = getOffset(e.center.x, e.center.y, true);
+	let options = {
+		"supportedGestures": [Tap]
+	};
+	let pointerListener = new PointerListener(pixel_container, options);
+	pixel_container.addEventListener("tap", function (event) {
+		let offset = getOffset(event.detail.live.center.x, event.detail.live.center.y, true);
 		if (offset == null) {
 			return true;
 		}

@@ -98,7 +98,7 @@ $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
 $sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $_SESSION['MDS_order_id'] ) . "' and banner_id='$BID'";
 
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
+$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $order_row = mysqli_fetch_array( $result );
 
 function display_edit_order_button( $order_id ) {
@@ -145,7 +145,7 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 	} else {
 		display_order( get_current_order_id(), $BID );
 		$sql = "select * from " . MDS_DB_PREFIX . "users where ID='" . intval( $_SESSION['MDS_ID'] ) . "'";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 		$u_row = mysqli_fetch_array( $result );
 
 		?>

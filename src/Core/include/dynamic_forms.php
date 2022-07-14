@@ -167,11 +167,11 @@ function generate_q_string( $form_id ) {
 	$q_string = "&action=search";
 
 	foreach ( $tag_to_search as $key => $val ) {
-		if ( is_array( $_REQUEST[ $tag_to_search[ $key ]['field_id'] ] ) ) {
+		if ( is_array( $_REQUEST[ $val['field_id'] ] ) ) {
 
-			$q_string .= ( "&" . $tag_to_search[ $key ]['field_id'] . "[]=" . implode( ",", $_REQUEST[ $tag_to_search[ $key ]['field_id'] ] ) );
+			$q_string .= ( "&" . $val['field_id'] . "[]=" . implode( ",", $_REQUEST[ $val['field_id'] ] ) );
 		} else {
-			$q_string .= ( "&" . $tag_to_search[ $key ]['field_id'] . "=" . $_REQUEST[ $tag_to_search[ $key ]['field_id'] ] );
+			$q_string .= ( "&" . $val['field_id'] . "=" . $_REQUEST[ $val['field_id'] ] );
 		}
 	}
 
@@ -297,13 +297,15 @@ function mds_display_form( $form_id, $mode, $prams, $section ) {
 
 								?>
                                 <img alt="" src="<?php echo UPLOAD_HTTP_PATH . 'images/' . $prams[ $row['field_id'] ]; ?>">
-							<?php } else {
+							<?php }
+                            /*else {
 								echo '<IMG SRC="' . UPLOAD_HTTP_PATH . 'images/no-image.gif" WIDTH="150" HEIGHT="150" BORDER="0" ALT="">';
-							}
+							}*/
 						}
-					} else {
-						echo '<IMG SRC="' . UPLOAD_HTTP_PATH . 'images/no-image.gif" WIDTH="150" HEIGHT="150" BORDER="0" ALT="">';
 					}
+//					} else {
+//						echo '<IMG SRC="' . UPLOAD_HTTP_PATH . 'images/no-image.gif" WIDTH="150" HEIGHT="150" BORDER="0" ALT="">';
+//					}
 
 					if ( ( $mode == 'edit' || $mode == 'user' ) ) {
 

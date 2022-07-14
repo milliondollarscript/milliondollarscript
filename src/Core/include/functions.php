@@ -71,14 +71,7 @@ function unfck_gpc() {
 	}
 }
 
-if ( isset( $_REQUEST['BID'] ) && ! empty( $_REQUEST['BID'] ) ) {
-	if ( ! defined( 'NO_HOUSE_KEEP' ) || NO_HOUSE_KEEP != 'YES' ) {
-		expire_orders();
-	}
-}
-
 function expire_orders() {
-
 	$now       = ( gmdate( "Y-m-d H:i:s" ) );
 	$unix_time = time();
 
@@ -89,7 +82,7 @@ function expire_orders() {
 
 	// Poor man's lock
 	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='YES' WHERE `key`='EXPIRE_RUNNING' AND `val`='NO' ";
-	$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	@mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 	if ( @mysqli_affected_rows( $GLOBALS['connection'] ) == 0 ) {
 
@@ -101,120 +94,128 @@ function expire_orders() {
 			// release the lock
 
 			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `key`='EXPIRE_RUNNING' ";
-			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+			@mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 			// update timestamp
 			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`key`, `val`) VALUES ('LAST_EXPIRE_RUN', '$unix_time')  ";
-			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+			@mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 		}
 
 		// this function is already executing in another process.
 		return;
 	}
 
-	// did 1 minute elapse since last run?
-	if ( $unix_time > $t_row['val'] + 60 ) {
+	// Delete Temp Orders
 
-		// Delete Temp Orders
+	$session_duration = intval( ini_get( "session.gc_maxlifetime" ) );
 
-		$session_duration = intval( ini_get( "session.gc_maxlifetime" ) );
+	$sql = "SELECT session_id, order_date FROM `" . MDS_DB_PREFIX . "temp_orders` WHERE  DATE_SUB('$now', INTERVAL $session_duration SECOND) >= " . MDS_DB_PREFIX . "temp_orders.order_date AND session_id <> '" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
 
-		$sql = "SELECT session_id, order_date FROM `" . MDS_DB_PREFIX . "temp_orders` WHERE  DATE_SUB('$now', INTERVAL $session_duration SECOND) >= " . MDS_DB_PREFIX . "temp_orders.order_date AND session_id <> '" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	while ( $row = @mysqli_fetch_array( $result ) ) {
 
-		while ( $row = @mysqli_fetch_array( $result ) ) {
+		delete_temp_order( $row['session_id'] );
+	}
 
-			delete_temp_order( $row['session_id'] );
+	// COMPLETED Orders
+
+	$sql = "SELECT *, " . MDS_DB_PREFIX . "banners.banner_id as BID from " . MDS_DB_PREFIX . "orders, " . MDS_DB_PREFIX . "banners where status='completed' and " . MDS_DB_PREFIX . "orders.banner_id=" . MDS_DB_PREFIX . "banners.banner_id AND " . MDS_DB_PREFIX . "orders.days_expire <> 0 AND DATE_SUB('$now', INTERVAL " . MDS_DB_PREFIX . "orders.days_expire DAY) >= " . MDS_DB_PREFIX . "orders.date_published AND " . MDS_DB_PREFIX . "orders.date_published IS NOT NULL";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+
+	$affected_BIDs = array();
+
+	while ( $row = @mysqli_fetch_array( $result ) ) {
+		$affected_BIDs[] = $row['BID'];
+		expire_order( $row['order_id'] );
+	}
+	if ( sizeof( $affected_BIDs ) > 0 ) {
+		foreach ( $affected_BIDs as $myBID ) {
+			$b_row = load_banner_row( $myBID );
+			if ( $b_row['auto_publish'] == 'Y' ) {
+				process_image( $myBID );
+				publish_image( $myBID );
+				process_map( $myBID );
+			}
+		}
+	}
+	process_paid_renew_orders();
+	unset( $affected_BIDs );
+
+	// unconfirmed Orders
+
+	if ( MINUTES_UNCONFIRMED != 0 ) {
+
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE (`status`='new')";
+		if ( MINUTES_UNCONFIRMED != - 1 ) {
+			$sql .= " AND DATE_SUB('$now',INTERVAL " . intval( MINUTES_UNCONFIRMED ) . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL ";
 		}
 
-		// COMPLETED Orders
-
-		$sql = "SELECT *, " . MDS_DB_PREFIX . "banners.banner_id as BID from " . MDS_DB_PREFIX . "orders, " . MDS_DB_PREFIX . "banners where status='completed' and " . MDS_DB_PREFIX . "orders.banner_id=" . MDS_DB_PREFIX . "banners.banner_id AND " . MDS_DB_PREFIX . "orders.days_expire <> 0 AND DATE_SUB('$now', INTERVAL " . MDS_DB_PREFIX . "orders.days_expire DAY) >= " . MDS_DB_PREFIX . "orders.date_published AND " . MDS_DB_PREFIX . "orders.date_published IS NOT NULL";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-
-		$affected_BIDs = array();
+		$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 		while ( $row = @mysqli_fetch_array( $result ) ) {
-			$affected_BIDs[] = $row['BID'];
+			delete_order( $row['order_id'] );
+
+			// Now really delete the order.
+
+			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $row['order_id'] ) . "'";
+			@mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+			global $f2;
+			$f2->debug( "Deleted unconfirmed order - " . $sql );
+		}
+	}
+
+	// unpaid Orders
+	if ( MINUTES_CONFIRMED != 0 ) {
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE (`status`='new' OR `status`='confirmed')";
+		if ( MINUTES_CONFIRMED != - 1 ) {
+			$sql .= " AND DATE_SUB('$now',INTERVAL " . intval( MINUTES_CONFIRMED ) . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL ";
+		}
+
+		$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+
+		while ( $row = @mysqli_fetch_array( $result ) ) {
 			expire_order( $row['order_id'] );
 		}
-		if ( sizeof( $affected_BIDs ) > 0 ) {
-			foreach ( $affected_BIDs as $myBID ) {
-				$b_row = load_banner_row( $myBID );
-				if ( $b_row['auto_publish'] == 'Y' ) {
-					process_image( $myBID );
-					publish_image( $myBID );
-					process_map( $myBID );
-				}
-			}
-		}
-		process_paid_renew_orders();
-		unset( $affected_BIDs );
-
-		// unconfirmed Orders
-
-		if ( MINUTES_UNCONFIRMED != 0 ) {
-
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where (status='new') AND DATE_SUB('$now',INTERVAL " . intval( MINUTES_UNCONFIRMED ) . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL ";
-
-			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-
-			while ( $row = @mysqli_fetch_array( $result ) ) {
-				delete_order( $row['order_id'] );
-
-				// Now really delete the order.
-
-				$sql = "delete from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $row['order_id'] ) . "'";
-				@mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-				global $f2;
-				$f2->debug( "Deleted unconfirmed order - " . $sql );
-			}
-		}
-
-		// unpaid Orders
-		if ( DAYS_CONFIRMED != 0 ) {
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where (status='new' OR status='confirmed') AND DATE_SUB('$now',INTERVAL " . intval( DAYS_CONFIRMED ) . " DAY) >= date_stamp AND date_stamp IS NOT NULL ";
-
-			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-
-			while ( $row = @mysqli_fetch_array( $result ) ) {
-				expire_order( $row['order_id'] );
-			}
-		}
-
-		// EXPIRED Orders -> Cancel
-
-		if ( DAYS_RENEW != 0 ) {
-
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where status='expired' AND DATE_SUB('$now',INTERVAL " . intval( DAYS_RENEW ) . " DAY) >= date_stamp AND date_stamp IS NOT NULL";
-
-			$result = @mysqli_query( $GLOBALS['connection'], $sql );
-
-			while ( $row = @mysqli_fetch_array( $result ) ) {
-				cancel_order( $row['order_id'] );
-			}
-		}
-
-		// Cancelled Orders -> Delete
-
-		if ( DAYS_CANCEL != 0 ) {
-
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where status='cancelled' AND DATE_SUB('$now',INTERVAL " . intval( DAYS_CANCEL ) . " DAY) >= date_stamp AND date_stamp IS NOT NULL ";
-
-			$result = @mysqli_query( $GLOBALS['connection'], $sql );
-
-			while ( $row = @mysqli_fetch_array( $result ) ) {
-				delete_order( $row['order_id'] );
-			}
-		}
-
-		// update last run time stamp
-
-		// update timestamp
-		$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`key`, `val`) VALUES ('LAST_EXPIRE_RUN', '$unix_time')  ";
-		$result = @mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	}
+
+	// EXPIRED Orders -> Cancel
+
+	if ( MINUTES_RENEW != 0 ) {
+
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`='expired'";
+		if ( MINUTES_RENEW != - 1 ) {
+			$sql .= " AND DATE_SUB('$now',INTERVAL " . intval( MINUTES_RENEW ) . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL";
+		}
+
+		$result = @mysqli_query( $GLOBALS['connection'], $sql );
+
+		while ( $row = @mysqli_fetch_array( $result ) ) {
+			cancel_order( $row['order_id'] );
+		}
+	}
+
+	// Cancelled Orders -> Delete
+
+	if ( MINUTES_CANCEL != 0 ) {
+
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`='cancelled'";
+		if ( MINUTES_CANCEL != 0 ) {
+			$sql .= " AND DATE_SUB('$now',INTERVAL " . intval( MINUTES_CANCEL ) . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL ";
+		}
+
+		$result = @mysqli_query( $GLOBALS['connection'], $sql );
+
+		while ( $row = @mysqli_fetch_array( $result ) ) {
+			delete_order( $row['order_id'] );
+		}
+	}
+
+	// update last run time stamp
+
+	// update timestamp
+	$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`key`, `val`) VALUES ('LAST_EXPIRE_RUN', '$unix_time')  ";
+	@mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 
 	// release the poor man's lock
 	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `key`='EXPIRE_RUNNING' ";
@@ -484,7 +485,7 @@ function confirm_order( $user_id, $order_id ) {
 		$message = str_replace( "%ORDER_ID%", $row['order_id'], $message );
 		$message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $message );
 		$message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $message );
-		$message = str_replace( "%DEADLINE%", intval( DAYS_CONFIRMED ), $message );
+		$message = str_replace( "%DEADLINE%", intval( MINUTES_CONFIRMED ), $message );
 		$message = str_replace( "%PRICE%", $price, $message );
 		$message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $message );
 		if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
@@ -501,7 +502,7 @@ function confirm_order( $user_id, $order_id ) {
 		$html_message = str_replace( "%ORDER_ID%", $row['order_id'], $html_message );
 		$html_message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $html_message );
 		$html_message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $html_message );
-		$html_message = str_replace( "%DEADLINE%", intval( DAYS_CONFIRMED ), $html_message );
+		$html_message = str_replace( "%DEADLINE%", intval( MINUTES_CONFIRMED ), $html_message );
 		$html_message = str_replace( "%PRICE%", $price, $html_message );
 		$html_message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $html_message );
 		if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
@@ -789,10 +790,10 @@ function cancel_order( $order_id ) {
 
 		$now = ( gmdate( "Y-m-d H:i:s" ) );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='cancelled', date_stamp='$now', approved='N' WHERE order_id='" . intval( $order_id ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `status`='cancelled', date_stamp='$now', approved='N' WHERE order_id='" . intval( $order_id ) . "'";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		//echo $sql."<br>";
-		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET `status`='cancelled', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' AND banner_id='" . intval( $row['banner_id'] ) . "'";
 		//echo $sql."<br>";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (cancel order) " );
 		/*
@@ -809,11 +810,28 @@ function cancel_order( $order_id ) {
 	}
 
 	// process the grid, if auto_publish is on
-
 	$b_row = load_banner_row( $row['banner_id'] );
-
 	if ( $b_row['auto_publish'] == 'Y' ) {
+		process_image( $row['banner_id'] );
+		publish_image( $row['banner_id'] );
+		process_map( $row['banner_id'] );
+	}
+}
 
+function unreserve_block( $block_id, $banner_id ) {
+	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "blocks` WHERE `block_id`='" . intval( $block_id ) . "' AND `banner_id`='" . intval( $banner_id ) . "' ";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+
+	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
+		if ( $row['status'] == 'reserved' ) {
+			$sql = "DELETE FROM `" . MDS_DB_PREFIX . "blocks` WHERE `status`='reserved' AND `block_id`='" . intval( $block_id ) . "' AND `banner_id`='" . $row['banner_id'] . "'";
+			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (cancel order) " );
+		}
+	}
+
+	// process the grid, if auto_publish is on
+	$b_row = load_banner_row( $row['banner_id'] );
+	if ( $b_row['auto_publish'] == 'Y' ) {
 		process_image( $row['banner_id'] );
 		publish_image( $row['banner_id'] );
 		process_map( $row['banner_id'] );
@@ -1283,7 +1301,7 @@ function display_banner_selecton_form( $BID, $order_id, $res ) {
     <form name="bidselect" method="post" action="<?php echo htmlentities( $action ); ?>">
         <input type="hidden" name="old_order_id" value="<?php echo $order_id; ?>">
         <input type="hidden" name="banner_change" value="1">
-        <select name="BID" onchange="document.bidselect.submit()" style="font-size: 14px;">
+        <select name="BID" style="font-size: 14px;">
 			<?php
 			while ( $row = mysqli_fetch_array( $res ) ) {
 				if ( $row['banner_id'] == $BID ) {
@@ -1295,6 +1313,7 @@ function display_banner_selecton_form( $BID, $order_id, $res ) {
 			}
 			?>
         </select>
+        <input type="submit" name="submit" value="Select Grid">
     </form>
 	<?php
 }
@@ -1383,7 +1402,7 @@ function move_uploaded_image( $img_key ) {
 
 function nav_pages_struct( $q_string, $count, $REC_PER_PAGE ) {
 
-	global $label, $list_mode;
+	global $BID, $label, $list_mode;
 
 	$nav = array(
 		'prev'         => '',
@@ -1396,24 +1415,24 @@ function nav_pages_struct( $q_string, $count, $REC_PER_PAGE ) {
 	if ( $list_mode == 'PREMIUM' ) {
 		$page = 'hot.php';
 	} else {
-		$page = $_SERVER['PHP_SELF'];
+		$page = isset( $_SERVER['PHP_SELF'] ) ? $_SERVER['PHP_SELF'] : '';
 	}
 
-	$offset   = intval( $_REQUEST["offset"] );
-	$show_emp = $_REQUEST["show_emp"];
+	$offset   = isset( $_REQUEST["offset"] ) ? intval( $_REQUEST["offset"] ) : 0;
+	$show_emp = isset( $_REQUEST["show_emp"] ) ? $_REQUEST["show_emp"] : '';
 
 	if ( $show_emp != '' ) {
-		$show_emp = "&show_emp=" . urlencode( $show_emp );
+		$show_emp = "&show_emp=" . $show_emp;
 	}
 
-	$cat = $_REQUEST["cat"];
+	$cat = isset( $_REQUEST["cat"] ) ? $_REQUEST["cat"] : '';
 	if ( $cat != '' ) {
 		$cat = ( "&cat=$cat" );
 	}
 
-	$order_by = $_REQUEST["order_by"];
+	$order_by = isset( $_REQUEST["order_by"] ) ? $_REQUEST["order_by"] : '';
 	if ( $order_by != '' ) {
-		$order_by = "&order_by=" . urlencode( $order_by );
+		$order_by = "&order_by=" . $order_by;
 	}
 
 	$cur_page = $offset / $REC_PER_PAGE;
@@ -1430,12 +1449,14 @@ function nav_pages_struct( $q_string, $count, $REC_PER_PAGE ) {
 	$prev = $offset - $REC_PER_PAGE;
 	$next = $offset + $REC_PER_PAGE;
 
+	$b = '&BID=' . $BID;
+
 	if ( $prev === 0 ) {
 		$prev = '';
 	}
 
 	if ( $prev > - 1 ) {
-		$nav['prev'] = "<a href='" . htmlspecialchars( $page . "?offset=" . $prev . $q_string . $show_emp . $cat . $order_by ) . "'>" . $label["navigation_prev"] . "</a> ";
+		$nav['prev'] = "<a href='" . esc_attr( $page . "?offset=" . $prev . $q_string . $show_emp . $cat . $order_by . $b ) . "'>" . $label["navigation_prev"] . "</a> ";
 	}
 
 	for ( $i = 0; $i < $count; $i = $i + $REC_PER_PAGE ) {
@@ -1459,7 +1480,7 @@ function nav_pages_struct( $q_string, $count, $REC_PER_PAGE ) {
 	}
 
 	if ( $next < $count ) {
-		$nav['next'] = " | <a  href='" . htmlspecialchars( $page . "?offset=" . $next . $q_string . $show_emp . $cat . $order_by ) . "'> " . $label["navigation_next"] . "</a>";
+		$nav['next'] = " | <a  href='" . esc_attr( $page . "?offset=" . $next . $q_string . $show_emp . $cat . $order_by . $b ) . "'> " . $label["navigation_next"] . "</a>";
 	}
 
 	return $nav;
@@ -1467,28 +1488,30 @@ function nav_pages_struct( $q_string, $count, $REC_PER_PAGE ) {
 
 function render_nav_pages( &$nav_pages_struct, $LINKS, $q_string = '' ) {
 
-	global $f2, $list_mode, $label;
+	global $BID, $f2, $list_mode, $label;
 
 	if ( $list_mode == 'PREMIUM' ) {
 		$page = 'hot.php';
 		echo $label['post_list_more_sponsored'] . " ";
 	} else {
-		$page = $_SERVER['PHP_SELF'];
+		$page = isset( $_SERVER['PHP_SELF'] ) ? $_SERVER['PHP_SELF'] : '';
 	}
 
-	$offset   = $_REQUEST["offset"];
-	$show_emp = $_REQUEST["show_emp"];
+	$offset   = isset( $_REQUEST["offset"] ) ? intval( $_REQUEST["offset"] ) : 0;
+	$show_emp = isset( $_REQUEST["show_emp"] ) ? $_REQUEST["show_emp"] : '';
 
 	if ( $show_emp != '' ) {
-		$show_emp = "&show_emp=" . urlencode( $show_emp );
+		$show_emp = "&show_emp=" . $show_emp;
 	}
-	$cat = $_REQUEST["cat"];
+
+	$cat = isset( $_REQUEST["cat"] ) ? $_REQUEST["cat"] : '';
 	if ( $cat != '' ) {
 		$cat = ( "&cat=$cat" );
 	}
-	$order_by = $_REQUEST["order_by"];
+
+	$order_by = isset( $_REQUEST["order_by"] ) ? $_REQUEST["order_by"] : '';
 	if ( $order_by != '' ) {
-		$order_by = "&order_by=" . urlencode( $order_by );
+		$order_by = "&order_by=" . $order_by;
 	}
 
 	if ( $nav_pages_struct['cur_page'] > $LINKS - 1 ) {
@@ -1497,27 +1520,35 @@ function render_nav_pages( &$nav_pages_struct, $LINKS, $q_string = '' ) {
 	} else {
 		$NLINKS = $LINKS - $nav_pages_struct['cur_page'];
 	}
+
+	$b = '&BID=' . $BID;
+
 	echo $nav_pages_struct['prev'];
 	$b_count = isset( $nav_pages_struct['pages_before'] ) ? count( $nav_pages_struct['pages_before'] ) : 0;
 	$pipe    = "";
+
 	for ( $i = $b_count - $LINKS; $i <= $b_count; $i ++ ) {
 		if ( $i > 0 ) {
 			//echo " <a href='?offset=".$nav['pages_before'][$i]."'>".$i."</a></b>";
-			echo " | <a  href='" . htmlspecialchars( $page . "?offset=" . $nav_pages_struct['pages_before'][ $i ] . $q_string . $show_emp . $cat . $order_by ) . "'>" . $i . "</a>";
+			echo " | <a  href='" . esc_attr( $page . "?offset=" . $nav_pages_struct['pages_before'][ $i ] . $q_string . $show_emp . $cat . $order_by . $b ) . "'>" . $i . "</a>";
 			$pipe = "|";
 		}
 	}
+
 	echo " $pipe <b>" . $nav_pages_struct['cur_page'] . " </b>  ";
 	$a_count = isset( $nav_pages_struct['pages_after'] ) ? count( $nav_pages_struct['pages_after'] ) : 0;
+
 	if ( $a_count > 0 ) {
 		$i = 0;
+
 		foreach ( $nav_pages_struct['pages_after'] as $key => $pa ) {
 			$i ++;
 			if ( $i > $NLINKS ) {
 				break;
 			}
+
 			//echo " <a href='?offset=".$pa."'>".$key."</a>";
-			echo " | <a  href='" . htmlspecialchars( $page . "?offset=" . $pa . $q_string . $show_emp . $cat . $order_by ) . "'>" . $key . "</a>  ";
+			echo " | <a  href='" . esc_attr( $page . "?offset=" . $pa . $q_string . $show_emp . $cat . $order_by . $b ) . "'>" . $key . "</a>  ";
 		}
 	}
 
@@ -1577,10 +1608,12 @@ function select_block( $map_x, $map_y ) {
 
 		// take multi-selection blocks into account (1,4,6) and deselecting blocks
 		if ( isset( $_REQUEST['sel_mode'] ) && ! empty( $_REQUEST['sel_mode'] ) ) {
+			$invert = MDSConfig::get( 'INVERT_PIXELS' ) === 'YES';
+
 			if ( $_REQUEST['sel_mode'] == "sel1" ) {
 				// 1x1
 				// [1]
-				if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+				if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 					// deselect
 					unset( $blocks2[ $block ] );
 				} else {
@@ -1597,7 +1630,7 @@ function select_block( $map_x, $map_y ) {
 				$max_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
 
 				// 1
-				if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+				if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 					// deselect
 					unset( $blocks2[ $block ] );
 				} else {
@@ -1610,7 +1643,7 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'];
 				if ( $x <= $max_x ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
@@ -1624,7 +1657,7 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
 				if ( $y <= $max_y ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
@@ -1638,7 +1671,7 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
 				if ( $x <= $max_x && $y <= $max_y ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
@@ -1656,7 +1689,7 @@ function select_block( $map_x, $map_y ) {
 				$max_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
 
 				// 1
-				if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+				if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 					unset( $blocks2[ $block ] );
 				} else {
 					$clicked_blocks[] = $clicked_block;
@@ -1667,7 +1700,7 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'];
 				if ( $x <= $max_x ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
@@ -1681,7 +1714,7 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'];
 				if ( $x <= $max_x && $y <= $max_y ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
@@ -1695,7 +1728,7 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
 				if ( $y <= $max_y ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
@@ -1709,7 +1742,7 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
 				if ( $x <= $max_x && $y <= $max_y ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
@@ -1723,13 +1756,18 @@ function select_block( $map_x, $map_y ) {
 				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
 				if ( $x <= $max_x && $y <= $max_y ) {
 					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 						// deselect
 						unset( $blocks2[ $block ] );
 					} else {
 						// select
 						$clicked_blocks[] = $clicked_block;
 					}
+				}
+			} else if ( $_REQUEST['sel_mode'] == "erase" ) {
+				if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+					// deselect
+					unset( $blocks2[ $block ] );
 				}
 			}
 		}
@@ -1784,7 +1822,7 @@ function select_block( $map_x, $map_y ) {
 		}
 
 		// merge blocks
-		$new_blocks = array_merge( $blocks2, $clicked_blocks );
+		$new_blocks = array_unique( array_merge( $blocks2, $clicked_blocks ) );
 
 		// check max blocks
 		$max_selected = false;
@@ -1837,7 +1875,7 @@ function select_block( $map_x, $map_y ) {
 
 			$return_val = intval( $_SESSION['MDS_order_id'] );
 
-			$sql = "delete from " . MDS_DB_PREFIX . "blocks where user_id=" . intval( $_SESSION['MDS_ID'] ) . " AND status = 'reserved' AND banner_id='" . intval( $BID ) . "' ";
+			$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . intval( $_SESSION['MDS_ID'] ) . " AND status = 'reserved' AND banner_id='" . intval( $BID ) . "' ";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			$cell = 0;
@@ -2581,6 +2619,7 @@ function get_tmp_img_name( $session_id = '' ) {
 	if ( $session_id == '' ) {
 		$session_id = addslashes( session_id() );
 	}
+
 	$uploaddir = \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/";
 	$dh        = opendir( $uploaddir );
 	while ( ( $file = readdir( $dh ) ) !== false ) {
@@ -3001,6 +3040,12 @@ function convertMemoryToBytes( $Sizes ) {
  * @param string $filename
  */
 function setMemoryLimit( $filename ) {
+	if ( ! file_exists( $filename ) ) {
+		error_log( "setMemoryLimit error, file not found: " . $filename );
+
+		return;
+	}
+
 	//this might take time so we limit the maximum execution time to 50 seconds
 	set_time_limit( 50 );
 

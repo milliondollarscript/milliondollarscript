@@ -31,3 +31,10 @@ iframe.usersframe {
 body #login {
 	padding-top:20px !important;
 }
+
+/* View cart button fix */
+.woocommerce-error a.button.wc-forward,
+.woocommerce-error a.button.wc-forward:hover {
+	border: none;
+	background: #fff;
+}

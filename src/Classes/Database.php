@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.3
+ * @version 2.3.4
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -520,6 +520,43 @@ class Database {
 			$wpdb->query( $sql );
 
 			$version = $this->up_dbver( 12 );
+		}
+
+		if ( $version <= 12 ) {
+
+			// Update config key DAYS_RENEW to MINUTES_RENEW
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `key`='MINUTES_RENEW' WHERE `key`='DAYS_RENEW';";
+			$wpdb->query( $sql );
+
+			// Update config value for DAYS_RENEW to MINUTES_RENEW
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=( SELECT SUM(val*1440) FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='MINUTES_RENEW' ) WHERE `key`='MINUTES_RENEW';";
+			$wpdb->query( $sql );
+
+			// Update config key DAYS_CONFIRMED to MINUTES_CONFIRMED
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `key`='MINUTES_CONFIRMED' WHERE `key`='DAYS_CONFIRMED';";
+			$wpdb->query( $sql );
+
+			// Update config value for DAYS_CONFIRMED to MINUTES_CONFIRMED
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=( SELECT SUM(val*1440) FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='MINUTES_CONFIRMED' ) WHERE `key`='MINUTES_CONFIRMED';";
+			$wpdb->query( $sql );
+
+			// Update config key DAYS_CANCEL to MINUTES_CANCEL
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `key`='MINUTES_CANCEL' WHERE `key`='DAYS_CANCEL';";
+			$wpdb->query( $sql );
+
+			// Update config value for DAYS_CANCEL to MINUTES_CANCEL
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`=( SELECT SUM(val*1440) FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='MINUTES_CANCEL' ) WHERE `key`='MINUTES_CANCEL';";
+			$wpdb->query( $sql );
+
+			// Add cancelled status for blocks
+			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "blocks` CHANGE `status` `status` SET('cancelled','reserved','sold','free','ordered','nfs');";
+			$wpdb->query( $sql );
+
+			// Add INVERT_PIXELS option
+			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "config` VALUES ('INVERT_PIXELS', 'YES');";
+			$wpdb->query( $sql );
+
+			$version = $this->up_dbver( 13 );
 		}
 
 		// TODO: remember to update the DB version in /milliondollarscript-two.php

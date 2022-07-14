@@ -81,94 +81,6 @@ class Mds_Ajax {
 		}
 	}
 
-	/**
-	 * Ensures the mds.js is loaded only once.
-	 */
-	private function mds_js_loaded() {
-		if ( ! isset( $GLOBALS['mds_js_loaded'] ) ) {
-			$GLOBALS['mds_js_loaded'] = true;
-
-			global $f2, $load_mds_js;
-			$BID         = $f2->bid();
-			$banner_data = load_banner_constants( $BID );
-
-			$wp_url = '';
-			if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
-				$wp_url = WP_URL;
-			}
-
-			if ( WP_ENABLED == "YES" ) {
-				?>
-                <script>
-					if (window.mds_js_loaded !== true) {
-						window.mds_js_loaded = true;
-
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
-
-						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
-							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
-								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
-									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
-										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/hammer.min.js', function () {
-											window.mds_data = {
-												ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
-												wp: '<?php echo $wp_url; ?>',
-												winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>'),
-												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>'),
-												time: '<?php echo time(); ?>',
-												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
-												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
-												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
-												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-												BID: parseInt('<?php echo $BID; ?>')
-											};
-											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
-											});
-										});
-									});
-								});
-							});
-						});
-					}
-                </script>
-				<?php
-			} else if ( $load_mds_js != null ) {
-				?>
-                <script>
-					if (window.mds_js_loaded !== true) {
-						window.mds_js_loaded = true;
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
-
-						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
-							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
-								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
-									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
-										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/hammer.min.js', function () {
-											window.mds_data = {
-												ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
-												time: '<?php echo time(); ?>',
-												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
-												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
-												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
-												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-												BID: parseInt('<?php echo $BID; ?>')
-											};
-											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
-											});
-										});
-									});
-								});
-							});
-						});
-					}
-                </script>
-				<?php
-			}
-		}
-	}
-
 	private function grid( int $BID ) {
 		$this->mds_js_loaded();
 
@@ -211,6 +123,94 @@ class Mds_Ajax {
 			});
         </script>
 		<?php
+	}
+
+	/**
+	 * Ensures the mds.js is loaded only once.
+	 */
+	private function mds_js_loaded() {
+		if ( ! isset( $GLOBALS['mds_js_loaded'] ) ) {
+			$GLOBALS['mds_js_loaded'] = true;
+
+			global $f2, $load_mds_js;
+			$BID         = $f2->bid();
+			$banner_data = load_banner_constants( $BID );
+
+			$wp_url = '';
+			if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
+				$wp_url = WP_URL;
+			}
+
+			if ( WP_ENABLED == "YES" ) {
+				?>
+                <script>
+					if (window.mds_js_loaded !== true) {
+						window.mds_js_loaded = true;
+
+						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
+						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
+
+						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
+							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
+								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
+									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
+										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
+											window.mds_data = {
+												ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
+												wp: '<?php echo $wp_url; ?>',
+												winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>'),
+												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>'),
+												time: '<?php echo time(); ?>',
+												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
+												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
+												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
+												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
+												BID: parseInt('<?php echo $BID; ?>')
+											};
+											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
+											});
+										});
+									});
+								});
+							});
+						});
+					}
+                </script>
+				<?php
+			} else if ( $load_mds_js != null ) {
+				?>
+                <script>
+					if (window.mds_js_loaded !== true) {
+						window.mds_js_loaded = true;
+						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
+						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
+
+						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
+							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
+								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
+									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
+										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
+											window.mds_data = {
+												ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
+												time: '<?php echo time(); ?>',
+												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
+												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
+												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
+												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
+												BID: parseInt('<?php echo $BID; ?>')
+											};
+											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
+											});
+										});
+									});
+								});
+							});
+						});
+					}
+                </script>
+				<?php
+			}
+		}
 	}
 
 	private function stats( int $BID ) {

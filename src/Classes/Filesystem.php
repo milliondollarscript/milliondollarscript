@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script
  *
- * @version 2.3.3
+ * @version 2.3.4
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3

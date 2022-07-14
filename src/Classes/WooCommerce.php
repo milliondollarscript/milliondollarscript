@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.3
+ * @version 2.3.4
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -43,14 +43,91 @@ class WooCommerce {
 		add_action( 'woocommerce_order_status_changed', [ __CLASS__, 'status_changed' ], 20, 4 );
 		add_action( 'woocommerce_order_edit_status', [ __CLASS__, 'status_edit' ], 20, 2 );
 
-		//add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'clear_cart' ] );
+		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'maybe_clear_cart' ] );
+		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'validate_order' ] );
 
 		add_filter( 'woocommerce_checkout_update_order_meta', [ __CLASS__, 'create_order' ], 10, 2 );
 
 //		add_action( 'woocommerce_before_cart', [ __CLASS__, 'add_discount' ] );
 //		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'add_discount' ] );
 
+		add_filter( 'woocommerce_update_cart_validation', [ __CLASS__, 'validate_cart' ], 10, 4 );
+		add_filter( 'woocommerce_update_cart_action_cart_updated', [ __CLASS__, 'update_cart_action_cart_updated' ], 10, 1 );
+		//woocommerce_stock_amount_cart_item
+
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'add_to_cart_validation' ], 10, 5 );
+	}
+
+	/**
+	 * Validates the cart when it's updated.
+	 */
+	public static function validate_cart( $passed_validation, $cart_item_key, $values, $quantity ) {
+		global $woocommerce, $passed_validation_mds;
+
+		if ( ! isset( $woocommerce->cart ) || ! isset( $woocommerce->cart->cart_contents ) ) {
+			return $passed_validation;
+		}
+
+		foreach ( $woocommerce->cart->cart_contents as $item ) {
+			$meta_values = get_post_custom( $item['product_id'] );
+
+			if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
+				// MDS item found
+
+				$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+
+				if ( ! self::check_quantity_mds( $item, $mds_order_id, $quantity ) ) {
+					$passed_validation_mds = false;
+
+					return false;
+				}
+			}
+		}
+
+		return $passed_validation;
+	}
+
+	/**
+	 * Possibly prevent cart from being updated if quantity was wrong.
+	 *
+	 */
+	public static function update_cart_action_cart_updated( $cart_updated ) {
+		global $passed_validation_mds;
+
+		if ( $passed_validation_mds === false ) {
+			$message = __( "Quantity does not match!", 'milliondollarscript' );
+			\wc_add_notice( $message, 'error' );
+
+			return false;
+		}
+
+		return $cart_updated;
+	}
+
+	/**
+	 * Validates the order before it's created only using the contents of the cart.
+	 */
+	public static function validate_order() {
+		global $woocommerce;
+
+		if ( ! isset( $woocommerce->cart ) || ! isset( $woocommerce->cart->cart_contents ) ) {
+			return;
+		}
+
+		foreach ( $woocommerce->cart->cart_contents as $item ) {
+			$meta_values = get_post_custom( $item['product_id'] );
+
+			if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
+				// MDS item found
+
+				$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+
+				if ( ! self::check_quantity_mds( $item, $mds_order_id ) ) {
+					$message = __( "Quantity does not match!", 'milliondollarscript' );
+					\wc_add_notice( sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', wc_get_cart_url(), __( 'View cart', 'woocommerce' ), $message ), 'error' );
+				}
+			}
+		}
 	}
 
 	/**
@@ -83,8 +160,13 @@ class WooCommerce {
 		// Check if the product added to the cart was an MDS product
 		$product = wc_get_product( $product_id );
 		if ( $product->get_meta( '_milliondollarscript', true ) == 'yes' ) {
-			// Run custom functions
-			do_action( 'mds_added_to_cart', $product, $quantity );
+			if ( self::valid_mds_order() ) {
+				// Run custom functions
+				do_action( 'mds_added_to_cart', $product, $quantity );
+			} else {
+				// Do not add to cart because there was no valid MDS order found.
+				$passed = false;
+			}
 		}
 
 		return $passed;
@@ -251,6 +333,45 @@ class WooCommerce {
 	}
 
 	/**
+	 * Check MDS order quantity against the given value using the MDS order id instead of WC order id.
+	 *
+	 * @param $item
+	 * @param $mds_order_id
+	 *
+	 * @return bool
+	 */
+	public static function check_quantity_mds( $item, $mds_order_id, $quantity = null ): bool {
+
+		if ( ! function_exists( 'get_home_path' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		global $wpdb;
+		$mds_quantity = $wpdb->get_var( $wpdb->prepare( "SELECT `quantity` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d", intval( $mds_order_id ) ) );
+
+		$mdspath = Options::get_mds_path();
+		require_once $mdspath . "include/init.php";
+		global $f2;
+		$BID         = $f2->bid();
+		$banner_data = load_banner_constants( $BID );
+
+		// Get the item quantity
+		$item_quantity = absint( $quantity ?? $item['quantity'] ) * ( $banner_data['block_width'] * $banner_data['block_height'] );
+
+		// verify quantity isn't modified
+		if ( $mds_quantity != $item_quantity ) {
+			return false;
+		}
+
+		// verify there is a quantity
+		if ( $mds_quantity == 0 || $item_quantity == 0 ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Check MDS order quantity against the given value.
 	 *
 	 * @param $id
@@ -286,12 +407,12 @@ class WooCommerce {
 		$mds_quantity = $wpdb->get_var( $wpdb->prepare( "SELECT `quantity` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d", intval( $mds_order_id ) ) );
 
 //		$mds_quantity = absint( $external_payment->get_quantity( $mds_order_id ) );
-		$good         = true;
+		$good = true;
 
 		$mdspath = Options::get_mds_path();
 		require_once $mdspath . "include/init.php";
 		global $f2;
-		$BID = $f2->bid();
+		$BID         = $f2->bid();
 		$banner_data = load_banner_constants( $BID );
 
 		// https://stackoverflow.com/a/40715347
@@ -299,7 +420,7 @@ class WooCommerce {
 		foreach ( $order->get_items() as $item_id => $item_data ) {
 
 			// Get the item quantity
-			$item_quantity = absint( $item_data->get_quantity() ) * ($banner_data['block_width'] * $banner_data['block_height']);
+			$item_quantity = absint( $item_data->get_quantity() ) * ( $banner_data['block_width'] * $banner_data['block_height'] );
 
 			// verify quantity isn't modified
 			if ( $mds_quantity != $item_quantity ) {
@@ -406,6 +527,59 @@ class WooCommerce {
 	}
 
 	/**
+	 * Checks for an MDS order with new or confirmed status.
+	 *
+	 * @return bool
+	 */
+	public static function valid_mds_order(): bool {
+		global $wpdb;
+
+		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+
+		// Check for valid MDS order
+		// Valid order statuses are 'pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid'
+		// We only want to check for new or confirmed
+		$count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d AND (`status`='new' OR `status`='confirmed')",
+				$mds_order_id
+			)
+		);
+
+		return $count > 0;
+	}
+
+	/**
+	 * Check if we should clear WooCommerce cart when viewing the checkout form.
+	 * Returns true of cart is cleared otherwise returns false.
+	 *
+	 * @return bool
+	 */
+	public static function maybe_clear_cart(): bool {
+		global $woocommerce;
+
+		if ( ! isset( $woocommerce->cart ) || ! isset( $woocommerce->cart->cart_contents ) ) {
+			return false;
+		}
+
+		foreach ( $woocommerce->cart->cart_contents as $item ) {
+			$meta_values = get_post_custom( $item['product_id'] );
+
+			if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
+				// MDS item found
+
+				if ( ! self::valid_mds_order() ) {
+					WC()->cart->empty_cart();
+
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Clear WooCommerce cart when adding a new item.
 	 */
 	public static function clear_cart() {
@@ -441,7 +615,8 @@ class WooCommerce {
 		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
 		update_post_meta( $order_id, "mds_order_id", $mds_order_id );
 		if ( ! self::check_quantity( $order_id ) ) {
-			throw new \Exception( "Quantity does not match!" );
+			$message = "Quantity does not match!";
+			throw new \Exception( sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', wc_get_cart_url(), __( 'View cart', 'woocommerce' ), $message ) );
 		}
 		$order->add_order_note( "MDS order id: " . $mds_order_id );
 

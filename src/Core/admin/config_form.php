@@ -218,7 +218,7 @@
 				<?php
 				$OUTPUT_JPEG = MDSConfig::get( 'OUTPUT_JPEG' );
 				?>
-                <input type="radio" name="OUTPUT_JPEG" value="Y" <?php echo( $OUTPUT_JPEG == 'Y' ? 'checked' : '' ); ?> /> JPEG (Lossy compression). JPEG Quality: <input type="text" name='JPEG_QUALITY' value="<?php echo MDSConfig::get( 'JPEG_QUALITY', true ); ?>" size="2" />%<br/>
+                <input type="radio" name="OUTPUT_JPEG" value="Y" <?php echo( $OUTPUT_JPEG == 'Y' ? 'checked' : '' ); ?> /> JPEG (Lossy compression). JPEG Quality: <input type="text" name='JPEG_QUALITY' value="<?php echo MDSConfig::get( 'JPEG_QUALITY', true ); ?>" size="2"/>%<br/>
                 <input type="radio" name="OUTPUT_JPEG" value="N" <?php echo( $OUTPUT_JPEG == 'N' ? 'checked' : '' ); ?> /> PNG (Non-lossy compression, always highest possible quality)<br/>
                 <input type="radio" name="OUTPUT_JPEG" value="GIF" <?php echo( $OUTPUT_JPEG == 'GIF' ? 'checked' : '' ); ?> /> GIF (8-bit, 256 color. Supported on newer versions of GD / PHP)
             </label>
@@ -315,6 +315,19 @@
         </div>
 
         <div class="admin-config-left">
+            Email Advertiser when an order is Completed?
+        </div>
+        <div class="admin-config-right">
+            <label>
+				<?php
+				$EMAIL_USER_ORDER_COMPLETED = MDSConfig::get( 'EMAIL_USER_ORDER_COMPLETED' );
+				?>
+                <input type="radio" name="EMAIL_USER_ORDER_COMPLETED" value="YES" <?php echo( $EMAIL_USER_ORDER_COMPLETED == 'YES' ? 'checked' : '' ); ?> /> Yes<br/>
+                <input type="radio" name="EMAIL_USER_ORDER_COMPLETED" value="NO" <?php echo( $EMAIL_USER_ORDER_COMPLETED == 'NO' ? 'checked' : '' ); ?> /> No
+            </label>
+        </div>
+
+        <div class="admin-config-left">
             Email Admin when an order is Confirmed?
         </div>
         <div class="admin-config-right">
@@ -324,19 +337,6 @@
 				?>
                 <input type="radio" name="EMAIL_ADMIN_ORDER_CONFIRMED" value="YES" <?php echo( $EMAIL_ADMIN_ORDER_CONFIRMED == 'YES' ? 'checked' : '' ); ?> /> Yes<br/>
                 <input type="radio" name="EMAIL_ADMIN_ORDER_CONFIRMED" value="NO" <?php echo( $EMAIL_ADMIN_ORDER_CONFIRMED == 'NO' ? 'checked' : '' ); ?> /> No
-            </label>
-        </div>
-
-        <div class="admin-config-left">
-            Email Advertiser when an order is Completed?
-        </div>
-        <div class="admin-config-right">
-            <label>
-			    <?php
-			    $EMAIL_USER_ORDER_COMPLETED = MDSConfig::get( 'EMAIL_USER_ORDER_COMPLETED' );
-			    ?>
-                <input type="radio" name="EMAIL_USER_ORDER_COMPLETED" value="YES" <?php echo( $EMAIL_USER_ORDER_COMPLETED == 'YES' ? 'checked' : '' ); ?> /> Yes<br/>
-                <input type="radio" name="EMAIL_USER_ORDER_COMPLETED" value="NO" <?php echo( $EMAIL_USER_ORDER_COMPLETED == 'NO' ? 'checked' : '' ); ?> /> No
             </label>
         </div>
 
@@ -578,22 +578,22 @@
         </div>
 
         <div class="admin-config-left">
-            How many days to keep Expired orders before cancellation?
+            How many <b>minutes</b> to keep Expired orders before cancellation?
         </div>
         <div class="admin-config-right">
             <label>
-                <input type="text" name="DAYS_RENEW" size="2" value="<?php echo intval( MDSConfig::get( 'DAYS_RENEW' ) ); ?>"/>
-                <br/>(Enter a number. 0 = Do not cancel)
+                <input type="text" name="MINUTES_RENEW" size="6" value="<?php echo intval( MDSConfig::get( 'MINUTES_RENEW' ) ); ?>"/>
+                <br/>(Enter a number. 0 = Do not cancel. -1 = instant.)
             </label>
         </div>
 
         <div class="admin-config-left">
-            How many days to keep Confirmed (but not paid) orders before cancellation?
+            How many <b>minutes</b> to keep Confirmed (but not paid) orders before cancellation?
         </div>
         <div class="admin-config-right">
             <label>
-                <input type="text" name="DAYS_CONFIRMED" size="2" value="<?php echo intval( MDSConfig::get( 'DAYS_CONFIRMED' ) ); ?>">
-                <br/>(Enter a number. 0 = never cancel)
+                <input type="text" name="MINUTES_CONFIRMED" size="6" value="<?php echo intval( MDSConfig::get( 'MINUTES_CONFIRMED' ) ); ?>">
+                <br/>(Enter a number. 0 = never cancel. -1 = instant.)
             </label>
         </div>
 
@@ -602,18 +602,18 @@
         </div>
         <div class="admin-config-right">
             <label>
-                <input type="text" name="MINUTES_UNCONFIRMED" size="2" value="<?php echo intval( MDSConfig::get( 'MINUTES_UNCONFIRMED' ) ); ?>">
-                <br/>(Enter a number. 0 = never delete)
+                <input type="text" name="MINUTES_UNCONFIRMED" size="6" value="<?php echo intval( MDSConfig::get( 'MINUTES_UNCONFIRMED' ) ); ?>">
+                <br/>(Enter a number. 0 = never delete. -1 = instant.)
             </label>
         </div>
 
         <div class="admin-config-left">
-            How many days to keep Cancelled orders before deletion?
+            How many <b>minutes</b> to keep Cancelled orders before deletion?
         </div>
         <div class="admin-config-right">
             <label>
-                <input type="text" name="DAYS_CANCEL" size="2" value="<?php echo intval( MDSConfig::get( 'DAYS_CANCEL' ) ); ?>"/>
-                <br/>(Enter a number. 0 = never delete. Note: If deleted, the order will stay in the database, and only the status will simply change to 'deleted'. The blocks will be freed)
+                <input type="text" name="MINUTES_CANCEL" size="6" value="<?php echo intval( MDSConfig::get( 'MINUTES_CANCEL' ) ); ?>"/>
+                <br/>(Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to 'deleted'. The blocks will be freed)
             </label>
         </div>
 
@@ -730,9 +730,9 @@
         </div>
         <div class="admin-config-right">
             <label>
-			    <?php
-			    $BLOCK_SELECTION_MODE = MDSConfig::get( 'BLOCK_SELECTION_MODE' );
-			    ?>
+				<?php
+				$BLOCK_SELECTION_MODE = MDSConfig::get( 'BLOCK_SELECTION_MODE' );
+				?>
                 <input type="radio" name="BLOCK_SELECTION_MODE" value="YES" <?php echo( $BLOCK_SELECTION_MODE == 'YES' ? 'checked' : '' ); ?> /> Yes - When Pixel Selection Method is set to Advanced users will be shown an option to select blocks 1, 4 or 6 at a time.<br/>
                 <input type="radio" name="BLOCK_SELECTION_MODE" value="NO" <?php echo( $BLOCK_SELECTION_MODE == 'NO' ? 'checked' : '' ); ?> /> No - They will only be able to select 1 block at a time. If you want to adjust how large of block they can select you can edit the grid settings under Manage Grids.
             </label>
@@ -743,9 +743,9 @@
         </div>
         <div class="admin-config-right">
             <label>
-			    <?php
-			    $STATS_DISPLAY_MODE = MDSConfig::get( 'STATS_DISPLAY_MODE' );
-			    ?>
+				<?php
+				$STATS_DISPLAY_MODE = MDSConfig::get( 'STATS_DISPLAY_MODE' );
+				?>
                 <input type="radio" name="STATS_DISPLAY_MODE" value="BLOCKS" <?php echo( $STATS_DISPLAY_MODE == 'BLOCKS' ? 'checked' : '' ); ?> /> Blocks - Stats box will display sold/available blocks.<br/>
                 <input type="radio" name="STATS_DISPLAY_MODE" value="PIXELS" <?php echo( $STATS_DISPLAY_MODE == 'PIXELS' ? 'checked' : '' ); ?> /> Pixels - Stats box will display sold/available pixels.
             </label>
@@ -761,6 +761,19 @@
 			    ?>
                 <input type="radio" name="DISPLAY_ORDER_HISTORY" value="YES" <?php echo( $DISPLAY_ORDER_HISTORY == 'YES' ? 'checked' : '' ); ?> /> Yes - Display a My Order History page for users.<br/>
                 <input type="radio" name="DISPLAY_ORDER_HISTORY" value="NO" <?php echo( $DISPLAY_ORDER_HISTORY == 'NO' ? 'checked' : '' ); ?> /> No - The My Order History page not be available for users.
+            </label>
+        </div>
+
+        <div class="admin-config-left">
+            Invert or Add when selecting pixels
+        </div>
+        <div class="admin-config-right">
+            <label>
+			    <?php
+			    $INVERT_PIXELS = MDSConfig::get( 'INVERT_PIXELS' );
+			    ?>
+                <input type="radio" name="INVERT_PIXELS" value="YES" <?php echo( $INVERT_PIXELS == 'YES' ? 'checked' : '' ); ?> /> Invert - Pixels will be inverted when selecting them the second time, even if overlapping using multi-block selection methods.<br/>
+                <input type="radio" name="INVERT_PIXELS" value="NO" <?php echo( $INVERT_PIXELS == 'NO' ? 'checked' : '' ); ?> /> Add - Pixels will be added to the selection. Clicking Reset will erase everything to start over.
             </label>
         </div>
     </div>

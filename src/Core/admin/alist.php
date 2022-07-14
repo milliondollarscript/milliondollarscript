@@ -45,14 +45,14 @@ $error = '';
 
 if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 
-	$gd_info = @gd_info();
-	$gif_support = '';
+	$gd_info      = @gd_info();
+	$gif_support  = '';
 	$jpeg_support = '';
-	$png_support = '';
+	$png_support  = '';
 	if ( isset( $gd_info['GIF Read Support'] ) && ! empty( $gd_info['GIF Read Support'] ) ) {
 		$gif_support = "GIF";
 	}
-	if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || (isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] )) ) {
+	if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || ( isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] ) ) ) {
 		$jpeg_support = "JPG";
 	}
 	if ( isset( $gd_info['PNG Support'] ) && ! empty( $gd_info['PNG Support'] ) ) {
@@ -99,11 +99,13 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
                 </center>
             </td>
             <td valign="top"><b><?php echo $label['adv_pub_pixinfo']; ?></b><br><?php
-
 				$label['adv_pub_pixcount'] = str_replace( '%SIZE_X%', $size['x'], $label['adv_pub_pixcount'] );
 				$label['adv_pub_pixcount'] = str_replace( '%SIZE_Y%', $size['y'], $label['adv_pub_pixcount'] );
 				$label['adv_pub_pixcount'] = str_replace( '%PIXEL_COUNT%', $pixels, $label['adv_pub_pixcount'] );
 				echo $label['adv_pub_pixcount'];
+				?><br></td>
+            <td valign="top" style="max-width:200px;"><b>Blocks</b><br><?php
+				echo str_replace( ',', ', ', $row['blocks'] );
 				?><br></td>
             <td valign="top"><b><?php echo $label['adv_pub_pixchng']; ?></b><br><?php
 				$label['adv_pub_pixtochng'] = str_replace( '%SIZE_X%', $size['x'], $label['adv_pub_pixtochng'] );
@@ -177,7 +179,7 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 	// select banner id
 	$BID = $f2->bid();
 
-	$sql = "Select * from " . MDS_DB_PREFIX . "banners ";
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners ";
 	$res = mysqli_query( $GLOBALS['connection'], $sql );
 	?>
 

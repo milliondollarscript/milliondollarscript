@@ -85,6 +85,8 @@ function display_ad_intro() {
 	}
 }
 
+require_once BASE_PATH . "/html/header.php";
+
 // saving
 if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 
@@ -106,7 +108,6 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		exit;
 	}
 } else {
-	require_once BASE_PATH . "/html/header.php";
 	display_ad_intro();
 
 	// get the ad_id form the temp_orders table..

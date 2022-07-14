@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.3
+ * @version 2.3.4
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -82,8 +82,12 @@ class Bootstrap {
 		// Update checker
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Update', 'checker' ] );
 
+		// Cron
+		add_filter( 'cron_schedules', [ 'MillionDollarScript\Classes\Cron', 'add_minute' ] );
+		add_action( 'milliondollarscript_cron_minute', [ 'MillionDollarScript\Classes\Cron', 'minute' ] );
+
 		// Hook for when loaded
-		do_action('mds-loaded', $this);
+		do_action( 'mds-loaded', $this );
 
 		return $this;
 	}

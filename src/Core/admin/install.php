@@ -1037,8 +1037,8 @@ function install_db() {
 				`val`
 		)
     	VALUES(
-				'DAYS_RENEW',
-				'7'
+				'MINUTES_RENEW',
+				'10080'
 		)";
 
 		$sql[] = "INSERT INTO `$table_name` (
@@ -1046,8 +1046,8 @@ function install_db() {
 				`val`
 		)
     	VALUES(
-				'DAYS_CONFIRMED',
-				'7'
+				'MINUTES_CONFIRMED',
+				'10080'
 		)";
 
 		$sql[] = "INSERT INTO `$table_name` (
@@ -1064,8 +1064,8 @@ function install_db() {
 				`val`
 		)
     	VALUES(
-				'DAYS_CANCEL',
-				'3'
+				'MINUTES_CANCEL',
+				'4320'
 		)";
 
 		$sql[] = "INSERT INTO `$table_name` (
@@ -1308,6 +1308,15 @@ function install_db() {
 		)
     	VALUES(
 				'DISPLAY_ORDER_HISTORY',
+				'YES'
+		)";
+
+		$sql[] = "INSERT INTO `$table_name` (
+				`key`,
+				`val`
+		)
+    	VALUES(
+				'INVERT_PIXELS',
 				'YES'
 		)";
 

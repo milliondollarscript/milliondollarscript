@@ -66,9 +66,9 @@ body.mds-container.wp {
 }
 
 .mds-container .container {
-	width: calc(100% - 40px);
+	width: calc(100% - 1rem);
 	margin: 0 auto;
-	padding: 20px;
+	padding: 0.5rem;
 }
 
 .mds-container.wp .container {
@@ -76,7 +76,7 @@ body.mds-container.wp {
 }
 
 .mds-container.wp .logged-in {
-	padding:20px !important;
+	padding:0.5rem !important;
 }
 
 /*
@@ -226,7 +226,8 @@ Ads list page
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	padding: 5px;
-	width: 180px;
+	min-width: auto;
+	max-width: 180px;
 }
 
 .mds-container .table-row {
@@ -585,4 +586,9 @@ The value of the field (on the right from the field label)
 	position:absolute;
 	background:url(../images/ajax-loader.gif) no-repeat center center;
 	z-index:9999;
+}
+
+.tippy-content {
+	min-width: 49px;
+	min-height: 43px;
 }

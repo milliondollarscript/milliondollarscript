@@ -237,9 +237,9 @@ usort( $orders, "date_sort" );
 
 			$time_expired = strtotime($order['date_stamp']);
 
-			$time_when_cancel = $time_expired + (DAYS_RENEW * 24 * 60 * 60);
+			$time_when_cancel = $time_expired + (MINUTES_RENEW * 60);
 
-			$days =floor (($time_when_cancel - time()) / 60 / 60 / 24);
+			$days =floor (($time_when_cancel - time()) / 60 );
 
 			// check to see if there is a renew_wait or renew_paid order
 

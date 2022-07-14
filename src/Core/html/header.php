@@ -58,7 +58,7 @@ if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
 
     <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js"></script>
     <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js"></script>
-    <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/hammer.min.js"></script>
+    <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js"></script>
 
     <link rel="stylesheet" type="text/css" href="<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>">
 

@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.3
+ * @version 2.3.4
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -74,6 +74,8 @@ class Functions {
 				add_post_meta( $product_id, '_price', 1 );
 				add_post_meta( $product_id, '_stock_status', 'instock' );
 				add_post_meta( $product_id, '_milliondollarscript', 'yes' );
+
+				WooCommerce::update_product( $product_id );
 			}
 		}
 

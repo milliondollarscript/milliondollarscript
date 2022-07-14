@@ -48,14 +48,14 @@ if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 
 require_once BASE_PATH . "/html/header.php";
 
-$gd_info = gd_info();
-$gif_support = '';
+$gd_info      = gd_info();
+$gif_support  = '';
 $jpeg_support = '';
-$png_support = '';
+$png_support  = '';
 if ( isset( $gd_info['GIF Read Support'] ) && ! empty( $gd_info['GIF Read Support'] ) ) {
 	$gif_support = "GIF";
 }
-if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || (isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] )) ) {
+if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || ( isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] ) ) ) {
 	$jpeg_support = "JPG";
 }
 if ( isset( $gd_info['PNG Support'] ) && ! empty( $gd_info['PNG Support'] ) ) {
@@ -73,11 +73,11 @@ $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $G
 $user_row = mysqli_fetch_array( $result );
 
 // Entry point for completion of orders which are made by super users or if the order was for free
-if ( isset($_REQUEST['action']) && $_REQUEST['action'] == 'complete' ) {
+if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'complete' ) {
 
 	// check if order is $0 & complete it
 
-	if ( isset($_REQUEST['order_id']) && $_REQUEST['order_id'] == 'temp' ) {
+	if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == 'temp' ) {
 		// convert the temp order to an order.
 
 		$sql = "select * from " . MDS_DB_PREFIX . "temp_orders where session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
@@ -167,11 +167,11 @@ if ( isset( $_REQUEST['block_id'] ) && ! empty( $_REQUEST['block_id'] ) ) {
 	if ( ! isset( $blk_row['ad_id'] ) || empty( $blk_row['ad_id'] ) ) { // no ad exists, create a new ad_id
 		$_POST[ $ad_tag_to_field_id['URL']['field_id'] ]      = '';
 		$_POST[ $ad_tag_to_field_id['ALT_TEXT']['field_id'] ] = 'ad text';
-		$_REQUEST['order_id']                                    = $blk_row['order_id'];
-		$_REQUEST['BID']                                         = $BID;
-		$_REQUEST['user_id']                                     = $_SESSION['MDS_ID'];
-		$_REQUEST['aid']                                       = "";
-		$ad_id                                                   = insert_ad_data();
+		$_REQUEST['order_id']                                 = $blk_row['order_id'];
+		$_REQUEST['BID']                                      = $BID;
+		$_REQUEST['user_id']                                  = $_SESSION['MDS_ID'];
+		$_REQUEST['aid']                                      = "";
+		$ad_id                                                = insert_ad_data();
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='" . intval( $ad_id ) . "' WHERE order_id='" . intval( $blk_row['order_id'] ) . "' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
@@ -191,10 +191,10 @@ if ( isset( $_REQUEST['block_id'] ) && ! empty( $_REQUEST['block_id'] ) ) {
 			echo "No ad exists..";
 			$_POST[ $ad_tag_to_field_id['URL']['field_id'] ]      = '';
 			$_POST[ $ad_tag_to_field_id['ALT_TEXT']['field_id'] ] = 'ad text';
-			$_REQUEST['order_id']                                    = $blk_row['order_id'];
-			$_REQUEST['BID']                                         = $BID;
-			$_REQUEST['user_id']                                     = $_SESSION['MDS_ID'];
-			$ad_id                                                   = insert_ad_data();
+			$_REQUEST['order_id']                                 = $blk_row['order_id'];
+			$_REQUEST['BID']                                      = $BID;
+			$_REQUEST['user_id']                                  = $_SESSION['MDS_ID'];
+			$ad_id                                                = insert_ad_data();
 
 			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='" . intval( $ad_id ) . "' WHERE order_id='" . intval( $blk_row['order_id'] ) . "' ";
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
@@ -216,7 +216,6 @@ if ( isset( $_REQUEST['block_id'] ) && ! empty( $_REQUEST['block_id'] ) ) {
 
 // Display ad editing forms if the ad was clicked, or 'Edit' button was pressed.
 if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
-
 	$sql = "SELECT * from " . MDS_DB_PREFIX . "ads as t1, " . MDS_DB_PREFIX . "orders as t2 where t1.ad_id=t2.ad_id AND t1.user_id=" . intval( $_SESSION['MDS_ID'] ) . " and t1.banner_id=" . intval( $BID ) . " and t1.ad_id=" . intval( $_REQUEST['aid'] ) . " AND t1.order_id=t2.order_id ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 
@@ -318,7 +317,7 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 	}
 } # end of ad forms
 
-$offset = isset($_REQUEST['offset']) ? intval($_REQUEST['offset']) : 0;
+$offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
 
 # List Ads
 ob_start();

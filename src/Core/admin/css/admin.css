@@ -155,7 +155,7 @@ a:hover {
 .inventory2-container {
 	background-color: #fff;
 	display: grid;
-	grid: 1fr / 1fr 2fr 1fr 1fr 3fr 2fr 1fr 1fr;
+	grid: 1fr / 2fr 1fr 2fr 1fr 1fr 3fr 1fr 1fr;
 	justify-items: stretch;
 	align-items: stretch;
 	justify-content: stretch;

@@ -3,7 +3,7 @@
 /**
  * Million Dollar Script Two
  *
- * @version 2.3.3
+ * @version 2.3.4
  * @author Ryan Rhode
  * @copyright (C) 2022, Ryan Rhode
  * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -68,7 +68,7 @@ class Options {
 			         Field::make( 'checkbox', self::prefix . 'woocommerce', __( 'WooCommerce Integration', 'milliondollarscript' ) )
 			              ->set_default_value( 'no' )
 			              ->set_option_value( 'yes' )
-			              ->set_help_text( __( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Recommended to install and enable the "Payment" payment module in MDS and creating a product in WC for it.', 'milliondollarscript' ) ),
+			              ->set_help_text( __( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.', 'milliondollarscript' ) ),
 
 			         // WooCommerce Product
 			         Field::make( 'association', self::prefix . 'product', __( 'Product', 'milliondollarscript' ) )

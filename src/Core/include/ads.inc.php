@@ -283,9 +283,9 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 			$user_id = $_SESSION['MDS_ID'];
 		}
 
-		$sql = "Select *  FROM `" . MDS_DB_PREFIX . "ads`, `" . MDS_DB_PREFIX . "orders` WHERE " . MDS_DB_PREFIX . "ads.ad_id=" . MDS_DB_PREFIX . "orders.ad_id AND " . MDS_DB_PREFIX . "ads.order_id > 0 AND " . MDS_DB_PREFIX . "ads.banner_id='" . intval( $BID ) . "' AND " . MDS_DB_PREFIX . "ads.user_id='" . intval( $user_id ) . "' AND (" . MDS_DB_PREFIX . "orders.status IN ('pending','completed','confirmed','new','expired','renew_wait','renew_paid')) $where_sql ORDER BY $order $ord";
+		$sql = "SELECT *  FROM `" . MDS_DB_PREFIX . "ads`, `" . MDS_DB_PREFIX . "orders` WHERE " . MDS_DB_PREFIX . "ads.ad_id=" . MDS_DB_PREFIX . "orders.ad_id AND " . MDS_DB_PREFIX . "ads.order_id > 0 AND " . MDS_DB_PREFIX . "ads.banner_id='" . intval( $BID ) . "' AND " . MDS_DB_PREFIX . "ads.user_id='" . intval( $user_id ) . "' AND (" . MDS_DB_PREFIX . "orders.status IN ('pending','completed','confirmed','new','expired','renew_wait','renew_paid')) $where_sql ORDER BY $order $ord";
 	} else {
-		$sql = "Select *  FROM `" . MDS_DB_PREFIX . "ads`, `" . MDS_DB_PREFIX . "orders` WHERE " . MDS_DB_PREFIX . "ads.ad_id=" . MDS_DB_PREFIX . "orders.ad_id AND " . MDS_DB_PREFIX . "ads.banner_id='" . intval( $BID ) . "' and " . MDS_DB_PREFIX . "ads.order_id > 0 AND " . MDS_DB_PREFIX . "orders.status != 'deleted' $where_sql ORDER BY $order $ord";
+		$sql = "SELECT *  FROM `" . MDS_DB_PREFIX . "ads`, `" . MDS_DB_PREFIX . "orders` WHERE " . MDS_DB_PREFIX . "ads.ad_id=" . MDS_DB_PREFIX . "orders.ad_id AND " . MDS_DB_PREFIX . "ads.banner_id='" . intval( $BID ) . "' and " . MDS_DB_PREFIX . "ads.order_id > 0 AND " . MDS_DB_PREFIX . "orders.status != 'deleted' $where_sql ORDER BY $order $ord";
 	}
 
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
@@ -294,12 +294,12 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 	$count = mysqli_num_rows( $result );
 
 	if ( $count > $records_per_page ) {
-		mysqli_data_seek( $result, $offset );
+		mysqli_data_seek( $result, intval( $offset ) );
 	}
 
 	if ( $count > 0 ) {
 
-		if ( $list_mode != 'USER' ) {
+		if ( $count > $records_per_page ) {
 
 			$pages    = ceil( $count / $records_per_page );
 			$cur_page = intval( $offset ) / $records_per_page;
@@ -317,7 +317,7 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
         <table border='0' bgcolor='#d9d9d9' cellspacing="1" cellpadding="5" id="pixels_list">
             <tr bgcolor="#EAEAEA">
 				<?php
-				if ( $admin == true ) {
+				if ( $admin ) {
 					echo '<td class="list_header_cell">&nbsp;</td>';
 				}
 
@@ -349,7 +349,7 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 
 					<?php
 
-					if ( $admin == true ) {
+					if ( $admin ) {
 						?>
                         <td class="list_data_cell">
                             <input type="button" style="font-size: 8pt" value="<?php echo $label['ads_inc_edit']; ?>" onClick="mds_load_page('<?php echo htmlspecialchars( $_SERVER['PHP_SELF'] ); ?>?action=edit&amp;aid=<?php echo $prams['ad_id']; ?>', true)">
@@ -369,7 +369,7 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 
 					if ( ( $list_mode == 'USER' ) || ( $admin ) ) {
 						?>
-                        <td class="list_data_cell"><img src="get_order_image.php?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>"></td>
+                        <td class="list_data_cell"><img src="get_order_image.php?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>" alt=""></td>
                         <td>
 							<?php
 							if ( $prams['days_expire'] > 0 ) {
@@ -381,12 +381,10 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 								}
 
 								$elapsed_time = strtotime( gmdate( 'r' ) ) - $time_start;
-								$elapsed_days = floor( $elapsed_time / 60 / 60 );
 
 								$exp_time = ( $prams['days_expire'] * 60 * 60 );
 
 								$exp_time_to_go = $exp_time - $elapsed_time;
-								$exp_days_to_go = floor( $exp_time_to_go / 60 / 60 );
 
 								$to_go = elapsedtime( $exp_time_to_go );
 
@@ -466,7 +464,7 @@ function delete_ad( $ad_id ) {
 	delete_ads_files( $ad_id );
 
 	$sql = "DELETE FROM `" . MDS_DB_PREFIX . "ads` WHERE `ad_id`='" . intval( $ad_id ) . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mds_sql_error( $sql ) );
+	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mds_sql_error( $sql ) );
 }
 
 function generate_ad_id() {
@@ -497,26 +495,26 @@ function insert_ad_data() {
 
 	$ad_values = array();
 
-	if ( ! isset( $_REQUEST['aid'] ) || empty( $_REQUEST['aid'] ) ) {
+	global $wpdb;
+	$sql = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE user_id='" . intval( $_SESSION['MDS_ID'] ) . "' AND status='new' AND order_id='" . intval( $order_id ) . "'";
+	$ad_id = $wpdb->get_var( $sql );
 
+	if ( empty($ad_id) && ( ! isset( $_REQUEST['aid'] ) || empty( $_REQUEST['aid'] ) ) ) {
 		$ad_id = generate_ad_id();
-		$now   = gmdate( "Y-m-d H:i:s" );
+		$now = gmdate( "Y-m-d H:i:s" );
 
 		$ad_values = get_sql_values( 1, MDS_DB_PREFIX . "ads", "ad_id", $ad_id, $user_id, 'insert' );
 		$values    = $ad_id . ", '" . $user_id . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $now ) . "', " . intval( $order_id ) . ", " . intval( $BID ) . $ad_values['extra_values'];
 		$sql       = "REPLACE INTO " . MDS_DB_PREFIX . "ads VALUES (" . $values . ");";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	} else {
-
-		$ad_id = intval( $_REQUEST['aid'] );
+		$ad_id = intval( $_REQUEST['aid'] ?? $ad_id );
 
 		if ( ! $admin ) {
 			// make sure that the logged in user is the owner of this ad.
 
-			if ( ! is_numeric( $_REQUEST['user_id'] ) ) {
-				if ( $_REQUEST['user_id'] != session_id() ) {
-					return false;
-				}
+			if ( ! is_logged_in() ) {
+				return false;
 			} else {
 				// user is logged in
 				$sql = "SELECT user_id FROM `" . MDS_DB_PREFIX . "ads` WHERE ad_id='" . $ad_id . "'";
@@ -605,14 +603,15 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 		// a new image was uploaded...
 
 		$uploaddir = \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/";
-
-		$file_parts = pathinfo( $_FILES['pixels']['name'] );
+        $files = $_FILES['pixels'] ?? ( $_FILES['graphic'] ?? '' );
+		$file_parts = pathinfo( $files['name'] );
 		$ext        = $f2->filter( strtolower( $file_parts['extension'] ) );
 
 		// CHECK THE EXTENSION TO MAKE SURE IT IS ALLOWED
 		$ALLOWED_EXT = array( 'jpg', 'jpeg', 'gif', 'png' );
 
 		$error = '';
+
 		if ( ! in_array( $ext, $ALLOWED_EXT ) ) {
 			$error = "<b>" . $label['advertiser_file_type_not_supp'] . "</b><br>";
 		}
@@ -640,7 +639,7 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 			$uploadfile = $uploaddir . "tmp_" . md5( session_id() ) . ".$ext";
 
 			// move the file
-			if ( move_uploaded_file( $_FILES['pixels']['tmp_name'], $uploadfile ) ) {
+			if ( move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
 				// File is valid, and was successfully uploaded.
 				$tmp_image_file = $uploadfile;
 
@@ -738,13 +737,13 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 							$cb        = ( ( $map_x ) / $banner_data['BLK_WIDTH'] ) + ( ( $map_y / $banner_data['BLK_HEIGHT'] ) * ( $GRD_WIDTH / $banner_data['BLK_WIDTH'] ) );
 
 							// save to db
-							$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET image_data='" . mysqli_real_escape_string( $GLOBALS['connection'], $image_data ) . "' where block_id=" . intval( $cb ) . " AND banner_id=" . intval( $BID ) . ' AND order_id=' . intval($order_id);
+							$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET image_data='" . mysqli_real_escape_string( $GLOBALS['connection'], $image_data ) . "' where block_id=" . intval( $cb ) . " AND banner_id=" . intval( $BID ) . ' AND order_id=' . intval( $order_id );
 							mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 						}
 					}
 				}
 
-				unlink( $tmp_image_file );
+//				unlink( $tmp_image_file );
 				unset( $tmp_image_file );
 
 				if ( $banner_data['AUTO_APPROVE'] != 'Y' ) { // to be approved by the admin

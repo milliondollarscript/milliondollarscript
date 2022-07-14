@@ -519,7 +519,6 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 		//echo "<font color='red'>Error, image upload failed</font>";
 		echo $error;
 	} else {
-
 		// clean up is handled by the delete_temp_order($sid) function...
 
 		delete_temp_order( session_id() );
@@ -655,7 +654,6 @@ if ( mysqli_num_rows( $res ) > 1 ) {
 		//echo $label['advertiser_sel_select_intro'];
 
 		?>
-
     </p>
     <p>
 		<?php display_banner_selecton_form( $BID, get_current_order_id(), $res ); ?>

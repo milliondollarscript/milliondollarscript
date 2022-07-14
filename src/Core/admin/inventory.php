@@ -801,6 +801,9 @@ Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to 
 
 <div class="inventory2-container">
     <div class="inventory2-title">
+        Action
+    </div>
+    <div class="inventory2-title">
         Grid ID
     </div>
     <div class="inventory2-title">
@@ -816,9 +819,6 @@ Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to 
         Offer
     </div>
     <div class="inventory2-title">
-        Action
-    </div>
-    <div class="inventory2-title">
         Today's Clicks
     </div>
     <div class="inventory2-title">
@@ -829,6 +829,16 @@ Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to 
 	$result = mysqli_query( $GLOBALS['connection'], "select * FROM " . MDS_DB_PREFIX . "banners" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
 		?>
+        <div class="inventory2-content">
+            <a href='inventory.php?action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a> <a href="packs.php?BID=<?php echo $row['banner_id']; ?>"> Packages</a>
+			<?php
+			if ( $row['banner_id'] != '1' ) {
+				?>
+                <a href='inventory.php?action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
+				<?php
+			}
+			?>
+        </div>
         <div class="inventory2-content">
 			<?php echo $row['banner_id']; ?>
         </div>
@@ -851,16 +861,6 @@ Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to 
 				while ( $p_row = mysqli_fetch_array( $banner_packages ) ) {
 					render_offer( $p_row['price'], $p_row['currency'], $p_row['max_orders'], $p_row['days_expire'] );
 				}
-			}
-			?>
-        </div>
-        <div class="inventory2-content">
-            <a href='inventory.php?action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a> <a href="packs.php?BID=<?php echo $row['banner_id']; ?>"> Packages</a>
-			<?php
-			if ( $row['banner_id'] != '1' ) {
-				?>
-                <a href='inventory.php?action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
-				<?php
 			}
 			?>
         </div>
