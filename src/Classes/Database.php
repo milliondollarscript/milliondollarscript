@@ -206,6 +206,8 @@ class Database {
 	public function upgrade() {
 		global $wpdb;
 
+		require_once MDS_CORE_PATH . 'include/version.php';
+
 		$version = $this->get_dbver();
 
 		if ( ! $this->requires_upgrade( $version ) ) {
@@ -553,8 +555,6 @@ class Database {
 
 			$version = $this->up_dbver( 13 );
 		}
-
-		require_once MDS_CORE_PATH . 'include/version.php';
 
 		// Update version info
 		$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='" . get_mds_version() . "' WHERE `key`='VERSION_INFO'";
