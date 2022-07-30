@@ -54,8 +54,8 @@
         },
         {
             "name": "components/jqueryui",
-            "version": "1.12.1",
-            "version_normalized": "1.12.1.0",
+            "version": "dev-master",
+            "version_normalized": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components/jqueryui.git",
@@ -71,6 +71,7 @@
                 "components/jquery": ">=1.6"
             },
             "time": "2016-09-16T05:47:55+00:00",
+            "default-branch": true,
             "type": "component",
             "extra": {
                 "component": {
@@ -102,19 +103,24 @@
                     "homepage": "http://jqueryui.com/about"
                 },
                 {
-                    "name": "Joern Zaefferer",
-                    "email": "joern.zaefferer@gmail.com",
-                    "homepage": "http://bassistance.de"
-                },
-                {
                     "name": "Scott Gonzalez",
                     "email": "scott.gonzalez@gmail.com",
                     "homepage": "http://scottgonzalez.com"
                 },
                 {
+                    "name": "Joern Zaefferer",
+                    "email": "joern.zaefferer@gmail.com",
+                    "homepage": "http://bassistance.de"
+                },
+                {
                     "name": "Kris Borchers",
                     "email": "kris.borchers@gmail.com",
                     "homepage": "http://krisborchers.com"
+                },
+                {
+                    "name": "Corey Frang",
+                    "email": "gnarf37@gmail.com",
+                    "homepage": "http://gnarf.net"
                 },
                 {
                     "name": "Mike Sherov",
@@ -127,11 +133,6 @@
                     "homepage": "http://tjvantoll.com"
                 },
                 {
-                    "name": "Corey Frang",
-                    "email": "gnarf37@gmail.com",
-                    "homepage": "http://gnarf.net"
-                },
-                {
                     "name": "Felix Nagel",
                     "email": "info@felixnagel.com",
                     "homepage": "http://www.felixnagel.com"
@@ -140,7 +141,7 @@
             "description": "jQuery UI is a curated set of user interface interactions, effects, widgets, and themes built on top of the jQuery JavaScript Library. Whether you're building highly interactive web applications or you just need to add a date picker to a form control, jQuery UI is the perfect choice.",
             "support": {
                 "issues": "https://github.com/components/jqueryui/issues",
-                "source": "https://github.com/components/jqueryui/tree/master"
+                "source": "https://github.com/components/jqueryui/tree/1.12.1"
             },
             "install-path": "../components/jqueryui"
         },
