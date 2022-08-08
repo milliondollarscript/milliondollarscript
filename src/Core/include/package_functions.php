@@ -67,6 +67,7 @@ function display_package_options_table( $banner_id, $selected = '', $selection_a
             </tr>
 
 			<?php
+			$first_sel = false;
 			while ( $row = mysqli_fetch_array( $result ) ) {
 
 				if ( $selected != '' ) {
@@ -78,7 +79,7 @@ function display_package_options_table( $banner_id, $selected = '', $selection_a
 					}
 				} else {
 					// make sure the first item is selected by default.
-					if ( $first_sel == false ) {
+					if ( ! $first_sel ) {
 						$sel       = 'checked';
 						$first_sel = true;
 					} else {

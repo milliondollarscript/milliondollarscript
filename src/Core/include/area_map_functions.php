@@ -150,7 +150,7 @@ GROUP BY order_id, block_id, x, y, url, alt_text, ad_id";
 		ARRAY_A
 	);
 
-	foreach($results as $row) {
+	foreach ( $results as $row ) {
 
 		$found = false;
 
@@ -190,7 +190,7 @@ GROUP BY y, x, block_id, ad_id, alt_text, image_data";
 				ARRAY_A
 			);
 
-			foreach($results2 as $row_i) {
+			foreach ( $results2 as $row_i ) {
 
 				// If the min/max measure does not equal number of boxes, then we have to render this row's boxes individually
 				//$box_count = ( ( ( $row_i['x2'] + 10 ) - $row_i['x1'] ) / 10 );
@@ -225,7 +225,7 @@ WHERE (published = 'Y')
 						ARRAY_A
 					);
 
-					foreach($results3 as $row_r) {
+					foreach ( $results3 as $row_r ) {
 						// render single block RECT
 						render_map_area( $fh, $row_r, $b_row );
 						$found = true;
@@ -299,10 +299,10 @@ WHERE (banner_id = %d)";
 		ARRAY_A
 	);
 
-	if ( ! $b_row['block_width'] ) {
+	if ( ! isset( $b_row['block_width'] ) || ! $b_row['block_width'] ) {
 		$b_row['block_width'] = 10;
 	}
-	if ( ! $b_row['block_height'] ) {
+	if ( ! isset( $b_row['block_height'] ) || ! $b_row['block_height'] ) {
 		$b_row['block_height'] = 10;
 	}
 
