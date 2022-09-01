@@ -415,7 +415,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 			e.preventDefault();
 			e.stopPropagation();
 			if (window.mds_data.REDIRECT_SWITCH === 'YES') {
-				window.open(window.mds_data.REDIRECT_URL);
+				window.open(window.mds_data.REDIRECT_URL, '_self');
 				return false;
 			}
 		});
