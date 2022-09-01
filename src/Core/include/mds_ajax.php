@@ -141,17 +141,23 @@ class Mds_Ajax {
 				$wp_url = WP_URL;
 			}
 
+			$tooltips = \MillionDollarScript\Classes\Config::get( 'ENABLE_MOUSEOVER' );
+
 			if ( WP_ENABLED == "YES" ) {
 				?>
                 <script>
 					if (window.mds_js_loaded !== true) {
 						window.mds_js_loaded = true;
 
+						<?php if($tooltips == 'POPUP') { ?>
 						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
+						<?php } ?>
 						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
 
+						<?php if($tooltips == 'POPUP') { ?>
 						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
 							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
+								<?php } ?>
 								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
 									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
 										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
@@ -172,8 +178,10 @@ class Mds_Ajax {
 										});
 									});
 								});
+								<?php if($tooltips == 'POPUP') { ?>
 							});
 						});
+						<?php } ?>
 					}
                 </script>
 				<?php
@@ -182,11 +190,15 @@ class Mds_Ajax {
                 <script>
 					if (window.mds_js_loaded !== true) {
 						window.mds_js_loaded = true;
+						<?php if($tooltips == 'POPUP') { ?>
 						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
+						<?php } ?>
 						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
 
+						<?php if($tooltips == 'POPUP') { ?>
 						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
 							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
+								<?php } ?>
 								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
 									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
 										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
@@ -204,8 +216,10 @@ class Mds_Ajax {
 										});
 									});
 								});
+								<?php if($tooltips == 'POPUP') { ?>
 							});
 						});
+						<?php } ?>
 					}
                 </script>
 				<?php
