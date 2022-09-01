@@ -385,6 +385,25 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 			e.stopPropagation();
 
 			window.click_data = jQuery(this).data('data');
+
+			if(window.mds_data.ENABLE_MOUSEOVER === 'NO') {
+				let ajax_data = {
+					aid: window.click_data.ad_id,
+					bid: window.click_data.banner_id,
+					block_id: window.click_data.block_id,
+					action: 'click'
+				};
+
+				jQuery.ajax({
+					method: 'POST',
+					url: window.mds_data.ajax,
+					data: ajax_data,
+					dataType: 'html',
+					crossDomain: true,
+				}).done(function () {
+					window.open(window.click_data.url, '_self');
+				});
+			}
 		});
 
 		jQuery(document).off('click', '.pixel-url').on('click', '.pixel-url', function (e) {
