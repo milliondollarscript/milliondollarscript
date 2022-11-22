@@ -38,6 +38,8 @@ require_once __DIR__ . "/../include/init.php";
 
 require_once( "../include/output_grid.php" );
 
+global $f2;
+
 $BID = $f2->bid();
 
 output_grid( true, "", $BID, array(

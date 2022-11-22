@@ -46,13 +46,19 @@ if ( isset( $_REQUEST['block_id'] ) ) {
 	$block_id = - 1;
 }
 
-global $f2, $banner_data;
+global $f2, $banner_data, $label;
 
 $BID           = $f2->bid();
 $output_result = "";
 
-if ( $_SESSION['MDS_ID'] == '' ) {
-	echo "error";
+if ( empty($_SESSION['MDS_ID']) ) {
+	echo json_encode( [
+		"error" => "true",
+		"type"  => "error",
+		"data"  => [
+			"value" => $label['not_logged_in'],
+		]
+	] );
 	die();
 }
 
@@ -73,7 +79,13 @@ if ( isset($_REQUEST['user_id']) && !empty($_REQUEST['user_id']) ) {
 
 if ( ! can_user_order( $banner_data, $_SESSION['MDS_ID'] ) ) {
 	$max_orders = true;
-	echo 'max_orders';
+	echo json_encode( [
+		"error" => "true",
+		"type"  => "max_orders",
+		"data"  => [
+			"value" => $label['advertiser_max_order'],
+		]
+	] );
 	die();
 }
 
@@ -87,10 +99,16 @@ if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
 	}
 
-	echo "removed";
+	echo json_encode( [
+		"error" => "false",
+		"type"  => "removed",
+		"data"  => [
+			"value" => "removed",
+		]
+	] );
 	die();
 }
 
 $output_result = select_block( '', '', $block_id );
 
-echo $output_result;
+echo json_encode( $output_result );

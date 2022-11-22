@@ -24,17 +24,19 @@
 
 namespace MillionDollarScript\Classes;
 
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
 class Update {
 	public static function checker() {
 		$updates = Options::get_option( 'updates' );
 		if ( $updates == 'yes' ) {
-			$MDSUpdateChecker = \Puc_v4_Factory::buildUpdateChecker(
+			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
 				'https://updates.milliondollarscript.com/?plugin=milliondollarscript-two',
 				MDS_BASE_FILE,
 				'milliondollarscript-two'
 			);
 		} else if ( $updates == 'dev' ) {
-			$MDSUpdateChecker = \Puc_v4_Factory::buildUpdateChecker(
+			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
 				'https://updates.milliondollarscript.com/?plugin=milliondollarscript-two-dev',
 				MDS_BASE_FILE,
 				'milliondollarscript-two-dev'

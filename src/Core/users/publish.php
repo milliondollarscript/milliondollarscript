@@ -389,10 +389,5 @@ $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $G
         </map>
         <img id="publish-grid" src="show_map.php?BID=<?php echo $BID; ?>&amp;time=<?php echo( time() ); ?>" width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>" height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" border="0" usemap="#main"/>
     </div>
-    <script>
-		$(function () {
-			//mds_init('#publish-grid', true, false);
-		});
-    </script>
 <?php
 require_once BASE_PATH . "/html/footer.php";

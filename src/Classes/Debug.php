@@ -24,14 +24,19 @@
 namespace MillionDollarScript\Classes;
 
 class Debug {
-	public static function output( $what, $where = 'screen', $label = '', $encapsulate = true, $type = 'var_dump', $user = 1 ) {
+	public static function output( $what, $where = 'screen', $label = '', $encapsulate = true, $type = 'var_export', $user = 1 ) {
 		if ( get_current_user_id() !== $user ) {
 			return;
 		}
 
 		$output = "";
 
-		if ( $type == 'var_dump' ) {
+		if ( $type == 'var_export' ) {
+			ob_start();
+			var_export( $what );
+			$output = ob_get_contents();
+			ob_end_clean();
+		} else if ( $type == 'var_dump' ) {
 			ob_start();
 			var_dump( $what );
 			$output = ob_get_contents();

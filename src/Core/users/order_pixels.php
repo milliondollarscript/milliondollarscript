@@ -208,7 +208,7 @@ require_once BASE_PATH . "/html/header.php";
 				t: <?php echo time(); ?>
 			};
 
-			$.ajax({
+			jQuery.ajax({
 				method: 'POST',
 				url: 'make_selection.php',
 				data: ajax_data,
@@ -683,7 +683,7 @@ if ( $has_packages ) {
     <p>
     <form method='post' action="<?php echo htmlentities( $_SERVER['PHP_SELF'] ); ?>" enctype="multipart/form-data">
         <p><strong><?php echo $label['upload_your_pix']; ?></strong></p>
-        <input type='file' name='graphic' style=' font-size:14px;'/><br/>
+        <input type='file' accept="image/*" name='graphic' style=' font-size:14px;width:200px;'/><br/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
         <input class="mds_upload_image" type='submit' value='<?php echo $f2->rmnl( $label['pix_upload_button'] ); ?>' style=' font-size:18px;'/>
     </form>
@@ -765,12 +765,12 @@ if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
 
     <script type="text/javascript">
 		document.form1.selected_pixels.value = block_str;
-		$(function () {
+		(function ($) {
 			window.pointer_width = <?php echo $reqsize[0]; ?>;
 			window.pointer_height =  <?php echo $reqsize[1]; ?>;
 
-			window.$block_pointer = $('#block_pointer');
-			window.$pixelimg = $('#pixelimg');
+				window.$block_pointer = jQuery('#block_pointer');
+				window.$pixelimg = jQuery('#pixelimg');
 
 			window.onresize = move_image_to_selection;
 			window.onload = move_image_to_selection;
@@ -793,7 +793,7 @@ if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
 			});
 
 			add_ajax_loader(window.$pixelimg.parent());
-		});
+		})(jQuery);
     </script>
 
 	<?php

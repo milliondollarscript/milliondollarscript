@@ -47,7 +47,7 @@ if ( ! mds_check_permission( "mds_order_pixels" ) ) {
 	exit;
 }
 
-global $f2;
+global $f2, $label;
 $BID = $f2->bid();
 
 if ( ! is_numeric( $BID ) ) {
@@ -77,7 +77,7 @@ if ( $order_row != null ) {
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		$sql = "delete from " . MDS_DB_PREFIX . "blocks where order_id=" . intval( $order_row['order_id'] );
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	} else if ( ( $_SESSION['MDS_order_id'] == '' ) || ( USE_AJAX == 'YES' ) ) {
+	} else if ( ( empty($_SESSION['MDS_order_id']) ) || ( USE_AJAX == 'YES' ) ) {
 		// save the order id to session
 		$_SESSION['MDS_order_id'] = $order_row['order_id'];
 	}
@@ -162,20 +162,21 @@ if ( isset( $order_row['blocks'] ) && $order_row['blocks'] != "" ) {
 		const select = {
 			USE_AJAX: '<?php echo USE_AJAX; ?>',
 			block_str: '<?php echo $block_str; ?>',
-			grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>'),
-			grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>'),
-			BLK_WIDTH: parseInt('<?php echo $banner_data['BLK_WIDTH']; ?>'),
-			BLK_HEIGHT: parseInt('<?php echo $banner_data['BLK_HEIGHT']; ?>'),
+			grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>', 10),
+			grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>', 10),
+			BLK_WIDTH: parseInt('<?php echo $banner_data['BLK_WIDTH']; ?>', 10),
+			BLK_HEIGHT: parseInt('<?php echo $banner_data['BLK_HEIGHT']; ?>', 10),
 			G_PRICE: parseFloat('<?php echo $banner_data['G_PRICE']; ?>'),
 			blocks: JSON.parse('<?php echo json_encode( $order_blocks ); ?>'),
-			user_id: parseInt('<?php echo $_SESSION['MDS_ID']; ?>'),
-			BID: parseInt('<?php echo $BID; ?>'),
+			user_id: parseInt('<?php echo $_SESSION['MDS_ID']; ?>', 10),
+			BID: parseInt('<?php echo $BID; ?>', 10),
 			time: '<?php echo time(); ?>',
 			advertiser_max_order: '<?php echo js_out_prep( $label['advertiser_max_order'] ); ?>',
 			not_adjacent: '<?php echo js_out_prep( $label['not_adjacent'] ); ?>',
 			no_blocks_selected: '<?php echo js_out_prep( $label['no_blocks_selected'] ); ?>',
 			BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH; ?>',
-			INVERT_PIXELS: '<?php echo INVERT_PIXELS; ?>'
+			INVERT_PIXELS: '<?php echo INVERT_PIXELS; ?>',
+            WAIT: '<?php echo js_out_prep( $label['reserving_pixels']); ?>'
 		}
     </script>
     <script src="../js/select.js?<?php echo filemtime( \MillionDollarScript\Classes\Options::get_mds_path() . 'js/select.js' ); ?>"></script>
@@ -311,10 +312,10 @@ if ( ! isset( $_REQUEST['sel_mode'] ) ) {
 				echo " checked ";
 			} ?> > <label for="erase"><?php echo $label['erase']; ?></label>
         </p>
-        <p>
+        <div id="submit-buttons">
             <input type="button" name='submit_button1' id='submit_button1' value='<?php echo htmlspecialchars( $label['advertiser_buy_button'] ); ?>' onclick='form1Submit(event)'>
             <input type="button" name='reset_button' id='reset_button' value='<?php echo htmlspecialchars( $label['advertiser_reset_button'] ); ?>' onclick='reset_pixels()'>
-        </p>
+        </div>
 
         <input type="hidden" value="1" name="select">
         <input type="hidden" value="<?php echo $BID; ?>" name="BID">

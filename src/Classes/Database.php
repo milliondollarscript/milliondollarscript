@@ -556,6 +556,19 @@ class Database {
 			$version = $this->up_dbver( 13 );
 		}
 
+		if ( $version <= 13 ) {
+
+			// Update language table for language direction
+			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "lang` ADD COLUMN `lang_dir` CHAR(3) NOT NULL default 'ltr' AFTER `lang_code`;";
+			$wpdb->query( $sql );
+
+			// Set ltr for all existing languages
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "lang` SET `lang_dir`='ltr';";
+			$wpdb->query( $sql );
+
+			$version = $this->up_dbver( 14 );
+		}
+
 		// Update version info
 		$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='" . get_mds_version() . "' WHERE `key`='VERSION_INFO'";
 		$wpdb->query( $sql );

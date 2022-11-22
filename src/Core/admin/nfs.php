@@ -110,12 +110,12 @@ if ( OUTPUT_JPEG == 'Y' ) {
 
 ?>
 <script>
-	$(function () {
-		if (!window.mds_admin_loading) {
-			window.mds_admin_loading = true;
-		} else {
-			return;
-		}
+	(function ($) {
+		// if (!window.mds_admin_loading) {
+		// 	window.mds_admin_loading = true;
+		// } else {
+		// 	return;
+		// }
 
 		let addnfs = [];
 		let remnfs = [];
@@ -123,12 +123,14 @@ if ( OUTPUT_JPEG == 'Y' ) {
 		const $document = $(document);
 		const $grid = $('.grid');
 
-		$('<img/>').attr('src', '<?php echo $grid_img; ?>').on('load', function () {
-			$(this).remove();
-			$('.loading').remove();
-			$grid.css('background-image', 'url("<?php echo $grid_img; ?>")');
-			window.mds_admin_loading = false;
-		});
+        $('<img/>').attr('src', '<?php echo $grid_img; ?>').on('load', function () {
+            $(this).remove();
+            $('.loading').remove();
+            $grid.css('background-image', 'url("<?php echo $grid_img; ?>")');
+            window.mds_admin_loading = false;
+        }).each(function() {
+            if(this.complete) $(this).trigger('load');
+        });
 
 		function processBlock(block) {
 			let $block = $(block);
@@ -303,7 +305,7 @@ if ( OUTPUT_JPEG == 'Y' ) {
 
 			return false;
 		});
-	});
+	})(jQuery);
 </script>
 <style>
     <?php

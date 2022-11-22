@@ -164,14 +164,14 @@ class Mds_Ajax {
 											window.mds_data = {
 												ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
 												wp: '<?php echo $wp_url; ?>',
-												winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>'),
-												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>'),
+													winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
+													winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 												time: '<?php echo time(); ?>',
 												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
 												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
 												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
 												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-												BID: parseInt('<?php echo $BID; ?>')
+												BID: parseInt('<?php echo $BID; ?>', 10)
 											};
 											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
 											});
@@ -209,7 +209,7 @@ class Mds_Ajax {
 												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
 												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
 												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-												BID: parseInt('<?php echo $BID; ?>')
+													BID: parseInt('<?php echo $BID; ?>', 10)
 											};
 											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
 											});

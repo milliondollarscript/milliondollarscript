@@ -121,7 +121,7 @@ function mds_submit(el) {
 jQuery(function () {
 	window.mds_admin_loading = false;
 
-	jQuery(window).on('mds_admin_page_loaded', function() {
+	jQuery(window).on('mds_admin_page_loaded', function () {
 		window.mds_admin_loading = false;
 	});
 
@@ -158,9 +158,9 @@ jQuery(function () {
 		} else {
 			admin_content.load(url, function (response, status) {
 				if (status === "success") {
-					scroll_to_top();
-					window.location.hash = '#' + url;
 					jQuery(window).trigger('mds_admin_page_loaded');
+					window.location.hash = '#' + url;
+					scroll_to_top();
 				}
 			});
 		}

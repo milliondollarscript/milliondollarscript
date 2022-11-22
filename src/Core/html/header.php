@@ -44,14 +44,17 @@ if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
 	header( "X-Frame-Options: allow-from " . WP_URL . "/" );
 }
 
+global $wpdb;
+$lang_dir = $wpdb->get_var("SELECT `lang_dir` FROM `" . MDS_DB_PREFIX . "lang` WHERE `is_default`='Y'");
+
 ?><!DOCTYPE html>
-<html>
+<html dir="<?php esc_attr_e($lang_dir); ?>">
 <head>
     <title><?php echo SITE_NAME; ?></title>
     <meta name="Description" content="<?php echo SITE_SLOGAN; ?>">
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=10.0, minimum-scale=0.1, user-scalable=yes"/>
-    <script src="<?php echo BASE_HTTP_PATH; ?>vendor/components/jquery/jquery.min.js?ver=<?php echo filemtime( BASE_PATH . "/vendor/components/jquery/jquery.min.js" ); ?>"></script>
+    <script src="<?php echo esc_url( includes_url( 'js/jquery/jquery.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/jquery.min.js" ) ); ?>"></script>
     <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.min.js"></script>
     <script src="<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.min.js"></script>
     <link rel="stylesheet" type="text/css" href="<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css">
@@ -79,20 +82,20 @@ if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
 			window.mds_data = {
 				ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
 				wp: '<?php echo $wp_url; ?>',
-				winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>'),
-				winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>'),
+				winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
+				winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 				time: '<?php echo time(); ?>',
 				BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
 				REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
 				REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
 				ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-				BID: parseInt('<?php echo $BID; ?>')
+				BID: parseInt('<?php echo $BID; ?>', 10)
 			};
         </script>
         <script src="<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>" defer></script>
 	<?php if ( $call_state == 4 ) { ?>
         <script>
-			$(function () {
+			(function ($) {
 				let mds_init_call = function () {
 					var load_wait = setInterval(function () {
 						if (typeof mds_init == 'function') {
@@ -107,7 +110,7 @@ if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
 				} else {
 					mds_init_call();
 				}
-			});
+			})(jQuery);
         </script>
 	<?php } ?>
 		<?php

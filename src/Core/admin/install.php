@@ -1539,6 +1539,7 @@ function install_db() {
 
 		$sql[] = "CREATE TABLE `$table_name` (
 			`lang_code` char(2) NOT NULL default '',
+			`lang_dir` char(3) NOT NULL default '',
 			`lang_filename` varchar(32) NOT NULL default '',
 			`lang_image` varchar(32) NOT NULL default '',
 			`is_active` set('Y','N') NOT NULL default '',
@@ -1552,6 +1553,7 @@ function install_db() {
 
 		$sql[] = "INSERT INTO `$table_name` (
 				`lang_code`,
+				`lang_dir`,
 				`lang_filename`,
 				`lang_image`,
 				`is_active`,
@@ -1563,6 +1565,7 @@ function install_db() {
 		)
     	VALUES(
 				'EN',
+				'ltr',
 				'english.php',
 				'english.gif',
 				'Y',

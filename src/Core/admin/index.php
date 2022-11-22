@@ -52,11 +52,21 @@ if ( WP_ENABLED == 'YES' ) {
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <title>Million Dollar Script Administration</title>
     <link rel="stylesheet" type="text/css" href="<?php echo $f2->value( BASE_HTTP_PATH ); ?>admin/css/admin.css?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/admin/css/admin.css" ); ?>">
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/components/jquery/jquery.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/components/jquery/jquery.min.js" ); ?>"></script>
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/components/jqueryui/jquery-ui.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/components/jqueryui/jquery-ui.min.js" ); ?>"></script>
+    <script src="<?php echo esc_url( includes_url( 'js/jquery/jquery.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/jquery.min.js" ) ); ?>"></script>
+
     <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/viselect.cjs.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/viselect.cjs.js" ); ?>"></script>
-    <link rel="stylesheet" href="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/components/jqueryui/themes/smoothness/jquery-ui.min.css?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/components/jqueryui/themes/smoothness/jquery-ui.min.css" ); ?>" type="text/css"/>
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>vendor/jquery-form/form/dist/jquery.form.min.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/vendor/jquery-form/form/dist/jquery.form.min.js" ); ?>"></script>
+
+    <script src="<?php echo esc_url( includes_url( 'js/jquery/ui/core.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/ui/core.min.js" ) ); ?>"></script>
+    <script src="<?php echo esc_url( includes_url( 'js/jquery/ui/dialog.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/ui/dialog.min.js" ) ); ?>"></script>
+    <script src="<?php echo esc_url( includes_url( 'js/jquery/ui/button.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/ui/button.min.js" ) ); ?>"></script>
+
+    <script src="<?php echo esc_url( includes_url( 'js/jquery/jquery.form.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/jquery.form.min.js" ) ); ?>"></script>
+
+	<?php
+	global $wp_scripts;
+	$ui = $wp_scripts->query( 'jquery-ui-core' );
+	?>
+    <link rel="stylesheet" href="<?php echo esc_url( 'https://code.jquery.com/ui/' . $ui->ver . '/themes/smoothness/jquery-ui.min.css' ); ?>" type="text/css"/>
 
     <script>
 		window.mds_data = {

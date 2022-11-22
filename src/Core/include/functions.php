@@ -1818,7 +1818,13 @@ function select_block( $map_x, $map_y ) {
 		// remove $clicked_blocks if not found adjacent to another block
 		if ( ! $is_adjacent ) {
 			$clicked_blocks = array();
-			$return_val     = 'not_adjacent';
+			$return_val   = [
+				"error" => "true",
+				"type"  => "not_adjacent",
+				"data"  => [
+					"value"           => $label['not_adjacent'],
+				]
+			];
 		}
 
 		// merge blocks
@@ -1829,7 +1835,13 @@ function select_block( $map_x, $map_y ) {
 		if ( $banner_data['G_MAX_BLOCKS'] > 0 ) {
 			if ( sizeof( $new_blocks ) > $banner_data['G_MAX_BLOCKS'] ) {
 				$max_selected = true;
-				$return_val   = str_replace( '%MAX_BLOCKS%', $banner_data['G_MAX_BLOCKS'], $label['max_blocks_selected'] );
+				$return_val   = [
+					"error" => "true",
+					"type"  => "max_blocks_selected",
+					"data"  => [
+						"value"           => str_replace( '%MAX_BLOCKS%', $banner_data['G_MAX_BLOCKS'], $label['max_blocks_selected'] ),
+					]
+				];
 			}
 		}
 
@@ -1844,7 +1856,14 @@ function select_block( $map_x, $map_y ) {
 			$num_rows = mysqli_num_rows( $result );
 			if ( $num_rows > 0 ) {
 				$label['advertiser_sel_sold_error'] = str_replace( "%BLOCK_ID% ", '', $label['advertiser_sel_sold_error'] );
-				$return_val                         = $label['advertiser_sel_sold_error'];
+				$return_val   = [
+					"error" => "true",
+					"type"  => "advertiser_sel_sold_error",
+					"data"  => [
+						"value"           => $label['advertiser_sel_sold_error'],
+					]
+				];
+
 				$existing_blocks                    = true;
 			}
 		}
@@ -1873,7 +1892,13 @@ function select_block( $map_x, $map_y ) {
 			$_SESSION['MDS_order_id'] = mysqli_insert_id( $GLOBALS['connection'] );
 			$order_id                 = $_SESSION['MDS_order_id'];
 
-			$return_val = intval( $_SESSION['MDS_order_id'] );
+			$return_val   = [
+				"error" => "false",
+				"type"  => "order_id",
+				"data"  => [
+					"value"           => intval( $_SESSION['MDS_order_id'] ),
+				]
+			];
 
 			$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . intval( $_SESSION['MDS_ID'] ) . " AND status = 'reserved' AND banner_id='" . intval( $BID ) . "' ";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -1927,10 +1952,22 @@ function select_block( $map_x, $map_y ) {
 	} else {
 
 		if ( $blocksrow['status'] == 'nfs' ) {
-			$return_val = $label['advertiser_sel_nfs_error'];
+			$return_val   = [
+				"error" => "true",
+				"type"  => "advertiser_sel_nfs_error",
+				"data"  => [
+					"value"           => $label['advertiser_sel_nfs_error'],
+				]
+			];
 		} else {
 			$label['advertiser_sel_sold_error'] = str_replace( "%BLOCK_ID%", $clicked_block, $label['advertiser_sel_sold_error'] );
-			$return_val                         = $label['advertiser_sel_sold_error'];
+			$return_val   = [
+				"error" => "true",
+				"type"  => "advertiser_sel_sold_error",
+				"data"  => [
+					"value"           => $label['advertiser_sel_sold_error'],
+				]
+			];
 		}
 	}
 
@@ -2589,6 +2626,7 @@ function is_filetype_allowed( $file_name ) {
 
 	if ( ! defined( 'ALLOWED_EXT' ) || ALLOWED_EXT == 'ALLOWED_EXT' ) {
 		$ALLOWED_EXT = 'jpg, jpeg, gif, png, doc, pdf, wps, hwp, txt, bmp, rtf, wri';
+        define( 'ALLOWED_EXT', $ALLOWED_EXT );
 	} else {
 		$ALLOWED_EXT = trim( strtolower( ALLOWED_EXT ) );
 	}
@@ -2605,6 +2643,7 @@ function is_imagetype_allowed( $file_name ) {
 
 	if ( ! defined( "ALLOWED_IMG" ) || ALLOWED_IMG == 'ALLOWED_IMG' ) {
 		$ALLOWED_IMG = 'jpg, jpeg, gif, png, bmp, wbmp, xbm, webp';
+        define( 'ALLOWED_IMG', $ALLOWED_IMG);
 	} else {
 		$ALLOWED_IMG = trim( strtolower( ALLOWED_IMG ) );
 	}

@@ -41,150 +41,154 @@ class Options {
 
 		$capabilities = Capabilities::get();
 
+		$fields = array(
+
+			// MDS install path
+			Field::make( 'text', self::prefix . 'path', __( 'MDS install path', 'milliondollarscript' ) )
+			     ->set_default_value( wp_normalize_path( MDS_CORE_PATH ) )
+			     ->set_help_text( __( 'The path to the folder where MDS is installed.', 'milliondollarscript' ) ),
+
+			// Admin Integration
+			Field::make( 'checkbox', self::prefix . 'admin', __( 'Admin Integration', 'milliondollarscript' ) )
+			     ->set_default_value( 'yes' )
+			     ->set_option_value( 'yes' )
+			     ->set_help_text( __( 'Enable admin integration. This will add a new MU plugin to the wp-content/mu-plugins folder in order to adjust some cookie settings. Once you enable this you will be logged out of WP and when you log back in you will be see an Admin submenu under Million Dollar Script to access MDS admin.', 'milliondollarscript' ) ),
+
+			// Users Integration
+			Field::make( 'checkbox', self::prefix . 'users', __( 'Users Integration', 'milliondollarscript' ) )
+			     ->set_default_value( 'yes' )
+			     ->set_option_value( 'yes' )
+			     ->set_help_text( __( 'Enable integration with MDS users. This will register users in MDS when they are registered in WP.', 'milliondollarscript' ) ),
+
+			// WooCommerce Integration
+			Field::make( 'checkbox', self::prefix . 'woocommerce', __( 'WooCommerce Integration', 'milliondollarscript' ) )
+			     ->set_default_value( 'no' )
+			     ->set_option_value( 'yes' )
+			     ->set_help_text( __( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.', 'milliondollarscript' ) ),
+
+			// WooCommerce Product
+			Field::make( 'association', self::prefix . 'product', __( 'Product', 'milliondollarscript' ) )
+			     ->set_conditional_logic( array(
+				     'relation' => 'AND',
+				     array(
+					     'field'   => self::prefix . 'woocommerce',
+					     'compare' => '=',
+					     'value'   => true,
+				     )
+			     ) )
+			     ->set_types( array(
+				     array(
+					     'type'      => 'post',
+					     'post_type' => 'product',
+				     )
+			     ) )
+			     ->set_min( 1 )
+			     ->set_max( 1 )
+			     ->set_help_text( __( 'The product for MDS to use. You should create a new product in WooCommerce and check the Million Dollar Script ', 'milliondollarscript' ) ),
+
+			// WooCommerce Clear Cart
+			Field::make( 'checkbox', self::prefix . 'clear-cart', __( 'Clear cart', 'milliondollarscript' ) )
+			     ->set_default_value( 'no' )
+			     ->set_option_value( 'yes' )
+			     ->set_conditional_logic( array(
+				     'relation' => 'AND',
+				     array(
+					     'field'   => self::prefix . 'woocommerce',
+					     'compare' => '=',
+					     'value'   => true,
+				     )
+			     ) )
+			     ->set_help_text( __( 'Clear the cart when a MDS product is added to it.', 'milliondollarscript' ) ),
+
+			// WooCommerce Auto-approve
+			Field::make( 'checkbox', self::prefix . 'auto-approve', __( 'Auto-approve', 'milliondollarscript' ) )
+			     ->set_default_value( 'no' )
+			     ->set_option_value( 'yes' )
+			     ->set_conditional_logic( array(
+				     'relation' => 'AND',
+				     array(
+					     'field'   => self::prefix . 'woocommerce',
+					     'compare' => '=',
+					     'value'   => true,
+				     )
+			     ) )
+			     ->set_help_text( __( 'Setting to Yes will automatically approve orders before payments are verified by an admin.', 'milliondollarscript' ) ),
+
+			// Account page
+			Field::make( 'text', self::prefix . 'account-page', __( 'Account Page', 'milliondollarscript' ) )
+			     ->set_default_value( get_edit_profile_url() )
+			     ->set_help_text( __( 'The page where users can modify their account details. If left empty will redirect to the default WP profile page. If WooCommerce integration is enabled it will go to the WooCommerce My Account page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here.', 'milliondollarscript' ) ),
+
+			// Register page
+			Field::make( 'text', self::prefix . 'register-page', __( 'Register Page', 'milliondollarscript' ) )
+			     ->set_default_value( wp_registration_url() )
+			     ->set_help_text( __( 'The page where users can register for an account. If left empty will redirect to the default WP registration page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here.', 'milliondollarscript' ) ),
+
+			// Validate page
+			Field::make( 'text', self::prefix . 'validate-page', __( 'Validate Page', 'milliondollarscript' ) )
+			     ->set_default_value( "" )
+			     ->set_help_text( __( 'The page where users can validate their account. You should add the Million Dollar Script validation block/shortcode there. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then you likely do not have to use this feature.', 'milliondollarscript' ) ),
+
+			// Login page
+			Field::make( 'text', self::prefix . 'login-page', __( 'Login Page', 'milliondollarscript' ) )
+			     ->set_default_value( wp_login_url() )
+			     ->set_help_text( __( 'The login page to redirect users to. If left empty will redirect to the default WP login. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full login URL here.', 'milliondollarscript' ) ),
+
+			// Forgot password page
+			Field::make( 'text', self::prefix . 'forgot-password-page', __( 'Forgot Password Page', 'milliondollarscript' ) )
+			     ->set_default_value( wp_lostpassword_url() )
+			     ->set_help_text( __( 'The URL to the forgot password page. If left empty will redirect to the default WP forgot password page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full forgot password page URL here.', 'milliondollarscript' ) ),
+
+			// Login Redirect
+			Field::make( 'text', self::prefix . 'login-redirect', __( 'Login Redirect', 'milliondollarscript' ) )
+			     ->set_default_value( wp_login_url() )
+			     ->set_help_text( __( 'The URL to redirect users to after login.', 'milliondollarscript' ) ),
+
+			// Enable Permissions
+			Field::make( 'checkbox', self::prefix . 'permissions', __( 'Enable Permissions?', 'milliondollarscript' ) )
+			     ->set_default_value( 'no' )
+			     ->set_option_value( 'yes' )
+			     ->set_help_text( __( 'Enable permission system for user roles and the following capabilities: mds_my_account, mds_order_pixels, mds_manage_pixels, mds_order_history, mds_logout', 'milliondollarscript' ) ),
+
+			// Capabilities
+			Field::make( 'multiselect', self::prefix . 'capabilities', __( 'Enable Capabilities' ) )
+			     ->set_default_value( $capabilities )
+			     ->add_options( $capabilities )
+			     ->set_conditional_logic( [
+				     'relation' => 'AND',
+				     [
+					     'field'   => self::prefix . 'permissions',
+					     'value'   => true,
+					     'compare' => '=',
+				     ]
+			     ] )
+			     ->set_help_text( __( 'Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability.', 'milliondollarscript' ) ),
+
+			// Delete data on uninstall
+			Field::make( 'checkbox', self::prefix . 'delete-data', __( 'Delete data on uninstall?', 'milliondollarscript' ) )
+			     ->set_default_value( 'no' )
+			     ->set_option_value( 'yes' )
+			     ->set_help_text( __( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.', 'milliondollarscript' ) ),
+
+			// Updates
+			Field::make( 'select', self::prefix . 'updates', __( 'Plugin updates', 'milliondollarscript' ) )
+			     ->set_default_value( 'yes' )
+			     ->set_options( [
+				     'yes' => 'Update',
+				     'no'  => 'Don\'t update',
+				     'dev' => 'Development'
+			     ] )
+			     ->set_help_text( __( 'If Update then updates will be done normally like all other plugins. If Don\'t update then no updates will be looked for. If Development then updates will be checked for in the development branch.', 'milliondollarscript' ) ),
+
+		);
+
+		$fields = apply_filters('mds_options_fields', $fields, self::prefix);
+
 		Container::make( 'theme_options', self::prefix . 'options', __( 'Million Dollar Script Options', 'milliondollarscript' ) )
 		         ->set_page_parent( 'MillionDollarScript' )
 		         ->set_page_file( self::prefix . 'options' )
 		         ->set_page_menu_title( 'Options' )
-		         ->add_fields( array(
-
-			         // MDS install path
-			         Field::make( 'text', self::prefix . 'path', __( 'MDS install path', 'milliondollarscript' ) )
-			              ->set_default_value( wp_normalize_path( MDS_CORE_PATH ) )
-			              ->set_help_text( __( 'The path to the folder where MDS is installed.', 'milliondollarscript' ) ),
-
-			         // Admin Integration
-			         Field::make( 'checkbox', self::prefix . 'admin', __( 'Admin Integration', 'milliondollarscript' ) )
-			              ->set_default_value( 'yes' )
-			              ->set_option_value( 'yes' )
-			              ->set_help_text( __( 'Enable admin integration. This will add a new MU plugin to the wp-content/mu-plugins folder in order to adjust some cookie settings. Once you enable this you will be logged out of WP and when you log back in you will be see an Admin submenu under Million Dollar Script to access MDS admin.', 'milliondollarscript' ) ),
-
-			         // Users Integration
-			         Field::make( 'checkbox', self::prefix . 'users', __( 'Users Integration', 'milliondollarscript' ) )
-			              ->set_default_value( 'yes' )
-			              ->set_option_value( 'yes' )
-			              ->set_help_text( __( 'Enable integration with MDS users. This will register users in MDS when they are registered in WP.', 'milliondollarscript' ) ),
-
-			         // WooCommerce Integration
-			         Field::make( 'checkbox', self::prefix . 'woocommerce', __( 'WooCommerce Integration', 'milliondollarscript' ) )
-			              ->set_default_value( 'no' )
-			              ->set_option_value( 'yes' )
-			              ->set_help_text( __( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.', 'milliondollarscript' ) ),
-
-			         // WooCommerce Product
-			         Field::make( 'association', self::prefix . 'product', __( 'Product', 'milliondollarscript' ) )
-			              ->set_conditional_logic( array(
-				              'relation' => 'AND',
-				              array(
-					              'field'   => self::prefix . 'woocommerce',
-					              'compare' => '=',
-					              'value'   => true,
-				              )
-			              ) )
-			              ->set_types( array(
-				              array(
-					              'type'      => 'post',
-					              'post_type' => 'product',
-				              )
-			              ) )
-			              ->set_min( 1 )
-			              ->set_max( 1 )
-			              ->set_help_text( __( 'The product for MDS to use. You should create a new product in WooCommerce and check the Million Dollar Script ', 'milliondollarscript' ) ),
-
-			         // WooCommerce Clear Cart
-			         Field::make( 'checkbox', self::prefix . 'clear-cart', __( 'Clear cart', 'milliondollarscript' ) )
-			              ->set_default_value( 'no' )
-			              ->set_option_value( 'yes' )
-			              ->set_conditional_logic( array(
-				              'relation' => 'AND',
-				              array(
-					              'field'   => self::prefix . 'woocommerce',
-					              'compare' => '=',
-					              'value'   => true,
-				              )
-			              ) )
-			              ->set_help_text( __( 'Clear the cart when a MDS product is added to it.', 'milliondollarscript' ) ),
-
-			         // WooCommerce Auto-approve
-			         Field::make( 'checkbox', self::prefix . 'auto-approve', __( 'Auto-approve', 'milliondollarscript' ) )
-			              ->set_default_value( 'no' )
-			              ->set_option_value( 'yes' )
-			              ->set_conditional_logic( array(
-				              'relation' => 'AND',
-				              array(
-					              'field'   => self::prefix . 'woocommerce',
-					              'compare' => '=',
-					              'value'   => true,
-				              )
-			              ) )
-			              ->set_help_text( __( 'Setting to Yes will automatically approve orders before payments are verified by an admin.', 'milliondollarscript' ) ),
-
-			         // Account page
-			         Field::make( 'text', self::prefix . 'account-page', __( 'Account Page', 'milliondollarscript' ) )
-			              ->set_default_value( get_edit_profile_url() )
-			              ->set_help_text( __( 'The page where users can modify their account details. If left empty will redirect to the default WP profile page. If WooCommerce integration is enabled it will go to the WooCommerce My Account page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here.', 'milliondollarscript' ) ),
-
-			         // Register page
-			         Field::make( 'text', self::prefix . 'register-page', __( 'Register Page', 'milliondollarscript' ) )
-			              ->set_default_value( wp_registration_url() )
-			              ->set_help_text( __( 'The page where users can register for an account. If left empty will redirect to the default WP registration page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here.', 'milliondollarscript' ) ),
-
-			         // Validate page
-			         Field::make( 'text', self::prefix . 'validate-page', __( 'Validate Page', 'milliondollarscript' ) )
-			              ->set_default_value( "" )
-			              ->set_help_text( __( 'The page where users can validate their account. You should add the Million Dollar Script validation block/shortcode there. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then you likely do not have to use this feature.', 'milliondollarscript' ) ),
-
-			         // Login page
-			         Field::make( 'text', self::prefix . 'login-page', __( 'Login Page', 'milliondollarscript' ) )
-			              ->set_default_value( wp_login_url() )
-			              ->set_help_text( __( 'The login page to redirect users to. If left empty will redirect to the default WP login. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full login URL here.', 'milliondollarscript' ) ),
-
-			         // Forgot password page
-			         Field::make( 'text', self::prefix . 'forgot-password-page', __( 'Forgot Password Page', 'milliondollarscript' ) )
-			              ->set_default_value( wp_lostpassword_url() )
-			              ->set_help_text( __( 'The URL to the forgot password page. If left empty will redirect to the default WP forgot password page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full forgot password page URL here.', 'milliondollarscript' ) ),
-
-			         // Login Redirect
-			         Field::make( 'text', self::prefix . 'login-redirect', __( 'Login Redirect', 'milliondollarscript' ) )
-			              ->set_default_value( wp_login_url() )
-			              ->set_help_text( __( 'The URL to redirect users to after login.', 'milliondollarscript' ) ),
-
-			         // Enable Permissions
-			         Field::make( 'checkbox', self::prefix . 'permissions', __( 'Enable Permissions?', 'milliondollarscript' ) )
-			              ->set_default_value( 'no' )
-			              ->set_option_value( 'yes' )
-			              ->set_help_text( __( 'Enable permission system for user roles and the following capabilities: mds_my_account, mds_order_pixels, mds_manage_pixels, mds_order_history, mds_logout', 'milliondollarscript' ) ),
-
-			         // Capabilities
-			         Field::make( 'multiselect', self::prefix . 'capabilities', __( 'Enable Capabilities' ) )
-			              ->set_default_value( $capabilities )
-			              ->add_options( $capabilities )
-			              ->set_conditional_logic( [
-				              'relation' => 'AND',
-				              [
-					              'field'   => self::prefix . 'permissions',
-					              'value'   => true,
-					              'compare' => '=',
-				              ]
-			              ] )
-			              ->set_help_text( __( 'Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability.', 'milliondollarscript' ) ),
-
-			         // Delete data on uninstall
-			         Field::make( 'checkbox', self::prefix . 'delete-data', __( 'Delete data on uninstall?', 'milliondollarscript' ) )
-			              ->set_default_value( 'no' )
-			              ->set_option_value( 'yes' )
-			              ->set_help_text( __( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.', 'milliondollarscript' ) ),
-
-			         // Updates
-			         Field::make( 'select', self::prefix . 'updates', __( 'Plugin updates', 'milliondollarscript' ) )
-			              ->set_default_value( 'yes' )
-			              ->set_options( [
-				              'yes' => 'Update',
-				              'no'  => 'Don\'t update',
-				              'dev' => 'Development'
-			              ] )
-			              ->set_help_text( __( 'If Update then updates will be done normally like all other plugins. If Don\'t update then no updates will be looked for. If Development then updates will be checked for in the development branch.', 'milliondollarscript' ) ),
-
-		         ) );
+		         ->add_fields( $fields );
 	}
 
 	public static function load() {

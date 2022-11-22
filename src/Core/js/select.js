@@ -37,6 +37,7 @@ let block_str = select.block_str;
 let selectedBlocks = block_str.split(',').map(Number);
 let selecting = false;
 let ajaxing = false;
+let submitting = false;
 
 let grid_width = select.grid_width;
 let grid_height = select.grid_height;
@@ -75,7 +76,7 @@ const messageout = function (message) {
 	}
 }
 
-$.fn.rescaleStyles = function () {
+jQuery.fn.rescaleStyles = function () {
 	this.css({
 		'width': BLK_WIDTH + 'px',
 		'height': BLK_HEIGHT + 'px',
@@ -86,12 +87,12 @@ $.fn.rescaleStyles = function () {
 	return this;
 };
 
-$.fn.repositionStyles = function () {
+jQuery.fn.repositionStyles = function () {
 	if (this.attr('id') === undefined) {
 		return this;
 	}
 
-	let id = parseInt(jQuery(this).data('blockid'));
+	let id = parseInt(jQuery(this).data('blockid'), 10);
 	let pos = get_block_position(id);
 
 	this.css({
@@ -141,7 +142,7 @@ window.onload = function () {
 function load_order() {
 
 	for (let i = 0; i < select.blocks.length; i++) {
-		add_block(parseInt(select.blocks[i].block_id), parseInt(select.blocks[i].x) * scaled_width, parseInt(select.blocks[i].y) * scaled_height, true);
+		add_block(parseInt(select.blocks[i].block_id, 10), parseInt(select.blocks[i].x, 10) * scaled_width, parseInt(select.blocks[i].y, 10) * scaled_height, true);
 	}
 
 	const form1 = document.getElementById('form1');
@@ -158,7 +159,7 @@ function update_order() {
 
 function reserve_block(block_id) {
 	if (selectedBlocks.indexOf(block_id) === -1) {
-		selectedBlocks.push(parseInt(block_id));
+		selectedBlocks.push(parseInt(block_id, 10));
 
 		// remove default value of -1 from array
 		let index = selectedBlocks.indexOf(-1);
@@ -253,6 +254,10 @@ function invert_block(clicked_block) {
 	} else {
 		add_block(clicked_block.id, clicked_block.x, clicked_block.y);
 	}
+}
+
+function is_block_selected(clicked_block) {
+	return selectedBlocks.indexOf(clicked_block) !== -1;
 }
 
 function get_clicked_blocks(OffsetX, OffsetY, block) {
@@ -366,17 +371,17 @@ function do_blocks(block, OffsetX, OffsetY, op) {
 
 function select_pixels(offset) {
 
-	if (selecting) {
-		return false;
-	}
-	selecting = true;
-
-	// cannot select while AJAX is in action
-	if (submit_button1.disabled) {
-		return false;
-	}
-
-	pointer.style.visibility = 'hidden';
+	// if (selecting) {
+	// 	return false;
+	// }
+	// selecting = true;
+	//
+	// // cannot select while AJAX is in action
+	// if (submit_button1.disabled) {
+	// 	return false;
+	// }
+	//
+	// pointer.style.visibility = 'hidden';
 
 	change_block_state(offset.x, offset.y);
 
@@ -431,74 +436,113 @@ function get_clicked_block(OffsetX, OffsetY) {
 	return Math.round(X + Y);
 }
 
+let ajax_queue = [];
+
+let ajax_queue_interval = setInterval(function () {
+	if (ajax_queue.length === 0 || ajaxing) {
+		return;
+	}
+
+	ajaxing = true;
+
+	add_ajax_loader("#submit-buttons");
+
+	let data = ajax_queue.shift();
+	jQuery.post(data.url, function (response) {
+
+		let parsed = JSON.parse(response);
+
+		if (parsed.error === 'true') {
+
+			switch (data.action) {
+				case 'invert':
+					do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
+					break;
+				case 'remove':
+					do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
+					break;
+				case 'add':
+					do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
+					break;
+			}
+
+			messageout(parsed.data.value);
+		}
+
+		if (parsed.type === 'order_id') {
+			// save order id
+			document.form1.order_id.value = parseInt(parsed.data.value, 10);
+		}
+
+	}).fail(function (data) {
+		switch (data.action) {
+			case 'invert':
+				do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
+				break;
+			case 'remove':
+				do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
+				break;
+			case 'add':
+				do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
+				break;
+		}
+
+		if (jQuery.isPlainObject(data)) {
+			messageout("Error: " + JSON.stringify(data));
+		} else {
+			messageout("Error: " + data);
+		}
+
+	}).always(function () {
+		ajaxing = false;
+		remove_ajax_loader();
+	});
+
+}, 100);
+
 function change_block_state(OffsetX, OffsetY) {
 	let clicked_block = get_clicked_block(OffsetX, OffsetY);
+	let erasing = jQuery('#erase').is(':checked');
 
-	if (ajaxing === false) {
+	let data = {
+		'erasing': erasing,
+		'clicked_block': clicked_block,
+		'OffsetX': OffsetX,
+		'OffsetY': OffsetY,
+		'url': "update_order.php?sel_mode=" + document.getElementsByName('pixel_form')[0].elements.sel_mode.value + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time,
+	};
 
-		submit_button1.disabled = true;
-		submit_button2.disabled = true;
-		pointer.style.cursor = 'wait';
-		grid.style.cursor = 'wait';
-		ajaxing = true;
-
-		$.post("update_order.php?sel_mode=" + document.getElementsByName('pixel_form')[0].elements.sel_mode.value + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time, function (data) {
-			const erase = document.getElementById('erase');
-			const erasing = (erase !== null && erase.checked);
-
-			if (data === 'new') {
+	if (is_block_selected(clicked_block)) {
 				if (erasing) {
+			data.action = 'remove';
 					do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
 				} else {
 					if (select.INVERT_PIXELS === 'YES') {
+				data.action = 'invert';
 						do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
 					} else {
+				data.action = 'add';
 						do_blocks(clicked_block, OffsetX, OffsetY, 'add');
 					}
 				}
 			} else {
-				if (IsNumeric(data)) {
-
-					// save order id
-					document.form1.order_id.value = data;
 					if (erasing) {
+			data.action = 'remove';
 						do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
 					} else {
 						if (select.INVERT_PIXELS === 'YES') {
+				data.action = 'invert';
 							do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
 						} else {
+				data.action = 'add';
 							do_blocks(clicked_block, OffsetX, OffsetY, 'add');
 						}
 					}
-
-				} else {
-
-					if (data.indexOf('max_orders') > -1) {
-						messageout(select.advertiser_max_order);
-					} else if (data.indexOf('not_adjacent') > -1) {
-						messageout(select.not_adjacent);
-					} else if (data.length > 0) {
-						messageout(data);
-					}
-				}
 			}
 
-			submit_button1.disabled = false;
-			submit_button2.disabled = false;
-			pointer.style.cursor = 'pointer';
-			pointer.style.visibility = 'visible';
-			grid.style.cursor = 'pointer';
-			selecting = false;
-			ajaxing = false;
+	// Add data to ajax queue
+	ajax_queue.push(data);
 
-		}).fail(function (data) {
-			if (jQuery.isPlainObject(data)) {
-				messageout("Error: " + JSON.stringify(data));
-			} else {
-				messageout("Error: " + data);
-			}
-		});
-	}
 }
 
 function implode(myArray) {
@@ -619,17 +663,51 @@ function form1Submit(event) {
 		messageout(select.no_blocks_selected);
 		return false;
 	} else {
-		document.form1.submit();
+
+		if (submitting === false) {
+
+			submit_button1.disabled = true;
+			submit_button2.disabled = true;
+
+			let submit1_lang = submit_button1.value;
+			let submit2_lang = submit_button2.value;
+
+			submit_button1.value = select.WAIT;
+			submit_button2.value = select.WAIT;
+
+			// Wait for ajax queue to finish
+			let waitInterval = setInterval(function () {
+				if (ajax_queue.length === 0) {
+					clearInterval(waitInterval);
+					document.form1.submit();
+
+					submit_button1.disabled = false;
+					submit_button2.disabled = false;
+					submit_button1.value = submit1_lang;
+					submit_button2.value = submit2_lang;
+
+					submitting = false;
+				}
+			}, 1000);
+
+		}
 	}
 }
 
 function reset_pixels() {
-	$.post("update_order.php?reset=true", function (data) {
-		if (data === "removed") {
+	ajax_queue = [];
+
+	add_ajax_loader("#submit-buttons");
+
+	jQuery.post("update_order.php?reset=true", function (data) {
+		let parsed = JSON.parse(data);
+		if (parsed.type === "removed") {
 			jQuery(myblocks).children().each(function () {
 				remove_block(jQuery(this).data('blockid'));
 			});
 		}
+	}).always(function () {
+		remove_ajax_loader();
 	});
 }
 

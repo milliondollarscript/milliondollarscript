@@ -46,6 +46,9 @@ function validate_input() {
 	if ( ( ! isset( $_FILES['lang_image']['name'] ) || $_FILES['lang_image']['name'] == '' ) && ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] != 'edit' ) ) {
 		$error .= "- No image uploaded <br>";
 	}
+	if ( ! isset( $_REQUEST['lang_dir'] ) || $_REQUEST['lang_dir'] == '' ) {
+		$error .= "- Language direction is blank<br>";
+	}
 	if ( ! isset( $_REQUEST['name'] ) || $_REQUEST['name'] == '' ) {
 		$error .= "- Language name is blank<br>";
 	}
@@ -104,10 +107,12 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 			echo '<strong>Sorry, that image is too large! You have to use a tiny image.</strong><br /><br />';
 		} else {
 
+            $lang_dir_val = $_REQUEST['lang_dir'] == 'Left to right' ? 'ltr' : 'rtl';
+
 			if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) {
-				$sql = "UPDATE `" . MDS_DB_PREFIX . "lang` SET name='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', " . mysqli_real_escape_string( $GLOBALS['connection'], $image_sql ) . " lang_filename='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_filename'] ) . "' WHERE `lang_code`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_code'] ) . "' ";
+				$sql = "UPDATE `" . MDS_DB_PREFIX . "lang` SET name='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', lang_dir='" . mysqli_real_escape_string( $GLOBALS['connection'], $lang_dir_val ) . "', " . mysqli_real_escape_string( $GLOBALS['connection'], $image_sql ) . " lang_filename='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_filename'] ) . "' WHERE `lang_code`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_code'] ) . "' ";
 			} else {
-				$sql = "INSERT INTO `" . MDS_DB_PREFIX . "lang` ( `lang_code` , `lang_filename` , `lang_image` , `is_active` , `name` , `image_data`, `mime_type`, `is_default`, `charset` ) VALUES ('" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_code'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_filename'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $image_file ) . "', 'Y', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $data ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $mime_type ) . "', 'N', '')";
+				$sql = "INSERT INTO `" . MDS_DB_PREFIX . "lang` ( `lang_code`, `lang_dir`, `lang_filename` , `lang_image` , `is_active` , `name` , `image_data`, `mime_type`, `is_default`, `charset` ) VALUES ('" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_code'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $lang_dir_val ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['lang_filename'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $image_file ) . "', 'Y', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $data ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $mime_type ) . "', 'N', '')";
 			}
 			//echo "Temp file is: ".$_FILES['lang_image']['tmp_name']."<br>";
 			//echo "$sql";
@@ -157,6 +162,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
             <td><b><font size="2">Code</b></font></td>
             <td><b><font size="2">File</b></font></td>
             <td><b><font size="2">Image</b></font></td>
+            <td><b><font size="2">Direction</b></font></td>
             <td><b><font size="2">Active</b></font></td>
             <td><b><font size="2">Tool</b></font></td>
         </tr>
@@ -172,6 +178,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
                 <td><font size="2"><?php echo $row['lang_code']; ?></font></td>
                 <td><font size="2"><?php echo $row['lang_filename']; ?></font></td>
                 <td><font size="2"><img alt="<?php echo $row['lang_code']; ?>" src="lang_image.php?code=<?php echo $row['lang_code']; ?>"/></font></td>
+                <td><font size="2"><?php echo $row['lang_dir']; ?></font></td>
                 <td><font size="2">  <?php if ( $row['is_active'] == 'Y' ) { ?><IMG SRC="images/active.gif" WIDTH="16" HEIGHT="16" BORDER="0" ALT=""><?php } else { ?><IMG SRC="images/notactive.gif" WIDTH="16" HEIGHT="16" BORDER="0" ALT=""><?php }; ?> <?php if ( $row['is_active'] != 'Y' ) { ?> [<a href="language.php?action=activate&code=<?php echo $row['lang_code']; ?>">Activate</a>] <?php }
 						if ( $row['is_active'] == 'Y' ) { ?> [<a href="language.php?action=deactivate&code=<?php echo $row['lang_code']; ?>">Deactivate</a>] <?php } ?>[<a href="language.php?action=edit&code=<?php echo $row['lang_code']; ?>">Edit</a>] <?php if ( $row['is_default'] != 'Y' ) { ?> [
                             <a onclick=" return confirmLink(this, 'Delete, are you sure?') " href="language.php?action=delete&code=<?php echo $row['lang_code']; ?>">Delete</a>] <?php } ?>
@@ -235,6 +242,7 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) {
 	$_REQUEST['name']          = $row['name'];
 	$_REQUEST['lang_code']     = $row['lang_code'];
 	$_REQUEST['lang_filename'] = $row["lang_filename"];
+	$_REQUEST['lang_dir']      = $row["lang_dir"];
 	//$_REQUEST['lang_image'] = "lang_image";
 	//$_REQUEST['charset'] = $row["charset"];
 
@@ -258,6 +266,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 
 	$action    = $_REQUEST['action'] ?? '';
 	$lang_code = $_REQUEST['lang_code'] ?? '';
+	$lang_dir = $_REQUEST['lang_dir'] ?? '';
 	$name      = $_REQUEST['name'] ?? '';
 	?>
     <input type="hidden" value="<?php echo htmlspecialchars( $action ); ?>" name="action">
@@ -275,6 +284,15 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
             <td><font size="2">Language File:</font></td>
             <td><select name="lang_filename">
                     <option></option><?php lang_file_options(); ?></td>
+        </tr>
+        <tr bgcolor="#ffffff">
+            <td><font size="2">Language Direction:</font></td>
+            <td>
+                <select name="lang_dir">
+                    <option>Left to right</option>
+                    <option>Right to left</option>
+                </select>
+            </td>
         </tr>
         <tr bgcolor="#ffffff">
             <td><font size="2">Image:</font></td>

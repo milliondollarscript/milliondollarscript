@@ -182,9 +182,9 @@ if ( WP_ENABLED == 'YES' ) {
 		let cb = get_clicked_block(offset);
 
 		if (bm_move_order_state) {
-			$(pointer).find('img').attr('src', 'get_pointer_image2.php?BID=' + banner_id + '&block_id=' + cb);
+			jQuery(pointer).find('img').attr('src', 'get_pointer_image2.php?BID=' + banner_id + '&block_id=' + cb);
 		} else {
-			$(pointer).find('img').attr('src', 'get_pointer_image.php?BID=' + banner_id + '&block_id=' + cb);
+			jQuery(pointer).find('img').attr('src', 'get_pointer_image.php?BID=' + banner_id + '&block_id=' + cb);
 		}
 		cb_from = cb
 
@@ -207,7 +207,7 @@ if ( WP_ENABLED == 'YES' ) {
 
 		document.move_form.submit();
 
-		$(pointer).find('img').attr('src', 'images/pointer.png');
+		jQuery(pointer).find('img').attr('src', 'images/pointer.png');
 
 	}
 
@@ -308,7 +308,7 @@ if ( WP_ENABLED == 'YES' ) {
 
 	function handle_mouse_events() {
 
-		$($(grid).add(pointer)).on('mousemove', function (event) {
+		jQuery(jQuery(grid).add(pointer)).on('mousemove', function (event) {
 			if ($block_target === undefined || (!bm_move_block_state && !bm_move_order_state)) {
 				return
 			}
@@ -330,7 +330,7 @@ if ( WP_ENABLED == 'YES' ) {
 		areas.on('click', function (event) {
 			event.preventDefault();
 
-			$block_target = $(event.currentTarget);
+			$block_target = jQuery(event.currentTarget);
 
 			let offset = getOffset(event.originalEvent.pageX, event.originalEvent.pageY);
 			if (offset == null) {
@@ -346,7 +346,7 @@ if ( WP_ENABLED == 'YES' ) {
 			return false;
 		});
 
-		$('#block_pointer').on('click', function (event) {
+		jQuery('#block_pointer').on('click', function (event) {
 			event.preventDefault();
 
 			let coords = center_block({

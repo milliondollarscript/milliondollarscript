@@ -154,10 +154,12 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != '' ) {
 
 	?>
     <script>
+		(function ($) {
 		$(function () {
 			$(document).scrollTop(0);
 			window.location.reload();
 		});
+		})(jQuery);
     </script>
 	<?php
 }

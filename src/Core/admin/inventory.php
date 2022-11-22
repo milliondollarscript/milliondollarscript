@@ -424,7 +424,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                             <input id="inventory-grid-name" autofocus tabindex="0" size="30" type="text" name="name" value="<?php echo( isset( $_REQUEST['name'] ) ? htmlspecialchars( $_REQUEST['name'] ) : "" ); ?>"/>
                             <script>
 								jQuery(function () {
-									let grid_name = $("#inventory-grid-name");
+									let grid_name = jQuery("#inventory-grid-name");
 									if (grid_name.val().length === 0) {
 										grid_name.focus();
 									}

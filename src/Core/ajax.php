@@ -32,6 +32,8 @@
 
 // Type of AJAX call can be POST or JSON input
 
+const DOING_AJAX = true;
+
 require_once __DIR__ . "/include/init.php";
 
 // Handle WP integration calls

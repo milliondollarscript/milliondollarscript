@@ -45,13 +45,13 @@ $banner_data = load_banner_constants( $BID );
 </div>
 <script>
 	const mouseover_box = {
-		winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>'),
-		winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>'),
+		winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
+		winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 		time: '<?php echo time(); ?>',
 		BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
 		REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
 		REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
-		BID: parseInt('<?php echo $BID; ?>')
+		BID: parseInt('<?php echo $BID; ?>', 10)
 	}
 	jQuery(document).on('click', 'a.list-link', function (e) {
 		e.preventDefault();
@@ -62,7 +62,7 @@ $banner_data = load_banner_constants( $BID );
 	jQuery(function () {
 		defer('Popper', () => {
 			defer('tippy', () => {
-				const defaultContent = $('.tooltip-source').html();
+				const defaultContent = jQuery('.tooltip-source').html();
 				const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
 
 				window.tippy_instance = tippy('a.list-link', {
@@ -91,12 +91,12 @@ $banner_data = load_banner_constants( $BID );
 						}
 
 						if (isIOS) {
-							$(instance.reference).click();
+							jQuery(instance.reference).click();
 						}
 
 						instance._isFetching = true;
 
-						const data = $(instance.reference).data('data');
+						const data = jQuery(instance.reference).data('data');
 
 						let ajax_data = {
 							aid: data.id,

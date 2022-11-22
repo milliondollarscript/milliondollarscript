@@ -1689,144 +1689,154 @@ function get_sql_values( $form_id, $table_name, $object_name, $object_id, $user_
 	$ret['extra_values'] = '';
 	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
 
-		switch ( $row['field_type'] ) {
+		if ( isset( $_POST[ $row['field_id'] ] ) || isset($_FILES[ $row['field_id'] ]) ) {
 
-			case "IMAGE":
-				if ( isset($_FILES[ $row['field_id'] ]) && $_FILES[ $row['field_id'] ]['name'] != '' ) {
-					$file_name                 = saveImage( $row['field_id'] );
-					$_POST[ $row['field_id'] ] = $file_name;
-					// delete the old image
-					if ( $object_id != '' ) {
-						deleteImage( $table_name, $object_name, $object_id, $row['field_id'] );
-					}
-					$ret[ $row['field_id'] ] = $_POST[ $row['field_id'] ];
-					if ( $op == "update" ) {
-						$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $file_name ) . "'";
-					} else if ( $op == "insert" ) {
-						$ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-					}
-				} else {
-					$ret[ $row['field_id'] ] = '';
-					if ( $op == "insert" ) {
-						$ret['extra_values'] .= ", ''";
-					}
-				}
-				break;
-			case "FILE":
-				if ( $_FILES[ $row['field_id'] ]['name'] != '' ) {
-					$file_name = saveFile( $row['field_id'] );
-					$mime_type = $_FILES[ $row['field_id'] ]['type'];
-					if ( $op == "insert" ) {
-						$_POST[ $row['field_id'] ] = $file_name;
-					}
-					// delete the old image
-					if ( $object_id != '' ) {
-						deleteFile( $table_name, $object_name, $object_id, $row['field_id'] );
-					}
-					$ret[ $row['field_id'] ] = $_POST[ $row['field_id'] ];
-					if ( $op == "update" ) {
-						$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $file_name ) . "'";
-					} else if ( $op == "insert" ) {
-						$ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-					}
-				} else {
-					$ret[ $row['field_id'] ] = '';
-					if ( $op == "insert" ) {
-						$ret['extra_values'] .= ", ''";
-					}
-				}
-				break;
-			case "DATE":
-				$day   = $_POST[ $row['field_id'] . "d" ];
-				$month = $_POST[ $row['field_id'] . "m" ];
-				$year  = $_POST[ $row['field_id'] . "y" ];
+            switch ( $row['field_type'] ) {
 
-				if ( ! checkdate( $month, $day, $year ) ) {
-					// invalid date so use epoc
-					$day   = 1;
-					$month = 1;
-					$year  = 1970;
-				}
+                case "IMAGE":
+                    if ( isset($_FILES[ $row['field_id'] ]) && $_FILES[ $row['field_id'] ]['name'] != '' ) {
+                        $file_name                 = saveImage( $row['field_id'] );
+                        $_POST[ $row['field_id'] ] = $file_name;
+                        // delete the old image
+                        if ( $object_id != '' ) {
+                            deleteImage( $table_name, $object_name, $object_id, $row['field_id'] );
+                        }
+                        $ret[ $row['field_id'] ] = $_POST[ $row['field_id'] ];
+                        if ( $op == "update" ) {
+                            $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $file_name ) . "'";
+                        } else if ( $op == "insert" ) {
+                            $ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                        }
+                    } else {
+                        $ret[ $row['field_id'] ] = '';
+                        if ( $op == "insert" ) {
+                            $ret['extra_values'] .= ", ''";
+                        }
+                    }
+                    break;
+                case "FILE":
+                    if ( $_FILES[ $row['field_id'] ]['name'] != '' ) {
+                        $file_name = saveFile( $row['field_id'] );
+                        $mime_type = $_FILES[ $row['field_id'] ]['type'];
+                        if ( $op == "insert" ) {
+                            $_POST[ $row['field_id'] ] = $file_name;
+                        }
+                        // delete the old image
+                        if ( $object_id != '' ) {
+                            deleteFile( $table_name, $object_name, $object_id, $row['field_id'] );
+                        }
+                        $ret[ $row['field_id'] ] = $_POST[ $row['field_id'] ];
+                        if ( $op == "update" ) {
+                            $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $file_name ) . "'";
+                        } else if ( $op == "insert" ) {
+                            $ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                        }
+                    } else {
+                        $ret[ $row['field_id'] ] = '';
+                        if ( $op == "insert" ) {
+                            $ret['extra_values'] .= ", ''";
+                        }
+                    }
+                    break;
+                case "DATE":
+                    $day   = $_POST[ $row['field_id'] . "d" ];
+                    $month = $_POST[ $row['field_id'] . "m" ];
+                    $year  = $_POST[ $row['field_id'] . "y" ];
 
-				$_POST[ $row['field_id'] ] = $year . "-" . $month . "-" . $day;
-				$ret[ $row['field_id'] ]   = $_POST[ $row['field_id'] ];
-				if ( $op == "update" ) {
-					$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				} else if ( $op == "insert" ) {
-					$ret['extra_values'] .= ",'" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				}
-				break;
-			case "DATE_CAL":
-				$temp_time               = strtotime( $_POST[ $row['field_id'] ] . " GMT" );
-				$day                     = date( 'd', $temp_time );
-				$month                   = date( 'm', $temp_time );
-				$year                    = date( 'y', $temp_time );
-				$ret[ $row['field_id'] ] = $year . "-" . $month . "-" . $day;
-				if ( $op == "update" ) {
-					$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $year . "-" . $month . "-" . $day ) . "'";
-				} else if ( $op == "insert" ) {
-					$ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $year . "-" . $month . "-" . $day ) . "'";
-				}
-				break;
-			case "CHECK":
+                    if ( ! checkdate( $month, $day, $year ) ) {
+                        // invalid date so use epoc
+                        $day   = 1;
+                        $month = 1;
+                        $year  = 1970;
+                    }
 
-				$selected_codes = array();
-				$selected_codes = $_POST[ $row['field_id'] ]; // the field comes in as an array
-				$tmp            = "";
-				$comma          = "";
-				for ( $i = 0; $i < sizeof( $selected_codes ); $i ++ ) {
-					if ( $i > 0 ) {
-						$comma = ',';
-					}
-					$tmp .= $comma . $selected_codes[ $i ] . "";
-				}
+                    $_POST[ $row['field_id'] ] = $year . "-" . $month . "-" . $day;
+                    $ret[ $row['field_id'] ]   = $_POST[ $row['field_id'] ];
+                    if ( $op == "update" ) {
+                        $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    } else if ( $op == "insert" ) {
+                        $ret['extra_values'] .= ",'" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    }
+                    break;
+                case "DATE_CAL":
+                    $temp_time               = strtotime( $_POST[ $row['field_id'] ] . " GMT" );
+                    $day                     = date( 'd', $temp_time );
+                    $month                   = date( 'm', $temp_time );
+                    $year                    = date( 'y', $temp_time );
+                    $ret[ $row['field_id'] ] = $year . "-" . $month . "-" . $day;
+                    if ( $op == "update" ) {
+                        $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $year . "-" . $month . "-" . $day ) . "'";
+                    } else if ( $op == "insert" ) {
+                        $ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $year . "-" . $month . "-" . $day ) . "'";
+                    }
+                    break;
+                case "CHECK":
 
-				$_POST[ $row['field_id'] ] = $tmp;
-				$ret[ $row['field_id'] ]   = $_POST[ $row['field_id'] ];
-				if ( $op == "update" ) {
-					$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				} else if ( $op == "insert" ) {
-					$ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				}
-				$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				break;
+                    $selected_codes = array();
+                    $selected_codes = $_POST[ $row['field_id'] ]; // the field comes in as an array
+                    $tmp            = "";
+                    $comma          = "";
+                    for ( $i = 0; $i < sizeof( $selected_codes ); $i ++ ) {
+                        if ( $i > 0 ) {
+                            $comma = ',';
+                        }
+                        $tmp .= $comma . $selected_codes[ $i ] . "";
+                    }
 
-			case "MSELECT":
-				$selected_codes = array();
-				$selected_codes = $_POST[ $row['field_id'] ]; // the field comes in as an array
-				$tmp            = "";
-				$comma          = "";
-				for ( $i = 0; $i < sizeof( $selected_codes ); $i ++ ) {
-					if ( $i > 0 ) {
-						$comma = ',';
-					}
-					$tmp .= $comma . $selected_codes[ $i ] . "";
-				}
+                    $_POST[ $row['field_id'] ] = $tmp;
+                    $ret[ $row['field_id'] ]   = $_POST[ $row['field_id'] ];
+                    if ( $op == "update" ) {
+                        $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    } else if ( $op == "insert" ) {
+                        $ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    }
+                    $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    break;
 
-				$_POST[ $row['field_id'] ] = $tmp;
-				$ret[ $row['field_id'] ]   = $_POST[ $row['field_id'] ];
-				if ( $op == "update" ) {
-					$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				} else if ( $op == "insert" ) {
-					$ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				}
-				break;
-			case "TEXT":
-				if ( $op == "update" ) {
-					$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], html_entity_decode( $_POST[ $row['field_id'] ] ) ) . "'";
-				} else if ( $op == "insert" ) {
-					$ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				}
-				break;
-			default:
-				$ret[ $row['field_id'] ] = $_POST[ $row['field_id'] ];
-				if ( $op == "update" ) {
-					$ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				} else if ( $op == "insert" ) {
-					$ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
-				}
-				break;
-		}
+                case "MSELECT":
+                    $selected_codes = array();
+                    $selected_codes = $_POST[ $row['field_id'] ]; // the field comes in as an array
+                    $tmp            = "";
+                    $comma          = "";
+                    for ( $i = 0; $i < sizeof( $selected_codes ); $i ++ ) {
+                        if ( $i > 0 ) {
+                            $comma = ',';
+                        }
+                        $tmp .= $comma . $selected_codes[ $i ] . "";
+                    }
+
+                    $_POST[ $row['field_id'] ] = $tmp;
+                    $ret[ $row['field_id'] ]   = $_POST[ $row['field_id'] ];
+                    if ( $op == "update" ) {
+                        $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    } else if ( $op == "insert" ) {
+                        $ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    }
+                    break;
+                case "TEXT":
+                    if ( $op == "update" ) {
+                        $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], html_entity_decode( $_POST[ $row['field_id'] ] ) ) . "'";
+                    } else if ( $op == "insert" ) {
+                        $ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    }
+                    break;
+                default:
+                    $ret[ $row['field_id'] ] = $_POST[ $row['field_id'] ];
+                    if ( $op == "update" ) {
+                        $ret['extra_values'] .= ", `" . $row['field_id'] . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    } else if ( $op == "insert" ) {
+                        $ret['extra_values'] .= ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $_POST[ $row['field_id'] ] ) . "'";
+                    }
+                    break;
+            }
+        } else {
+            // Add extra_values for any other queries
+			if ( $op == "update" ) {
+				$ret['extra_values'] .= ", `" . $row['field_id'] . "`=''";
+			} else if ( $op == "insert" ) {
+				$ret['extra_values'] .= ", ''";
+			}
+        }
 	}
 
 	return $ret;
