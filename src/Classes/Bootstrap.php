@@ -59,8 +59,12 @@ class Bootstrap {
 		add_shortcode( 'milliondollarscript', [ '\MillionDollarScript\Classes\Shortcode', 'shortcode' ] );
 
 		// load WooCommerce integration
-		if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) && Options::get_option( 'woocommerce', false, 'options', 'no' ) == 'yes' ) {
-			new WooCommerce();
+		if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+			new WooCommerceOptions();
+
+			if ( Options::get_option( 'woocommerce', false, 'options', 'no' ) == 'yes' ) {
+				new WooCommerce();
+			}
 		}
 
 		// return if user integration isn't enabled

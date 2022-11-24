@@ -60,60 +60,6 @@ class Options {
 			     ->set_option_value( 'yes' )
 			     ->set_help_text( __( 'Enable integration with MDS users. This will register users in MDS when they are registered in WP.', 'milliondollarscript' ) ),
 
-			// WooCommerce Integration
-			Field::make( 'checkbox', self::prefix . 'woocommerce', __( 'WooCommerce Integration', 'milliondollarscript' ) )
-			     ->set_default_value( 'no' )
-			     ->set_option_value( 'yes' )
-			     ->set_help_text( __( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.', 'milliondollarscript' ) ),
-
-			// WooCommerce Product
-			Field::make( 'association', self::prefix . 'product', __( 'Product', 'milliondollarscript' ) )
-			     ->set_conditional_logic( array(
-				     'relation' => 'AND',
-				     array(
-					     'field'   => self::prefix . 'woocommerce',
-					     'compare' => '=',
-					     'value'   => true,
-				     )
-			     ) )
-			     ->set_types( array(
-				     array(
-					     'type'      => 'post',
-					     'post_type' => 'product',
-				     )
-			     ) )
-			     ->set_min( 1 )
-			     ->set_max( 1 )
-			     ->set_help_text( __( 'The product for MDS to use. You should create a new product in WooCommerce and check the Million Dollar Script ', 'milliondollarscript' ) ),
-
-			// WooCommerce Clear Cart
-			Field::make( 'checkbox', self::prefix . 'clear-cart', __( 'Clear cart', 'milliondollarscript' ) )
-			     ->set_default_value( 'no' )
-			     ->set_option_value( 'yes' )
-			     ->set_conditional_logic( array(
-				     'relation' => 'AND',
-				     array(
-					     'field'   => self::prefix . 'woocommerce',
-					     'compare' => '=',
-					     'value'   => true,
-				     )
-			     ) )
-			     ->set_help_text( __( 'Clear the cart when a MDS product is added to it.', 'milliondollarscript' ) ),
-
-			// WooCommerce Auto-approve
-			Field::make( 'checkbox', self::prefix . 'auto-approve', __( 'Auto-approve', 'milliondollarscript' ) )
-			     ->set_default_value( 'no' )
-			     ->set_option_value( 'yes' )
-			     ->set_conditional_logic( array(
-				     'relation' => 'AND',
-				     array(
-					     'field'   => self::prefix . 'woocommerce',
-					     'compare' => '=',
-					     'value'   => true,
-				     )
-			     ) )
-			     ->set_help_text( __( 'Setting to Yes will automatically approve orders before payments are verified by an admin.', 'milliondollarscript' ) ),
-
 			// Account page
 			Field::make( 'text', self::prefix . 'account-page', __( 'Account Page', 'milliondollarscript' ) )
 			     ->set_default_value( get_edit_profile_url() )
@@ -219,22 +165,8 @@ class Options {
 					\MillionDollarScript\milliondollarscript_delete_mu_plugin( 'cookies' );
 				}
 				break;
-			case 'woocommerce':
-				if ( class_exists( 'woocommerce' ) && $field->get_value() == 'yes' ) {
-					Functions::enable_woocommerce_payments();
-				} else {
-					Functions::disable_woocommerce_payments();
-				}
-				break;
-			case 'product':
-				if ( class_exists( 'woocommerce' ) ) {
-					$field = Functions::set_default_product( $field );
-				}
-				break;
-			case 'auto-approve':
-				Functions::woocommerce_auto_approve( $field->get_value() );
-				break;
 			default:
+				$field = apply_filters( 'mds_options_save', $name, $field );
 				break;
 		}
 
