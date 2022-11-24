@@ -70,7 +70,7 @@ class WooCommerceOptions {
 			     ) )
 			     ->set_min( 1 )
 			     ->set_max( 1 )
-			     ->set_help_text( __( 'The product for MDS to use. You should create a new product in WooCommerce and check the Million Dollar Script ', 'milliondollarscript' ) ),
+			     ->set_help_text( __( 'The product for MDS to use. You should create a new product in WooCommerce and tick the Million Dollar Script Pixels checkbox on it.', 'milliondollarscript' ) ),
 
 			// WooCommerce Clear Cart
 			Field::make( 'checkbox', $prefix . 'clear-cart', __( 'Clear cart', 'milliondollarscript' ) )
