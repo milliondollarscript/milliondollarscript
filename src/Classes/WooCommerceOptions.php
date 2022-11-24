@@ -29,12 +29,19 @@ use Carbon_Fields\Field;
 defined( 'ABSPATH' ) or exit;
 
 class WooCommerceOptions {
+
 	function __construct() {
 		add_filter( 'mds_options_fields', [ __CLASS__, 'mds_options_fields' ], 10, 2 );
 		add_filter( 'mds_options_save', [ __CLASS__, 'mds_options_save' ], 10, 2 );
 	}
 
-	public static function mds_options_fields( $fields, $prefix ) {
+	/**
+	 * @param $fields array The array of fields
+	 * @param $prefix string The options prefix string (milliondollarscript_ by default)
+	 *
+	 * @return array
+	 */
+	public static function mds_options_fields( array $fields, string $prefix ): array {
 		$wc_fields = [
 
 			// WooCommerce Integration
@@ -97,7 +104,13 @@ class WooCommerceOptions {
 		return array_merge( $fields, $wc_fields );
 	}
 
-	public static function mds_options_save( $name, $field ) {
+	/**
+	 * @param $name string The field name without the prefix
+	 * @param $field \Carbon_Fields\Field\Field The Carbon Fields field
+	 *
+	 * @return \Carbon_Fields\Field\Field
+	 */
+	public static function mds_options_save( string $name, \Carbon_Fields\Field\Field $field ) {
 		switch ( $name ) {
 			case 'woocommerce':
 				if ( class_exists( 'woocommerce' ) && $field->get_value() == 'yes' ) {
