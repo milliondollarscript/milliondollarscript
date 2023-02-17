@@ -96,7 +96,7 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 
 ?>
 
-    <script language="JavaScript" type="text/javascript">
+    <script>
 
 		function confirmLink(theLink, theConfirmMsg) {
 
@@ -178,8 +178,10 @@ usort( $orders, "date_sort" );
 			$b_result = mysqli_query($GLOBALS['connection'], $sql) or die (mysqli_error($GLOBALS['connection']).$sql);
 			$b_row = mysqli_fetch_array($b_result);
 		
-			echo $b_row['name'];
-			
+            if( $b_row ) {
+			    echo $b_row['name'];
+            }
+
 		?></font></td>
 			<td><font face="Arial" size="2"><?php echo convert_to_default_currency_formatted($order['currency'], $order['price']); ?></font></td>
 			<td><font face="Arial" size="2"><?php

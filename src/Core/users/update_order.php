@@ -51,7 +51,7 @@ global $f2, $banner_data, $label;
 $BID           = $f2->bid();
 $output_result = "";
 
-if ( empty($_SESSION['MDS_ID']) ) {
+if ( ! is_user_logged_in() ) {
 	echo json_encode( [
 		"error" => "true",
 		"type"  => "error",

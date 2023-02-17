@@ -49,14 +49,14 @@ function load_price_zones( $banner_id ) {
 
 	$banner_data = load_banner_constants( $banner_id );
 
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "prices where banner_id='" . intval( $banner_id ) . "' ";
+	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "prices` where `banner_id`='" . intval( $banner_id ) . "' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 	$key = 1;
 	while ( $row = mysqli_fetch_array( $result ) ) {
-		$price_table[ $key ]['row_from'] = $row['row_from'] * $banner_data['BLK_WIDTH'];
-		$price_table[ $key ]['row_to']   = $row['row_to'] * $banner_data['BLK_WIDTH'];
-		$price_table[ $key ]['col_from'] = $row['col_from'] * $banner_data['BLK_HEIGHT'];
-		$price_table[ $key ]['col_to']   = $row['col_to'] * $banner_data['BLK_HEIGHT'];
+		$price_table[ $key ]['row_from'] = $row['row_from'] * $banner_data['BLK_HEIGHT'];
+		$price_table[ $key ]['row_to']   = $row['row_to'] * $banner_data['BLK_HEIGHT'];
+		$price_table[ $key ]['col_from'] = $row['col_from'] * $banner_data['BLK_WIDTH'];
+		$price_table[ $key ]['col_to']   = $row['col_to'] * $banner_data['BLK_WIDTH'];
 		$price_table[ $key ]['color']    = $row['color'];
 		$price_table[ $key ]['price']    = $row['price'];
 		$price_table[ $key ]['currency'] = $row['currency'];
@@ -86,7 +86,6 @@ function get_zone_color( $banner_id, $row, $col ) {
 		}
 
 		if ( ( ( $val['row_from'] <= $row ) && ( $val['row_to'] >= $row ) ) && ( ( $val['col_from'] <= $col ) && ( $val['col_to'] >= $col ) ) ) {
-
 			return $val['color'];
 		}
 	}
@@ -99,7 +98,7 @@ function get_block_price( $banner_id, $block_id ) {
 
 	// get co-ords of the block
 
-	$sql = "select x, y from " . MDS_DB_PREFIX . "blocks where block_id='" . intval( $block_id ) . "' and banner_id='" . intval( $banner_id ) . "' ";
+	$sql = "SELECT `x`, `y` FROM `" . MDS_DB_PREFIX . "blocks` WHERE `block_id`='" . intval( $block_id ) . "' AND `banner_id`='" . intval( $banner_id ) . "' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	$block_row = mysqli_fetch_array( $result );
 
@@ -108,7 +107,7 @@ function get_block_price( $banner_id, $block_id ) {
 
 	$banner_data = load_banner_constants( $banner_id );
 
-	return get_zone_price( $banner_id, $row / $banner_data['BLK_HEIGHT'], $col / $banner_data['BLK_WIDTH'] );
+	return get_zone_price( $banner_id, $row, $col );
 }
 
 function get_zone_price( $banner_id, $row, $col ) {
@@ -116,6 +115,7 @@ function get_zone_price( $banner_id, $row, $col ) {
 
 	$banner_data = load_banner_constants( $banner_id );
 
+    // Adjust for the off by 1
 	$row += $banner_data['BLK_HEIGHT'];
 	$col += $banner_data['BLK_WIDTH'];
 
@@ -139,7 +139,7 @@ function get_zone_price( $banner_id, $row, $col ) {
 	}
 
 	// If not found then get the default price per block for the grid
-	$sql = "select price_per_block as price, currency from " . MDS_DB_PREFIX . "banners where  banner_id='" . intval( $banner_id ) . "' ";
+	$sql = "SELECT `price_per_block` AS `price`, `currency` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`='" . intval( $banner_id ) . "' ";
 	$result2 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	$block_row = mysqli_fetch_array( $result2 );
 

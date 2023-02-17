@@ -29,38 +29,6 @@
  *
  */
 
-const submit_options = {
-	target: ".admin-content",
-	type: 'post',
-	delegation: true,
-	beforeSubmit: mds_form_submit,
-	success: mds_form_submit_success,
-};
-
-function scroll_to_top() {
-	jQuery("#mds-top")[0].scrollIntoView();
-	document.body.scrollLeft -= 20;
-	document.body.scrollTop -= 20;
-}
-
-function mds_load_page(page, force) {
-	if (!window.mds_admin_loading) {
-		window.mds_admin_loading = true;
-	} else {
-		return;
-	}
-
-	// remove hashtag from page
-	if (window.location.hash !== "" && (page === undefined || (window.location.hash !== page && force !== true))) {
-		page = window.location.hash.substring(1);
-	}
-
-	jQuery(".admin-content").load(page, function () {
-		scroll_to_top();
-		window.mds_admin_loading = false;
-	});
-}
-
 function mds_form_submit(formData, $form, options) {
 	$form.find('input').attr('disabled', true);
 	return true;
@@ -88,7 +56,7 @@ function mds_form_submit_success(responseText, statusText, xhr, $form) {
 
 function confirmLink(theLink, theConfirmMsg) {
 	if (theConfirmMsg === '') {
-		mds_load_page(theLink.href, true);
+		// mds_load_page(theLink.href, true);
 		return false;
 	}
 
@@ -103,7 +71,7 @@ function confirmLink(theLink, theConfirmMsg) {
 		}
 
 		link += '&is_js_confirmed=1';
-		mds_load_page(link, true);
+		// mds_load_page(link, true);
 	}
 
 	return false;
@@ -115,65 +83,13 @@ function checkBoxes(name) {
 
 function mds_submit(el) {
 	let form = jQuery(el).closest('form');
-	jQuery(form).ajaxSubmit(submit_options);
+
+	jQuery(form).ajaxSubmit({
+		target: ".admin-content",
+		type: 'post',
+		delegation: true,
+		beforeSubmit: mds_form_submit,
+		success: mds_form_submit_success,
+	});
+	return false;
 }
-
-jQuery(function () {
-	window.mds_admin_loading = false;
-
-	jQuery(window).on('mds_admin_page_loaded', function () {
-		window.mds_admin_loading = false;
-	});
-
-	let admin_content = jQuery(".admin-content");
-
-	let startpage = "main.php";
-	mds_load_page(startpage);
-
-	jQuery(document).on('click', 'a', function (event) {
-		let target = jQuery(this).attr('target');
-
-		if ('_blank' === target) {
-			return true;
-		}
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		let url = jQuery(this).attr('href');
-
-		if (['_parent', '_top'].indexOf(target) !== -1) {
-			window.top.location = url;
-			return false;
-		}
-
-		if (url.startsWith("http")) {
-			window.location = url;
-			return false;
-		}
-
-		window.mds_admin_loading = true;
-		if (url.endsWith('.txt')) {
-			admin_content.html('<embed style="width:100%;height:100%;" src="' + url + '" />');
-		} else {
-			admin_content.load(url, function (response, status) {
-				if (status === "success") {
-					jQuery(window).trigger('mds_admin_page_loaded');
-					window.location.hash = '#' + url;
-					scroll_to_top();
-				}
-			});
-		}
-
-		return false;
-	});
-
-	jQuery(this).ajaxForm(submit_options);
-
-	jQuery(window).on('popstate', function () {
-		jQuery(function () {
-			mds_load_page(window.location);
-		});
-	});
-
-});

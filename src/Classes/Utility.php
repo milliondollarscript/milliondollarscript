@@ -319,4 +319,61 @@ class Utility {
 //			}
 //		}
 //	}
+
+	/**
+	 * Get the URL to the grid image.
+	 *
+	 * @return string
+	 */
+	public static function get_grid_img(): string {
+		require_once MDS_CORE_PATH . "include/init.php";
+		require_once MDS_CORE_PATH . 'admin/admin_common.php';
+
+		global $f2;
+
+		$BID = $f2->bid();
+
+		$grid_img = Utility::get_upload_url() . 'grids/grid' . $BID;
+
+		$grid_ext = '.png';
+		if ( defined( 'OUTPUT_JPEG' ) ) {
+			if ( OUTPUT_JPEG == 'Y' ) {
+				$grid_ext = '.jpg';
+				// } else if ( OUTPUT_JPEG == 'N' ) {
+				//    $grid_ext = '.png';
+			} else if ( ( OUTPUT_JPEG == 'GIF' ) ) {
+				$grid_ext = '.gif';
+			}
+		}
+
+		$grid_img .= $grid_ext;
+
+		$grid_file = Utility::get_upload_path() . 'grids/grid' . $BID . $grid_ext;
+
+		// Add modification time
+		$grid_img .= "?v=" . filemtime( $grid_file );
+
+		return $grid_img;
+	}
+
+	public static function get_currencies() {
+		$codes = [];
+		if ( class_exists( 'WC_Payments_Utils' ) && \WC_Payments_Features::is_customer_multi_currency_enabled() && Options::get_option( 'woocommerce', false, 'options', 'no' ) == 'yes' ) {
+			$currencies = \WC_Payments_Multi_Currency()->get_enabled_currencies();
+			foreach ( $currencies as $currency ) {
+				$codes[] = $currency->get_code();
+			}
+
+			return $codes;
+		}
+
+		$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "currencies` ORDER by `name`";
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mds_sql_error( $sql ) );
+		while ( $row = mysqli_fetch_array( $result ) ) {
+			$codes[] = $row['code'];
+		}
+
+		return $codes;
+	}
+
 }

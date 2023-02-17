@@ -88,6 +88,10 @@ if ( isset( $_POST ) ) {
 				show_list();
 				die;
 				break;
+			case "show_users":
+				show_users();
+				die;
+				break;
 			default:
 				break;
 		}
@@ -119,6 +123,12 @@ if ( isset( $_POST ) ) {
 					$mds_ajax = new Mds_Ajax();
 					$mds_ajax->show( 'list', $data->grid_id, 'list' );
 					break;
+				case "ajax_users":
+					$_REQUEST['type'] = 'users';
+					require_once( BASE_PATH . "/include/mds_ajax.php" );
+					$mds_ajax = new Mds_Ajax();
+					$mds_ajax->show( 'users', $data->grid_id, 'users' );
+					break;
 				case "users":
 					require_once( BASE_PATH . "/users/index.php" );
 					break;
@@ -146,7 +156,7 @@ function show_grid() {
 	$banner_data = load_banner_constants( $BID );
 
 	$BANNER_PATH = \MillionDollarScript\Classes\Utility::get_upload_path() . 'grids/';
-	$BANNER_URL = \MillionDollarScript\Classes\Utility::get_upload_url() . 'grids/';
+	$BANNER_URL  = \MillionDollarScript\Classes\Utility::get_upload_url() . 'grids/';
 
 	$map_file = get_map_file_name( $BID );
 
@@ -171,7 +181,7 @@ function show_grid() {
 
 	if ( file_exists( $BANNER_PATH . "grid" . $BID . ".$ext" ) ) {
 		?>
-        <img id="theimage" src="<?php echo $BANNER_URL; ?>grid<?php echo $BID; ?>.<?php echo $ext; ?>?v=<?php echo filemtime($BANNER_PATH . "grid" . $BID . ".$ext"); ?>" width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0" usemap="#main"/>
+        <img id="theimage" src="<?php echo $BANNER_URL; ?>grid<?php echo $BID; ?>.<?php echo $ext; ?>?v=<?php echo filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" ); ?>" width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0" usemap="#main"/>
 		<?php
 	} else {
 		echo "<b>The file: " . $BANNER_PATH . "grid" . $BID . ".$ext" . " doesn't exist.</b><br>";
@@ -194,7 +204,7 @@ function show_stats() {
 
 	$sql = "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='sold' and banner_id='$BID' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-	$row  = mysqli_fetch_array( $result );
+	$row = mysqli_fetch_array( $result );
 
 	if ( defined( 'STATS_DISPLAY_MODE' ) && STATS_DISPLAY_MODE == 'BLOCKS' ) {
 		$sold = $row['COUNT'];
@@ -207,10 +217,10 @@ function show_stats() {
 	$row = mysqli_fetch_array( $result );
 
 	if ( defined( 'STATS_DISPLAY_MODE' ) && STATS_DISPLAY_MODE == 'BLOCKS' ) {
-		$nfs = $row['COUNT'];
+		$nfs       = $row['COUNT'];
 		$available = ( ( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] ) - $nfs ) - $sold;
 	} else {
-		$nfs = $row['COUNT'] * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+		$nfs       = $row['COUNT'] * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 		$available = ( ( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] ) ) - $nfs ) - $sold;
 	}
 
@@ -326,7 +336,7 @@ function show_list() {
                 <div class="list-heading" style="width:100%;"><?php echo $purifier->purify( $banner['name'] ); ?></div>
             </div>
 			<?php
-            //TODO: add option to order by other columns
+			//TODO: add option to order by other columns
 			$sql = "SELECT *, MAX(order_date) as max_date, sum(quantity) AS pixels FROM " . MDS_DB_PREFIX . "orders where status='completed' AND approved='Y' AND published='Y' AND banner_id='" . intval( $banner['banner_id'] ) . "' GROUP BY user_id, banner_id, order_id order by pixels desc ";
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 			while ( $row = mysqli_fetch_array( $result ) ) {
@@ -386,4 +396,103 @@ function show_list() {
         </div>
     </div>
 	<?php
+}
+
+function show_users() {
+
+	require_once BASE_PATH . "/include/login_functions.php";
+	mds_start_session();
+	require_once BASE_PATH . "/include/init.php";
+
+    var_export(is_logged_in());
+
+	//process_login();
+
+// check if user has permission to access this page
+	if ( ! mds_check_permission( "mds_my_account" ) ) {
+		// require_once BASE_PATH . "/html/header.php";
+		_e( "No Access", 'milliondollarscript' );
+		// require_once BASE_PATH . "/html/footer.php";
+		exit;
+	}
+
+	// require_once BASE_PATH . "/html/header.php";
+
+	global $f2, $label;
+	$BID = $f2->bid();
+	$sql = "SELECT grid_width,grid_height, block_width, block_height, bgcolor, time_stamp FROM " . MDS_DB_PREFIX . "banners WHERE (banner_id = '$BID')";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+	$b_row = mysqli_fetch_array( $result );
+
+	if ( ! $b_row['block_width'] ) {
+		$b_row['block_width'] = 10;
+	}
+	if ( ! $b_row['block_height'] ) {
+		$b_row['block_height'] = 10;
+	}
+
+	$sql = "select block_id from " . MDS_DB_PREFIX . "blocks where user_id='" . intval( $_SESSION['MDS_ID'] ) . "' and status='sold' ";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+	$pixels = mysqli_num_rows( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
+
+	$sql = "select block_id from " . MDS_DB_PREFIX . "blocks where user_id='" . intval( $_SESSION['MDS_ID'] ) . "' and status='ordered' ";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+	$ordered = mysqli_num_rows( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
+
+	$sql = "select * from " . MDS_DB_PREFIX . "users where ID='" . intval( $_SESSION['MDS_ID'] ) . "' ";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+	$user_row = mysqli_fetch_array( $result );
+
+	if ( $user_row == null ) {
+		// user might not be logged in correctly so log them out
+		require_once MDS_BASE_PATH . 'src/Core/users/wplogout.php';
+	}
+
+	?>
+    <h3><?php echo $label['advertiser_home_welcome']; ?></h3>
+    <p>
+		<?php echo $label['advertiser_home_line2'] . "<br>"; ?>
+    <p>
+    <p>
+		<?php
+		$label['advertiser_home_blkyouown'] = str_replace( "%PIXEL_COUNT%", $pixels, $label['advertiser_home_blkyouown'] );
+		$label['advertiser_home_blkyouown'] = str_replace( "%BLOCK_COUNT%", ( $pixels / ( $b_row['block_width'] * $b_row['block_height'] ) ), $label['advertiser_home_blkyouown'] );
+		echo $label['advertiser_home_blkyouown'] . "<br>";
+
+		$label['advertiser_home_blkonorder'] = str_replace( "%PIXEL_ORD_COUNT%", $ordered, $label['advertiser_home_blkonorder'] );
+		$label['advertiser_home_blkonorder'] = str_replace( "%BLOCK_ORD_COUNT%", ( $ordered / ( $b_row['block_width'] * $b_row['block_height'] ) ), $label['advertiser_home_blkonorder'] );
+
+		if ( USE_AJAX == 'SIMPLE' ) {
+			$label['advertiser_home_blkonorder'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_blkonorder'] );
+		}
+		echo $label['advertiser_home_blkonorder'] . "<br>";
+
+		$label['advertiser_home_click_count'] = str_replace( "%CLICK_COUNT%", number_format( $user_row['click_count'] ), $label['advertiser_home_click_count'] );
+		echo $label['advertiser_home_click_count'] . "<br>";
+
+		$label['advertiser_home_view_count'] = str_replace( "%VIEW_COUNT%", number_format( $user_row['view_count'] ), $label['advertiser_home_view_count'] );
+		echo $label['advertiser_home_view_count'] . "<br>";
+		?>
+    </p>
+
+    <h3><?php echo $label['advertiser_home_sub_head']; ?></h3>
+    <p>
+		<?php
+
+		if ( USE_AJAX == 'SIMPLE' ) {
+			$label['advertiser_home_selectlink'] = str_replace( 'select.php', 'order_pixels.php', $label['advertiser_home_selectlink'] );
+		}
+		if ( WP_ENABLED == 'YES' ) {
+			$label['advertiser_home_editlink'] = str_replace( [ 'edit.php', 'href' ], [ \MillionDollarScript\Classes\Options::get_option( 'account-page' ), 'target=\'_top\' href' ], $label['advertiser_home_editlink'] );
+		}
+
+		echo $label['advertiser_home_selectlink']; ?><br>
+		<?php echo $label['advertiser_home_managelink']; ?><br>
+		<?php echo $label['advertiser_home_ordlink']; ?><br>
+		<?php echo $label['advertiser_home_editlink']; ?><br>
+    </p>
+    <p>
+		<?php echo $label['advertiser_home_quest']; ?>
+    </p>
+	<?php //require_once BASE_PATH . "/html/footer.php";
 }

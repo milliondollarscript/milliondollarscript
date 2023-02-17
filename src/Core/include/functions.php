@@ -320,7 +320,7 @@ function debit_transaction( $order_id, $amount, $currency, $txn_id, $reason, $or
 }
 
 function complete_order( $user_id, $order_id ) {
-	confirm_order( $_SESSION['MDS_ID'], $order_id );
+	confirm_order( $user_id, $order_id );
 
 	global $label;
 
@@ -360,6 +360,9 @@ function complete_order( $user_id, $order_id ) {
 			$order_row['days_expire'] = $label['advertiser_ord_never'];
 		}
 
+		$banner_data = load_banner_constants( $order_row['banner_id'] );
+		$block_count = $order_row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+
 		$price = convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
 		$message = $label["order_completed_email_template"];
@@ -369,6 +372,7 @@ function complete_order( $user_id, $order_id ) {
 		$message = str_replace( "%MEMBERID%", $user_row['Username'], $message );
 		$message = str_replace( "%ORDER_ID%", $order_row['order_id'], $message );
 		$message = str_replace( "%PIXEL_COUNT%", $order_row['quantity'], $message );
+		$message = str_replace( "%BLOCK_COUNT%", $block_count, $message );
 		$message = str_replace( "%PIXEL_DAYS%", $order_row['days_expire'], $message );
 		$message = str_replace( "%PRICE%", $price, $message );
 		$message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $message );
@@ -385,6 +389,7 @@ function complete_order( $user_id, $order_id ) {
 		$html_message = str_replace( "%MEMBERID%", $user_row['Username'], $html_message );
 		$html_message = str_replace( "%ORDER_ID%", $order_row['order_id'], $html_message );
 		$html_message = str_replace( "%PIXEL_COUNT%", $order_row['quantity'], $html_message );
+		$html_message = str_replace( "%BLOCK_COUNT%", $block_count, $html_message );
 		$html_message = str_replace( "%PIXEL_DAYS%", $order_row['days_expire'], $html_message );
 		$html_message = str_replace( "%PRICE%", $price, $html_message );
 		$html_message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $html_message );
@@ -475,6 +480,9 @@ function confirm_order( $user_id, $order_id ) {
 			$row['days_expire'] = $label['advertiser_ord_never'];
 		}
 
+		$banner_data = load_banner_constants( $row['banner_id'] );
+		$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+
 		$price = convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
 		$message = $label["order_confirmed_email_template"];
@@ -484,6 +492,7 @@ function confirm_order( $user_id, $order_id ) {
 		$message = str_replace( "%MEMBERID%", $row['Username'], $message );
 		$message = str_replace( "%ORDER_ID%", $row['order_id'], $message );
 		$message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $message );
+		$message = str_replace( "%BLOCK_COUNT%", $block_count, $message );
 		$message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $message );
 		$message = str_replace( "%DEADLINE%", intval( MINUTES_CONFIRMED ), $message );
 		$message = str_replace( "%PRICE%", $price, $message );
@@ -501,6 +510,7 @@ function confirm_order( $user_id, $order_id ) {
 		$html_message = str_replace( "%MEMBERID%", $row['Username'], $html_message );
 		$html_message = str_replace( "%ORDER_ID%", $row['order_id'], $html_message );
 		$html_message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $html_message );
+		$html_message = str_replace( "%BLOCK_COUNT%", $block_count, $html_message );
 		$html_message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $html_message );
 		$html_message = str_replace( "%DEADLINE%", intval( MINUTES_CONFIRMED ), $html_message );
 		$html_message = str_replace( "%PRICE%", $price, $html_message );
@@ -567,6 +577,9 @@ function pend_order( $user_id, $order_id ) {
 			$row['days_expire'] = $label['advertiser_ord_never'];
 		}
 
+		$banner_data = load_banner_constants( $row['banner_id'] );
+		$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+
 		$price = convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
 		$message = $label["order_pending_email_template"];
@@ -576,6 +589,7 @@ function pend_order( $user_id, $order_id ) {
 		$message = str_replace( "%MEMBERID%", $row['Username'], $message );
 		$message = str_replace( "%ORDER_ID%", $row['order_id'], $message );
 		$message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $message );
+		$message = str_replace( "%BLOCK_COUNT%", $block_count, $message );
 		$message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $message );
 		$message = str_replace( "%PRICE%", $price, $message );
 		$message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $message );
@@ -592,6 +606,7 @@ function pend_order( $user_id, $order_id ) {
 		$html_message = str_replace( "%MEMBERID%", $row['Username'], $html_message );
 		$html_message = str_replace( "%ORDER_ID%", $row['order_id'], $html_message );
 		$html_message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $html_message );
+		$html_message = str_replace( "%BLOCK_COUNT%", $block_count, $html_message );
 		$html_message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $html_message );
 		$html_message = str_replace( "%PRICE%", $price, $html_message );
 		$html_message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $html_message );
@@ -677,6 +692,9 @@ function expire_order( $order_id ) {
 			$row['days_expire'] = $label['advertiser_ord_never'];
 		}
 
+		$banner_data = load_banner_constants( $row['banner_id'] );
+		$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+
 		$price = convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
 		$message = $label["order_expired_email_template"];
@@ -686,6 +704,7 @@ function expire_order( $order_id ) {
 		$message = str_replace( "%MEMBERID%", $row['Username'], $message );
 		$message = str_replace( "%ORDER_ID%", $row['order_id'], $message );
 		$message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $message );
+		$message = str_replace( "%BLOCK_COUNT%", $block_count, $message );
 		$message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $message );
 		$message = str_replace( "%PRICE%", $price, $message );
 		$message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $message );
@@ -702,6 +721,7 @@ function expire_order( $order_id ) {
 		$html_message = str_replace( "%MEMBERID%", $row['Username'], $html_message );
 		$html_message = str_replace( "%ORDER_ID%", $row['order_id'], $html_message );
 		$html_message = str_replace( "%PIXEL_COUNT%", $row['quantity'], $html_message );
+		$html_message = str_replace( "%BLOCK_COUNT%", $block_count, $html_message );
 		$html_message = str_replace( "%PIXEL_DAYS%", $row['days_expire'], $html_message );
 		$html_message = str_replace( "%PRICE%", $price, $html_message );
 		$html_message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $html_message );
@@ -960,6 +980,9 @@ function complete_renew_order( $order_id ) {
 			$order_row['days_expire'] = $label['advertiser_ord_never'];
 		}
 
+		$banner_data = load_banner_constants( $order_row['banner_id'] );
+		$block_count = $order_row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+
 		$price = convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
 		$message = $label["order_completed_renewal_email_template"];
@@ -970,6 +993,7 @@ function complete_renew_order( $order_id ) {
 		$message = str_replace( "%ORDER_ID%", $order_row['order_id'], $message );
 		$message = str_replace( "%ORIGINAL_ORDER_ID%", $order_row['original_order_id'], $message );
 		$message = str_replace( "%PIXEL_COUNT%", $order_row['quantity'], $message );
+		$message = str_replace( "%BLOCK_COUNT%", $block_count, $message );
 		$message = str_replace( "%PIXEL_DAYS%", $order_row['days_expire'], $message );
 		$message = str_replace( "%PRICE%", $price, $message );
 		$message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $message );
@@ -987,6 +1011,7 @@ function complete_renew_order( $order_id ) {
 		$html_message = str_replace( "%ORDER_ID%", $order_row['order_id'], $html_message );
 		$html_message = str_replace( "%ORIGINAL_ORDER_ID%", $order_row['original_order_id'], $html_message );
 		$html_message = str_replace( "%PIXEL_COUNT%", $order_row['quantity'], $html_message );
+		$html_message = str_replace( "%BLOCK_COUNT%", $block_count, $html_message );
 		$html_message = str_replace( "%PIXEL_DAYS%", $order_row['days_expire'], $html_message );
 		$html_message = str_replace( "%PRICE%", $price, $html_message );
 		$html_message = str_replace( "%SITE_CONTACT_EMAIL%", SITE_CONTACT_EMAIL, $html_message );
@@ -1291,6 +1316,8 @@ function display_packages( $order_id, $BID ) {
 
 function display_banner_selecton_form( $BID, $order_id, $res ) {
 
+	global $label;
+
 	$action = $_SERVER['PHP_SELF'];
 
 	// strip parameters
@@ -1304,6 +1331,9 @@ function display_banner_selecton_form( $BID, $order_id, $res ) {
         <select name="BID" style="font-size: 14px;">
 			<?php
 			while ( $row = mysqli_fetch_array( $res ) ) {
+				if ( $row['enabled'] == 'N' ) {
+					continue;
+				}
 				if ( $row['banner_id'] == $BID ) {
 					$sel = 'selected';
 				} else {
@@ -1313,7 +1343,7 @@ function display_banner_selecton_form( $BID, $order_id, $res ) {
 			}
 			?>
         </select>
-        <input type="submit" name="submit" value="Select Grid">
+        <input type="submit" name="submit" value="<?php esc_attr_e( $label['select_grid'] ); ?>">
     </form>
 	<?php
 }
@@ -3241,4 +3271,12 @@ function check_pixels( $in_str ) {
 	}
 
 	return $available;
+}
+
+function mds_get_user_id() {
+	if ( isset( $_SESSION['MDS_ID'] ) ) {
+		return intval( $_SESSION['MDS_ID'] );
+	}
+
+    return 0;
 }

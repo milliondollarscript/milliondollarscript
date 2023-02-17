@@ -163,18 +163,32 @@ class Database {
 		$prefix = ( $this->mds_sql_pre8_installed() ) ? '' : MDS_DB_PREFIX;
 
 		if ( $version > 0 ) {
-			$sql = "UPDATE `" . $prefix . "config` SET `val`=" . intval( $version ) . " WHERE `key`='dbver';";
+			$val = $version;
 		} else {
-			$sql = "UPDATE `" . $prefix . "config` SET `val`='1' WHERE `key`='dbver';";
+			$val = 1;
 		}
 
-		$wpdb->query( $sql );
+		$wpdb->update(
+			MDS_DB_PREFIX . 'config',
+			[
+				'val' => $val,
+			],
+			[
+				'key' => 'dbver'
+			],
+			[
+				'%d',
+			],
+			[
+				'%s'
+			]
+		);
 
 		if ( $version > 0 ) {
 			return $version;
 		}
 
-		$sql = "SELECT `val` FROM `" . $prefix . "config` WHERE `key`='dbver';";
+		$sql   = "SELECT `val` FROM `" . $prefix . "config` WHERE `key`='dbver';";
 		$dbver = $wpdb->get_var( $sql );
 
 		return intval( $dbver );
@@ -562,16 +576,93 @@ class Database {
 			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "lang` ADD COLUMN `lang_dir` CHAR(3) NOT NULL default 'ltr' AFTER `lang_code`;";
 			$wpdb->query( $sql );
 
-			// Set ltr for all existing languages
-			$sql = "UPDATE `" . MDS_DB_PREFIX . "lang` SET `lang_dir`='ltr';";
-			$wpdb->query( $sql );
-
 			$version = $this->up_dbver( 14 );
 		}
 
+		if ( $version <= 14 ) {
+			add_action( 'wp_loaded', function () {
+				if ( Functions::migrate_product() != null ) {
+					$this->up_dbver( 15 );
+				}
+			} );
+		}
+
+		if ( $version <= 15 ) {
+
+			// Add nfs_covered column to banners table
+			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` ADD COLUMN `nfs_covered` CHAR(1) NOT NULL default 'N' AFTER `auto_approve`;";
+			$wpdb->query( $sql );
+
+			$version = $this->up_dbver( 16 );
+		}
+
+		if ( $version <= 16 ) {
+
+			// Store banner data from database into an array for later use.
+			// $sql     = "SELECT `banner_id`,`nfs_block`, `usr_nfs_block` FROM `" . MDS_DB_PREFIX . "banners`";
+			// $results = $wpdb->get_results( $sql );
+			// $banners = [];
+			// foreach ( $results as $result ) {
+			// 	// Decode block data while storing to the array
+			// 	$banners[$result->banner_id] = [
+			// 		'nfs_block'     => base64_decode( $result->nfs_block ),
+			// 		'usr_nfs_block' => base64_decode( $result->usr_nfs_block ),
+			// 	];
+			// }
+
+			// Change nfs_block and usr_nfs_block to LONGBLOB
+			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` CHANGE `nfs_block` `nfs_block` LONGBLOB NOT NULL, CHANGE `usr_nfs_block` `usr_nfs_block` LONGBLOB NOT NULL;";
+			$wpdb->query( $sql );
+
+			// Update block data for each banner
+			// foreach ( $banners as $banner_id => $data ) {
+			// 	$wpdb->update(
+			// 		MDS_DB_PREFIX . 'banners',
+			// 		[
+			// 			'nfs_block'     => $data['nfs_block'],
+			// 			'usr_nfs_block' => $data['usr_nfs_block'],
+			// 		],
+			// 		[
+			// 			'banner_id' => $banner_id
+			// 		],
+			// 		[
+			// 			'%s',
+			// 			'%s'
+			// 		],
+			// 		[
+			// 			'%d'
+			// 		]
+			// 	);
+			// }
+
+			$version = $this->up_dbver( 17 );
+		}
+
+		if($version <= 17) {
+
+			// Add nfs_covered column to banners table
+			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` ADD COLUMN `enabled` CHAR(1) NOT NULL default 'Y' AFTER `nfs_covered`;";
+			$wpdb->query( $sql );
+
+			$version = $this->up_dbver( 18 );
+		}
+
 		// Update version info
-		$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='" . get_mds_version() . "' WHERE `key`='VERSION_INFO'";
-		$wpdb->query( $sql );
+		$wpdb->update(
+			MDS_DB_PREFIX . 'config',
+			[
+				'val' => get_mds_version(),
+			],
+			[
+				'key' => 'VERSION_INFO'
+			],
+			[
+				'%s',
+			],
+			[
+				'%s'
+			]
+		);
 
 		// TODO: remember to update the DB version in /milliondollarscript-two.php
 

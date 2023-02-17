@@ -90,7 +90,7 @@ if ( WP_ENABLED == 'YES' ) {
         + <a href="inventory.php">Manage Grids</a><br/>
         &nbsp;&nbsp;|- <a href="packs.php">Packages</a><br/>
         &nbsp;&nbsp;|- <a href="price.php">Price Zones</a><br/>
-        &nbsp;&nbsp;|- <a href="nfs.php">Not For Sale</a><br/>
+        &nbsp;&nbsp;|- <a target="_top" href="<?php echo admin_url('admin.php?page=MillionDollarScript_NFS'); ?>">Not For Sale</a><br/>
         &nbsp;&nbsp;|- <a href="blending.php">Backgrounds</a><br/>
         - <a href="gethtml.php">Get HTML Code</a><br/>
 

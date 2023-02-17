@@ -40,12 +40,24 @@ function load_banner_row( $BID ) {
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 	$row = mysqli_fetch_array( $result );
 
+	if ( ! $row ) {
+		// No grid found with the given id so just select the first row.
+		$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` LIMIT 1";
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$row = mysqli_fetch_array( $result );
+	}
+
 	return $row;
 }
 
 function load_banner_constants( $BID ) {
 
 	$row = load_banner_row( $BID );
+
+	// Check non-existent grid.
+	if ( $row == null ) {
+		return;
+	}
 
 	// defaults
 
@@ -94,6 +106,8 @@ function load_banner_constants( $BID ) {
 	$row["BANNER_ID"]  = $row['banner_id'];
 	$row["G_WIDTH"]    = $row['grid_width'];
 	$row["G_HEIGHT"]   = $row['grid_height'];
+
+	$row["NFS_COVERED"] = $row['nfs_covered'];
 
 	$row["GRID_BLOCK"] = base64_decode( $row['grid_block'] );
 	$row["NFS_BLOCK"]  = base64_decode( $row['nfs_block'] );

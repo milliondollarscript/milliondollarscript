@@ -123,7 +123,7 @@ class MdsWooCommercePaymentModule {
 
 	function config_form() {
 
-		if ( isset($_REQUEST['action']) && $_REQUEST['action'] == 'save' ) {
+		if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'save' ) {
 			$woocommerce_enabled      = $_REQUEST['woocommerce_enabled'];
 			$woocommerce_url          = $_REQUEST['woocommerce_url'];
 			$woocommerce_auto_approve = $_REQUEST['woocommerce_auto_approve'];
@@ -153,10 +153,13 @@ class MdsWooCommercePaymentModule {
                         <span style="font-family: Verdana,serif; font-size: xx-small; ">WooCommerce Checkout URL</span></td>
                     <td bgcolor="#e6f2ea"><span style="font-family: Verdana,serif; font-size: xx-small; ">
                             <input type="text" name="woocommerce_url" value="<?php echo htmlspecialchars( $woocommerce_url, ENT_QUOTES ); ?>"></span>
-                        <div>Scenario: https://example.com/checkout/?add-to-cart=##&quantity=%QUANTITY% - Make a product in WooCommerce that is Virtual and set to the price of a single block. ## is your product id.</div>
+                        <div>https://example.com/checkout/?add-to-cart=%VARIATION%&quantity=%QUANTITY%</div>
+                        <div>Note that this is all automatically done for you by default: Make a product in WooCommerce. Set it as a Variable product. Add a check to Million Dollar Script Pixels in the Product Data section of the product. Add a product attribute for grid and set it to be used by variations. Set the value to pipe separated grid id #s. For example 1 | 2 | 3, etc. Add variations for each grid. Set the variation price per block, assign them to the grid attribute, make them all virtual.</div>
                         <div>%AMOUNT% will be replaced with the order amount.</div>
                         <div>%CURRENCY% will be replaced with the order currency.</div>
                         <div>%QUANTITY% will be replaced with the number of blocks ordered.</div>
+                        <div>%PRODUCTID% will be replaced with the product id #.</div>
+                        <div>%VARIATION% will be replaced with the product variation id #.</div>
                     </td>
                 </tr>
                 <tr>
@@ -246,7 +249,7 @@ class MdsWooCommercePaymentModule {
 		$sql = "SELECT val FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='WOOCOMMERCE_ENABLED' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		$row = mysqli_fetch_array( $result );
-		if ( $row['val'] == 'Y' ) {
+		if ( isset( $row ) && $row['val'] == 'Y' ) {
 			return true;
 		} else {
 			return false;
@@ -279,8 +282,6 @@ class MdsWooCommercePaymentModule {
 	}
 
 	function process_payment_return() {
-		global $f2;
-
 		if ( ( $_REQUEST['order_id'] != '' ) ) {
 
 			if ( $_SESSION['MDS_ID'] == '' ) {
@@ -306,11 +307,17 @@ class MdsWooCommercePaymentModule {
 
 				$banner_data = load_banner_constants( $row['banner_id'] );
 				$quantity    = intval( $row['quantity'] ) / intval( $banner_data['block_width'] ) / intval( $banner_data['block_height'] );
+				$price        = $row['price'];
+				$variation_id = \MillionDollarScript\Classes\Functions::get_variation_id( $row['banner_id'] );
+				$product_id   = \MillionDollarScript\Classes\Functions::get_product_id();
 
-				$dest = str_replace( '%AMOUNT%', urlencode( $row['price'] ), $url );
+					$dest = str_replace( '%AMOUNT%', urlencode( $price ), $url );
 				$dest = str_replace( '%CURRENCY%', urlencode( $row['currency'] ), $dest );
 				$dest = str_replace( '%QUANTITY%', urlencode( $quantity ), $dest );
-				if(strpos($dest, '?') !== false) {
+				$dest = str_replace( '%VARIATION%', urlencode( $variation_id ), $dest );
+				$dest = str_replace( '%PRODUCTID%', urlencode( $product_id ), $dest );
+
+				if ( str_contains( $dest, '?' ) ) {
 					$dest = $dest . '&mdsid=' . $order_id;
 				} else {
 					$dest = $dest . '?mdsid=' . $order_id;
@@ -321,11 +328,23 @@ class MdsWooCommercePaymentModule {
 					echo "<script>top.window.location = '$dest'</script>";
 					exit;
 				}
+				// if ( WOOCOMMERCE_REDIRECT == "yes" ) {
+				//     $product_id = \MillionDollarScript\Classes\Functions::get_product_id();
+				//
+				// 	WC()->cart->add_to_cart($product_id, $quantity);
+				// 	WC()->cart->calculate_totals();
+				// 	wp_safe_redirect(wc_get_checkout_url());
+				// 	exit;
+				// }
 			}
 		}
 	}
 
 	function complete_order( $order_id ) {
+		if ( ! defined( 'WOOCOMMERCE_URL' ) ) {
+			return;
+		}
+
 		$url = esc_url_raw( WOOCOMMERCE_URL );
 
 		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $order_id ) . "'";
@@ -333,7 +352,7 @@ class MdsWooCommercePaymentModule {
 		$row = mysqli_fetch_array( $result );
 
 		complete_order( $row['user_id'], $order_id );
-		debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', substr($url, 0, 64), 'WooCommerce' );
+		debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', substr( $url, 0, 64 ), 'WooCommerce' );
 	}
 
 	function get_quantity( $order_id ) {

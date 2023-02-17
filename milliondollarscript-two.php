@@ -37,6 +37,7 @@
 namespace MillionDollarScript;
 
 use MillionDollarScript\Classes\Bootstrap;
+use MillionDollarScript\Classes\Cron;
 use MillionDollarScript\Classes\Database;
 use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Utility;
@@ -60,7 +61,7 @@ defined( 'MDS_CORE_URL' ) or define( 'MDS_CORE_URL', MDS_BASE_URL . 'src/Core/' 
 
 global $wpdb;
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
-defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', 14 );
+defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', 18 );
 defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.3.6' );
 
 require_once ABSPATH . 'wp-includes/pluggable.php';
@@ -297,5 +298,6 @@ register_uninstall_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two
 add_action( 'plugins_loaded', '\MillionDollarScript\milliondollarscript_two_update' );
 
 // Cron
-register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\Cron', 'schedule_cron' ] );
-register_deactivation_hook( __FILE__,  [ '\MillionDollarScript\Classes\Cron', 'clear_cron' ] );
+$cron = new Cron();
+register_activation_hook( __FILE__, [ $cron, 'schedule_cron' ] );
+register_deactivation_hook( __FILE__,  [ $cron, 'clear_cron' ] );

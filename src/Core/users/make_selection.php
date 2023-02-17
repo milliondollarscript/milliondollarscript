@@ -117,7 +117,7 @@ function reserve_temp_order_pixels( $block_info, $in_str ) {
 	$total = 0;
 	foreach ( $block_info as $key => $block ) {
 
-		$price = get_zone_price( $BID, $block['map_y'] / $banner_data['BLK_HEIGHT'], $block['map_x'] / $banner_data['BLK_WIDTH'] );
+		$price = get_zone_price( $BID, $block['map_y'], $block['map_x'] );
 
 		$currency = get_default_currency();
 

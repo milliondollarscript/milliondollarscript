@@ -58,18 +58,87 @@
  *
  * @return string Progress output.
  */
-function output_grid( $show, $file, $BID, $types, $user_id = 0 ) {
+function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false ) {
 	if ( ! is_numeric( $BID ) ) {
 		return false;
 	}
 
+	// TODO: add shutdown detection for when this times out
+	// TODO: add cleanup of old images
+
+	if ( $cached ) {
+
+		// Banner paths
+		$BANNER_PATH = \MillionDollarScript\Classes\Utility::get_upload_path() . 'grids/';
+
+		// Get the file extension if the file doesn't already have one
+		$ext = pathinfo( $file, PATHINFO_EXTENSION );
+		if ( empty( $ext ) ) {
+			$ext = "png";
+			if ( OUTPUT_JPEG == 'Y' ) {
+				$ext = "jpg";
+			} else if ( OUTPUT_JPEG == 'N' ) {
+				// defaults to png, set above
+			} else if ( OUTPUT_JPEG == 'GIF' ) {
+				$ext = "gif";
+			}
+		}
+
+		// TODO: Make it save the time somewhere when publishing or updating an order and use that instead of this since this will get slow
+		// Get the table checksum
+		global $wpdb;
+		$checksum = $wpdb->get_var( "CHECKSUM TABLE `" . MDS_DB_PREFIX . "orders`", 1 );
+
+		// Get the hash value of the types of blocks to show in the grid
+		$typehash = md5( serialize( $types ) );
+
+		// Get the file path and url
+		$filename = "grid$BID-$checksum-$typehash";
+		$file     = $BANNER_PATH . $filename;
+		$fullfile = $file . '.' . $ext;
+
+		//MillionDollarScript\Classes\Debug::output( $fullfile, 'log' );
+
+		// grid1-856848500-1bf8f4d8717252cf8010a67f0b3c50b0.png
+		if ( file_exists( $fullfile ) ) {
+			// If the file exists then output it directly.
+			header( 'Content-Type:' . 'image/' . $ext );
+			header( 'Content-Length: ' . filesize( $fullfile ) );
+			readfile( $fullfile );
+		} else {
+			// The file doesn't exist so save it and then output it.
+			// save the grid image since it doesn't exist yet
+			output_grid( false, $file, $BID, $types, $user_id, false );
+			output_grid( false, $file, $BID, $types, $user_id, true );
+		}
+
+		return "Saved " . $fullfile;
+	}
+
 	$progress = 'Please wait.. Processing the Grid image with GD';
 
-	if ( class_exists( 'Imagick' ) ) {
-		$imagine = new Imagine\Imagick\Imagine();
-	} else if ( function_exists( 'gd_info' ) ) {
+	// Was getting weird errors so removed Imagick
+// 	[04-Jan-2023 17:13:32 UTC] PHP Fatal error:  Uncaught ImagickException: No IDATs written into file `/home/user/public_html/wp-content/uploads/milliondollarscript/grids/grid158.png' @ error/png.c/MagickPNGErrorHandler/1642 in /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php:343
+// Stack trace:
+// #0 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php(343): Imagick->writeImages()
+// #1 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/output_grid.php(539): Imagine\Imagick\Image->save()
+// #2 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/image_functions.php(107): output_grid()
+// #3 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/admin/process.php(47): process_image()
+// #4 {main}
+//
+// Next Imagine\Exception\RuntimeException: Save operation failed in /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php:345
+// Stack trace:
+// #0 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/output_grid.php(539): Imagine\Imagick\Image->save()
+// #1 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/image_functions.php(107): output_grid()
+// #2 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/admin/process.php(47): process_image()
+// #3 {main}
+//   thrown in /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php on line 345
+
+	// if ( class_exists( 'Imagick' ) ) {
+	// 	$imagine = new Imagine\Imagick\Imagine();
+	// } else if ( function_exists( 'gd_info' ) ) {
 		$imagine = new Imagine\Gd\Imagine();
-	}
+	// }
 
 	$banner_data = load_banner_constants( $BID );
 
@@ -168,25 +237,72 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0 ) {
 		}
 	}
 
-	$blocks = $orders = $price_zones = $users = array();
+	$blocks = $orders = $price_zones = $users = $nfs = array();
 
 	// preload nfs blocks
 	if ( isset( $default_nfs_block ) ) {
 		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND banner_id='" . intval( $BID ) . "' " . $and_user;
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$blocks[ $row['block_id'] ] = 'nfs';
+		// nfs covered images
+		if ( isset( $banner_data['NFS_COVERED'] )  == 'Y' ) {
+			$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id='" . intval( $BID ) . "'";
+			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+
+			while ( $row = mysqli_fetch_array( $result ) ) {
+
+				$data = $row['image_data'];
+
+				// get block image output
+				if ( strlen( $data ) != 0 ) {
+					$block = $imagine->load( base64_decode( $data ) );
+				} else {
+					$block = $default_nfs_block->copy();
+				}
+				$block->resize( $block_size );
+
+				$blocks[ $row['block_id'] ] = 'nfs';
+				$nfs[ $row['block_id'] ] = $block;
+			}
+		} else {
+			while ( $row = mysqli_fetch_array( $result ) ) {
+				$blocks[ $row['block_id'] ] = 'nfs';
+				$nfs[ $row['block_id'] ] = $default_nfs_block;
+			}
 		}
 	}
 
+	// TODO: It should probably reload this from the grid settings when a new image is uploaded.
 	// preload nfs_front blocks (nfs blocks appearing in front of the background)
 	if ( isset( $default_nfs_front_block ) ) {
 		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND banner_id='" . intval( $BID ) . "' " . $and_user;
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$blocks[ $row['block_id'] ] = 'nfs_front';
+		// nfs covered images
+		if ( isset( $banner_data['NFS_COVERED'] )  == 'Y' ) {
+			$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id='" . intval( $BID ) . "'";
+			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+
+			while ( $row = mysqli_fetch_array( $result ) ) {
+
+				$data = $row['image_data'];
+
+				// get block image output
+				if ( strlen( $data ) != 0 ) {
+					$block = $imagine->load( base64_decode( $data ) );
+				} else {
+					$block = $default_nfs_front_block->copy();
+				}
+				$block->resize( $block_size );
+
+				$blocks[ $row['block_id'] ] = 'nfs_front';
+				$nfs[ $row['block_id'] ] = $block;
+			}
+		} else {
+			while ( $row = mysqli_fetch_array( $result ) ) {
+				$blocks[ $row['block_id'] ] = 'nfs_front';
+				$nfs[ $row['block_id'] ] = $default_nfs_front_block;
+			}
 		}
 	}
 
@@ -296,7 +412,6 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0 ) {
 		$price_zone_blocks = array();
 		$cell              = 0;
 		for ( $y = 0; $y < ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); $y += $banner_data['BLK_HEIGHT'] ) {
-
 			for ( $x = 0; $x < ( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); $x += $banner_data['BLK_WIDTH'] ) {
 
 				$price_zone_color = get_zone_color( $BID, $y, $x );
@@ -338,9 +453,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0 ) {
 				} else if ( isset( $user ) && $blocks[ $cell ] == "user" ) {
 					$grid_front[ $x ][ $y ] = $users[ $cell ];
 				} else if ( isset( $default_nfs_block ) && $blocks[ $cell ] == "nfs" ) {
-					$grid_back[ $x ][ $y ] = $default_nfs_block;
+					$grid_back[ $x ][ $y ] = $nfs[ $cell ];
 				} else if ( isset( $default_nfs_front_block ) && $blocks[ $cell ] == "nfs_front" ) {
-					$grid_front[ $x ][ $y ] = $default_nfs_front_block;
+					$grid_front[ $x ][ $y ] = $nfs[ $cell ];
 				} else if ( isset( $default_ordered_block ) && $blocks[ $cell ] == "ordered" ) {
 					$grid_front[ $x ][ $y ] = $default_ordered_block;
 				} else if ( isset( $default_reserved_block ) && $blocks[ $cell ] == "reserved" ) {
@@ -486,7 +601,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0 ) {
 
 		$map->show( $mime, $options );
 	} else {
-		$filename = $file . "." . $ext;
+
+		$pathinfo = pathinfo( $file );
+		$filename = $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $pathinfo['filename'] . "." . $ext;
 		if ( ! touch( $filename ) ) {
 			$progress .= "<b>Warning:</b> The script does not have permission write to " . $filename . " or the directory does not exist<br>";
 		}

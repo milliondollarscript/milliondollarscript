@@ -69,8 +69,8 @@ $lang_dir = $wpdb->get_var("SELECT `lang_dir` FROM `" . MDS_DB_PREFIX . "lang` W
 	if ( ! isset( $GLOBALS['mds_js_loaded'] ) ) {
 		$GLOBALS['mds_js_loaded'] = true;
 
-		global $f2;
-		$BID         = $f2->bid();
+		global $BID, $f2;
+		$BID         = $f2->bid($BID);
 		$banner_data = load_banner_constants( $BID );
 
 		$wp_url = '';

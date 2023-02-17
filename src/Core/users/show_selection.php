@@ -42,15 +42,22 @@ global $f2;
 
 $BID = $f2->bid();
 
-output_grid( true, "", $BID, array(
-	'background',
-	'orders',
-	'grid',
-	'nfs',
-	'ordered',
-	'reserved',
-	'selected',
-	'sold',
-	'price_zones',
-	'not_my_reserved'
-) );
+output_grid(
+	true,
+	"",
+	$BID,
+	array(
+		'background',
+		'orders',
+		'grid',
+		'nfs',
+		'ordered',
+		'reserved',
+		'selected',
+		'sold',
+		'price_zones',
+		'not_my_reserved'
+	),
+	0,
+	true
+);

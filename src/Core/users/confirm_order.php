@@ -71,12 +71,13 @@ if ( mysqli_num_rows( $order_result ) == 0 ) {
 $order_row = mysqli_fetch_array( $order_result );
 
 // get the banner ID
+global $BID;
 $BID = $order_row['banner_id'];
 
 $banner_data = load_banner_constants( $BID );
 
 /* Login -> Select pixels -> Write ad -> Confirm order */
-if ( $_SESSION['MDS_ID'] == '' ) {
+if ( !isset($_SESSION['MDS_ID']) || $_SESSION['MDS_ID'] == '' ) {
 	if ( WP_ENABLED == "YES" && WP_USERS_ENABLED == "YES" ) {
         mds_wp_login_check();
     }
@@ -95,11 +96,11 @@ if ( $_SESSION['MDS_ID'] == '' ) {
 				<?php
 
 				// process signup form
-				if ( $_REQUEST['form'] == "filled" ) {
+				if ( isset($_REQUEST['form']) && $_REQUEST['form'] == "filled" ) {
 					$success = process_signup_form( 'confirm_order.php' );
 				}
 
-				if ( ! $success ) {
+				if ( empty($success) ) {
 					// Signup form is shown below
 
 					?>
@@ -197,7 +198,6 @@ if ( $_SESSION['MDS_ID'] == '' ) {
 			echo "<p>" . $label['pack_cannot_select'] . "</p>";
 		}
 	} else {
-
 		display_order( get_current_order_id(), $BID );
 
 		$sql = "select * from " . MDS_DB_PREFIX . "users where ID='" . intval( $_SESSION['MDS_ID'] ) . "'";

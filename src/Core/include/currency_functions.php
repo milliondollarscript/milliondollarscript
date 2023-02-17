@@ -31,6 +31,22 @@
  */
 
 function currency_option_list( $selected ) {
+	// Support for WooCommerce Payments Multi-currency
+	if ( class_exists( 'WC_Payments_Utils' ) && WC_Payments_Features::is_customer_multi_currency_enabled() ) {
+		$currencies = \WC_Payments_Multi_Currency()->get_enabled_currencies();
+		$default = get_default_currency();
+
+		foreach($currencies as $currency) {
+			$code = $currency->get_code();
+			if ( $code === $selected ) {
+				$sel = " selected ";
+			} else {
+				$sel = "";
+			}
+			echo "<option $sel value=" . $code . ">" . $code . " " . $currency->get_symbol() . "</option>";
+		}
+		return;
+	}
 
 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "currencies ORDER by name ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -45,6 +61,12 @@ function currency_option_list( $selected ) {
 }
 
 function get_default_currency() {
+	// Support for WooCommerce Payments Multi-currency
+	if ( class_exists( 'WC_Payments_Utils' ) && WC_Payments_Features::is_customer_multi_currency_enabled() ) {
+		$wc_currency = \WC_Payments_Multi_Currency()->get_selected_currency();
+
+		return $wc_currency->get_code();
+	}
 
 	$sql = "SELECT code from " . MDS_DB_PREFIX . "currencies WHERE is_default='Y' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -67,6 +89,12 @@ function get_currency_rate( $code ) {
 }
 
 function convert_to_currency( $amount, $from_currency, $to_currency ) {
+	// Support for WooCommerce Payments Multi-currency
+	if ( class_exists( 'WC_Payments_Features' ) && WC_Payments_Features::is_customer_multi_currency_enabled() ) {
+		// /wp-admin/admin.php?page=wc-settings&tab=wcpay_multi_currency
+
+		return \WC_Payments_Multi_Currency()->get_price($amount, 'product');
+	}
 
 	if ( $from_currency == $to_currency ) {
 		return $amount;
@@ -95,6 +123,13 @@ function convert_to_currency( $amount, $from_currency, $to_currency ) {
 
 // return as a float
 function convert_to_default_currency( $cur_code, $amount ) {
+	// Support for WooCommerce Payments Multi-currency
+	if ( class_exists( 'WC_Payments_Features' ) && WC_Payments_Features::is_customer_multi_currency_enabled() ) {
+		// /wp-admin/admin.php?page=wc-settings&tab=wcpay_multi_currency
+
+		return \WC_Payments_Multi_Currency()->get_price($amount, 'product');
+	}
+
 	if ( func_num_args() > 2 ) {
 		$from_rate = func_get_arg( 2 );
 	}
@@ -127,6 +162,10 @@ function convert_to_default_currency( $cur_code, $amount ) {
 }
 
 function convert_to_default_currency_formatted( $cur_code, $amount ) {
+	// Support for WooCommerce Payments Multi-currency
+	if ( class_exists( 'WC_Payments_Utils' ) && WC_Payments_Features::is_customer_multi_currency_enabled() ) {
+		return \WC_Payments_Utils::format_currency( $amount, $cur_code );
+	}
 
 	$show_code = "";
 	if ( func_num_args() > 2 ) {
@@ -171,6 +210,11 @@ function convert_to_default_currency_formatted( $cur_code, $amount ) {
 }
 
 function format_currency( $amount, $cur_code ) {
+	// Support for WooCommerce Payments Multi-currency
+	if ( class_exists( 'WC_Payments_Utils' ) && WC_Payments_Features::is_customer_multi_currency_enabled() ) {
+		return \WC_Payments_Utils::format_currency( $amount, $cur_code );
+	}
+
 	$show_code = "";
 	if ( func_num_args() > 2 ) {
 		$show_code = func_get_arg( 2 );

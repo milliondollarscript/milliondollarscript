@@ -391,7 +391,7 @@ if ( isset( $_REQUEST['user_id'] ) && $_REQUEST['user_id'] != '' ) {
 }
 
 if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
-	echo '<h3>*** Highlighting order #' . esc_html($_REQUEST['order_id']) . '.</h3> ';
+	echo '<h3>*** Highlighting order #' . esc_html( $_REQUEST['order_id'] ) . '.</h3> ';
 }
 
 if ( ! isset( $sql ) ) {
@@ -493,7 +493,9 @@ global $label;
 					$b_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 					$b_row = mysqli_fetch_array( $b_result );
 
-					echo $b_row['name'];
+					if ( $b_row ) {
+						echo $b_row['name'];
+					}
 
 					?></td>
                 <td><?php echo $row['quantity']; ?></td>

@@ -51,11 +51,14 @@ $color       = $palette->color( '#000', 0 );
 $zero_point  = new Imagine\Image\Point( 0, 0 );
 $blank_block = $imagine->create( $block_size, $color );
 
-$default_nfs_block = $blank_block->copy();
-$tmp_block         = $imagine->load( $banner_data['USR_NFS_BLOCK'] );
-$tmp_block->resize( $block_size );
-$default_nfs_block->paste( $tmp_block, $zero_point );
-$data = base64_encode( $default_nfs_block->get( "png", array( 'png_compression_level' => 9 ) ) );
+$usr_nfs_block = $imagine->load( $banner_data['USR_NFS_BLOCK'] );
+
+if ( $banner_data['NFS_COVERED'] == "N" ) {
+	$default_nfs_block = $blank_block->copy();
+	$usr_nfs_block->resize( $block_size );
+	$default_nfs_block->paste( $usr_nfs_block, $zero_point );
+	$data = base64_encode( $default_nfs_block->get( "png", array( 'png_compression_level' => 9 ) ) );
+}
 
 if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'save' ) {
 	//$sql = "delete from blocks where status='nfs' AND banner_id=$BID ";
@@ -73,247 +76,371 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'save' ) {
 		unset( $remnfs );
 	}
 
-	$cell = $x = $y = 0;
+	// Mix the database results with $addnfs and $remnfs to get the full results to loop over.
+	if ( $banner_data['NFS_COVERED'] == "Y" ) {
+		// Find outer bounds of NFS blocks to get the size of the cover image.
+		$sql = "SELECT `block_id` FROM `" . MDS_DB_PREFIX . "blocks` WHERE `status`='nfs' AND `banner_id`='" . intval( $BID ) . "' ORDER BY `block_id`";
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+
+		$topleft     = [ 'x' => PHP_INT_MIN, 'y' => PHP_INT_MIN ];
+		$bottomright = [ 'x' => PHP_INT_MAX, 'y' => PHP_INT_MAX ];
+
+		while ( $row = mysqli_fetch_array( $result ) ) {
+			// Don't process blocks being removed.
+			if ( isset( $remnfs ) && in_array( $row['block_id'], $remnfs ) ) {
+				continue;
+			}
+
+			$coords = get_block_position( $row['block_id'], $BID );
+
+			$topleft['x']     = max( $topleft['x'], $coords['x'] );
+			$topleft['y']     = max( $topleft['y'], $coords['y'] );
+			$bottomright['x'] = min( $bottomright['x'], $coords['x'] );
+			$bottomright['y'] = min( $bottomright['y'], $coords['y'] );
+		}
+
+		if ( isset( $addnfs ) ) {
+			foreach ( $addnfs as $add ) {
+				$coords = get_block_position( $add, $BID );
+
+				$topleft['x']     = max( $topleft['x'], $coords['x'] );
+				$topleft['y']     = max( $topleft['y'], $coords['y'] );
+				$bottomright['x'] = min( $bottomright['x'], $coords['x'] );
+				$bottomright['y'] = min( $bottomright['y'], $coords['y'] );
+			}
+		}
+
+		$image_width  = ( $topleft['x'] - $bottomright['x'] + $banner_data['BLK_WIDTH'] );
+		$image_height = ( $topleft['y'] - $bottomright['y'] + $banner_data['BLK_HEIGHT'] );
+
+		$image_size = new Imagine\Image\Box( $image_width, $image_height );
+		$usr_nfs_block->resize( $image_size );
+	}
+
+	global $wpdb;
+
+	$cell = $x = $y = $nfs_x = $nfs_y = 0;
 	for ( $i = 0; $i < $banner_data['G_HEIGHT']; $i ++ ) {
-		$x = 0;
+		$x = $nfs_x = 0;
 		for ( $j = 0; $j < $banner_data['G_WIDTH']; $j ++ ) {
 			if ( isset( $addnfs ) && in_array( $cell, $addnfs ) ) {
-				$sql = "REPLACE INTO " . MDS_DB_PREFIX . "blocks (block_id, status, x, y, image_data, banner_id, click_count, alt_text) VALUES ({$cell}, 'nfs', {$x}, {$y}, '{$data}', {$BID}, 0, '')";
-				mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				if ( $banner_data['NFS_COVERED'] == "Y" ) {
+					// Take parts of the image and place them in the right spots.
+
+					// @see \check_selection_main
+					$dest = $imagine->create( $block_size, $color );
+					imagecopy( $dest->getGdResource(), $usr_nfs_block->getGdResource(), 0, 0, $nfs_x, $nfs_y, $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
+
+					$data = $dest->get( "png", array( 'png_compression_level' => 9 ) );
+
+					unset( $dest );
+
+					// TODO: fix this to be more robust
+					$nfs_x = $nfs_x + $banner_data['BLK_WIDTH'];
+					if ( $nfs_x + $banner_data['BLK_WIDTH'] > $image_width ) {
+						$nfs_x = 0;
+						$nfs_y = $nfs_y + $banner_data['BLK_HEIGHT'];
+					}
+				}
+
+				// Check to make sure we don't overwrite any existing blocks that aren't free.
+				$sql = $wpdb->prepare(
+					"SELECT `block_id` FROM `" . MDS_DB_PREFIX . "blocks` WHERE `block_id`=%d AND `status`!='free' AND `banner_id`=%d ",
+					$cell,
+					$BID,
+				);
+				$wpdb->get_results( $sql );
+				if ( $wpdb->num_rows == 0 ) {
+					// Insert new block
+					$sql = $wpdb->prepare(
+						"INSERT INTO `" . MDS_DB_PREFIX . "blocks` (`block_id`, `status`, `x`, `y`, `image_data`, `banner_id`, `click_count`, `alt_text`) VALUES (%d, 'nfs', %d, %d, %s, %d, 0, '')",
+						$cell,
+						$x,
+						$y,
+						base64_encode( $data ),
+						$BID
+					);
+				} else {
+					// Update existing block only if it's free or nfs.
+					$sql = $wpdb->prepare(
+						"UPDATE `" . MDS_DB_PREFIX . "blocks` SET `status`='nfs', `x`=%d, `y`=%d, `image_data`=%s, `click_count`=0, `alt_text`='' WHERE `block_id`=%d AND `banner_id`=%d AND `status` IN ('free','nfs')",
+						$x,
+						$y,
+						base64_encode( $data ),
+						$cell,
+						$BID,
+					);
+				}
+
+				$wpdb->query( $sql );
+
+				unset( $data );
 			}
+
 			if ( isset( $remnfs ) && in_array( $cell, $remnfs ) ) {
 				$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE status='nfs' AND banner_id={$BID} AND block_id={$cell}";
-				mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->query( $sql );
 			}
 			$x = $x + $banner_data['BLK_WIDTH'];
 			$cell ++;
 		}
+
 		$y = $y + $banner_data['BLK_HEIGHT'];
 	}
+
+	process_image( $BID );
+	publish_image( $BID );
+	process_map( $BID );
+
 	echo "Success!";
 	exit();
 } else if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'reset' ) {
 	$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE status='nfs' AND banner_id=$BID";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
+
+	process_image( $BID );
+	publish_image( $BID );
+	process_map( $BID );
+
 	echo "Success!";
 	exit();
 }
 
 $grid_img = \MillionDollarScript\Classes\Utility::get_upload_url() . 'grids/grid' . $BID;
-if ( OUTPUT_JPEG == 'Y' ) {
-	$grid_img .= '.jpg';
-} else if ( OUTPUT_JPEG == 'N' ) {
-	$grid_img .= '.png';
-} else if ( ( OUTPUT_JPEG == 'GIF' ) ) {
-	$grid_img .= '.gif';
+
+$grid_ext = '.png';
+if ( defined( 'OUTPUT_JPEG' ) ) {
+	if ( OUTPUT_JPEG == 'Y' ) {
+		$grid_ext = '.jpg';
+		// } else if ( OUTPUT_JPEG == 'N' ) {
+		// 	$grid_ext = '.png';
+	} else if ( ( OUTPUT_JPEG == 'GIF' ) ) {
+		$grid_ext = '.gif';
+	}
 }
+
+$grid_img .= $grid_ext;
+
+$grid_file = \MillionDollarScript\Classes\Utility::get_upload_path() . 'grids/grid' . $BID . $grid_ext;
+
+// Add modification time
+$grid_img .= "?v=" . filemtime( $grid_file );
 
 ?>
 <script>
-	(function ($) {
-		// if (!window.mds_admin_loading) {
-		// 	window.mds_admin_loading = true;
-		// } else {
-		// 	return;
-		// }
+	// workaround hack for the broken admin ajax loading stuff
+	if (window.nfs_loaded) {
 
-		let addnfs = [];
-		let remnfs = [];
+		(function ($) {
 
-		const $document = $(document);
-		const $grid = $('.grid');
+			let addnfs = [];
+			let remnfs = [];
 
-        $('<img/>').attr('src', '<?php echo $grid_img; ?>').on('load', function () {
-            $(this).remove();
-            $('.loading').remove();
-            $grid.css('background-image', 'url("<?php echo $grid_img; ?>")');
-            window.mds_admin_loading = false;
-        }).each(function() {
-            if(this.complete) $(this).trigger('load');
-        });
+			const $document = $(document);
+			const $grid = $('.grid');
 
-		function processBlock(block) {
-			let $block = $(block);
-			let blockid;
-			if ($block.hasClass("nfs")) {
-				blockid = $block.attr("data-block");
-				addnfs.push(blockid);
-				let index = remnfs.indexOf(blockid);
-				if (index !== -1) {
-					remnfs.splice(index, 1);
+			const grid_img = $('<img/>').attr('src', '<?php echo $grid_img; ?>');
+
+			grid_img.off('load');
+			grid_img.on('load', function () {
+				$(this).remove();
+				$('.loading').remove();
+				$grid.css('background-image', 'url("<?php echo $grid_img; ?>")');
+				window.mds_admin_loading = false;
+			}).each(function () {
+				if (this.complete) $(this).trigger('load');
+			});
+
+			function processBlock(block) {
+				let $block = $(block);
+				let blockid;
+				if ($block.hasClass("nfs")) {
+					blockid = $block.attr("data-block");
+					addnfs.push(blockid);
+					let index = remnfs.indexOf(blockid);
+					if (index !== -1) {
+						remnfs.splice(index, 1);
+					}
+				} else if ($block.hasClass("free")) {
+					blockid = $block.attr("data-block");
+					remnfs.push(blockid);
+					let index = addnfs.indexOf(blockid);
+					if (index !== -1) {
+						addnfs.splice(index, 1);
+					}
 				}
-			} else if ($block.hasClass("free")) {
-				blockid = $block.attr("data-block");
-				remnfs.push(blockid);
-				let index = addnfs.indexOf(blockid);
-				if (index !== -1) {
-					addnfs.splice(index, 1);
+			}
+
+			function toggleBlock(el) {
+				let $block = $(el);
+				if ($block.hasClass('nfs')) {
+					$block.removeClass('nfs');
+					$block.addClass('free');
+				} else {
+					$block.removeClass('free');
+					$block.addClass('nfs');
 				}
 			}
-		}
 
-		function toggleBlock(el) {
-			let $block = $(el);
-			if ($block.hasClass('nfs')) {
-				$block.removeClass('nfs');
-			} else {
-				$block.addClass('nfs');
-			}
-			if ($block.hasClass('free')) {
-				$block.removeClass('free');
-			} else {
-				$block.addClass('free');
-			}
-		}
+			// https://github.com/Simonwep/selection
+			const selection = new SelectionArea({
+				selectables: ['span.block'],
+				startareas: ['.grid'],
+				boundaries: ['.grid'],
+			});
 
-		// https://github.com/Simonwep/selection
-		const selection = new SelectionArea({
-			selectables: ['span.block'],
-			startareas: ['.grid'],
-			boundaries: ['.grid'],
-		});
+			$(window).off('unload');
+			$(window).on('unload', function () {
+				selection.destroy();
+			});
 
-		selection.off('beforestart').off('move').off('stop');
-		selection.on('beforestart', e => {
-			for (const el of e.store.stored) {
-				$(el).removeClass('selected');
-			}
-			selection.clearSelection(true);
+			selection.off('beforestart');
+			selection.off('move');
+			selection.off('stop');
+			selection.on('beforestart', e => {
+				for (const el of e.store.stored) {
+					$(el).removeClass('selected');
+				}
+				selection.clearSelection(true);
 
-			// }).on('beforedrag', e => {
-			// }).on('start', e => {
+				// }).on('beforedrag', e => {
+				// }).on('start', e => {
 
-		}).on('move', e => {
-			for (const el of e.store.changed.added) {
-				$(el).addClass('selected');
-			}
+			}).on('move', e => {
+				for (const el of e.store.changed.added) {
+					$(el).addClass('selected');
+				}
 
-			for (const el of e.store.changed.removed) {
-				$(el).removeClass('selected');
-			}
+				for (const el of e.store.changed.removed) {
+					$(el).removeClass('selected');
+				}
 
-		}).on('stop', e => {
-			let els = e.store.selected;
-			for (const el of els) {
-				toggleBlock(el);
-				processBlock(el);
-			}
+			}).on('stop', e => {
+				let els = e.store.selected;
+				for (const el of els) {
+					toggleBlock(el);
+					processBlock(el);
+				}
 
-		});
+			});
 
-		// selection object must be destroyed when the page is loaded
-		$(window).off('mds_admin_page_loaded');
-		$(window).on('mds_admin_page_loaded', function () {
-			selection.destroy();
-		});
+			let $save = $('.save');
+			let $reset = $('.reset');
 
-		let $save = $('.save');
-		let $reset = $('.reset');
+			let submitting = false;
+			$document.off('click', '.save');
+			$document.on('click', '.save', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				$grid.append('<img class="loading" src="../images/ajax-loader.gif" alt="" />');
+				$save.prop('disabled', true);
+				$reset.prop('disabled', true);
 
-		let submitting = false;
-		$document.off('click', '.save');
-		$document.on('click', '.save', function (e) {
-			e.preventDefault();
-			e.stopPropagation();
-			$grid.append('<img class="loading" src="../images/ajax-loader.gif" alt="" />');
-			$save.prop('disabled', true);
-			$reset.prop('disabled', true);
+				if (!submitting) {
+					submitting = true;
 
-			if (!submitting) {
-				submitting = true;
-
-				$.post("nfs.php", {
-					BID: <?php echo $BID; ?>,
-					action: "save",
-					addnfs: JSON.stringify(addnfs),
-					remnfs: JSON.stringify(remnfs)
-				}).done(function (data) {
-					$('.loading').hide(function () {
-						$(this).remove();
-						$('<span class="message">' + data + '</span>').insertAfter('.save').fadeOut(10000, function () {
+					$.post("nfs.php", {
+						BID: <?php echo $BID; ?>,
+						action: "save",
+						addnfs: JSON.stringify(addnfs),
+						remnfs: JSON.stringify(remnfs)
+					}).done(function (data) {
+						$('.loading').hide(function () {
 							$(this).remove();
-						});
-					});
-					$save.prop('disabled', false);
-					$reset.prop('disabled', false);
-					submitting = false;
-				});
-			}
-
-			return false;
-		});
-
-		function confirm_dialog(title, message) {
-			$('<div id="confirm-dialog">' + message + '</div>').appendTo('body');
-			$('#confirm-dialog').dialog({
-				title: title,
-				modal: true,
-				width: 'auto',
-				resizable: false,
-				position: {my: "center top", at: "center top+1%", of: window},
-				buttons: {
-					Yes: function () {
-
-						$grid.append('<img class="loading" src="../images/ajax-loader.gif" alt="" />');
-
-						$.post("nfs.php", {
-							BID: <?php echo $BID; ?>,
-							action: "reset"
-						}).done(function (data) {
-							$('.loading').hide(function () {
+							$('<span class="message">' + data + '</span>').insertAfter('.save').fadeOut(10000, function () {
 								$(this).remove();
-
-								$('<span class="message">' + data + '</span>').insertAfter('.reset').fadeOut(10000, function () {
-									$(this).remove();
-								});
 							});
+						});
+						$save.prop('disabled', false);
+						$reset.prop('disabled', false);
+						submitting = false;
+					});
+				}
+
+				return false;
+			});
+
+			function confirm_dialog(title, message) {
+				$('<div id="confirm-dialog">' + message + '</div>').appendTo('body');
+				$('#confirm-dialog').dialog({
+					title: title,
+					modal: true,
+					width: 'auto',
+					resizable: false,
+					position: {my: "center top", at: "center top+1%", of: window},
+					buttons: {
+						Yes: function () {
+
+							$grid.append('<img class="loading" src="../images/ajax-loader.gif" alt="" />');
+
+							$.post("nfs.php", {
+								BID: <?php echo $BID; ?>,
+								action: "reset"
+							}).done(function (data) {
+								$('.loading').hide(function () {
+									$(this).remove();
+
+									$('<span class="message">' + data + '</span>').insertAfter('.reset').fadeOut(10000, function () {
+										$(this).remove();
+									});
+								});
+
+								$save.prop('disabled', false);
+								$reset.prop('disabled', false);
+
+								$(".block.nfs,.block.selected").removeClass("selected").removeClass("nfs").addClass("free");
+
+								selection.clearSelection();
+							});
+
+							$(this).dialog("close");
+						},
+						No: function () {
+							$(this).dialog("close");
 
 							$save.prop('disabled', false);
 							$reset.prop('disabled', false);
-
-							$(".block.nfs,.block.selected").removeClass("selected").removeClass("nfs").addClass("free");
-
-							selection.clearSelection();
-						});
-
-						$(this).dialog("close");
+						}
 					},
-					No: function () {
-						$(this).dialog("close");
+					close: function () {
+						$(this).remove();
 
 						$save.prop('disabled', false);
 						$reset.prop('disabled', false);
 					}
-				},
-				close: function () {
-					$(this).remove();
+				});
+			}
 
-					$save.prop('disabled', false);
-					$reset.prop('disabled', false);
-				}
+			$document.off('click', '.reset');
+			$document.on('click', '.reset', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				$save.prop('disabled', true);
+				$reset.prop('disabled', true);
+
+				confirm_dialog('Reset?', 'This will unselect all Not For Sale blocks. Are you sure you want to do this?');
+
+				return false;
 			});
-		}
-
-		$document.off('click', '.reset');
-		$document.on('click', '.reset', function (e) {
-			e.preventDefault();
-			e.stopPropagation();
-			$save.prop('disabled', true);
-			$reset.prop('disabled', true);
-
-			confirm_dialog('Reset?', 'This will unselect all Not For Sale blocks. Are you sure you want to do this?');
-
-			return false;
-		});
-	})(jQuery);
+		})(jQuery);
+	} else {
+		window.nfs_loaded = true;
+	}
 </script>
 <style>
     <?php
 	    $grid_background = "";
-		if(file_exists(BASE_PATH . "/" . BANNER_DIR . "main$BID.png")) {
+		if( file_exists( $grid_file ) ) {
 			$grid_background = 'background: url("' . $grid_img . '") no-repeat center center;
 			';
 	    }
+
+        // TODO: make work for NFS covered images
+        $default_nfs_block = $blank_block->copy();
+        $usr_nfs_block->resize( $block_size );
+        $default_nfs_block->paste( $usr_nfs_block, $zero_point );
+        $data = base64_encode( $default_nfs_block->get( "png", array( 'png_compression_level' => 9 ) ) );
+
 	?>
 	.grid {
 		position: relative;

@@ -1,151 +1,6 @@
 {
     "packages": [
         {
-            "name": "components/jquery",
-            "version": "3.6.0",
-            "version_normalized": "3.6.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/components/jquery.git",
-                "reference": "6cf38ee1fd04b6adf8e7dda161283aa35be818c3"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/components/jquery/zipball/6cf38ee1fd04b6adf8e7dda161283aa35be818c3",
-                "reference": "6cf38ee1fd04b6adf8e7dda161283aa35be818c3",
-                "shasum": ""
-            },
-            "time": "2021-03-20T19:13:42+00:00",
-            "type": "component",
-            "extra": {
-                "component": {
-                    "scripts": [
-                        "jquery.js"
-                    ],
-                    "files": [
-                        "jquery.min.js",
-                        "jquery.min.map",
-                        "jquery.slim.js",
-                        "jquery.slim.min.js",
-                        "jquery.slim.min.map"
-                    ]
-                }
-            },
-            "installation-source": "dist",
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "JS Foundation and other contributors"
-                }
-            ],
-            "description": "jQuery JavaScript Library",
-            "homepage": "http://jquery.com",
-            "support": {
-                "forum": "http://forum.jquery.com",
-                "irc": "irc://irc.freenode.org/jquery",
-                "issues": "https://github.com/jquery/jquery/issues",
-                "source": "https://github.com/jquery/jquery",
-                "wiki": "http://docs.jquery.com/"
-            },
-            "install-path": "../components/jquery"
-        },
-        {
-            "name": "components/jqueryui",
-            "version": "dev-master",
-            "version_normalized": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/components/jqueryui.git",
-                "reference": "44ecf3794cc56b65954cc19737234a3119d036cc"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/components/jqueryui/zipball/44ecf3794cc56b65954cc19737234a3119d036cc",
-                "reference": "44ecf3794cc56b65954cc19737234a3119d036cc",
-                "shasum": ""
-            },
-            "require": {
-                "components/jquery": ">=1.6"
-            },
-            "time": "2016-09-16T05:47:55+00:00",
-            "default-branch": true,
-            "type": "component",
-            "extra": {
-                "component": {
-                    "name": "jquery-ui",
-                    "scripts": [
-                        "jquery-ui.js"
-                    ],
-                    "files": [
-                        "ui/**",
-                        "themes/**",
-                        "jquery-ui.min.js"
-                    ],
-                    "shim": {
-                        "deps": [
-                            "jquery"
-                        ],
-                        "exports": "jQuery"
-                    }
-                }
-            },
-            "installation-source": "dist",
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "jQuery UI Team",
-                    "homepage": "http://jqueryui.com/about"
-                },
-                {
-                    "name": "Scott Gonzalez",
-                    "email": "scott.gonzalez@gmail.com",
-                    "homepage": "http://scottgonzalez.com"
-                },
-                {
-                    "name": "Joern Zaefferer",
-                    "email": "joern.zaefferer@gmail.com",
-                    "homepage": "http://bassistance.de"
-                },
-                {
-                    "name": "Kris Borchers",
-                    "email": "kris.borchers@gmail.com",
-                    "homepage": "http://krisborchers.com"
-                },
-                {
-                    "name": "Corey Frang",
-                    "email": "gnarf37@gmail.com",
-                    "homepage": "http://gnarf.net"
-                },
-                {
-                    "name": "Mike Sherov",
-                    "email": "mike.sherov@gmail.com",
-                    "homepage": "http://mike.sherov.com"
-                },
-                {
-                    "name": "TJ VanToll",
-                    "email": "tj.vantoll@gmail.com",
-                    "homepage": "http://tjvantoll.com"
-                },
-                {
-                    "name": "Felix Nagel",
-                    "email": "info@felixnagel.com",
-                    "homepage": "http://www.felixnagel.com"
-                }
-            ],
-            "description": "jQuery UI is a curated set of user interface interactions, effects, widgets, and themes built on top of the jQuery JavaScript Library. Whether you're building highly interactive web applications or you just need to add a date picker to a form control, jQuery UI is the perfect choice.",
-            "support": {
-                "issues": "https://github.com/components/jqueryui/issues",
-                "source": "https://github.com/components/jqueryui/tree/1.12.1"
-            },
-            "install-path": "../components/jqueryui"
-        },
-        {
             "name": "ezyang/htmlpurifier",
             "version": "v4.16.0",
             "version_normalized": "4.16.0.0",
@@ -211,17 +66,17 @@
         },
         {
             "name": "imagine/imagine",
-            "version": "1.3.2",
-            "version_normalized": "1.3.2.0",
+            "version": "1.3.3",
+            "version_normalized": "1.3.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-imagine/Imagine.git",
-                "reference": "ae864f26afbf8859ebd2e2b9df92d77ee175dc13"
+                "reference": "a6e6da93ea0f76aba33b0e8ed1325523c0413da2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-imagine/Imagine/zipball/ae864f26afbf8859ebd2e2b9df92d77ee175dc13",
-                "reference": "ae864f26afbf8859ebd2e2b9df92d77ee175dc13",
+                "url": "https://api.github.com/repos/php-imagine/Imagine/zipball/a6e6da93ea0f76aba33b0e8ed1325523c0413da2",
+                "reference": "a6e6da93ea0f76aba33b0e8ed1325523c0413da2",
                 "shasum": ""
             },
             "require": {
@@ -236,7 +91,7 @@
                 "ext-gmagick": "to use the Gmagick implementation",
                 "ext-imagick": "to use the Imagick implementation"
             },
-            "time": "2022-04-01T11:58:30+00:00",
+            "time": "2022-11-16T13:09:11+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -270,86 +125,23 @@
             ],
             "support": {
                 "issues": "https://github.com/php-imagine/Imagine/issues",
-                "source": "https://github.com/php-imagine/Imagine/tree/1.3.2"
+                "source": "https://github.com/php-imagine/Imagine/tree/1.3.3"
             },
             "install-path": "../imagine/imagine"
         },
         {
-            "name": "jquery-form/form",
-            "version": "v4.3.0",
-            "version_normalized": "4.3.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/jquery-form/form.git",
-                "reference": "fcbd5773d19a75d4b2f336df7f49788a42b71fbc"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/jquery-form/form/zipball/fcbd5773d19a75d4b2f336df7f49788a42b71fbc",
-                "reference": "fcbd5773d19a75d4b2f336df7f49788a42b71fbc",
-                "shasum": ""
-            },
-            "require": {
-                "components/jquery": ">=1.7.2"
-            },
-            "time": "2020-06-07T04:29:46+00:00",
-            "type": "library",
-            "extra": {
-                "component": {
-                    "scripts": [
-                        "src/jquery.form.js"
-                    ],
-                    "shim": {
-                        "deps": [
-                            "jquery"
-                        ]
-                    }
-                }
-            },
-            "installation-source": "dist",
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "(LGPL-2.1+ OR MIT)"
-            ],
-            "authors": [
-                {
-                    "name": "Kevin Morris"
-                },
-                {
-                    "name": "Mike Alsup"
-                }
-            ],
-            "description": "The jQuery Form Plugin allows you to easily and unobtrusively upgrade HTML forms to use AJAX.",
-            "homepage": "https://github.com/jquery-form/form",
-            "keywords": [
-                "ajax",
-                "form",
-                "html-form",
-                "jquery",
-                "jquery-form",
-                "jquery-plugin",
-                "json",
-                "json-form"
-            ],
-            "support": {
-                "issues": "https://github.com/jquery-form/form/issues",
-                "source": "https://github.com/jquery-form/form/tree/v4.3.0"
-            },
-            "install-path": "../jquery-form/form"
-        },
-        {
             "name": "phpmailer/phpmailer",
-            "version": "v6.6.5",
-            "version_normalized": "6.6.5.0",
+            "version": "v6.7.1",
+            "version_normalized": "6.7.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPMailer/PHPMailer.git",
-                "reference": "8b6386d7417526d1ea4da9edb70b8352f7543627"
+                "reference": "49cd7ea3d2563f028d7811f06864a53b1f15ff55"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/8b6386d7417526d1ea4da9edb70b8352f7543627",
-                "reference": "8b6386d7417526d1ea4da9edb70b8352f7543627",
+                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/49cd7ea3d2563f028d7811f06864a53b1f15ff55",
+                "reference": "49cd7ea3d2563f028d7811f06864a53b1f15ff55",
                 "shasum": ""
             },
             "require": {
@@ -359,24 +151,26 @@
                 "php": ">=5.5.0"
             },
             "require-dev": {
-                "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
-                "doctrine/annotations": "^1.2",
+                "dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
+                "doctrine/annotations": "^1.2.6 || ^1.13.3",
                 "php-parallel-lint/php-console-highlighter": "^1.0.0",
                 "php-parallel-lint/php-parallel-lint": "^1.3.2",
                 "phpcompatibility/php-compatibility": "^9.3.5",
                 "roave/security-advisories": "dev-latest",
-                "squizlabs/php_codesniffer": "^3.6.2",
-                "yoast/phpunit-polyfills": "^1.0.0"
+                "squizlabs/php_codesniffer": "^3.7.1",
+                "yoast/phpunit-polyfills": "^1.0.4"
             },
             "suggest": {
                 "ext-mbstring": "Needed to send email in multibyte encoding charset or decode encoded addresses",
+                "ext-openssl": "Needed for secure SMTP sending and DKIM signing",
+                "greew/oauth2-azure-provider": "Needed for Microsoft Azure XOAUTH2 authentication",
                 "hayageek/oauth2-yahoo": "Needed for Yahoo XOAUTH2 authentication",
                 "league/oauth2-google": "Needed for Google XOAUTH2 authentication",
                 "psr/log": "For optional PSR-3 debug logging",
                 "symfony/polyfill-mbstring": "To support UTF-8 if the Mbstring PHP extension is not enabled (^1.2)",
                 "thenetworg/oauth2-azure": "Needed for Microsoft XOAUTH2 authentication"
             },
-            "time": "2022-10-07T12:23:10+00:00",
+            "time": "2022-12-08T13:30:06+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -408,7 +202,7 @@
             "description": "PHPMailer is a full-featured email creation and transfer class for PHP",
             "support": {
                 "issues": "https://github.com/PHPMailer/PHPMailer/issues",
-                "source": "https://github.com/PHPMailer/PHPMailer/tree/v6.6.5"
+                "source": "https://github.com/PHPMailer/PHPMailer/tree/v6.7.1"
             },
             "funding": [
                 {

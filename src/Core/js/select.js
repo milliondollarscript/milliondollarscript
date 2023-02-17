@@ -139,6 +139,30 @@ window.onload = function () {
 	}
 };
 
+let grid_interval;
+function on_grid_load() {
+	jQuery("#pixelimg").one("load", function () {
+		jQuery('.ajax-loader').remove();
+		clearInterval(grid_interval);
+	}).each(function () {
+		if (this.complete) {
+			jQuery(this).trigger('load');
+		}
+	});
+}
+
+grid_interval = setInterval(on_grid_load, 100);
+
+(function ($) {
+	function add_ajax_loader(container) {
+		let $ajax_loader = $("<div class='ajax-loader'></div>");
+		$(container).append($ajax_loader)
+		$ajax_loader.css('top', $(container).position().top).css('left', ($(container).width() / 2) - ($ajax_loader.width() / 2));
+	}
+
+	add_ajax_loader('.mds-container .container');
+})(jQuery);
+
 function load_order() {
 
 	for (let i = 0; i < select.blocks.length; i++) {
@@ -513,32 +537,32 @@ function change_block_state(OffsetX, OffsetY) {
 	};
 
 	if (is_block_selected(clicked_block)) {
-				if (erasing) {
+		if (erasing) {
 			data.action = 'remove';
-					do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
-				} else {
-					if (select.INVERT_PIXELS === 'YES') {
+			do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
+		} else {
+			if (select.INVERT_PIXELS === 'YES') {
 				data.action = 'invert';
-						do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
-					} else {
-				data.action = 'add';
-						do_blocks(clicked_block, OffsetX, OffsetY, 'add');
-					}
-				}
+				do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
 			} else {
-					if (erasing) {
-			data.action = 'remove';
-						do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
-					} else {
-						if (select.INVERT_PIXELS === 'YES') {
-				data.action = 'invert';
-							do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
-						} else {
 				data.action = 'add';
-							do_blocks(clicked_block, OffsetX, OffsetY, 'add');
-						}
-					}
+				do_blocks(clicked_block, OffsetX, OffsetY, 'add');
 			}
+		}
+	} else {
+		if (erasing) {
+			data.action = 'remove';
+			do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
+		} else {
+			if (select.INVERT_PIXELS === 'YES') {
+				data.action = 'invert';
+				do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
+			} else {
+				data.action = 'add';
+				do_blocks(clicked_block, OffsetX, OffsetY, 'add');
+			}
+		}
+	}
 
 	// Add data to ajax queue
 	ajax_queue.push(data);

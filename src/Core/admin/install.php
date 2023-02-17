@@ -80,10 +80,10 @@ function install_db() {
 			`block_width` int NOT NULL default '10',
 			`block_height` int NOT NULL default '10',
 			`grid_block` text NOT NULL,
-			`nfs_block` text NOT NULL,
+			`nfs_block` longblob NOT NULL,
 			`tile` text NOT NULL,
 			`usr_grid_block` text NOT NULL,
-			`usr_nfs_block` text NOT NULL,
+			`usr_nfs_block` longblob NOT NULL,
 			`usr_ord_block` text NOT NULL,
 			`usr_res_block` text NOT NULL,
 			`usr_sel_block` text NOT NULL,
@@ -94,6 +94,8 @@ function install_db() {
 			`bgcolor` varchar(7) NOT NULL default '#FFFFFF',
 			`auto_publish` char(1) NOT NULL default 'N',
 			`auto_approve` char(1) NOT NULL default 'N',
+			`nfs_covered` char(1) NOT NULL default 'N',
+			`enabled` char(1) NOT NULL default 'Y',
 			`time_stamp` int default NULL,
 			PRIMARY KEY  (`banner_id`)
 		) $charset_collate";
@@ -125,6 +127,7 @@ function install_db() {
 			`bgcolor`,
 			`auto_publish`,
 			`auto_approve`,
+			`nfs_covered`,
 			`time_stamp`
 		)
 		VALUES(
@@ -154,6 +157,7 @@ function install_db() {
 			'#FFFFFF',
 			'Y',
 			'Y',
+			'N',
 			1171775611
 		)";
 

@@ -38,7 +38,7 @@ $BID = $f2->bid();
 ?>
 
 <p>
-    <b>Price Zones:</b> Here you can add different price price zones to the grid. This feature allows you to make some regions of the grid more expensive than others. <i>Careful: Packages disregard Price Zones, i.e. if a grid has packages, the Price Zones will be ignored for that grid.</i></p>
+    <b>Price Zones:</b> Here you can add different price zones to the grid. This feature allows you to make some regions of the grid more expensive than others.<br /><i>Careful: Packages disregard Price Zones, i.e. if a grid has packages, the Price Zones will be ignored for that grid.</i></p>
 <hr>
 <?php
 $sql = "Select * from " . MDS_DB_PREFIX . "banners ";
@@ -164,8 +164,8 @@ if ( $BID != '' ) {
 
 		if ( $error != '' ) {
 			echo "<p>";
-			echo "<font color='red'>Error: cannot save due to the following errors:</font><br>";
-			echo $error;
+			echo "<span style='color:red;'>Error: cannot save due to the following errors:</span><br>";
+			echo "<span style='color:red;'>$error</span>";
 			echo "</p>";
 		} else {
 			// calculate block id..

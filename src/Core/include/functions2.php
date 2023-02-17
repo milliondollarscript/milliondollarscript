@@ -41,6 +41,26 @@ class functions2 {
 	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>';
 	}
 
+	function get_default_grid(): int {
+		global $wpdb, $BID;
+		$default = 1;
+
+		// Check if first grid is enabled.
+		$enabled = $wpdb->get_var( "SELECT `enabled` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`=1" );
+		if ( $enabled == 'N' ) {
+			// First grid is not enabled, so try to find one that is.
+			$banner_id = $wpdb->get_var( "SELECT `banner_id` FROM `" . MDS_DB_PREFIX . "banners` WHERE `enabled`='Y' ORDER BY `banner_id` ASC LIMIT 1" );
+			if ( $banner_id ) {
+				$default = $banner_id;
+				if ( ! empty( $BID ) ) {
+					$BID = $default;
+				}
+			}
+		}
+
+		return intval( $default );
+	}
+
 	/**
 	 * Get the banner id value.
 	 *
@@ -49,15 +69,11 @@ class functions2 {
 	 * @return int|string
 	 */
 	function bid( $var = 0 ) {
-		$ret = 1;
+		$ret = $this->get_default_grid();
 
 		if ( $var == 0 ) {
 
-			global $BID;
-			if ( ! empty( $BID ) ) {
-				// global
-				$ret = $BID;
-			} else if ( isset( $_REQUEST['BID'] ) && ! empty( $_REQUEST['BID'] ) ) {
+			if ( isset( $_REQUEST['BID'] ) && ! empty( $_REQUEST['BID'] ) ) {
 				// $_REQUEST['BID']
 				$ret = $_REQUEST['BID'];
 			} else if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {

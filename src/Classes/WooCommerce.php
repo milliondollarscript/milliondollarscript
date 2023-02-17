@@ -43,8 +43,8 @@ class WooCommerce {
 		add_action( 'woocommerce_order_status_changed', [ __CLASS__, 'status_changed' ], 20, 4 );
 		add_action( 'woocommerce_order_edit_status', [ __CLASS__, 'status_edit' ], 20, 2 );
 
-		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'maybe_clear_cart' ] );
-		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'validate_order' ] );
+		// add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'maybe_clear_cart' ] );
+		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'validate_order' ], 10, 1 );
 
 		add_filter( 'woocommerce_checkout_update_order_meta', [ __CLASS__, 'create_order' ], 10, 2 );
 
@@ -56,31 +56,52 @@ class WooCommerce {
 		//woocommerce_stock_amount_cart_item
 
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'add_to_cart_validation' ], 10, 5 );
+
+		add_action( 'woocommerce_before_calculate_totals', [ __CLASS__, 'before_calculate_totals' ] );
+	}
+
+	public static function before_calculate_totals( $cart_object ) {
+		if ( is_checkout() ) {
+			global $wpdb;
+
+			$product_id   = \MillionDollarScript\Classes\Functions::get_product_id();
+			$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+
+			foreach ( $cart_object->get_cart() as $cart_item ) {
+				if ( $cart_item['product_id'] == $product_id ) {
+					$table = MDS_DB_PREFIX . 'orders';
+					$price = $wpdb->get_var( $wpdb->prepare(
+						"SELECT `price` FROM `$table` WHERE `order_id`=%d",
+						$mds_order_id
+					) );
+
+					if ( $price ) {
+						// Order total is the price of all blocks in all price zones.
+						// Here we will divide by the quantity to get the right price since we are using the total order price from the MDS table and WC will multiply that by the quantity.
+						$cart_item['data']->set_price( $price / $cart_item['quantity'] );
+					}
+				}
+			}
+		}
 	}
 
 	/**
-	 * Validates the cart when it's updated.
+	 * Validates the cart when it's updated. This filter loops all the cart contents so no loop required in here.
 	 */
 	public static function validate_cart( $passed_validation, $cart_item_key, $values, $quantity ) {
-		global $woocommerce, $passed_validation_mds;
 
-		if ( ! isset( $woocommerce->cart ) || ! isset( $woocommerce->cart->cart_contents ) ) {
-			return $passed_validation;
-		}
+		global $passed_validation_mds;
 
-		foreach ( $woocommerce->cart->cart_contents as $item ) {
-			$meta_values = get_post_custom( $item['product_id'] );
+		$meta_values = get_post_custom( $values['product_id'] );
 
-			if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
-				// MDS item found
+		if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
+			// MDS item found
+			$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
 
-				$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+			if ( ! self::check_quantity_mds( $values, $mds_order_id, $quantity ) ) {
+				$passed_validation_mds = false;
 
-				if ( ! self::check_quantity_mds( $item, $mds_order_id, $quantity ) ) {
-					$passed_validation_mds = false;
-
-					return false;
-				}
+				return false;
 			}
 		}
 
@@ -107,25 +128,30 @@ class WooCommerce {
 	/**
 	 * Validates the order before it's created only using the contents of the cart.
 	 */
-	public static function validate_order() {
-		global $woocommerce;
-
-		if ( ! isset( $woocommerce->cart ) || ! isset( $woocommerce->cart->cart_contents ) ) {
+	public static function validate_order( \WC_Checkout $checkout ): void {
+		if ( WC()->cart->is_empty() ) {
 			return;
 		}
 
-		foreach ( $woocommerce->cart->cart_contents as $item ) {
-			$meta_values = get_post_custom( $item['product_id'] );
+		$cart       = WC()->cart->get_cart();
+		$product_id = Functions::get_product_id();
 
-			if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
-				// MDS item found
+		foreach ( $cart as $cart_item_key => $cart_item ) {
+			if ( $cart_item['product_id'] != $product_id ) {
+				continue;
+			}
 
-				$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+			$meta_value = get_post_meta( $product_id, '_milliondollarscript', true );
+			if ( $meta_value != 'yes' ) {
+				continue;
+			}
 
-				if ( ! self::check_quantity_mds( $item, $mds_order_id ) ) {
-					$message = __( "Quantity does not match!", 'milliondollarscript' );
-					\wc_add_notice( sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', wc_get_cart_url(), __( 'View cart', 'woocommerce' ), $message ), 'error' );
-				}
+			// MDS item found
+			$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+
+			if ( ! self::check_quantity_mds( $cart_item, $mds_order_id ) ) {
+				$message = __( "Quantity does not match!", 'milliondollarscript' );
+				\wc_add_notice( sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', wc_get_cart_url(), __( 'View cart', 'woocommerce' ), $message ), 'error' );
 			}
 		}
 	}
@@ -150,7 +176,7 @@ class WooCommerce {
 
 		// https://example.com/checkout/?add-to-cart=17&quantity=100&mdsid=18
 		if ( ( isset( $_REQUEST['add-to-cart'] ) && ! empty( $_REQUEST['add-to-cart'] ) ) && ( isset( $_REQUEST['quantity'] ) && ! empty( $_REQUEST['quantity'] ) ) ) {
-			WC()->cart->empty_cart();
+			// WC()->cart->empty_cart();
 			if ( isset( $_REQUEST['mdsid'] ) && ! empty( $_REQUEST['mdsid'] ) ) {
 				$value = absint( $_REQUEST['mdsid'] );
 				WC()->session->set( "mds_order_id", $value );
@@ -250,6 +276,8 @@ class WooCommerce {
 	public static function update_product( $product_id ) {
 		$product = wc_get_product( $product_id );
 		if ( $product->get_meta( '_milliondollarscript', true ) == 'yes' ) {
+
+			// Set as hidden from the shop
 			$visibility = $product->get_catalog_visibility();
 			if ( $visibility != 'hidden' ) {
 				try {
@@ -337,6 +365,7 @@ class WooCommerce {
 	 *
 	 * @param $item
 	 * @param $mds_order_id
+	 * @param null $quantity
 	 *
 	 * @return bool
 	 */
@@ -553,31 +582,25 @@ class WooCommerce {
 	 * Check if we should clear WooCommerce cart when viewing the checkout form.
 	 * Returns true of cart is cleared otherwise returns false.
 	 *
-	 * @return bool
+	 * @return void
 	 */
-	public static function maybe_clear_cart(): bool {
-		global $woocommerce;
-
-		if ( ! isset( $woocommerce->cart ) || ! isset( $woocommerce->cart->cart_contents ) ) {
-			return false;
-		}
-
-		foreach ( $woocommerce->cart->cart_contents as $item ) {
-			$meta_values = get_post_custom( $item['product_id'] );
-
-			if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
-				// MDS item found
-
-				if ( ! self::valid_mds_order() ) {
-					WC()->cart->empty_cart();
-
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
+	// public static function maybe_clear_cart(): void {
+	// 	$product_id = Functions::get_product_id();
+	// 	$cart       = WC()->cart->get_cart();
+	// 	foreach ( $cart as $cart_item_key => $cart_item ) {
+	// 		if ( $cart_item['product_id'] == $product_id ) {
+	// 			$meta_value = get_post_meta( $product_id, '_milliondollarscript', true );
+	// 			if ( $meta_value == 'yes' ) {
+	// 				// MDS item found
+	//
+	// 				if ( ! self::valid_mds_order() ) {
+	// 					WC()->cart->remove_cart_item( $cart_item_key );
+	// 					WC()->cart->calculate_totals();
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	/**
 	 * Clear WooCommerce cart when adding a new item.
@@ -622,4 +645,26 @@ class WooCommerce {
 
 		return null;
 	}
+
+	public static function delete_duplicate_variations( $product, $attribute = 'grid' ) {
+		$all_variations = $product->get_children();
+		if ( count( $all_variations ) <= 0 ) {
+			return;
+		}
+		$attribute_values = array();
+		$duplicate_ids    = array();
+		foreach ( $all_variations as $variation_id ) {
+			$variation       = new \WC_Product_Variation( $variation_id );
+			$attribute_value = $variation->get_attribute( $attribute );
+			if ( in_array( $attribute_value, $attribute_values ) ) {
+				$duplicate_ids[] = $variation_id;
+			} else {
+				$attribute_values[] = $attribute_value;
+			}
+		}
+		foreach ( $duplicate_ids as $id ) {
+			wp_delete_post( $id, true );
+		}
+	}
+
 }

@@ -30,6 +30,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Utility;
 
 require_once __DIR__ . "/../include/init.php";
@@ -37,6 +38,70 @@ require( 'admin_common.php' );
 
 global $f2;
 $BID = $f2->bid();
+
+function validate_or_defaults(): void {
+	if ( ! isset( $_REQUEST['grid_width'] ) || ! is_numeric( $_REQUEST['grid_width'] ) ) {
+		$_REQUEST['grid_width'] = 100;
+	}
+
+	if ( ! isset( $_REQUEST['grid_height'] ) || ! is_numeric( $_REQUEST['grid_height'] ) ) {
+		$_REQUEST['grid_height'] = 100;
+	}
+
+	if ( ! isset( $_REQUEST['price_per_block'] ) || ! is_numeric( $_REQUEST['price_per_block'] ) ) {
+		$_REQUEST['price_per_block'] = 1;
+	}
+
+	if ( ! isset( $_REQUEST['currency'] ) || ! in_array( $_REQUEST['currency'], Utility::get_currencies() ) ) {
+		$_REQUEST['currency'] = get_default_currency();
+	}
+
+	if ( ! isset( $_REQUEST['days_expire'] ) || ! is_numeric( $_REQUEST['days_expire'] ) ) {
+		$_REQUEST['days_expire'] = 0;
+	}
+
+	if ( ! isset( $_REQUEST['max_orders'] ) || ! is_numeric( $_REQUEST['max_orders'] ) ) {
+		$_REQUEST['max_orders'] = 1;
+	}
+
+	if ( ! isset( $_REQUEST['max_blocks'] ) || ! is_numeric( $_REQUEST['max_blocks'] ) ) {
+		$_REQUEST['max_blocks'] = 1;
+	}
+
+	if ( ! isset( $_REQUEST['min_blocks'] ) || ! is_numeric( $_REQUEST['min_blocks'] ) ) {
+		$_REQUEST['min_blocks'] = 1;
+	}
+
+	if ( ! isset( $_REQUEST['auto_approve'] ) || ! in_array( $_REQUEST['auto_approve'], [ 'Y', 'N' ] ) ) {
+		$_REQUEST['auto_approve'] = 'N';
+	}
+
+	if ( ! isset( $_REQUEST['auto_publish'] ) || ! in_array( $_REQUEST['auto_publish'], [ 'Y', 'N' ] ) ) {
+		$_REQUEST['auto_publish'] = 'Y';
+	}
+
+	if ( ! isset( $_REQUEST['block_width'] ) || ! is_numeric( $_REQUEST['block_width'] ) ) {
+		$_REQUEST['block_width'] = 10;
+	}
+
+	if ( ! isset( $_REQUEST['block_height'] ) || ! is_numeric( $_REQUEST['block_height'] ) ) {
+		$_REQUEST['block_height'] = 10;
+	}
+
+	if ( ! isset( $_REQUEST['nfs_covered'] ) || ! in_array( $_REQUEST['nfs_covered'], [ 'Y', 'N' ] ) ) {
+		$_REQUEST['nfs_covered'] = 'N';
+	}
+
+	if ( ! isset( $_REQUEST['enabled'] ) || ! in_array( $_REQUEST['enabled'], [ 'Y', 'N' ] ) ) {
+		$_REQUEST['enabled'] = 'Y';
+	}
+
+	if ( ! isset( $_REQUEST['bgcolor'] ) || $_REQUEST['bgcolor'] != sanitize_hex_color( $_REQUEST['bgcolor'] ) ) {
+		$_REQUEST['bgcolor'] = '';
+	}
+}
+
+validate_or_defaults();
 
 if ( isset( $_REQUEST['reset_image'] ) && $_REQUEST['reset_image'] != '' ) {
 	$default = get_default_image( $_REQUEST['reset_image'] );
@@ -53,11 +118,10 @@ function display_reset_link( $BID, $image_name ) {
 }
 
 function is_allowed_grid_file( $image_name ): bool {
-	$ALLOWED_EXT = 'png';
-	$parts       = explode( '.', $_FILES[ $image_name ]['name'] );
-	$ext         = strtolower( array_pop( $parts ) );
-	$ext_list    = preg_split( "/[\s,]+/i", ( $ALLOWED_EXT ) );
-	if ( ! in_array( $ext, $ext_list ) ) {
+	$ALLOWED_EXT = array( 'jpg', 'jpeg', 'gif', 'png' );
+	$file_parts  = pathinfo( $_FILES[ $image_name ]['name'] );
+	$ext         = strtolower( $file_parts['extension'] );
+	if ( ! in_array( $ext, $ALLOWED_EXT ) ) {
 		return false;
 	} else {
 		return true;
@@ -67,6 +131,10 @@ function is_allowed_grid_file( $image_name ): bool {
 function validate_input(): string {
 
 	$error = "";
+
+	if ( isset( $_REQUEST['enabled'] ) && ! in_array( $_REQUEST['enabled'], [ 'Y', 'N' ] ) ) {
+		$error .= "- Is this grid enabled? Grids that aren't enabled will be hidden from users.<br>";
+	}
 
 	if ( isset( $_REQUEST['name'] ) && $_REQUEST['name'] == '' ) {
 		$error .= "- Grid name not filled in<br>";
@@ -112,45 +180,49 @@ function validate_input(): string {
 		$error .= "- Min Blocks is not valid<br>";
 	}
 
+	if ( isset( $_REQUEST['nfs_covered'] ) && ! in_array( $_REQUEST['nfs_covered'], [ 'Y', 'N' ] ) ) {
+		$error .= "- Not For Sale Image Coverage is not valid<br>";
+	}
+
 	if ( isset( $_FILES['grid_block'] ) && $_FILES['grid_block']['tmp_name'] != '' ) {
 		if ( ! is_allowed_grid_file( 'grid_block' ) ) {
-			$error .= "- Grid Block must be a valid PNG file.<br>";
+			$error .= "- Grid Block must be a valid jpg, jpeg, gif, or png file.<br>";
 		}
 	}
 
 	if ( isset( $_FILES['nfs_block'] ) && $_FILES['nfs_block']['tmp_name'] != '' ) {
 		if ( ! is_allowed_grid_file( 'nfs_block' ) ) {
-			$error .= "- Not For Sale Block must be a valid PNG file.<br>";
+			$error .= "- Not For Sale Block must be a valid jpg, jpeg, gif, or png file.<br>";
 		}
 	}
 
 	if ( isset( $_FILES['usr_grid_block'] ) && $_FILES['usr_grid_block']['tmp_name'] != '' ) {
 		if ( ! is_allowed_grid_file( 'usr_grid_block' ) ) {
-			$error .= "- Not For Sale Block must be a valid PNG file.<br>";
+			$error .= "- Not For Sale Block must be a valid jpg, jpeg, gif, or png file.<br>";
 		}
 	}
 
 	if ( isset( $_FILES['usr_nfs_block'] ) && $_FILES['usr_nfs_block']['tmp_name'] != '' ) {
 		if ( ! is_allowed_grid_file( 'usr_nfs_block' ) ) {
-			$error .= "- User's Not For Sale Block must be a valid PNG file.<br>";
+			$error .= "- User's Not For Sale Block must be a valid jpg, jpeg, gif, or png file.<br>";
 		}
 	}
 
 	if ( isset( $_FILES['usr_ord_block'] ) && $_FILES['usr_ord_block']['tmp_name'] != '' ) {
 		if ( ! is_allowed_grid_file( 'usr_ord_block' ) ) {
-			$error .= "- User's Ordered Block must be a valid PNG file.<br>";
+			$error .= "- User's Ordered Block must be a valid jpg, jpeg, gif, or png file.<br>";
 		}
 	}
 
 	if ( isset( $_FILES['usr_res_block'] ) && $_FILES['usr_res_block']['tmp_name'] != '' ) {
 		if ( ! is_allowed_grid_file( 'usr_res_block' ) ) {
-			$error .= "- User's Reserved Block must be a valid PNG file.<br>";
+			$error .= "- User's Reserved Block must be a valid jpg, jpeg, gif, or png file.<br>";
 		}
 	}
 
 	if ( isset( $_FILES['usr_sol_block'] ) && $_FILES['usr_sol_block']['tmp_name'] != '' ) {
 		if ( ! is_allowed_grid_file( 'usr_sol_block' ) ) {
-			$error .= "- User's Sold Block must be a valid PNG file.<br>";
+			$error .= "- User's Sold Block must be a valid jpg, jpeg, gif, or png file.<br>";
 		}
 	}
 
@@ -165,6 +237,16 @@ function is_default(): bool {
 	return false;
 }
 
+if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'disable' ) {
+	$sql = "UPDATE `" . MDS_DB_PREFIX . "banners` SET enabled='N' WHERE banner_id=" . $BID;
+	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+}
+
+if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'enable' ) {
+	$sql = "UPDATE `" . MDS_DB_PREFIX . "banners` SET enabled='Y' WHERE banner_id=" . $BID;
+	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+}
+
 if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'delete' ) {
 	if ( is_default() ) {
 		echo "<b>Cannot delete</b> - This is the default grid!<br>";
@@ -173,7 +255,7 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'delete' ) {
 		// check orders..
 
 		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders where status <> 'deleted' and banner_id=" . $BID;
-		//echo $sql;
+		// echo $sql;
 		$res = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $res ) == 0 ) {
 
@@ -199,6 +281,10 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'delete' ) {
 			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".jpg" );
 			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".png" );
 			@unlink( Utility::get_upload_path() . "grids/background" . $BID . ".png" );
+
+			$product = \MillionDollarScript\Classes\Functions::get_product();
+
+			\MillionDollarScript\Classes\Functions::delete_variation( $product, $BID );
 		} else {
 			echo "<b>Cannot delete</b> - this grid contains some orders in the database.<br>";
 		}
@@ -258,7 +344,11 @@ function validate_block_size( $image_name, $BID ): bool {
 
 	$imagine = new Imagine\Gd\Imagine();
 
-	$img = $imagine->load( base64_decode( $b_row[ $image_name ] ) );
+	try {
+		$img = $imagine->load( base64_decode( $b_row[ $image_name ] ) );
+	} catch ( \Imagine\Exception\RuntimeException ) {
+        return false;
+	}
 
 	$temp_file = Utility::get_upload_path() . "temp_block" . md5( session_id() ) . ".png";
 	$img->save( $temp_file );
@@ -283,20 +373,22 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 
 	if ( $error != '' ) {
 
-		echo "Error: cannot save due to the following errors:<br>";
-		echo $error;
+		echo "<span style='color:red;'>Error: cannot save due to the following errors:</span><br>";
+		echo "<span style='color:red;'>$error</span>";
 	} else {
 		$image_sql_fields = ', grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block ';
 		$image_sql_values = get_banner_image_sql_values( $BID );
 		$now              = ( gmdate( "Y-m-d H:i:s" ) );
 
+		$new = false;
 		if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'new' ) {
-			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "banners` ( `banner_id` , `grid_width` , `grid_height` , `days_expire` , `price_per_block`, `name`, `currency`, `max_orders`, `block_width`, `block_height`, `max_blocks`, `min_blocks`, `date_updated`, `bgcolor`, `auto_publish`, `auto_approve` $image_sql_fields ) VALUES (NULL, '" . intval( $_REQUEST['grid_width'] ) . "', '" . intval( $_REQUEST['grid_height'] ) . "', '" . intval( $_REQUEST['days_expire'] ) . "', '" . floatval( $_REQUEST['price_per_block'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['currency'] ) . "', '" . intval( $_REQUEST['max_orders'] ) . "', '" . intval( $_REQUEST['block_width'] ) . "', '" . intval( $_REQUEST['block_height'] ) . "', '" . intval( $_REQUEST['max_blocks'] ) . "', '" . intval( $_REQUEST['min_blocks'] ) . "', '" . $now . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['bgcolor'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_publish'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_approve'] ) . "' $image_sql_values);";
+			$new = true;
+			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "banners` ( `banner_id` , `grid_width` , `grid_height` , `days_expire` , `price_per_block`, `name`, `currency`, `max_orders`, `block_width`, `block_height`, `max_blocks`, `min_blocks`, `date_updated`, `bgcolor`, `auto_publish`, `auto_approve`, `nfs_covered`, `enabled` $image_sql_fields ) VALUES (NULL, '" . intval( $_REQUEST['grid_width'] ) . "', '" . intval( $_REQUEST['grid_height'] ) . "', '" . intval( $_REQUEST['days_expire'] ) . "', '" . floatval( $_REQUEST['price_per_block'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['currency'] ) . "', '" . intval( $_REQUEST['max_orders'] ) . "', '" . intval( $_REQUEST['block_width'] ) . "', '" . intval( $_REQUEST['block_height'] ) . "', '" . intval( $_REQUEST['max_blocks'] ) . "', '" . intval( $_REQUEST['min_blocks'] ) . "', '" . $now . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['bgcolor'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_publish'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_approve'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['nfs_covered'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['enabled'] ) . "' $image_sql_values);";
 		} else {
-			$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "banners` ( `banner_id` , `grid_width` , `grid_height` , `days_expire` , `price_per_block`, `name`, `currency`, `max_orders`, `block_width`, `block_height`, `max_blocks`, `min_blocks`, `date_updated`, `bgcolor`, `auto_publish`, `auto_approve` $image_sql_fields ) VALUES ('" . $BID . "', '" . intval( $_REQUEST['grid_width'] ) . "', '" . intval( $_REQUEST['grid_height'] ) . "', '" . intval( $_REQUEST['days_expire'] ) . "', '" . floatval( $_REQUEST['price_per_block'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['currency'] ) . "', '" . intval( $_REQUEST['max_orders'] ) . "', '" . intval( $_REQUEST['block_width'] ) . "', '" . intval( $_REQUEST['block_height'] ) . "', '" . intval( $_REQUEST['max_blocks'] ) . "', '" . intval( $_REQUEST['min_blocks'] ) . "', '" . $now . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['bgcolor'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_publish'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_approve'] ) . "' $image_sql_values);";
+			$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "banners` ( `banner_id` , `grid_width` , `grid_height` , `days_expire` , `price_per_block`, `name`, `currency`, `max_orders`, `block_width`, `block_height`, `max_blocks`, `min_blocks`, `date_updated`, `bgcolor`, `auto_publish`, `auto_approve`, `nfs_covered`, `enabled` $image_sql_fields ) VALUES ('" . $BID . "', '" . intval( $_REQUEST['grid_width'] ) . "', '" . intval( $_REQUEST['grid_height'] ) . "', '" . intval( $_REQUEST['days_expire'] ) . "', '" . floatval( $_REQUEST['price_per_block'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['currency'] ) . "', '" . intval( $_REQUEST['max_orders'] ) . "', '" . intval( $_REQUEST['block_width'] ) . "', '" . intval( $_REQUEST['block_height'] ) . "', '" . intval( $_REQUEST['max_blocks'] ) . "', '" . intval( $_REQUEST['min_blocks'] ) . "', '" . $now . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['bgcolor'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_publish'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_approve'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['nfs_covered'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['enabled'] ) . "' $image_sql_values);";
 		}
 
-		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mds_sql_error( $sql ) );
 
 		$BID = mysqli_insert_id( $GLOBALS['connection'] );
 
@@ -305,21 +397,37 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 
 		$_REQUEST['new'] = '';
+
+		// WooCommerce integration
+		if ( Options::get_option( 'woocommerce', false, 'options', 'no' ) == 'yes' ) {
+			// Get product from CarbonFields
+			$product_option = Options::get_option( 'product', true );
+
+			// Product id
+			$product_id = $product_option[0]['id'];
+
+			// WC Product
+			$product = wc_get_product( $product_id );
+
+			\MillionDollarScript\Classes\Functions::update_attributes( $product );
+			//
+			// if ( $new ) {
+			// 	// Add attributes to product
+			// 	\MillionDollarScript\Classes\Functions::add_variation( $product, $BID );
+			// } else {
+			// 	// Update attributes on product
+			// 	\MillionDollarScript\Classes\Functions::update_variation( $product, $BID );
+			// }
+
+			$product->save();
+		}
 	}
 }
 
 ?>
-<?php if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] == '' ) && ( ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == '' ) ) ) { ?>
-    Here you can manage your grid(s):
-    <ul>
-        <li>Set the expiry of the pixels</li>
-        <li>Set the maximum allowed orders per grid</li>
-        <li>Set the default price of the pixels</li>
-        <li>Set the grid width</li>
-        <li>Create and delete new Grids</li>
-    </ul>
+<p>Here you can manage your grid(s) expiration, max/min orders per grid, price, dimensions, images, or add and delete them.</p>
+<p>Note: A grid with 100 rows and 100 columns and a block size of 10x10 is a million pixels. Setting this to a larger value may affect the memory & performance of the script.</p>
 
-<?php } ?>
 <input type="button" style="background-color:#66FF33" value="New Grid..." onclick="mds_load_page('inventory.php?action=new&new=1', true)"><br>
 
 <?php
@@ -328,7 +436,7 @@ if ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] == '1' ) {
 	echo "<h4>New Grid</h4>";
 }
 if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) {
-	echo "<h4>Edit Grid</h4>";
+	echo "<h4>Edit Grid #";
 
 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE `banner_id`='" . $BID . "' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
@@ -348,61 +456,14 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) {
 	$_REQUEST['bgcolor']         = $row['bgcolor'];
 	$_REQUEST['auto_approve']    = $row['auto_approve'];
 	$_REQUEST['auto_publish']    = $row['auto_publish'];
+	$_REQUEST['nfs_covered']     = $row['nfs_covered'];
+	$_REQUEST['enabled']         = $row['enabled'];
+
+	echo intval($row['banner_id']) . "</h4>";
 }
 
 if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'edit' ) ) {
 
-	function not_valid_grid_option( $option ) {
-		return ( ! isset( $_REQUEST[ $option ] ) || ! $_REQUEST[ $option ] ) && ( isset( $_REQUEST[ $option ] ) && $_REQUEST[ $option ] != "0" );
-	}
-
-	if ( not_valid_grid_option( 'grid_width' ) ) {
-		$_REQUEST['grid_width'] = 100;
-	}
-
-	if ( not_valid_grid_option( 'grid_height' ) ) {
-		$_REQUEST['grid_height'] = 100;
-	}
-
-	if ( not_valid_grid_option( 'price_per_block' ) ) {
-		$_REQUEST['price_per_block'] = 1;
-	}
-
-	if ( not_valid_grid_option( 'currency' ) ) {
-		$_REQUEST['currency'] = get_default_currency();
-	}
-
-	if ( not_valid_grid_option( 'days_expire' ) ) {
-		$_REQUEST['days_expire'] = '0';
-	}
-
-	if ( not_valid_grid_option( 'max_orders' ) ) {
-		$_REQUEST['max_orders'] = '1';
-	}
-
-	if ( not_valid_grid_option( 'max_blocks' ) ) {
-		$_REQUEST['max_blocks'] = '1';
-	}
-
-	if ( not_valid_grid_option( 'min_blocks' ) ) {
-		$_REQUEST['min_blocks'] = '1';
-	}
-
-	if ( not_valid_grid_option( 'auto_approve' ) ) {
-		$_REQUEST['auto_approve'] = 'N';
-	}
-
-	if ( not_valid_grid_option( 'auto_publish' ) ) {
-		$_REQUEST['auto_publish'] = 'Y';
-	}
-
-	if ( not_valid_grid_option( 'block_width' ) ) {
-		$_REQUEST['block_width'] = 10;
-	}
-
-	if ( not_valid_grid_option( 'block_height' ) ) {
-		$_REQUEST['block_height'] = 10;
-	}
 	$size_error_msg = "Error: Invalid size! Must be " . htmlspecialchars( $_REQUEST['block_width'] ) . "x" . htmlspecialchars( $_REQUEST['block_height'] );
 
 	?>
@@ -431,6 +492,24 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 								});
                             </script>
                         </label> eg. My Million Pixel Grid
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Enabled</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input type="radio" name="enabled" value="Y" <?php if ( $_REQUEST['enabled'] == 'Y' ) {
+								echo " checked ";
+							} ?> >
+                            Grid is enabled and will be selectable by the user to order from.
+                        </label>
+                        <br/>
+                        <label>
+                            <input type="radio" name="enabled" value="N" <?php if ( $_REQUEST['enabled'] == 'N' ) {
+								echo " checked ";
+							} ?> >
+                            Grid is disabled and will not be available to select when ordering.
+                        </label>
                     </div>
                 </div>
                 <div class="inventory-entry">
@@ -578,6 +657,24 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                             <input type="text" name="block_height" size="2" style="font-size: 18pt" value="<?php echo intval( $_REQUEST['block_height'] ); ?>">
                         </label>
                         <br/>(Width X Height, default is 10x10 in pixels)
+                    </div>
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Not For Sale Image Coverage</div>
+                    <div class="inventory-content">
+                        <label>
+                            <input type="radio" name="nfs_covered" value="N" <?php if ( $_REQUEST['nfs_covered'] == 'N' ) {
+								echo " checked ";
+							} ?> >
+                            Show the NFS image on every NFS block.
+                        </label>
+                        <br/>
+                        <label>
+                            <input type="radio" name="nfs_covered" value="Y" <?php if ( $_REQUEST['nfs_covered'] == 'Y' ) {
+								echo " checked ";
+							} ?> >
+                            Show a single image across all NFS blocks.
+                        </label>
                     </div>
                 </div>
                 <div class="inventory-section-title">Block Graphics - Displayed on the public Grid</div>
@@ -773,7 +870,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
         Note: The Grid Width and Grid Height fields are locked because this image has some pixels on order / sold.
 		<?php
 	}
-}
+} else {
 
 function render_offer( $price, $currency, $max_orders, $days_expire ) {
 	?>
@@ -795,9 +892,6 @@ function render_offer( $price, $currency, $max_orders, $days_expire ) {
 }
 
 ?>
-<br/>
-Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to a larger value may affect the memory & performance of the script.<br/>
-<br/><br/>
 
 <div class="inventory2-container">
     <div class="inventory2-title">
@@ -826,15 +920,24 @@ Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to 
     </div>
 
 	<?php
-	$result = mysqli_query( $GLOBALS['connection'], "select * FROM " . MDS_DB_PREFIX . "banners" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		$result = mysqli_query( $GLOBALS['connection'], "SELECT * FROM `" . MDS_DB_PREFIX . "banners` ORDER BY `enabled` DESC, `date_updated` ASC, `publish_date` ASC, `banner_id` ASC" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
 		?>
         <div class="inventory2-content">
             <a href='inventory.php?action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a> <a href="packs.php?BID=<?php echo $row['banner_id']; ?>"> Packages</a>
 			<?php
+				if ( $row['enabled'] == 'Y' ) {
+					?>
+                    <a href='inventory.php?action=disable&BID=<?php echo $row['banner_id']; ?>'>Disable</a>
+					<?php
+				} else {
+					?>
+                    <a href='inventory.php?action=enable&BID=<?php echo $row['banner_id']; ?>'>Enable</a>
+					<?php
+				}
 			if ( $row['banner_id'] != '1' ) {
 				?>
-                <a href='inventory.php?action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
+                    <a onclick="if (! confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')) return false;" href='inventory.php?action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
 				<?php
 			}
 			?>
@@ -874,3 +977,5 @@ Note: A grid with 100 rows and 100 columns is a million pixels. Setting this to 
 	}
 	?>
 </div>
+	<?php
+}

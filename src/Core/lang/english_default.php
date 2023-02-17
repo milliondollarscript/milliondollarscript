@@ -831,3 +831,4 @@ $label['no_blocks_selected']                          = 'You have no blocks sele
 $label['advertiser_reset_button']                     = "Reset";
 $label['ads_not_found']                               = 'No ads were found';
 $label['erase']                                       = 'Erase';
+$label['select_grid']                                 = 'Select Grid';

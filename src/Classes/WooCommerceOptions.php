@@ -99,6 +99,20 @@ class WooCommerceOptions {
 				     )
 			     ) )
 			     ->set_help_text( __( 'Setting to Yes will automatically approve orders before payments are verified by an admin.', 'milliondollarscript' ) ),
+
+			// WooCommerce de-dupe variations
+			Field::make( 'checkbox', $prefix . 'dedupe', __( 'Remove duplicate variations', 'milliondollarscript' ) )
+			     ->set_default_value( 'no' )
+			     ->set_option_value( 'yes' )
+			     ->set_conditional_logic( array(
+				     'relation' => 'AND',
+				     array(
+					     'field'   => $prefix . 'woocommerce',
+					     'compare' => '=',
+					     'value'   => true,
+				     )
+			     ) )
+			     ->set_help_text( __( 'Checking this will remove all duplicate variations on the MDS product when the options are saved.', 'milliondollarscript' ) ),
 		];
 
 		return array_merge( $fields, $wc_fields );
@@ -110,7 +124,7 @@ class WooCommerceOptions {
 	 *
 	 * @return \Carbon_Fields\Field\Field
 	 */
-	public static function mds_options_save( string $name, \Carbon_Fields\Field\Field $field ) {
+	public static function mds_options_save( \Carbon_Fields\Field\Field $field , string $name ) {
 		switch ( $name ) {
 			case 'woocommerce':
 				if ( class_exists( 'woocommerce' ) && $field->get_value() == 'yes' ) {
@@ -126,6 +140,11 @@ class WooCommerceOptions {
 				break;
 			case 'auto-approve':
 				Functions::woocommerce_auto_approve( $field->get_value() );
+				break;
+			case 'dedupe':
+				if ( $field->get_value() == 'yes' ) {
+					\MillionDollarScript\Classes\WooCommerce::delete_duplicate_variations( Functions::get_product() );
+				}
 				break;
 			default:
 				break;

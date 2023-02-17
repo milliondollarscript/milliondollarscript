@@ -34,7 +34,7 @@ require_once __DIR__ . "/../include/init.php";
 
 require( 'admin_common.php' );
 
-echo '<style type="text/css">
+echo '<style>
     #bubble {
         position: absolute;
         left: 0;

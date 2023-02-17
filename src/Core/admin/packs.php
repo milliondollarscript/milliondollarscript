@@ -161,8 +161,8 @@ if ( $BID != '' ) {
 		if ( $error != '' ) {
 
 			echo "<p>";
-			echo "<font color='red'>Error: cannot save due to the following errors:</font><br>";
-			echo $error;
+			echo "<span style='color:red;'>Error: cannot save due to the following errors:</span><br>";
+			echo "<span style='color:red;'>$error</span>";
 			echo "</p>";
 		} else {
 

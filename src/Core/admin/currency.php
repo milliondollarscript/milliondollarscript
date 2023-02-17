@@ -113,8 +113,8 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 
 	if ( $error != '' ) {
 
-		echo "Error: cannot save due to the following errors:<br>";
-		echo $error;
+		echo "<span style='color:red;'>Error: cannot save due to the following errors:</span><br>";
+		echo "<span style='color:red;'>$error</span>";
 	} else {
 
 		$sql = "REPLACE INTO " . MDS_DB_PREFIX . "currencies(code, name, rate, sign, decimal_places, decimal_point, thousands_sep, is_default) VALUES ('" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['code'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . floatval( $_REQUEST['rate'] ) . "',  '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['sign'] ) . "', '" . intval( $_REQUEST['decimal_places'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['decimal_point'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['thousands_sep'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['is_default'] ) . "') ";

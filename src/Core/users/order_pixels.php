@@ -792,6 +792,15 @@ if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
 				remove_ajax_loader();
 			});
 
+			function add_ajax_loader(container) {
+				let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
+				jQuery(container).append($ajax_loader)
+				$ajax_loader.css('top', jQuery(container).position().top).css('left', (jQuery(container).width() / 2) - ($ajax_loader.width() / 2));
+			}
+
+			function remove_ajax_loader() {
+				jQuery('.ajax-loader').remove();
+			}
 			add_ajax_loader(window.$pixelimg.parent());
 		})(jQuery);
     </script>

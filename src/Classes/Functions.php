@@ -31,7 +31,7 @@ class Functions {
 	/**
 	 * Enqueue scripts and styles
 	 */
-	public static function enqueue_scripts() {
+	public static function enqueue_scripts(): void {
 		wp_enqueue_style( 'mds-css', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
 
 		wp_enqueue_script( 'mds-js', MDS_BASE_URL . 'src/Assets/js/mds.js', [ 'jquery' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
@@ -41,8 +41,285 @@ class Functions {
 			) ), 'before' );
 	}
 
-	public static function get_product_id() {
-		// Check for MDS product, if one doesn't exist create one.
+	/**
+	 * Get attribute and grid data for all grids or a single grid if a grid id is provided.
+	 *
+	 * @param int|null $grid_id
+	 *
+	 * @return array
+	 */
+	public static function get_attribute_data( int $grid_id = null ): array {
+
+		global $wpdb;
+
+		if ( $grid_id == null ) {
+			$grids = $wpdb->get_results( "SELECT `banner_id`, `name`, `price_per_block` FROM `" . MDS_DB_PREFIX . "banners`" );
+		} else {
+			$grids = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT `banner_id`, `name`, `price_per_block` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id` = %d",
+					$grid_id
+				)
+			);
+		}
+
+		$options = [];
+		foreach ( $grids as $grid ) {
+			$options[] = $grid->banner_id;
+		}
+
+		$attribute = new \WC_Product_Attribute();
+		$attribute->set_id( 0 );
+		$attribute->set_name( 'Grid' );
+		$attribute->set_position( 0 );
+		$attribute->set_visible( 1 );
+		$attribute->set_variation( 1 );
+		$attribute->set_options( $options );
+
+		return [ $attribute, $grids ];
+	}
+
+	/**
+	 * Add attribute data to the product.
+	 *
+	 * @param \WC_Product_Variable|\WC_Product $product
+	 */
+	public static function add_grid_attributes( \WC_Product_Variable|\WC_Product $product ): void {
+
+		list( $attribute, $grids ) = self::get_attribute_data();
+
+		$product->set_attributes( [ $attribute ] );
+		$product->set_reviews_allowed( false );
+		$product_id = $product->save();
+
+		foreach ( $grids as $grid ) {
+
+			$variation = new \WC_Product_Variation();
+			$variation->set_regular_price( $grid->price_per_block );
+			$variation->set_parent_id( $product_id );
+			$variation->set_virtual( true );
+
+			$variation->set_attributes( [
+				'grid' => $grid->banner_id
+			] );
+
+			$variation->save();
+		}
+	}
+
+	/**
+	 * Get attribute and grid data for all grids or a single grid if a grid id is provided. Used for updating.
+	 *
+	 * @param int|null $grid_id
+	 *
+	 * @return array
+	 */
+	public static function get_update_attribute_data( int $grid_id = null ): array {
+
+		global $wpdb;
+
+		if ( $grid_id == null ) {
+			$grids = $wpdb->get_results( "SELECT `banner_id`, `price_per_block` FROM `" . MDS_DB_PREFIX . "banners` ORDER BY `banner_id` ASC" );
+		} else {
+			$grids = $wpdb->get_results(
+			$wpdb->prepare(
+					"SELECT `banner_id`, `price_per_block` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id` = %d ORDER BY `banner_id` ASC",
+				$grid_id
+			)
+		);
+		}
+
+		return $grids;
+	}
+
+	/**
+	 * Update product attributes and variations.
+	 *
+	 * @param \WC_Product_Variable|\WC_Product $product
+	 *
+	 * @return void
+	 */
+	public static function update_attributes( \WC_Product_Variable|\WC_Product $product ): void {
+		global $BID;
+
+		// Fetch data
+		$grids               = self::get_update_attribute_data();
+		$existing_variations = $product->get_children();
+
+		self::update_attribute( $grids, $product );
+
+		// Loop through all grids.
+		foreach ( $grids as $grid ) {
+			$new_attribute_value = intval( $grid->banner_id );
+
+			$exists       = false;
+			$variation    = null;
+			$variation_id = 0;
+
+			// Loop through all existing variations (grids on the product).
+			foreach ( $existing_variations as $existing_variation_id ) {
+				// Check cache
+				$cache_key          = 'wc_get_product_' . $existing_variation_id;
+				$existing_variation = wp_cache_get( $cache_key );
+				if ( false === $existing_variation ) {
+					// Store cache
+					$existing_variation = \WC()->product_factory->get_product( $existing_variation_id );
+					wp_cache_set( $cache_key, $existing_variation );
+				}
+
+				// Check cache
+				$cache_key              = 'wc_get_attribute_' . $existing_variation_id;
+				$exists_attribute_value = wp_cache_get( $cache_key );
+				if ( false === $exists_attribute_value ) {
+					// Store cache
+					$exists_attribute_value = intval( $existing_variation->get_attribute( 'grid' ) );
+					wp_cache_set( $cache_key, $exists_attribute_value );
+				}
+
+				// If a variation exists for the grid save it for later and break out of the loop.
+				if ( $exists_attribute_value == $new_attribute_value ) {
+					$exists       = true;
+					$variation_id = $existing_variation_id;
+					break;
+				}
+			}
+			unset( $existing_variation_id );
+
+			if ( ! $exists ) {
+				// If no existing variation was found, make a new one.
+		$variation = new \WC_Product_Variation();
+				$variation->set_parent_id( $product->get_id() );
+		$variation->set_regular_price( $grid->price_per_block );
+				$variation->set_virtual( true );
+				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
+				$variation->save();
+			} else if ( $new_attribute_value == $BID ) {
+				// If an existing variation was found, update it with the new data only if it's the one being edited.
+				$variation = wc_get_product( $variation_id );
+				$variation->set_regular_price( $grid->price_per_block );
+		$variation->set_virtual( true );
+				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
+		$variation->save();
+	}
+			}
+		unset( $grid );
+
+		// Cleanup
+		foreach ( $existing_variations as $existing_variation_id ) {
+			wp_cache_delete( 'wc_get_product_' . $existing_variation_id );
+			wp_cache_delete( 'wc_get_attribute_' . $existing_variation_id );
+		}
+	}
+
+	/**
+	 * Delete a variation from the given product for the given grid.
+	 *
+	 * @param \WC_Product_Variable|\WC_Product $product
+	 * @param int $grid_id
+	 *
+	 * @return void
+	 */
+	public static function delete_variation( \WC_Product_Variable|\WC_Product $product, int $grid_id ): void {
+		$variations = $product->get_available_variations();
+
+		$cache_key = '';
+		foreach ( $variations as $variation ) {
+			if ( isset( $variation['attributes']['attribute_grid'] ) && $variation['attributes']['attribute_grid'] == $grid_id ) {
+
+				// Check cache
+				$cache_key         = 'wc_get_product_' . $variation['variation_id'];
+				$variation_product = wp_cache_get( $cache_key );
+				if ( false === $variation_product ) {
+					// Store cache
+				$variation_product = wc_get_product( $variation['variation_id'] );
+					wp_cache_set( $cache_key, $variation_product );
+				}
+
+				// Delete it
+				$variation_product->delete();
+				break;
+			}
+		}
+
+		$grids = self::get_update_attribute_data();
+
+		self::update_attribute( $grids, $product );
+
+		wp_cache_delete( $cache_key );
+	}
+
+	/**
+	 * Create a product for MDS to use.
+	 */
+	public static function create_product(): \WC_Product_Variable {
+
+		$product = new \WC_Product_Variable();
+		$product->set_name( __( 'Pixels', 'milliondollarscript' ) );
+		$product->add_meta_data( '_milliondollarscript', 'yes' );
+
+		self::add_grid_attributes( $product );
+
+		return $product;
+	}
+
+	/**
+	 * Used to update the product in the database upgrade.
+	 *
+	 * @return \WC_Product|null
+	 */
+	public static function migrate_product(): null|\WC_Product {
+		global $wp_query;
+
+		$product = null;
+
+		$wc_query = new \WP_Query( [
+			'posts_per_page' => 1,
+			'post_type'      => 'product',
+			'meta_key'       => '_milliondollarscript',
+			'meta_value'     => 'yes',
+			'meta_compare'   => '==',
+			'post_status'    => 'publish',
+		] );
+
+		if ( $wp_query == null ) {
+			$wp_query = $wc_query;
+		}
+
+		if ( $wc_query->have_posts() ) {
+			while ( $wc_query->have_posts() ) {
+				$wc_query->the_post();
+
+				$product_id = get_the_ID();
+				$product    = wc_get_product( $product_id );
+
+				if ( $product === false || $product === null ) {
+					error_log("Product with id " . $product_id . " wasn't found from wc_get_product function.");
+
+					return null;
+				}
+
+				if ( $product->is_type( 'simple' ) ) {
+					wp_remove_object_terms( $product_id, 'simple', 'product_type' );
+					wp_set_object_terms( $product_id, 'variable', 'product_type', true );
+				}
+
+				self::get_attribute_data();
+				self::add_grid_attributes( $product );
+			}
+			wp_reset_postdata();
+		}
+
+		return $product;
+	}
+
+	/**
+	 * Get a product id. Checks for an existing MDS product first and if one doesn't exist creates one.
+	 *
+	 * @return bool|int
+	 */
+	public static function get_product_id(): bool|int {
+		global $wp_query;
+
 		$product_id = 0;
 
 		$wc_query = new \WP_Query( [
@@ -50,40 +327,60 @@ class Functions {
 			'post_type'      => 'product',
 			'meta_key'       => '_milliondollarscript',
 			'meta_value'     => 'yes',
-			'meta_compare'   => '=='
+			'meta_compare'   => '==',
+			'post_status'    => 'publish',
 		] );
+
+		if ( $wp_query == null ) {
+			$wp_query = $wc_query;
+		}
+
 		if ( $wc_query->have_posts() ) {
+			// existing product
 			while ( $wc_query->have_posts() ) {
 				$wc_query->the_post();
 				$product_id = get_the_ID();
 			}
 			wp_reset_postdata();
 		} else {
-
-			// Insert the post into the database
-			$product_id = wp_insert_post( [
-				'post_title'   => 'Pixels',
-				'post_content' => '',
-				'post_status'  => 'publish',
-				'post_author'  => get_current_user_id(),
-				'post_type'    => 'product'
-			] );
-
-			if ( $product_id ) {
-				global $wpdb;
-				add_post_meta( $product_id, '_regular_price', 1 );
-				add_post_meta( $product_id, '_price', $wpdb->get_var('SELECT `price_per_block` FROM `' . MDS_DB_PREFIX . 'banners` WHERE `banner_id`=1') );
-				add_post_meta( $product_id, '_stock_status', 'instock' );
-				add_post_meta( $product_id, '_milliondollarscript', 'yes' );
-
-				WooCommerce::update_product( $product_id );
-			}
+			// create new product
+			$product    = self::create_product();
+			$product_id = $product->get_id();
 		}
 
 		return $product_id;
 	}
 
-	public static function enable_woocommerce_payments() {
+	/**
+	 * Get a variation id for the given grid id.
+	 *
+	 * @param $grid_id
+	 *
+	 * @return int|null
+	 */
+	public static function get_variation_id( $grid_id ): ?int {
+		$product = self::get_product();
+
+		$variations = $product->get_available_variations();
+
+		foreach ( $variations as $variation ) {
+			if ( isset( $variation['attributes']['attribute_grid'] ) && $variation['attributes']['attribute_grid'] == $grid_id ) {
+				// Get the variation product object
+				$variation_product = wc_get_product( $variation['variation_id'] );
+
+				return $variation_product->get_id();
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Enable WooCommerce payments module in MDS.
+	 *
+	 * @return void
+	 */
+	public static function enable_woocommerce_payments(): void {
 		global $wpdb;
 
 		// Disable "Payment" module
@@ -92,9 +389,9 @@ class Functions {
 		// Enable WooCommerce module
 		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'key' => 'WOOCOMMERCE_ENABLED', 'val' => 'Y' ] );
 
-		$product_id = self::get_product_id();
+		// $product_id = self::get_product_id();
 
-		$checkout_url = wc_get_checkout_url() . '?add-to-cart=' . $product_id . '&quantity=%QUANTITY%';
+		$checkout_url = wc_get_checkout_url() . '?add-to-cart=%VARIATION%&quantity=%QUANTITY%';
 		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'key' => 'WOOCOMMERCE_URL', 'val' => $checkout_url ] );
 
 		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'key' => 'WOOCOMMERCE_AUTO_APPROVE', 'val' => 'yes' ] );
@@ -103,12 +400,24 @@ class Functions {
 		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'key' => 'WOOCOMMERCE_REDIRECT', 'val' => 'yes' ] );
 	}
 
-	public static function disable_woocommerce_payments() {
+	/**
+	 * Disable WooCommerce payment module.
+	 *
+	 * @return void
+	 */
+	public static function disable_woocommerce_payments(): void {
 		global $wpdb;
 		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'key' => 'WOOCOMMERCE_ENABLED', 'val' => 'N' ] );
 	}
 
-	public static function woocommerce_auto_approve( $val = 'yes' ) {
+	/**
+	 * Enable auto approve in WooCommerce payment module.
+	 *
+	 * @param $val
+	 *
+	 * @return void
+	 */
+	public static function woocommerce_auto_approve( $val = 'yes' ): void {
 		global $wpdb;
 		if ( empty( $val ) ) {
 			$val = 'no';
@@ -116,7 +425,14 @@ class Functions {
 		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'key' => 'WOOCOMMERCE_AUTO_APPROVE', 'val' => $val ] );
 	}
 
-	public static function set_default_product( \Carbon_Fields\Field\Field $field ) {
+	/**
+	 * Set the product for the option field.
+	 *
+	 * @param \Carbon_Fields\Field\Field $field
+	 *
+	 * @return \Carbon_Fields\Field\Field
+	 */
+	public static function set_default_product( \Carbon_Fields\Field\Field $field ): \Carbon_Fields\Field\Field {
 		$product_id = self::get_product_id();
 
 		$field->set_value( [
@@ -130,4 +446,44 @@ class Functions {
 
 		return $field;
 	}
+
+	/**
+	 * Get product from options.
+	 *
+	 * @return false|\WC_Product_Variable|null
+	 */
+	public static function get_product() {
+		// Get product from CarbonFields
+		$product_option = Options::get_option( 'product', true );
+
+		// Product id
+		$product_id = $product_option[0]['id'];
+
+		// WC Product
+		return wc_get_product( $product_id );
+	}
+
+	/**
+	 * @param array $grids
+	 * @param \WC_Product_Variable|\WC_Product $product
+	 *
+	 * @return void
+	 */
+	private static function update_attribute( array $grids, \WC_Product_Variable|\WC_Product $product ): void {
+		$options = array_column( $grids, 'banner_id' );
+
+		$attribute = new \WC_Product_Attribute();
+		$attribute->set_name( 'grid' );
+		$attribute->set_options( $options );
+		$attribute->set_position( 0 );
+		$attribute->set_visible( 1 );
+		$attribute->set_variation( 1 );
+		$attribute->set_id( 0 );
+
+		$product->set_attributes( [ 'grid' => $attribute ] );
+
+		// Save the product.
+		$product->save();
+	}
+
 }

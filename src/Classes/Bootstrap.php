@@ -51,6 +51,9 @@ class Bootstrap {
 			add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Admin', 'menu' ], 10 );
 		}
 
+		// Add NFS page
+		add_action( 'init', [ '\MillionDollarScript\Classes\NFS', 'init' ], 10 );
+
 		// enqueue js
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Functions', 'enqueue_scripts' ] );
 		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\Functions', 'enqueue_scripts' ] );
@@ -87,8 +90,9 @@ class Bootstrap {
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Update', 'checker' ] );
 
 		// Cron
-		add_filter( 'cron_schedules', [ 'MillionDollarScript\Classes\Cron', 'add_minute' ] );
-		add_action( 'milliondollarscript_cron_minute', [ 'MillionDollarScript\Classes\Cron', 'minute' ] );
+		$cron = new Cron();
+		add_filter( 'cron_schedules', [ $cron, 'add_minute' ] );
+		add_action( 'milliondollarscript_cron_minute', [ $cron, 'minute' ] );
 
 		// Hook for when loaded
 		do_action( 'mds-loaded', $this );

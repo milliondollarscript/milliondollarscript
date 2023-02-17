@@ -46,6 +46,7 @@ class Mds_Ajax {
 	}
 
 	function show( $type = null, $BID = null, $add_container = false ) {
+
 		if ( $BID == null ) {
 			if ( isset( $_REQUEST['BID'] ) && ! empty( $_REQUEST['BID'] ) ) {
 				$BID = $_REQUEST['BID'];
@@ -75,6 +76,9 @@ class Mds_Ajax {
 				break;
 			case "list":
 				$this->list( $BID );
+				break;
+			case "users":
+				$this->users( $BID );
 				break;
 			default:
 				break;
@@ -289,6 +293,40 @@ class Mds_Ajax {
 					window.mds_ajax_request.done(mds_list_call);
 				} else {
 					mds_list_call();
+				}
+			});
+        </script>
+		<?php
+	}
+
+	private function users( int $BID ) {
+		$this->mds_js_loaded();
+
+		$container = 'users' . $BID;
+
+		if ( $this->add_container !== false ) {
+			$container = $this->add_container . $BID;
+			?>
+            <div class="mds-container users-container <?php echo $container; ?>"></div>
+			<?php
+		}
+
+		?>
+        <script>
+			jQuery(function () {
+				let mds_users_call = function () {
+					var load_wait = setInterval(function () {
+						if (typeof mds_users == 'function') {
+							mds_users('<?php echo $container; ?>', <?php echo $BID; ?>);
+							clearInterval(load_wait);
+						}
+					}, 100);
+				}
+
+				if (window.mds_ajax_request != null) {
+					window.mds_ajax_request.done(mds_users_call);
+				} else {
+					mds_users_call();
 				}
 			});
         </script>

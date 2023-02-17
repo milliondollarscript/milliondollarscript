@@ -64,6 +64,8 @@ function process_login() {
 		$session_duration = 60 * 20;
 	}
 
+	mds_get_session_mds_id();
+
 	$now = ( gmdate( "Y-m-d H:i:s" ) );
 	$sql = "UPDATE `" . MDS_DB_PREFIX . "users` SET `logout_date`='$now' WHERE UNIX_TIMESTAMP(DATE_SUB('$now', INTERVAL $session_duration SECOND)) > UNIX_TIMESTAMP(last_request_time) AND (`logout_date` ='1000-01-01 00:00:00')";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die ( $sql . mysqli_error( $GLOBALS['connection'] ) );
@@ -135,22 +137,7 @@ function is_logged_in() {
 			return false;
 		}
 
-		$user = wp_get_current_user();
-
-		// get user from MDS db
-		$result = mysqli_query( $GLOBALS['connection'], "SELECT * FROM `" . MDS_DB_PREFIX . "users` WHERE username='" . mysqli_real_escape_string( $GLOBALS['connection'], $user->user_login ) . "'" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
-		if ( isset( $row ) && ! $row['Username'] ) {
-			return false;
-		}
-
-		$_SESSION['MDS_ID']        = $row['ID'];
-		$_SESSION['MDS_FirstName'] = $row['FirstName'];
-		$_SESSION['MDS_LastName']  = $row['LastName'];
-		$_SESSION['MDS_Username']  = $row['Username'];
-		$_SESSION['MDS_Rank']      = $row['Rank'];
-		//$_SESSION['MDS_order_id'] = '';
-		$_SESSION['MDS_Domain'] = 'ADVERTISER';
+		mds_get_session_mds_id();
 
 		// TODO: why is this even here? should per-user lang be a thing?
 //		if ( $row['lang'] != '' ) {
@@ -482,13 +469,7 @@ function do_login() {
 		return false;
 	} else {
 		if ( $Password == $row['Password'] || ( $_REQUEST['Password'] == ADMIN_PASSWORD ) ) {
-			$_SESSION['MDS_ID']        = $row['ID'];
-			$_SESSION['MDS_FirstName'] = $row['FirstName'];
-			$_SESSION['MDS_LastName']  = $row['LastName'];
-			$_SESSION['MDS_Username']  = $row['Username'];
-			$_SESSION['MDS_Rank']      = $row['Rank'];
-			//$_SESSION['MDS_order_id'] = '';
-			$_SESSION['MDS_Domain'] = 'ADVERTISER';
+			mds_setup_session( $row );
 
 			$now = ( gmdate( "Y-m-d H:i:s" ) );
 			$sql = "UPDATE `" . MDS_DB_PREFIX . "users` SET `login_date`='$now', `last_request_time`='$now', `logout_date`='1000-01-01 00:00:00', `login_count`=`login_count`+1 WHERE `Username`='" . mysqli_real_escape_string( $GLOBALS['connection'], $row['Username'] ) . "' ";
@@ -565,16 +546,49 @@ function do_logout() {
 	}
 }
 
+function mds_get_session_mds_id() {
+	require_once WP_PATH . '/wp-load.php';
+	require_once WP_PATH . '/wp-includes/pluggable.php';
+
+	$user = wp_get_current_user();
+
+	// get user from MDS db
+	$result = mysqli_query( $GLOBALS['connection'], "SELECT * FROM `" . MDS_DB_PREFIX . "users` WHERE username='" . mysqli_real_escape_string( $GLOBALS['connection'], $user->user_login ) . "'" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+	$row = mysqli_fetch_array( $result );
+	if ( isset( $row ) && ! $row['Username'] ) {
+		return false;
+	}
+
+	mds_setup_session( $row );
+
+	return $_SESSION['MDS_ID'];
+}
+
 /**
- * Start a session with a 1 hour limit.
+ * @param bool|array|null $row
+ *
+ * @return void
+ */
+function mds_setup_session( bool|array|null $row ): void {
+	$_SESSION['MDS_ID']        = $row['ID'];
+	$_SESSION['MDS_FirstName'] = $row['FirstName'];
+	$_SESSION['MDS_LastName']  = $row['LastName'];
+	$_SESSION['MDS_Username']  = $row['Username'];
+	$_SESSION['MDS_Rank']      = $row['Rank'];
+	//$_SESSION['MDS_order_id'] = '';
+	$_SESSION['MDS_Domain'] = 'ADVERTISER';
+}
+
+/**
+ * Start a session with a 1 year limit.
  *
  * @link https://stackoverflow.com/a/8311400/311458
  */
 function mds_start_session( $options = [] ) {
 	if ( session_status() == PHP_SESSION_NONE ) {
 
-		ini_set( 'session.gc_maxlifetime', 3600 );
-		session_set_cookie_params( 3600 );
+		ini_set( 'session.gc_maxlifetime', 31557600 );
+		session_set_cookie_params( 31557600 );
 		session_start( $options );
 
 		$now = time();
@@ -584,6 +598,6 @@ function mds_start_session( $options = [] ) {
 			session_start( $options );
 		}
 
-		$_SESSION['discard_after'] = $now + 3600;
+		$_SESSION['discard_after'] = $now + 31557600;
 	}
 }

@@ -111,6 +111,25 @@ function mds_list(container, bid, width, height) {
 	});
 }
 
+function mds_users(container, bid, width, height) {
+	if (jQuery('#' + container).length > 0) {
+		return;
+	}
+
+	let users = jQuery("<div class='users-inner' id='" + container + "'></div>");
+	users.css('width', width).css('height', height);
+	jQuery('.' + container).append(users);
+
+	const data = {
+		action: 'show_users',
+		BID: bid
+	};
+
+	jQuery(users).load(window.mds_data.ajax, data, function () {
+		mds_init('#' + container, false, true, false, false);
+	});
+}
+
 function receiveMessage(event, $el) {
 	if (event.origin !== window.mds_data.wp || !initialized) {
 		return;

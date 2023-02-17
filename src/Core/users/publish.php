@@ -138,7 +138,7 @@ if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] == 'complete' ) {
 // Banner Selection form
 // Load this form only if more than 1 grid exists with pixels purchased.
 
-$sql = "select DISTINCT " . MDS_DB_PREFIX . "banners.banner_id, " . MDS_DB_PREFIX . "banners.name FROM " . MDS_DB_PREFIX . "orders, " . MDS_DB_PREFIX . "banners where " . MDS_DB_PREFIX . "orders.banner_id=" . MDS_DB_PREFIX . "banners.banner_id  AND user_id=" . intval( $_SESSION['MDS_ID'] ) . " and (" . MDS_DB_PREFIX . "orders.status='completed' or " . MDS_DB_PREFIX . "orders.status='expired') group by " . MDS_DB_PREFIX . "orders.banner_id, " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "banners.banner_id order by `name`";
+$sql = "select DISTINCT " . MDS_DB_PREFIX . "banners.banner_id, " . MDS_DB_PREFIX . "banners.name, " . MDS_DB_PREFIX . "banners.enabled FROM " . MDS_DB_PREFIX . "orders, " . MDS_DB_PREFIX . "banners where " . MDS_DB_PREFIX . "orders.banner_id=" . MDS_DB_PREFIX . "banners.banner_id  AND user_id=" . intval( $_SESSION['MDS_ID'] ) . " and (" . MDS_DB_PREFIX . "orders.status='completed' or " . MDS_DB_PREFIX . "orders.status='expired') group by " . MDS_DB_PREFIX . "orders.banner_id, " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "banners.banner_id order by `name`";
 
 $res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
 

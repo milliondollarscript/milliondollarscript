@@ -166,7 +166,7 @@ class Options {
 				}
 				break;
 			default:
-				$field = apply_filters( 'mds_options_save', $name, $field );
+				$field = apply_filters( 'mds_options_save', $field, $name );
 				break;
 		}
 

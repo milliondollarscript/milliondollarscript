@@ -48,7 +48,8 @@ class Shortcode {
 	 * Example usage:
 	 * Grid: [milliondollarscript id="1" display_method="ajax" align="center" width="1000px" height="1000px" lang="EN" type="grid" display="display_map.php?"]
 	 * Users: [milliondollarscript id="1" display_method="iframe" align="center" width="100%" height="auto" lang="EN" type="users" display="users/?"]
-	 * List: [milliondollarscript id="1" display_method="iframe" align="center" width="100%" height="auto" lang="EN" type="list" display="list.php?"]
+	 * Users: [milliondollarscript id="1" display_method="ajax" align="center" width="100%" height="auto" lang="EN" type="users" display="users/?"]
+	 * List: [milliondollarscript id="1" display_method="ajax" align="center" width="100%" height="auto" lang="EN" type="list" display="list.php?"]
 	 * Stats: [milliondollarscript id="1" display_method="ajax" align="center" width="150px" height="60px" lang="EN" type="stats" display="display_stats.php?"]
 	 * Thankyou: [milliondollarscript id="1" display_method="iframe" align="center" width="100%" height="auto" lang="EN" type="thankyou" gateway="PayPal" display="users/thanks.php?m=%PROVIDER%&"]
 	 * Validate: [milliondollarscript id="1" display_method="iframe" align="center" width="100%" height="auto" lang="EN" type="validate" display="users/validate.php?email=%EMAIL%&code=%CODE%&"]

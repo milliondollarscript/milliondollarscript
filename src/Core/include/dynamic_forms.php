@@ -442,7 +442,7 @@ function mds_display_form( $form_id, $mode, $prams, $section ) {
 						echo '</a>';
 					}
 					if ( $row['is_required'] == 'Y' && $mode != 'view' && $mode == 'user' ) {
-						echo "<FONT SIZE='4' COLOR='#FF0000'><b>*</B></FONT>";
+						echo "<strong style='color:#FF0000;'>*</strong>";
 					}
 
 					// avoid triggering mod_security by not posting http:// in the form fields
@@ -2255,7 +2255,7 @@ function check_for_bad_words( $data ) {
 	$baddies = preg_split( "/[\s,]+/", BAD_WORDS );
 
 	foreach ( $baddies as $bad ) {
-		if ( preg_match( "/\b$bad\b/", $data ) ) {
+		if ( preg_match( "/$bad/i", $data ) ) {
 			$found_bad = true;
 		}
 	}

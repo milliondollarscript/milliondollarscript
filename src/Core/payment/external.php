@@ -245,7 +245,7 @@ class external {
 		$sql = "SELECT val FROM `" . MDS_DB_PREFIX . "config` WHERE `key`='EXTERNAL_ENABLED' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		$row = mysqli_fetch_array( $result );
-		if ( isset($row['val']) && $row['val'] == 'Y' ) {
+		if ( isset( $row['val'] ) && $row['val'] == 'Y' ) {
 			return true;
 		} else {
 			return false;
@@ -308,7 +308,8 @@ class external {
 				$dest = str_replace( '%AMOUNT%', urlencode( $row['price'] ), $url );
 				$dest = str_replace( '%CURRENCY%', urlencode( $row['currency'] ), $dest );
 				$dest = str_replace( '%QUANTITY%', urlencode( $quantity ), $dest );
-				if(strpos($dest, '?') !== false) {
+				$dest = str_replace( '%VARIATION%', urlencode( \MillionDollarScript\Classes\Functions::get_variation_id( $row['banner_id'] ) ), $dest );
+				if ( strpos( $dest, '?' ) !== false ) {
 					$dest = $dest . '&mdsid=' . $order_id;
 				} else {
 					$dest = $dest . '?mdsid=' . $order_id;
@@ -324,6 +325,11 @@ class external {
 	}
 
 	function complete_order( $order_id ) {
+
+		if ( ! defined( 'EXTERNAL_URL' ) ) {
+			return;
+		}
+
 		global $f2;
 
 		$url = $f2->filter( EXTERNAL_URL );
@@ -333,7 +339,7 @@ class external {
 		$row = mysqli_fetch_array( $result );
 
 		complete_order( $row['user_id'], $order_id );
-		debit_transaction( $order_id, $row['price'], $row['currency'], 'External', substr($url, 0, 64), 'External' );
+		debit_transaction( $order_id, $row['price'], $row['currency'], 'External', substr( $url, 0, 64 ), 'External' );
 	}
 
 	function get_quantity( $order_id ) {

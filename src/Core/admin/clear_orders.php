@@ -38,7 +38,7 @@ if ( isset( $_REQUEST['clear_orders'] ) && $_REQUEST['clear_orders'] == 'true' )
 	$sql = "delete from " . MDS_DB_PREFIX . "ads";
 	mysqli_query( $GLOBALS['connection'], $sql );
 
-	$sql = "delete from " . MDS_DB_PREFIX . "blocks";
+	$sql = "delete from " . MDS_DB_PREFIX . "blocks where `status`!='nfs'";
 	mysqli_query( $GLOBALS['connection'], $sql );
 
 	$sql = "delete from " . MDS_DB_PREFIX . "orders";
