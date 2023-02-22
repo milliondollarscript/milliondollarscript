@@ -1086,6 +1086,15 @@ function install_db() {
 				`val`
 		)
     	VALUES(
+				'TOOLTIP_TRIGGER',
+				'click'
+		)";
+
+		$sql[] = "INSERT INTO `$table_name` (
+				`key`,
+				`val`
+		)
+    	VALUES(
 				'ENABLE_CLOAKING',
 				'YES'
 		)";

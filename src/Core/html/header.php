@@ -31,6 +31,8 @@
  */
 
 // MillionDollarScript header.php
+use MillionDollarScript\Classes\Options;
+
 require_once __DIR__ . "/../include/init.php";
 
 // Only load headers and assets if not using WP integration and not an ajax call.
@@ -48,7 +50,7 @@ global $wpdb;
 $lang_dir = $wpdb->get_var("SELECT `lang_dir` FROM `" . MDS_DB_PREFIX . "lang` WHERE `is_default`='Y'");
 
 ?><!DOCTYPE html>
-<html dir="<?php esc_attr_e($lang_dir); ?>">
+<html dir="<?php esc_attr_e( $lang_dir ); ?>">
 <head>
     <title><?php echo SITE_NAME; ?></title>
     <meta name="Description" content="<?php echo SITE_SLOGAN; ?>">
@@ -79,8 +81,11 @@ $lang_dir = $wpdb->get_var("SELECT `lang_dir` FROM `" . MDS_DB_PREFIX . "lang` W
 		}
 		?>
         <script>
-			window.mds_data = {
-				ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
+			const MDS = {
+				ajaxurl: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
+				mds_core_nonce: '<?php echo wp_create_nonce( 'mds_core_nonce' ); ?>',
+				mds_nonce: '<?php echo wp_create_nonce( 'mds_nonce' ); ?>',
+				users: '<?php echo Options::get_option( 'users', false, 'options', 'no' ); ?>',
 				wp: '<?php echo $wp_url; ?>',
 				winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
 				winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
@@ -89,9 +94,11 @@ $lang_dir = $wpdb->get_var("SELECT `lang_dir` FROM `" . MDS_DB_PREFIX . "lang` W
 				REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
 				REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
 				ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
+				TOOLTIP_TRIGGER: '<?php echo TOOLTIP_TRIGGER; ?>',
 				BID: parseInt('<?php echo $BID; ?>', 10)
 			};
         </script>
+        <script src="<?php echo MDS_BASE_URL; ?>src/Assets/js/mds.js?ver=<?php echo filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ); ?>" defer></script>
         <script src="<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>" defer></script>
 	<?php if ( $call_state == 4 ) { ?>
         <script>

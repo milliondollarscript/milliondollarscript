@@ -638,13 +638,29 @@ class Database {
 			$version = $this->up_dbver( 17 );
 		}
 
-		if($version <= 17) {
+		if ( $version <= 17 ) {
 
 			// Add nfs_covered column to banners table
 			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` ADD COLUMN `enabled` CHAR(1) NOT NULL default 'Y' AFTER `nfs_covered`;";
 			$wpdb->query( $sql );
 
 			$version = $this->up_dbver( 18 );
+		}
+
+		if ( $version <= 18 ) {
+
+			// Add nfs_covered column to banners table
+			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "config` (
+					`key`,
+					`val`
+			)
+	        VALUES(
+					'TOOLTIP_TRIGGER',
+					'click'
+			)";
+			$wpdb->query( $sql );
+
+			$version = $this->up_dbver( 19 );
 		}
 
 		// Update version info

@@ -32,13 +32,52 @@ class Functions {
 	 * Enqueue scripts and styles
 	 */
 	public static function enqueue_scripts(): void {
-		wp_enqueue_style( 'mds-css', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
+		require_once MDS_CORE_PATH . 'include/init.php';
 
-		wp_enqueue_script( 'mds-js', MDS_BASE_URL . 'src/Assets/js/mds.js', [ 'jquery' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
+		global $f2;
+		$BID         = $f2->bid();
+		$banner_data = load_banner_constants( $BID );
 
-		wp_add_inline_script( 'mds-js', 'const MDS = ' . json_encode( array(
-				'users' => Options::get_option( 'users', false, 'options', 'no' ),
-			) ), 'before' );
+		$data = [
+			'ajaxurl'          => admin_url( 'admin-ajax.php' ),
+			'mds_core_nonce'   => wp_create_nonce( 'mds_core_nonce' ),
+			'mds_nonce'        => wp_create_nonce( 'mds_nonce' ),
+			'users'            => Options::get_option( 'users', false, 'options', 'no' ),
+			'wp'               => WP_URL,
+			'winWidth'         => intval( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ),
+			'winHeight'        => intval( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ),
+			'time'             => time(),
+			'BASE_HTTP_PATH'   => BASE_HTTP_PATH,
+			'REDIRECT_SWITCH'  => REDIRECT_SWITCH,
+			'REDIRECT_URL'     => REDIRECT_URL,
+			'ENABLE_MOUSEOVER' => ENABLE_MOUSEOVER,
+			'TOOLTIP_TRIGGER'  => TOOLTIP_TRIGGER,
+			'BID'              => intval( $BID ),
+		];
+
+		wp_enqueue_style( 'mds', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
+		wp_enqueue_style( 'tippy-light', BASE_HTTP_PATH . 'css/tippy/light.css', [], filemtime( BASE_PATH . '/css/tippy/light.css' ) );
+		wp_enqueue_style( 'mds-main', BASE_HTTP_PATH . 'css/main.css', [], filemtime( BASE_PATH . '/css/main.css' ) );
+
+		$tooltips = \MillionDollarScript\Classes\Config::get( 'ENABLE_MOUSEOVER' );
+		if ( $tooltips == 'POPUP' ) {
+			wp_enqueue_script( 'popper', BASE_HTTP_PATH . 'js/third-party/popper.js', [], filemtime( BASE_PATH . '/js/third-party/popper.js' ), true );
+			wp_enqueue_script( 'tippy', BASE_HTTP_PATH . 'js/third-party/tippy-bundle.umd.js', [ 'popper' ], filemtime( BASE_PATH . '/js/third-party/tippy-bundle.umd.js' ), true );
+			$deps = 'tippy';
+		} else {
+			$deps = '';
+		}
+
+		wp_enqueue_script( 'image-scale', BASE_HTTP_PATH . 'js/third-party/image-scale.min.js', [ $deps ], filemtime( BASE_PATH . '/js/third-party/image-scale.min.js' ), true );
+		wp_enqueue_script( 'image-map', BASE_HTTP_PATH . 'js/third-party/image-map.js', [ 'image-scale' ], filemtime( BASE_PATH . '/js/third-party/image-map.js' ), true );
+		wp_enqueue_script( 'contact', BASE_HTTP_PATH . 'js/third-party/contact.min.js', [ 'image-map' ], filemtime( BASE_PATH . '/js/third-party/contact.min.js' ), true );
+
+		wp_register_script( 'mds-core', BASE_HTTP_PATH . 'js/mds.js', [ 'contact' ], filemtime( BASE_PATH . '/js/mds.js' ), true );
+		wp_localize_script( 'mds-core', 'MDS', $data );
+		wp_enqueue_script( 'mds-core' );
+
+		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.js', [ 'jquery', 'mds-core' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
+		wp_enqueue_script( 'mds' );
 	}
 
 	/**
@@ -122,11 +161,11 @@ class Functions {
 			$grids = $wpdb->get_results( "SELECT `banner_id`, `price_per_block` FROM `" . MDS_DB_PREFIX . "banners` ORDER BY `banner_id` ASC" );
 		} else {
 			$grids = $wpdb->get_results(
-			$wpdb->prepare(
+				$wpdb->prepare(
 					"SELECT `banner_id`, `price_per_block` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id` = %d ORDER BY `banner_id` ASC",
-				$grid_id
-			)
-		);
+					$grid_id
+				)
+			);
 		}
 
 		return $grids;
@@ -187,9 +226,9 @@ class Functions {
 
 			if ( ! $exists ) {
 				// If no existing variation was found, make a new one.
-		$variation = new \WC_Product_Variation();
+				$variation = new \WC_Product_Variation();
 				$variation->set_parent_id( $product->get_id() );
-		$variation->set_regular_price( $grid->price_per_block );
+				$variation->set_regular_price( $grid->price_per_block );
 				$variation->set_virtual( true );
 				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
 				$variation->save();
@@ -197,11 +236,11 @@ class Functions {
 				// If an existing variation was found, update it with the new data only if it's the one being edited.
 				$variation = wc_get_product( $variation_id );
 				$variation->set_regular_price( $grid->price_per_block );
-		$variation->set_virtual( true );
+				$variation->set_virtual( true );
 				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
-		$variation->save();
-	}
+				$variation->save();
 			}
+		}
 		unset( $grid );
 
 		// Cleanup
@@ -231,7 +270,7 @@ class Functions {
 				$variation_product = wp_cache_get( $cache_key );
 				if ( false === $variation_product ) {
 					// Store cache
-				$variation_product = wc_get_product( $variation['variation_id'] );
+					$variation_product = wc_get_product( $variation['variation_id'] );
 					wp_cache_set( $cache_key, $variation_product );
 				}
 
@@ -293,7 +332,7 @@ class Functions {
 				$product    = wc_get_product( $product_id );
 
 				if ( $product === false || $product === null ) {
-					error_log("Product with id " . $product_id . " wasn't found from wc_get_product function.");
+					error_log( "Product with id " . $product_id . " wasn't found from wc_get_product function." );
 
 					return null;
 				}

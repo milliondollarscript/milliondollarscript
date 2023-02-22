@@ -215,10 +215,10 @@ class Shortcode {
 				";
 			}
 
-			wp_register_script( 'mds-js', MDS_BASE_URL . 'src/Assets/js/mds.js', [ 'jquery' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
+			wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.js', [ 'jquery' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
 
 			// add inline function call to each MDS iframe
-			wp_add_inline_script( 'mds-js', $js );
+			wp_add_inline_script( 'mds', $js );
 		}
 
 		if ( $atts['display_method'] == 'ajax' ) {

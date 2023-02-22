@@ -166,10 +166,10 @@ class Mds_Ajax {
 									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
 										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
 											window.mds_data = {
-												ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
+												ajax: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
 												wp: '<?php echo $wp_url; ?>',
-													winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
-													winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
+												winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
+												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 												time: '<?php echo time(); ?>',
 												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
 												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
@@ -207,13 +207,13 @@ class Mds_Ajax {
 									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
 										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
 											window.mds_data = {
-												ajax: '<?php echo BASE_HTTP_PATH; ?>ajax.php',
+												ajax: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
 												time: '<?php echo time(); ?>',
 												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
 												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
 												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
 												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-													BID: parseInt('<?php echo $BID; ?>', 10)
+												BID: parseInt('<?php echo $BID; ?>', 10)
 											};
 											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
 											});

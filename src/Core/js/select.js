@@ -68,6 +68,16 @@ let submit_button2;
 let pointer;
 let pixel_container;
 
+function add_ajax_loader(container) {
+	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
+	jQuery(container).append($ajax_loader)
+	$ajax_loader.css('top', jQuery(container).position().top).css('left', (jQuery(container).width() / 2) - ($ajax_loader.width() / 2));
+}
+
+function remove_ajax_loader() {
+	jQuery('.ajax-loader').remove();
+}
+
 const messageout = function (message) {
 	if (debug) {
 		console.log(message);
@@ -114,6 +124,7 @@ function has_touch() {
 
 window.onload = function () {
 	grid = document.getElementById("pixelimg");
+	let $grid = jQuery(grid);
 	myblocks = document.getElementById('blocks');
 	total_cost = document.getElementById('total_cost');
 	submit_button1 = document.getElementById('submit_button1');
@@ -121,9 +132,13 @@ window.onload = function () {
 	pointer = document.getElementById('block_pointer');
 	pixel_container = document.getElementById('pixel_container');
 
-	window.onresize = rescale_grid;
-
 	load_order();
+
+	if ($grid.length === 0) {
+		remove_ajax_loader();
+	}
+
+	window.onresize = rescale_grid;
 
 	if (has_touch()) {
 		handle_touch_events();
@@ -140,6 +155,7 @@ window.onload = function () {
 };
 
 let grid_interval;
+
 function on_grid_load() {
 	jQuery("#pixelimg").one("load", function () {
 		jQuery('.ajax-loader').remove();
@@ -148,6 +164,9 @@ function on_grid_load() {
 		if (this.complete) {
 			jQuery(this).trigger('load');
 		}
+	});
+	jQuery("#pixelimg").on("loadstart", function () {
+		add_ajax_loader("#submit-buttons");
 	});
 }
 

@@ -788,11 +788,24 @@
         </div>
         <div class="admin-config-right">
             <label>
-				<?php
-				$ENABLE_MOUSEOVER = MDSConfig::get( 'ENABLE_MOUSEOVER' );
-				?>
+			    <?php
+			    $ENABLE_MOUSEOVER = MDSConfig::get( 'ENABLE_MOUSEOVER' );
+			    ?>
                 <input type="radio" name="ENABLE_MOUSEOVER" value="POPUP" <?php echo( $ENABLE_MOUSEOVER == 'POPUP' ? 'checked' : '' ); ?> /> Yes - Simple popup box, with no animation<br/>
                 <input type="radio" name="ENABLE_MOUSEOVER" value="NO" <?php echo( $ENABLE_MOUSEOVER == 'NO' ? 'checked' : '' ); ?> /> No, turn off
+            </label>
+        </div>
+
+        <div class="admin-config-left">
+            Tooltip trigger
+        </div>
+        <div class="admin-config-right">
+            <label>
+			    <?php
+			    $TOOLTIP_TRIGGER = MDSConfig::get( 'TOOLTIP_TRIGGER' );
+			    ?>
+                <input type="radio" name="TOOLTIP_TRIGGER" value="click" <?php echo( $TOOLTIP_TRIGGER == 'click' ? 'checked' : '' ); ?> /> Click - Tooltips will popup when ads are clicked on the grid.<br/>
+                <input type="radio" name="TOOLTIP_TRIGGER" value="mouseenter" <?php echo( $TOOLTIP_TRIGGER == 'mouseenter' ? 'checked' : '' ); ?> /> Hover - Tooltips will popup when ads are hovered over on the grid.
             </label>
         </div>
     </div>

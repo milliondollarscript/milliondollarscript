@@ -127,7 +127,8 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
     <p><b><?php echo $label['adv_pub_edityourad']; ?></b></p>
 	<?php
 
-	if ( $_REQUEST['save'] != "" ) {
+	if ( isset( $_REQUEST['save'] ) && ! empty( $_REQUEST['save'] ) ) {
+
 		// saving
 
 		$error = validate_ad_data( 1 );

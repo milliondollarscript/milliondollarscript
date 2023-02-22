@@ -54,6 +54,9 @@ class Bootstrap {
 		// Add NFS page
 		add_action( 'init', [ '\MillionDollarScript\Classes\NFS', 'init' ], 10 );
 
+		// Load AJAX
+		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Ajax', 'init' ], 10 );
+
 		// enqueue js
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Functions', 'enqueue_scripts' ] );
 		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\Functions', 'enqueue_scripts' ] );

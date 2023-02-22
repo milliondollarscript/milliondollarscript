@@ -258,7 +258,7 @@ if ( mysqli_num_rows( $res ) > 1 ) {
 		echo $label['advertiser_sel_select_intro'];
 		?>
     </p>
-	<?php display_banner_selecton_form( $BID, $order_row['order_id'], $res ); ?>
+	<?php display_banner_selecton_form( $BID, $order_row['order_id'] ?? 0, $res ); ?>
 
 	<?php
 	if ( ! isset( $_REQUEST['banner_change'] ) && ( ! isset( $_REQUEST['jEditOrder'] ) || $_REQUEST['jEditOrder'] !== 'true' ) ) {

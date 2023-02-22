@@ -65,12 +65,17 @@ $banner_data = load_banner_constants( $BID );
 				const defaultContent = jQuery('.tooltip-source').html();
 				const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
 
+				let delay = 50;
+				if(MDS.TOOLTIP_TRIGGER === 'mouseenter') {
+					delay = 400;
+				}
+
 				window.tippy_instance = tippy('a.list-link', {
 					theme: 'light',
 					content: defaultContent,
 					duration: 50,
-					delay: 50,
-					trigger: 'click',
+					delay: delay,
+					trigger: MDS.TOOLTIP_TRIGGER,
 					allowHTML: true,
 					followCursor: 'initial',
 					hideOnClick: true,

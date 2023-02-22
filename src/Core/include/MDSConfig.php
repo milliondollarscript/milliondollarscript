@@ -99,6 +99,7 @@ class MDSConfig {
 			'MINUTES_UNCONFIRMED'         => '60',
 			'MINUTES_CANCEL'              => '4320',
 			'ENABLE_MOUSEOVER'            => 'POPUP',
+			'TOOLTIP_TRIGGER'             => 'click',
 			'ENABLE_CLOAKING'             => 'YES',
 			'VALIDATE_LINK'               => 'NO',
 			'ADVANCED_CLICK_COUNT'        => 'YES',
