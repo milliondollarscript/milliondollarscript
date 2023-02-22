@@ -172,7 +172,7 @@ class NFS {
 		wp_enqueue_script( 'jquery-ui-button' );
 		wp_enqueue_script( 'jquery-ui-dialog' );
 		wp_enqueue_script( 'jquery-form' );
-		wp_enqueue_script( 'viselect', MDS_CORE_URL . 'js/third-party/viselect.cjs.js', [], filemtime( MDS_CORE_PATH . "/js/third-party/viselect.cjs.js" ) );
+		wp_enqueue_script( 'viselect', MDS_CORE_URL . 'js/third-party/viselect.umd.js', [], filemtime( MDS_CORE_PATH . "/js/third-party/viselect.umd.js" ) );
 
 		if ( WP_ENABLED == 'YES' ) {
 			$mds_site_url = WP_URL;

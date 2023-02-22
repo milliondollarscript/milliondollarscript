@@ -3,7 +3,7 @@
         'name' => 'milliondollarscript/milliondollarscript',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '77081144e9be045b39b5b64604912ce802335f3e',
+        'reference' => '656a0a4198c05c3ef6389446c4817695fb081fb7',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'milliondollarscript/milliondollarscript' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '77081144e9be045b39b5b64604912ce802335f3e',
+            'reference' => '656a0a4198c05c3ef6389446c4817695fb081fb7',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

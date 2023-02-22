@@ -54,7 +54,7 @@ if ( WP_ENABLED == 'YES' ) {
     <link rel="stylesheet" type="text/css" href="<?php echo $f2->value( BASE_HTTP_PATH ); ?>admin/css/admin.css?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/admin/css/admin.css" ); ?>">
     <script src="<?php echo esc_url( includes_url( 'js/jquery/jquery.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/jquery.min.js" ) ); ?>"></script>
 
-    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/viselect.cjs.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/viselect.cjs.js" ); ?>"></script>
+    <script src="<?php echo $f2->value( BASE_HTTP_PATH ); ?>js/third-party/viselect.umd.js?ver=<?php echo filemtime( $f2->value( BASE_PATH ) . "/js/third-party/viselect.umd.js" ); ?>"></script>
 
     <script src="<?php echo esc_url( includes_url( 'js/jquery/ui/core.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/ui/core.min.js" ) ); ?>"></script>
     <script src="<?php echo esc_url( includes_url( 'js/jquery/ui/dialog.min.js' ) . "?ver=" . filemtime( ABSPATH . WPINC . "/js/jquery/ui/dialog.min.js" ) ); ?>"></script>
