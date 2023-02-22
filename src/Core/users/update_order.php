@@ -35,7 +35,7 @@ mds_start_session();
 define( 'NO_HOUSE_KEEP', 'YES' );
 
 header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
-header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" ); // Date in the past
+header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );   // Date in the past
 
 require_once __DIR__ . "/../include/init.php";
 
@@ -68,10 +68,23 @@ if ( ! is_numeric( $BID ) ) {
 	die();
 }
 
-if ( isset($_REQUEST['user_id']) && !empty($_REQUEST['user_id']) ) {
+if ( isset( $_REQUEST['user_id'] ) && ! empty( $_REQUEST['user_id'] ) ) {
 	$user_id = intval( $_REQUEST['user_id'] );
 	if ( ! is_numeric( $_REQUEST['user_id'] ) ) {
-		die();
+		// Sometimes the user ID can be NaN in some cases so let's check WP user
+		// For example if MDS was just installed and user hasn't been logged out and logged in
+		if ( is_user_logged_in() ) {
+			$user_id = get_current_user_id();
+		} else {
+			echo json_encode( [
+				"error" => "true",
+				"type"  => "error",
+				"data"  => [
+					"value" => $label['not_logged_in'],
+				]
+			] );
+			die();
+		}
 	}
 } else {
 	$user_id = intval( $_SESSION['MDS_ID'] );
@@ -92,11 +105,11 @@ if ( ! can_user_order( $banner_data, $_SESSION['MDS_ID'] ) ) {
 // reset blocks
 if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
 	$sql = "delete from " . MDS_DB_PREFIX . "blocks where user_id='" . intval( $_SESSION['MDS_ID'] ) . "' AND status = 'reserved' AND banner_id='" . intval( $BID ) . "' ";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
+	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 	if ( isset( $_SESSION['MDS_order_id'] ) ) {
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET blocks = '' WHERE order_id=" . intval( $_SESSION['MDS_order_id'] );
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
+		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	}
 
 	echo json_encode( [
