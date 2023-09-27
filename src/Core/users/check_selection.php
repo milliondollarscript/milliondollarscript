@@ -85,7 +85,5 @@ function check_selection_main(): void {
 	$in_str = implode( ',', $cb_array );
 	$f2->write_log( "in_str is:" . $in_str );
 
-	error_log($in_str);
-
 	check_pixels( $in_str );
 }
