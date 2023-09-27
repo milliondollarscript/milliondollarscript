@@ -1,71 +1,68 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/login_functions.php";
-mds_start_session();
-require_once __DIR__ . "/../include/init.php";
+use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Utility;
 
-if ( DISPLAY_ORDER_HISTORY !== "YES" ) {
+defined( 'ABSPATH' ) or exit;
+
+mds_wp_login_check();
+
+if ( \MillionDollarScript\Classes\Config::get('DISPLAY_ORDER_HISTORY') !== "YES" ) {
 	exit;
 }
-
-process_login();
 
 // check if user has permission to access this page
 if ( ! mds_check_permission( "mds_order_history" ) ) {
-	require_once BASE_PATH . "/html/header.php";
-	_e( "No Access", 'milliondollarscript' );
-	require_once BASE_PATH . "/html/footer.php";
+	require_once MDS_CORE_PATH . "html/header.php";
+	Language::out( "No Access" );
+	require_once MDS_CORE_PATH . "html/footer.php";
 	exit;
 }
 
-require_once BASE_PATH . "/html/header.php";
+require_once MDS_CORE_PATH . "html/header.php";
 
-global $label;
+global $wpdb;
 
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
-	if ( $_REQUEST['order_id'] == "temp" ) {
+	if ( $_REQUEST['order_id'] == get_current_order_id() ) {
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "temp_orders WHERE session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval(get_current_order_id() ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
 			$row = mysqli_fetch_assoc( $result );
 
 			// delete associated ad
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "ads where ad_id=" . intval( $row['ad_id'] );
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			wp_delete_post(intval( $row['ad_id'] ));
 
 			// delete associated temp order
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "temp_orders WHERE session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
+			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( get_current_order_id() ) . "'";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			// delete associated uploaded image
@@ -75,20 +72,19 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 			}
 
 			// if deleted order is the current order unset current order id
-			if ( $_REQUEST['order_id'] == $_SESSION['MDS_order_id'] ) {
-				unset( $_SESSION['MDS_order_id'] );
+			if ( $_REQUEST['order_id'] == get_current_order_id() ) {
+				delete_current_order_id();
 			}
 		}
 	} else {
-
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . intval( $_SESSION['MDS_ID'] ) . "' AND order_id='" . intval( $_REQUEST['order_id'] ) . "'";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( $_REQUEST['order_id'] ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
 			delete_order( intval( $_REQUEST['order_id'] ) );
 
 			// if deleted order is the current order unset current order id
-			if ( $_REQUEST['order_id'] == $_SESSION['MDS_order_id'] ) {
-				unset( $_SESSION['MDS_order_id'] );
+			if ( $_REQUEST['order_id'] == get_current_order_id() ) {
+				delete_current_order_id();
 			}
 		}
 	}
@@ -100,7 +96,7 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 
 		function confirmLink(theLink, theConfirmMsg) {
 
-			if (theConfirmMsg == '') {
+			if (theConfirmMsg === '') {
 				return true;
 			}
 
@@ -114,179 +110,197 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 
     </script>
 
-    <h3><?php echo $label['advertiser_ord_history']; ?></h3>
-
-    <p>
-		<?php echo $label['advertiser_ord_explain']; ?>
-    </p>
-
-    <h4><?php echo $label['advertiser_ord_hist_list']; ?></h4>
+    <div class="fancy-heading"><?php Language::out( 'Order History' ); ?></div>
 
 <?php
 
 $orders = array();
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders AS t1, " . MDS_DB_PREFIX . "users AS t2 WHERE t1.user_id=t2.ID AND t1.user_id='" . intval( $_SESSION['MDS_ID'] ) . "' ORDER BY t1.order_date DESC ";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-while ( $row = mysqli_fetch_array( $result ) ) {
-	$orders[] = $row;
-}
-
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "temp_orders WHERE session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ORDER BY order_date DESC ";
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders AS t1, " . $wpdb->prefix . "users AS t2 WHERE t1.user_id=t2.ID AND t1.user_id='" . get_current_user_id() . "' ORDER BY t1.order_date DESC ";
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 while ( $row = mysqli_fetch_array( $result ) ) {
 	$orders[] = $row;
 }
 
 // Sort by order_date from both orders and temp_orders
-function date_sort( $a, $b ) {
-	return strtotime( $a['order_date'] ) < strtotime( $b['order_date'] );
+function date_sort( $a, $b ): int {
+	$dateA = strtotime( $a['order_date'] );
+	$dateB = strtotime( $b['order_date'] );
+
+	if ($dateA == $dateB) {
+		return 0;
+	} elseif ($dateA < $dateB) {
+		return -1;
+	} else {
+		return 1;
+	}
 }
 
 usort( $orders, "date_sort" );
 
 ?>
 
-    <table width="100%" cellSpacing="1" cellPadding="3" align="center" bgColor="#d9d9d9" border="0">
+    <table class="mds-order-history">
+        <thead>
         <tr>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_ord_prderdate']; ?></font></b></td>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_ord_custname']; ?></font></b></td>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_ord_usernid']; ?></font></b></td>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_ord_orderid']; ?></font></b></td>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_ord_quantity']; ?></font></b></td>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_ord_image']; ?></font></b></td>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_ord_amount']; ?></font></b></td>
-            <td><b><font face="Arial" size="2"><?php echo $label['advertiser_status']; ?></font></b></td>
+            <td><?php Language::out( 'Order Date' ); ?></td>
+            <td><?php Language::out( 'OrderID' ); ?></td>
+            <td><?php Language::out( 'Quantity' ) ?></td>
+            <td><?php Language::out( 'Grid' ); ?></td>
+            <td><?php Language::out( 'Amount' ); ?></td>
+            <td><?php Language::out( 'Status' ); ?></td>
         </tr>
+        </thead>
 		<?php
 
-		if (count($orders) == 0) {
-	echo '<td colspan="7">'.$label['advertiser_ord_noordfound'].' </td>';
-} else {
+		if ( count( $orders ) == 0 ) {
+			echo '<td colspan="7">' . Language::get( 'No orders found.' ) . ' </td>';
+		} else {
 
-			foreach($orders as $order) {
-	?>
-<tr onmouseover="old_bg=this.getAttribute('bgcolor');this.setAttribute('bgcolor', '#FBFDDB', 0);" onmouseout="this.setAttribute('bgcolor', old_bg, 0);" bgColor="#ffffff">
-			<td><font face="Arial" size="2"><?php echo get_local_datetime($order['order_date'], true);?></font></td>
-			<td><font face="Arial" size="2"><?php echo isset($order['FirstName']) ? $order['FirstName']." ".$order['LastName'] : "";?></font></td>
-			<td><font face="Arial" size="2"><?php echo isset($order['Username']) ? $order['Username'] : "";?> <?php echo (isset($order['ID']) ? '(#' . $order['ID'] . ')' : '');?></font></td>
-			<td><font face="Arial" size="2">#<?php echo isset($order['order_id']) ? $order['order_id'] : "";?></font></td>
-			<td><font face="Arial" size="2"><?php echo $order['quantity'];?></font></td>
-	<td><font face="Arial" size="2"><?php 
+			foreach ( $orders as $order ) {
+				?>
+                <tr>
+                <td><?php echo get_date_from_gmt( $order['order_date'] ); ?></td>
+                <td><?php echo isset( $order['order_id'] ) ? '#' . $order['order_id'] : Language::get( 'In progress' ); ?></td>
+                <td><?php echo $order['quantity']; ?></td>
+                <td><?php
 
-			$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=".intval($order['banner_id']);
-			$b_result = mysqli_query($GLOBALS['connection'], $sql) or die (mysqli_error($GLOBALS['connection']).$sql);
-			$b_row = mysqli_fetch_array($b_result);
-		
-            if( $b_row ) {
-			    echo $b_row['name'];
-            }
+					$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $order['banner_id'] );
+					$b_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+					$b_row = mysqli_fetch_array( $b_result );
 
-		?></font></td>
-			<td><font face="Arial" size="2"><?php echo convert_to_default_currency_formatted($order['currency'], $order['price']); ?></font></td>
-			<td><font face="Arial" size="2"><?php
-			    if(isset($order['status'])) {
+					if ( $b_row ) {
+						echo $b_row['name'];
+					}
 
-					echo $label[$order['status']];?><br><?php
-	if (USE_AJAX=='SIMPLE') {
-		$order_page = 'order_pixels.php';
-		$temp_var = '&order_id=temp';
-	} else {
-		$order_page = 'select.php';
-	}
+					?></td>
+                <td><?php echo convert_to_default_currency_formatted( $order['currency'], $order['price'] ); ?></td>
+                <td><?php
+				if ( isset( $order['status'] ) ) {
+					switch ( $order['status'] ) {
+						case 'pending':
+							Language::out( 'Pending' );
+							break;
+						case 'completed':
+							Language::out( 'Completed' );
+							break;
+						case 'cancelled':
+							Language::out( 'Cancelled' );
+							break;
+						case 'confirmed':
+							Language::out( 'Confirmed' );
+							break;
+						case 'new':
+							Language::out( 'New' );
+							break;
+						case 'expired':
+							Language::out( 'Expired' );
+							break;
+						case 'deleted':
+							Language::out( 'Deleted' );
+							break;
+						case 'renew_wait':
+							Language::out( 'Renew Now' );
+							break;
+						case 'renew_paid':
+							Language::out( 'Renewal Paid' );
+							break;
+						default:
+							break;
+					}
+					echo "<br />";
 
-                    switch ( $order['status'] ) {
-		case "new":
-			echo $label['adv_ord_inprogress'].'<br>';
-                            echo "<a href='" . $order_page . "?BID=" . $order['banner_id'] . "$temp_var'>(" . $label['advertiser_ord_confnow'] . ")</a>";
-                            echo "<br><input type='button' value='" . $label['advertiser_ord_cancel_button'] . "' onclick='if (!confirmLink(this, \"" . $label['advertiser_ord_cancel'] . "\")) return false; window.location=\"orders.php?cancel=yes&order_id=" . $order['order_id'] . "\"' >";
-			break;
-		case "confirmed":
-                            echo "<a href='payment.php?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>(" . $label['advertiser_ord_awaiting'] . ")</a>";
-                            //echo "<br><input type='button' value='".$label['advertiser_ord_cancel_button']."' onclick='if (!confirmLink(this, \"".$label['advertiser_ord_cancel']."\")) return false; window.location=\"orders.php?cancel=yes&order_id=".$order['order_id']."\"' >";
-			break;
-		case "completed":
-			echo "<a href='publish.php?order_id=".$order['order_id']."&BID=".$order['banner_id']."'>(".$label['advertiser_ord_manage_pix'].")</a>";
+					$temp_var = '';
+					if ( \MillionDollarScript\Classes\Config::get('USE_AJAX') == 'SIMPLE' ) {
+						$temp_var = '&order_id=' . $order['order_id'];
+					}
 
-			if ($order['days_expire'] > 0) {
+					switch ( $order['status'] ) {
+						case "new":
+							echo Language::get( 'In progress' ) . '<br>';
+							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
+							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"orders.php?cancel=yes&order_id=" . $order['order_id'] . "\"' >";
+							break;
+						case "confirmed":
+							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
+							break;
+						case "completed":
+							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'manage' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
 
-				if ($order['published']!='Y') {
-						$time_start = strtotime(gmdate('r'));
+							if ( $order['days_expire'] > 0 ) {
+
+								if ( $order['published'] != 'Y' ) {
+									$time_start = strtotime( gmdate( 'r' ) );
+								} else {
+									$time_start = strtotime( $order['date_published'] . " GMT" );
+								}
+
+								$elapsed_time = strtotime( gmdate( 'r' ) ) - $time_start;
+								$elapsed_days = floor( $elapsed_time / 60 / 60 );
+
+								$exp_time = ( $order['days_expire'] * 60 * 60 );
+
+								$exp_time_to_go = $exp_time - $elapsed_time;
+								$exp_days_to_go = floor( $exp_time_to_go / 60 / 60 );
+
+								$to_go = elapsedtime( $exp_time_to_go );
+
+								$elapsed = elapsedtime( $elapsed_time );
+
+								if ( $order['date_published'] != '' ) {
+									echo "<br>Expires in: " . $to_go;
+								}
+							}
+
+							break;
+						case "expired":
+
+							$time_expired = strtotime( $order['date_stamp'] );
+
+							$time_when_cancel = $time_expired + ( \MillionDollarScript\Classes\Config::get('MINUTES_RENEW') * 60 );
+
+							$days = floor( ( $time_when_cancel - time() ) / 60 );
+
+							// check to see if there is a renew_wait or renew_paid order
+
+							$sql   = "select order_id from " . MDS_DB_PREFIX . "orders where (status = 'renew_paid' OR status = 'renew_wait') AND original_order_id='" . intval( $order['original_order_id'] ) . "' ";
+							$res_c = mysqli_query( $GLOBALS['connection'], $sql );
+							if ( mysqli_num_rows( $res_c ) == 0 ) {
+								echo "<a class='mds-button mds-order-renew' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get_replace( '%DAYS_TO_RENEW%', $days, 'Renew Now! %DAYS_TO_RENEW% days left to renew' ) . "</a>";
+							}
+							break;
+						case "pending":
+						case "cancelled":
+							break;
+					}
 				} else {
-					$time_start = strtotime($order['date_published']." GMT");
+					$temp_var = '&order_id=' . $order['order_id'];
+					echo Language::get( 'In progress' ) . '<br>';
+					echo "<a href='" . Utility::get_page_url( 'order' ) . "?BID={$order['banner_id']}{$temp_var}'>" . Language::get( 'Confirm now' ) . "</a>";
+					echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "}\")) return false; window.location=\"orders.php?cancel=yes{$temp_var}\"' >";
 				}
-
-				$elapsed_time = strtotime(gmdate('r')) - $time_start;
-                $elapsed_days = floor( $elapsed_time / 60 / 60 );
-
-                $exp_time = ( $order['days_expire'] * 60 * 60 );
-
-				$exp_time_to_go = $exp_time - $elapsed_time;
-                $exp_days_to_go = floor( $exp_time_to_go / 60 / 60 );
-
-				$to_go = elapsedtime($exp_time_to_go);
-
-				$elapsed = elapsedtime($elapsed_time);
-
-				if ($order['date_published']!='') {
-					echo "<br>Expires in: ".$to_go;
-				}
-
 			}
+			?></td>
+            </tr>
 
-			break;
-		case "expired":
-
-			$time_expired = strtotime($order['date_stamp']);
-
-			$time_when_cancel = $time_expired + (MINUTES_RENEW * 60);
-
-			$days =floor (($time_when_cancel - time()) / 60 );
-
-			// check to see if there is a renew_wait or renew_paid order
-
-			$sql = "select order_id from " . MDS_DB_PREFIX . "orders where (status = 'renew_paid' OR status = 'renew_wait') AND original_order_id='".intval($order['original_order_id'])."' ";
-			$res_c = mysqli_query($GLOBALS['connection'], $sql);
-			if (mysqli_num_rows($res_c)==0) {
- 
-				$label['advertiser_ord_renew'] = str_replace("%DAYS_TO_RENEW%", $days, $label['advertiser_ord_renew']);
-				echo "<a href='payment.php?order_id=".$order['order_id']."&BID=".$order['banner_id']."'><font color='red' size='1'>(".$label['advertiser_ord_renew'].")</font></a>";
-			}
-			break;
-		case "cancelled":
-			break;
-		case "pending":
-			break;
-
-	}
-
-/*
-	if (($row['price']==0) && ($row['status']='deleted') && && ($row['status']!='cancelled')) {
-
-		echo "<br><input type='button' value='".$label['advertiser_ord_cancel_button']."' onclick='if (!confirmLink(this, \"".$label['advertiser_ord_cancel']."\")) return false; window.location=\"orders.php?cancel=yes&order_id=".$row['order_id']."\"' >";
-
-
-	}
-
-*/
-                } else {
-                    $temp_var = '&order_id=temp';
-                    echo $label['adv_ord_inprogress'] . '<br>';
-                    echo "<a href='order_pixels.php?BID={$order['banner_id']}{$temp_var}'>({$label['advertiser_ord_confnow']})</a>";
-                    echo "<br><input type='button' value='{$label['advertiser_ord_cancel_button']}' onclick='if (!confirmLink(this, \"{$label['advertiser_ord_cancel']}\")) return false; window.location=\"orders.php?cancel=yes{$temp_var}\"' >";
-                }
-			}
-	?></td>
-	</tr>
-
-	<?php
-	}
+			<?php
+		}
 		?>
 
     </table>
 
+    <div class="mds-order-explain">
+		<?php
+		Language::out( '"Completed" Orders - Orders where the transaction was successfully completed.<br />
+"Confirmed" Orders - Orders confirmed by you, but the transaction has not been completed.<br />
+"Pending" Orders - Orders confirmed by you, but the transaction has not been approved.<br />
+"Cancelled" Orders - Cancelled by the administrator.<br />
+"Expired" Orders - Pixels were expired after the specified term. You can renew this order.<br />' );
+		?>
+    </div>
+
 <?php
 
-require_once BASE_PATH . "/html/footer.php";
+require_once MDS_CORE_PATH . "html/footer.php";
 
 ?>

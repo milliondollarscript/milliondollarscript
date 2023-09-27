@@ -1,11 +1,11 @@
 <?php
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,250 +19,119 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 namespace MillionDollarScript\Classes;
+
+use Carbon_Fields\Container;
+use Carbon_Fields\Field;
 
 defined( 'ABSPATH' ) or exit;
 
 class Users {
 
-	/**
-	 * Register MDS user.
-	 *
-	 * @param $user_id int WP user id
-	 */
-	public static function register( int $user_id ) {
-		global $wpdb;
-
-		// WP_User
-		$wp_user = get_userdata( $user_id );
-
-		// check if user exists already
-		$mds_user = $wpdb->get_row(
-			$wpdb->prepare( "SELECT ID FROM " . MDS_DB_PREFIX . "users WHERE Username = %s",
-				array( $wp_user->user_login )
-			)
+	public static function custom_fields(): void {
+		$fields = array(
+			Field::make( 'select', MDS_PREFIX . 'privileged', Language::get( 'Privileged' ) )
+			     ->set_default_value( '0' )
+			     ->set_options( [
+				     '0' => 'Normal',
+				     '1' => 'Privileged',
+			     ] )
+			     ->set_help_text( Language::get( 'Privileged users bypass payment for pixels.' ) ),
 		);
 
-		// TODO: if user exists then do something useful
-		if ( $mds_user !== null ) {
+		$fields = apply_filters( 'mds_user_fields', $fields, MDS_PREFIX );
+
+		Container::make( 'user_meta', MDS_PREFIX . 'users', Language::get( 'Million Dollar Script' ) )
+		         ->add_fields( $fields );
+	}
+
+	public static function add_custom_user_columns( $columns ) {
+		$columns['view_count']  = Language::get( 'View Count' );
+		$columns['click_count'] = Language::get( 'Click Count' );
+		$columns['privileged']  = Language::get( 'Privileged' );
+
+		return $columns;
+	}
+
+	public static function show_custom_user_columns_content( $value, $column_name, $user_id ) {
+		if ( 'view_count' == $column_name ) {
+			return get_user_meta( $user_id, MDS_PREFIX . 'view_count', true );
+		}
+
+		if ( 'click_count' == $column_name ) {
+			return get_user_meta( $user_id, MDS_PREFIX . 'click_count', true );
+		}
+
+		if ( 'privileged' == $column_name ) {
+			return carbon_get_user_meta( $user_id, MDS_PREFIX . 'privileged' );
+		}
+
+		return $value;
+	}
+
+	public static function make_custom_user_columns_sortable( $columns ) {
+		$columns['view_count']  = MDS_PREFIX . 'view_count';
+		$columns['click_count'] = MDS_PREFIX . 'click_count';
+		$columns['privileged']  = MDS_PREFIX . 'privileged';
+
+		return $columns;
+	}
+
+	public static function sort_users_by_custom_column( $query ): void {
+		if ( ! is_admin() ) {
 			return;
 		}
 
-		// username doesn't exist in MDS yet so create it
-		self::create( $wp_user->first_name, $wp_user->last_name, $wp_user->user_login, $wp_user->user_pass, $wp_user->user_email );
-	}
+		$orderby = $query->get( 'orderby' );
 
-	/**
-	 * Create MDS user.
-	 *
-	 * @param $FirstName string
-	 * @param $LastName string
-	 * @param $Username string
-	 * @param $pass string
-	 * @param $Email string
-	 *
-	 * @return bool
-	 */
-	public static function create( string $FirstName, string $LastName, string $Username, string $pass, string $Email ): bool {
-		global $wpdb;
-
-		$EM_NEEDS_ACTIVATION = Config::get( 'EM_NEEDS_ACTIVATION' );
-
-		$Password = wp_hash_password( $pass );
-
-		$validated = 0;
-
-		if ( ( $EM_NEEDS_ACTIVATION == "AUTO" ) ) {
-			$validated = 1;
+		if ( 'view_count' == $orderby ) {
+			$query->set( 'meta_key', MDS_PREFIX . 'view_count' );
+			$query->set( 'orderby', 'meta_value' );
 		}
 
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
-
-		$res = $wpdb->insert(
-			MDS_DB_PREFIX . 'users',
-			array(
-				'SignupDate' => $now,
-				'FirstName'  => $FirstName,
-				'LastName'   => $LastName,
-				'Username'   => $Username,
-				'Password'   => $Password,
-				'Email'      => $Email,
-				'Validated'  => $validated,
-			),
-			array(
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%s'
-			)
-		);
-
-		return $res > 0;
-	}
-
-	/**
-	 * Validate MDS user with the given MDS user id.
-	 *
-	 * @param $id int
-	 */
-	public static function validate( int $id ) {
-		global $wpdb;
-
-		$wpdb->update(
-			MDS_DB_PREFIX . 'users',
-			array( 'Validated' => 1 ),
-			array( 'ID' => $id ),
-			null,
-			array( '%d' )
-		);
-	}
-
-	/**
-	 * Login the given user.
-	 *
-	 * @param $user_login
-	 * @param $user \WP_User
-	 */
-	public static function login( $user_login, \WP_User $user ) {
-		global $wpdb;
-
-		// Check if there is a valid MDS user
-		$valid_user = false;
-		$mds_user   = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT * FROM `" . MDS_DB_PREFIX . "users` Where Username = %s",
-				$user_login
-			)
-		);
-		if ( $mds_user === null ) {
-			// No MDS user found so check if they already exist in WP
-			if ( username_exists( $user_login ) ) {
-				// User exists in WP so create it in MDS
-				if ( self::create( $user->first_name, $user->last_name, $user->user_login, $user->user_pass, $user->user_email ) > 0 ) {
-					$mds_user = $wpdb->get_row(
-						$wpdb->prepare(
-							"SELECT * FROM `" . MDS_DB_PREFIX . "users` Where Username = %s",
-							$user_login
-						)
-					);
-				}
-			}
+		if ( 'click_count' == $orderby ) {
+			$query->set( 'meta_key', MDS_PREFIX . 'click_count' );
+			$query->set( 'orderby', 'meta_value' );
 		}
 
-		if ( $mds_user !== null ) {
-			// Now we have a valid user
-			$valid_user = true;
-		}
-
-		// Unable to get a valid MDS user so don't login
-		if ( ! $valid_user ) {
-			return;
-		}
-
-		// validate account if it isn't already
-		if ( $mds_user->Validated == "0" ) {
-			self::validate( (int) $mds_user->ID );
-		}
-
-		// post to MDS to log the user in
-		$login    = Config::get( 'BASE_HTTP_PATH' ) . 'users/wplogin.php';
-		$response = wp_remote_post( $login, array(
-			'method'  => 'POST',
-			'timeout' => 30,
-			'body'    => array(
-				'ID'       => $user->ID,
-				'Username' => $_POST['log'],
-				'Password' => $_POST['pwd']
-			)
-		) );
-
-		if ( is_wp_error( $response ) ) {
-			error_log( 'Error sending login request to ' . $login );
+		if ( 'privileged' == $orderby ) {
+			$query->set( 'meta_key', MDS_PREFIX . 'privileged' );
+			$query->set( 'orderby', 'meta_value' );
 		}
 	}
 
 	/**
-	 * Logout the MDS user.
+	 * Login redirect
 	 *
-	 * @param $user_id
+	 * @param $url
+	 * @param $query
+	 * @param $user
+	 *
+	 * @return string
 	 */
-	public static function logout( $user_id ) {
-		$logout   = Config::get( 'BASE_HTTP_PATH' ) . 'users/wplogout.php';
-		$response = wp_remote_post( $logout );
-
-		if ( is_wp_error( $response ) ) {
-			error_log( 'Error sending logout request to ' . $logout );
-		}
-
-		$user = get_userdata( $user_id );
-		if ( $user !== false && $user->has_cap( 'manage_options' ) ) {
-			if ( isset( $_COOKIE['MDSADMIN_PHPSESSID'] ) ) {
-				unset( $_COOKIE['MDSADMIN_PHPSESSID'] );
-				setcookie( 'MDSADMIN_PHPSESSID', null, - 1 );
-			}
-		}
+	public static function login_redirect( $url, $query, $user ): string {
+		return \MillionDollarScript\Classes\Options::get_option( 'login-redirect', home_url() );
 	}
 
 	/**
-	 * Update the MDS user matching the given WP user id.
+	 * Logout redirect
 	 *
-	 * @param $user_id int
-	 * @param $old_user_data \WP_User
-	 */
-	public static function update( int $user_id, \WP_User $old_user_data ) {
-		global $wpdb;
-
-		// WP_User
-		$wp_user = get_userdata( $user_id );
-
-		$now = gmdate( "Y-m-d H:i:s" );
-
-		$wpdb->update(
-			MDS_DB_PREFIX . 'users',
-			array(
-				'SignupDate' => $now,
-				'FirstName'  => $wp_user->first_name,
-				'LastName'   => $wp_user->last_name,
-				'Username'   => $wp_user->user_login,
-				'Password'   => $wp_user->user_pass,
-				'Email'      => $wp_user->user_email
-			),
-			array( 'username' => $wp_user->user_login ),
-			array(
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-			)
-		);
-	}
-
-	/**
-	 * Delete the MDS user matching the given WP user id.
+	 * @param $logout_url
+	 * @param $requested_redirect_to
+	 * @param $user
 	 *
-	 * @param $id int
+	 * @return string
 	 */
-	public static function delete( int $id ) {
-		global $wpdb;
-
-		// WP_User
-		$wp_user = get_userdata( $id );
-
-		$wpdb->delete(
-			MDS_DB_PREFIX . 'users',
-			array(
-				'Username' => $wp_user->user_login
-			),
-			array(
-				'%s'
-			)
-		);
+	public static function logout_redirect( $logout_url, $requested_redirect_to, $user ): string {
+		return \MillionDollarScript\Classes\Options::get_option( 'logout-redirect', home_url() );
 	}
 
 	/**
@@ -273,26 +142,186 @@ class Users {
 	 * @return string
 	 */
 	public static function login_headerurl( $login_header_url ): string {
-		return "#";
+		return home_url();
 	}
 
 	/**
 	 * Change logo on login page.
 	 */
-	public static function login_head() {
+	public static function login_head(): void {
+		$login_header_image = Options::get_option( 'login-header-image' );
+		if ( empty( $login_header_image ) ) {
+			$logo = wp_get_attachment_url( get_theme_mod( 'custom_logo' ) );
+			if ( empty( $logo ) ) {
+				$logo = '';
+			}
+		} else {
+			$logo = wp_get_attachment_url( $login_header_image );
+		}
+
+		$show_text = '';
+		if ( empty( $logo ) && Options::get_option( 'login-header-text', '' ) != '' ) {
+			$show_text = 'text-indent: 0;';
+		}
+
 		echo '
 	<style type="text/css">
     	.login h1 a {
-    		background-image:url(' . Config::get( 'SITE_LOGO_URL' ) . ') !important;
+    		background-image:url(' . esc_url( $logo ) . ') !important;
     		background-size: contain;
     		margin:0 auto;
     		width:auto;
     		height:100px;
+    		' . $show_text . '
     	}
     	#backtoblog {
     		display:none;
     	}
     </style>
 ';
+	}
+
+	/**
+	 * Change the login header text.
+	 *
+	 * @return string
+	 */
+	public static function login_headertext(): string {
+		return Language::get( Options::get_option( 'login-header-text', '' ) );
+	}
+
+	public static function my_account( $header_footer = true ): void {
+
+		mds_wp_login_check();
+
+		// check if user has permission to access this page
+		if ( ! mds_check_permission( "mds_my_account" ) ) {
+			require_once MDS_CORE_PATH . "html/header.php";
+			_e( "No Access" );
+			require_once MDS_CORE_PATH . "html/footer.php";
+			exit;
+		}
+
+		if ( $header_footer ) {
+			require_once MDS_CORE_PATH . "html/header.php";
+		}
+
+		global $f2;
+		$BID = $f2->bid();
+		$sql = "SELECT grid_width,grid_height, block_width, block_height, bgcolor, time_stamp FROM " . MDS_DB_PREFIX . "banners WHERE (banner_id = '$BID')";
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+		$b_row = mysqli_fetch_array( $result );
+
+		if ( ! $b_row['block_width'] ) {
+			$b_row['block_width'] = 10;
+		}
+		if ( ! $b_row['block_height'] ) {
+			$b_row['block_height'] = 10;
+		}
+
+		$user_id = get_current_user_id();
+
+		$sql = "select block_id from " . MDS_DB_PREFIX . "blocks where user_id='" . $user_id . "' and status='sold' ";
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$pixels = mysqli_num_rows( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
+
+		$sql = "select block_id from " . MDS_DB_PREFIX . "blocks where user_id='" . $user_id . "' and status='ordered' ";
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$ordered = mysqli_num_rows( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
+
+		// Replacements for custom page links in WP
+		$order_page   = Utility::get_page_url( 'order' );
+		$manage_page  = Utility::get_page_url( 'manage' );
+		$history_page = Utility::get_page_url( 'history' );
+		$account_page = \MillionDollarScript\Classes\Options::get_option( 'account-page' );
+
+		Language::out( '<div class="fancy-heading">Welcome to your account</div>' );
+
+		Language::out_replace(
+			[
+				'%PIXEL_COUNT%',
+				'%BLOCK_COUNT%',
+				'%MANAGE_URL%',
+			],
+			[
+				$pixels,
+				( $pixels / ( $b_row['block_width'] * $b_row['block_height'] ) ),
+				Utility::get_page_url( 'manage' ),
+			],
+			'<p>Here you can manage your pixels. <a href="%MANAGE_URL%">Manage Pixels</a><p>'
+		);
+
+		Language::out_replace(
+			[
+				'%PIXEL_COUNT%',
+				'%BLOCK_COUNT%',
+				'%MANAGE_URL%',
+			],
+			[
+				$pixels,
+				( $pixels / ( $b_row['block_width'] * $b_row['block_height'] ) ),
+				Utility::get_page_url( 'manage' ),
+			],
+			'<p>You own %PIXEL_COUNT% blocks.</p>'
+		);
+
+		Language::out_replace(
+			[
+				'%PIXEL_ORD_COUNT%',
+				'%BLOCK_ORD_COUNT%',
+				'%ORDER_URL%',
+				'%HISTORY_URL%',
+			],
+			[
+				$ordered,
+				( $ordered / ( $b_row['block_width'] * $b_row['block_height'] ) ),
+				$order_page,
+				$history_page,
+			],
+			'<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href="%ORDER_URL%">Order Pixels</a> / <a href="%HISTORY_URL%">View Order History</a></p>'
+		);
+
+		Language::out_replace( '%CLICK_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'click_count', true ) ) ), '<p>Your pixels were clicked %CLICK_COUNT% times.</p>' );
+		Language::out_replace( '%VIEW_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'view_count', true ) ) ), '<p>Your pixels were viewed %VIEW_COUNT% times.</p>' );
+
+		Language::out( '<div class="fancy-heading">Here is what you can do</div>' );
+
+		Language::out_replace( '%ORDER_URL%', $order_page, '- <a href="%ORDER_URL%">Order</a>: Choose and order new pixels.<br />' );
+		Language::out_replace( '%MANAGE_URL%', $manage_page, '- <a href="%MANAGE_URL%">Manage</a>: Manage pixels owned by you.<br />' );
+		Language::out_replace( '%HISTORY_URL%', $history_page, '- <a href="%HISTORY_URL%">View Orders</a>: View your order history, and status of each order.<br />' );
+		Language::out_replace( '%ACCOUNT_URL%', $account_page, '- <a href="%ACCOUNT_URL%">Edit Account Details</a>: Edit your personal details, change your password.<br />' );
+
+		Language::out( '<p>Questions? Contact Us: <span id="emailPlaceholder"></span></p>' );
+
+		// encode email from spam bots
+		$email         = get_option( 'admin_email' );
+		$encoded_email = '';
+		for ( $i = 0; $i < strlen( $email ); $i ++ ) {
+			$encoded_email .= dechex( ord( $email[ $i ] ) ) . ',';
+		}
+		$encoded_email = rtrim( $encoded_email, ',' );
+
+		?>
+        <script>
+			const encodedEmail = '<?php echo $encoded_email; ?>';
+			let decodedEmail = '';
+			const hexValues = encodedEmail.split(',');
+			for (let i = 0; i < hexValues.length; i++) {
+				decodedEmail += String.fromCharCode(parseInt(hexValues[i], 16));
+			}
+
+			const a = document.createElement('a');
+			a.href = 'mailto:' + decodedEmail;
+			a.textContent = decodedEmail;
+
+			const placeholder = document.getElementById('emailPlaceholder');
+			placeholder.parentNode.replaceChild(a, placeholder);
+
+        </script>
+		<?php
+
+		if ( $header_footer ) {
+			require_once MDS_CORE_PATH . "html/footer.php";
+		}
 	}
 }

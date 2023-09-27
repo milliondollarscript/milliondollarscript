@@ -1,36 +1,36 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/init.php";
+use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Utility;
+
+defined( 'ABSPATH' ) or exit;
 
 /**
  * Class mds_ajax
@@ -136,48 +136,46 @@ class Mds_Ajax {
 		if ( ! isset( $GLOBALS['mds_js_loaded'] ) ) {
 			$GLOBALS['mds_js_loaded'] = true;
 
-			global $f2, $load_mds_js;
+			global $f2;
 			$BID         = $f2->bid();
 			$banner_data = load_banner_constants( $BID );
 
-			$wp_url = '';
-			if ( WP_ENABLED == "YES" && ! empty( WP_URL ) ) {
-				$wp_url = WP_URL;
-			}
+			$tooltips = Config::get( 'ENABLE_MOUSEOVER' );
 
-			$tooltips = \MillionDollarScript\Classes\Config::get( 'ENABLE_MOUSEOVER' );
-
-			if ( WP_ENABLED == "YES" ) {
-				?>
-                <script>
+			?>
+            <script>
+				jQuery(function ($) {
 					if (window.mds_js_loaded !== true) {
 						window.mds_js_loaded = true;
 
 						<?php if($tooltips == 'POPUP') { ?>
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
+						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo MDS_CORE_URL; ?>css/tippy/light.css'}).appendTo('head');
 						<?php } ?>
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
+						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo MDS_BASE_URL; ?>src/Assets/css/mds.css?ver=<?php echo filemtime( MDS_BASE_PATH . "src/Assets/css/mds.css" ); ?>'}).appendTo('head');
 
 						<?php if($tooltips == 'POPUP') { ?>
-						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
-							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
+						jQuery.getScript('<?php echo MDS_CORE_URL; ?>js/third-party/popper.min.js', function () {
+							jQuery.getScript('<?php echo MDS_CORE_URL; ?>js/third-party/tippy-bundle.umd.min.js', function () {
 								<?php } ?>
-								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
-									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
-										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
+								jQuery.getScript('<?php echo MDS_CORE_URL; ?>js/third-party/image-scale.min.js', function () {
+									jQuery.getScript('<?php echo MDS_CORE_URL; ?>js/third-party/image-map.min.js', function () {
+										jQuery.getScript('<?php echo MDS_CORE_URL; ?>js/third-party/contact.nomodule.min.js', function () {
 											window.mds_data = {
-												ajax: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
-												wp: '<?php echo $wp_url; ?>',
+												ajax: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
+												publishurl: '<?php echo esc_js( Utility::get_page_url( 'manage' ) ); ?>',
+												paymenturl: '<?php echo esc_js( Utility::get_page_url( 'payment' ) ); ?>',
+												wp: '<?php echo esc_js( get_site_url() ); ?>',
 												winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
 												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
-												time: '<?php echo time(); ?>',
-												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
-												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
-												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
-												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-												BID: parseInt('<?php echo $BID; ?>', 10)
+												time: '<?php echo esc_js( time() ); ?>',
+												MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL );?>',
+												REDIRECT_SWITCH: '<?php echo esc_js( REDIRECT_SWITCH ); ?>',
+												REDIRECT_URL: '<?php echo esc_js( REDIRECT_URL ); ?>',
+												ENABLE_MOUSEOVER: '<?php echo esc_js( ENABLE_MOUSEOVER ); ?>',
+												BID: parseInt('<?php echo $BID; ?>', 10),
+												link_target: '<?php echo esc_js( \MillionDollarScript\Classes\Options::get_option( 'link-target' ) ); ?>'
 											};
-											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
+											jQuery.getScript('<?php echo MDS_BASE_URL; ?>src/Assets/js/mds.min.js?ver=<?php echo filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ); ?>', function () {
 											});
 										});
 									});
@@ -187,47 +185,9 @@ class Mds_Ajax {
 						});
 						<?php } ?>
 					}
-                </script>
-				<?php
-			} else if ( $load_mds_js != null ) {
-				?>
-                <script>
-					if (window.mds_js_loaded !== true) {
-						window.mds_js_loaded = true;
-						<?php if($tooltips == 'POPUP') { ?>
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/tippy/light.css'}).appendTo('head');
-						<?php } ?>
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo BASE_HTTP_PATH; ?>css/main.css?ver=<?php echo filemtime( BASE_PATH . "/css/main.css" ); ?>'}).appendTo('head');
-
-						<?php if($tooltips == 'POPUP') { ?>
-						jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/popper.js', function () {
-							jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/tippy-bundle.umd.js', function () {
-								<?php } ?>
-								jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-scale.min.js', function () {
-									jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/image-map.js', function () {
-										jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/third-party/contact.min.js', function () {
-											window.mds_data = {
-												ajax: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
-												time: '<?php echo time(); ?>',
-												BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
-												REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
-												REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
-												ENABLE_MOUSEOVER: '<?php echo ENABLE_MOUSEOVER; ?>',
-												BID: parseInt('<?php echo $BID; ?>', 10)
-											};
-											jQuery.getScript('<?php echo BASE_HTTP_PATH; ?>js/mds.js?ver=<?php echo filemtime( BASE_PATH . '/js/mds.js' ); ?>', function () {
-											});
-										});
-									});
-								});
-								<?php if($tooltips == 'POPUP') { ?>
-							});
-						});
-						<?php } ?>
-					}
-                </script>
-				<?php
-			}
+				});
+            </script>
+			<?php
 		}
 	}
 

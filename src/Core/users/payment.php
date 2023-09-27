@@ -1,78 +1,57 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/login_functions.php";
-mds_start_session();
-require_once __DIR__ . "/../include/init.php";
+defined( 'ABSPATH' ) or exit;
 
-$BID = 1; # Banner ID. Change this later & allow users to select multiple banners
+mds_wp_login_check();
+
+global $f2;
+$BID = $f2->bid();
+
 $sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id='$BID'";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
+$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $b_row = mysqli_fetch_array( $result );
-if ( $_REQUEST['order_id'] ) {
-	$_SESSION['MDS_order_id'] = $_REQUEST['order_id'];
-}
-process_login();
-require_once BASE_PATH . "/html/header.php";
-?>
-    <p>
-		<?php echo $label['advertiser_pay_navmap']; ?>
-    </p>
-    <h3><?php echo $label['advertiser_pay_sel_method']; ?></h3>
-<?php
 
 if ( $_REQUEST['order_id'] != '' ) {
-
 	$order_id = $_REQUEST['order_id'];
 } else {
-	$order_id = $_SESSION['MDS_order_id'];
+	$order_id = get_current_order_id();
 }
 
 $sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $order_id );
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
+$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $order_row = mysqli_fetch_array( $result );
 
-// Proceess confirmation
-if ( $_REQUEST['action'] == 'confirm' ) {
-
+// Process confirmation
+if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'confirm' ) {
 	// move temp order to confirmed order
-
-	confirm_order( $_SESSION['MDS_ID'], $order_id );
+	confirm_order( get_current_user_id(), $order_id );
 }
 
-echo "<h2>Total: " . $order_row['price'] . " " . $order_row['currency'] . "</h2>";
-
-include BASE_PATH . '/payment/payment_manager.php';
-
-payment_option_list( $order_id );
-
-require_once BASE_PATH . "/html/footer.php";
+\MillionDollarScript\Classes\Payment::handle_checkout();

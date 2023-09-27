@@ -1,12 +1,12 @@
 <?php
 
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +20,17 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 namespace MillionDollarScript\Classes;
+
+defined( 'ABSPATH' ) or exit;
 
 class Utility {
 
@@ -31,19 +39,19 @@ class Utility {
 	 *
 	 * @var string|null
 	 */
-	public static $base_path = null;
+	public static ?string $base_path = null;
 
 	/**
 	 * Base URL to plugin with trailing slash.
 	 *
 	 * @var string|null
 	 */
-	public static $base_url = null;
+	public static ?string $base_url = null;
 
 	/**
 	 * Attempt to stop PHP timeout
 	 */
-	public static function stop_timeout() {
+	public static function stop_timeout(): void {
 		echo str_repeat( " ", 1024 );
 		flush();
 	}
@@ -90,7 +98,7 @@ class Utility {
 			$path = apply_filters( 'mds_upload_path', $path );
 
 			// normalize path
-			$path = trailingslashit( wp_normalize_path( $path ) );
+			$path = wp_normalize_path( trailingslashit( $path ) );
 
 			// if path doesn't exist
 			if ( ! file_exists( $path ) ) {
@@ -100,47 +108,16 @@ class Utility {
 				// create subfolders
 				wp_mkdir_p( $path . 'grids' );
 				wp_mkdir_p( $path . 'images' );
-				wp_mkdir_p( $path . 'languages' );
 
 				// copy default no-image file
-				$src  = MDS_BASE_PATH . 'src/Core/upload_files/images/no-image.gif';
-				$dest = $path . 'images/no-image.gif';
+				$src  = MDS_BASE_PATH . 'src/Assets/images/no-image.gif';
+				$dest = wp_normalize_path( $path . 'images/no-image.gif' );
 				if ( ! file_exists( $dest ) ) {
 					$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
 					$filesystem = new Filesystem( $url );
 					if ( ! $filesystem->copy( $src, $dest ) ) {
 						error_log( wp_sprintf(
-							__( 'Error copying file. From: %s To: %s', 'milliondollarscript' ),
-							$src,
-							$dest
-						) );
-					}
-				}
-
-				// copy english_default.php
-				$src  = MDS_BASE_PATH . 'src/Core/lang/english_default.php';
-				$dest = $path . 'languages/english_default.php';
-				if ( ! file_exists( $dest ) ) {
-					$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
-					$filesystem = new Filesystem( $url );
-					if ( ! $filesystem->copy( $src, $dest ) ) {
-						error_log( wp_sprintf(
-							__( 'Error copying file. From: %s To: %s', 'milliondollarscript' ),
-							$src,
-							$dest
-						) );
-					}
-				}
-
-				// copy english.php
-				$src  = MDS_BASE_PATH . 'src/Core/lang/english_default.php';
-				$dest = $path . 'languages/english.php';
-				if ( ! file_exists( $dest ) ) {
-					$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
-					$filesystem = new Filesystem( $url );
-					if ( ! $filesystem->copy( $src, $dest ) ) {
-						error_log( wp_sprintf(
-							__( 'Error copying file. From: %s To: %s', 'milliondollarscript' ),
+							Language::get( 'Error copying file. From: %s To: %s' ),
 							$src,
 							$dest
 						) );
@@ -148,7 +125,7 @@ class Utility {
 				}
 			}
 
-			return trailingslashit( realpath( $path ) );
+			return wp_normalize_path( trailingslashit( realpath( $path ) ) );
 		} else {
 			return null;
 		}
@@ -185,7 +162,7 @@ class Utility {
 	 *
 	 * @return integer
 	 */
-	public static function modified( $filename ) {
+	public static function modified( string $filename ): int {
 		if ( file_exists( $filename ) ) {
 			return intval( filemtime( $filename ) );
 		} else {
@@ -201,12 +178,13 @@ class Utility {
 	 *
 	 * @return int Attachment ID on success, 0 on failure
 	 */
-	public static function get_attachment_id( $url ) {
+	public static function get_attachment_id( string $url ): int {
 		$attachment_id = 0;
 		$dir           = wp_upload_dir();
 		// Is URL in uploads directory?
-		if ( false !== strpos( $url, $dir['baseurl'] . '/' ) ) {
-			$file       = basename( $url );
+		if ( str_contains( $url, $dir['baseurl'] . '/' ) ) {
+			$file = basename( $url );
+			wp_reset_postdata();
 			$query_args = array(
 				'post_type'   => 'attachment',
 				'post_status' => 'inherit',
@@ -236,14 +214,14 @@ class Utility {
 		return $attachment_id;
 	}
 
-	public static function delete_uploads_folder() {
+	public static function delete_uploads_folder(): void {
 		$path = self::get_upload_path();
 		if ( is_dir( $path ) ) {
 			$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
 			$filesystem = new Filesystem( $url );
 			if ( ! $filesystem->delete_folder( $path ) ) {
 				error_log( wp_sprintf(
-					__( 'Error deleting folder: %s', 'milliondollarscript' ),
+					Language::get( 'Error deleting folder: %s' ),
 					$path
 				) );
 			}
@@ -326,29 +304,17 @@ class Utility {
 	 * @return string
 	 */
 	public static function get_grid_img(): string {
-		require_once MDS_CORE_PATH . "include/init.php";
-		require_once MDS_CORE_PATH . 'admin/admin_common.php';
-
 		global $f2;
 
 		$BID = $f2->bid();
 
 		$grid_img = Utility::get_upload_url() . 'grids/grid' . $BID;
 
-		$grid_ext = '.png';
-		if ( defined( 'OUTPUT_JPEG' ) ) {
-			if ( OUTPUT_JPEG == 'Y' ) {
-				$grid_ext = '.jpg';
-				// } else if ( OUTPUT_JPEG == 'N' ) {
-				//    $grid_ext = '.png';
-			} else if ( ( OUTPUT_JPEG == 'GIF' ) ) {
-				$grid_ext = '.gif';
-			}
-		}
+		$grid_ext = Utility::get_file_extension();
 
 		$grid_img .= $grid_ext;
 
-		$grid_file = Utility::get_upload_path() . 'grids/grid' . $BID . $grid_ext;
+		$grid_file = Utility::get_upload_path() . 'grids/grid' . $BID . '.' . $grid_ext;
 
 		// Add modification time
 		$grid_img .= "?v=" . filemtime( $grid_file );
@@ -356,9 +322,9 @@ class Utility {
 		return $grid_img;
 	}
 
-	public static function get_currencies() {
+	public static function get_currencies(): array {
 		$codes = [];
-		if ( class_exists( 'WC_Payments_Utils' ) && \WC_Payments_Features::is_customer_multi_currency_enabled() && Options::get_option( 'woocommerce', false, 'options', 'no' ) == 'yes' ) {
+		if ( class_exists( 'WC_Payments_Utils' ) && \WC_Payments_Features::is_customer_multi_currency_enabled() && Options::get_option( 'woocommerce', 'no', false, 'options' ) == 'yes' ) {
 			$currencies = \WC_Payments_Multi_Currency()->get_enabled_currencies();
 			foreach ( $currencies as $currency ) {
 				$codes[] = $currency->get_code();
@@ -367,13 +333,131 @@ class Utility {
 			return $codes;
 		}
 
-		$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "currencies` ORDER by `name`";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mds_sql_error( $sql ) );
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$codes[] = $row['code'];
-		}
+		$codes[] = 'USD';
 
 		return $codes;
 	}
 
+	/**
+	 * Deletes all blocks, orders, user meta data related to MDS orders, and mds-pixel posts and associated attachments.
+	 *
+	 * // TODO: delete matching WooCommerce orders?
+	 *
+	 * @return void
+	 */
+	public static function clear_orders(): void {
+		global $wpdb;
+
+		$table_name = MDS_DB_PREFIX . 'blocks';
+		$exists     = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+
+		if ( ! $exists ) {
+			return;
+		}
+
+		// Delete all blocks and orders.
+		$wpdb->query( "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE `status` != 'nfs'" );
+		/** @noinspection SqlWithoutWhere */
+		$wpdb->query( "DELETE FROM " . MDS_DB_PREFIX . "orders" );
+
+		// Delete any orders in progress from user meta.
+		$users = get_users();
+		foreach ( $users as $user ) {
+			delete_user_meta( $user->ID, MDS_PREFIX . 'current_order_id' );
+			delete_user_meta( $user->ID, MDS_PREFIX . 'click_count' );
+			delete_user_meta( $user->ID, MDS_PREFIX . 'view_count' );
+			delete_user_meta( $user->ID, '_' . MDS_PREFIX . 'privileged' );
+		}
+
+		// Delete mds-pixel posts and attachments.
+		$args = [
+			'post_type'   => \MillionDollarScript\Classes\FormFields::$post_type,
+			'post_status' => 'any',
+			'numberposts' => - 1,
+		];
+
+		$custom_posts = get_posts( $args );
+
+		foreach ( $custom_posts as $post ) {
+			$attachments = get_attached_media( '', $post->ID );
+			foreach ( $attachments as $attachment ) {
+				$fields = \MillionDollarScript\Classes\FormFields::get_fields();
+				foreach ( $fields as $field ) {
+					if ( $field->get_type() === 'image' ) {
+						$attachment_id = carbon_get_post_meta( $post->ID, $field->get_base_name() );
+						if ( ! empty( $attachment_id ) ) {
+							wp_delete_attachment( $attachment_id, true );
+						}
+					}
+				}
+			}
+
+			wp_delete_post( $post->ID, true );
+		}
+
+		$wpdb->flush();
+	}
+
+	public static function get_file_extension(): string {
+		$OUTPUT_JPEG = Config::get( 'OUTPUT_JPEG' );
+
+		$ext = '';
+		if ( $OUTPUT_JPEG == 'Y' ) {
+			$ext = "jpg";
+		} else if ( $OUTPUT_JPEG == 'N' ) {
+			$ext = 'png';
+		} else if ( $OUTPUT_JPEG == 'GIF' ) {
+			$ext = 'gif';
+		}
+
+		return $ext;
+	}
+
+	/**
+	 * Redirect to the previous page or fallback to home if no referrer.
+	 * TODO: implement too many redirects protection
+	 *
+	 * @return void
+	 */
+	public static function redirect( $dest = '' ) {
+		if ( ! empty( $dest ) ) {
+			wp_safe_redirect( $dest );
+		} else if ( ! empty( $_SERVER['HTTP_REFERER'] ) ) {
+			wp_safe_redirect( $_SERVER['HTTP_REFERER'] );
+		} else {
+			wp_safe_redirect( home_url() );
+		}
+		exit;
+	}
+
+	/**
+	 * Get an MDS page URL.
+	 *
+	 * @param $page_name
+	 *
+	 * @return string|null
+	 */
+	public static function get_page_url( $page_name ): ?string {
+		return trailingslashit( home_url( "/" . MDS_ENDPOINT . "/{$page_name}" ) );
+	}
+
+	/**
+	 * Get the header. Checks if theme is a block theme or standard theme.
+	 *
+	 * @return void
+	 */
+	public static function get_header(): void {
+		// TODO: find some way to make FSE themes work with this
+		get_header();
+	}
+
+	/**
+	 * Get the footer. Checks if theme is a block theme or standard theme.
+	 *
+	 * @return void
+	 */
+	public static function get_footer(): void {
+		// TODO: find some way to make FSE themes work with this
+		get_footer();
+	}
 }

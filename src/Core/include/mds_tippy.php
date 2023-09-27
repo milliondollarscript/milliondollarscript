@@ -1,36 +1,33 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/init.php";
+defined( 'ABSPATH' ) or exit;
 
 if ( ENABLE_MOUSEOVER === 'NO' ) {
 	return;
@@ -41,14 +38,14 @@ $BID         = $f2->bid();
 $banner_data = load_banner_constants( $BID );
 ?>
 <div class="tooltip-source">
-    <img src="<?php echo BASE_HTTP_PATH; ?>images/periods.gif" alt=""/>
+    <img src="<?php echo MDS_CORE_URL; ?>images/periods.gif" alt=""/>
 </div>
 <script>
 	const mouseover_box = {
 		winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
 		winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 		time: '<?php echo time(); ?>',
-		BASE_HTTP_PATH: '<?php echo BASE_HTTP_PATH;?>',
+		MDS_CORE_URL: '<?php echo MDS_CORE_URL;?>',
 		REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
 		REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
 		BID: parseInt('<?php echo $BID; ?>', 10)
@@ -66,7 +63,7 @@ $banner_data = load_banner_constants( $BID );
 				const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
 
 				let delay = 50;
-				if(MDS.TOOLTIP_TRIGGER === 'mouseenter') {
+				if (MDS.TOOLTIP_TRIGGER === 'mouseenter') {
 					delay = 400;
 				}
 
@@ -80,7 +77,7 @@ $banner_data = load_banner_constants( $BID );
 					followCursor: 'initial',
 					hideOnClick: true,
 					interactive: true,
-					maxWidth: 350,
+					maxWidth: parseInt('<?php echo intval( \MillionDollarScript\Classes\Options::get_option( 'max-popup-size' ) ); ?>', 10),
 					placement: 'auto',
 					touch: true,
 					appendTo: 'parent',

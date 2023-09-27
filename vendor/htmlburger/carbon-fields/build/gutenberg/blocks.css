@@ -28,9 +28,11 @@
 }
 .edit-post-sidebar .cf-association__cols {
   border-color: #8d96a0;
+  flex-direction: column;
 }
 .edit-post-sidebar .cf-association__cols::before {
   background-color: #8d96a0;
+  display: none;
 }
 
 .edit-post-sidebar .cf-association__counter {
@@ -704,6 +706,39 @@
 .wp-block .cf-field .cf-textarea__input:focus {
   border-color: #00a0d2;
   box-shadow: none;
+}
+/* ==========================================================================
+   Colors
+   ========================================================================== */
+/* ==========================================================================
+   WordPress Colors - https://make.wordpress.org/design/handbook/design-guide/foundations/colors/
+   ========================================================================== */
+/* ==========================================================================
+   Gutenberg Colors - https://github.com/WordPress/gutenberg/blob/master/assets/stylesheets/_colors.scss
+   ========================================================================== */
+/* ==========================================================================
+   Fonts
+   ========================================================================== */
+/* ==========================================================================
+   Variables
+   ========================================================================== */
+/* ==========================================================================
+   WordPress Variables
+   ========================================================================== */
+/* ==========================================================================
+   Gutenberg Variables - https://github.com/WordPress/gutenberg/blob/master/assets/stylesheets/_variables.scss
+   ========================================================================== */
+/* ------------------------------------------------------------ *\ 
+    Block Preview iFrame
+\* ------------------------------------------------------------ */
+body.block-editor-iframe__body .cf-block-preview {
+  display: block;
+}
+body.block-editor-iframe__body .cf-block__fields[\:has\(.cf-block-preview\)] .cf-field:not(.cf-block-preview) {
+  display: none;
+}
+body.block-editor-iframe__body .cf-block__fields:has(.cf-block-preview) .cf-field:not(.cf-block-preview) {
+  display: none;
 }
 /* ==========================================================================
    Colors

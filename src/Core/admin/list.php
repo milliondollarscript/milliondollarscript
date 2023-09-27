@@ -1,55 +1,204 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/init.php";
-require( 'admin_common.php' );
+use MillionDollarScript\Classes\Language;
+
+defined( 'ABSPATH' ) or exit;
+
+require_once MDS_CORE_PATH . "include/ads.inc.php";
 
 global $f2;
+
 $BID = $f2->bid();
 
-$bid_sql = " AND banner_id=$BID ";
+$banner_data = load_banner_constants( $BID );
 
-if ( ( $BID == 'all' ) || ( $BID == '' ) ) {
-	$BID     = '';
-	$bid_sql = "  ";
-}
+$error = '';
 
-$sql = "Select * from " . MDS_DB_PREFIX . "banners ";
-$res = mysqli_query( $GLOBALS['connection'], $sql );
-?>
-    <form name="bidselect" method="post" action="list.php">
+if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
+
+	$gd_info      = @gd_info();
+	$gif_support  = '';
+	$jpeg_support = '';
+	$png_support  = '';
+	if ( isset( $gd_info['GIF Read Support'] ) && ! empty( $gd_info['GIF Read Support'] ) ) {
+		$gif_support = "GIF";
+	}
+	if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || ( isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] ) ) ) {
+		$jpeg_support = "JPG";
+	}
+	if ( isset( $gd_info['PNG Support'] ) && ! empty( $gd_info['PNG Support'] ) ) {
+		$png_support = "PNG";
+	}
+
+	$prams = load_ad_values( $_REQUEST['aid'] );
+
+	// pre-check for failure
+	if ( $prams['user_id'] == "" ) {
+		die( Language::get( "Either the user id for this ad doesn't exist or this ad doesn't exist." ) );
+	}
+
+	$banner_data = load_banner_constants( $prams['banner_id'] );
+
+	$sql = "SELECT * from " . MDS_DB_PREFIX . "ads as t1, " . MDS_DB_PREFIX . "orders as t2 where t1.ad_id=t2.ad_id AND t1.user_id=" . intval( $prams['user_id'] ) . " and t1.banner_id='" . intval( $prams['banner_id'] ) . "' and t1.ad_id='" . intval( $prams['ad_id'] ) . "' AND t1.order_id=t2.order_id ";
+	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+
+	$row      = mysqli_fetch_array( $result );
+	$order_id = $row['order_id'];
+	$blocks   = explode( ',', $row['blocks'] );
+
+	$size   = get_pixel_image_size( $row['order_id'] );
+	$pixels = $size['x'] * $size['y'];
+
+	upload_changed_pixels( $order_id, $BID, $size, $banner_data );
+
+	// Ad forms:
+	?>
+    <p>
+    <div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>
+    <p><?php Language::out( 'Here you can edit your ad or change your pixels.' ); ?> </p>
+    <p><b><?php Language::out( 'Your Pixels:' ); ?></b></p>
+    <table>
+        <tr>
+            <td><b><?php Language::out( 'Pixels' ); ?></b><br>
+                <div style="text-align: center;">
+					<?php
+					if ( $_REQUEST['aid'] != '' ) {
+						?><img id="order_image_preview" src="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>get-order-image&amp;BID=<?php echo $BID; ?>&amp;aid=<?php echo intval( $_REQUEST['aid'] ); ?>" border=1><?php
+					} else {
+						?><img id="order_image_preview" src="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>get-order-image&amp;BID=<?php echo $BID; ?>&amp;block_id=<?php echo intval( $_REQUEST['block_id'] ); ?>" border=1><?php
+					} ?>
+                </div>
+            </td>
+            <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
+				Language::out_replace(
+					[ '%SIZE_X%', '%SIZE_Y%', '%PIXEL_COUNT%' ],
+					[ $size['x'], $size['y'], $pixels ],
+					'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)'
+				);
+				?><br></td>
+            <td style="max-width:200px;"><b>Blocks</b><br><?php
+				echo str_replace( ',', ', ', $row['blocks'] );
+				?><br></td>
+            <td><b><?php Language::out( 'Change Pixels' ); ?></b><br><?php
+				Language::out_replace(
+					[ '%SIZE_X%', '%SIZE_Y%' ],
+					[ $size['x'], $size['y'] ],
+					'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \'Upload\''
+				);
+				?>
+                <form name="change" enctype="multipart/form-data" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'mds-admin' ); ?>
+                    <input type="hidden" name="action" value="mds_admin_form_submission"/>
+                    <input type="hidden" name="mds_dest" value="list"/>
+
+                    <input type="file" name='pixels'><br>
+                    <input type="hidden" name="aid" value="<?php echo intval( $_REQUEST['aid'] ); ?>">
+                    <input type="submit" name="change_pixels" value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>"></form><?php if ( $error ) {
+					echo "<span style=\"color: red; \">" . $error . "</span>";
+					$error = '';
+				} ?>
+                <span><?php Language::out( 'Supported formats:' ); ?><?php echo "$gif_support $jpeg_support $png_support"; ?></span>
+            </td>
+        </tr>
+    </table>
+
+    <p><b><?php Language::out( 'Edit Your Ad:' ); ?></b></p>
+	<?php
+
+	if ( ! empty( $_REQUEST['save'] ) ) {
+
+		// saving
+
+		insert_ad_data( true ); // admin mode
+		$prams = load_ad_values( $_REQUEST['aid'] );
+
+		display_ad_form( 1, "user", $prams );
+		// disapprove the pixels because the ad was modified..
+
+		if ( $banner_data['AUTO_APPROVE'] != 'Y' ) {
+			// to be approved by the admin
+			disapprove_modified_order( $prams['order_id'], $BID );
+		}
+
+		if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
+			process_image( $BID );
+			publish_image( $BID );
+			process_map( $BID );
+		}
+
+		Language::out_replace(
+			'%LIST_URL%',
+			esc_url( admin_url( 'admin.php?page=mds-list&BID=' . $prams['banner_id'] ) ),
+			'Ad Saved. <a href="%LIST_URL%">&lt;&lt; Go to the Ad List</a>'
+		);
+		?>
+        <hr>
+		<?php
+	} else {
+
+		$prams = load_ad_values( $_REQUEST['aid'] );
+		display_ad_form( 1, "user", $prams );
+	}
+	$prams = load_ad_values( $_REQUEST['aid'] );
+
+	$user_info = get_userdata( intval( $prams['user_id'] ) );
+
+	$b_row = load_banner_row( $prams['banner_id'] );
+
+	Language::out( '<h3>Additional Info</h3>' );
+	?>
+
+
+    <b><?php Language::out( 'Customer:' ); ?></b><?php echo esc_html( $user_info->last_name ) . ', ' . esc_html( $user_info->first_name ); ?><BR>
+    <b><?php Language::out( 'Order #:' ); ?></b><?php echo $prams['order_id']; ?><br>
+    <b><?php Language::out( 'Grid:' ); ?></b><a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>map-of-orders&amp;banner_id=<?php echo intval( $prams['banner_id'] ); ?>'><?php echo esc_html( $prams['banner_id'] . " - " . $b_row['name'] ); ?></a>
+
+	<?php
+	echo '<hr>';
+} else {
+
+	// select banner id
+	$BID = $f2->bid();
+
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners ";
+	$res = mysqli_query( $GLOBALS['connection'], $sql );
+	?>
+
+    <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<?php wp_nonce_field( 'mds-admin' ); ?>
+        <input type="hidden" name="action" value="mds_admin_form_submission"/>
+        <input type="hidden" name="mds_dest" value="list"/>
+
+		<?php Language::out( 'Select grid:' ); ?>
         <label>
-            Select grid: <select name="BID" onchange="mds_submit(this)">
-
+            <select name="BID" onchange="this.form.submit()">
 				<?php
 				while ( $row = mysqli_fetch_array( $res ) ) {
 
@@ -58,33 +207,16 @@ $res = mysqli_query( $GLOBALS['connection'], $sql );
 					} else {
 						$sel = '';
 					}
-					echo '<option ' . $sel . ' value=' . $row['banner_id'] . '>' . $row['name'] . '</option>';
+					echo '<option ' . $sel . ' value=' . intval( $row['banner_id'] ) . '>' . esc_html( $row['name'] ) . '</option>';
 				}
 				?>
             </select>
         </label>
     </form>
-    <br/>
-    <p>Here is the list of your top advertisers for the selected grid. <b>To have this list on your own page, copy and paste the following HTML/JavaScript code.</b></p>
-<?php
-require_once realpath( __DIR__ . "/../include/mds_ajax.php" );
-global $load_mds_js;
-$load_mds_js = true;
-$mds_ajax = new Mds_Ajax();
-ob_start();
-$mds_ajax->show( 'list', $BID, 'list' );
-$output = ob_get_contents();
-?>
-    <textarea style='font-size: 10px;' rows='10' onfocus="this.select()" cols="90%"><?php echo htmlentities( $output ); ?></textarea>
+    <hr>
+	<?php
+}
 
-    <p>You can also use PHP:</p>
-    <textarea style='font-size: 10px;' rows='10' onfocus="this.select()" cols="90%"><?php echo htmlentities( '<?php
-require_once( BASE_PATH . "/include/mds_ajax.php" );
-$mds_ajax = new Mds_Ajax();
-$mds_ajax->show( \'list\', $BID, \'list\' );
-' ); ?></textarea>
+$offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
 
-    <p>Results:</p>
-<?php
-
-echo $output;
+$count = list_ads( true, $offset );

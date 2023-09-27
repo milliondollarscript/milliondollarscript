@@ -1,45 +1,37 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-class functions2 {
+use MillionDollarScript\Classes\Config;
 
-	function get_doc(): string {
-		return '<!DOCTYPE html>
-<html>
-<head>
-	<title> ' . SITE_NAME . '</title>
-	<meta name="Description" content="' . SITE_SLOGAN . '">
-	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>';
-	}
+defined( 'ABSPATH' ) or exit;
+
+class functions2 {
 
 	function get_default_grid(): int {
 		global $wpdb, $BID;
@@ -49,7 +41,7 @@ class functions2 {
 		$enabled = $wpdb->get_var( "SELECT `enabled` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`=1" );
 		if ( $enabled == 'N' ) {
 			// First grid is not enabled, so try to find one that is.
-			$banner_id = $wpdb->get_var( "SELECT `banner_id` FROM `" . MDS_DB_PREFIX . "banners` WHERE `enabled`='Y' ORDER BY `banner_id` ASC LIMIT 1" );
+			$banner_id = $wpdb->get_var( "SELECT `banner_id` FROM `" . MDS_DB_PREFIX . "banners` WHERE `enabled`='Y' ORDER BY `banner_id` LIMIT 1" );
 			if ( $banner_id ) {
 				$default = $banner_id;
 				if ( ! empty( $BID ) ) {
@@ -66,40 +58,30 @@ class functions2 {
 	 *
 	 * @param int $var
 	 *
-	 * @return int|string
+	 * @return float|int|string
 	 */
-	function bid( $var = 0 ) {
+	function bid( int $var = 0 ): float|int|string {
 		$ret = $this->get_default_grid();
 
 		if ( $var == 0 ) {
+			global $wpdb;
 
 			if ( isset( $_REQUEST['BID'] ) && ! empty( $_REQUEST['BID'] ) ) {
 				// $_REQUEST['BID']
-				$ret = $_REQUEST['BID'];
+				$ret = $_REQUEST['BID'] == 'all' ? 'all' : intval( $_REQUEST['BID'] );
 			} else if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 				// $_REQUEST['aid']
-				$sql = "select banner_id from " . MDS_DB_PREFIX . "ads where ad_id='" . intval( $_REQUEST['aid'] ) . "'";
-				$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-				if ( mysqli_num_rows( $res ) > 0 ) {
-					$row = mysqli_fetch_array( $res );
-					$ret = $row['banner_id'];
+				$mds_pixel_post = get_post( $_REQUEST['aid'] );
+				if ( ! empty( $mds_pixel_post ) ) {
+					$ret = intval( carbon_get_post_meta( intval( $_REQUEST['aid'] ), 'grid' ) );
 				}
-			} else if ( isset( $_SESSION['MDS_ID'] ) && ! empty( $_SESSION['MDS_ID'] ) ) {
-				// $_SESSION['MDS_ID']
-				$sql = "select *, " . MDS_DB_PREFIX . "banners.banner_id AS BID FROM " . MDS_DB_PREFIX . "orders, " . MDS_DB_PREFIX . "banners where " . MDS_DB_PREFIX . "orders.banner_id=" . MDS_DB_PREFIX . "banners.banner_id  AND user_id=" . intval( $_SESSION['MDS_ID'] ) . " and (" . MDS_DB_PREFIX . "orders.status='completed' or " . MDS_DB_PREFIX . "orders.status='expired') group by " . MDS_DB_PREFIX . "orders.banner_id order by " . MDS_DB_PREFIX . "orders.banner_id ";
-				$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-				if ( $res !== false && mysqli_num_rows( $res ) > 0 ) {
-					$row = mysqli_fetch_array( $res );
-					$ret = $row['BID'];
-				}
-			} else {
-				// temp_orders
-				$sql = "select * from " . MDS_DB_PREFIX . "temp_orders where session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
-				$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-				if ( mysqli_num_rows( $order_result ) > 0 ) {
-					$order_row = mysqli_fetch_array( $order_result );
-
-					$ret = $order_row['banner_id'];
+			} else if ( get_current_user_id() > 0 ) {
+				// User is logged in
+				$sql = "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND (status='completed' OR status='expired') ORDER BY banner_id";
+				$prepared_sql = $wpdb->prepare( $sql, get_current_user_id() );
+				$result          = $wpdb->get_var( $prepared_sql );
+				if ( $result !== null ) {
+					$ret = $result;
 				}
 			}
 		} else {
@@ -203,20 +185,20 @@ class functions2 {
 	}
 
 	function write_log( $text ) {
-		if ( MDSConfig::get( 'DEBUG' ) === true ) {
-			$output_file = fopen( MDSConfig::get( 'MDS_LOG_FILE' ), 'a' );
+		if ( Config::get( 'DEBUG' ) ) {
+			$output_file = fopen( Config::get( 'MDS_LOG_FILE' ), 'a' );
 			fwrite( $output_file, $text . "\n" );
 			fclose( $output_file );
 		}
 	}
 
 	/** debug */
-	function debug( $line = "null", $label = "debug" ) {
+	function debug( $line = "null", $label = "debug" ): void {
 
 		// log file
-		if ( MDSConfig::get( 'MDS_LOG' ) === true && file_exists( MDSConfig::get( 'MDS_LOG_FILE' ) ) ) {
+		if ( Config::get( 'MDS_LOG' ) && file_exists( Config::get( 'MDS_LOG_FILE' ) ) ) {
 			$entry_line = "[" . date( 'r' ) . "]	" . $line . "\r\n";
-			$log_fp     = fopen( MDSConfig::get( 'MDS_LOG_FILE' ), "a" );
+			$log_fp     = fopen( Config::get( 'MDS_LOG_FILE' ), "a" );
 			fputs( $log_fp, $entry_line );
 			fclose( $log_fp );
 		}
@@ -241,5 +223,5 @@ class functions2 {
 }
 
 function get_banner_dir() {
-	return \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/";
+	return wp_normalize_path( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/" );
 }

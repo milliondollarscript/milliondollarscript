@@ -1,40 +1,41 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
+
+use MillionDollarScript\Classes\Utility;
+
+defined( 'ABSPATH' ) or exit;
 
 // Contributed by Martin 
 // AREA render  function
 // Million Penny Home Page
 function render_map_area( $fh, $data, $b_row ) {
-	require_once( BASE_PATH . "/include/ads.inc.php" );
+	require_once( MDS_CORE_PATH . "include/ads.inc.php" );
 
 	$BID = $b_row['banner_id'];
 
@@ -49,20 +50,20 @@ function render_map_area( $fh, $data, $b_row ) {
 	if ( ENABLE_CLOAKING == 'YES' ) {
 		$url = $data['url'];
 	} else {
-		$url = 'click.php?block_id=' . $data['block_id'] . '&BID=' . $BID;
+		$url = Utility::get_page_url( 'click' ) . '?block_id=' . intval( $data['block_id'] ) . '&BID=' . $BID;
 	}
 
 	$ALT_TEXT = "";
 	if ( ENABLE_MOUSEOVER == 'YES' || ENABLE_MOUSEOVER == 'POPUP' ) {
 		if ( $data['ad_id'] > 0 ) {
-			$ALT_TEXT = $data['alt_text'] . '<img src="' . BASE_HTTP_PATH . 'images/periods.gif" border="0">';
+			$ALT_TEXT = $data['alt_text'] . '<img src="' . MDS_CORE_URL . 'images/periods.gif" border="0">';
 			$ALT_TEXT = str_replace( "'", "", $ALT_TEXT );
 			$ALT_TEXT = ( str_replace( "\"", '', $ALT_TEXT ) );
 		}
 	}
 
 	$data_values = array(
-		'id'        => $data['ad_id'],
+		'aid'       => $data['ad_id'],
 		'block_id'  => $data['block_id'],
 		'banner_id' => $BID,
 		'alt_text'  => $ALT_TEXT,
@@ -307,15 +308,15 @@ WHERE (banner_id = %d)";
 	}
 
 	// include the header
-	require_once( BASE_PATH . "/html/header.php" );
+	require_once( MDS_CORE_PATH . "html/header.php" );
 
 	// Displays the grid image map. Use Process Pixels in the admin to update the image map.
-	require_once( BASE_PATH . "/include/mds_ajax.php" );
+	require_once( MDS_CORE_PATH . "include/mds_ajax.php" );
 	$mds_ajax = new Mds_Ajax();
 	$mds_ajax->show( 'grid', $BID, 'grid' );
 
 	// include footer
-	require_once( BASE_PATH . "/html/footer.php" );
+	require_once( MDS_CORE_PATH . "html/footer.php" );
 }
 
 function get_map_file_name( $BID ) {

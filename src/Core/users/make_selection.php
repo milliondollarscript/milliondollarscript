@@ -1,44 +1,40 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/login_functions.php";
-mds_start_session();
-define( 'NO_HOUSE_KEEP', 'YES' );
-require_once __DIR__ . "/../include/init.php";
+defined( 'ABSPATH' ) or exit;
+
+mds_wp_login_check();
 
 header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
-header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" ); // Date in the past
+header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );   // Date in the past
 
-global $f2, $banner_data;
+global $BID, $f2, $banner_data;
 $BID         = $f2->bid();
 $banner_data = load_banner_constants( $BID );
 
@@ -50,9 +46,9 @@ $banner_data = load_banner_constants( $BID );
 $floorx               = floor( intval( $_REQUEST['map_x'] ) / intval( $banner_data['BLK_WIDTH'] ) );
 $floory               = floor( intval( $_REQUEST['map_y'] ) / intval( $banner_data['BLK_HEIGHT'] ) );
 $floorid              = floor( intval( $_REQUEST['block_id'] ) );
-$floorx               = $floorx ? $floorx : 0;
-$floory               = $floory ? $floory : 0;
-$floorid              = $floorid ? $floorid : 0;
+$floorx               = $floorx ?: 0;
+$floory               = $floory ?: 0;
+$floorid              = $floorid ?: 0;
 $_REQUEST['map_x']    = $floorx * $banner_data['BLK_WIDTH'];
 $_REQUEST['map_y']    = $floory * $banner_data['BLK_HEIGHT'];
 $_REQUEST['block_id'] = $floorid;
@@ -60,14 +56,11 @@ $_REQUEST['block_id'] = $floorid;
 // place on temp order -> then
 function place_temp_order( $in_str ) {
 
-	global $f2, $BID, $banner_data;
+	global $BID, $f2, $banner_data, $wpdb;
 
 	// cannot place order if there is no session!
-	if ( session_id() == '' ) {
-		$f2->write_log( 'Cannot place order if there is no session!' );
+	mds_wp_login_check();
 
-		return false;
-	}
 	$blocks = explode( ',', $in_str );
 
 	$quantity = sizeof( $blocks ) * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
@@ -75,24 +68,66 @@ function place_temp_order( $in_str ) {
 	$now = ( gmdate( "Y-m-d H:i:s" ) );
 
 	// preserve ad_id & block info...
-	$sql = "SELECT ad_id, block_info FROM " . MDS_DB_PREFIX . "temp_orders WHERE session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+	$order_id = get_current_order_id();
+	$sql      = $wpdb->prepare( "SELECT ad_id, block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $order_id );
+	$row      = $wpdb->get_row( $sql, ARRAY_A );
 
-	if ( mysqli_num_rows( $result ) > 0 ) {
-		$row        = mysqli_fetch_array( $result );
+	if ( $row ) {
 		$ad_id      = intval( $row['ad_id'] );
-		$block_info = mysqli_real_escape_string( $GLOBALS['connection'], $row['block_info'] );
+		$block_info = wp_kses_data( $row['block_info'] );
 	} else {
 		$ad_id      = 0;
 		$block_info = '';
 	}
 
 	// DAYS_EXPIRE comes form load_banner_constants()
-	$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "temp_orders` ( `session_id` , `blocks` , `order_date` , `price` , `quantity` ,  `days_expire`, `banner_id` , `currency` ,  `date_stamp` , `ad_id`, `block_info` )  VALUES ('" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "', '" . $in_str . "', '" . $now . "', '0', '" . intval( $quantity ) . "', '" . intval( $banner_data['DAYS_EXPIRE'] ) . "', '" . $BID . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "',  '$now', '$ad_id', '$block_info' )";
-	$f2->write_log( 'Placed Temp order. ' . $sql );
-	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+	$table_name = MDS_DB_PREFIX . 'orders';
 
-	$_SESSION['MDS_order_id'] = session_id();
+	// TODO: add any extra columns necessary such as package_id
+	$order_id = get_current_order_id();
+	$data     = array(
+		'user_id'           => get_current_user_id(),
+		'order_id'          => $order_id,
+		'blocks'            => $in_str,
+		'status'            => 'new',
+		'order_date'        => $now,
+		'price'             => 0,
+		'quantity'          => intval( $quantity ),
+		'days_expire'       => intval( $banner_data['DAYS_EXPIRE'] ),
+		'banner_id'         => $BID,
+		'currency'          => get_default_currency(),
+		'date_stamp'        => $now,
+		'ad_id'             => $ad_id,
+		'published'         => 'N',
+		'block_info'        => $block_info,
+		'original_order_id' => $order_id,
+	);
+
+	$format = array(
+		'%s', // user_id
+		'%s', // order_id
+		'%s', // blocks
+		'%s', // status
+		'%s', // order_date
+		'%d', // price
+		'%d', // quantity
+		'%d', // days_expire
+		'%d', // banner_id
+		'%s', // currency
+		'%s', // date_stamp
+		'%d', // ad_id
+		'%s', // published
+		'%s', // block_info
+		'%s', // original_order_id
+	);
+
+	$result = $wpdb->replace( $table_name, $data, $format );
+	if ( false === $result ) {
+		mds_sql_error( 'Error: ' . $wpdb->last_error );
+	}
+	$f2->write_log( 'Placed Temp order. ' . $sql );
+
+	get_current_order_id();
 
 	return true;
 }
@@ -101,18 +136,16 @@ function place_temp_order( $in_str ) {
 
 $price_table = '';
 
-function reserve_temp_order_pixels( $block_info, $in_str ) {
+function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 
-	global $f2, $label, $banner_data;
+	global $BID, $f2, $wpdb;
 
 	// cannot reserve pixels if there is no session
-	if ( session_id() == '' ) {
+	if ( ! is_user_logged_in() ) {
 		$f2->write_log( 'Cannot reserve pixels if there is no session!' );
 
 		return false;
 	}
-
-	$BID = $f2->bid();
 
 	$total = 0;
 	foreach ( $block_info as $key => $block ) {
@@ -129,8 +162,13 @@ function reserve_temp_order_pixels( $block_info, $in_str ) {
 		$total += $price;
 	}
 
-	$sql = "UPDATE " . MDS_DB_PREFIX . "temp_orders set price='" . floatval( $total ) . "', block_info='" . serialize( $block_info ) . "' where session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'  ";
-	mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_log_die( $sql );
+	$sql = $wpdb->prepare(
+		"UPDATE " . MDS_DB_PREFIX . "orders SET price=%f, block_info=%s WHERE order_id=%d",
+		floatval( $total ),
+		serialize( $block_info ),
+		get_current_order_id()
+	);
+	$wpdb->query( $sql ) or mds_sql_log_die( $sql );
 	$f2->write_log( 'Reserved Temp order. ' . $sql );
 
 	return true;
@@ -141,9 +179,9 @@ function reserve_temp_order_pixels( $block_info, $in_str ) {
 
 check_selection_main();
 
-function check_selection_main() {
+function check_selection_main(): void {
 
-	global $f2, $banner_data;
+	global $banner_data;
 
 	$upload_image_file = get_tmp_img_name();
 

@@ -1,10 +1,10 @@
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 function add_ajax_loader(container) {
@@ -129,55 +135,12 @@ function mds_users(container, bid, width, height) {
 	});
 }
 
-function receiveMessage(event, $el) {
-	if (event.origin !== MDS.wp || !initialized) {
-		return;
-	}
-
-	if ($el && $el.length > 0 && $el.data('scalemap') === true) {
-		parent.postMessage('gridwidth', MDS.wp);
-		rescale($el);
-	}
-
-	switch (event.data) {
-		case "thankyouframeheight":
-		case "usersframeheight":
-		case "listframeheight":
-		case "statsframeheight":
-		case "validateframeheight":
-
-			event.source.postMessage(event.data + ":" + document.body.clientHeight, event.origin);
-			break;
-		case "gridheight":
-			// readjust width if grid is smaller than body
-			if ($el.width() < jQuery('body').width() && $el.width() < $el.data('origWidth')) {
-				jQuery('html').height("100%");
-				jQuery('body').height("100%");
-
-				$el.width(('body').width());
-				$el.height(('body').width());
-			}
-
-			// set html and body height to same as grid height
-			if (jQuery('body').height() !== $el.height()) {
-				jQuery('html').height($el.height());
-				jQuery('body').height($el.height());
-			}
-
-			event.source.postMessage("gridheight:" + document.body.clientHeight, event.origin);
-
-			break;
-		default:
-			break;
-	}
-}
-
 function add_tippy() {
 	const defaultContent = "<div class='ajax-loader'></div>";
 	const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
 
 	let delay = 50;
-	if(MDS.TOOLTIP_TRIGGER === 'mouseenter') {
+	if (MDS.TOOLTIP_TRIGGER === 'mouseenter') {
 		delay = 400;
 	}
 
@@ -191,7 +154,7 @@ function add_tippy() {
 		followCursor: 'initial',
 		hideOnClick: true,
 		interactive: true,
-		maxWidth: 350,
+		maxWidth: parseInt(MDS.MAX_POPUP_SIZE, 10),
 		placement: 'auto',
 		touch: true,
 		appendTo: 'parent',
@@ -237,7 +200,7 @@ function add_tippy() {
 				action: 'mds_ajax',
 				type: 'ga',
 				mds_nonce: MDS.mds_nonce,
-				aid: data.id,
+				aid: data.aid,
 				bid: data.banner_id,
 				block_id: data.block_id,
 			};
@@ -305,7 +268,7 @@ function rescale($el) {
 	});
 }
 
-function mds_loaded_event(el, scalemap, tippy, iframe, isgrid) {
+function mds_loaded_event(el, scalemap, tippy, mdstype, isgrid) {
 	if (window.mds_loaded === true) {
 		return;
 	}
@@ -316,12 +279,12 @@ function mds_loaded_event(el, scalemap, tippy, iframe, isgrid) {
 		el: el,
 		scalemap: scalemap,
 		tippy: tippy,
-		iframe: iframe,
+		mdstype: mdstype,
 		isgrid: isgrid
 	});
 }
 
-jQuery(document).on('mds-loaded', function (el, scalemap, tippy, iframe, isgrid) {
+jQuery(document).on('mds-loaded', function (el, scalemap, tippy, mdstype, isgrid) {
 	setTimeout(function () {
 		window.dispatchEvent(new Event('resize'));
 	}, 100);
@@ -424,7 +387,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 						action: 'mds_ajax',
 						type: 'click',
 						mds_nonce: MDS.mds_nonce,
-						aid: window.click_data.ad_id,
+						aid: window.click_data.aid,
 						bid: window.click_data.banner_id,
 						block_id: window.click_data.block_id,
 					};
@@ -436,12 +399,12 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 						dataType: 'html',
 						crossDomain: true,
 					}).done(function () {
-						window.open(window.click_data.url, '_self');
+						window.open(window.click_data.url, MDS.link_target);
 					});
 				}
 			});
 
-			jQuery(document).off('click', '.pixel-url').on('click', '.pixel-url', function (e) {
+			jQuery(document).off('click', '.mds-popup-url').on('click', '.mds-popup-url', function (e) {
 				e.preventDefault();
 				e.stopPropagation();
 
@@ -451,7 +414,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 					action: 'mds_ajax',
 					type: 'click',
 					mds_nonce: MDS.mds_nonce,
-					aid: window.click_data.ad_id,
+					aid: window.click_data.aid,
 					bid: window.click_data.banner_id,
 					block_id: window.click_data.block_id,
 				};
@@ -463,7 +426,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 					dataType: 'html',
 					crossDomain: true,
 				}).done(function () {
-					window.open($link.attr('href'), '_self');
+					window.open($link.attr('href'), MDS.link_target);
 				});
 			});
 
@@ -471,7 +434,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 				e.preventDefault();
 				e.stopPropagation();
 				if (MDS.REDIRECT_SWITCH === 'YES') {
-					window.open(MDS.REDIRECT_URL, '_self');
+					window.open(MDS.REDIRECT_URL, MDS.link_target);
 					return false;
 				}
 			});
@@ -487,127 +450,35 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 		remove_ajax_loader();
 	});
 
-	if (type === "iframe") {
-		jQuery('body').addClass('wp');
-		window.top.postMessage('iframeload:html', MDS.wp);
-		window.addEventListener("message", function (event) {
-			receiveMessage(event, $el);
-		}, false);
-	}
-
 	initialized = true;
 }
 
 jQuery(function ($) {
-	// MDS iframe display method
-	window.mds_iframe = function (mds_type, mds_frame_id, mds_width, mds_height, mds_origin_url) {
-		var sendmessage = true;
-		var frames = jQuery("#" + mds_frame_id);
-
-		if (frames.length > 0) {
-			function adjustframeHeight(frame) {
-				if (MDS.users === 'yes' && frame !== undefined && jQuery(frame).hasClass('usersframe')) {
-					jQuery(frame).height(560);
-				}
-				if (frame !== undefined) {
-					if (sendmessage) {
-						jQuery(frame)[0].contentWindow.postMessage(mds_type + "frameheight", mds_origin_url);
-					}
-				} else {
-					jQuery(frames).each(function () {
-						if (sendmessage) {
-							jQuery(this)[0].contentWindow.postMessage(mds_type + "frameheight", mds_origin_url);
-						}
-					});
-				}
-			}
-
-			function receiveframeMessage(event) {
-				const wp_origin = new URL(event.origin);
-				const mds_origin = new URL(mds_origin_url);
-
-				if (wp_origin.hostname !== mds_origin.hostname) {
-					return;
-				}
-
-				if (event.data === mds_type + "width") {
-					sendmessage = true;
-
-					jQuery(frames).each(function () {
-						var newwidth = jQuery("body").width();
-						var origwidth = parseInt(mds_width);
-
-						if (!isNaN(origwidth)) {
-							newwidth = Math.min(newwidth, origwidth);
-						}
-
-						jQuery(this).width(newwidth);
-					});
-
-				} else {
-					if (event.data != null && typeof event.data.split === "function") {
-						var data = event.data.split(":");
-						if (data[0] === mds_type + "frameheight") {
-							sendmessage = true;
-
-							jQuery(frames).each(function () {
-								var newheight = data[1];
-								var origheight = parseInt(mds_height, 10);
-
-								if (!isNaN(origheight)) {
-									if (mds_height === "auto") {
-										newheight = Math.min(newheight, origheight);
-									} else {
-										newheight = Math.max(newheight, origheight);
-									}
-								}
-
-								jQuery(this).height(newheight);
-							});
-
-						} else if (data[0] === "iframeunload") {
-							sendmessage = false;
-
-							if (mds_height !== "auto") {
-								jQuery(frames).each(function () {
-									jQuery(this).css("height", mds_height);
-								});
-							}
-
-						} else if (data[0] === "iframeload") {
-							sendmessage = true;
-							adjustframeHeight();
-						}
-					}
-				}
-			}
-
-			window.addEventListener("message", receiveframeMessage, false);
-
-			jQuery(frames).each(function () {
-				jQuery(this).load(function () {
-					adjustframeHeight(this);
-
-					window.scrollTo(0, 0);
-				});
-			});
-
-			jQuery(window).resize(function () {
-				adjustframeHeight();
-				// jQuery(frames).each(function () {
-				// 	jQuery(this).attr("src", jQuery(this).attr("src"));
-				// });
-			});
-
-			setInterval(function () {
-				jQuery(window).resize();
-			}, 1000);
-		}
-	}
 
 	// MDS ajax display method
-	window.mds_ajax = function (mds_type, mds_frame_id, mds_align, mds_width, mds_height, mds_origin_url, grid_id) {
-		var container = jQuery("#" + mds_frame_id);
+	window.mds_ajax = function (mds_type, mds_container_id, mds_align, mds_width, mds_height, grid_id) {
+		// jQuery(document).on('carbonFields.apiLoaded', function (e, api) {
+		// 	console.log('carbonFields.apiLoaded');
+		// 	console.log(e, api);
+		// });
+		// (function () {
+		// 	console.log('jQuery loaded');
+		//
+		// 	const {addAction} = window.cf.hooks;
+		//
+		// 	addAction('carbon-fields.init', 'carbon-fields/blocks', () => {
+		// 		console.log('carbon fields blocks loaded');
+		// 		const {select} = window.cf.vendor['@wordpress/data'];
+		// 		const fields = select('carbon-fields/metaboxes').getFieldsByContainerId('carbon_fields_container_theme_options');
+		//
+		// 		console.log(fields);
+		//
+		// 		const typeField = fields.find((field) => field.base_name === MDS.MDS_PREFIX + 'type');
+		// 		console.log(typeField);
+		// 	});
+		// })();
+
+		var container = jQuery("#" + mds_container_id);
 
 		container.width(mds_width).height(mds_height).css('max-width', '100%');
 		switch (mds_align) {
@@ -640,7 +511,9 @@ jQuery(function ($) {
 				success: function (data) {
 					remove_ajax_loader();
 					jQuery(container).html(data);
-					mds_init('#theimage', true, MDS.ENABLE_MOUSEOVER !== 'NO', false, true);
+					if (mds_type == 'grid') {
+						mds_init('#theimage', true, MDS.ENABLE_MOUSEOVER !== 'NO', false, true);
+					}
 				},
 				error: function (jqXHR, textStatus, errorThrown) {
 					// if (errorThrown === "") {
@@ -679,4 +552,47 @@ jQuery(function ($) {
 		});
 	}
 
+	jQuery('.mds_upload_image').on('click', function (e) {
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Uploading...');
+		$el.parent('form').submit();
+	});
+
+	jQuery('.mds_pointer_graphic').on('load', function (e) {
+		jQuery('.mds_upload_image').prop('disabled', false);
+		jQuery(this).attr('value', 'Upload');
+	});
+
+	jQuery('.mds_save_ad_button').on('click', function () {
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Saving...');
+		$el.closest('form').submit();
+	});
+
+	jQuery('#mds-complete-button').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Completing...');
+		window.location = MDS.publishurl + '?mds-action=complete&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
+		return false;
+	});
+
+	jQuery('#mds-confirm-button').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', 'Confirming...');
+		window.location = MDS.paymenturl + '?mds-action=confirm&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
+		return false;
+	});
 });
+
+function mdsToggleMenu() {
+	const menu = document.getElementById("mds-users-menu");
+	menu.classList.toggle('mds-show-menu');
+}

@@ -1,71 +1,63 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/login_functions.php";
-mds_start_session();
-require_once __DIR__ . "/../include/init.php";
+use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Utility;
 
-require_once( "../include/ads.inc.php" );
+defined( 'ABSPATH' ) or exit;
 
-global $order_page, $label;
-if ( USE_AJAX == 'SIMPLE' ) {
-	$order_page = 'order_pixels.php';
-} else {
-	$order_page = 'select.php';
-}
+mds_wp_login_check();
+
+require_once( __DIR__ . "/../include/ads.inc.php" );
+
+global $f2;
+
+$BID = $f2->bid();
+
+$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
 function display_edit_order_button( $order_id ) {
-	global $BID, $label, $order_page;
+	global $BID;
 	?>
-    <input type='button' class='big_button' value="<?php echo $label['advertiser_o_edit_button']; ?>" onclick="window.location='<?php echo $order_page; ?>?&amp;BID=<?php echo $BID; ?>&amp;order_id=<?php echo $order_id; ?>'">
+    <input type='button' class='mds-button mds-edit' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>?&amp;BID=<?php echo $BID; ?>&amp;order_id=<?php echo $order_id; ?>'">
 	<?php
 }
 
 update_temp_order_timestamp();
 
-$sql = "select * from " . MDS_DB_PREFIX . "temp_orders where session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
+$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 // check if we have pixels...
 if ( mysqli_num_rows( $order_result ) == 0 ) {
-	require_once BASE_PATH . "/html/header.php";
-	?>
-    <h1><?php echo $label['no_order_in_progress']; ?></h1>
-    <p><?php $label['no_order_in_progress_go_here'] = str_replace( '%ORDER_PAGE%', $order_page, $label['no_order_in_progress_go_here'] );
-		echo $label['no_order_in_progress_go_here']; ?></p>
-
-	<?php
-	require_once BASE_PATH . "/html/footer.php";
-	die();
+	\MillionDollarScript\Classes\Utility::redirect('no-orders');
 }
 
 $order_row = mysqli_fetch_array( $order_result );
@@ -77,74 +69,27 @@ $BID = $order_row['banner_id'];
 $banner_data = load_banner_constants( $BID );
 
 /* Login -> Select pixels -> Write ad -> Confirm order */
-if ( !isset($_SESSION['MDS_ID']) || $_SESSION['MDS_ID'] == '' ) {
-	if ( WP_ENABLED == "YES" && WP_USERS_ENABLED == "YES" ) {
-        mds_wp_login_check();
-    }
-
-	// not logged in..
-	require_once BASE_PATH . "/html/header.php";
-
-	?>
-    <h3>
-		<?php echo $label['not_logged_in']; ?>
-    </h3>
-    <table cellpadding=5 border=1 style="border-collapse: collapse; border-style:solid; border-color:#D2D2D2">
-        <tr>
-            <td width="50%" bgcolor='#EBEBEB'>
-
-				<?php
-
-				// process signup form
-				if ( isset($_REQUEST['form']) && $_REQUEST['form'] == "filled" ) {
-					$success = process_signup_form( 'confirm_order.php' );
-				}
-
-				if ( empty($success) ) {
-					// Signup form is shown below
-
-					?>
-                    <h2><?php echo $label['conirm_signup']; ?></h2>
-                    <h3><?php echo $label['confirm_instructions']; ?></h3>
-					<?php
-
-					display_signup_form( $_REQUEST['FirstName'], $_REQUEST['LastName'], $_REQUEST['CompName'], $_REQUEST['Username'], $_REQUEST['Password'], $_REQUEST['Password2'], $_REQUEST['Email'] );
-				}
-				?>
-            </td>
-            <td valign=top>
-                <h2><?php echo $label['confirm_login']; ?></h2>
-                <h3><?php echo $label['confirm_member']; ?></h3>
-				<?php login_form( false, 'confirm_order.php' ); ?>
-            </td>
-        </tr>
-    </table>
-	<?php
+if ( ! is_user_logged_in() ) {
+	mds_wp_login_check();
 } else {
 	// The user is singed in
 
 	$has_packages = banner_get_packages( $BID );
 
-	require_once BASE_PATH . "/html/header.php";
+	require_once MDS_CORE_PATH . "html/header.php";
 
-	?>
-    <p>
-		<?php
-		show_nav_status( 3 );
-		?>
-    </p>
-	<?php
+	show_nav_status( 3 );
 
 	$cannot_get_package = false;
 
-	if ( $has_packages && $_REQUEST['pack'] != '' ) {
+	if ( $has_packages && isset( $_REQUEST['pack'] ) && $_REQUEST['pack'] != '' ) {
 		// has packages, and a package was selected...
 
 		// check to make sure this advertiser can order this package
 
-		if ( can_user_get_package( $_SESSION['MDS_ID'], $_REQUEST['pack'] ) ) {
+		if ( can_user_get_package( get_current_user_id(), $_REQUEST['pack'] ) ) {
 
-			$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "temp_orders WHERE session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
+			$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 			$row      = mysqli_fetch_array( $result );
 			$quantity = $row['quantity'];
@@ -158,7 +103,7 @@ if ( !isset($_SESSION['MDS_ID']) || $_SESSION['MDS_ID'] == '' ) {
 			// convert & round off
 			$total = convert_to_default_currency( $pack['currency'], $total );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "temp_orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "' WHERE session_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
+			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			$order_row['price']       = $total;
@@ -173,18 +118,21 @@ if ( !isset($_SESSION['MDS_ID']) || $_SESSION['MDS_ID'] == '' ) {
 	}
 
 	$p_max_ord = 0;
-	if ( ( $has_packages ) && ( $_REQUEST['pack'] == '' ) ) {
+	if ( ( $has_packages ) && ( isset( $_REQUEST['pack'] ) && $_REQUEST['pack'] == '' ) ) {
 		?>
-        <form name="confirm-order" method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
-            <input type="hidden" name="selected_pixels" value="<?php echo htmlspecialchars($_REQUEST['selected_pixels']); ?>">
-            <input type="hidden" name="order_id" value="<?php echo intval($_REQUEST['order_id']); ?>">
+        <form method="post" name="confirm-order" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'mds-form' ); ?>
+            <input type="hidden" name="action" value="mds_form_submission">
+            <input type="hidden" name="mds_dest" value="confirm-order">
+            <input type="hidden" name="selected_pixels" value="<?php echo htmlspecialchars( $_REQUEST['selected_pixels'] ); ?>">
+            <input type="hidden" name="order_id" value="<?php echo intval( $_REQUEST['order_id'] ); ?>">
             <input type="hidden" name="BID" value="<?php echo $BID; ?>">
-            <?php
-            display_package_options_table( $BID, $_REQUEST['pack'], true );
-            ?>
-            <input class='big_button' type='button' value='<?php echo htmlspecialchars($label['advertiser_pack_prev_button']); ?>' onclick='window.location="write_ad.php?BID=<?php echo intval($BID); ?>&amp;ad_id=<?php echo intval($order_row['ad_id']); ?>"'>
-            &nbsp; <input class='big_button' type='submit' value='<?php echo htmlspecialchars($label['advertiser_pack_select_button']); ?>'>
-		<form>
+			<?php
+			display_package_options_table( $BID, $_REQUEST['pack'], true );
+			?>
+            <input class='big_button' type='button' value='<?php echo esc_attr( Language::get( '<< Previous' ) ); ?>' onclick='window.location="<?php echo esc_url( Utility::get_page_url( 'write-ad' ) ); ?>?BID=<?php echo intval( $BID ); ?>&amp;aid=<?php echo intval( $order_row['ad_id'] ); ?>"'>
+            <input class='big_button' type='submit' value='<?php echo esc_attr( Language::get( 'Next >>' ) ); ?>'>
+        </form>
 		<?php
 		if ( $cannot_get_package ) {
 
@@ -193,20 +141,19 @@ if ( !isset($_SESSION['MDS_ID']) || $_SESSION['MDS_ID'] == '' ) {
 			$p_row     = mysqli_fetch_array( $p_result );
 			$p_max_ord = $p_row['max_orders'];
 
-			$label['pack_cannot_select'] = str_replace( "%MAX_ORDERS%", $p_row['max_orders'], $label['pack_cannot_select'] );
-
-			echo "<p>" . $label['pack_cannot_select'] . "</p>";
+			Language::out_replace( [ '%MAX_ORDERS%', '%HISTORY_URL%' ], [ $p_row['max_orders'], Utility::get_page_url( 'history' ) ], '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>' );
 		}
 	} else {
 		display_order( get_current_order_id(), $BID );
 
-		$sql = "select * from " . MDS_DB_PREFIX . "users where ID='" . intval( $_SESSION['MDS_ID'] ) . "'";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$u_row = mysqli_fetch_array( $result );
+		?>
+        <div class="mds-button-container">
+		<?php
 
-		display_edit_order_button( 'temp' );
+		display_edit_order_button( get_current_order_id() );
 
-		if ( ! can_user_order( $banner_data, $_SESSION['MDS_ID'], ( isset( $_REQUEST['pack'] ) ? $_REQUEST['pack'] : "" ) ) ) { // one more check before continue
+		if ( ! can_user_order( $banner_data, get_current_user_id(), ( $_REQUEST['pack'] ?? 0 ) ) ) {
+			// one more check before continue
 
 			if ( ! $p_max_ord ) {
 				$max = $banner_data['G_MAX_ORDERS'];
@@ -214,21 +161,55 @@ if ( !isset($_SESSION['MDS_ID']) || $_SESSION['MDS_ID'] == '' ) {
 				$max = $p_max_ord;
 			}
 
-			$label['pack_cannot_select'] = str_replace( "%MAX_ORDERS%", $max, $label['pack_cannot_select'] );
-
-			echo "<p>" . $label['advertiser_max_order'] . "</p>";
+			Language::out_replace( [ '%MAX_ORDERS%', '%HISTORY_URL%' ], [ $max, Utility::get_page_url( 'history' ) ], '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>' );
 		} else {
+			$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
 
-		    // TODO: Add option to auto forward to next page
-			if ( ( $order_row['price'] == 0 ) || ( $u_row['Rank'] == 2 ) ) { // go straight to publish...
+			if ( \MillionDollarScript\Classes\Options::get_option( 'confirm-orders' ) == 'yes' ) {
+				// Confirm order page buttons
+				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
+					// go straight to publish...
+					if ( $advanced_order ) {
+						?>
+                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>&order_id=<?php echo intval( $order_row['order_id'] ); ?>'">
+						<?php
+					} else {
+						?>
+                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&BID=<?php echo $BID; ?>&order_id=<?php echo get_current_order_id(); ?>'">
+						<?php
+					}
+				} else {
+					// go to payment
+					if ( $advanced_order ) {
+						?>
+                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment' ) ); ?>?mds-action=confirm&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>'">
+						<?php
+					} else {
+						?>
+                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'checkout' ) ); ?>?mds-action=confirm&BID=<?php echo $BID; ?>'">
+						<?php
+					}
+				}
 				?>
-                <input type='button' class='big_button' value="<?php echo htmlspecialchars( $label['advertiser_o_completebutton'] ); ?>" onclick="window.location='publish.php?action=complete&BID=<?php echo $BID; ?>&order_id=temp'">
+                </div>
 				<?php
 			} else {
-				// go to payment
-				?>
-                <input type='button' class='big_button' value="<?php echo htmlspecialchars( $label['advertiser_o_confpay_button'] ); ?>" onclick="window.location='checkout.php?action=confirm&BID=<?php echo $BID; ?>'">
-				<?php
+				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
+					// go straight to publish...
+					if ( $advanced_order ) {
+						wp_safe_redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . $order_row['order_id'] );
+					} else {
+						wp_safe_redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . get_current_order_id() );
+					}
+				} else {
+					// go to payment
+					if ( $advanced_order ) {
+						wp_safe_redirect( Utility::get_page_url( 'payment' ) . '?mds-action=confirm&order_id=' . $order_row['order_id'] . '&BID=' . $BID );
+					} else {
+						wp_safe_redirect( Utility::get_page_url( 'checkout' ) . '?mds-action=confirm&BID=' . $BID . '&order_id=' . get_current_order_id() );
+					}
+				}
+				exit;
 			}
 		}
 		?>
@@ -236,4 +217,4 @@ if ( !isset($_SESSION['MDS_ID']) || $_SESSION['MDS_ID'] == '' ) {
 	}
 }
 
-require_once BASE_PATH . "/html/footer.php";
+require_once MDS_CORE_PATH . "html/footer.php";

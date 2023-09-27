@@ -1,12 +1,12 @@
 <?php
 
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 namespace MillionDollarScript\Classes;
@@ -28,13 +34,12 @@ use Imagine\Gd\Imagine;
 use Imagine\Image\Box;
 use Imagine\Image\Palette\RGB;
 use Imagine\Image\Point;
-use JetBrains\PhpStorm\NoReturn;
 
 defined( 'ABSPATH' ) or exit;
 
 class NFS {
 
-	private static string $slug = 'MillionDollarScript_NFS';
+	private static string $slug = 'mds-not-for-sale';
 
 	/**
 	 * Init NFS page.
@@ -49,7 +54,7 @@ class NFS {
 		add_action( 'wp_ajax_mds_nfs_covered_image', [ __CLASS__, 'ajax_covered_image' ] );
 		add_action( 'admin_post_mds_nfs_grid', [ __CLASS__, 'form_response' ] );
 
-		if ( isset( $_GET['page'] ) && $_GET['page'] == 'MillionDollarScript_NFS' ) {
+		if ( isset( $_GET['page'] ) && $_GET['page'] == 'mds-not-for-sale' ) {
 			add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
 		}
 	}
@@ -60,7 +65,7 @@ class NFS {
 	 * @return void
 	 */
 	public static function menu(): void {
-		$handle = \add_submenu_page( 'MillionDollarScript', 'Million Dollar Script NFS', 'NFS', 'manage_options', self::$slug, array( __CLASS__, 'html' ), 2 );
+		$handle = \add_submenu_page( 'MillionDollarScript_Admin', 'Million Dollar Script NFS', 'Not For Sale', 'manage_options', self::$slug, array( __CLASS__, 'html' ), 2 );
 
 		// Add styles for admin page
 		add_action( 'admin_print_styles-' . $handle, [ __CLASS__, 'enqueue_styles' ] );
@@ -76,80 +81,16 @@ class NFS {
 		$ui = $wp_scripts->query( 'jquery-ui-core' );
 		wp_enqueue_style( 'jquery-ui-theme-smoothness', 'https://code.jquery.com/ui/' . $ui->ver . '/themes/smoothness/jquery-ui.min.css' );
 
-		global $f2;
-
-		$BID = $f2->bid();
-
-		$banner_data = load_banner_constants( $BID );
+		wp_enqueue_style(
+			MDS_PREFIX . 'admin-css',
+			MDS_CORE_URL . 'admin/css/admin.css',
+			array(),
+			filemtime( MDS_CORE_PATH . '/admin/css/admin.css' )
+		);
 
 		wp_enqueue_style( 'mds-admin-css', MDS_BASE_URL . 'src/Assets/css/admin.css' );
 		wp_add_inline_style( 'mds-admin-css',
-			".grid {
-                    position: relative;
-                        background-size: contain;
-                        z-index: 0;
-                        width: " . $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] . "px;
-                        height: " . $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] . "px;
-                        user-select: none;
-                    }
-                    
-                    .block_row {
-                        clear: both;
-                        display: block;
-                    }
-                    
-                    .block {
-                        white-space: nowrap;
-                        width: " . $banner_data['BLK_WIDTH'] . "px;
-                        height: " . $banner_data['BLK_HEIGHT'] . "px;
-                        float: left;
-                        opacity: 0.5;
-                        filter: alpha(opacity=50);
-                        background-size: contain !important;
-                    }
-                    
-                    .sold {
-                        background: url('" . esc_url( MDS_CORE_URL ) . "images/sold_block.png') no-repeat;
-                    }
-                    
-                    .reserved {
-                        background: url('" . esc_url( MDS_CORE_URL ) . "images/reserved_block.png') no-repeat;
-                    }
-
-                    .ordered {
-                        background: url('" . esc_url( MDS_CORE_URL ) . "images/ordered_block.png') no-repeat;
-                    }
-                    
-                    .ordered {
-                        background: url('" . esc_url( MDS_CORE_URL ) . "images/ordered_block.png') no-repeat;
-                    }
-                    
-                    .onorder {
-                        background: url('" . esc_url( MDS_CORE_URL ) . "images/not_for_sale_block.png') no-repeat;
-                    }
-                    
-                    .free {
-                        background: url('" . esc_url( MDS_CORE_URL ) . "images/block.png') no-repeat;
-                        cursor: pointer;
-                    }
-                    
-                    .loading {
-                        width: 32px;
-                        height: 32px;
-                        position: absolute;
-                        top: 5%;
-                        left: calc(50% - 16px);
-                        z-index: 10000;
-                    }
-                    
-                    .selection-area {
-                        background: rgba(254, 202, 64, 0.33);
-                        border: 1px solid rgba(135, 110, 42, 0.33);
-                    }
-                    
-                    .selected {
-                        outline: 1px solid rgba(0, 0, 0, 0.45);
-                    }"
+			self::get_inline_css()
 		);
 	}
 
@@ -160,13 +101,6 @@ class NFS {
 	 */
 	public static function enqueue_scripts(): void {
 
-		require_once MDS_CORE_PATH . "include/init.php";
-		require_once MDS_CORE_PATH . 'admin/admin_common.php';
-
-		global $f2;
-
-		$BID = $f2->bid();
-
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'jquery-ui-core' );
 		wp_enqueue_script( 'jquery-ui-button' );
@@ -174,40 +108,17 @@ class NFS {
 		wp_enqueue_script( 'jquery-form' );
 		wp_enqueue_script( 'viselect', MDS_CORE_URL . 'js/third-party/viselect.umd.js', [], filemtime( MDS_CORE_PATH . "/js/third-party/viselect.umd.js" ) );
 
-		if ( WP_ENABLED == 'YES' ) {
-			$mds_site_url = WP_URL;
-		} else {
-			$mds_site_url = MDS_CORE_URL;
-		}
-
-		wp_add_inline_script( 'mds-admin-js',
-			"window.mds_data = {
-        ajax: '" . MDS_CORE_URL . "ajax.php',
-        mds_site_url: '" . esc_url( $mds_site_url ) . "',
-        BASE_HTTP_PATH: '" . MDS_CORE_URL . "'
-        };",
-			'before' );
-		wp_register_script( 'mds-admin-js', MDS_CORE_URL . 'admin/js/admin-wp.js', [ 'jquery', 'jquery-ui-core', 'jquery-form', 'jquery-form' ], filemtime( MDS_CORE_PATH . "/admin/js/admin-wp.js" ) );
-		wp_localize_script( 'mds-admin-js', 'MDS', [
-			'ajax'            => MDS_CORE_URL . 'ajax.php',
-			'mds_site_url'    => esc_url( $mds_site_url ),
-			'adminpost'       => admin_url( 'admin-post.php' ),
-			'mds_admin_nonce' => wp_create_nonce( 'mds_admin_nonce' ),
-			'MDS_BASE_URL'    => MDS_BASE_URL,
-		] );
-		wp_enqueue_script( 'mds-admin-js' );
-
-		wp_register_script( 'mds-nfs-js', MDS_BASE_URL . 'src/Assets/js/nfs.js', [ 'jquery', 'jquery-ui-core', 'jquery-ui-button', 'jquery-ui-dialog', 'jquery-form', 'viselect', 'mds-admin-js' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/nfs.js' ), true );
+		wp_register_script( 'mds-nfs-js', MDS_BASE_URL . 'src/Assets/js/nfs.min.js', [ 'jquery', 'jquery-ui-core', 'jquery-ui-button', 'jquery-ui-dialog', 'jquery-form', 'viselect' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/nfs.min.js' ), true );
 		wp_localize_script( 'mds-nfs-js', 'MDS', [
 			'ajaxurl'       => admin_url( 'admin-ajax.php' ),
 			'adminpost'     => admin_url( 'admin-post.php' ),
 			'mds_nfs_nonce' => wp_create_nonce( 'mds_nfs_nonce' ),
 			'MDS_BASE_URL'  => MDS_BASE_URL,
 			'lang'          => [
-				'success'       => __( 'Success!', 'milliondollarscript' ),
-				'error'         => __( 'Error!', 'milliondollarscript' ),
-				'reset'         => __( 'Reset!', 'milliondollarscript' ),
-				'reset_message' => __( 'This will unselect all Not For Sale blocks. Are you sure you want to do this?', 'milliondollarscript' ),
+				'success'       => Language::get( 'Success!' ),
+				'error'         => Language::get( 'Error!' ),
+				'reset'         => Language::get( 'Reset!' ),
+				'reset_message' => Language::get( 'This will unselect all Not For Sale blocks. Are you sure you want to do this?' ),
 			],
 		] );
 		wp_enqueue_script( 'mds-nfs-js' );
@@ -236,7 +147,7 @@ class NFS {
 	 *
 	 * @return void
 	 */
-	#[NoReturn] public static function ajax_save(): void {
+	public static function ajax_save(): void {
 		check_ajax_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -254,12 +165,9 @@ class NFS {
 		}
 
 		if ( ! $addingnfs && ! $removingnfs ) {
-			$error = new \WP_Error( '406', __( "You haven't made any changes to save!", 'milliondollarscript' ) );
+			$error = new \WP_Error( '406', Language::get( "You haven't made any changes to save!" ) );
 			wp_send_json_error( $error );
 		}
-
-		require_once MDS_CORE_PATH . "include/init.php";
-		require_once MDS_CORE_PATH . 'admin/admin_common.php';
 
 		@ini_set( 'max_execution_time', 10000 );
 		@ini_set( 'max_input_vars', 10002 );
@@ -280,7 +188,7 @@ class NFS {
 		$blank_block = $imagine->create( $block_size, $color );
 
 		if ( $banner_data['NFS_COVERED'] == "N" ) {
-			$usr_nfs_block = $imagine->load( $banner_data['USR_NFS_BLOCK'] );
+			$usr_nfs_block     = $imagine->load( $banner_data['USR_NFS_BLOCK'] );
 			$default_nfs_block = $blank_block->copy();
 			$usr_nfs_block->resize( $block_size );
 			$default_nfs_block->paste( $usr_nfs_block, $zero_point );
@@ -408,7 +316,9 @@ class NFS {
 
 					$wpdb->query( $sql );
 
-					unset( $data );
+					if ( $banner_data['NFS_COVERED'] == "Y" ) {
+						unset( $data );
+					}
 				}
 
 				if ( $removingnfs && in_array( $cell, $remnfs ) ) {
@@ -426,7 +336,7 @@ class NFS {
 		publish_image( $BID );
 		process_map( $BID );
 
-		wp_send_json_success( self::get_html() );
+		wp_send_json_success( [ 'css' => self::get_inline_css(), 'html' => self::get_html() ] );
 	}
 
 	/**
@@ -434,15 +344,12 @@ class NFS {
 	 *
 	 * @return void
 	 */
-	#[NoReturn] public static function ajax_reset(): void {
+	public static function ajax_reset(): void {
 		check_ajax_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			self::no_perms();
 		}
-
-		require_once MDS_CORE_PATH . "include/init.php";
-		require_once MDS_CORE_PATH . 'admin/admin_common.php';
 
 		global $wpdb, $f2;
 
@@ -460,18 +367,15 @@ class NFS {
 		publish_image( $BID );
 		process_map( $BID );
 
-		wp_send_json_success( self::get_html() );
+		wp_send_json_success( [ 'css' => self::get_inline_css(), 'html' => self::get_html() ] );
 	}
 
-	#[NoReturn] public static function ajax_covered_image(): void {
+	public static function ajax_covered_image(): void {
 		check_ajax_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			self::no_perms();
 		}
-
-		require_once MDS_CORE_PATH . "include/init.php";
-		require_once MDS_CORE_PATH . 'admin/admin_common.php';
 
 		global $f2;
 
@@ -487,7 +391,7 @@ class NFS {
 	 *
 	 * @return void
 	 */
-	#[NoReturn] public static function form_response(): void {
+	public static function form_response(): void {
 		check_admin_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -496,16 +400,90 @@ class NFS {
 
 		status_header( 200 );
 
-		wp_send_json_success( self::get_html() );
+		wp_send_json_success( [ 'css' => self::get_inline_css(), 'html' => self::get_html() ] );
 	}
 
-	#[NoReturn] public static function no_perms(): void {
-		$error = new \WP_Error( '403', __( "Insufficient permissions!", 'milliondollarscript' ) );
+	public static function no_perms(): void {
+		$error = new \WP_Error( '403', Language::get( "Insufficient permissions!" ) );
 		wp_send_json_error( $error );
 		wp_die();
 	}
 
-	public static function get_html(): bool|string {
+	public static function get_inline_css(): string {
+
+		global $f2;
+		$BID         = $f2->bid();
+		$banner_data = load_banner_constants( $BID );
+
+		return ".grid {
+                        position: relative;
+                        background-size: contain;
+                        z-index: 0;
+                        width: " . $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] . "px;
+                        height: " . $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] . "px;
+                        user-select: none;
+                    }
+                    
+                    .block_row {
+                        clear: both;
+                        display: block;
+                    }
+                    
+                    .block {
+                        white-space: nowrap;
+                        width: " . $banner_data['BLK_WIDTH'] . "px;
+                        height: " . $banner_data['BLK_HEIGHT'] . "px;
+                        float: left;
+                        opacity: 0.5;
+                        filter: alpha(opacity=50);
+                        background-size: contain !important;
+                    }
+                    
+                    .sold {
+                        background: url('" . esc_url( MDS_CORE_URL ) . "images/sold_block.png') no-repeat;
+                    }
+                    
+                    .reserved {
+                        background: url('" . esc_url( MDS_CORE_URL ) . "images/reserved_block.png') no-repeat;
+                    }
+
+                    .ordered {
+                        background: url('" . esc_url( MDS_CORE_URL ) . "images/ordered_block.png') no-repeat;
+                    }
+                    
+                    .ordered {
+                        background: url('" . esc_url( MDS_CORE_URL ) . "images/ordered_block.png') no-repeat;
+                    }
+                    
+                    .onorder {
+                        background: url('" . esc_url( MDS_CORE_URL ) . "images/not_for_sale_block.png') no-repeat;
+                    }
+                    
+                    .free {
+                        background: url('" . esc_url( MDS_CORE_URL ) . "images/block.png') no-repeat;
+                        cursor: pointer;
+                    }
+                    
+                    .loading {
+                        width: 32px;
+                        height: 32px;
+                        position: absolute;
+                        top: 5%;
+                        left: calc(50% - 16px);
+                        z-index: 10000;
+                    }
+                    
+                    .selection-area {
+                        background: rgba(254, 202, 64, 0.33);
+                        border: 1px solid rgba(135, 110, 42, 0.33);
+                    }
+                    
+                    .selected {
+                        outline: 1px solid rgba(0, 0, 0, 0.45);
+                    }";
+	}
+
+	public static function get_html(): string {
 		ob_start();
 		self::html();
 		$html = ob_get_contents();
@@ -518,6 +496,15 @@ class NFS {
 	 * Output NFS page HTML.
 	 */
 	public static function html(): void {
-		require_once MDS_BASE_PATH . "src/Html/NFS.php";
+		?>
+        <div class="admin-container">
+			<?php require_once MDS_CORE_PATH . "admin/admin_menu.php"; ?>
+            <div class="admin-content">
+                <div class="admin-content-inner">
+					<?php require_once MDS_BASE_PATH . "src/Html/NFS.php"; ?>
+                </div>
+            </div>
+        </div>
+		<?php
 	}
 }

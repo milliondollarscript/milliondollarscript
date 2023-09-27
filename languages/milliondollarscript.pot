@@ -1,0 +1,977 @@
+# Million Dollar Script.
+# Copyright (C) 2023 Ryan Rhode
+# This file is distributed under the GNU/GPL v3.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Million Dollar Script Two 2.5.0\n"
+"Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
+"Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
+"Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2023-06-19 09:40-0500\n"
+"PO-Revision-Date: 2023-06-19 09:40-0500\n"
+"X-Generator: Million Dollar Script Two 2.5.0\n"
+"X-Domain: milliondollarscript\n"
+"Language: English\n"
+
+msgid "\"Completed\" Orders - Orders where the transaction was successfully completed.<br />\n\"Confirmed\" Orders - Orders confirmed by you, but the transaction has not been completed.<br />\n\"Pending\" Orders - Orders confirmed by you, but the transaction has not been approved.<br />\n\"Cancelled\" Orders - Cancelled by the administrator.<br />\n\"Expired\" Orders - Pixels were expired after the specified term. You can renew this order.<br />"
+msgstr ""
+
+msgid "%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)"
+msgstr ""
+
+msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3. See %s for license information."
+msgstr ""
+
+msgid "(Maximum upload size possible:"
+msgstr ""
+
+msgid "- <a href=\"%ACCOUNT_URL%\">Edit Account Details</a>: Edit your personal details, change your password.<br />"
+msgstr ""
+
+msgid "- <a href=\"%HISTORY_URL%\">View Orders</a>: View your order history, and status of each order.<br />"
+msgstr ""
+
+msgid "- <a href=\"%MANAGE_URL%\">Manage</a>: Manage pixels owned by you.<br />"
+msgstr ""
+
+msgid "- <a href=\"%ORDER_URL%\">Order</a>: Choose and order new pixels.<br />"
+msgstr ""
+
+msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
+msgstr ""
+
+msgid "1 block at a time"
+msgstr ""
+
+msgid "2.5.0"
+msgstr ""
+
+msgid "4 blocks at a time"
+msgstr ""
+
+msgid "6 blocks at a time"
+msgstr ""
+
+msgid "<b>Upload Your pixels</b> -> Write Your Ad -> Confirm -> Payment -> Thank you!"
+msgstr ""
+
+msgid "<div class=\"fancy-heading\">Here is what you can do</div>"
+msgstr ""
+
+msgid "<div class=\"fancy-heading\">Welcome to your account</div>"
+msgstr ""
+
+msgid "<h3>Instructions:</h3>\n<p>\nEach square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). Select the blocks that you want, and then press the 'Buy Pixels Now' button.<br /><br />\n- Click on a White block to select it.<br />\n- Green blocks are selected by you.<br />\n- Click on a Green block to un-select.<br />\n- Red blocks have been sold.<br />\n- Yellow blocks are reserved by someone else.<br />\n- Orange have been ordered by you.<br />\n- Click the 'Buy Pixels Now' button below when you are finished.<br />\n</p>"
+msgstr ""
+
+msgid "<h3>Main Configuration</h3>\n<p>Options on this page affect the running of the pixel advertising system.</p>\n<p><b>Tip:</b> Looking for where to settings for the grid? It is set in \"Pixel Inventory\" -> <a href=\"%MANAGE_GRIDS_URL%\">Manage Grids</a>. Click on Edit to edit the grid parameters.</p>"
+msgstr ""
+
+msgid "<h3>Please write your advertisement and click \"Save Ad\" when done.</h3>"
+msgstr ""
+
+msgid "<p>- Upload a GIF, JPEG or PNG graphics file<br/>\n- Click \"Browse\" to find your file on your computer, then click \"Upload\".<br/>\n- Once uploaded, you will be able to position your file over the grid.<br/></p>"
+msgstr ""
+
+msgid "<p>1. <a href=\"%ORDER_URL%?BID=%BID%\">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
+msgstr ""
+
+msgid "<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
+msgstr ""
+
+msgid "<p><b>Your Pixels:</b></p>"
+msgstr ""
+
+msgid "<p><strong>Upload your pixels:</strong></p>"
+msgstr ""
+
+msgid "<p>Here you can edit your ad or change your pixels.</p>"
+msgstr ""
+
+msgid "<p>Here you can manage your pixels. <a href=\"%MANAGE_URL%\">Manage Pixels</a><p>"
+msgstr ""
+
+msgid "<p>Questions? Contact Us: <span id=\"emailPlaceholder\"></span></p>"
+msgstr ""
+
+msgid "<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgstr ""
+
+msgid "<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href=\"%ORDER_URL%\">Order Pixels</a> / <a href=\"%HISTORY_URL%\">View Order History</a></p>"
+msgstr ""
+
+msgid "<p>You own %PIXEL_COUNT% blocks.</p>"
+msgstr ""
+
+msgid "<p>Your pixels were clicked %CLICK_COUNT% times.</p>"
+msgstr ""
+
+msgid "<p>Your pixels were viewed %VIEW_COUNT% times.</p>"
+msgstr ""
+
+msgid "A WordPress plugin with Million Dollar Script Two embedded in it."
+msgstr ""
+
+msgid "Account Page"
+msgstr ""
+
+msgid "Action"
+msgstr ""
+
+msgid "Adam Malinowski - Project Founder"
+msgstr ""
+
+msgid "Admin"
+msgstr ""
+
+msgid "Ads(s)"
+msgstr ""
+
+msgid "Align to the left, right or center."
+msgstr ""
+
+msgid "Alignment"
+msgstr ""
+
+msgid "Amount"
+msgstr ""
+
+msgid "And the many members of the community who have contributed bug reports,feature suggestions and fixes."
+msgstr ""
+
+msgid "Approve Pixels"
+msgstr ""
+
+msgid "Approve for all selected, are you sure?"
+msgstr ""
+
+msgid "Approved"
+msgstr ""
+
+msgid "Auto-approve"
+msgstr ""
+
+msgid "Awaiting Renewal"
+msgstr ""
+
+msgid "Backgrounds"
+msgstr ""
+
+msgid "Block Preview"
+msgstr ""
+
+msgid "Buy Pixels Now"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cancel, are you sure?"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History."
+msgstr ""
+
+msgid "Change Pixels"
+msgstr ""
+
+msgid "Checking this will remove all duplicate variations on the MDS product when the options are saved."
+msgstr ""
+
+msgid "Checkout URL"
+msgstr ""
+
+msgid "Clear Orders"
+msgstr ""
+
+msgid "Clear cart"
+msgstr ""
+
+msgid "Clear the cart when a MDS product is added to it."
+msgstr ""
+
+msgid "Click Count"
+msgstr ""
+
+msgid "Click Reports"
+msgstr ""
+
+msgid "Clicks:"
+msgstr ""
+
+msgid "Complete Order"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Configuration"
+msgstr ""
+
+msgid "Confirm & Pay"
+msgstr ""
+
+msgid "Confirm Now"
+msgstr ""
+
+msgid "Confirm Orders Page"
+msgstr ""
+
+msgid "Confirmed"
+msgstr ""
+
+msgid "Current GMT Time: %s"
+msgstr ""
+
+msgid "Current Local Time: %s"
+msgstr ""
+
+msgid "Current Server Time: %s"
+msgstr ""
+
+msgid "Current orders:"
+msgstr ""
+
+msgid "Customer Accounts"
+msgstr ""
+
+msgid "Customer Admin"
+msgstr ""
+
+msgid "Customer Name"
+msgstr ""
+
+msgid "Database v%s"
+msgstr ""
+
+msgid "Date of Purchase"
+msgstr ""
+
+msgid "Date:"
+msgstr ""
+
+msgid "Dear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYou have successfully placed an order at %SITE_NAME%.<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Confirmed<br />\n--------------------------<br />\n<br />\nYour order will be Completed as soon as the payment is cleared.<br />\n<br />\nOnce your order is Completed, log into your account and<br />\nupload your pixels and link.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "Delete data on uninstall?"
+msgstr ""
+
+msgid "Deleted"
+msgstr ""
+
+msgid "Disapprove Pixels"
+msgstr ""
+
+msgid "Disapprove all selected, are you sure?"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Edit Order"
+msgstr ""
+
+msgid "Edit Your Ad:"
+msgstr ""
+
+msgid "Edit your Ad / Change your pixels"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Emails"
+msgstr ""
+
+msgid "Enable Capabilities"
+msgstr ""
+
+msgid "Enable Permissions?"
+msgstr ""
+
+msgid "Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the \"WooCommerce\" payment module in MDS and create a product in WC for it."
+msgstr ""
+
+msgid "Enable expiration of orders."
+msgstr ""
+
+msgid "Enable permission system for user roles and the following capabilities: mds_my_account, mds_order_pixels, mds_manage_pixels, mds_order_history, mds_logout"
+msgstr ""
+
+msgid "Enable the Confirm Order page which shows after filling out the fields and before the checkout page."
+msgstr ""
+
+msgid "Erase"
+msgstr ""
+
+msgid "Error!"
+msgstr ""
+
+msgid "Expire Orders"
+msgstr ""
+
+msgid "Expired"
+msgstr ""
+
+msgid "Expires"
+msgstr ""
+
+msgid "Expires:"
+msgstr ""
+
+msgid "Forgot Password Page"
+msgstr ""
+
+msgid "Get Shortcodes"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "Grid ID"
+msgstr ""
+
+msgid "Grid Name:"
+msgstr ""
+
+msgid "Grid id"
+msgstr ""
+
+msgid "Height"
+msgstr ""
+
+msgid "Height of the iframe. Examples: 1000px or 100% or auto"
+msgstr ""
+
+msgid "How to open links in the popup when they are clicked."
+msgstr ""
+
+msgid "How to open the login page when shown. When set to Current Page it will attempt to load the login page into the current page content. If that fails or it's set to Redirect then it will redirect to the default WP login page. If you want to further customize the login/registration page beyond the options here then you can install a plugin like Ultimate Member and set the URLs here to the pages provided by it such as Account, Register, Login, and Forgot Password pages."
+msgstr ""
+
+msgid "If Update then updates will be done normally like all other plugins. If Don't update then no updates will be looked for. If Development then updates will be checked for in the development branch."
+msgstr ""
+
+msgid "If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled."
+msgstr ""
+
+msgid "Image"
+msgstr ""
+
+msgid "Image Blending - Allows you to specify an image to blend in with your grid in the background.<br />\n(This functionality requires GD 2.0.1 or later)<br />\n- Upload PNG true color image<br />\n- The image must have an alpha channel (Eg. PNG image created with Photoshop with blending options set).<br />\n- See <a href=\"%BACKGROUND_URL%\" target=\"_blank\">background.png</a> as an example of an image with an alpha channel set to 50%.<br />\n- <a href=\"https://milliondollarscript.com/documentation/alpha-blending-tutorial/\" target=\"_blank\">See the tutorial</a> to get an idea how to create background images using Photoshop.\n"
+msgstr ""
+
+msgid "In progress"
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+msgid "Input the MDS grid id here."
+msgstr ""
+
+msgid "Invalid request."
+msgstr ""
+
+msgid "License"
+msgstr ""
+
+msgid "Link Target"
+msgstr ""
+
+msgid "Link Text(s) & Link URL(s)"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "List Customers"
+msgstr ""
+
+msgid "Login Header Image"
+msgstr ""
+
+msgid "Login Header Text"
+msgstr ""
+
+msgid "Login Page"
+msgstr ""
+
+msgid "Login Page Target"
+msgstr ""
+
+msgid "Login Redirect"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Logout Redirect"
+msgstr ""
+
+msgid "MDS"
+msgstr ""
+
+msgid "Main"
+msgstr ""
+
+msgid "Main Config"
+msgstr ""
+
+msgid "Manage"
+msgstr ""
+
+msgid "Manage Grids"
+msgstr ""
+
+msgid "Manage Pixels"
+msgstr ""
+
+msgid "Manage your pixels"
+msgstr ""
+
+msgid "Map of Orders"
+msgstr ""
+
+msgid "Map:"
+msgstr ""
+
+msgid "Max Image Size"
+msgstr ""
+
+msgid "Max Popup Size"
+msgstr ""
+
+msgid "Million Dollar Script"
+msgstr ""
+
+msgid "Million Dollar Script Emails"
+msgstr ""
+
+msgid "Million Dollar Script Logo"
+msgstr ""
+
+msgid "Million Dollar Script Options"
+msgstr ""
+
+msgid "Million Dollar Script Two"
+msgstr ""
+
+msgid "Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience."
+msgstr ""
+
+msgid "Million Dollar Script logo"
+msgstr ""
+
+msgid "Million Dollar Script v%s"
+msgstr ""
+
+msgid "My Account"
+msgstr ""
+
+msgid "Never"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "New pixels published on %SITE_NAME%!<br />\n<br />\nGrid: %GRID_NAME%<br />\nUsername: %USER_LOGIN%<br />\n<br />\nURLS:<br />\n%URL_LIST%<br />\n<br />\n- To view and approve the pixels, please visit here:<br />\n<a href='%VIEW_URL%'>Click Here...</a><br />\n"
+msgstr ""
+
+msgid "No ads were found."
+msgstr ""
+
+msgid "Non-current orders:"
+msgstr ""
+
+msgid "Not Approved"
+msgstr ""
+
+msgid "Not For Sale"
+msgstr ""
+
+msgid "Not Published"
+msgstr ""
+
+msgid "Note: Your pixels are now published and live!"
+msgstr ""
+
+msgid "Options"
+msgstr ""
+
+msgid "Order Completed"
+msgstr ""
+
+msgid "Order Completed Renewal"
+msgstr ""
+
+msgid "Order Completed Renewal Content"
+msgstr ""
+
+msgid "Order Completed Renewal Subject"
+msgstr ""
+
+msgid "Order Completed Subject"
+msgstr ""
+
+msgid "Order Confirmed"
+msgstr ""
+
+msgid "Order Confirmed Content"
+msgstr ""
+
+msgid "Order Confirmed Subject"
+msgstr ""
+
+msgid "Order Date"
+msgstr ""
+
+msgid "Order Expired"
+msgstr ""
+
+msgid "Order Expired Content"
+msgstr ""
+
+msgid "Order Expired Subject"
+msgstr ""
+
+msgid "Order History"
+msgstr ""
+
+msgid "Order ID"
+msgstr ""
+
+msgid "Order ID:"
+msgstr ""
+
+msgid "Order Pending"
+msgstr ""
+
+msgid "Order Pending Content"
+msgstr ""
+
+msgid "Order Pending Subject"
+msgstr ""
+
+msgid "Order Pixels"
+msgstr ""
+
+msgid "Order Published"
+msgstr ""
+
+msgid "Order Published Content"
+msgstr ""
+
+msgid "Order Published Subject"
+msgstr ""
+
+msgid "OrderID"
+msgstr ""
+
+msgid "Orders Cancelled"
+msgstr ""
+
+msgid "Orders Completed"
+msgstr ""
+
+msgid "Orders Waiting"
+msgstr ""
+
+msgid "Orders: Cancelled"
+msgstr ""
+
+msgid "Orders: Completed"
+msgstr ""
+
+msgid "Orders: Deleted"
+msgstr ""
+
+msgid "Orders: Expired"
+msgstr ""
+
+msgid "Orders: Reserved"
+msgstr ""
+
+msgid "Orders: Waiting"
+msgstr ""
+
+msgid "Other:"
+msgstr ""
+
+msgid "Outgoing Email"
+msgstr ""
+
+msgid "Packages"
+msgstr ""
+
+msgid "Pay Now"
+msgstr ""
+
+msgid "Payment Gateway"
+msgstr ""
+
+msgid "Pixel Admin"
+msgstr ""
+
+msgid "Pixel Info"
+msgstr ""
+
+msgid "Pixel Inventory"
+msgstr ""
+
+msgid "Pixels"
+msgstr ""
+
+msgid "Pixels Waiting for approval"
+msgstr ""
+
+msgid "Please Wait! Reserving Pixels..."
+msgstr ""
+
+msgid "Please upload an image."
+msgstr ""
+
+msgid "Plugin updates"
+msgstr ""
+
+msgid "Popup Template"
+msgstr ""
+
+msgid "Popup Text"
+msgstr ""
+
+msgid "Price Zones"
+msgstr ""
+
+msgid "Price:"
+msgstr ""
+
+msgid "Privileged"
+msgstr ""
+
+msgid "Privileged users bypass payment for pixels."
+msgstr ""
+
+msgid "Process Grid Images immediately after approval / disapproval"
+msgstr ""
+
+msgid "Process Pixels"
+msgstr ""
+
+msgid "Product"
+msgstr ""
+
+msgid "Project Contributors"
+msgstr ""
+
+msgid "Published"
+msgstr ""
+
+msgid "Quantity"
+msgstr ""
+
+msgid "Quantity:"
+msgstr ""
+
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Expired' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have expired and will<br /> \nno longer be show when the grid is next updated.<br />\nYou may renew your order, Here is how to do it:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Order History'<br />\n<br />\n3. Click on 'Renew' on the Order shown as 'expired'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Expired<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order was completed on %SITE_NAME%.<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Completed<br />\n--------------------------.<br />\n<br />\nPlease Log into your account and<br />\nupload your pixels and link.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FNAME% %LNAME%,<br />\n<br />\nYour order status changed to 'Pending' on %SITE_NAME%.<br />\n<br />\nThis means that you payment was recived, and the funds<br />\nare clearing. Once the funds are cleared, you will be<br />\nable to manage your pixels.<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Pending<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FNAME% %LNAME%,<br />\n<br />\nYour order was renewed on %SITE_NAME%.<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID% (Carried over from %ORIGINAL_ORDER_ID%)<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Completed<br />\n--------------------------.<br />\n<br />\nPlease Log into your account and<br />\nupload your pixels and link.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "Register Page"
+msgstr ""
+
+msgid "Remember to process your Grid Image(s) <a href=\"%PROCESS_PIXELS_URL%\">here</a>"
+msgstr ""
+
+msgid "Remove duplicate variations"
+msgstr ""
+
+msgid "Renewed"
+msgstr ""
+
+msgid "Reports"
+msgstr ""
+
+msgid "Reserved"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "Reset!"
+msgstr ""
+
+msgid "Ryan Rhode"
+msgstr ""
+
+msgid "Ryan Rhode - Developer"
+msgstr ""
+
+msgid "Save Ad"
+msgstr ""
+
+msgid "Select Grid:"
+msgstr ""
+
+msgid "Select Pixels"
+msgstr ""
+
+msgid "Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability."
+msgstr ""
+
+msgid "Select grid:"
+msgstr ""
+
+msgid "Selected Grid:"
+msgstr ""
+
+msgid "Selection Mode:"
+msgstr ""
+
+msgid "Setting to Yes will automatically approve orders before payments are verified by an admin."
+msgstr ""
+
+msgid "Show All"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Status:"
+msgstr ""
+
+msgid "Success!"
+msgstr ""
+
+msgid "Supported formats:"
+msgstr ""
+
+msgid "System Information"
+msgstr ""
+
+msgid "Text to display in the popup that shows when the block is interacted with."
+msgstr ""
+
+msgid "The URL to link to."
+msgstr ""
+
+msgid "The URL to redirect users to after login."
+msgstr ""
+
+msgid "The URL to redirect users to after logout."
+msgstr ""
+
+msgid "The URL to the forgot password page. If left empty will redirect to the default WP forgot password page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full forgot password page URL here."
+msgstr ""
+
+msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (note that this option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
+msgstr ""
+
+msgid "The body of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "The login header image used only on the default WP login page. If this isn't set then it will try to use the theme logo. If that isn't set it'll show nothing but the login box unless you set the Login Header Text below. A good size for this image is 320 X 100 pixels."
+msgstr ""
+
+msgid "The login page to redirect users to. If left empty will redirect to the default WP login. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full login URL here."
+msgstr ""
+
+msgid "The maximum image size in pixels. The system will attempt to resize images larger than this."
+msgstr ""
+
+msgid "The maximum popup size in pixels. The fields will be scaled to fit within this width automatically."
+msgstr ""
+
+msgid "The page where users can modify their account details. If left empty will redirect to the default WP profile page. If WooCommerce integration is enabled it will go to the WooCommerce My Account page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here."
+msgstr ""
+
+msgid "The page where users can register for an account. If left empty will redirect to the default WP registration page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here."
+msgstr ""
+
+msgid "The product for MDS to use. You should create a new product in WooCommerce and tick the Million Dollar Script Pixels checkbox on it."
+msgstr ""
+
+msgid "The subject line of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "The subject line of the email sent when an order has completed renewal. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %ORIGINAL_ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "The subject line of the email sent when an order is expired. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "The subject line of the email sent when an order is pending. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "The subject line of the email sent when an order is published. Placeholders: %SITE_NAME%, %GRID_NAME%, %FIRST_NAME%, %LAST_NAME%, %USER_LOGIN%, %URL_LIST%, %VIEW_URL%"
+msgstr ""
+
+msgid "The text to show above the Login page. This will only be shown if there is no Login Header Image set above."
+msgstr ""
+
+msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high."
+msgstr ""
+
+msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />"
+msgstr ""
+
+msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks."
+msgstr ""
+
+msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />"
+msgstr ""
+
+msgid "This email is sent when an order has been completed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "This email is sent when an order has completed renewal. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %ORIGINAL_ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "This email is sent when an order is expired. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "This email is sent when an order is expired. Placeholders: %SITE_NAME%, %GRID_NAME%, %FIRST_NAME%, %LAST_NAME%, %USER_LOGIN%, %URL_LIST%, %VIEW_URL%"
+msgstr ""
+
+msgid "This email is sent when an order is pending. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "This is only useful to add missing strings to the language file and should be left disabled due to performance reasons. This will search for any missing strings being processed on each page load and add them to the languages/milliondollarscript.pot file. This is useful for translation or editing the language. To reset the language file and generate a fresh one do the following: 1. Delete the languages/milliondollarscript.pot file and set this to off and save. 2. Set back to on and save. 3. Browse every page and possible screen, option, etc. in MDS to be sure to get all the language strings."
+msgstr ""
+
+msgid "This is the template for the popup that displays when a block on the grid is interacted with. Placeholders: %ALT_TEXT%, %URL%, %IMAGE%"
+msgstr ""
+
+msgid "This value must match the class name/m parameter of the MDS payment module used to pay. You must have a unique thank-you page for each enabled MDS payment module."
+msgstr ""
+
+msgid "This will cost you %TOTAL_COST%."
+msgstr ""
+
+msgid "This will unselect all Not For Sale blocks. Are you sure you want to do this?"
+msgstr ""
+
+msgid "To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\""
+msgstr ""
+
+msgid "Top Clicks"
+msgstr ""
+
+msgid "Top Customers"
+msgstr ""
+
+msgid "Transaction Log"
+msgstr ""
+
+msgid "Transactions:"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Type of MDS component to load."
+msgstr ""
+
+msgid "URL"
+msgstr ""
+
+msgid "Update Language"
+msgstr ""
+
+msgid "Upload"
+msgstr ""
+
+msgid "Upload <b>True-color PNG Image</b> to blend:"
+msgstr ""
+
+msgid "Upload Your pixels -> <b>Write Your Ad</b> -> Confirm -> Payment -> Thank you!"
+msgstr ""
+
+msgid "Upload Your pixels -> Write Your Ad -> <b>Confirm</b> -> Payment -> Thank you!"
+msgstr ""
+
+msgid "Upload your pixel image"
+msgstr ""
+
+msgid "Username & ID"
+msgstr ""
+
+msgid "View Count"
+msgstr ""
+
+msgid "View Pixels..."
+msgstr ""
+
+msgid "View Site"
+msgstr ""
+
+msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
+msgstr ""
+
+msgid "WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgstr ""
+
+msgid "Waiting"
+msgstr ""
+
+msgid "Width"
+msgstr ""
+
+msgid "Width of the iframe. Examples: 1000px or 100% or auto"
+msgstr ""
+
+msgid "WooCommerce"
+msgstr ""
+
+msgid "WooCommerce Integration"
+msgstr ""
+
+msgid "Write Your Ad"
+msgstr ""
+
+msgid "X,Y"
+msgstr ""
+
+msgid "You have no blocks selected."
+msgstr ""
+
+msgid "You might want to run a backup before doing this. Are you sure?"
+msgstr ""
+
+msgid "You might want to run a backup before doing this. Click the Delete button below if you wish to proceed.</p>"
+msgstr ""
+
+msgid "You must select a block adjacent to another one."
+msgstr ""
+
+msgid "Your Uploaded Pixels"
+msgstr ""
+
+msgid "Your blocks are shown on the grid below.<br />\n- Click your block to edit it. Only your blocks are shown.<br />\n- <b>Red</b> blocks have no pixels yet. Click on them to upload your pixels.<br />"
+msgstr ""
+
+msgid "Your uploaded pixels:"
+msgstr ""
+
+msgid "https://milliondollarscript.com"
+msgstr ""
+
+msgid "pixels"
+msgstr ""
+

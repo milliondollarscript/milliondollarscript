@@ -1,0 +1,161 @@
+<?php
+/*
+ * Million Dollar Script Two
+ *
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
+ */
+
+namespace MillionDollarScript\Classes;
+
+defined( 'ABSPATH' ) or exit;
+
+class Payment {
+
+	/**
+	 * Handles the checkout process.
+	 *
+	 * @return void
+	 */
+	public static function handle_checkout(): void {
+		$checkout_url = Options::get_option( 'checkout-url' );
+		if ( empty( $checkout_url ) ) {
+			if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+				if ( Options::get_option( 'woocommerce' ) == 'yes' ) {
+
+					if ( ( $_REQUEST['order_id'] != '' ) ) {
+
+						if ( ! is_user_logged_in() ) {
+							Language::out( 'Error: You must be logged in to view this page' );
+						} else {
+
+							$order_id = intval( $_REQUEST['order_id'] );
+
+							// Save order id in cookie for later
+							$_COOKIE['mds_order_id'] = $order_id;
+
+							$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+							$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
+							$row = mysqli_fetch_array( $result );
+
+							if ( Options::get_option( 'auto-approve' ) == "yes" ) {
+								complete_order( $row['user_id'], $order_id );
+								debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );
+							}
+
+							$banner_data = load_banner_constants( $row['banner_id'] );
+							$quantity    = intval( $row['quantity'] ) / intval( $banner_data['block_width'] ) / intval( $banner_data['block_height'] );
+
+							$variation_id = \MillionDollarScript\Classes\Functions::get_variation_id( $row['banner_id'] );
+							$product_id   = \MillionDollarScript\Classes\Functions::get_product_id();
+
+							WC()->session->set( "mds_order_id", $order_id );
+							WC()->session->set( "mds_variation_id", $variation_id );
+							WC()->session->set( "mds_quantity", $quantity );
+
+							$passed_validation = apply_filters( 'woocommerce_add_to_cart_validation', true, $product_id, $quantity );
+							if ( $passed_validation ) {
+								$cart         = WC()->cart;
+								$cart_id      = $cart->generate_cart_id( $product_id, $variation_id );
+								$cart_item_id = $cart->find_product_in_cart( $cart_id );
+
+								if ( $cart_item_id ) {
+									// Product exists in the cart, so just update the quantity
+									$cart->set_quantity( $cart_item_id, $quantity );
+								} else {
+									// Product is not in the cart, so add it
+									try {
+										$cart->add_to_cart( $product_id, $quantity, $variation_id );
+									} catch ( \Exception $e ) {
+									}
+								}
+
+								WC()->cart->calculate_totals();
+
+								wp_redirect( add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ) );
+							} else {
+								wc_add_notice( Language::get( 'There was a problem adding the product to the cart.' ), 'error' );
+								wp_redirect( wc_get_cart_url() );
+							}
+
+							exit;
+						}
+					}
+				} else {
+					self::default_message();
+
+					return;
+				}
+			} else {
+				self::default_message();
+
+				return;
+			}
+		} else {
+			if ( ( ( $_REQUEST['order_id'] != '' ) ) && str_contains( $checkout_url, '%' ) ) {
+				$order_id = intval( $_REQUEST['order_id'] );
+				$sql      = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+				$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
+				$row = mysqli_fetch_array( $result );
+
+				$checkout_url = str_replace(
+					[ '%AMOUNT%', '%CURRENCY%', '%QUANTITY%', '%ORDERID', '%USERID%', '%GRID%', '%PIXELID%' ],
+					[ $row['price'], $row['currency'], $row['quantity'], $row['order_id'], $row['user_id'], $row['banner_id'], $row['ad_id'] ],
+					$checkout_url
+				);
+			}
+
+			wp_safe_redirect( $checkout_url );
+			exit;
+		}
+	}
+
+	/**
+	 * Outputs default checkout messages for when WooCommerce integration isn't enabled.
+	 *
+	 * @return void
+	 */
+	private static function default_message(): void {
+		if ( Options::get_option( 'auto-approve' ) == 'yes' ) {
+			if ( ( $_REQUEST['order_id'] != '' ) ) {
+				if ( ! is_user_logged_in() ) {
+					Language::out( 'Error: You must be logged in to view this page' );
+				} else {
+
+					$order_id = intval( $_REQUEST['order_id'] );
+					$sql      = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+					$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
+					$row = mysqli_fetch_array( $result );
+
+					complete_order( $row['user_id'], $order_id );
+					debit_transaction( $order_id, $row['price'], $row['currency'], '', 'order', 'MDS' );
+				}
+			}
+
+			Language::out( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
+		} else {
+			Language::out( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+		}
+	}
+}

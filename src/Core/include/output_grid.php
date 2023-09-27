@@ -1,35 +1,36 @@
 <?php
 
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
+
+use MillionDollarScript\Classes\Config;
+
+defined( 'ABSPATH' ) or exit;
 
 /**
  * Output grid map
@@ -74,14 +75,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 		// Get the file extension if the file doesn't already have one
 		$ext = pathinfo( $file, PATHINFO_EXTENSION );
 		if ( empty( $ext ) ) {
-			$ext = "png";
-			if ( OUTPUT_JPEG == 'Y' ) {
-				$ext = "jpg";
-			} else if ( OUTPUT_JPEG == 'N' ) {
-				// defaults to png, set above
-			} else if ( OUTPUT_JPEG == 'GIF' ) {
-				$ext = "gif";
-			}
+			$ext = \MillionDollarScript\Classes\Utility::get_file_extension();
 		}
 
 		// TODO: Make it save the time somewhere when publishing or updating an order and use that instead of this since this will get slow
@@ -95,7 +89,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 		// Get the file path and url
 		$filename = "grid$BID-$checksum-$typehash";
 		$file     = $BANNER_PATH . $filename;
-		$fullfile = $file . '.' . $ext;
+		$fullfile = wp_normalize_path( $file . '.' . $ext );
 
 		//MillionDollarScript\Classes\Debug::output( $fullfile, 'log' );
 
@@ -137,7 +131,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 	// if ( class_exists( 'Imagick' ) ) {
 	// 	$imagine = new Imagine\Imagick\Imagine();
 	// } else if ( function_exists( 'gd_info' ) ) {
-		$imagine = new Imagine\Gd\Imagine();
+	$imagine = new Imagine\Gd\Imagine();
 	// }
 
 	$banner_data = load_banner_constants( $BID );
@@ -151,7 +145,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 
 	// default grid block
 	$default_block = $blank_block->copy();
-	$tmp_block     = $imagine->load( $banner_data['USR_GRID_BLOCK'] );
+	$tmp_block     = $imagine->load( $banner_data['GRID_BLOCK'] );
 	$tmp_block->resize( $block_size );
 	$default_block->paste( $tmp_block, $zero_point );
 
@@ -165,7 +159,11 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 				}
 				break;
 			case 'orders':
-				$show_orders = true;
+				$show_orders       = true;
+				$orders_grid_block = $blank_block->copy();
+				$tmp_block         = $imagine->load( $banner_data['USR_GRID_BLOCK'] );
+				$tmp_block->resize( $block_size );
+				$orders_grid_block->paste( $tmp_block, $zero_point );
 				break;
 			case 'grid':
 				// this is the default grid block created above
@@ -230,7 +228,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 				$and_user = " AND `user_id`=" . intval( $user );
 				break;
 			case 'not_my_reserved':
-				$and_not_user = " AND `user_id`!=" . intval( $_SESSION['MDS_ID'] );
+				$and_not_user = " AND `user_id`!=" . get_current_user_id();
 				break;
 			default:
 				break;
@@ -245,7 +243,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		// nfs covered images
-		if ( isset( $banner_data['NFS_COVERED'] )  == 'Y' ) {
+		if ( isset( $banner_data['NFS_COVERED'] ) == 'Y' ) {
 			$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id='" . intval( $BID ) . "'";
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
@@ -262,12 +260,12 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 				$block->resize( $block_size );
 
 				$blocks[ $row['block_id'] ] = 'nfs';
-				$nfs[ $row['block_id'] ] = $block;
+				$nfs[ $row['block_id'] ]    = $block;
 			}
 		} else {
 			while ( $row = mysqli_fetch_array( $result ) ) {
 				$blocks[ $row['block_id'] ] = 'nfs';
-				$nfs[ $row['block_id'] ] = $default_nfs_block;
+				$nfs[ $row['block_id'] ]    = $default_nfs_block;
 			}
 		}
 	}
@@ -279,7 +277,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		// nfs covered images
-		if ( isset( $banner_data['NFS_COVERED'] )  == 'Y' ) {
+		if ( isset( $banner_data['NFS_COVERED'] ) && $banner_data['NFS_COVERED'] == 'Y' ) {
 			$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id='" . intval( $BID ) . "'";
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
@@ -296,12 +294,12 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 				$block->resize( $block_size );
 
 				$blocks[ $row['block_id'] ] = 'nfs_front';
-				$nfs[ $row['block_id'] ] = $block;
+				$nfs[ $row['block_id'] ]    = $block;
 			}
 		} else {
 			while ( $row = mysqli_fetch_array( $result ) ) {
 				$blocks[ $row['block_id'] ] = 'nfs_front';
-				$nfs[ $row['block_id'] ] = $default_nfs_front_block;
+				$nfs[ $row['block_id'] ]    = $default_nfs_front_block;
 			}
 		}
 	}
@@ -326,7 +324,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 		}
 
 		// from temp_orders table
-		$sql = "SELECT blocks FROM " . MDS_DB_PREFIX . "temp_orders WHERE banner_id='" . intval( $BID ) . "'";
+		$sql = "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id='" . intval( $BID ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		while ( $row = mysqli_fetch_array( $result ) ) {
@@ -370,7 +368,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 			if ( strlen( $data ) != 0 ) {
 				$block = $imagine->load( base64_decode( $data ) );
 			} else {
-				$block = $default_block->copy();
+				$block = $orders_grid_block->copy();
 			}
 			$block->resize( $block_size );
 
@@ -392,7 +390,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 			if ( strlen( $data ) != 0 ) {
 				$block = $imagine->load( base64_decode( $data ) );
 			} else {
-				$block = $default_block->copy();
+				$block = $orders_grid_block->copy();
 			}
 			$block->resize( $block_size );
 
@@ -549,9 +547,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 	if ( isset( $show_price_zones_text ) ) {
 		$imagine = new Imagine\Gd\Imagine();
 
-		$zmap = $imagine->load($map);
+		$zmap = $imagine->load( $map );
 
-		unset($map);
+		unset( $map );
 
 		$row_c       = 0;
 		$col_c       = 0;
@@ -581,13 +579,16 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 	$ext     = "png";
 	$mime    = "png";
 	$options = array( 'png_compression_level' => 9 );
-	if ( OUTPUT_JPEG == 'Y' ) {
+
+	$OUTPUT_JPEG = Config::get( 'OUTPUT_JPEG' );
+
+	if ( $OUTPUT_JPEG == 'Y' ) {
 		$ext     = "jpg";
 		$mime    = "jpeg";
-		$options = array( 'jpeg_quality' => JPEG_QUALITY );
-	} else if ( OUTPUT_JPEG == 'N' ) {
+		$options = array( 'jpeg_quality' => Config::get( 'JPEG_QUALITY' ) );
+	} else if ( $OUTPUT_JPEG == 'N' ) {
 		// defaults to png, set above
-	} else if ( OUTPUT_JPEG == 'GIF' ) {
+	} else if ( $OUTPUT_JPEG == 'GIF' ) {
 		$ext     = "gif";
 		$mime    = "gif";
 		$options = array( 'flatten' => false );
@@ -595,7 +596,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 
 	// output
 	if ( $show ) {
-		if ( INTERLACE_SWITCH == 'YES' ) {
+		if ( Config::get( 'INTERLACE_SWITCH' ) == 'YES' ) {
 			$map->interlace( Imagine\Image\ImageInterface::INTERLACE_LINE );
 		}
 
@@ -603,7 +604,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 	} else {
 
 		$pathinfo = pathinfo( $file );
-		$filename = $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $pathinfo['filename'] . "." . $ext;
+		$filename = wp_normalize_path( $pathinfo['dirname'] . DIRECTORY_SEPARATOR . $pathinfo['filename'] . "." . $ext );
 		if ( ! touch( $filename ) ) {
 			$progress .= "<b>Warning:</b> The script does not have permission write to " . $filename . " or the directory does not exist<br>";
 		}

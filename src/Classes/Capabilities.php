@@ -1,12 +1,12 @@
 <?php
 
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 namespace MillionDollarScript\Classes;
@@ -33,7 +39,7 @@ class Capabilities {
 	public static function __callStatic( $name, $arguments ) {
 		if ( $name == 'enabled' ) {
 			if ( ! isset( self::$permissions_enabled ) ) {
-				self::$permissions_enabled = Options::get_option( 'permissions', true, 'options', null );
+				self::$permissions_enabled = Options::get_option( 'permissions', null, true, 'options' );
 			}
 
 			return self::enabled( $arguments[0] );
@@ -68,7 +74,7 @@ class Capabilities {
 			return false;
 		}
 
-		$capabilities = Options::get_option( 'capabilities', true );
+		$capabilities = Options::get_option( 'capabilities', null, true );
 
 		if ( isset( $capabilities ) && $capabilities !== false && in_array( $capability, $capabilities ) ) {
 			return true;

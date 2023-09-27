@@ -1,12 +1,12 @@
 <?php
 
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 namespace MillionDollarScript\Classes;
@@ -58,9 +64,65 @@ class WooCommerce {
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'add_to_cart_validation' ], 10, 5 );
 
 		add_action( 'woocommerce_before_calculate_totals', [ __CLASS__, 'before_calculate_totals' ] );
+
+		add_action( 'woocommerce_after_calculate_totals', [ __CLASS__, 'reset_quantity' ] );
+
+		add_filter( 'woocommerce_cart_item_quantity', [ __CLASS__, 'disable_quantity_field' ], 10, 3 );
+		add_filter( 'woocommerce_quantity_input_args', [ __CLASS__, 'disable_product_quantity_input' ], 10, 2 );
+
+		add_action( 'woocommerce_thankyou', [ __CLASS__, 'reset_session_variables' ], 10, 1 );
 	}
 
-	public static function before_calculate_totals( $cart_object ) {
+	public static function disable_product_quantity_input( $args, $product ) {
+		$product_id = \MillionDollarScript\Classes\Functions::get_product_id();
+		if ( $product->get_id() === $product_id ) {
+			$args['input_value'] = 1;
+			$args['max_value']   = 1;
+			$args['min_value']   = 1;
+		}
+
+		return $args;
+	}
+
+	public static function reset_session_variables( $order_id ): void {
+		$keys = [ 'mds_order_id', 'mds_variation_id', 'mds_quantity' ];
+
+		foreach ( $keys as $key ) {
+			WC()->session->__unset( $key );
+		}
+
+		delete_user_meta( get_current_user_id(), MDS_PREFIX . 'current_order_id' );
+	}
+
+	public static function reset_quantity( $cart ): void {
+		$product_id   = \MillionDollarScript\Classes\Functions::get_product_id();
+		$variation_id = absint( WC()->session->get( "mds_variation_id" ) );
+		$quantity     = absint( WC()->session->get( "mds_quantity" ) );
+
+		$cart_id      = $cart->generate_cart_id( $product_id, $variation_id );
+		$cart_item_id = $cart->find_product_in_cart( $cart_id );
+
+		if ( $cart_item_id ) {
+			$cart_item = $cart->get_cart_item( $cart_item_id );
+
+			if ( $cart_item['quantity'] != $quantity ) {
+				$cart->set_quantity( $cart_item_id, $quantity, true );
+			}
+		}
+	}
+
+	public static function disable_quantity_field( $product_quantity, $cart_item_key, $cart_item ): string {
+		$product_id   = \MillionDollarScript\Classes\Functions::get_product_id();
+		$variation_id = absint( WC()->session->get( "mds_variation_id" ) );
+
+		if ( $cart_item['product_id'] == $product_id && ( ! empty( $cart_item['variation_id'] ) && $cart_item['variation_id'] == $variation_id ) ) {
+			return sprintf( '%s <input type="hidden" name="cart[%s][qty]" value="%s" />', $cart_item['quantity'], $cart_item_key, $cart_item['quantity'] );
+		}
+
+		return $product_quantity;
+	}
+
+	public static function before_calculate_totals( $cart_object ): void {
 		if ( is_checkout() ) {
 			global $wpdb;
 
@@ -116,7 +178,7 @@ class WooCommerce {
 		global $passed_validation_mds;
 
 		if ( $passed_validation_mds === false ) {
-			$message = __( "Quantity does not match!", 'milliondollarscript' );
+			$message = Language::get( "Quantity does not match! (1)" );
 			\wc_add_notice( $message, 'error' );
 
 			return false;
@@ -150,8 +212,8 @@ class WooCommerce {
 			$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
 
 			if ( ! self::check_quantity_mds( $cart_item, $mds_order_id ) ) {
-				$message = __( "Quantity does not match!", 'milliondollarscript' );
-				\wc_add_notice( sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', wc_get_cart_url(), __( 'View cart', 'woocommerce' ), $message ), 'error' );
+				$message = Language::get( "Quantity does not match! (2)" );
+				\wc_add_notice( '<a href="' . wc_get_cart_url() . '" class="button wc-forward">' . __( 'View cart', 'woocommerce' ) . '</a> ' . $message, 'error' );
 			}
 		}
 	}
@@ -167,20 +229,11 @@ class WooCommerce {
 	 *
 	 * @return mixed
 	 */
-	public static function add_to_cart_validation( $passed, $product_id, $quantity, $variation_id = '', $variations = '' ) {
+	public static function add_to_cart_validation( $passed, $product_id, $quantity, $variation_id = '', $variations = '' ): mixed {
 
 		// Clear cart if option is set to yes
-		if ( Options::get_option( 'clear-cart', false, 'options', 'no' ) == 'yes' ) {
+		if ( Options::get_option( 'clear-cart', 'no', false, 'options' ) == 'yes' ) {
 			self::clear_cart();
-		}
-
-		// https://example.com/checkout/?add-to-cart=17&quantity=100&mdsid=18
-		if ( ( isset( $_REQUEST['add-to-cart'] ) && ! empty( $_REQUEST['add-to-cart'] ) ) && ( isset( $_REQUEST['quantity'] ) && ! empty( $_REQUEST['quantity'] ) ) ) {
-			// WC()->cart->empty_cart();
-			if ( isset( $_REQUEST['mdsid'] ) && ! empty( $_REQUEST['mdsid'] ) ) {
-				$value = absint( $_REQUEST['mdsid'] );
-				WC()->session->set( "mds_order_id", $value );
-			}
 		}
 
 		// Check if the product added to the cart was an MDS product
@@ -255,15 +308,15 @@ class WooCommerce {
 		$product_type_options['milliondollarscript'] = array(
 			'id'            => '_milliondollarscript',
 			'wrapper_class' => '',
-			'label'         => __( 'Million Dollar Script Pixels', 'milliondollarscript' ),
-			'description'   => __( 'Check this to set this product as a Million Dollar Script Pixels product.', 'milliondollarscript' ),
+			'label'         => Language::get( 'Million Dollar Script Pixels' ),
+			'description'   => Language::get( 'Check this to set this product as a Million Dollar Script Pixels product.' ),
 			'default'       => 'no'
 		);
 
 		return $product_type_options;
 	}
 
-	public static function save_option_field( $post_id ) {
+	public static function save_option_field( $post_id ): void {
 		$mds = isset( $_POST['_milliondollarscript'] ) ? 'yes' : 'no';
 		update_post_meta( $post_id, '_milliondollarscript', $mds );
 	}
@@ -273,7 +326,7 @@ class WooCommerce {
 	 *
 	 * @param $product_id
 	 */
-	public static function update_product( $product_id ) {
+	public static function update_product( $product_id ): void {
 		$product = wc_get_product( $product_id );
 		if ( $product->get_meta( '_milliondollarscript', true ) == 'yes' ) {
 
@@ -378,8 +431,6 @@ class WooCommerce {
 		global $wpdb;
 		$mds_quantity = $wpdb->get_var( $wpdb->prepare( "SELECT `quantity` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d", intval( $mds_order_id ) ) );
 
-		$mdspath = Options::get_mds_path();
-		require_once $mdspath . "include/init.php";
 		global $f2;
 		$BID         = $f2->bid();
 		$banner_data = load_banner_constants( $BID );
@@ -428,18 +479,13 @@ class WooCommerce {
 		}
 
 		// Get external payment module
-//		$mdspath = Options::get_mds_path();
-//		require_once $mdspath . "payment/external.php";
-//
-//		$external_payment = new \external;
+
 		global $wpdb;
 		$mds_quantity = $wpdb->get_var( $wpdb->prepare( "SELECT `quantity` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d", intval( $mds_order_id ) ) );
 
 //		$mds_quantity = absint( $external_payment->get_quantity( $mds_order_id ) );
 		$good = true;
 
-		$mdspath = Options::get_mds_path();
-		require_once $mdspath . "include/init.php";
 		global $f2;
 		$BID         = $f2->bid();
 		$banner_data = load_banner_constants( $BID );
@@ -470,25 +516,21 @@ class WooCommerce {
 	 *
 	 * @param $id int WooCommerce order id
 	 */
-	public static function complete_mds_order( int $id ) {
+	public static function complete_mds_order( int $id ): void {
 		if ( ! self::is_mds_order( $id ) ) {
 			// Not a Million Dollar Script order
 			return;
 		}
 
 		if ( self::check_quantity( $id ) ) {
-			if ( ! function_exists( 'get_home_path' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
-			}
-
-			// Get external payment module
-			$mdspath = Options::get_mds_path();
-			require_once $mdspath . "payment/external.php";
-
-			$external_payment = new \external;
-
 			$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
-			$external_payment->complete_order( $mds_order_id );
+			global $wpdb;
+			$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d";
+			$prepared_sql = $wpdb->prepare( $sql, intval( $mds_order_id ) );
+			$row       = $wpdb->get_row( $prepared_sql, ARRAY_A );
+
+			complete_order( $row['user_id'], $mds_order_id );
+			debit_transaction( $mds_order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );
 		}
 	}
 
@@ -500,7 +542,7 @@ class WooCommerce {
 	 * @param $to
 	 * @param $order
 	 */
-	public static function status_changed( $id, $from, $to, $order ) {
+	public static function status_changed( $id, $from, $to, $order ): void {
 		if ( ! self::is_mds_order( $id ) ) {
 			// Not a Million Dollar Script order
 			return;
@@ -526,19 +568,22 @@ class WooCommerce {
 			$order->add_order_note( "Coinbase Charge ID: " . $coinbase_id );
 		}
 
-		// Complete MDS payment if order goes to completed
+		// Action hook for MDS status change
+		do_action( 'mds-status-changed', $id, $mds_order_id, $from, $to, $order );
+
+		// Complete MDS payment if order goes to 'completed'
 		if ( $to === "completed" ) {
 			self::complete_mds_order( $id );
 		}
 	}
 
 	/**
-	 * Manual order status change to completed.
+	 * Manual order status change to 'completed'.
 	 *
 	 * @param $id
 	 * @param $to
 	 */
-	public static function status_edit( $id, $to ) {
+	public static function status_edit( $id, $to ): void {
 		if ( ! self::is_mds_order( $id ) ) {
 			// Not a Million Dollar Script order
 			return;
@@ -605,14 +650,13 @@ class WooCommerce {
 	/**
 	 * Clear WooCommerce cart when adding a new item.
 	 */
-	public static function clear_cart() {
+	public static function clear_cart(): void {
 		if ( ! self::is_mds_cart() ) {
 			// Not a Million Dollar Script order
 			return;
 		}
 
-		// https://example.com/checkout/?add-to-cart=17&quantity=100&mdsid=18
-		if ( ( isset( $_REQUEST['add-to-cart'] ) && ! empty( $_REQUEST['add-to-cart'] ) ) && ( isset( $_REQUEST['quantity'] ) && ! empty( $_REQUEST['quantity'] ) ) ) {
+		if ( WC()->session->get( "mds_order_id" ) ) {
 			WC()->cart->empty_cart();
 		}
 	}
@@ -628,25 +672,25 @@ class WooCommerce {
 	 * @see WC_Checkout::create_order() WooCommerce create order function.
 	 *
 	 */
-	public static function create_order( $order_id, $data ) {
+	public static function create_order( $order_id, $data ): mixed {
 		if ( ! self::is_mds_order( $order_id ) ) {
 			// Not a Million Dollar Script order
-			return;
+			return null;
 		}
 
 		$order        = wc_get_order( $order_id );
 		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
 		update_post_meta( $order_id, "mds_order_id", $mds_order_id );
 		if ( ! self::check_quantity( $order_id ) ) {
-			$message = "Quantity does not match!";
-			throw new \Exception( sprintf( '<a href="%s" class="button wc-forward">%s</a> %s', wc_get_cart_url(), __( 'View cart', 'woocommerce' ), $message ) );
+			$message = "Quantity does not match! (3)";
+			throw new \Exception( '<a href="' . wc_get_cart_url() . '" class="button wc-forward">' . __( 'View cart', 'woocommerce' ) . '</a> ' . $message );
 		}
 		$order->add_order_note( "MDS order id: " . $mds_order_id );
 
 		return null;
 	}
 
-	public static function delete_duplicate_variations( $product, $attribute = 'grid' ) {
+	public static function delete_duplicate_variations( $product, $attribute = 'grid' ): void {
 		$all_variations = $product->get_children();
 		if ( count( $all_variations ) <= 0 ) {
 			return;

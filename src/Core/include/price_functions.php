@@ -1,34 +1,35 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
+
+use MillionDollarScript\Classes\Language;
+
+defined( 'ABSPATH' ) or exit;
 
 $price_table = array();
 
@@ -115,7 +116,7 @@ function get_zone_price( $banner_id, $row, $col ) {
 
 	$banner_data = load_banner_constants( $banner_id );
 
-    // Adjust for the off by 1
+	// Adjust for the off by 1
 	$row += $banner_data['BLK_HEIGHT'];
 	$col += $banner_data['BLK_WIDTH'];
 
@@ -180,8 +181,6 @@ function show_price_area( $banner_id ) {
 
 function display_price_table( $banner_id ) {
 
-	global $label;
-
 	if ( banner_get_packages( $banner_id ) ) {
 		// cannot have custom price zones, this banner has packages.
 		return;
@@ -192,18 +191,18 @@ function display_price_table( $banner_id ) {
 
 	if ( mysqli_num_rows( $result ) > 0 ) {
 		?>
-        <div class='fancy_heading' width="85%"><?php echo $label['advertiser_pf_table']; ?></div>
+        <div class='fancy-heading'><?php Language::out( 'Price Table' ); ?></div>
         <p>
-			<?php echo $label['advertiser_pf_intro']; ?>&nbsp;
+			<?php Language::out( 'The following table shows the different price regions for the selected grid.' ); ?>&nbsp;
         </p>
         <table border="0" cellSpacing="1" cellPadding="3" bgColor="#d9d9d9" width="50%">
             <tr>
-                <td><b><font face="Arial" size="2"><?php echo $label['advertiser_pf_price']; ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php echo $label['advertiser_pf_color']; ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php echo $label['advertiser_pf_fromrow']; ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php echo $label['advertiser_pf_torow']; ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php echo $label['advertiser_pf_fromcol']; ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php echo $label['advertiser_pf_tocol']; ?></font></b></td>
+                <td><b><font face="Arial" size="2"><?php Language::out( 'Price / 100 pixels' ); ?></font></b></td>
+                <td><b><font face="Arial" size="2"><?php Language::out( 'Color' ); ?></font></b></td>
+                <td><b><font face="Arial" size="2"><?php Language::out( 'From row' ); ?></font></b></td>
+                <td><b><font face="Arial" size="2"><?php Language::out( 'To row' ); ?></font></b></td>
+                <td><b><font face="Arial" size="2"><?php Language::out( 'From column' ); ?></font></b></td>
+                <td><b><font face="Arial" size="2"><?php Language::out( 'To column' ); ?></font></b></td>
 
             </tr>
 
@@ -212,7 +211,7 @@ function display_price_table( $banner_id ) {
 				?>
                 <tr bgcolor="#ffffff">
                     <td><font face="Arial" size="2"><?php if ( $row['price'] == 0 ) {
-								echo $label['free'];
+								Language::out( 'free' );
 							} else {
 								echo convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
 							} ?></font></td>

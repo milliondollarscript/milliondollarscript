@@ -1,34 +1,33 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
+
+defined( 'ABSPATH' ) or exit;
 
 function publish_image( $BID ) {
 
@@ -43,19 +42,12 @@ function publish_image( $BID ) {
 		$imagine = new Imagine\Gd\Imagine();
 	}
 
-	$file_path = SERVER_PATH_TO_ADMIN;
-	$dest      = get_banner_dir();
-
-	if ( OUTPUT_JPEG == 'Y' ) {
-		copy( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/grid$BID.jpg", $dest . "grid$BID.jpg" );
-	} else if ( OUTPUT_JPEG == 'N' ) {
-		copy( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/grid$BID.png", $dest . "grid$BID.png" );
-	} else if ( ( OUTPUT_JPEG == 'GIF' ) ) {
-		copy( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/grid$BID.gif", $dest . "grid$BID.gif" );
-	}
+	$dest = get_banner_dir();
+	$ext  = \MillionDollarScript\Classes\Utility::get_file_extension();
+	copy( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/grid$BID.$ext", $dest . "grid$BID.$ext" );
 
 	// output the tile image
-	if ( DISPLAY_PIXEL_BACKGROUND == "YES" ) {
+	if ( \MillionDollarScript\Classes\Config::get( 'DISPLAY_PIXEL_BACKGROUND' ) == "YES" ) {
 		$b_row = load_banner_row( $BID );
 
 		if ( $b_row['tile'] == '' ) {
@@ -111,7 +103,7 @@ function process_image( $BID ) {
 	) );
 }
 
-function get_html_code( $BID ) {
+function get_grid_shortcode( $BID ) {
 	$BID = intval( $BID );
 
 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id='" . $BID . "'";
@@ -128,13 +120,21 @@ function get_html_code( $BID ) {
 	$width  = $b_row['grid_width'] * $b_row['block_width'];
 	$height = $b_row['grid_height'] * $b_row['block_height'];
 
-	return '<iframe class="gridframe' . $BID . '" src="' . BASE_HTTP_PATH . 'display_map.php?BID=' . $BID . '&iframe_call=true" style="width:' . $width . 'px;height:' . $height . 'px;" width="' . $width . '" height="' . $height . '"></iframe>';
+	return wp_sprintf(
+		'[milliondollarscript id="%d" align="center" width="%dpx" height="%dpx" type="grid"]',
+		$BID,
+		$width,
+		$height
+	);
 }
 
-function get_stats_html_code( $BID ) {
+function get_stats_shortcode( $BID ) {
 	$BID = intval( $BID );
 
-	return '<iframe class="statsframe' . $BID . '" src="' . BASE_HTTP_PATH . 'display_stats.php?BID=' . $BID . '&iframe_call=true" width="150" height="50"></iframe>';
+	return wp_sprintf(
+		'[milliondollarscript id="%d" align="center" width="150px" height="60px" type="stats"]',
+		$BID,
+	);
 }
 
 /**

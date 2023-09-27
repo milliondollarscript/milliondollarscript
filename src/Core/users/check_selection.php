@@ -1,45 +1,42 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/login_functions.php";
-mds_start_session();
-define( 'NO_HOUSE_KEEP', 'YES' );
-// check the image selection.
-require_once __DIR__ . "/../include/init.php";
+use MillionDollarScript\Classes\Language;
+
+defined( 'ABSPATH' ) or exit;
+
+mds_wp_login_check();
 
 header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
-header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" ); // Date in the past
+header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );   // Date in the past
 
-global $f2;
+global $f2, $banner_data;
 
 $BID         = $f2->bid();
 $banner_data = load_banner_constants( $BID );
@@ -55,11 +52,17 @@ $_REQUEST['block_id'] = floor( $_REQUEST['block_id'] );
 
 check_selection_main();
 
-function check_selection_main() {
+function check_selection_main(): void {
 
 	global $f2, $banner_data;
 
 	$upload_image_file = get_tmp_img_name();
+
+	if ( empty( $upload_image_file ) ) {
+		Language::out( 'upload_image_file_empty' );
+
+		return;
+	}
 
 	$imagine = new Imagine\Gd\Imagine();
 
@@ -81,5 +84,8 @@ function check_selection_main() {
 
 	$in_str = implode( ',', $cb_array );
 	$f2->write_log( "in_str is:" . $in_str );
+
+	error_log($in_str);
+
 	check_pixels( $in_str );
 }

@@ -1,13 +1,38 @@
 <?php
 
+/*
+ * Million Dollar Script Two
+ *
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
+ */
+
 use Imagine\Gd\Imagine;
 use Imagine\Image\Box;
 use Imagine\Image\Palette\RGB;
 use Imagine\Image\Point;
 use MillionDollarScript\Classes\Utility;
-
-require_once MDS_CORE_PATH . "include/init.php";
-require_once MDS_CORE_PATH . 'admin/admin_common.php';
 
 @ini_set( 'max_execution_time', 10000 );
 @ini_set( 'max_input_vars', 10002 );
@@ -66,20 +91,11 @@ if ( $BID != '' ) {
 
 	$grid_img = Utility::get_upload_url() . 'grids/grid' . $BID;
 
-	$grid_ext = '.png';
-	if ( defined( 'OUTPUT_JPEG' ) ) {
-		if ( OUTPUT_JPEG == 'Y' ) {
-			$grid_ext = '.jpg';
-			// } else if ( OUTPUT_JPEG == 'N' ) {
-			//    $grid_ext = '.png';
-		} else if ( ( OUTPUT_JPEG == 'GIF' ) ) {
-			$grid_ext = '.gif';
-		}
-	}
+	$grid_ext = \MillionDollarScript\Classes\Utility::get_file_extension();
 
-	$grid_img .= $grid_ext;
+	$grid_img .= '.' . $grid_ext;
 
-	$grid_file = Utility::get_upload_path() . 'grids/grid' . $BID . $grid_ext;
+	$grid_file = Utility::get_upload_path() . 'grids/grid' . $BID . '.' . $grid_ext;
 
 	if ( ! file_exists( $grid_file ) ) {
 		process_image( $BID );
@@ -121,7 +137,7 @@ if ( $BID != '' ) {
         </style>
 		<?php
 	} else {
-		$nfs_block = $imagine->load( $banner_data['NFS_BLOCK'] );
+		$nfs_block      = $imagine->load( $banner_data['NFS_BLOCK'] );
 		$nfs_block_data = base64_encode( $nfs_block->get( "png", array( 'png_compression_level' => 9 ) ) );
 
 		$data_covered = ' data-covered="true" data-width="' . $banner_data['BLK_WIDTH'] . '" data-height="' . $banner_data['BLK_HEIGHT'] . '"';
@@ -132,6 +148,7 @@ if ( $BID != '' ) {
 				background: url('data:image/png;base64,<?php echo $nfs_block_data; ?>') no-repeat center/contain;
 				cursor: pointer;
 			}
+
 			.nfs {
 				cursor: pointer;
 			}

@@ -1,45 +1,37 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
-require_once __DIR__ . "/../include/login_functions.php";
-mds_start_session();
-define( 'NO_HOUSE_KEEP', 'YES' );
+defined( 'ABSPATH' ) or exit;
 
-require_once __DIR__ . "/../include/init.php";
+mds_wp_login_check();
 
-//include( "login_functions.php" );
-
-//process_login();
-
+global $f2;
 $BID = $f2->bid();
 
 $banner_data = load_banner_constants( $BID );
@@ -47,18 +39,30 @@ $banner_data = load_banner_constants( $BID );
 $imagine = new Imagine\Gd\Imagine();
 
 // get the order id
+$order_id = null;
 if ( isset( $_REQUEST['block_id'] ) && $_REQUEST['block_id'] != '' ) {
-	$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id='" . intval( $_REQUEST['block_id'] ) . "' AND banner_id='" . $BID . "' ";
+	global $wpdb;
+	$sql          = "SELECT order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=%d AND banner_id=%d";
+	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['block_id'] ), $BID );
+	$order_id     = $wpdb->get_var( $prepared_sql );
 } else if ( isset( $_REQUEST['aid'] ) && $_REQUEST['aid'] != '' ) {
-	$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "ads WHERE ad_id='" . intval( $_REQUEST['aid'] ) . "' ";
+	$ad_id     = intval( $_REQUEST['aid'] );
+	$mds_pixel = get_post( $ad_id );
+	if ( ! empty( $mds_pixel ) ) {
+		$order_id = \carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
+	}
+} else {
+	exit;
 }
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-$row = mysqli_fetch_array( $result );
 
-$size = get_pixel_image_size( $row['order_id'] );
+if ( empty( $order_id ) ) {
+	exit;
+}
+
+$size = get_pixel_image_size( $order_id );
 
 // load all the blocks wot
-$sql = "SELECT block_id,x,y,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE order_id='" . intval( $row['order_id'] ) . "' ";
+$sql = "SELECT block_id,x,y,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE order_id='" . intval( $order_id ) . "' ";
 $result3 = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 $blocks = array();

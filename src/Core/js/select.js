@@ -1,31 +1,28 @@
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
@@ -34,7 +31,7 @@ let debug = false;
 // Initialize
 let USE_AJAX = select.USE_AJAX;
 let block_str = select.block_str;
-let selectedBlocks = block_str.split(',').map(Number);
+let selectedBlocks = block_str !== '-1' ? block_str.split(',').map(Number) : [];
 let selecting = false;
 let ajaxing = false;
 let submitting = false;
@@ -64,7 +61,6 @@ let myblocks;
 let total_cost;
 let grid;
 let submit_button1;
-let submit_button2;
 let pointer;
 let pixel_container;
 
@@ -122,13 +118,33 @@ function has_touch() {
 	}
 }
 
+document.querySelectorAll('.mds-select-radio input[type="radio"]').forEach(function (radio) {
+	radio.addEventListener('hover', function () {
+		this.style.cursor = 'pointer';
+	});
+	radio.addEventListener('change', function () {
+		const label = this.nextElementSibling;
+		const iconErase = label.querySelector('.icon-erase');
+		const iconSelect = label.querySelector('.icon-select');
+
+		if (iconErase && iconSelect) {
+			if (this.checked) {
+				iconErase.setAttribute("stroke", "#FFFFFF");
+				iconSelect.setAttribute("stroke", "none");
+			} else {
+				iconErase.setAttribute("stroke", "none");
+				iconSelect.setAttribute("stroke", "#008000");
+			}
+		}
+	});
+});
+
 window.onload = function () {
 	grid = document.getElementById("pixelimg");
 	let $grid = jQuery(grid);
 	myblocks = document.getElementById('blocks');
 	total_cost = document.getElementById('total_cost');
 	submit_button1 = document.getElementById('submit_button1');
-	submit_button2 = document.getElementById('submit_button2');
 	pointer = document.getElementById('block_pointer');
 	pixel_container = document.getElementById('pixel_container');
 
@@ -166,7 +182,7 @@ function on_grid_load() {
 		}
 	});
 	jQuery("#pixelimg").on("loadstart", function () {
-		add_ajax_loader("#submit-buttons");
+		add_ajax_loader(".mds-pixel-wrapper");
 	});
 }
 
@@ -179,7 +195,7 @@ grid_interval = setInterval(on_grid_load, 100);
 		$ajax_loader.css('top', $(container).position().top).css('left', ($(container).width() / 2) - ($ajax_loader.width() / 2));
 	}
 
-	add_ajax_loader('.mds-container .container');
+	add_ajax_loader('.mds-container');
 })(jQuery);
 
 function load_order() {
@@ -188,15 +204,15 @@ function load_order() {
 		add_block(parseInt(select.blocks[i].block_id, 10), parseInt(select.blocks[i].x, 10) * scaled_width, parseInt(select.blocks[i].y, 10) * scaled_height, true);
 	}
 
-	const form1 = document.getElementById('form1');
-	if (form1 !== null) {
-		form1.addEventListener('submit', form1Submit);
+	const pixel_form = document.getElementById('pixel_form');
+	if (pixel_form !== null) {
+		pixel_form.addEventListener('submit', formSubmit);
 	}
 }
 
 function update_order() {
-	if (selectedBlocks !== -1) {
-		document.form1.selected_pixels.value = selectedBlocks.join(',');
+	if (selectedBlocks.length > 0) {
+		document.pixel_form.selected_pixels.value = selectedBlocks.join(',');
 	}
 }
 
@@ -269,7 +285,7 @@ function add_block(block_id, block_x, block_y, loading) {
 	let $new_img = jQuery('<img alt="" src="">');
 	$new_block.append($new_img);
 
-	$new_img.attr('src', select.BASE_HTTP_PATH + 'images/selected_block.png');
+	$new_img.attr('src', select.MDS_CORE_URL + 'images/selected_block.png');
 
 	$new_img.css({
 		'line-height': BLK_HEIGHT + 'px',
@@ -488,15 +504,40 @@ let ajax_queue_interval = setInterval(function () {
 
 	ajaxing = true;
 
-	add_ajax_loader("#submit-buttons");
+	add_ajax_loader(".mds-pixel-wrapper");
 
 	let data = ajax_queue.shift();
-	jQuery.post(data.url, function (response) {
 
-		let parsed = JSON.parse(response);
+	jQuery.ajax({
+		type: 'POST',
+		url: data.url,
+		data: {
+			_wpnonce: select.NONCE,
+		},
+		success: function (response) {
+			let parsed = JSON.parse(response);
+			if (parsed.error === 'true') {
+				switch (data.action) {
+					case 'invert':
+						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
+						break;
+					case 'remove':
+						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
+						break;
+					case 'add':
+						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
+						break;
+				}
 
-		if (parsed.error === 'true') {
+				messageout(parsed.data.value);
+			}
 
+			if (parsed.type === 'order_id') {
+				// save order id
+				document.pixel_form.order_id.value = parseInt(parsed.data.value, 10);
+			}
+		},
+		fail: function () {
 			switch (data.action) {
 				case 'invert':
 					do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
@@ -509,36 +550,16 @@ let ajax_queue_interval = setInterval(function () {
 					break;
 			}
 
-			messageout(parsed.data.value);
+			if (jQuery.isPlainObject(data)) {
+				messageout("Error: " + JSON.stringify(data));
+			} else {
+				messageout("Error: " + data);
+			}
+		},
+		complete: function () {
+			ajaxing = false;
+			remove_ajax_loader();
 		}
-
-		if (parsed.type === 'order_id') {
-			// save order id
-			document.form1.order_id.value = parseInt(parsed.data.value, 10);
-		}
-
-	}).fail(function (data) {
-		switch (data.action) {
-			case 'invert':
-				do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
-				break;
-			case 'remove':
-				do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
-				break;
-			case 'add':
-				do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
-				break;
-		}
-
-		if (jQuery.isPlainObject(data)) {
-			messageout("Error: " + JSON.stringify(data));
-		} else {
-			messageout("Error: " + data);
-		}
-
-	}).always(function () {
-		ajaxing = false;
-		remove_ajax_loader();
 	});
 
 }, 100);
@@ -552,7 +573,7 @@ function change_block_state(OffsetX, OffsetY) {
 		'clicked_block': clicked_block,
 		'OffsetX': OffsetX,
 		'OffsetY': OffsetY,
-		'url': "update_order.php?sel_mode=" + document.getElementsByName('pixel_form')[0].elements.sel_mode.value + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time,
+		'url': select.UPDATE_ORDER + "?sel_mode=" + document.getElementsByName('pixel_form')[0].elements.sel_mode.value + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time,
 	};
 
 	if (is_block_selected(clicked_block)) {
@@ -604,22 +625,10 @@ function implode(myArray) {
 }
 
 function getObjCoords(obj) {
-	let pos = {x: 0, y: 0};
-	let curtop = 0;
-	let curleft = 0;
-	if (obj.offsetParent) {
-		while (obj.offsetParent) {
-			curtop += obj.offsetTop;
-			curleft += obj.offsetLeft;
-			obj = obj.offsetParent;
-		}
-	} else if (obj.y) {
-		curtop += obj.y;
-		curleft += obj.x;
-	}
-	pos.x = curleft;
-	pos.y = curtop;
-	return pos;
+	var rect = obj.getBoundingClientRect();
+	var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+	var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+	return {x: rect.left + scrollLeft, y: rect.top + scrollTop};
 }
 
 function getOffset(x, y, touch) {
@@ -698,7 +707,7 @@ function show_pointer(offset) {
 	return true;
 }
 
-function form1Submit(event) {
+function formSubmit(event) {
 	event.preventDefault();
 	event.stopPropagation();
 
@@ -710,24 +719,19 @@ function form1Submit(event) {
 		if (submitting === false) {
 
 			submit_button1.disabled = true;
-			submit_button2.disabled = true;
 
 			let submit1_lang = submit_button1.value;
-			let submit2_lang = submit_button2.value;
 
 			submit_button1.value = select.WAIT;
-			submit_button2.value = select.WAIT;
 
 			// Wait for ajax queue to finish
 			let waitInterval = setInterval(function () {
 				if (ajax_queue.length === 0) {
 					clearInterval(waitInterval);
-					document.form1.submit();
+					document.pixel_form.submit();
 
 					submit_button1.disabled = false;
-					submit_button2.disabled = false;
 					submit_button1.value = submit1_lang;
-					submit_button2.value = submit2_lang;
 
 					submitting = false;
 				}
@@ -740,17 +744,27 @@ function form1Submit(event) {
 function reset_pixels() {
 	ajax_queue = [];
 
-	add_ajax_loader("#submit-buttons");
+	add_ajax_loader(".mds-pixel-wrapper");
 
-	jQuery.post("update_order.php?reset=true", function (data) {
-		let parsed = JSON.parse(data);
-		if (parsed.type === "removed") {
-			jQuery(myblocks).children().each(function () {
-				remove_block(jQuery(this).data('blockid'));
-			});
+	jQuery.ajax({
+		type: "POST",
+		url: select.UPDATE_ORDER,
+		data: {
+			reset: true,
+			action: 'reset',
+			_wpnonce: select.NONCE
+		},
+		success: function (data) {
+			let parsed = JSON.parse(data);
+			if (parsed.type === "removed") {
+				jQuery(myblocks).children().each(function () {
+					remove_block(jQuery(this).data('blockid'));
+				});
+			}
+		},
+		complete: function () {
+			remove_ajax_loader();
 		}
-	}).always(function () {
-		remove_ajax_loader();
 	});
 }
 

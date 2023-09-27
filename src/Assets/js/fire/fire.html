@@ -1,0 +1,95 @@
+<script type="text/x-vertex-shader" id="particle-update-vert">
+	#version 300 es
+	precision mediump float;
+
+	uniform float u_TimeDelta;
+	uniform sampler2D u_RgNoise;
+	uniform vec2 u_Gravity;
+	uniform vec2 u_Origin;
+	uniform float u_MinTheta;
+	uniform float u_MaxTheta;
+	uniform float u_MinSpeed;
+	uniform float u_MaxSpeed;
+
+	in vec2 i_Position;
+	in float i_Age;
+	in float i_Life;
+	in vec2 i_Velocity;
+
+	out vec2 v_Position;
+	out float v_Age;
+	out float v_Life;
+	out vec2 v_Velocity;
+
+	void main() {
+	if (i_Age >= i_Life) {
+		ivec2 noise_coord = ivec2(gl_VertexID % 512, gl_VertexID / 512);
+		vec2 rand = texelFetch(u_RgNoise, noise_coord, 0).rg;
+		float theta = u_MinTheta + rand.r*(u_MaxTheta - u_MinTheta);
+		float x = cos(theta);
+		float y = sin(theta);
+    v_Position = vec2(u_Origin.x, u_Origin.y);
+		v_Age = 0.0;
+		v_Life = i_Life;
+		v_Velocity =
+		vec2(x, y) * (u_MinSpeed + rand.g * (u_MaxSpeed - u_MinSpeed));
+	} else {
+    v_Position = vec2((i_Position.x + i_Velocity.x * u_TimeDelta), i_Position.y + i_Velocity.y * u_TimeDelta);
+		v_Age = i_Age + u_TimeDelta;
+		v_Life = i_Life;
+		v_Velocity = i_Velocity + u_Gravity * u_TimeDelta;
+	}
+}
+</script>
+<script type="text/x-fragment-shader" id="passthru-frag-shader">
+	#version 300 es
+	precision mediump float;
+	in float v_Age;
+	void main() { discard; }
+</script>
+<script type="text/x-vertex-shader" id="particle-render-vert">
+	#version 300 es
+	precision mediump float;
+
+	in vec2 i_Position;
+	in float i_Age;
+	in float i_Life;
+	in vec2 i_Coord;
+	in vec2 i_TexCoord;
+
+	out float v_Age;
+	out float v_Life;
+	out vec2 v_TexCoord;
+
+	void main() {
+        vec2 vert_coord = i_Position +
+	    (0.75*(1.0-i_Age / i_Life) + 0.25) * 0.05 * i_Coord;
+
+		v_Age = i_Age;
+		v_Life = i_Life;
+		v_TexCoord = i_TexCoord;
+		gl_Position = vec4(vert_coord, 0.0, 1.0);
+	}
+</script>
+<script type="text/x-fragment-shader" id="particle-render-frag">
+	#version 300 es
+	precision mediump float;
+
+	uniform sampler2D u_Sprite;
+
+	in float v_Age;
+	in float v_Life;
+	in vec2 v_TexCoord;
+
+	out vec4 o_FragColor;
+
+	/* From http://iquilezles.org/www/articles/palettes/palettes.htm */
+	vec3 palette( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
+	{  return a + b*cos( 6.28318*(c*t+d) ); }
+
+	void main() {
+	float t =  v_Age/v_Life;
+	vec4 color = vec4(vec3(1.0, 0.8, 0.3), 1.0-(v_Age/v_Life));
+	o_FragColor = color * texture(u_Sprite, v_TexCoord);
+}
+</script>

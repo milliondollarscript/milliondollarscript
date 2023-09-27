@@ -1,3 +1,227 @@
+/*
+ * Million Dollar Script Two
+ *
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
+ */
+
+.mds-main-page {
+	font-family: Arial, sans-serif;
+	color: #333;
+	margin: 20px 20px 0 0;
+	padding: 1rem;
+	background-color: #fff;
+	box-shadow: 0 0 7px rgba(0, 0, 0, 0.3);
+	font-size: 1.2rem;
+	overflow: hidden;
+	border-radius: 20px;
+}
+
+div.mds-main-page a {
+	text-decoration: none;
+	color: rgb(136, 105, 40);
+}
+
+div.mds-main-page a:hover {
+	text-decoration: underline;
+	color: rgb(136, 105, 40);
+}
+
 .mds-main-page ul {
 	list-style: circle inside;
+}
+
+div.milliondollarscript-section {
+	padding: 0.5rem;
+}
+
+div.milliondollarscript-section p {
+	font-size: 1rem;
+}
+
+div.milliondollarscript-header p {
+	font-size: 1.5rem;
+}
+
+div.milliondollarscript-description {
+	float: left;
+}
+
+div.milliondollarscript-description p {
+	color: #333;
+	font-size: 1.2rem;
+	line-height: 1.5;
+}
+
+div.milliondollarscript-time {
+	float: right;
+	color: #666;
+	font-size: 0.9rem;
+	margin: 1.5rem 0;
+	line-height: 1.5;
+	text-align: right;
+}
+
+div.milliondollarscript-orders {
+	clear: left;
+	float: left;
+	font-size: 1.1rem;
+	line-height: 1.5;
+}
+
+div.milliondollarscript-credits {
+	clear: left;
+	float: left;
+}
+
+div.milliondollarscript-credits p {
+	color: #333;
+	font-size: 1rem;
+	line-height: 1.2;
+}
+
+div.milliondollarscript-version {
+	clear: both;
+	float: right;
+}
+
+div.milliondollarscript-version p {
+	text-align: right;
+	color: #666;
+	font-size: 0.9rem;
+	line-height: 1.5;
+}
+
+div.milliondollarscript-license {
+	clear: left;
+	float: left;
+}
+
+div.milliondollarscript-license p {
+	color: #666;
+	font-size: 0.9rem;
+	line-height: 1.5;
+}
+
+ul.milliondollarscript-menu {
+	display: flex;
+	justify-content: center;
+	flex-direction: row;
+	background: transparent;
+	color: #fff;
+	margin: 0;
+	list-style: none;
+	z-index: 999;
+	position: relative;
+}
+
+@media screen and (max-width: 750px) {
+	ul.milliondollarscript-menu {
+		flex-direction: column;
+	}
+}
+
+@-webkit-keyframes milliondollarscript {
+	0% {
+		background-color: transparent;
+	}
+	100% {
+		background-color: rgba(124, 114, 87, 0.9);
+	}
+}
+
+@keyframes milliondollarscript {
+	0% {
+		background-color: transparent;
+	}
+	100% {
+		background-color: rgba(124, 114, 87, 0.9);
+	}
+}
+
+.milliondollarscript-menu li {
+	margin-bottom: 0;
+	text-align: center;
+	background: transparent;
+	-webkit-animation: milliondollarscript 3s linear infinite alternate;
+	animation: milliondollarscript 3s linear infinite alternate;
+	-webkit-animation-delay: calc(var(--milliondollarscript-menu) * 1400ms);
+	animation-delay: calc(var(--milliondollarscript-menu) * 1400ms);
+}
+
+.milliondollarscript-menu li:hover {
+	-webkit-animation: milliondollarscript 700ms linear 1 forwards;
+	animation: milliondollarscript 700ms linear 1 forwards;
+	-webkit-animation-delay: 0ms;
+	animation-delay: 0ms;
+}
+
+div.mds-main-page .milliondollarscript-menu a {
+	display: block;
+	padding: 20px;
+	color: #fff;
+	font-weight: bold;
+	font-size: 1.4rem;
+	text-decoration: none;
+	text-shadow: -1px -1px 2px #000,
+	1px -1px 2px #000,
+	-1px 1px 2px #000,
+	1px 1px 2px #000;
+}
+
+div.milliondollarscript-fire {
+	pointer-events: auto;
+	z-index: 997 !important;
+	position: relative;
+	display: block;
+	background: #07010a;
+	width: calc(100% + 2rem);
+	overflow: hidden;
+	margin: -1rem -1rem 0 -1rem;
+	border-bottom-right-radius: 20px;
+}
+
+#milliondollarscript-fire {
+	position: absolute;
+	width: 512px;
+	height: 512px;
+	z-index: 998;
+	top: 0;
+	left: 0;
+	display: none;
+	pointer-events: none;
+	background: transparent;
+}
+
+.milliondollarscript-logo {
+	display: block;
+	width: 1900px;
+	height: auto;
+	max-width: 100%;
+	margin: 0 auto;
+	z-index: 999;
+	position: relative;
+	overflow: hidden;
+	border-bottom-right-radius: 20px;
 }

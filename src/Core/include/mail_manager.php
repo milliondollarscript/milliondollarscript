@@ -1,38 +1,37 @@
 <?php
 /*
- * @package       mds
- * @copyright     (C) Copyright 2022 Ryan Rhode, All rights reserved.
- * @author        Ryan Rhode, ryan@milliondollarscript.com
- * @version       2022-01-30 17:07:25 EST
- * @license       This program is free software; you can redistribute it and/or modify
- *        it under the terms of the GNU General Public License as published by
- *        the Free Software Foundation; either version 3 of the License, or
- *        (at your option) any later version.
+ * Million Dollar Script Two
  *
- *        This program is distributed in the hope that it will be useful,
- *        but WITHOUT ANY WARRANTY; without even the implied warranty of
- *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *        GNU General Public License for more details.
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
- *        You should have received a copy of the GNU General Public License along
- *        with this program;  If not, see http://www.gnu.org/licenses/gpl-3.0.html.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *        Million Dollar Script
- *        A pixel script for selling pixels on your website.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
- *        For instructions see README.txt
- *
- *        Visit our website for FAQs, documentation, a list team members,
- *        to post any bugs or feature requests, and a community forum:
- *        https://milliondollarscript.com/
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
  *
  */
 
+defined( 'ABSPATH' ) or exit;
+
 function q_mail_error( $s ) {
 
-	mail( SITE_CONTACT_EMAIL, SITE_NAME . 'email q error', $s . "\n" );
+	mail( get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ) . 'email q error', $s . "\n" );
 }
 
 function queue_mail( $to_address, $to_name, $from_address, $from_name, $subject, $message, $html_message, $template_id, $att = false ) {
@@ -64,7 +63,7 @@ function process_mail_queue( $send_count = 1 ) {
 	$unix_time = time();
 
 	// get the time of last run
-	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "config` where `key` = 'LAST_MAIL_QUEUE_RUN' ";
+	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "config` where `config_key` = 'LAST_MAIL_QUEUE_RUN' ";
 	$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
 	$t_row = @mysqli_fetch_array( $result );
 
@@ -73,7 +72,7 @@ function process_mail_queue( $send_count = 1 ) {
 	}
 
 	// Poor man's lock (making sure that this function is a Singleton)
-	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='YES' WHERE `key`='MAIL_QUEUE_RUNNING' AND `val`='NO' ";
+	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='YES' WHERE `config_key`='MAIL_QUEUE_RUNNING' AND `val`='NO' ";
 	$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
 	if ( @mysqli_affected_rows( $GLOBALS['connection'] ) == 0 ) {
 
@@ -81,14 +80,14 @@ function process_mail_queue( $send_count = 1 ) {
 		// This is in case the proccess fails inside the lock
 		// and does not release it.
 
-		if ( $unix_time > $t_row['val'] + 30 ) {
+		if ( ! isset( $t_row ) || $unix_time > $t_row['val'] + 30 ) {
 			// release the lock
 
-			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `key`='MAIL_QUEUE_RUNNING' ";
+			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `config_key`='MAIL_QUEUE_RUNNING' ";
 			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
 
 			// update timestamp
-			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`key`, `val`) VALUES ('LAST_MAIL_QUEUE_RUN', '$unix_time')  ";
+			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`config_key`, `val`) VALUES ('LAST_MAIL_QUEUE_RUN', '$unix_time')  ";
 			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
 		}
 
@@ -123,35 +122,7 @@ function process_mail_queue( $send_count = 1 ) {
 			//echo "(($now - $wait) > $time_stamp) status:".$row['status']."\n";
 			if ( ( ( ( $now - $wait ) > $time_stamp ) && ( $row['status'] == 'error' ) ) || ( $row['status'] == 'queued' ) ) {
 				$send_count --;
-				if ( defined( "EMAIL_DEBUG" ) && EMAIL_DEBUG == 'YES' ) {
-					echo "Sending mail: " . print_r( $row, true ) . "<br>";
-				}
-
-				if ( WP_ENABLED == 'YES' && WP_USE_MAIL == 'YES' ) {
-					mds_load_wp();
-					wp_mail( $row['to_address'], $row['subject'], $row['message'] );
-				} else {
-					if ( USE_SMTP == 'YES' ) {
-						$error = send_smtp_email( $row );
-					} else {
-
-						$sql    = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue WHERE mail_id=" . intval( $_REQUEST['mail_id'] );
-						$result = mysqli_query( $GLOBALS['connection'], $sql );
-						$row    = mysqli_fetch_array( $result );
-
-						send_phpmail( array(
-							'from_address' => $row['from_address'],
-							'from_name'    => $row['from_name'],
-							'to_address'   => $row['to_address'],
-							'to_name'      => $row['to_name'],
-							'subject'      => $row['subject'],
-							'html_message' => $row['html_message'],
-							'message'      => $row['message'],
-							'mail_id'      => intval( $_REQUEST['mail_id'] ),
-
-						) );
-					}
-				}
+				\MillionDollarScript\Classes\Mail::send( $row['to_address'], $row['subject'], $row['message'], '', $row['subject'], $row['message'] );
 			}
 		}
 
@@ -190,167 +161,8 @@ function process_mail_queue( $send_count = 1 ) {
 	}
 
 	// release the poor man's lock
-	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `key`='MAIL_QUEUE_RUNNING' ";
+	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `config_key`='MAIL_QUEUE_RUNNING' ";
 	@mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-}
-
-function send_smtp_email( $mail_row ) {
-
-	$debug_level = 0;
-	if ( defined( "EMAIL_DEBUG" ) && EMAIL_DEBUG == 'YES' ) {
-		$debug_level = 2;
-	}
-
-	if ( EMAIL_POP_BEFORE_SMTP == 'YES' ) {
-		$pop = PHPMailer\PHPMailer\POP3::popBeforeSmtp( EMAIL_POP_SERVER, POP3_PORT, 30, EMAIL_SMTP_USER, EMAIL_SMTP_PASS, $debug_level );
-	}
-
-	$mail = new PHPMailer\PHPMailer\PHPMailer;
-
-	$error = "";
-	try {
-		$mail->CharSet = "UTF-8";
-		$mail->isSMTP();
-
-		$mail->SMTPDebug   = $debug_level;
-		$mail->Debugoutput = 'html';
-
-		$mail->Host = EMAIL_SMTP_SERVER;
-		$mail->Port = SMTP_PORT;
-
-		if ( EMAIL_TLS == 1 ) {
-			$mail->SMTPSecure = 'tls';
-		} else {
-			$mail->SMTPSecure = '';
-		}
-
-		if ( defined( "EMAIL_SMTP_USER" ) && EMAIL_SMTP_USER != "" ) {
-			$mail->SMTPAuth = true;
-			$mail->Username = EMAIL_SMTP_USER;
-			$mail->Password = EMAIL_SMTP_PASS;
-		}
-
-		$mail->setFrom( $mail_row['from_address'], mds_specialchars_decode( $mail_row['from_name'] ) );
-		$mail->addReplyTo( $mail_row['from_address'], mds_specialchars_decode( $mail_row['from_name'] ) );
-		$mail->addAddress( $mail_row['to_address'], mds_specialchars_decode( $mail_row['to_name'] ) );
-		$mail->Subject = mds_specialchars_decode( $mail_row['subject'] );
-
-		$html = mds_specialchars_decode( $mail_row['html_message'] );
-		$text = mds_specialchars_decode( $mail_row['message'] );
-		if ( ! empty( $html ) ) {
-			$mail->msgHTML( $html );
-		} else {
-			$mail->msgHTML( nl2br( $text ) );
-		}
-		$mail->AltBody = $text;
-
-		if ( ! $mail->send() ) {
-			$error = $mail->ErrorInfo;
-			if ( $debug_level > 0 ) {
-				file_put_contents( __DIR__ . '/.maildebug.log', "Mailer Error: " . $error . "\n", FILE_APPEND );
-			}
-		} else {
-			if ( $debug_level > 0 ) {
-				file_put_contents( __DIR__ . '/.maildebug.log', "Message sent!" . "\n", FILE_APPEND );
-			}
-		}
-	} catch ( PHPMailer\PHPMailer\Exception $e ) {
-		$error = $e->errorMessage();
-		if ( $debug_level > 0 ) {
-			file_put_contents( __DIR__ . '/.maildebug.log', $e->errorMessage() . "\n", FILE_APPEND );
-		}
-	} catch ( Exception $e ) {
-		$error = $e->getMessage();
-		if ( $debug_level > 0 ) {
-			file_put_contents( __DIR__ . '/.maildebug.log', $e->getMessage() . "\n", FILE_APPEND );
-		}
-	}
-
-	if ( strcmp( $error, "" ) ) {
-		$now = gmdate( "Y-m-d H:i:s" );
-
-		$sql = "UPDATE " . MDS_DB_PREFIX . "mail_queue SET status='error', retry_count=retry_count+1,  error_msg='" . mysqli_real_escape_string( $GLOBALS['connection'], $error ) . "', `date_stamp`='$now' WHERE mail_id=" . intval( $mail_row['mail_id'] );
-		//echo $sql;
-		mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	} else {
-
-		$now = gmdate( "Y-m-d H:i:s" );
-
-		$sql = "UPDATE " . MDS_DB_PREFIX . "mail_queue SET status='sent', `date_stamp`='$now' WHERE mail_id=" . intval( $mail_row['mail_id'] );
-		mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	}
-
-	return $error;
-}
-
-function send_phpmail( $mail_row ) {
-	if ( WP_ENABLED == 'YES' && WP_USE_MAIL == 'YES' ) {
-		mds_load_wp();
-		add_filter( 'wp_mail_content_type', function() { return 'text/html'; } );
-		return wp_mail( $mail_row['to_address'], $mail_row['subject'], $mail_row['html_message'] );
-	}
-
-	$debug_level = 0;
-	if ( defined( "EMAIL_DEBUG" ) && EMAIL_DEBUG == 'YES' ) {
-		$debug_level = 2;
-	}
-
-	$mail = new PHPMailer\PHPMailer\PHPMailer;
-
-	$error = "";
-	try {
-		$mail->CharSet = "UTF-8";
-		$mail->setFrom( $mail_row['from_address'], mds_specialchars_decode( $mail_row['from_name'] ) );
-		$mail->addReplyTo( $mail_row['from_address'], mds_specialchars_decode( $mail_row['from_name'] ) );
-		$mail->addAddress( $mail_row['to_address'], mds_specialchars_decode( $mail_row['to_name'] ) );
-		$mail->Subject = mds_specialchars_decode( $mail_row['subject'] );
-
-		$html = mds_specialchars_decode( $mail_row['html_message'] );
-		$text = mds_specialchars_decode( $mail_row['message'] );
-		if ( ! empty( $html ) ) {
-			$mail->msgHTML( $html );
-		} else {
-			$mail->msgHTML( nl2br( $text ) );
-		}
-		$mail->AltBody = $text;
-
-		if ( ! $mail->send() ) {
-			$error = $mail->ErrorInfo;
-			if ( $debug_level > 0 ) {
-				file_put_contents( __DIR__ . '/.maildebug.log', "Mailer Error: " . $error . "\n", FILE_APPEND );
-			}
-		} else {
-			if ( $debug_level > 0 ) {
-				file_put_contents( __DIR__ . '/.maildebug.log', "Message sent!" . "\n", FILE_APPEND );
-			}
-		}
-	} catch ( PHPMailer\PHPMailer\Exception $e ) {
-		$error = $e->errorMessage();
-		if ( $debug_level > 0 ) {
-			file_put_contents( __DIR__ . '/.maildebug.log', $e->errorMessage() . "\n", FILE_APPEND );
-		}
-	} catch ( Exception $e ) {
-		$error = $e->getMessage();
-		if ( $debug_level > 0 ) {
-			file_put_contents( __DIR__ . '/.maildebug.log', $e->getMessage() . "\n", FILE_APPEND );
-		}
-	}
-
-	if ( strcmp( $error, "" ) ) {
-		$now = gmdate( "Y-m-d H:i:s" );
-
-		$sql = "UPDATE " . MDS_DB_PREFIX . "mail_queue SET status='error', retry_count=retry_count+1,  error_msg='" . mysqli_real_escape_string( $GLOBALS['connection'], $error ) . "', `date_stamp`='$now' WHERE mail_id=" . intval( $mail_row['mail_id'] );
-		//echo $sql;
-		mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	} else {
-
-		$now = gmdate( "Y-m-d H:i:s" );
-
-		$sql = "UPDATE " . MDS_DB_PREFIX . "mail_queue SET status='sent', `date_stamp`='$now' WHERE mail_id=" . intval( $mail_row['mail_id'] );
-		mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	}
-
-	return $error;
 }
 
 // From WordPress /wp-includes/formatting.php

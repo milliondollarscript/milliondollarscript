@@ -1,12 +1,12 @@
 <?php
 
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 namespace MillionDollarScript\Classes;
@@ -31,29 +37,31 @@ defined( 'ABSPATH' ) or exit;
 class WooCommerceOptions {
 
 	function __construct() {
-		add_filter( 'mds_options_fields', [ __CLASS__, 'mds_options_fields' ], 10, 2 );
+		add_filter( 'mds_options', [ __CLASS__, 'mds_options' ], 10, 2 );
 		add_filter( 'mds_options_save', [ __CLASS__, 'mds_options_save' ], 10, 2 );
 	}
 
 	/**
-	 * @param $fields array The array of fields
-	 * @param $prefix string The options prefix string (milliondollarscript_ by default)
+	 * Add WooCommerce tab to Options page.
+	 *
+	 * @param array $tabs
+	 * @param string $prefix
 	 *
 	 * @return array
 	 */
-	public static function mds_options_fields( array $fields, string $prefix ): array {
-		$wc_fields = [
+	public static function mds_options( array $tabs, string $prefix ): array {
 
+		$tabs[ Language::get( 'WooCommerce' ) ] = [
 			// WooCommerce Integration
-			Field::make( 'separator', $prefix . 'separator', __( 'WooCommerce' ) ),
+			Field::make( 'separator', $prefix . 'separator', Language::get( 'WooCommerce' ) ),
 
-			Field::make( 'checkbox', $prefix . 'woocommerce', __( 'WooCommerce Integration', 'milliondollarscript' ) )
+			Field::make( 'checkbox', $prefix . 'woocommerce', Language::get( 'WooCommerce Integration' ) )
 			     ->set_default_value( 'no' )
 			     ->set_option_value( 'yes' )
-			     ->set_help_text( __( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.', 'milliondollarscript' ) ),
+			     ->set_help_text( Language::get( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.' ) ),
 
 			// WooCommerce Product
-			Field::make( 'association', $prefix . 'product', __( 'Product', 'milliondollarscript' ) )
+			Field::make( 'association', $prefix . 'product', Language::get( 'Product' ) )
 			     ->set_conditional_logic( array(
 				     'relation' => 'AND',
 				     array(
@@ -70,10 +78,10 @@ class WooCommerceOptions {
 			     ) )
 			     ->set_min( 1 )
 			     ->set_max( 1 )
-			     ->set_help_text( __( 'The product for MDS to use. You should create a new product in WooCommerce and tick the Million Dollar Script Pixels checkbox on it.', 'milliondollarscript' ) ),
+			     ->set_help_text( Language::get( 'The product for MDS to use. You should create a new product in WooCommerce and tick the Million Dollar Script Pixels checkbox on it.' ) ),
 
 			// WooCommerce Clear Cart
-			Field::make( 'checkbox', $prefix . 'clear-cart', __( 'Clear cart', 'milliondollarscript' ) )
+			Field::make( 'checkbox', $prefix . 'clear-cart', Language::get( 'Clear cart' ) )
 			     ->set_default_value( 'no' )
 			     ->set_option_value( 'yes' )
 			     ->set_conditional_logic( array(
@@ -84,24 +92,10 @@ class WooCommerceOptions {
 					     'value'   => true,
 				     )
 			     ) )
-			     ->set_help_text( __( 'Clear the cart when a MDS product is added to it.', 'milliondollarscript' ) ),
-
-			// WooCommerce Auto-approve
-			Field::make( 'checkbox', $prefix . 'auto-approve', __( 'Auto-approve', 'milliondollarscript' ) )
-			     ->set_default_value( 'no' )
-			     ->set_option_value( 'yes' )
-			     ->set_conditional_logic( array(
-				     'relation' => 'AND',
-				     array(
-					     'field'   => $prefix . 'woocommerce',
-					     'compare' => '=',
-					     'value'   => true,
-				     )
-			     ) )
-			     ->set_help_text( __( 'Setting to Yes will automatically approve orders before payments are verified by an admin.', 'milliondollarscript' ) ),
+			     ->set_help_text( Language::get( 'Clear the cart when a MDS product is added to it.' ) ),
 
 			// WooCommerce de-dupe variations
-			Field::make( 'checkbox', $prefix . 'dedupe', __( 'Remove duplicate variations', 'milliondollarscript' ) )
+			Field::make( 'checkbox', $prefix . 'dedupe', Language::get( 'Remove duplicate variations' ) )
 			     ->set_default_value( 'no' )
 			     ->set_option_value( 'yes' )
 			     ->set_conditional_logic( array(
@@ -112,10 +106,10 @@ class WooCommerceOptions {
 					     'value'   => true,
 				     )
 			     ) )
-			     ->set_help_text( __( 'Checking this will remove all duplicate variations on the MDS product when the options are saved.', 'milliondollarscript' ) ),
+			     ->set_help_text( Language::get( 'Checking this will remove all duplicate variations on the MDS product when the options are saved.' ) ),
 		];
 
-		return array_merge( $fields, $wc_fields );
+		return $tabs;
 	}
 
 	/**
@@ -124,7 +118,7 @@ class WooCommerceOptions {
 	 *
 	 * @return \Carbon_Fields\Field\Field
 	 */
-	public static function mds_options_save( \Carbon_Fields\Field\Field $field , string $name ) {
+	public static function mds_options_save( \Carbon_Fields\Field\Field $field, string $name ) {
 		switch ( $name ) {
 			case 'woocommerce':
 				if ( class_exists( 'woocommerce' ) && $field->get_value() == 'yes' ) {

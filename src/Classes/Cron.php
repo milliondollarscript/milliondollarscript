@@ -1,11 +1,11 @@
 <?php
-/**
+/*
  * Million Dollar Script Two
  *
- * @version 2.3.6
- * @author Ryan Rhode
- * @copyright (C) 2022, Ryan Rhode
- * @license https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ * @version     2.5.0
+ * @author      Ryan Rhode
+ * @copyright   (C) 2023, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
  */
 
 namespace MillionDollarScript\Classes;
@@ -34,7 +40,7 @@ class Cron {
 	 *
 	 * @return mixed
 	 */
-	public static function add_minute( $schedules ) {
+	public static function add_minute( $schedules ): mixed {
 		$schedules['everyminute'] = array(
 			'interval' => 60,
 			'display'  => __( 'Once Every Minute' )
@@ -48,7 +54,7 @@ class Cron {
 	 *
 	 * @return void
 	 */
-	public static function schedule_cron() {
+	public static function schedule_cron(): void {
 		if ( ! wp_next_scheduled( 'milliondollarscript_cron_minute' ) ) {
 			wp_schedule_event( time(), 'everyminute', 'milliondollarscript_cron_minute' );
 		}
@@ -59,7 +65,7 @@ class Cron {
 	 *
 	 * @return void
 	 */
-	public static function clear_cron() {
+	public static function clear_cron(): void {
 		wp_clear_scheduled_hook( 'milliondollarscript_cron_minute' );
 	}
 
@@ -68,11 +74,9 @@ class Cron {
 	 *
 	 * @return void
 	 */
-	public static function minute() {
+	public static function minute(): void {
 		// Expire orders
-		if ( ! defined( 'NO_HOUSE_KEEP' ) || NO_HOUSE_KEEP != 'YES' ) {
-			$mdspath = Options::get_mds_path();
-			require_once $mdspath . "include/init.php";
+		if ( Options::get_option( 'expire-orders' ) == 'yes' ) {
 			\expire_orders();
 		}
 	}
