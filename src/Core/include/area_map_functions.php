@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.0
+ * @version     2.5.1
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -47,14 +47,15 @@ function render_map_area( $fh, $data, $b_row ) {
 		$y2 = $data['y1'];
 	}
 
-	if ( ENABLE_CLOAKING == 'YES' ) {
+	if ( \MillionDollarScript\Classes\Config::get('ENABLE_CLOAKING') == 'YES' ) {
 		$url = $data['url'];
 	} else {
 		$url = Utility::get_page_url( 'click' ) . '?block_id=' . intval( $data['block_id'] ) . '&BID=' . $BID;
 	}
 
 	$ALT_TEXT = "";
-	if ( ENABLE_MOUSEOVER == 'YES' || ENABLE_MOUSEOVER == 'POPUP' ) {
+	$ENABLE_MOUSEOVER = \MillionDollarScript\Classes\Config::get('ENABLE_MOUSEOVER');
+	if ( $ENABLE_MOUSEOVER == 'YES' || $ENABLE_MOUSEOVER == 'POPUP' ) {
 		if ( $data['ad_id'] > 0 ) {
 			$ALT_TEXT = $data['alt_text'] . '<img src="' . MDS_CORE_URL . 'images/periods.gif" border="0">';
 			$ALT_TEXT = str_replace( "'", "", $ALT_TEXT );
@@ -71,7 +72,7 @@ function render_map_area( $fh, $data, $b_row ) {
 	);
 
 	fwrite( $fh, '<area href="" data-data="' . htmlspecialchars( json_encode( $data_values, JSON_HEX_QUOT | JSON_HEX_APOS ), ENT_QUOTES, 'UTF-8' ) . '" coords="' . $data['x1'] . ',' . $data['y1'] . ',' . ( $x2 + $b_row['block_width'] ) . ',' . ( $y2 + $b_row['block_height'] ) . '"' );
-	if ( ENABLE_MOUSEOVER == 'NO' ) {
+	if ( $ENABLE_MOUSEOVER == 'NO' ) {
 		fwrite( $fh, " title=\"" . htmlspecialchars( $data['alt_text'], ENT_QUOTES, 'UTF-8' ) . "\" alt=\"" . htmlspecialchars( $data['alt_text'], ENT_QUOTES, 'UTF-8' ) . "\"" );
 	}
 	fwrite( $fh, ">\n" );

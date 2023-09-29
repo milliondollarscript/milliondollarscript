@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.0
+ * @version     2.5.1
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -208,7 +208,7 @@ class Config {
 						$table_name,
 						[
 							'config_key' => $key,
-							'val' => $default['value'],
+							'val'        => $default['value'],
 						],
 						[
 							'%s',

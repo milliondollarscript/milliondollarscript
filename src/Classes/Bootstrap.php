@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.0
+ * @version     2.5.1
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -43,6 +43,11 @@ class Bootstrap {
 
 		$this->instance = $this;
 
+		// Init MDS core
+		add_action( 'init', function () {
+			require_once MDS_CORE_PATH . 'include/init.php';
+		} );
+
 		// Load language
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Language', 'load_textdomain' ] );
 
@@ -62,7 +67,7 @@ class Bootstrap {
 		add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Options', 'save' ] );
 
 		// Add Block
-		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Block', 'register_style' ] );
+		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Block', 'register_style' ] );
 		add_action( 'after_setup_theme', [ '\MillionDollarScript\Classes\Block', 'load' ] );
 
 		// Add Emails page

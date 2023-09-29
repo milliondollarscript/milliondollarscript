@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.3.1
-Stable tag: 2.5
+Stable tag: 2.5.1
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -19,7 +19,12 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 == Changelog ==
 
-= 2.5 =
+= 2.5.1 =
+* Fix loading of block styles properly.
+* Finish implementing updating from MDS 2.3.5.
+* Found a way to at least load the menu on dynamic pages for block themes.
+
+= 2.5.0 =
 * Fix more warnings, notices, etc.
 * Don't load popper and tippy if tooltips are disabled.
 * Fix links not working when tooltips are off.

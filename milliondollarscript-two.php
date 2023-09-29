@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.0
+  Version: 2.5.1
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -15,7 +15,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.0
+ * @version     2.5.1
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -45,6 +45,7 @@ namespace MillionDollarScript;
 use MillionDollarScript\Classes\Bootstrap;
 use MillionDollarScript\Classes\Cron;
 use MillionDollarScript\Classes\Database;
+use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Utility;
 
@@ -66,17 +67,19 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', 25 );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.0' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.1' );
 
 // Detect PHP version
 $minimum_version = '8.0.0';
 if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
-	esc_html_e( 'Minimum PHP version requirement not met. Million Dollar Script requires at least PHP ' . $minimum_version, MDS_TEXT_DOMAIN );
+	$error_message = wp_sprintf( Language::get( 'Minimum PHP version requirement not met. Million Dollar Script requires at least PHP %s' ), $minimum_version );
+	esc_html_e( $error_message );
 	exit;
 }
 
 /**
  * Activation
+ * @throws \Exception
  */
 function milliondollarscript_two_activate(): void {
 	@ini_set( 'memory_limit', '512M' );
@@ -88,7 +91,7 @@ function milliondollarscript_two_activate(): void {
 	// Check if database requires upgrades and do them before install deltas happen.
 	$mdsdb   = new Database();
 	$version = $mdsdb->upgrade();
-	if ( $version != MDS_DB_VERSION && $version !== false ) {
+	if ( $version !== false ) {
 		$mdsdb->up_dbver( $version );
 	}
 
@@ -140,7 +143,6 @@ require_once ABSPATH . 'wp-includes/pluggable.php';
 
 // Please wait, loading...
 require_once MDS_BASE_PATH . 'vendor/autoload.php';
-require_once MDS_CORE_PATH . 'include/init.php';
 
 // WP plugin activation actions.
 register_activation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_activate' );

@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.0
+ * @version     2.5.1
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -82,14 +82,36 @@ class Database {
 	/**
 	 * Performs any necessary upgrades on the database.
 	 *
-	 * @return bool
+	 * @return bool|int
+	 * @throws \Exception
 	 */
-	public function upgrade(): bool {
+	public function upgrade(): bool|int {
 		global $wpdb;
+
+		// Change config key column to config_key here since we're going to use it.
+		$table_name = MDS_DB_PREFIX . "config";
+		if ( $this->table_exists( $table_name ) ) {
+			$result = $wpdb->get_results(
+				"SELECT COLUMN_NAME 
+	FROM INFORMATION_SCHEMA.COLUMNS 
+	WHERE table_name = '{$table_name}' 
+	AND column_name = 'key'"
+			);
+			if ( ! empty( $result ) ) {
+				$wpdb->query( "ALTER TABLE `{$table_name}` CHANGE `key` `config_key` VARCHAR(100) NOT NULL DEFAULT ''" );
+				$wpdb->flush();
+			}
+		}
 
 		require_once MDS_CORE_PATH . 'include/version.php';
 
 		$version = $this->get_dbver();
+
+		// Check for an older version and don't upgrade from them.
+		if ( $version < 13 ) {
+			$error_message = wp_sprintf( Language::get( 'You must upgrade the plugin to 2.3.5 before updating to %s.' ), MDS_VERSION );
+			wp_die( $error_message, Language::get( 'Plugin Activation Error' ), array( 'response' => 400 ) );
+		}
 
 		if ( ! $this->requires_upgrade( $version ) ) {
 			return false;
@@ -98,35 +120,34 @@ class Database {
 		if ( $version < 25 ) {
 
 			// Convert Rank to Privileged Users
+			$users_map  = [];
 			$table_name = MDS_DB_PREFIX . "users";
 			if ( $this->table_exists( $table_name ) ) {
 				$results = $wpdb->get_results( "SELECT * FROM " . $table_name, ARRAY_A );
-
 				if ( ! empty( $results ) ) {
 					foreach ( $results as $row ) {
-						if ( $row['Rank'] == '2' ) {
-							update_user_meta( $row['ID'], '_' . MDS_PREFIX . 'privileged', '1' );
+
+						// Get WP user by email.
+						$user = get_user_by( 'email', $row['Email'] );
+						if ( $user ) {
+
+							// Get user id.
+							$user_id = $user->ID;
+
+							// Save user id in users map.
+							$users_map[ intval( $row['ID'] ) ] = $user_id;
+
+							// Set privileged users.
+							if ( $row['Rank'] == '2' ) {
+								update_user_meta( $user_id, '_' . MDS_PREFIX . 'privileged', '1' );
+							}
 						}
 					}
 				}
 			}
 
-			// TODO: this did not work for some reason
-			// Change config key column to config_key to prevent dbDelta conflicts.
-			$table_name = MDS_DB_PREFIX . "config";
-			if ( $this->table_exists( $table_name ) ) {
-				$result = $wpdb->get_results(
-					"SELECT COLUMN_NAME 
-	FROM INFORMATION_SCHEMA.COLUMNS 
-	WHERE table_name = '{$table_name}' 
-	AND column_name = 'key'"
-				);
-				if ( ! empty( $result ) ) {
-					$wpdb->query( "ALTER TABLE {$table_name} CHANGE `key` `config_key` VARCHAR(100) NOT NULL DEFAULT ''" );
-				}
-			}
-
-			// TODO: delete extra tables or leave them?
+			// TODO: Add a button/option to delete old unused tables in the admin.
+			// TODO: Add a way to migrate massive amounts of records which could be useful for other things.
 
 			// Convert ads table to mds-pixel post type
 			$table_name = MDS_DB_PREFIX . "ads";
@@ -136,31 +157,61 @@ class Database {
 				if ( ! empty( $results ) ) {
 					foreach ( $results as $row ) {
 
+						// If the user doesn't exist in the users map skip it.
+						if ( ! isset( $users_map[ $row['user_id'] ] ) ) {
+							continue;
+						}
+
 						// Get order status
 						$order_status = $wpdb->get_var(
 							$wpdb->prepare(
-								"SELECT order_id from %s WHERE order_id=%d",
-								MDS_DB_PREFIX . "orders",
+								"SELECT `status` FROM `" . MDS_DB_PREFIX . "orders` WHERE order_id = %d",
 								$row['order_id']
 							)
 						);
 
-						// Insert post
-						$post_content = array(
-							'post_title'  => 'MDS Pixel - ' . $row['ad_id'],
-							'post_type'   => 'mds-pixel',
-							'post_status' => $order_status,
-							'meta_input'  => array(
-								'_mds_user_id'   => $row['user_id'],
-								'_mds_ad_date'   => $row['ad_date'],
-								'_mds_order_id'  => $row['order_id'],
-								'_mds_banner_id' => $row['banner_id'],
-								'_mds_1'         => $row['1'],
-								'_mds_2'         => $row['2'],
-								'_mds_3'         => $row['3']
-							)
-						);
-						wp_insert_post( $post_content );
+						// Check if post exists before inserting it.
+						$post_title  = 'MDS Pixel - ' . $row['ad_id'];
+						$post_exists = post_exists( $post_title );
+						if ( ! $post_exists ) {
+
+							// Insert image attachment
+							$attachment_id = 0;
+							// TODO: Add more checks for the field type to make sure it's the default image field.
+							if ( ! empty( $row['3'] ) ) {
+								$image_file = Utility::get_upload_path() . "images/" . $row['3'];
+								if ( file_exists( $image_file ) ) {
+									$filetype      = wp_check_filetype( $image_file );
+									$mime_type     = $filetype['type'];
+									$attachment    = [
+										'post_mime_type' => $mime_type,
+										'post_title'     => basename( $image_file ),
+										'post_content'   => '',
+										'post_status'    => 'inherit'
+									];
+									$attachment_id = wp_insert_attachment( $attachment, $image_file );
+									$attach_data   = wp_generate_attachment_metadata( $attachment_id, $image_file );
+									wp_update_attachment_metadata( $attachment_id, $attach_data );
+								}
+							}
+
+							// Insert mds-pixel post.
+							$post_content = [
+								'post_title'  => $post_title,
+								'post_type'   => 'mds-pixel',
+								'post_status' => $order_status,
+								'post_date'   => $row['ad_date'],
+								'post_author' => $users_map[ $row['user_id'] ],
+								'meta_input'  => [
+									'_milliondollarscript_order' => $row['order_id'],
+									'_milliondollarscript_grid'  => $row['banner_id'],
+									'_milliondollarscript_text'  => $row['1'],
+									'_milliondollarscript_url'   => $row['2'],
+									'_milliondollarscript_image' => empty( $attachment_id ) ? '' : $attachment_id
+								]
+							];
+							wp_insert_post( $post_content );
+						}
 					}
 				}
 			}
@@ -168,7 +219,7 @@ class Database {
 
 		// TODO: remember to update the DB version in /milliondollarscript-two.php
 
-		return $version;
+		return MDS_DB_VERSION;
 	}
 
 	/**
@@ -178,7 +229,12 @@ class Database {
 	 */
 	public function get_dbver(): int {
 		if ( get_option( MDS_PREFIX . 'activation' ) == '1' ) {
-			return MDS_DB_VERSION;
+			// If plugin is currently being activated check if the config table exists.
+			$table_name = MDS_DB_PREFIX . "config";
+			if ( ! $this->table_exists( $table_name ) ) {
+				// If the config table doesn't exist then this is the first time the plugin has been activated so return the database version of the plugin.
+				return MDS_DB_VERSION;
+			}
 		}
 
 		global $wpdb;

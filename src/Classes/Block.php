@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.0
+ * @version     2.5.1
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -36,21 +36,23 @@ defined( 'ABSPATH' ) or exit;
 
 class Block {
 
+	private static \Carbon_Fields\Container\Block_Container $cfblock;
+
 	public static function load(): void {
-		$mdsfields = new BlockFields();
-		CFBlock::make( Language::get( 'Million Dollar Script' ) )
-		       ->set_icon( 'grid-view' )
-		       ->set_category( 'embed' )
-		       ->set_keywords( [ 'mds', 'million', 'dollar', 'script', 'pixel' ] )
-		       ->set_mode( 'both' )
-		       ->set_editor_style( MDS_PREFIX . 'admin-block-css' )
-		       ->add_fields( $mdsfields->get_fields() )
-		       ->set_render_callback( function ( $fields, $attributes, $inner_blocks ) use ( $mdsfields ) {
-			       $mdsfields->display( $fields );
-		       } );
+		$mdsfields     = new BlockFields();
+		self::$cfblock = CFBlock::make( Language::get( 'Million Dollar Script' ) )
+		                        ->set_icon( 'grid-view' )
+		                        ->set_category( 'embed' )
+		                        ->set_keywords( [ 'mds', 'million', 'dollar', 'script', 'pixel' ] )
+		                        ->set_mode( 'both' )
+		                        ->add_fields( $mdsfields->get_fields() )
+		                        ->set_render_callback( function ( $fields, $attributes, $inner_blocks ) use ( $mdsfields ) {
+			                        $mdsfields->display( $fields );
+		                        } );
 	}
 
 	public static function register_style(): void {
 		wp_register_style( MDS_PREFIX . 'admin-block-css', MDS_BASE_URL . 'src/Assets/css/mds.css', array(), filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
+		self::$cfblock->set_editor_style( MDS_PREFIX . 'admin-block-css' );
 	}
 }

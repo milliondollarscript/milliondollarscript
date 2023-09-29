@@ -5,7 +5,7 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.0\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.1\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2023-06-19 09:40-0500\n"
 "PO-Revision-Date: 2023-06-19 09:40-0500\n"
-"X-Generator: Million Dollar Script Two 2.5.0\n"
+"X-Generator: Million Dollar Script Two 2.5.1\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -48,7 +48,7 @@ msgstr ""
 msgid "1 block at a time"
 msgstr ""
 
-msgid "2.5.0"
+msgid "2.5.1"
 msgstr ""
 
 msgid "4 blocks at a time"
@@ -474,6 +474,9 @@ msgstr ""
 msgid "Million Dollar Script v%s"
 msgstr ""
 
+msgid "Minimum PHP version requirement not met. Million Dollar Script requires at least PHP %s"
+msgstr ""
+
 msgid "My Account"
 msgstr ""
 
@@ -637,6 +640,9 @@ msgid "Please Wait! Reserving Pixels..."
 msgstr ""
 
 msgid "Please upload an image."
+msgstr ""
+
+msgid "Plugin Activation Error"
 msgstr ""
 
 msgid "Plugin updates"
@@ -958,6 +964,9 @@ msgid "You might want to run a backup before doing this. Click the Delete button
 msgstr ""
 
 msgid "You must select a block adjacent to another one."
+msgstr ""
+
+msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
 msgstr ""
 
 msgid "Your Uploaded Pixels"
