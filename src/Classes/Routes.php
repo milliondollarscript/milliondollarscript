@@ -60,7 +60,7 @@ class Routes {
 	public static function parse_query( $wp_query ): void {
 		if ( isset( $wp_query->query_vars[ MDS_ENDPOINT ] ) ) {
 			$post_id = Options::get_option( 'dynamic-id' );
-			if ( $post_id !== null ) {
+			if ( ! empty( $post_id ) ) {
 				$post_id = intval( $post_id );
 				$post    = get_post( $post_id );
 				if ( $post !== null ) {
