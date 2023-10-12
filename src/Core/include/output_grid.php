@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -323,8 +323,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 			$blocks[ $row['block_id'] ] = 'reserved';
 		}
 
-		// from temp_orders table
-		$sql = "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id='" . intval( $BID ) . "'";
+		// from orders table
+		$sql = "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id='" . intval( $BID ) . "' AND `status` <> 'deleted' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		while ( $row = mysqli_fetch_array( $result ) ) {
