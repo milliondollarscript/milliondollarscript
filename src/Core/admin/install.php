@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -96,7 +96,7 @@ function install_db(): void {
 	dbDelta( "CREATE TABLE `{$tables['blocks']}` (
     `block_id` INT NOT NULL DEFAULT '0',
     `user_id` INT DEFAULT NULL,
-    `status` SET('reserved','sold','free','ordered','nfs') NOT NULL DEFAULT '',
+    `status` SET('cancelled','reserved','sold','free','ordered','nfs') NOT NULL DEFAULT '',
     `x` INT NOT NULL DEFAULT '0',
     `y` INT NOT NULL DEFAULT '0',
     `image_data` TEXT NOT NULL,
@@ -111,8 +111,8 @@ function install_db(): void {
     `price` FLOAT DEFAULT NULL,
     `banner_id` INT NOT NULL DEFAULT '1',
     `ad_id` INT NOT NULL DEFAULT '0',
-    `click_count` INT NOT NULL,
-    `view_count` INT NOT NULL,
+    `click_count` INT NOT NULL DEFAULT '0',
+    `view_count` INT NOT NULL DEFAULT '0',
     PRIMARY KEY  (`block_id`,`banner_id`)
 ) $charset_collate;" );
 
