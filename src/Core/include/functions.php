@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -1337,7 +1337,8 @@ function select_block( $map_x, $map_y ) {
 
 	//Check if max_orders < order count
 	if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
-		return Language::get( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="' . Utility::get_page_url( 'history' ) . '">Order History.</a></b>' ); // order count > max orders
+		// order count > max orders
+		return Language::get( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="' . Utility::get_page_url( 'history' ) . '">Order History.</a></b>' );
 	}
 
 	if ( ! function_exists( 'load_ad_values' ) ) {
@@ -2670,7 +2671,7 @@ function check_pixels( $in_str ): bool {
 		$available = false;
 	}
 
-    // TODO: optimize or remove this but make sure blocks are added so they get checked above.
+	// TODO: optimize or remove this but make sure blocks are added so they get checked above.
 	if ( $available ) {
 		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %s", $BID, get_current_order_id() );
 		$result = $wpdb->get_results( $sql );
