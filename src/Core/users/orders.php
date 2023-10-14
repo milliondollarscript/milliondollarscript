@@ -53,7 +53,7 @@ global $wpdb;
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
 	if ( $_REQUEST['order_id'] == get_current_order_id() ) {
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval(get_current_order_id() ) . "'";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval(get_current_order_id() ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
 			$row = mysqli_fetch_assoc( $result );
