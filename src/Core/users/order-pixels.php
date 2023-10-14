@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -708,22 +708,18 @@ if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
 
     <script type="text/javascript">
 		document.form1.selected_pixels.value = block_str;
-		(function ($) {
+		jQuery(document).ready(function(){
 			window.pointer_width = <?php echo $reqsize[0]; ?>;
 			window.pointer_height =  <?php echo $reqsize[1]; ?>;
 
 			window.$block_pointer = jQuery('#block_pointer');
 			window.$pixelimg = jQuery('#pixelimg');
 
-			window.onresize = move_image_to_selection;
-			window.onload = move_image_to_selection;
-			move_image_to_selection();
-
 			window.$block_pointer.on('mousemove', function (event) {
 				show_pointer2(event);
 			});
 
-			window.$block_pointer.on('click', function (event) {
+			window.$block_pointer.on('click', function () {
 				do_block_click();
 			});
 
@@ -732,6 +728,9 @@ if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
 			});
 
 			window.$pixelimg.on('load', function () {
+				window.onresize = move_image_to_selection;
+				window.onload = move_image_to_selection;
+				move_image_to_selection();
 				remove_ajax_loader();
 			});
 
@@ -746,7 +745,7 @@ if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
 			}
 
 			add_ajax_loader(window.$pixelimg.parent());
-		})(jQuery);
+		});
     </script>
 
 	<?php

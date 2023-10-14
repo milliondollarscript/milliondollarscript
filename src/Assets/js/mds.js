@@ -1,7 +1,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -453,8 +453,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 	initialized = true;
 }
 
-jQuery(function ($) {
-
+jQuery(document).ready(function(){
 	// MDS ajax display method
 	window.mds_ajax = function (mds_type, mds_container_id, mds_align, mds_width, mds_height, grid_id) {
 		// jQuery(document).on('carbonFields.apiLoaded', function (e, api) {

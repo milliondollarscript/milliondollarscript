@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -94,7 +94,7 @@ function mds_wp_login_check(): void {
 							?>
                         </div>
                         <script>
-							jQuery(function ($) {
+	                        jQuery(document).ready(function(){
 								const registerBtn = $('.mds-register-btn-container');
 								if (registerBtn.length) {
 									const submitBtn = $('#loginform .button[name="wp-submit"]');

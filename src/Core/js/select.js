@@ -1,7 +1,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -188,7 +188,7 @@ function on_grid_load() {
 
 grid_interval = setInterval(on_grid_load, 100);
 
-(function ($) {
+jQuery(document).ready(function(){
 	function add_ajax_loader(container) {
 		let $ajax_loader = $("<div class='ajax-loader'></div>");
 		$(container).append($ajax_loader)
@@ -196,7 +196,7 @@ grid_interval = setInterval(on_grid_load, 100);
 	}
 
 	add_ajax_loader('.mds-container');
-})(jQuery);
+});
 
 function load_order() {
 
