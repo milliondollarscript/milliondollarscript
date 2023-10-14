@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -71,6 +71,15 @@ class WooCommerce {
 		add_filter( 'woocommerce_quantity_input_args', [ __CLASS__, 'disable_product_quantity_input' ], 10, 2 );
 
 		add_action( 'woocommerce_thankyou', [ __CLASS__, 'reset_session_variables' ], 10, 1 );
+		add_action( 'woocommerce_thankyou', [ __CLASS__, 'thank_you_redirect' ], 11, 1 );
+	}
+
+	public static function thank_you_redirect( $order_id ): void {
+		$thank_you_page = \MillionDollarScript\Classes\Options::get_option( 'thank-you-page' );
+		if ( ! empty( $thank_you_page ) ) {
+			wp_safe_redirect( $thank_you_page );
+			exit;
+		}
 	}
 
 	public static function disable_product_quantity_input( $args, $product ) {
@@ -527,7 +536,7 @@ class WooCommerce {
 			global $wpdb;
 			$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d";
 			$prepared_sql = $wpdb->prepare( $sql, intval( $mds_order_id ) );
-			$row       = $wpdb->get_row( $prepared_sql, ARRAY_A );
+			$row          = $wpdb->get_row( $prepared_sql, ARRAY_A );
 
 			complete_order( $row['user_id'], $mds_order_id );
 			debit_transaction( $mds_order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );

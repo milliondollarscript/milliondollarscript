@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -83,7 +83,7 @@ class Options {
 				Field::make( 'text', MDS_PREFIX . 'checkout-url', Language::get( 'Checkout URL' ) )
 				     ->set_default_value( '' )
 				     ->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (note that this option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
-				//
+
 				// Dynamic Page
 				Field::make( 'text', MDS_PREFIX . 'dynamic-id', Language::get( 'Dynamic Page ID' ) )
 				     ->set_default_value( '' )
@@ -98,6 +98,11 @@ class Options {
 					     'no'  => 'No',
 				     ] )
 				     ->set_help_text( Language::get( 'Enable the Confirm Order page which shows after filling out the fields and before the checkout page.' ) ),
+
+				// Thank-you Page
+				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page' ) )
+				     ->set_default_value( wp_login_url() )
+				     ->set_help_text( Language::get( 'The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message.' ) ),
 			],
 
 			'Login' => [

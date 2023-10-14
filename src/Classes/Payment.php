@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -156,6 +156,12 @@ class Payment {
 			Language::out( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
 		} else {
 			Language::out( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+		}
+
+		$thank_you_page    = \MillionDollarScript\Classes\Options::get_option( 'thank-you-page' );
+		if(!empty($thank_you_page)){
+			wp_safe_redirect( $thank_you_page );
+			exit;
 		}
 	}
 }
