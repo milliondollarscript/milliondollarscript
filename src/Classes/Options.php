@@ -101,7 +101,7 @@ class Options {
 
 				// Thank-you Page
 				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page' ) )
-				     ->set_default_value( wp_login_url() )
+				     ->set_default_value( '' )
 				     ->set_help_text( Language::get( 'The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message.' ) ),
 			],
 
