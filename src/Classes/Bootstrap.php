@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -138,6 +138,9 @@ class Bootstrap {
 
 		// load WooCommerce integration
 		if ( Functions::is_wc_active() ) {
+			// Migrate product if necessary.
+			add_action( 'wp_loaded', [ '\MillionDollarScript\Classes\Functions', 'migrate_product' ] );
+
 			new WooCommerceOptions();
 
 			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) == 'yes' ) {

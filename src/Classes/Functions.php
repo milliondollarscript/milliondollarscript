@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.1
+ * @version     2.5.2
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -335,49 +335,55 @@ class Functions {
 	 * @return \WC_Product|null
 	 */
 	public static function migrate_product(): null|\WC_Product {
-		global $wp_query;
-		wp_reset_postdata();
-
-		$product = null;
-
-		$wc_query = new \WP_Query( [
-			'posts_per_page' => 1,
-			'post_type'      => 'product',
-			'meta_key'       => '_milliondollarscript',
-			'meta_value'     => 'yes',
-			'meta_compare'   => '==',
-			'post_status'    => 'publish',
-		] );
-
-		if ( $wp_query == null ) {
-			$wp_query = $wc_query;
-		}
-
-		if ( $wc_query->have_posts() ) {
-			while ( $wc_query->have_posts() ) {
-				$wc_query->the_post();
-
-				$product_id = get_the_ID();
-				$product    = wc_get_product( $product_id );
-
-				if ( $product === false || $product === null ) {
-					error_log( "Product with id " . $product_id . " wasn't found from wc_get_product function." );
-
-					return null;
-				}
-
-				if ( $product->is_type( 'simple' ) ) {
-					wp_remove_object_terms( $product_id, 'simple', 'product_type' );
-					wp_set_object_terms( $product_id, 'variable', 'product_type', true );
-				}
-
-				self::get_attribute_data();
-				self::add_grid_attributes( $product );
-			}
+		$mds_migrate_product_executed = get_option( 'mds_migrate_product_executed' );
+		if ( ! $mds_migrate_product_executed ) {
+			global $wp_query;
 			wp_reset_postdata();
+
+			$product = null;
+
+			$wc_query = new \WP_Query( [
+				'posts_per_page' => 1,
+				'post_type'      => 'product',
+				'meta_key'       => '_milliondollarscript',
+				'meta_value'     => 'yes',
+				'meta_compare'   => '==',
+				'post_status'    => 'publish',
+			] );
+
+			if ( $wp_query == null ) {
+				$wp_query = $wc_query;
+			}
+
+			if ( $wc_query->have_posts() ) {
+				while ( $wc_query->have_posts() ) {
+					$wc_query->the_post();
+
+					$product_id = get_the_ID();
+					$product    = wc_get_product( $product_id );
+
+					if ( $product === false || $product === null ) {
+						return null;
+					}
+
+					if ( $product->is_type( 'simple' ) ) {
+						$product_classname = \WC_Product_Factory::get_product_classname( $product_id, 'variable' );
+						$product       = new $product_classname( $product_id );
+						$product->save();
+					}
+
+					self::get_attribute_data();
+					self::add_grid_attributes( $product );
+				}
+				wp_reset_postdata();
+			}
+
+			update_option( 'mds_migrate_product_executed', true );
+
+			return $product;
 		}
 
-		return $product;
+		return null;
 	}
 
 	/**
@@ -634,6 +640,10 @@ class Functions {
 		}
 	}
 
+	public static function is_wc_active(): bool {
+		return in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) );
+	}
+
 	/**
 	 * @param array $grids
 	 * @param \WC_Product_Variable|\WC_Product $product
@@ -655,9 +665,5 @@ class Functions {
 
 		// Save the product.
 		$product->save();
-	}
-
-	public static function is_wc_active(): bool {
-		return in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) );
 	}
 }
