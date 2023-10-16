@@ -88,6 +88,7 @@ $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
 <?php
 Language::out_replace(
+	'<p>1. <a href="%ORDER_URL%?BID=%BID%">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>',
 	[
 		'%BID%',
 		'%ORDER_URL%',
@@ -96,7 +97,6 @@ Language::out_replace(
 		$BID,
 		Utility::get_page_url( 'order' ),
 	],
-	'<p>1. <a href="%ORDER_URL%?BID=%BID%">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>',
 );
 
 $sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( get_current_order_id() ) . "' and banner_id='$BID'";
@@ -113,16 +113,16 @@ function display_edit_order_button( $order_id ) {
 
 if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) ) {
 	Language::out_replace(
+		'<h3>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a></h3>',
 		[ '%ORDER_URL%', '%BID%' ],
-		[ Utility::get_page_url( 'order' ), $BID ],
-		'<h3>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a></h3>'
+		[ Utility::get_page_url( 'order' ), $BID ]
 	);
 } else if ( $not_enough_blocks ) {
 	Language::out( '<h3>Not enough blocks selected</h3>' );
 	Language::out_replace(
+		'<p>You are required to select at least %MIN_BLOCKS% blocks form the grid. Please go back to select more pixels.</p>',
 		[ '%MIN_BLOCKS%' ],
-		[ $banner_data['G_MIN_BLOCKS'] ],
-		'<p>You are required to select at least %MIN_BLOCKS% blocks form the grid. Please go back to select more pixels.</p>'
+		[ $banner_data['G_MIN_BLOCKS'] ]
 	);
 
 	display_edit_order_button( get_current_order_id() );
@@ -175,9 +175,9 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 			$row = mysqli_fetch_array( $result );
 
 			Language::out_replace(
+				'<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>',
 				[ '%MAX_ORDERS%', '%HISTORY_URL%' ],
-				[ $row['max_orders'], Utility::get_page_url( 'history' ) ],
-				'<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>'
+				[ $row['max_orders'], Utility::get_page_url( 'history' ) ]
 			);
 		}
 	} else {

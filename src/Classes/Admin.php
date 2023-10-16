@@ -34,6 +34,22 @@ defined( 'ABSPATH' ) or exit;
 
 class Admin {
 
+	/**
+     * Updates the language file.
+     *
+	 * @throws \Exception
+	 */
+	public static function update_language(): void {
+		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
+
+		$plugin_folder = plugin_dir_path( MDS_BASE_FILE );
+		$scanner       = new MDS_Language_Scanner( $plugin_folder );
+		$scanner->scan_files();
+
+		wp_send_json( true );
+		wp_die();
+	}
+
 	public static function block_editor_scripts(): void {
 		wp_register_script(
 			MDS_PREFIX . 'admin-block-js',
@@ -145,8 +161,8 @@ class Admin {
 				'orders',
 				'show-email',
 				'outgoing-email',
-                'get-order-image',
-                'show-map',
+				'get-order-image',
+				'show-map',
 				'Manage Grids',
 				'Packages',
 				'Price Zones',

@@ -34,7 +34,7 @@ defined( 'ABSPATH' ) or exit;
 ?>
 <div class="system-info">
     <h1><?php Language::out( 'System Information' ); ?></h1>
-    <p><?php Language::out_replace( '%UPLOAD_PATH%', \MillionDollarScript\Classes\Utility::get_upload_path(), 'The path to your uploads directory: %UPLOAD_PATH%' ); ?></p>
+    <p><?php Language::out_replace( 'The path to your uploads directory: %UPLOAD_PATH%', '%UPLOAD_PATH%', \MillionDollarScript\Classes\Utility::get_upload_path() ); ?></p>
     <hr>
     <div class="phpinfo-container">
 		<?php

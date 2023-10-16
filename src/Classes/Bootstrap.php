@@ -107,6 +107,8 @@ class Bootstrap {
 		// Load Admin AJAX
 		add_action( 'wp_ajax_mds_admin_ajax', [ '\MillionDollarScript\Classes\Admin', 'ajax' ] );
 
+		add_action( 'wp_ajax_mds_update_language', [ '\MillionDollarScript\Classes\Admin', 'update_language' ] );
+
 		// Load Block Editor JS
 		add_action( 'enqueue_block_editor_assets', [ '\MillionDollarScript\Classes\Admin', 'block_editor_scripts' ] );
 
@@ -127,6 +129,8 @@ class Bootstrap {
 			$current_page = $_REQUEST['page'];
 			if ( $current_page == 'mds-top-customers' ) {
 				add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\Functions', 'enqueue_scripts' ] );
+			} else if ( $current_page == 'milliondollarscript_options' ) {
+				add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\Options', 'enqueue_scripts' ] );
 			}
 		}
 		if ( isset( $_REQUEST['post_type'] ) && $_REQUEST['post_type'] == \MillionDollarScript\Classes\FormFields::$post_type ) {

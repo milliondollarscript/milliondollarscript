@@ -113,7 +113,7 @@ function display_package_options_table( $banner_id, string $selected = '', bool 
 						} else {
 							echo convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
 							$banner_data = load_banner_constants( $banner_id );
-							echo " " . Language::get_replace( '%NUM_PIXELS%', $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'], '/ %NUM_PIXELS% pixels' );
+							echo " " . Language::get_replace( '/ %NUM_PIXELS% pixels', '%NUM_PIXELS%', $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 						} ?><?php ?></label>
                 </div>
                 <div>
@@ -122,7 +122,7 @@ function display_package_options_table( $banner_id, string $selected = '', bool 
 					if ( $row['days_expire'] == '0' ) {
 						Language::out( 'Never' );
 					} else {
-						Language::out_replace( '%DAYS_EXPIRE%', $row['days_expire'], 'Expires in %DAYS_EXPIRE% days.' );
+						Language::out_replace( 'Expires in %DAYS_EXPIRE% days.', '%DAYS_EXPIRE%', $row['days_expire'] );
 					}
 
 					?>

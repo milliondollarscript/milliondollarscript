@@ -1099,7 +1099,7 @@ function display_order( $order_id, $BID ): void {
 			if ( $order_row['days_expire'] == 0 ) {
 				Language::out( 'Never' );
 			} else {
-				Language::out_replace( '%DAYS_EXPIRE%', $order_row['days_expire'], 'In %DAYS_EXPIRE% days from date of publishment' );
+				Language::out_replace( 'In %DAYS_EXPIRE% days from date of publishment', '%DAYS_EXPIRE%', $order_row['days_expire'] );
 			}
 			?>
         </div>
@@ -1329,7 +1329,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 	// Check if max_orders < order count
 	if ( ! can_user_order( $banner_data, $user_id ) ) {
 		// order count > max orders
-		return Language::get_replace( '%HISTORY_URL%', esc_url( Utility::get_page_url( 'history' ) ), '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="%HISTORY_URL%">Order History.</a></b>' );
+		return Language::get_replace( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="%HISTORY_URL%">Order History.</a></b>', '%HISTORY_URL%', esc_url( Utility::get_page_url( 'history' ) ) );
 	}
 
 	if ( ! function_exists( 'load_ad_values' ) ) {
@@ -1466,7 +1466,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 					"error" => "true",
 					"type"  => "max_blocks_selected",
 					"data"  => [
-						"value" => Language::get_replace( '%MAX_BLOCKS%', $banner_data['G_MAX_BLOCKS'], 'Maximum blocks selected. (%MAX_BLOCKS% allowed per order)' ),
+						"value" => Language::get_replace( 'Maximum blocks selected. (%MAX_BLOCKS% allowed per order)', '%MAX_BLOCKS%', $banner_data['G_MAX_BLOCKS'] ),
 					]
 				];
 			}
@@ -1486,7 +1486,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 					"error" => "true",
 					"type"  => "advertiser_sel_sold_error",
 					"data"  => [
-						"value" => Language::get_replace( "%BLOCK_ID% ", '', 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!' ),
+						"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID% ", '' ),
 					]
 				];
 
@@ -1521,7 +1521,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 					"error" => "true",
 					"type"  => "advertiser_sel_sold_error",
 					"data"  => [
-						"value" => Language::get_replace( "%BLOCK_ID% ", '', 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!' ),
+						"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID% ", '' ),
 					]
 				];
 			}
@@ -1592,7 +1592,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 				"error" => "true",
 				"type"  => "advertiser_sel_sold_error",
 				"data"  => [
-					"value" => Language::get_replace( "%BLOCK_ID%", $clicked_block, 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!' ),
+					"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID%", $clicked_block ),
 				]
 			];
 		}

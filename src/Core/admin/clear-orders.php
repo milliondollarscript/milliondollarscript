@@ -40,7 +40,7 @@ if ( isset( $done ) ) {
 	?>
     <h3><?php echo $done; ?></h3>
 	<?php
-	Language::out_replace( '%PROCESS_PIXELS_URL%', esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ), 'Now you should <a href="%PROCESS_PIXELS_URL%">Process Pixels</a> to regenerate your grid.' );
+	Language::out_replace( 'Now you should <a href="%PROCESS_PIXELS_URL%">Process Pixels</a> to regenerate your grid.', '%PROCESS_PIXELS_URL%', esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ) );
 }
 ?>
 <h1><?php Language::out( 'Clear Orders' ); ?></h1>

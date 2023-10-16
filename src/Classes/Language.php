@@ -70,14 +70,14 @@ class Language {
 	/**
 	 * Get the output of the given content with translation, search and replace, and sanitization.
 	 *
+	 * @param string $content
 	 * @param string|array $search
 	 * @param string|array $replace
-	 * @param string $content
 	 * @param bool $html
 	 *
 	 * @return string
 	 */
-	public static function get_replace( string|array $search, string|array $replace, string $content, bool $html = true ): string {
+	public static function get_replace( string $content, string|array $search, string|array $replace, bool $html = true ): string {
 		$content = __( $content, MDS_TEXT_DOMAIN );
 
 		$content = str_replace( $search, $replace, $content );
@@ -98,8 +98,8 @@ class Language {
 	 * @param bool $html If true, filters valid HTML tags. If false, escapes HTML.
 	 *
 	 */
-	public static function out_replace( string|array $search, string|array $replace, string $content, bool $html = true ): void {
-		echo self::get_replace( $search, $replace, $content, $html );
+	public static function out_replace( string $content, string|array $search, string|array $replace, bool $html = true ): void {
+		echo self::get_replace( $content, $search, $replace, $html );
 	}
 
 	/**
@@ -343,13 +343,13 @@ class Language {
 	/**
 	 * Translate and replace string.
 	 *
+	 * @param $string string String to translate and replace.
 	 * @param $search array|string String or array to search for.
 	 * @param $replace array|string String or array to replace with.
-	 * @param $string string String to translate and replace.
 	 *
 	 * @return array|string|null
 	 */
-	public static function replace( array|string $search, array|string $replace, string $string ): array|string|null {
+	public static function replace( string $string, array|string $search, array|string $replace ): array|string|null {
 		$translatable = __( $string, MDS_TEXT_DOMAIN );
 
 		return str_replace( $search, $replace, $translatable );
@@ -361,11 +361,11 @@ class Language {
 
 	public static function upgrade(): void {
 		if ( ! is_writable( \MillionDollarScript\Classes\Utility::get_upload_path() ) ) {
-			Language::out_replace( '%UPLOAD_PATH%', \MillionDollarScript\Classes\Utility::get_upload_path(), '%UPLOAD_PATH% directory is not writable. Give write permissions (777) to the directory.<br>' );
+			Language::out_replace( '%UPLOAD_PATH% directory is not writable. Give write permissions (777) to the directory.<br>', '%UPLOAD_PATH%', \MillionDollarScript\Classes\Utility::get_upload_path() );
 		}
 
 		if ( ! is_writable( \MillionDollarScript\Classes\Utility::get_upload_path() . "/images/" ) ) {
-			Language::out_replace( '%UPLOAD_PATH%', \MillionDollarScript\Classes\Utility::get_upload_path(), '%UPLOAD_PATH%/images/ directory is not writable. Give write permissions (777) to the directory.<br>' );
+			Language::out_replace( '%UPLOAD_PATH%/images/ directory is not writable. Give write permissions (777) to the directory.<br>', '%UPLOAD_PATH%', \MillionDollarScript\Classes\Utility::get_upload_path() );
 		}
 	}
 }

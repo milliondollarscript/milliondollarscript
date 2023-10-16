@@ -141,9 +141,9 @@ $count             = mysqli_num_rows( $res );
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
 Language::out_replace(
+	'<p>1. <a href="%ORDER_URL%?BID=%BID%">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>',
 	[ '%BID%', '%ORDER_URL%' ],
-	[ $BID, Utility::get_page_url( 'order' ) ],
-	'<p>1. <a href="%ORDER_URL%?BID=%BID%">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>'
+	[ $BID, Utility::get_page_url( 'order' ) ]
 );
 ?>
     <p id="select_status"><?php echo( $cannot_sel ?? "" ); ?></p>
@@ -176,9 +176,9 @@ if ( mysqli_num_rows( $res ) > 1 ) {
 
 if ( isset( $order_exists ) && $order_exists ) {
 	Language::out_replace(
+		'<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a></p>',
 		'%HISTORY_URL%',
-		Utility::get_page_url( 'history' ),
-		'<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a></p>'
+		Utility::get_page_url( 'history' )
 	);
 }
 
@@ -195,9 +195,9 @@ $order_row = mysqli_fetch_array( $result );
 
 if ( $result->num_rows == 0 ) {
 	Language::out_replace(
+		'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
 		[ '%ORDER_URL%', '%BID%' ],
-		[ Utility::get_page_url( 'order' ), $BID ],
-		'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>'
+		[ Utility::get_page_url( 'order' ), $BID ]
 	);
 
 	return;
@@ -208,11 +208,11 @@ $price = $order_row['price'] . ' ' . $order_row['currency'];
     <div class="fancy-heading"><?php Language::out( 'Upload your pixel image' ); ?></div>
 <?php
 Language::out_replace(
-	'%TOTAL_COST%',
-	$price,
 	'<p>- Upload a GIF, JPEG or PNG graphics file<br/>
 - Click "Browse" to find your file on your computer, then click "Upload".<br/>
-- Once uploaded, you will be able to position your file over the grid.<br/></p>'
+- Once uploaded, you will be able to position your file over the grid.<br/></p>',
+	'%TOTAL_COST%',
+	$price
 );
 ?>
     <p>
@@ -244,9 +244,9 @@ if ( ! empty( $image ) ) {
 		}
 
 		Language::out_replace(
+			'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.',
 			[ '%WIDTH%', '%HEIGHT%' ],
-			[ $size['x'], $size['y'] ],
-			'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.'
+			[ $size['x'], $size['y'] ]
 		);
 
 		?>
@@ -275,18 +275,18 @@ if ( ! empty( $image ) ) {
 				$limit = $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
 
 				Language::out_replace(
+					'<strong style="color:red;">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>',
 					[ '%MAX_PIXELS%', '%COUNT%' ],
-					[ $limit, $pixel_count ],
-					'<strong style="color:red;">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>'
+					[ $limit, $pixel_count ]
 				);
 
 				unset( $tmp_image_file );
 			} else if ( ( $block_size < $banner_data['G_MIN_BLOCKS'] ) && ( $banner_data['G_MIN_BLOCKS'] > 0 ) ) {
 
 				Language::out_replace(
+					'<strong style="color:red;">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>',
 					[ '%MIN_PIXELS%', '%COUNT%' ],
-					[ $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'], $pixel_count ],
-					'<strong style="color:red;">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>'
+					[ $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'], $pixel_count ]
 				);
 
 				unset( $tmp_image_file );
@@ -294,9 +294,9 @@ if ( ! empty( $image ) ) {
 		}
 
 		Language::out_replace(
+			'The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.',
 			[ '%PIXEL_COUNT%', '%BLOCK_COUNT%' ],
-			[ $pixel_count, $block_size ],
-			'The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.'
+			[ $pixel_count, $block_size ]
 		);
 
 		?>
@@ -304,9 +304,9 @@ if ( ! empty( $image ) ) {
 		<?php
 
 		Language::out_replace(
+			'This will cost you %TOTAL_COST%.',
 			[ '%PIXEL_COUNT%', '%BLOCK_COUNT%', '%TOTAL_COST%' ],
-			[ $pixel_count, $block_size, $price ],
-			'This will cost you %TOTAL_COST%.'
+			[ $pixel_count, $block_size, $price ]
 		);
 
 		?>
@@ -325,16 +325,16 @@ if ( ! empty( $image ) ) {
 
 	if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) ) {
 		Language::out_replace(
+			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
 			[ '%ORDER_URL%', '%BID%' ],
-			[ Utility::get_page_url( 'order' ), $BID ],
-			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>'
+			[ Utility::get_page_url( 'order' ), $BID ]
 		);
 	} else if ( $not_enough_blocks ) {
 		Language::out( '<h3>Not enough blocks selected</h3>' );
 		Language::out_replace(
+			'<p>You are required to select at least %MIN_BLOCKS% blocks from the grid. Please go back to select more pixels.</p>',
 			'%MIN_BLOCKS%',
-			$banner_data['G_MIN_BLOCKS'],
-			'<p>You are required to select at least %MIN_BLOCKS% blocks from the grid. Please go back to select more pixels.</p>'
+			$banner_data['G_MIN_BLOCKS']
 		);
 
 		display_edit_order_button( $mds_order_id );

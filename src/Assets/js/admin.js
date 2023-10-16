@@ -69,5 +69,4 @@ jQuery(document).ready(function () {
 		row.css('background-color', '#fffd99');
 		row[0].scrollIntoView();
 	}
-
 });

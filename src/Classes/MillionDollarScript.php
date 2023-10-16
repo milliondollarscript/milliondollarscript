@@ -101,47 +101,47 @@ class MillionDollarScript {
                 <p><?php Language::out( 'Visit the <a target="_blank" href="https://milliondollarscript.com/million-dollar-script-wordpress-plugin/">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation.' ); ?></p>
             </div>
 
-	        <?php
-	        $time_gmt    = wp_sprintf( Language::get( 'Current GMT Time: %s' ), current_time( 'mysql', 1 ) );
-	        $time_server = wp_sprintf( Language::get( 'Current Server Time: %s' ), current_time( 'mysql' ) );
-	        $time_local  = wp_sprintf( Language::get( 'Current Local Time: %s' ), '<span id="mdsLocalTime"></span>' );
+			<?php
+			$time_gmt    = wp_sprintf( Language::get( 'Current GMT Time: %s' ), current_time( 'mysql', 1 ) );
+			$time_server = wp_sprintf( Language::get( 'Current Server Time: %s' ), current_time( 'mysql' ) );
+			$time_local  = wp_sprintf( Language::get( 'Current Local Time: %s' ), '<span id="mdsLocalTime"></span>' );
 
-	        ?>
+			?>
             <div class="milliondollarscript-time milliondollarscript-section">
 
                 <div class="mds-time mds-gmt"><?php esc_html_e( $time_gmt ); ?></div>
                 <div class="mds-time mds-server"><?php esc_html_e( $time_server ); ?></div>
                 <div class="mds-time mds-local"><?php echo wp_kses( $time_local, array( 'span' => array( 'id' => array() ) ) ); ?></div>
                 <script>
-			        const localTime = new Date();
-			        const formattedLocalTime = localTime.getFullYear() + '-'
-				        + String(localTime.getMonth() + 1).padStart(2, '0') + '-'
-				        + String(localTime.getDate()).padStart(2, '0') + ' '
-				        + String(localTime.getHours()).padStart(2, '0') + ':'
-				        + String(localTime.getMinutes()).padStart(2, '0') + ':'
-				        + String(localTime.getSeconds()).padStart(2, '0');
+					const localTime = new Date();
+					const formattedLocalTime = localTime.getFullYear() + '-'
+						+ String(localTime.getMonth() + 1).padStart(2, '0') + '-'
+						+ String(localTime.getDate()).padStart(2, '0') + ' '
+						+ String(localTime.getHours()).padStart(2, '0') + ':'
+						+ String(localTime.getMinutes()).padStart(2, '0') + ':'
+						+ String(localTime.getSeconds()).padStart(2, '0');
 
-			        document.getElementById("mdsLocalTime").innerHTML = formattedLocalTime;
+					document.getElementById("mdsLocalTime").innerHTML = formattedLocalTime;
                 </script>
 
             </div>
 
-            <?php
+			<?php
 
-            global $wpdb;
+			global $wpdb;
 
-            $count_users = count_users();
-            $advertisers = $count_users['total_users'];
+			$count_users = count_users();
+			$advertisers = $count_users['total_users'];
 
-            $orders_waiting = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='confirmed' OR status='pending')" );
+			$orders_waiting = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='confirmed' OR status='pending')" );
 
-            $orders_cancelled = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='cancelled')" );
+			$orders_cancelled = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='cancelled')" );
 
-            $orders_completed = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='completed')" );
+			$orders_completed = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='completed')" );
 
-            $waiting = $wpdb->get_var( "SELECT COUNT(block_id) FROM " . MDS_DB_PREFIX . "blocks WHERE approved='N' and image_data <> ''" );
+			$waiting = $wpdb->get_var( "SELECT COUNT(block_id) FROM " . MDS_DB_PREFIX . "blocks WHERE approved='N' and image_data <> ''" );
 
-            ?>
+			?>
             <div class="milliondollarscript-orders milliondollarscript-section">
 
                 <div>

@@ -266,7 +266,7 @@ usort( $orders, "date_sort" );
 							$sql   = "select order_id from " . MDS_DB_PREFIX . "orders where (status = 'renew_paid' OR status = 'renew_wait') AND original_order_id='" . intval( $order['original_order_id'] ) . "' ";
 							$res_c = mysqli_query( $GLOBALS['connection'], $sql );
 							if ( mysqli_num_rows( $res_c ) == 0 ) {
-								echo "<a class='mds-button mds-order-renew' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get_replace( '%DAYS_TO_RENEW%', $days, 'Renew Now! %DAYS_TO_RENEW% days left to renew' ) . "</a>";
+								echo "<a class='mds-button mds-order-renew' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get_replace( 'Renew Now! %DAYS_TO_RENEW% days left to renew', '%DAYS_TO_RENEW%', $days ) . "</a>";
 							}
 							break;
 						case "pending":

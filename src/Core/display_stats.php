@@ -67,8 +67,8 @@ if ( defined( 'STATS_DISPLAY_MODE' ) && STATS_DISPLAY_MODE == 'BLOCKS' ) {
 <body class="status_body">
 <div class="status">
 	<?php
-	Language::out_replace( '%SOLD%', number_format( $sold ), '<b>Sold:</b> <span class="status_text">%SOLD%</span><br/>' );
-	Language::out_replace( '%AVAILABLE%', number_format( $available ), '<b>Available:</b> <span class="status_text">%AVAILABLE%</span><br/>' );
+	Language::out_replace( '<b>Sold:</b> <span class="status_text">%SOLD%</span><br/>', '%SOLD%', number_format( $sold ) );
+	Language::out_replace( '<b>Available:</b> <span class="status_text">%AVAILABLE%</span><br/>', '%AVAILABLE%', number_format( $available ) );
 	?>
 </div>
 </body>

@@ -96,9 +96,9 @@ function assign_ad_template( $prams ) {
 	$replace[] = $prams['text'];
 
 	return Language::get_replace(
+		\MillionDollarScript\Classes\Options::get_option( 'popup-template' ),
 		$search,
-		$replace,
-		\MillionDollarScript\Classes\Options::get_option( 'popup-template' )
+		$replace
 	);
 }
 
@@ -230,9 +230,9 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 			$cur_page ++;
 
 			Language::out_replace(
+				'<span>Page %CUR_PAGE% of %PAGES% - </span>',
 				[ "%CUR_PAGE%", "%PAGES%" ],
-				[ $cur_page, $pages ],
-				'<span>Page %CUR_PAGE% of %PAGES% - </span>'
+				[ $cur_page, $pages ]
 			);
 
 			$nav   = nav_pages_struct( $q_string, $count, $records_per_page );
@@ -325,9 +325,9 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 									$days = Language::get( 'Not Yet Published' );
 								} else {
 									$days = Language::get_replace(
+										'%ELAPSED% elapsed<br> %TO_GO% to go',
 										[ '%ELAPSED%', '%TO_GO%' ],
-										[ $elapsed, $to_go ],
-										'%ELAPSED% elapsed<br> %TO_GO% to go'
+										[ $elapsed, $to_go ]
 									);
 								}
 							} else {
@@ -456,7 +456,7 @@ function disapprove_modified_order( $order_id, $BID ) {
 	mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 	// send pixel change notification
-	if ( EMAIL_ADMIN_PUBLISH_NOTIFY == 'YES' ) {
+	if ( \MillionDollarScript\Classes\Config::get('EMAIL_ADMIN_PUBLISH_NOTIFY') == 'YES' ) {
 		send_published_pixels_notification( get_current_user_id(), $BID );
 	}
 }
@@ -517,13 +517,14 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 
 				// check image size
 				$img_size = $image->getSize();
+                $MDS_RESIZE = \MillionDollarScript\Classes\Config::get('MDS_RESIZE');
 
 				// check the size
-				if ( ( MDS_RESIZE != 'YES' ) && ( ( $img_size->getWidth() > $size['x'] ) || ( $img_size->getHeight() > $size['y'] ) ) ) {
+				if ( ( $MDS_RESIZE != 'YES' ) && ( ( $img_size->getWidth() > $size['x'] ) || ( $img_size->getHeight() > $size['y'] ) ) ) {
 					$error = Language::get_replace(
+							'The size of the uploaded image is incorrect. It needs to be %SIZE_X% wide and %SIZE_Y% high (or less)',
 							[ '%SIZE_X%', '%SIZE_Y%' ],
-							[ $size['x'], $size['y'] ],
-							'The size of the uploaded image is incorrect. It needs to be %SIZE_X% wide and %SIZE_Y% high (or less)'
+							[ $size['x'], $size['y'] ]
 						) . "<br>";
 				}
 
@@ -579,7 +580,7 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 					$filter->apply( $image );
 
 					// resize uploaded image
-					if ( MDS_RESIZE == 'YES' ) {
+					if ( $MDS_RESIZE == 'YES' ) {
 						$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
 						$image->resize( $resize );
 					}

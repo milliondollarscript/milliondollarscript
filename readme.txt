@@ -19,6 +19,12 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 == Changelog ==
 
+= 2.5.3 =
+* Fix uploaded image preview size in advanced pixel selection method.
+* Add Update Language button to automatically add any missing entries to the language file.
+* Refactor Language class functions to move content to first arg.
+* Update language.
+
 = 2.5.2 =
 * On dynamic-id check for not empty post id instead of not null.
 * Fix deleted orders still showing as reserved during ordering.

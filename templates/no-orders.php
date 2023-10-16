@@ -42,9 +42,9 @@ require_once MDS_CORE_PATH . "html/header.php";
 
 Language::out( '<h1>No new orders in progress</h1>' );
 Language::out_replace(
+	'<p>You don\'t have any orders in progress. Please go <a href="%ORDER_URL%">here to order pixels</a>.</p>',
 	'%ORDER_URL%',
-	Utility::get_page_url( 'order' ),
-	'<p>You don\'t have any orders in progress. Please go <a href="%ORDER_URL%">here to order pixels</a>.</p>'
+	Utility::get_page_url( 'order' )
 );
 
 require_once MDS_CORE_PATH . "html/footer.php";

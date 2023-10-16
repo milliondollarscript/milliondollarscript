@@ -238,6 +238,7 @@ class Users {
 		Language::out( '<div class="fancy-heading">Welcome to your account</div>' );
 
 		Language::out_replace(
+			'<p>Here you can manage your pixels. <a href="%MANAGE_URL%">Manage Pixels</a><p>',
 			[
 				'%PIXEL_COUNT%',
 				'%BLOCK_COUNT%',
@@ -247,11 +248,11 @@ class Users {
 				$pixels,
 				( $pixels / ( $b_row['block_width'] * $b_row['block_height'] ) ),
 				Utility::get_page_url( 'manage' ),
-			],
-			'<p>Here you can manage your pixels. <a href="%MANAGE_URL%">Manage Pixels</a><p>'
+			]
 		);
 
 		Language::out_replace(
+			'<p>You own %PIXEL_COUNT% blocks.</p>',
 			[
 				'%PIXEL_COUNT%',
 				'%BLOCK_COUNT%',
@@ -261,11 +262,11 @@ class Users {
 				$pixels,
 				( $pixels / ( $b_row['block_width'] * $b_row['block_height'] ) ),
 				Utility::get_page_url( 'manage' ),
-			],
-			'<p>You own %PIXEL_COUNT% blocks.</p>'
+			]
 		);
 
 		Language::out_replace(
+			'<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href="%ORDER_URL%">Order Pixels</a> / <a href="%HISTORY_URL%">View Order History</a></p>',
 			[
 				'%PIXEL_ORD_COUNT%',
 				'%BLOCK_ORD_COUNT%',
@@ -277,19 +278,18 @@ class Users {
 				( $ordered / ( $b_row['block_width'] * $b_row['block_height'] ) ),
 				$order_page,
 				$history_page,
-			],
-			'<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href="%ORDER_URL%">Order Pixels</a> / <a href="%HISTORY_URL%">View Order History</a></p>'
+			]
 		);
 
-		Language::out_replace( '%CLICK_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'click_count', true ) ) ), '<p>Your pixels were clicked %CLICK_COUNT% times.</p>' );
-		Language::out_replace( '%VIEW_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'view_count', true ) ) ), '<p>Your pixels were viewed %VIEW_COUNT% times.</p>' );
+		Language::out_replace( '<p>Your pixels were clicked %CLICK_COUNT% times.</p>', '%CLICK_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'click_count', true ) ) ) );
+		Language::out_replace( '<p>Your pixels were viewed %VIEW_COUNT% times.</p>', '%VIEW_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'view_count', true ) ) ) );
 
 		Language::out( '<div class="fancy-heading">Here is what you can do</div>' );
 
-		Language::out_replace( '%ORDER_URL%', $order_page, '- <a href="%ORDER_URL%">Order</a>: Choose and order new pixels.<br />' );
-		Language::out_replace( '%MANAGE_URL%', $manage_page, '- <a href="%MANAGE_URL%">Manage</a>: Manage pixels owned by you.<br />' );
-		Language::out_replace( '%HISTORY_URL%', $history_page, '- <a href="%HISTORY_URL%">View Orders</a>: View your order history, and status of each order.<br />' );
-		Language::out_replace( '%ACCOUNT_URL%', $account_page, '- <a href="%ACCOUNT_URL%">Edit Account Details</a>: Edit your personal details, change your password.<br />' );
+		Language::out_replace( '- <a href="%ORDER_URL%">Order</a>: Choose and order new pixels.<br />', '%ORDER_URL%', $order_page );
+		Language::out_replace( '- <a href="%MANAGE_URL%">Manage</a>: Manage pixels owned by you.<br />', '%MANAGE_URL%', $manage_page );
+		Language::out_replace( '- <a href="%HISTORY_URL%">View Orders</a>: View your order history, and status of each order.<br />', '%HISTORY_URL%', $history_page );
+		Language::out_replace( '- <a href="%ACCOUNT_URL%">Edit Account Details</a>: Edit your personal details, change your password.<br />', '%ACCOUNT_URL%', $account_page );
 
 		Language::out( '<p>Questions? Contact Us: <span id="emailPlaceholder"></span></p>' );
 

@@ -142,7 +142,7 @@ class Ajax {
 			<?php
 		} else {
 
-			Language::out_replace( '%FILE%', $BANNER_PATH . 'grid' . $BID . '.' . $ext, '<b>The file: %FILE% doesn\'t exist.</b><br>' );
+			Language::out_replace( '<b>The file: %FILE% doesn\'t exist.</b><br>', '%FILE%', $BANNER_PATH . 'grid' . $BID . '.' . $ext );
 			Language::out( "<b>Please process your pixels from the Admin section (Look under 'Pixel Admin')</b>" );
 		}
 	}
@@ -181,8 +181,8 @@ class Ajax {
             <div class="status_body">
                 <div class="status">
 					<?php
-					Language::out_replace( '%SOLD%', number_format( $sold ), '<b>Sold:</b> <span class="status_text">%SOLD%</span><br/>' );
-					Language::out_replace( '%AVAILABLE%', number_format( $available ), '<b>Available:</b> <span class="status_text">%AVAILABLE%</span><br/>' );
+					Language::out_replace( '<b>Sold:</b> <span class="status_text">%SOLD%</span><br/>', '%SOLD%', number_format( $sold ) );
+					Language::out_replace( '<b>Available:</b> <span class="status_text">%AVAILABLE%</span><br/>', '%AVAILABLE%', number_format( $available ) );
 					?>
                 </div>
             </div>

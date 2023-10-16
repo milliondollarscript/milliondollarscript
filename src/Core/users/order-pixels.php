@@ -215,9 +215,9 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 					$limit = $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
 
 					$messages .= Language::get_replace(
+						'<strong style="color:red;">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>',
 						[ '%MAX_PIXELS%', '%COUNT%' ],
-						[ $limit, $pixel_count ],
-						'<strong style="color:red;">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>'
+						[ $limit, $pixel_count ]
 					);
 					unlink( $tmp_image_file );
 					unset( $tmp_image_file );
@@ -226,9 +226,9 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 					$limit = $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
 
 					$messages .= Language::get_replace(
+						'<strong style="color:red;">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>',
 						[ '%MIN_PIXELS%', '%COUNT%' ],
-						[ $limit, $pixel_count ],
-						'<strong style="color:red;">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>'
+						[ $limit, $pixel_count ]
 					);
 					unlink( $tmp_image_file );
 					unset( $tmp_image_file );
@@ -627,7 +627,7 @@ if ( count( $res ) > 1 ) {
 }
 
 if ( isset( $order_exists ) && $order_exists ) {
-	Language::out_replace( '%HISTORY_URL%', Utility::get_page_url( 'history' ), '<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a></p>' );
+	Language::out_replace( '<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a></p>', '%HISTORY_URL%', Utility::get_page_url( 'history' ) );
 }
 
 $has_packages = banner_get_packages( $BID );
@@ -667,9 +667,9 @@ if ( ! empty( $tmp_image_file ) ) {
 	echo "<img class='mds_pointer_graphic' style=\"border:0px;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic' ) ) . "?BID=" . $BID . "' alt=\"\" /><br />";
 
 	Language::out_replace(
+		'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />',
 		[ '%WIDTH%', '%HEIGHT%' ],
-		[ $size[0], $size[1] ],
-		'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />'
+		[ $size[0], $size[1] ]
 	);
 
 	if ( empty( $reqsize ) ) {
@@ -685,9 +685,9 @@ if ( ! empty( $tmp_image_file ) ) {
 	}
 
 	Language::out_replace(
+		'The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />',
 		[ '%PIXEL_COUNT%', '%BLOCK_COUNT%' ],
-		[ $pixel_count, $block_size ],
-		'The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />'
+		[ $pixel_count, $block_size ]
 	);
 	?>
 

@@ -89,9 +89,9 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 
 			Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
 			Language::out_replace(
+				'<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>',
 				'%ORDER_PAGE%',
-				Utility::get_page_url( 'order' ),
-				'<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>'
+				Utility::get_page_url( 'order' )
 			);
 
 			require_once MDS_CORE_PATH . "html/footer.php";
@@ -138,9 +138,9 @@ if ( count( $res ) > 1 ) {
 
 	<?php
 	Language::out_replace(
+		'You own pixels on <b>%GRID_COUNT%</b> different grids served by this website. Select the image which you would like to publish your pixels to:',
 		'%GRID_COUNT%',
-		count( $res ),
-		'You own pixels on <b>%GRID_COUNT%</b> different grids served by this website. Select the image which you would like to publish your pixels to:'
+		count( $res )
 	);
 	echo '<br />';
 	display_banner_selecton_form( $BID, get_current_order_id(), $res, 'publish' );
@@ -238,16 +238,16 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
             </td>
             <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
 				Language::out_replace(
+					'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)',
 					[ '%SIZE_X%', '%SIZE_Y%', '%PIXEL_COUNT%' ],
-					[ $size['x'], $size['y'], $pixels ],
-					'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)'
+					[ $size['x'], $size['y'], $pixels ]
 				);
 				?><br></td>
             <td><b><?php Language::out( 'Change Pixels' ); ?></b><br><?php
 				Language::out_replace(
+					'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click "upload"',
 					[ '%SIZE_X%', '%SIZE_Y%' ],
-					[ $size['x'], $size['y'] ],
-					'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click "upload"'
+					[ $size['x'], $size['y'] ]
 				);
 				?>
                 <form name="change" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" method="post">
@@ -378,6 +378,6 @@ if ( $count > 0 ) {
     </div>
 	<?php
 } else {
-	Language::out_replace( '%ORDER_URL%', Utility::get_page_url( 'order' ), 'You have no pixels yet. Go <a href="%ORDER_URL%">here</a> to order pixels.' );
+	Language::out_replace( 'You have no pixels yet. Go <a href="%ORDER_URL%">here</a> to order pixels.', '%ORDER_URL%', Utility::get_page_url( 'order' ) );
 }
 require_once MDS_CORE_PATH . "html/footer.php";

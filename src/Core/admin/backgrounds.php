@@ -87,14 +87,14 @@ if ( isset( $_POST['mds_dest'] ) ) {
 	return;
 }
 
-Language::out_replace( '%BACKGROUND_URL%', MDS_BASE_URL . 'src/Assets/images/background.png',
-	'Image Blending - Allows you to specify an image to blend in with your grid in the background.<br />
+Language::out_replace( 'Image Blending - Allows you to specify an image to blend in with your grid in the background.<br />
 (This functionality requires GD 2.0.1 or later)<br />
 - Upload PNG true color image<br />
 - The image must have an alpha channel (Eg. PNG image created with Photoshop with blending options set).<br />
 - See <a href="%BACKGROUND_URL%" target="_blank">background.png</a> as an example of an image with an alpha channel set to 50%.<br />
 - <a href="https://milliondollarscript.com/documentation/alpha-blending-tutorial/" target="_blank">See the tutorial</a> to get an idea how to create background images using Photoshop.
-' );
+', '%BACKGROUND_URL%',
+	MDS_BASE_URL . 'src/Assets/images/background.png' );
 ?>
 <hr/>
 <?php

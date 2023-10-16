@@ -197,9 +197,9 @@ if ( mysqli_num_rows( $res ) > 1 ) {
     <div class="mds-select-intro">
 		<?php
 		Language::out_replace(
+			'There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:',
 			'%GRID_COUNT%',
-			mysqli_num_rows( $res ),
-			'There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:'
+			mysqli_num_rows( $res )
 		);
 		?>
     </div>
@@ -217,9 +217,9 @@ if ( mysqli_num_rows( $res ) > 1 ) {
 
 if ( isset( $order_exists ) && $order_exists ) {
 	Language::out_replace(
+		'Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a>',
 		'%HISTORY_URL%',
-		Utility::get_page_url( 'history' ),
-		'Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a>'
+		Utility::get_page_url( 'history' )
 	);
 }
 
@@ -235,16 +235,6 @@ if ( $has_packages ) {
     <div class="mds-select-instructions">
 		<?php
 		Language::out_replace(
-			[
-				'%PIXEL_C%',
-				'%BLK_HEIGHT%',
-				'%BLK_WIDTH%',
-			],
-			[
-				$banner_data['BLK_HEIGHT'] * $banner_data['BLK_WIDTH'],
-				$banner_data['BLK_HEIGHT'],
-				$banner_data['BLK_WIDTH'],
-			],
 			'<h3>Instructions:</h3>
 <p>
 Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). Select the blocks that you want, and then press the \'Buy Pixels Now\' button.<br /><br />
@@ -255,7 +245,17 @@ Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). S
 - Yellow blocks are reserved by someone else.<br />
 - Orange have been ordered by you.<br />
 - Click the \'Buy Pixels Now\' button below when you are finished.<br />
-</p>'
+</p>',
+			[
+				'%PIXEL_C%',
+				'%BLK_HEIGHT%',
+				'%BLK_WIDTH%',
+			],
+			[
+				$banner_data['BLK_HEIGHT'] * $banner_data['BLK_WIDTH'],
+				$banner_data['BLK_HEIGHT'],
+				$banner_data['BLK_WIDTH'],
+			]
 		);
 		?>
     </div>

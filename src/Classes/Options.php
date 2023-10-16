@@ -209,13 +209,9 @@ class Options {
 			'System' => [
 
 				// Update Language
-				Field::make( 'select', MDS_PREFIX . 'update-language', Language::get( 'Update Language' ) )
-				     ->set_default_value( 'off' )
-				     ->set_options( [
-					     'on'  => 'On',
-					     'off' => 'Off',
-				     ] )
-				     ->set_help_text( Language::get( 'This is only useful to add missing strings to the language file and should be left disabled due to performance reasons. This will search for any missing strings being processed on each page load and add them to the languages/milliondollarscript.pot file. This is useful for translation or editing the language. To reset the language file and generate a fresh one do the following: 1. Delete the languages/milliondollarscript.pot file and set this to off and save. 2. Set back to on and save. 3. Browse every page and possible screen, option, etc. in MDS to be sure to get all the language strings.' ) ),
+				Field::make( 'html', MDS_PREFIX . 'update-language', Language::get( 'Update Language' ) )
+				     ->set_html( '<div class="button button-primary" id="mds_update_language" style="margin-top: 10px;">' . Language::get( 'Update Language' ) . '</div/>' )
+				     ->set_help_text( Language::get( 'This will automatically add any missing entries to the plugin language file.' ) ),
 
 				// Delete data on uninstall?
 				Field::make( 'checkbox', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
@@ -333,4 +329,21 @@ class Options {
 		self::$tabs = $tabs;
 	}
 
+	public static function enqueue_scripts() {
+
+		wp_register_script(
+			MDS_PREFIX . 'admin-options-js',
+			MDS_BASE_URL . 'src/Assets/js/admin-options.min.js',
+			[ 'jquery' ],
+			filemtime( MDS_CORE_PATH . '/admin/js/admin-options.min.js' ),
+			true
+		);
+
+		wp_localize_script( MDS_PREFIX . 'admin-options-js', 'MDS', [
+			'nonce'   => wp_create_nonce( 'mds_admin_nonce' ),
+			'ajaxurl' => admin_url( 'admin-ajax.php' ),
+		] );
+
+		wp_enqueue_script( MDS_PREFIX . 'admin-options-js' );
+	}
 }

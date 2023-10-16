@@ -98,9 +98,9 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
             </td>
             <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
 				Language::out_replace(
+					'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)',
 					[ '%SIZE_X%', '%SIZE_Y%', '%PIXEL_COUNT%' ],
-					[ $size['x'], $size['y'], $pixels ],
-					'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)'
+					[ $size['x'], $size['y'], $pixels ]
 				);
 				?><br></td>
             <td style="max-width:200px;"><b>Blocks</b><br><?php
@@ -108,9 +108,9 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 				?><br></td>
             <td><b><?php Language::out( 'Change Pixels' ); ?></b><br><?php
 				Language::out_replace(
+					'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \'Upload\'',
 					[ '%SIZE_X%', '%SIZE_Y%' ],
-					[ $size['x'], $size['y'] ],
-					'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \'Upload\''
+					[ $size['x'], $size['y'] ]
 				);
 				?>
                 <form name="change" enctype="multipart/form-data" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -154,9 +154,9 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 		}
 
 		Language::out_replace(
+			'Ad Saved. <a href="%LIST_URL%">&lt;&lt; Go to the Ad List</a>',
 			'%LIST_URL%',
-			esc_url( admin_url( 'admin.php?page=mds-list&BID=' . $prams['banner_id'] ) ),
-			'Ad Saved. <a href="%LIST_URL%">&lt;&lt; Go to the Ad List</a>'
+			esc_url( admin_url( 'admin.php?page=mds-list&BID=' . $prams['banner_id'] ) )
 		);
 		?>
         <hr>

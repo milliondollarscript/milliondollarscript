@@ -199,7 +199,7 @@ function display_price_table( $banner_id ) {
             <tr>
                 <td><b><span style="font-family: Arial,serif; font-size: x-small; "><?php
 			                $banner_data = load_banner_constants( $banner_id );
-			                Language::out_replace( '%NUM_PIXELS%', $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'],'Price / %NUM_PIXELS% pixels' );
+			                Language::out_replace( 'Price / %NUM_PIXELS% pixels', '%NUM_PIXELS%', $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
                             ?></span></b></td>
                 <td><b><span style="font-family: Aria,serif; font-size: x-small; "><?php Language::out( 'Color' ); ?></span></b></td>
                 <td><b><span style="font-family: Aria,serif; font-size: x-small; "><?php Language::out( 'From row' ); ?></span></b></td>

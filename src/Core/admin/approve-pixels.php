@@ -170,7 +170,7 @@ if ( isset( $_POST['mds_dest'] ) ) {
 
 ?>
 
-<h3><?php Language::out_replace( '%PROCESS_PIXELS_URL%', esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ), 'Remember to process your Grid Image(s) <a href="%PROCESS_PIXELS_URL%">here</a>' ); ?></h3>
+<h3><?php Language::out_replace( 'Remember to process your Grid Image(s) <a href="%PROCESS_PIXELS_URL%">here</a>', '%PROCESS_PIXELS_URL%', esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ) ); ?></h3>
 
 <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 	<?php wp_nonce_field( 'mds-admin' ); ?>
