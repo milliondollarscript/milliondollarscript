@@ -112,7 +112,8 @@ function display_package_options_table( $banner_id, string $selected = '', bool 
 							Language::out( 'free' );
 						} else {
 							echo convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
-							echo " " . Language::get( '/ 100 pixels' );
+							$banner_data = load_banner_constants( $banner_id );
+							echo " " . Language::get_replace( '%NUM_PIXELS%', $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'], '/ %NUM_PIXELS% pixels' );
 						} ?><?php ?></label>
                 </div>
                 <div>

@@ -59,7 +59,7 @@ function check_selection_main(): void {
 	$upload_image_file = get_tmp_img_name();
 
 	if ( empty( $upload_image_file ) ) {
-		Language::out( 'upload_image_file_empty' );
+		Language::out( 'The upload image file is empty.' );
 
 		return;
 	}

@@ -180,6 +180,9 @@ msgstr ""
 msgid "Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History."
 msgstr ""
 
+msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href=\"%HISTORY_URL%\">Order History.</a></b>"
+msgstr ""
+
 msgid "Change Pixels"
 msgstr ""
 
@@ -990,3 +993,209 @@ msgstr ""
 msgid "pixels"
 msgstr ""
 
+msgid "Sorry, you are not allowed to access this page."
+msgstr ""
+
+msgid "Grid not found."
+msgstr ""
+
+msgid "Error sending data."
+msgstr ""
+
+msgid "Invalid callback: %s"
+msgstr ""
+
+msgid "<b>The file: %FILE% doesn\'t exist.</b><br>"
+msgstr ""
+
+msgid "<b>Please process your pixels from the Admin section (Look under 'Pixel Admin')</b>"
+msgstr ""
+
+msgid "<b>Sold:</b> <span class=\"status_text\">%SOLD%</span><br/>"
+msgstr ""
+
+msgid "<b>Available:</b> <span class=\"status_text\">%AVAILABLE%</span><br/>"
+msgstr ""
+
+msgid "%UPLOAD_PATH% directory is not writable. Give write permissions (777) to the directory.<br>"
+msgstr ""
+
+msgid "%UPLOAD_PATH%/images/ directory is not writable. Give write permissions (777) to the directory.<br>"
+msgstr ""
+
+msgid "You haven't made any changes to save!"
+msgstr ""
+
+msgid "Insufficient permissions!"
+msgstr ""
+
+msgid "Error: the image must be a PNG file"
+msgstr ""
+
+msgid "Check Completed."
+msgstr ""
+
+msgid "Done!"
+msgstr ""
+
+msgid "Either the user id for this ad doesn't exist or this ad doesn't exist."
+msgstr ""
+
+msgid "Ad Saved. <a href=\"%LIST_URL%\">&lt;&lt; Go to the Ad List</a>"
+msgstr ""
+
+msgid "ERROR: Cannot save your ad for the following reasons: "
+msgstr ""
+
+msgid "<span>Page %CUR_PAGE% of %PAGES% - </span>"
+msgstr ""
+
+msgid "Expired!"
+msgstr ""
+
+msgid "Not Yet Published"
+msgstr ""
+
+msgid "%ELAPSED% elapsed<br> %TO_GO% to go"
+msgstr ""
+
+msgid "File type not supported."
+msgstr ""
+
+msgid "The size of the uploaded image is incorrect. It needs to be %SIZE_X% wide and %SIZE_Y% high (or less)"
+msgstr ""
+
+msgid "Upload failed. Please try again, or try a different file."
+msgstr ""
+
+msgid "Error: Grid not found"
+msgstr ""
+
+msgid "In %DAYS_EXPIRE% days from date of publishment"
+msgstr ""
+
+msgid "Maximum blocks selected. (%MAX_BLOCKS% allowed per order)"
+msgstr ""
+
+msgid "Sorry, cannot select block %BLOCK_ID% because it is on order / sold!"
+msgstr ""
+
+msgid "Sorry, cannot select this block of pixels because it is not for sale!"
+msgstr ""
+
+msgid "You do not have permission to reserve pixels for this order."
+msgstr ""
+
+msgid "<span style=\"color: red;\">Cannot move the order - the space chosen is not empty!</span><br/>"
+msgstr ""
+
+msgid "You do not own this order!"
+msgstr ""
+
+msgid "This space is not available! Please try to place your pixels in a different area."
+msgstr ""
+
+msgid "Today!"
+msgstr ""
+
+msgid "Day ago"
+msgstr ""
+
+msgid "Days ago"
+msgstr ""
+
+msgid "Price Options"
+msgstr ""
+
+msgid "Please select your preferred package from the following list:"
+msgstr ""
+
+msgid "Here are the available price options for this grid:"
+msgstr ""
+
+msgid "Price"
+msgstr ""
+
+msgid "Max Orders"
+msgstr ""
+
+msgid "free"
+msgstr ""
+
+msgid "/ %NUM_PIXELS% pixels"
+msgstr ""
+
+msgid "Expires in %DAYS_EXPIRE% days."
+msgstr ""
+
+msgid "Unlimited"
+msgstr ""
+
+msgid "Price Table"
+msgstr ""
+
+msgid "The following table shows the different price regions for the selected grid."
+msgstr ""
+
+msgid "Price / %NUM_PIXELS% pixels"
+msgstr ""
+
+msgid "Register"
+msgstr ""
+
+msgid "The upload image file is empty."
+msgstr ""
+
+msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
+msgstr ""
+
+msgid "<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>"
+msgstr ""
+
+msgid "<< Previous"
+msgstr ""
+
+msgid "Next >>"
+msgstr ""
+
+msgid "<p><span style=\"color:red\">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href=\"%HISTORY_URL%\">Order History.</a></p>"
+msgstr ""
+
+msgid "No Access"
+msgstr ""
+
+msgid "<strong style=\"color:red;\">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>"
+msgstr ""
+
+msgid "<strong style=\"color:red;\">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>"
+msgstr ""
+
+msgid "Available Grids"
+msgstr ""
+
+msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%HISTORY_URL%\">View Order History</a></p>"
+msgstr ""
+
+msgid "<h3>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a></h3>"
+msgstr ""
+
+msgid "<h3>Not enough blocks selected</h3>"
+msgstr ""
+
+msgid "<p>You are required to select at least %MIN_BLOCKS% blocks form the grid. Please go back to select more pixels.</p>"
+msgstr ""
+
+msgid "Complete Order >>"
+msgstr ""
+
+msgid "Confirm & Pay >>"
+msgstr ""
+
+msgid "Sorry there was an error with your session."
+msgstr ""
+
+msgid "<h3>Please write your advertisement and click \"Save Ad\" when done.</h3>"
+msgstr ""
+
+msgid "<h1>No new orders in progress</h1>"
+msgstr ""

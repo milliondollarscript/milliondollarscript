@@ -161,7 +161,7 @@ if ( ! is_user_logged_in() ) {
 				$max = $p_max_ord;
 			}
 
-			Language::out_replace( [ '%MAX_ORDERS%', '%HISTORY_URL%' ], [ $max, Utility::get_page_url( 'history' ) ], '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>' );
+			Language::out_replace( [ '%MAX_ORDERS%', '%HISTORY_URL%' ], [ $max, Utility::get_page_url( 'history' ) ], '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>' );
 		} else {
 			$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
 

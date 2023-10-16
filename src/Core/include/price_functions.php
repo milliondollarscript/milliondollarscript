@@ -197,12 +197,15 @@ function display_price_table( $banner_id ) {
         </p>
         <table border="0" cellSpacing="1" cellPadding="3" bgColor="#d9d9d9" width="50%">
             <tr>
-                <td><b><font face="Arial" size="2"><?php Language::out( 'Price / 100 pixels' ); ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php Language::out( 'Color' ); ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php Language::out( 'From row' ); ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php Language::out( 'To row' ); ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php Language::out( 'From column' ); ?></font></b></td>
-                <td><b><font face="Arial" size="2"><?php Language::out( 'To column' ); ?></font></b></td>
+                <td><b><span style="font-family: Arial,serif; font-size: x-small; "><?php
+			                $banner_data = load_banner_constants( $banner_id );
+			                Language::out_replace( '%NUM_PIXELS%', $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'],'Price / %NUM_PIXELS% pixels' );
+                            ?></span></b></td>
+                <td><b><span style="font-family: Aria,serif; font-size: x-small; "><?php Language::out( 'Color' ); ?></span></b></td>
+                <td><b><span style="font-family: Aria,serif; font-size: x-small; "><?php Language::out( 'From row' ); ?></span></b></td>
+                <td><b><span style="font-family: Aria,serif; font-size: x-small; "><?php Language::out( 'To row' ); ?></span></b></td>
+                <td><b><span style="font-family: Aria,serif; font-size: x-small; "><?php Language::out( 'From column' ); ?></span></b></td>
+                <td><b><span style="font-family: Aria,serif; font-size: x-small; "><?php Language::out( 'To column' ); ?></span></b></td>
 
             </tr>
 
@@ -210,28 +213,28 @@ function display_price_table( $banner_id ) {
 			while ( $row = mysqli_fetch_array( $result ) ) {
 				?>
                 <tr bgcolor="#ffffff">
-                    <td><font face="Arial" size="2"><?php if ( $row['price'] == 0 ) {
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php if ( $row['price'] == 0 ) {
 								Language::out( 'free' );
 							} else {
 								echo convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
-							} ?></font></td>
+							} ?></span></td>
                     <td bgcolor="<?php if ( $row['color'] == 'yellow' ) {
 						echo '#FFFF00';
 					} else if ( $row['color'] == 'cyan' ) {
 						echo '#00FFFF';
 					} else if ( $row['color'] == 'magenta' ) {
 						echo '#FF00FF';
-					} ?>"><font face="Arial" size="2"><?php
+					} ?>"><span style="font-family: Aria,serif; font-size: x-small; "><?php
 
 							echo $row['color'];
 
 							?>
 
-                        </font></td>
-                    <td><font face="Arial" size="2"><?php echo $row['row_from']; ?></font></td>
-                    <td><font face="Arial" size="2"><?php echo $row['row_to']; ?></font></td>
-                    <td><font face="Arial" size="2"><?php echo $row['col_from']; ?></font></td>
-                    <td><font face="Arial" size="2"><?php echo $row['col_to']; ?></font></td>
+                        </span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['row_from']; ?></span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['row_to']; ?></span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['col_from']; ?></span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['col_to']; ?></span></td>
 
                 </tr>
 				<?php

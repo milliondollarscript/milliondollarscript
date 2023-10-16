@@ -177,7 +177,7 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 			Language::out_replace(
 				[ '%MAX_ORDERS%', '%HISTORY_URL%' ],
 				[ $row['max_orders'], Utility::get_page_url( 'history' ) ],
-				'<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>'
+				'<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>'
 			);
 		}
 	} else {

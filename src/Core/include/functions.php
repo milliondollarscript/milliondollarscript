@@ -1324,12 +1324,12 @@ function render_nav_pages( &$nav_pages_struct, $LINKS, $q_string = '' ) {
 
 function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 
-    $BID = $banner_data['banner_id'];
+	$BID = $banner_data['banner_id'];
 
 	// Check if max_orders < order count
 	if ( ! can_user_order( $banner_data, $user_id ) ) {
 		// order count > max orders
-		return Language::get( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="' . Utility::get_page_url( 'history' ) . '">Order History.</a></b>' );
+		return Language::get_replace( '%HISTORY_URL%', esc_url( Utility::get_page_url( 'history' ) ), '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="%HISTORY_URL%">Order History.</a></b>' );
 	}
 
 	if ( ! function_exists( 'load_ad_values' ) ) {
@@ -2186,12 +2186,6 @@ function show_nav_status( $page_id ): void {
 			break;
 		case 3:
 			Language::out( 'Upload Your pixels -> Write Your Ad -> <b>Confirm</b> -> Payment -> Thank you!' );
-			break;
-		case 4:
-			Language::out( 'Upload Your pixels -> Write Your Ad -> Confirm -> <b>Payment</b> -> Thank you!' );
-			break;
-		case 5:
-			Language::out( 'Upload Your pixels -> Write Your Ad -> Confirm -> Payment -> <b>Thank you!</b>' );
 			break;
 	}
 
