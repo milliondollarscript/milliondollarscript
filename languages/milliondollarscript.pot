@@ -747,7 +747,13 @@ msgstr ""
 msgid "Selected Grid:"
 msgstr ""
 
-msgid "Selection Mode:"
+msgid "Selection Size:"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Blocks"
 msgstr ""
 
 msgid "Setting to Yes will automatically approve orders before payments are verified by an admin."

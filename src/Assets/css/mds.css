@@ -611,15 +611,34 @@ table.mds-order-history {
 	line-height: 24px;
 }
 
-.mds-select-radios {
+.mds-select-items {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: 20px;
 	justify-content: center;
 	align-items: center;
+	flex-direction: row;
 }
 
-.mds-select-radio {
+.mds-input-item {
+	flex-grow: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.mds-slider {
+	flex-grow: 2;
+	padding-bottom: 25px;
+}
+
+.mds-number {
+	justify-content: center;
+}
+
+.mds-select-input {
 	display: flex;
 	align-items: center;
 	margin-right: 20px;
@@ -633,40 +652,67 @@ table.mds-order-history {
 	position: relative;
 }
 
-.mds-select-radio:hover {
+.mds-select-input:hover {
 	transform: scale(1.1);
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-.mds-select-radio,
-.mds-select-radio * {
+.mds-select-input,
+.mds-select-input * {
 	cursor: pointer;
 }
 
-.mds-select-radio input[type="radio"] {
+.mds-select-input input[type="checkbox"] {
 	display: none;
 }
 
-.mds-select-radio label {
+.mds-input-item label {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 16px;
+	font-size: 1.2rem;
 	padding: 10px;
 	transition: all 0.2s ease-in-out;
 	margin: 0;
+	text-align: center;
 }
 
-.mds-container input[type="radio"]:checked + label {
+#mds-selection-size-slider {
+	width: 90%;
+}
+
+#mds-selection-size-value {
+	width: 150px;
+	padding: 4px;
+	font-size: 1.1rem;
+}
+
+#mds-total-blocks-value {
+	width: 150px;
+	padding: 4px;
+	font-size: 1.1rem;
+}
+
+.mds-container input[type="checkbox"]:checked + label {
 	background-color: #008000;
 	color: #fff;
 }
 
-.mds-select-radio .icon-single,
-.mds-select-radio .icon-square,
-.mds-select-radio .icon-rectangle,
-.mds-select-radio .icon-erase {
+.mds-select-input .icon-single,
+.mds-select-input .icon-square,
+.mds-select-input .icon-rectangle,
+.mds-select-input .icon-erase {
 	margin-right: 8px;
+}
+
+.mds-break {
+	flex-basis: 100%;
+	height: 0;
+}
+
+.mds-break-column {
+	flex-basis: 100%;
+	width: 0;
 }
 
 /* submit buttons */

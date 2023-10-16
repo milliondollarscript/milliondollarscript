@@ -67,26 +67,17 @@ if ( ! is_numeric( $BID ) ) {
 	die();
 }
 
-if ( isset( $_REQUEST['user_id'] ) && ! empty( $_REQUEST['user_id'] ) ) {
-	$user_id = intval( $_REQUEST['user_id'] );
-	if ( ! is_numeric( $_REQUEST['user_id'] ) ) {
-		// Sometimes the user ID can be NaN in some cases so let's check WP user
-		// For example if MDS was just installed and user hasn't been logged out and logged in
-		if ( is_user_logged_in() ) {
-			$user_id = get_current_user_id();
-		} else {
-			echo json_encode( [
-				"error" => "true",
-				"type"  => "error",
-				"data"  => [
-					"value" => Language::get( 'You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in.' ),
-				]
-			] );
-			die();
-		}
-	}
-} else {
+if ( is_user_logged_in() ) {
 	$user_id = get_current_user_id();
+} else {
+	echo json_encode( [
+		"error" => "true",
+		"type"  => "error",
+		"data"  => [
+			"value" => Language::get( 'You are not logged in. Please log in or sign up for a new account.' ),
+		]
+	] );
+	die();
 }
 
 if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
@@ -103,13 +94,13 @@ if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
 
 // reset blocks
 if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
-	$sql = "delete from " . MDS_DB_PREFIX . "blocks where user_id='" . get_current_user_id() . "' AND status = 'reserved' AND banner_id='" . intval( $BID ) . "' ";
+	$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='" . intval( $BID ) . "'";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 	$order_id = get_current_order_id();
 
 	if ( ! empty( $order_id ) ) {
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET blocks = '' WHERE order_id=" . intval( $order_id );
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET blocks='' WHERE order_id=" . intval( $order_id );
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	}
 
@@ -123,6 +114,11 @@ if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
 	die();
 }
 
-$output_result = select_block( '', '', $block_id );
+$size = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
+if ( ! empty( $_REQUEST['selection_size'] ) ) {
+	$size = intval( $_REQUEST['selection_size'] );
+}
+
+$output_result = select_block( $block_id, $banner_data, $size, $user_id );
 
 echo json_encode( $output_result );

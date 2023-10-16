@@ -52,6 +52,8 @@ if ( ! is_numeric( $BID ) ) {
 
 $banner_data = load_banner_constants( $BID );
 
+$USE_AJAX = \MillionDollarScript\Classes\Config::get( 'USE_AJAX' );
+
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND status='new'";
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $order_row = mysqli_fetch_array( $order_result );
@@ -64,7 +66,7 @@ if ( $order_row != null ) {
 	}
 
 	// only 1 new order allowed per user per grid
-	if ( isset( $_REQUEST['banner_change'] ) && ! empty( $_REQUEST['banner_change'] ) ) {
+	if ( ! empty( $_REQUEST['banner_change'] ) ) {
 		// clear the current order
 		delete_current_order_id();
 
@@ -73,7 +75,7 @@ if ( $order_row != null ) {
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		$sql = "delete from " . MDS_DB_PREFIX . "blocks where order_id=" . intval( $order_row['order_id'] );
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	} else if ( ( empty( get_current_order_id() ) ) || ( USE_AJAX == 'YES' ) ) {
+	} else if ( ( empty( get_current_order_id() ) ) || ( $USE_AJAX == 'YES' ) ) {
 		// save the order id to session
 		set_current_order_id( $order_row['order_id'] );
 	}
@@ -103,7 +105,7 @@ $order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
 		const select = {
 			NONCE: '<?php echo wp_create_nonce( 'mds-select' ); ?>',
 			UPDATE_ORDER: '<?php echo Utility::get_page_url( 'update-order' ); ?>',
-			USE_AJAX: '<?php echo USE_AJAX; ?>',
+			USE_AJAX: '<?php echo $USE_AJAX; ?>',
 			block_str: '<?php echo $block_str; ?>',
 			grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>', 10),
 			grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>', 10),
@@ -117,8 +119,8 @@ $order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
 			advertiser_max_order: '<?php echo esc_js( Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ) ); ?>',
 			not_adjacent: '<?php echo esc_js( Language::get( 'You must select a block adjacent to another one.' ) ); ?>',
 			no_blocks_selected: '<?php echo esc_js( Language::get( 'You have no blocks selected.' ) ); ?>',
-			MDS_CORE_URL: '<?php echo MDS_CORE_URL; ?>',
-			INVERT_PIXELS: '<?php echo INVERT_PIXELS; ?>',
+			MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL ); ?>',
+			INVERT_PIXELS: '<?php echo \MillionDollarScript\Classes\Config::get( 'INVERT_PIXELS' ); ?>',
 			WAIT: '<?php echo esc_js( Language::get( 'Please Wait! Reserving Pixels...' ) ); ?>'
 		}
     </script>
@@ -227,6 +229,7 @@ if ( $has_packages ) {
 } else {
 	display_price_table( $BID );
 }
+
 ?>
     <div class="fancy-heading"><?php Language::out( 'Select Pixels' ); ?></div>
     <div class="mds-select-instructions">
@@ -256,12 +259,6 @@ Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). S
 		);
 		?>
     </div>
-
-<?php
-if ( ! isset( $_REQUEST['sel_mode'] ) ) {
-	$_REQUEST['sel_mode'] = 'sel1';
-}
-?>
     <form method="post" id="pixel_form" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name='pixel_form'>
 		<?php wp_nonce_field( 'mds-form' ); ?>
         <input type="hidden" name="action" value="mds_form_submission">
@@ -276,77 +273,95 @@ if ( ! isset( $_REQUEST['sel_mode'] ) ) {
         <div class="mds-select-wrapper">
             <div class="mds-select-prompt">
 				<?php
-				// TODO: Disable extra selection modes based on the number of blocks allowed in the selected grid
-				// TODO: Add support for custom selection modes
-				if ( defined( 'BLOCK_SELECTION_MODE' ) && BLOCK_SELECTION_MODE == 'YES' ) {
-				Language::out( 'Selection Mode:' ); ?>
+				if ( \MillionDollarScript\Classes\Config::get( 'BLOCK_SELECTION_MODE' ) == 'YES' ) {
+				?>
             </div>
-            <div class="mds-select-radios">
-                <div class="mds-select-radio">
-                    <input type="radio" id='sel1' name='sel_mode' value='sel1' <?php if ( ( $_REQUEST['sel_mode'] == '' ) || ( $_REQUEST['sel_mode'] == 'sel1' ) ) {
-						echo " checked ";
-					} ?> />
-                    <label for='sel1'>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-single">
-                            <rect x="5" y="5" width="14" height="14"/>
-                        </svg>
-						<?php Language::out( '1 block at a time' ); ?>
-                    </label>
-                </div>
-                <div class="mds-select-radio">
-                    <input type="radio" name='sel_mode' id='sel4' value='sel4' <?php if ( ( $_REQUEST['sel_mode'] == 'sel4' ) ) {
-						echo " checked ";
-					} ?> />
-                    <label for="sel4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-square">
-                            <rect x="4.5" y="4.5" width="7" height="7"/>
-                            <rect x="12.5" y="4.5" width="7" height="7"/>
-                            <rect x="4.5" y="12.5" width="7" height="7"/>
-                            <rect x="12.5" y="12.5" width="7" height="7"/>
-                        </svg>
-						<?php Language::out( '4 blocks at a time' ); ?>
-                    </label>
-                </div>
-                <div class="mds-select-radio">
-                    <input type="radio" name='sel_mode' id='sel6' value='sel6' <?php if ( ( $_REQUEST['sel_mode'] == 'sel6' ) ) {
-						echo " checked ";
-					} ?> />
-                    <label for="sel6">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 26 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-rectangle">
-                            <rect x="2" y="4" width="7" height="7"/>
-                            <rect x="9" y="4" width="7" height="7"/>
-                            <rect x="16" y="4" width="7" height="7"/>
-                            <rect x="2" y="11" width="7" height="7"/>
-                            <rect x="9" y="11" width="7" height="7"/>
-                            <rect x="16" y="11" width="7" height="7"/>
-                        </svg>
-						<?php Language::out( '6 blocks at a time' ); ?>
-                    </label>
+            <div class="mds-select-items">
+				<?php
+
+				// Calculate the minimum and maximum block sizes based on the grid dimensions
+				$min_size       = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
+				$max_size       = min( intval( $banner_data['G_WIDTH'] ), intval( $banner_data['G_HEIGHT'] ) );
+				$selection_size = isset( $_REQUEST['selection_size'] ) ? intval( $_REQUEST['selection_size'] ) : $min_size;
+				$total_blocks   = $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'];
+
+				// Calculate the maximum allowed total blocks based on the grid dimensions and G_MAX_BLOCKS
+				$max_total_blocks = min( $banner_data['G_MAX_BLOCKS'], $total_blocks );
+
+				// Set the maximum values for the selection_size and total_blocks inputs based on G_MAX_BLOCKS
+				$max_selection_size     = min( $max_size, floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) ) );
+				$max_total_blocks_input = min( $max_selection_size * $max_selection_size, $max_total_blocks );
+
+				// Adjust the minimum and maximum size of the pointer based on the grid dimensions
+				$min_size_adjusted = $min_size;
+				$max_size_adjusted = $max_selection_size;
+
+				// Adjust the block size and total blocks based on the total blocks and the grid dimensions
+				if ( $total_blocks > $max_total_blocks_input ) {
+					$total_blocks = $max_total_blocks_input;
+				}
+
+				if ( $total_blocks > 0 ) {
+					$selection_size_adjusted = floor( sqrt( $max_total_blocks_input / $total_blocks ) );
+				} else {
+					$selection_size_adjusted = $min_size_adjusted;
+				}
+
+				$block_size_adjusted   = floor( $max_size / $selection_size_adjusted );
+				$total_blocks_adjusted = min( $selection_size_adjusted * $selection_size_adjusted, $max_total_blocks_input );
+				$total_blocks          = $max_total_blocks_input / ( $selection_size_adjusted * $selection_size_adjusted );
+				$total_blocks          = max( 1, $total_blocks );
+
+				// Swap min_size and max_size if min_size_adjusted is greater than max_size_adjusted
+				if ( $min_size_adjusted > $max_size_adjusted ) {
+					$temp              = $min_size_adjusted;
+					$min_size_adjusted = $max_size_adjusted;
+					$max_size_adjusted = $temp;
+				}
+
+				?>
+                <div class="mds-input-item">
+                    <div class="mds-input-item mds-slider">
+                        <label for="mds-selection-size-slider"><?php Language::out( 'Selection Size' ); ?></label>
+                        <input type="range" id="mds-selection-size-slider" name="selection_size" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_selection_size; ?>" value="<?php echo $selection_size_adjusted; ?>">
+                    </div>
+                    <div class="mds-break"></div>
+                    <div class="mds-input-item mds-number">
+                        <label for="mds-selection-size-value"><?php Language::out( 'Size' ); ?></label>
+                        <input type="number" id="mds-selection-size-value" value="<?php echo $selection_size_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_selection_size; ?>">
+                    </div>
+                    <div class="mds-input-item mds-number">
+                        <label for="mds-total-blocks-value"><?php Language::out( 'Blocks' ); ?></label>
+                        <input type="number" id="mds-total-blocks-value" value="<?php echo $total_blocks_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_total_blocks_input; ?>">
+                    </div>
                 </div>
 				<?php
 				} else {
+					$min_size = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
 					?>
-                    <input type="hidden" id='sel1' name='sel_mode' value='sel1' checked="checked"/>
+                    <input type="hidden" id='selection_size' name='selection_size' value='<?php echo $min_size; ?>>'/>
 					<?php
 				}
 				?>
-                <div class="mds-select-radio">
-					<?php
-					$checked = '';
-					if ( ( $_REQUEST['sel_mode'] == 'erase' ) ) {
-						$checked = " checked ";
-					}
-					?>
-                    <input type="radio" name='sel_mode' id='erase' value='erase' <?php echo $checked; ?> />
-                    <label for="erase">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-erase">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            <line x1="10" y1="11" x2="10" y2="17"/>
-                            <line x1="14" y1="11" x2="14" y2="17"/>
-                        </svg>
-						<?php Language::out( 'Erase' ); ?>
-                    </label>
+                <div class="mds-input-item">
+                    <div class="mds-select-input">
+						<?php
+						$checked = '';
+						if ( ( $_REQUEST['erase'] == 'true' ) ) {
+							$checked = " checked ";
+						}
+						?>
+                        <input type="checkbox" name='erase' id='erase' value='true' <?php echo $checked; ?> />
+                        <label for="erase">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-erase">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                <line x1="10" y1="11" x2="10" y2="17"/>
+                                <line x1="14" y1="11" x2="14" y2="17"/>
+                            </svg>
+							<?php Language::out( 'Erase' ); ?>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>

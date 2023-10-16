@@ -76,7 +76,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 	if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == get_current_order_id() ) {
 		// convert the temp order to an order.
 
-		$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( get_current_order_id() ) . "' ";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( get_current_order_id() ) . "' ";
 		$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		if ( mysqli_num_rows( $order_result ) == 0 ) {

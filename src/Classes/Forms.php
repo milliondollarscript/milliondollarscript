@@ -89,23 +89,28 @@ class Forms {
 				\MillionDollarScript\Classes\Functions::verify_nonce( 'mds-form' );
 				require_once MDS_CORE_PATH . 'users/upload.php';
 
-				$valid_modes = [ 'sel1', 'sel4', 'sel6' ];
+				global $f2;
+				$BID         = $f2->bid();
+				$banner_data = load_banner_constants( $BID );
+
+				$min_size = $banner_data['G_MIN_BLOCKS'] ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
+				$max_size = $banner_data['G_MAX_BLOCKS'] ? intval( $banner_data['G_MAX_BLOCKS'] ) : intval( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] );
 
 				$selected_pixels = null;
 				if ( isset( $_REQUEST['selected_pixels'] ) ) {
 					$selected_pixels = explode( ',', $_REQUEST['selected_pixels'] );
-					$selected_array = [];
+					$selected_array  = [];
 					foreach ( $selected_pixels as $selected_pixel ) {
 						$selected_array[] = intval( $selected_pixel );
 					}
 					$selected_pixels = implode( ',', $selected_array );
 				}
 
-				$select   = isset( $_REQUEST['select'] ) ? intval( $_REQUEST['select'] ) : 0;
-				$package  = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
-				$order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
-				$sel_mode = isset( $_REQUEST['sel_mode'] ) && in_array( $_REQUEST['sel_mode'], $valid_modes ) ? $_REQUEST['sel_mode'] : 'sel1';
-				$params   .= '&select=' . $select . '&package=' . $package . '&selected_pixels=' . $selected_pixels . '&order_id=' . $order_id . '&sel_mode=' . $sel_mode;
+				$select     = isset( $_REQUEST['select'] ) ? intval( $_REQUEST['select'] ) : 0;
+				$package    = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+				$order_id   = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+				$selection_size = isset( $_REQUEST['selection_size'] ) && $_REQUEST['selection_size'] >= $min_size && $_REQUEST['selection_size'] <= $max_size ? intval( $_REQUEST['selection_size'] ) : $min_size;
+				$params     .= '&select=' . $select . '&package=' . $package . '&selected_pixels=' . $selected_pixels . '&order_id=' . $order_id . '&selection_size=' . $selection_size;
 
 				break;
 			case 'write-ad':

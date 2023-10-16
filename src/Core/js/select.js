@@ -118,7 +118,7 @@ function has_touch() {
 	}
 }
 
-document.querySelectorAll('.mds-select-radio input[type="radio"]').forEach(function (radio) {
+document.querySelectorAll('.mds-select-input input[type="checkbox"]').forEach(function (radio) {
 	radio.addEventListener('hover', function () {
 		this.style.cursor = 'pointer';
 	});
@@ -188,7 +188,7 @@ function on_grid_load() {
 
 grid_interval = setInterval(on_grid_load, 100);
 
-jQuery(document).ready(function(){
+jQuery(document).ready(function ($) {
 	function add_ajax_loader(container) {
 		let $ajax_loader = $("<div class='ajax-loader'></div>");
 		$(container).append($ajax_loader)
@@ -196,6 +196,34 @@ jQuery(document).ready(function(){
 	}
 
 	add_ajax_loader('.mds-container');
+
+	const $mds_selection_size_slider = $('#mds-selection-size-slider');
+	const $mds_selection_size_value = $('#mds-selection-size-value');
+	const $mds_total_blocks_value = $('#mds-total-blocks-value');
+
+	if ($mds_selection_size_slider.length > 0) {
+		$mds_selection_size_slider.on('input', function () {
+			const blockSize = $(this).val();
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
+			$mds_selection_size_value.val(adjustedBlockSize);
+			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
+		});
+
+		$mds_selection_size_value.on('input', function () {
+			const blockSize = $(this).val();
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
+			$mds_selection_size_slider.val(adjustedBlockSize);
+			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
+		});
+
+		$mds_total_blocks_value.on('input', function () {
+			const totalBlocks = $(this).val();
+			const blockSize = Math.floor(Math.sqrt(totalBlocks));
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
+			$mds_selection_size_slider.val(adjustedBlockSize);
+			$mds_selection_size_value.val(adjustedBlockSize);
+		});
+	}
 });
 
 function load_order() {
@@ -324,91 +352,34 @@ function get_clicked_blocks(OffsetX, OffsetY, block) {
 	let x;
 	let y;
 
-	// actual clicked block
-	x = OffsetX;
-	y = OffsetY;
-	clicked_blocks.push({
-		id: block,
-		x: x,
-		y: y
-	});
-
-	// additional blocks if multiple selection radio buttons are selected
-	const sel4 = document.getElementById('sel4');
-	if (sel4 !== null && sel4.checked) {
-		// select 4 - 4x4
-
-		x = OffsetX + BLK_WIDTH;
+	// Additional blocks if multiple selection radio buttons are selected
+	const selectedSize = parseInt(jQuery('#mds-selection-size-value').val(), 10);
+	if (selectedSize > 1) {
+		for (let i = 0; i < selectedSize; i++) {
+			for (let j = 0; j < selectedSize; j++) {
+				x = OffsetX + (i * BLK_WIDTH);
+				y = OffsetY + (j * BLK_HEIGHT);
+				// Ensure the block is within the grid boundaries
+				if (x >= 0 && x < GRD_WIDTH && y >= 0 && y < GRD_HEIGHT) {
+					clicked_blocks.push({
+						id: get_clicked_block(x, y),
+						x: x,
+						y: y
+					});
+				}
+			}
+		}
+	} else {
+		// Actual clicked block
+		x = OffsetX;
 		y = OffsetY;
 		clicked_blocks.push({
-			id: get_clicked_block(x, y),
+			id: block,
 			x: x,
 			y: y
 		});
-
-		x = OffsetX;
-		y = OffsetY + BLK_HEIGHT;
-		clicked_blocks.push({
-			id: get_clicked_block(x, y),
-			x: x,
-			y: y
-		});
-
-		x = OffsetX + BLK_WIDTH;
-		y = OffsetY + BLK_HEIGHT;
-		clicked_blocks.push({
-			id: get_clicked_block(x, y),
-			x: x,
-			y: y
-		});
-
-	} else {
-		// select 6 - 3x2
-
-		const sel6 = document.getElementById('sel6');
-		if (sel6 !== null && sel6.checked) {
-
-			x = OffsetX + BLK_WIDTH;
-			y = OffsetY;
-			clicked_blocks.push({
-				id: get_clicked_block(x, y),
-				x: x,
-				y: y
-			});
-
-			x = OffsetX + (BLK_WIDTH * 2);
-			y = OffsetY;
-			clicked_blocks.push({
-				id: get_clicked_block(x, y),
-				x: x,
-				y: y
-			});
-
-			x = OffsetX;
-			y = OffsetY + BLK_HEIGHT;
-			clicked_blocks.push({
-				id: get_clicked_block(x, y),
-				x: x,
-				y: y
-			});
-
-			x = OffsetX + BLK_WIDTH;
-			y = OffsetY + BLK_HEIGHT;
-			clicked_blocks.push({
-				id: get_clicked_block(x, y),
-				x: x,
-				y: y
-			});
-
-			x = OffsetX + (BLK_WIDTH * 2);
-			y = OffsetY + BLK_HEIGHT;
-			clicked_blocks.push({
-				id: get_clicked_block(x, y),
-				x: x,
-				y: y
-			});
-		}
 	}
+
 	return clicked_blocks;
 }
 
@@ -513,6 +484,7 @@ let ajax_queue_interval = setInterval(function () {
 		url: data.url,
 		data: {
 			_wpnonce: select.NONCE,
+			erasing: data.erasing,
 		},
 		success: function (response) {
 			let parsed = JSON.parse(response);
@@ -522,7 +494,9 @@ let ajax_queue_interval = setInterval(function () {
 						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
 						break;
 					case 'remove':
-						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
+						if (!data.erasing) {
+							do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
+						}
 						break;
 					case 'add':
 						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
@@ -567,13 +541,14 @@ let ajax_queue_interval = setInterval(function () {
 function change_block_state(OffsetX, OffsetY) {
 	let clicked_block = get_clicked_block(OffsetX, OffsetY);
 	let erasing = jQuery('#erase').is(':checked');
+	let selection_size = parseInt(document.getElementsByName('pixel_form')[0].elements.selection_size.value, 10);
 
 	let data = {
 		'erasing': erasing,
 		'clicked_block': clicked_block,
 		'OffsetX': OffsetX,
 		'OffsetY': OffsetY,
-		'url': select.UPDATE_ORDER + "?sel_mode=" + document.getElementsByName('pixel_form')[0].elements.sel_mode.value + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time,
+		'url': select.UPDATE_ORDER + "?selection_size=" + selection_size + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time + "&erase=" + erasing,
 	};
 
 	if (is_block_selected(clicked_block)) {
@@ -671,21 +646,14 @@ function getOffset(x, y, touch) {
 function get_pointer_size() {
 	let size = {};
 
-	const sel4 = document.getElementById('sel4');
-	if (sel4 !== null && sel4.checked) {
-		size.width = BLK_WIDTH * 2;
-		size.height = BLK_HEIGHT * 2;
+	const selectedSize = parseInt($('#mds-selection-size-value').val(), 10);
+	const maxBlockSize = Math.max(GRD_WIDTH, GRD_HEIGHT);
 
-	} else {
-		const sel6 = document.getElementById('sel6');
-		if (sel6 !== null && sel6.checked) {
-			size.width = BLK_WIDTH * 3;
-			size.height = BLK_HEIGHT * 2;
-		} else {
-			size.width = BLK_WIDTH;
-			size.height = BLK_HEIGHT;
-		}
-	}
+	// Cap the selected size to the maximum block size
+	const cappedSize = Math.min(selectedSize, maxBlockSize);
+
+	size.width = BLK_WIDTH * cappedSize;
+	size.height = BLK_HEIGHT * cappedSize;
 
 	return size;
 }

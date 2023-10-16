@@ -20,12 +20,14 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 == Changelog ==
 
 = 2.5.2 =
+* On dynamic-id check for not empty post id instead of not null.
+* Fix deleted orders still showing as reserved during ordering.
+* Fix jQuery load event not firing.
+* Fix product migration from older versions.
 * Add some missing database upgrades.
 * Move database upgrades to their own files.
-* Fix jQuery load event not firing.
-* Fix deleted orders still showing as reserved during ordering.
-* Fix product migration from older versions.
 * Add thank-you page option to redirect to after an order is completed.
+* Add user adjustable block selection size in advanced pixel selection method.
 
 = 2.5.1 =
 * Fix loading of block styles properly.

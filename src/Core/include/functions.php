@@ -1322,21 +1322,12 @@ function render_nav_pages( &$nav_pages_struct, $LINKS, $q_string = '' ) {
 	echo $nav_pages_struct['next'];
 }
 
-function select_block( $map_x, $map_y ) {
+function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 
-	global $BID, $order_id, $banner_data;
+    $BID = $banner_data['banner_id'];
 
-	// calculate clicked block from coords.
-
-	if ( func_num_args() > 2 ) {
-		$clicked_block = func_get_arg( 2 );
-	} else {
-
-		$clicked_block = get_block_id_from_position( $map_x, $map_y, $BID );
-	}
-
-	//Check if max_orders < order count
-	if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
+	// Check if max_orders < order count
+	if ( ! can_user_order( $banner_data, $user_id ) ) {
 		// order count > max orders
 		return Language::get( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="' . Utility::get_page_url( 'history' ) . '">Order History.</a></b>' );
 	}
@@ -1371,168 +1362,39 @@ function select_block( $map_x, $map_y ) {
 
 		$is_adjacent = false;
 
-		// take multi-selection blocks into account (1,4,6) and deselecting blocks
-		if ( isset( $_REQUEST['sel_mode'] ) && ! empty( $_REQUEST['sel_mode'] ) ) {
+		if ( $_REQUEST['erase'] == "true" ) {
+			if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+				// deselect
+				unset( $blocks2[ $block ] );
+				$is_adjacent = true;
+			}
+		} else if ( ! empty( $size ) ) {
+			// take multi-selection blocks into account (1,4,6) and deselecting blocks
 			$invert = Config::get( 'INVERT_PIXELS' ) === 'YES';
 
-			if ( $_REQUEST['sel_mode'] == "sel1" ) {
-				// 1x1
-				// [1]
-				if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-					// deselect
-					unset( $blocks2[ $block ] );
-				} else {
-					// select
-					$clicked_blocks[] = $clicked_block;
-				}
-			} else if ( $_REQUEST['sel_mode'] == "sel4" ) {
-				// 2x2
-				// [1][2]
-				// [3][4]
+			$pos            = get_block_position( $clicked_block, $BID );
+			$blocks_per_row = $banner_data['G_WIDTH'];
+			$blocks_per_col = $banner_data['G_HEIGHT'];
+			$max_x_px       = $blocks_per_row * $banner_data['BLK_WIDTH'];
+			$max_y_px       = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+			$max_size       = min( floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) ), $size );
 
-				$pos   = get_block_position( $clicked_block, $BID );
-				$max_x = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
-				$max_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+			for ( $y = 0; $y < $max_size; $y ++ ) {
+				$y_pos = $pos['y'] + ( $y % $blocks_per_col ) * $banner_data['BLK_HEIGHT'];
+				for ( $x = 0; $x < $max_size; $x ++ ) {
+					$x_pos = $pos['x'] + ( $x % $blocks_per_row ) * $banner_data['BLK_WIDTH'];
 
-				// 1
-				if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-					// deselect
-					unset( $blocks2[ $block ] );
-				} else {
-					// select
-					$clicked_blocks[] = $clicked_block;
-				}
+					if ( $x_pos <= $max_x_px && $y_pos <= $max_y_px ) {
+						$clicked_block = get_block_id_from_position( $x_pos, $y_pos, $BID );
 
-				// 2
-				$x = $pos['x'] + $banner_data['BLK_WIDTH'];
-				$y = $pos['y'];
-				if ( $x <= $max_x ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
+						if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+							// deselect
+							unset( $blocks2[ $block ] );
+						} else {
+							// select
+							$clicked_blocks[] = $clicked_block;
+						}
 					}
-				}
-
-				// 3
-				$x = $pos['x'];
-				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
-				if ( $y <= $max_y ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
-					}
-				}
-
-				// 4
-				$x = $pos['x'] + $banner_data['BLK_WIDTH'];
-				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
-				if ( $x <= $max_x && $y <= $max_y ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
-					}
-				}
-			} else if ( $_REQUEST['sel_mode'] == "sel6" ) {
-				// 3x2
-				// [1][2][3]
-				// [4][5][6]
-
-				$pos   = get_block_position( $clicked_block, $BID );
-				$max_x = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
-				$max_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
-
-				// 1
-				if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-					unset( $blocks2[ $block ] );
-				} else {
-					$clicked_blocks[] = $clicked_block;
-				}
-
-				// 2
-				$x = $pos['x'] + $banner_data['BLK_WIDTH'];
-				$y = $pos['y'];
-				if ( $x <= $max_x ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
-					}
-				}
-
-				// 3
-				$x = $pos['x'] + ( $banner_data['BLK_WIDTH'] * 2 );
-				$y = $pos['y'];
-				if ( $x <= $max_x && $y <= $max_y ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
-					}
-				}
-
-				// 4
-				$x = $pos['x'];
-				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
-				if ( $y <= $max_y ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
-					}
-				}
-
-				// 5
-				$x = $pos['x'] + $banner_data['BLK_WIDTH'];
-				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
-				if ( $x <= $max_x && $y <= $max_y ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
-					}
-				}
-
-				// 6
-				$x = $pos['x'] + ( $banner_data['BLK_WIDTH'] * 2 );
-				$y = $pos['y'] + $banner_data['BLK_HEIGHT'];
-				if ( $x <= $max_x && $y <= $max_y ) {
-					$clicked_block = get_block_id_from_position( $x, $y, $BID );
-					if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-						// deselect
-						unset( $blocks2[ $block ] );
-					} else {
-						// select
-						$clicked_blocks[] = $clicked_block;
-					}
-				}
-			} else if ( $_REQUEST['sel_mode'] == "erase" ) {
-				if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-					// deselect
-					unset( $blocks2[ $block ] );
 				}
 			}
 		}
@@ -1612,11 +1474,11 @@ function select_block( $map_x, $map_y ) {
 
 		$order_blocks = implode( ",", $new_blocks );
 
-		// don't overwrite existing blocks from other users
+		// don't overwrite existing blocks from other orders
 		$existing_blocks = false;
 		if ( count( $new_blocks ) > 1 ) {
 			// single block is already handled, only handle multiple here
-			$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id != " . get_current_user_id() . " AND block_id IN(" . $order_blocks . ") AND banner_id=" . intval( $BID );
+			$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != " . $orderid . " AND block_id IN(" . $order_blocks . ") AND banner_id=" . intval( $BID );
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 			$num_rows = mysqli_num_rows( $result );
 			if ( $num_rows > 0 ) {
@@ -1633,7 +1495,7 @@ function select_block( $map_x, $map_y ) {
 		}
 
 		// if conditions are met then select new blocks
-		if ( ! $max_selected && $is_adjacent && ! $existing_blocks ) {
+		if ( ! $max_selected && $is_adjacent && ! $existing_blocks && ! empty( $order_blocks ) ) {
 
 			$price      = $total = 0;
 			$num_blocks = sizeof( $new_blocks );
@@ -1650,9 +1512,23 @@ function select_block( $map_x, $map_y ) {
 				$adid = intval( $ordersrow['ad_id'] );
 			}
 
+			// One last check to make sure we aren't replacing existing blocks from other orders
+			$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != " . $orderid . " AND block_id IN(" . $order_blocks . ") AND banner_id=" . intval( $BID );
+			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+			$num_rows = mysqli_num_rows( $result );
+			if ( $num_rows > 0 ) {
+				return [
+					"error" => "true",
+					"type"  => "advertiser_sel_sold_error",
+					"data"  => [
+						"value" => Language::get_replace( "%BLOCK_ID% ", '', 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!' ),
+					]
+				];
+			}
+
 			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved) VALUES (" . get_current_user_id() . ", " . $orderid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $order_blocks ) . "', 'new', NOW(), " . floatval( $price ) . ", " . intval( $quantity ) . ", " . intval( $BID ) . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "', " . intval( $banner_data['DAYS_EXPIRE'] ) . ", '$now', " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "') ";
 
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 			$order_id = mysqli_insert_id( $GLOBALS['connection'] );
 			set_current_order_id( $order_id );
 
@@ -1664,7 +1540,7 @@ function select_block( $map_x, $map_y ) {
 				]
 			];
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . get_current_user_id() . " AND status = 'reserved' AND banner_id='" . intval( $BID ) . "' ";
+			$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . get_current_user_id() . " AND status='reserved' AND banner_id='" . intval( $BID ) . "' ";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			$cell = 0;
@@ -1674,9 +1550,7 @@ function select_block( $map_x, $map_y ) {
 
 			for ( $y = 0; $y < $blocks_y; $y += $banner_data['BLK_HEIGHT'] ) {
 				for ( $x = 0; $x < $blocks_x; $x += $banner_data['BLK_WIDTH'] ) {
-
 					if ( in_array( $cell, $new_blocks ) ) {
-
 						$price = get_zone_price( $BID, $y, $x );
 
 						// reserve block
@@ -1698,19 +1572,9 @@ function select_block( $map_x, $map_y ) {
 
 			// check that we have ad_id, if not then create an ad for this order.
 			if ( $adid == 0 ) {
-
 				$_REQUEST['order_id'] = $order_id;
 				$_REQUEST['BID']      = $BID;
 				$_REQUEST['user_id']  = get_current_user_id();
-
-				// $ad_id = insert_ad_data();
-				//
-				// $sql = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id=" . intval( $ad_id ) . " WHERE order_id=" . intval( $order_id ) . " ";
-				// $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-				// $sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET ad_id=" . intval( $ad_id ) . " WHERE order_id=" . intval( $order_id ) . " AND banner_id=" . intval( $BID );
-				// $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-				//
-				// $_REQUEST['aid'] = $ad_id;
 			}
 		}
 	} else {
@@ -1742,7 +1606,7 @@ function select_block( $map_x, $map_y ) {
 The new 'Easy' pixel selection method (since 2.0)
 - Reserve pixels
 Takes the temp_order and converts it to an order.
-Allocates pixels in the blocks tabe, returning order_id
+Allocates pixels in the blocks table, returning order_id
 shows an error if pixels were not reserved.
 
 */
