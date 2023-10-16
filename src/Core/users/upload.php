@@ -228,14 +228,14 @@ Language::out_replace(
 
 <?php
 
-if ( isset( $image ) && ! empty( $image ) ) {
+if ( ! empty( $image ) ) {
 
 	?>
 
     <div class="fancy-heading"><?php Language::out( 'Your Uploaded Pixels' ); ?></div>
     <p>
 		<?php
-		echo "<img class='mds_pointer_graphic' style=\"border:0px;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic' ) ) . "?BID=" . $BID . "' alt=\"\" /><br />";
+		echo "<img class='mds_pointer_graphic' style=\"border:0;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic' ) ) . "?BID=" . $BID . "' alt=\"\" /><br />";
 
 		if ( empty( $size ) ) {
 			$tmp_size = getimagesize( $tmp_image_file );
@@ -269,40 +269,7 @@ if ( isset( $image ) && ! empty( $image ) ) {
 		}
 
 		// if image should be resized automatically make it fit within grid max/min block settings
-		if ( Config::get( 'MDS_RESIZE' ) == 'YES' ) {
-
-			$rescale = [];
-			if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
-				$rescale['x'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $reqsize['x'] );
-				$rescale['y'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_HEIGHT'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'], $reqsize['y'] );
-			} else if ( ( $block_size < $banner_data['G_MIN_BLOCKS'] ) && ( $banner_data['G_MIN_BLOCKS'] > 0 ) ) {
-				$rescale['x'] = min( $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $reqsize['x'] );
-				$rescale['y'] = min( $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_HEIGHT'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'], $reqsize['y'] );
-			} else {
-				$rescale['x'] = $banner_data['BLK_WIDTH'];
-				$rescale['y'] = $banner_data['BLK_HEIGHT'];
-			}
-
-			if ( isset( $rescale['x'] ) && isset( $rescale['y'] ) ) {
-				// resize uploaded image
-				// if ( class_exists( 'Imagick' ) ) {
-				// 	$imagine = new Imagine\Imagick\Imagine();
-				// } else if ( function_exists( 'gd_info' ) ) {
-				// 	$imagine = new Imagine\Gd\Imagine();
-				// }
-				// $image  = $imagine->open( $tmp_image_file );
-				$resize = new Imagine\Image\Box( $rescale['x'], $rescale['y'] );
-				$image->resize( $resize );
-				$fileinfo = pathinfo( $tmp_image_file );
-				$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
-				$image->save( $newname );
-				// $size[0]    = $rescale['x'];
-				// $size[1]    = $rescale['y'];
-				// $reqsize[0] = $rescale['x'];
-				// $reqsize[1] = $rescale['y'];
-			}
-		} else {
-
+		if ( Config::get( 'MDS_RESIZE' ) != 'YES' ) {
 			if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
 
 				$limit = $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
@@ -386,6 +353,7 @@ if ( isset( $image ) && ! empty( $image ) ) {
                 <input type="submit" class='big_button' name='submit_button2' id='submit_button2' value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ); ?>'>
                 <hr/>
             </form>
+            <!--suppress HtmlRequiredAltAttribute, HtmlUnknownAnchorTarget -->
             <img src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&time=<?php echo( time() ); ?>" width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>" height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" usemap="#main"/>
 			<?php
 		}
