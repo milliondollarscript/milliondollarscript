@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.2
+ * @version     2.5.3
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -102,7 +102,7 @@ class UpdateLanguage {
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.2\\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.3\\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\\n"
@@ -111,7 +111,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 "POT-Creation-Date: 2023-06-19 09:40-0500\\n"
 "PO-Revision-Date: 2023-06-19 09:40-0500\\n"
-"X-Generator: Million Dollar Script Two 2.5.2\\n"
+"X-Generator: Million Dollar Script Two 2.5.3\\n"
 "X-Domain: milliondollarscript\\n"
 "Language: English\\n"
 \n

@@ -5,7 +5,7 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.2\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.3\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2023-10-16 14:13:43\n"
 "PO-Revision-Date: 2023-10-16 14:13:43\n"
-"X-Generator: Million Dollar Script Two 2.5.2\n"
+"X-Generator: Million Dollar Script Two 2.5.3\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 

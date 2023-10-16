@@ -1,5 +1,58 @@
-jQuery(function ($) {
+// wp.data.dispatch( 'core/annotations' ).addAnnotation( {
+// 	source: 'my-annotations-plugin',
+// 	blockClientId: wp.data.select( 'core/block-editor' ).getBlockOrder()[ 0 ],
+// 	richTextIdentifier: 'content',
+// 	range: {
+// 		start: 50,
+// 		end: 100,
+// 	},
+// } );
 
+jQuery(document).on('carbonFields.apiLoaded', function (e, api) {
+	console.log('carbonFields.apiLoaded');
+	console.log(e, api);
+});
+(function () {
+	console.log('jQuery loaded');
+
+	const {addAction} = window.cf.hooks;
+
+	addAction('carbon-fields.init', 'carbon-fields/blocks', () => {
+		console.log('carbon fields blocks loaded');
+
+		const {select} = window.cf.vendor['@wordpress/data'];
+		console.log('select', select);
+
+		const metaboxes = select('carbon-fields/metaboxes');
+		console.log('metaboxes', metaboxes);
+
+		console.log('getCachedResolvers', metaboxes.getCachedResolvers());
+		console.log('getComplexGroupValues', metaboxes.getComplexGroupValues());
+		console.log('getContainerById', metaboxes.getContainerById());
+		console.log('getContainers', metaboxes.getContainers());
+		console.log('getFieldById', metaboxes.getFieldById());
+		console.log('getFields', metaboxes.getFields());
+		console.log('getFieldsByContainerId', metaboxes.getFieldsByContainerId());
+		console.log('getIsResolving', metaboxes.getIsResolving());
+		console.log('getResolutionError', metaboxes.getResolutionError());
+		console.log('getResolutionState', metaboxes.getResolutionState());
+		console.log('hasFinishedResolution', metaboxes.hasFinishedResolution());
+		console.log('hasResolvingSelectors', metaboxes.hasResolvingSelectors());
+		console.log('hasStartedResolution', metaboxes.hasStartedResolution());
+		console.log('isDirty', metaboxes.isDirty());
+		console.log('isFieldUpdated', metaboxes.isFieldUpdated());
+		console.log('isResolving', metaboxes.isResolving());
+		console.log('isSavingLocked', metaboxes.isSavingLocked());
+
+		const fields = metaboxes.getFieldsByContainerId('carbon-fields/million-dollar-script');
+		console.log(fields);
+
+		const typeField = fields.find((field) => field.base_name === MDS.MDS_PREFIX + 'type');
+		console.log(typeField);
+	});
+})();
+
+jQuery(document).ready(function(){
 	let $changed = null;
 
 	// TODO: Implement some way to not change the width/height if they aren't defaults.
@@ -29,8 +82,14 @@ jQuery(function ($) {
 			dataType: "json",
 			success: function (response) {
 				if (response.success) {
+
 					$width.val(response.data.width);
 					$height.val(response.data.height);
+					$width.trigger('change');
+					$height.trigger('change');
+					// const onChangeBorderWidth = newBorderWidth => {
+					// 	props.setAttributes( { borderWidth: newBorderWidth.target.value })
+					// }
 				}
 			}
 		});
