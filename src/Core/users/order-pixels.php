@@ -279,8 +279,9 @@ require_once MDS_CORE_PATH . "html/header.php";
 				if (xmlhttp.readyState === 4) {
 
 					// bad selection - not available
-					if (xmlhttp.responseText.indexOf('E432') > -1) {
-						alert(xmlhttp.responseText);
+					let parsed = JSON.parse(xmlhttp.responseText);
+					if (parsed.type === 'unavailable') {
+						alert(parsed.data.value);
 						is_moving = true;
 					}
 

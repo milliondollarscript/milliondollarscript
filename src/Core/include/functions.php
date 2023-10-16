@@ -2525,7 +2525,14 @@ function check_pixels( $in_str ): bool {
 	$wpdb->get_results( $sql );
 
 	if ( $wpdb->num_rows > 0 ) {
-		echo esc_js( Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E432)" );
+		echo json_encode( [
+			"error" => "true",
+			"type"  => "unavailable",
+			"data"  => [
+				"value" => Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E432)",
+			]
+		] );
+
 		$available = false;
 	}
 
@@ -2538,7 +2545,13 @@ function check_pixels( $in_str ): bool {
 		foreach ( $result as $row ) {
 			$entries = explode( ",", $row->blocks );
 			if ( ! empty( array_intersect( $entries, $selected ) ) ) {
-				echo esc_js( Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E433)" );
+				echo json_encode( [
+					"error" => "true",
+					"type"  => "unavailable",
+					"data"  => [
+						"value" => Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E433)",
+					]
+				] );
 				$available = false;
 				break;
 			}
