@@ -184,7 +184,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 				} else if ( function_exists( 'gd_info' ) ) {
 					$imagine = new Imagine\Gd\Imagine();
 				}
-				$image  = $imagine->open( $tmp_image_file );
+				$image = $imagine->open( $tmp_image_file );
 
 				if ( isset( $rescale['x'] ) ) {
 					$resize = new Imagine\Image\Box( $rescale['x'], $rescale['y'] );
@@ -203,7 +203,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 					// recount final size
 					$block_size = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 				} else {
-                    // save to png
+					// save to png
 					$fileinfo = pathinfo( $tmp_image_file );
 					$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
 					$image->save( $newname );
@@ -573,17 +573,27 @@ require_once MDS_CORE_PATH . "html/header.php";
 			window.$block_pointer.css('visibility', 'visible');
 		}
     </script>
+
+<?php
+if ( ! empty( $tmp_image_file ) ) {
+
+	if ( empty( $size ) ) {
+		$size = getimagesize( $tmp_image_file );
+	}
+
+	?>
     <style>
 		#block_pointer {
-			height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			width: <?php echo $banner_data['BLK_WIDTH']; ?>px;
+			width: <?php echo $size[0]; ?>px;
+			height: <?php echo $size[1]; ?>px;
 			padding: 0;
 			margin: 0;
-			line-height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			font-size: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+			line-height: <?php echo $size[1]; ?>px;
+			font-size: <?php echo $size[1]; ?>px;
 		}
     </style>
-<?php
+	<?php
+}
 
 // Output any messages
 if ( ! empty( $messages ) ) {
@@ -642,17 +652,13 @@ Language::out( '- Upload a GIF, JPEG or PNG graphics file<br />
     </form>
 
 <?php
-if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
+if ( ! empty( $tmp_image_file ) ) {
 	?>
 
     <div class="fancy-heading"><?php Language::out( 'Your uploaded pixels:' ); ?></div>
 	<?php
 
 	echo "<img class='mds_pointer_graphic' style=\"border:0px;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic' ) ) . "?BID=" . $BID . "' alt=\"\" /><br />";
-
-	if ( empty( $size ) ) {
-		$size = getimagesize( $tmp_image_file );
-	}
 
 	Language::out_replace(
 		[ '%WIDTH%', '%HEIGHT%' ],
@@ -714,7 +720,7 @@ if ( isset( $tmp_image_file ) && ! empty( $tmp_image_file ) ) {
 
     <script type="text/javascript">
 		document.form1.selected_pixels.value = block_str;
-		jQuery(document).ready(function(){
+		jQuery(document).ready(function () {
 			window.pointer_width = <?php echo $reqsize[0]; ?>;
 			window.pointer_height =  <?php echo $reqsize[1]; ?>;
 
