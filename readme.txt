@@ -28,6 +28,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Move database upgrades to their own files.
 * Add thank-you page option to redirect to after an order is completed.
 * Add user adjustable block selection size in advanced pixel selection method.
+* Fix being able to select blocks in multi-block selection when not clicking the block.
+* Fix still only allowing png files to upload sometimes.
+* Fix uploaded image not appearing the proper size.
 
 = 2.5.1 =
 * Fix loading of block styles properly.
