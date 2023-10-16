@@ -178,14 +178,15 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 					$rescale['y'] = min( $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_HEIGHT'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'], $reqsize[0] );
 				}
 
+				// resize uploaded image
+				if ( class_exists( 'Imagick' ) ) {
+					$imagine = new Imagine\Imagick\Imagine();
+				} else if ( function_exists( 'gd_info' ) ) {
+					$imagine = new Imagine\Gd\Imagine();
+				}
+				$image  = $imagine->open( $tmp_image_file );
+
 				if ( isset( $rescale['x'] ) ) {
-					// resize uploaded image
-					if ( class_exists( 'Imagick' ) ) {
-						$imagine = new Imagine\Imagick\Imagine();
-					} else if ( function_exists( 'gd_info' ) ) {
-						$imagine = new Imagine\Gd\Imagine();
-					}
-					$image  = $imagine->open( $tmp_image_file );
 					$resize = new Imagine\Image\Box( $rescale['x'], $rescale['y'] );
 					$image->resize( $resize );
 					$fileinfo = pathinfo( $tmp_image_file );
@@ -201,6 +202,11 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 
 					// recount final size
 					$block_size = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+				} else {
+                    // save to png
+					$fileinfo = pathinfo( $tmp_image_file );
+					$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
+					$image->save( $newname );
 				}
 			} else {
 				// TODO: handle png extension in these cases
