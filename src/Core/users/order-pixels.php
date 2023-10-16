@@ -279,10 +279,15 @@ require_once MDS_CORE_PATH . "html/header.php";
 				if (xmlhttp.readyState === 4) {
 
 					// bad selection - not available
-					let parsed = JSON.parse(xmlhttp.responseText);
-					if (parsed.type === 'unavailable') {
-						alert(parsed.data.value);
-						is_moving = true;
+					if (xmlhttp.responseText.length > 0) {
+						try {
+							let parsed = JSON.parse(xmlhttp.responseText);
+							if (parsed.type === 'unavailable') {
+								alert(parsed.data.value);
+								is_moving = true;
+							}
+						} catch (e) {
+						}
 					}
 
 					document.getElementById('submit_button1').disabled = false;
