@@ -125,7 +125,7 @@ class Admin {
 	}
 
 	public static function menu(): void {
-		global $menus;
+		global $mds_menus;
 
 		$handle = \add_submenu_page( 'milliondollarscript', 'Million Dollar Script Admin', 'Admin', 'manage_options', 'milliondollarscript_admin', [ __CLASS__, 'html' ], 2 );
 
@@ -135,7 +135,7 @@ class Admin {
 		// Add scripts for admin page
 		add_action( 'admin_print_scripts-' . $handle, [ __CLASS__, 'scripts' ] );
 
-		$menus = [
+		$mds_menus = [
 			'hidden' => [
 				'list2',
 				'approve-pixels',
@@ -181,7 +181,7 @@ class Admin {
 		$parent_slug = 'milliondollarscript';
 		$capability  = 'manage_options';
 
-		foreach ( $menus as $parent_title => $submenu_items ) {
+		foreach ( $mds_menus as $parent_title => $submenu_items ) {
 			// if ( $parent_title == 'hidden' ) {
 			// 	continue;
 			// }
@@ -234,9 +234,9 @@ class Admin {
 	 * @throws \Exception
 	 */
 	public static function __callStatic( $name, $arguments ) {
-		global $menus;
+		global $mds_menus;
 
-		foreach ( $menus as $parent_title => $submenu_items ) {
+		foreach ( $mds_menus as $parent_title => $submenu_items ) {
 			$parent_slug_formatted = sanitize_title( $parent_title );
 			$parent_callback       = sanitize_title( $parent_title );
 
