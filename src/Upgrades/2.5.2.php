@@ -43,20 +43,36 @@ class _2_5_2 {
 		if ( version_compare( $version, '2.5.2', '<' ) ) {
 
 			// modify blocks.view_count column to have a default value
-			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "blocks` MODIFY COLUMN `view_count` INT NOT NULL default '0';";
-			$wpdb->query( $sql );
+			$sql    = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "blocks` LIKE 'view_count';";
+			$result = $wpdb->get_results( $sql );
+			if ( empty( $result ) || $result[0]->Type !== 'int(11)' || $result[0]->Null !== 'NO' || $result[0]->Default !== '0' ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "blocks` MODIFY COLUMN `view_count` INT NOT NULL default '0';";
+				$wpdb->query( $sql );
+			}
 
 			// modify blocks.click_count column to have a default value
-			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "blocks` MODIFY COLUMN `click_count` INT NOT NULL default '0';";
-			$wpdb->query( $sql );
+			$sql    = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "blocks` LIKE 'click_count';";
+			$result = $wpdb->get_results( $sql );
+			if ( empty( $result ) || $result[0]->Type !== 'int(11)' || $result[0]->Null !== 'NO' || $result[0]->Default !== '0' ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "blocks` MODIFY COLUMN `click_count` INT NOT NULL default '0';";
+				$wpdb->query( $sql );
+			}
 
 			// Add cancelled status for blocks
-			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "blocks` CHANGE `status` `status` SET('cancelled','reserved','sold','free','ordered','nfs');";
-			$wpdb->query( $sql );
+			$sql    = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "blocks` LIKE 'status';";
+			$result = $wpdb->get_results( $sql );
+			if ( empty( $result ) || $result[0]->Type !== "enum('cancelled','reserved','sold','free','ordered','nfs')" ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "blocks` CHANGE `status` `status` SET('cancelled','reserved','sold','free','ordered','nfs');";
+				$wpdb->query( $sql );
+			}
 
 			// Add nfs_covered column to banners table
-			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` ADD COLUMN `nfs_covered` CHAR(1) NOT NULL default 'N' AFTER `auto_approve`;";
-			$wpdb->query( $sql );
+			$sql    = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "banners` LIKE 'nfs_covered';";
+			$result = $wpdb->get_results( $sql );
+			if ( ! $result ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` ADD COLUMN `nfs_covered` CHAR(1) NOT NULL default 'N' AFTER `auto_approve`;";
+				$wpdb->query( $sql );
+			}
 
 			// Store banner data from database into an array for later use.
 			// $sql     = "SELECT `banner_id`,`nfs_block`, `usr_nfs_block` FROM `" . MDS_DB_PREFIX . "banners`";
@@ -71,8 +87,14 @@ class _2_5_2 {
 			// }
 
 			// Change nfs_block and usr_nfs_block to LONGBLOB
-			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` CHANGE `nfs_block` `nfs_block` LONGBLOB NOT NULL, CHANGE `usr_nfs_block` `usr_nfs_block` LONGBLOB NOT NULL;";
-			$wpdb->query( $sql );
+			$sql               = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "banners` LIKE 'nfs_block';";
+			$resultNfsBlock    = $wpdb->get_results( $sql );
+			$sql               = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "banners` LIKE 'usr_nfs_block';";
+			$resultUsrNfsBlock = $wpdb->get_results( $sql );
+			if ( empty( $resultNfsBlock ) || empty( $resultUsrNfsBlock ) || $resultNfsBlock[0]->Type !== 'longblob' || $resultUsrNfsBlock[0]->Type !== 'longblob' || $resultNfsBlock[0]->Null !== 'NO' || $resultUsrNfsBlock[0]->Null !== 'NO' ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` CHANGE `nfs_block` `nfs_block` LONGBLOB NOT NULL, CHANGE `usr_nfs_block` `usr_nfs_block` LONGBLOB NOT NULL;";
+				$wpdb->query( $sql );
+			}
 
 			// Update block data for each banner
 			// foreach ( $banners as $banner_id => $data ) {
@@ -96,11 +118,18 @@ class _2_5_2 {
 			// }
 
 			// Add nfs_covered column to banners table
-			$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` ADD COLUMN `enabled` CHAR(1) NOT NULL default 'Y' AFTER `nfs_covered`;";
-			$wpdb->query( $sql );
+			$sql    = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "banners` LIKE 'enabled';";
+			$result = $wpdb->get_results( $sql );
+			if ( empty( $result ) ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "banners` ADD COLUMN `enabled` CHAR(1) NOT NULL default 'Y' AFTER `nfs_covered`;";
+				$wpdb->query( $sql );
+			}
 
 			// Add nfs_covered column to banners table
-			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "config` (
+			$sql           = "SELECT COUNT(*) FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key` = 'TOOLTIP_TRIGGER';";
+			$existingCount = $wpdb->get_var( $sql );
+			if ( $existingCount == 0 ) {
+				$sql = "INSERT INTO `" . MDS_DB_PREFIX . "config` (
 					`config_key`,
 					`val`
 			)
@@ -108,7 +137,8 @@ class _2_5_2 {
 					'TOOLTIP_TRIGGER',
 					'click'
 			)";
-			$wpdb->query( $sql );
+				$wpdb->query( $sql );
+			}
 
 			// Convert Rank to Privileged Users
 			$users_map  = [];
