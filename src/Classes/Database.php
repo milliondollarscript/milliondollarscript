@@ -185,7 +185,7 @@ class Database {
 				],
 				[
 					'%s',
-					'%d'
+					'%s'
 				]
 			);
 
