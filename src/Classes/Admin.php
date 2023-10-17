@@ -303,7 +303,7 @@ class Admin {
 			MDS_PREFIX . 'admin-css',
 			MDS_CORE_URL . 'admin/css/admin.css',
 			[],
-			filemtime( MDS_CORE_PATH . '/admin/css/admin.css' )
+			filemtime( MDS_CORE_PATH . 'admin/css/admin.css' )
 		);
 
 		global $wp_scripts;
@@ -323,7 +323,7 @@ class Admin {
 			MDS_PREFIX . 'viselect',
 			MDS_CORE_URL . 'js/third-party/viselect.umd.js',
 			[],
-			filemtime( MDS_CORE_PATH . '/js/third-party/viselect.umd.js' ),
+			filemtime( MDS_CORE_PATH . 'js/third-party/viselect.umd.js' ),
 			true
 		);
 
@@ -331,7 +331,7 @@ class Admin {
 			MDS_PREFIX . 'admin-core-js',
 			MDS_CORE_URL . 'admin/js/admin.min.js',
 			[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form' ],
-			filemtime( MDS_CORE_PATH . '/admin/js/admin.min.js' ),
+			filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
 			true
 		);
 

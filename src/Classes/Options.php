@@ -341,7 +341,7 @@ class Options {
 			MDS_PREFIX . 'admin-options-js',
 			MDS_BASE_URL . 'src/Assets/js/admin-options.min.js',
 			[ 'jquery' ],
-			filemtime( MDS_CORE_PATH . '/admin/js/admin-options.min.js' ),
+			filemtime( MDS_BASE_PATH . 'src/Assets/js/admin-options.min.js' ),
 			true
 		);
 

@@ -53,7 +53,7 @@ class MillionDollarScript {
 			MDS_PREFIX . 'admin-js',
 			MDS_BASE_URL . 'src/Assets/js/admin.min.js',
 			[ 'jquery' ],
-			filemtime( MDS_CORE_PATH . '/admin/js/admin.min.js' ),
+			filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
 			true
 		);
 
