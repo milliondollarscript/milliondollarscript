@@ -24,6 +24,8 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add Update Language button to automatically add any missing entries to the language file.
 * Refactor Language class functions to move content to first arg.
 * Update language.
+* Add option to allow changing /milliondollarscript endpoint.
+* Fix list page not showing ad.
 
 = 2.5.2 =
 * On dynamic-id check for not empty post id instead of not null.
