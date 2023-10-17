@@ -35,7 +35,7 @@ defined( 'ABSPATH' ) or exit;
  * Routes for Million Dollar Script
  *
  * Usage:
- * home_url( MDS_ENDPOINT . '/pointer' )
+ * home_url( $MDS_ENDPOINT . '/pointer' )
  *
  * Wrapper function:
  * \MillionDollarScript\Classes\Functions::get_page_url('account')
@@ -58,7 +58,9 @@ class Routes {
 	 * @return void
 	 */
 	public static function parse_query( $wp_query ): void {
-		if ( isset( $wp_query->query_vars[ MDS_ENDPOINT ] ) ) {
+		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+
+		if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
 			$post_id = Options::get_option( 'dynamic-id' );
 			if ( ! empty( $post_id ) ) {
 				$post_id = intval( $post_id );
@@ -86,9 +88,10 @@ class Routes {
 
 	public static function template_include( $template ) {
 		global $wp_query;
+		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
 
-		if ( isset( $wp_query->query_vars[ MDS_ENDPOINT ] ) ) {
-			$page = $wp_query->query_vars[ MDS_ENDPOINT ];
+		if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
+			$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
 
 			/**
 			 * requires
@@ -182,7 +185,8 @@ class Routes {
 	}
 
 	public static function add_rewrite_rules(): void {
-		add_rewrite_tag( '%' . MDS_ENDPOINT . '%', '([^&]+)' );
+		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+		add_rewrite_tag( '%' . $MDS_ENDPOINT . '%', '([^&]+)' );
 
 		$routes = [
 			'account',
@@ -217,7 +221,7 @@ class Routes {
 		];
 
 		foreach ( $routes as $route ) {
-			add_rewrite_rule( '^' . MDS_ENDPOINT . '/' . $route . '/?', 'index.php?' . MDS_ENDPOINT . '=' . $route, 'top' );
+			add_rewrite_rule( '^' . $MDS_ENDPOINT . '/' . $route . '/?', 'index.php?' . $MDS_ENDPOINT . '=' . $route, 'top' );
 		}
 	}
 

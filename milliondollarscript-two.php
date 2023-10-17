@@ -62,7 +62,6 @@ defined( 'MDS_VENDOR_PATH' ) or define( 'MDS_VENDOR_PATH', wp_normalize_path( MD
 defined( 'MDS_VENDOR_URL' ) or define( 'MDS_VENDOR_URL', MDS_BASE_URL . 'vendor/' );
 defined( 'MDS_CORE_PATH' ) or define( 'MDS_CORE_PATH', wp_normalize_path( MDS_BASE_PATH . 'src/Core/' ) );
 defined( 'MDS_CORE_URL' ) or define( 'MDS_CORE_URL', MDS_BASE_URL . 'src/Core/' );
-defined( 'MDS_ENDPOINT' ) or define( 'MDS_ENDPOINT', 'milliondollarscript' );
 defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript' );
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );

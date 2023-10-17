@@ -103,6 +103,11 @@ class Options {
 				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page' ) )
 				     ->set_default_value( '' )
 				     ->set_help_text( Language::get( 'The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message.' ) ),
+
+				// Endpoint
+				Field::make( 'text', MDS_PREFIX . 'endpoint', Language::get( 'Endpoint' ) )
+				     ->set_default_value( 'milliondollarscript' )
+				     ->set_help_text( Language::get( 'The endpoint to use for dynamic pages. Example: /<span style="color: red;">endpoint</span>/order. If left empty will use the default: milliondollarscript' ) ),
 			],
 
 			'Login' => [
@@ -269,20 +274,21 @@ class Options {
 			case 'popup-template':
 				$field->set_value( nl2br( $field->get_value() ) );
 				break;
-			case 'update-language':
-				if ( $field->get_value() === 'off' ) {
-					delete_option( MDS_PREFIX . 'pot_needs_updating' );
-					delete_transient( MDS_PREFIX . 'pot_strings' );
+			case 'endpoint':
+				if ( empty( $field->get_value() ) ) {
+					$field->set_value( 'milliondollarscript' );
+					flush_rewrite_rules();
+				}if ( $field->get_value() !== 'milliondollarscript' ) {
+					flush_rewrite_rules();
 				}
 				break;
 			case 'users':
 			case 'admin':
 			default:
-				$field = apply_filters( 'mds_options_save', $field, $name );
 				break;
 		}
 
-		return $field;
+		return apply_filters( 'mds_options_save', $field, $name );
 	}
 
 	/**

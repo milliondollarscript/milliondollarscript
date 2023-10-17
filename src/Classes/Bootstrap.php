@@ -168,12 +168,6 @@ class Bootstrap {
 		// WP logout redirect filter
 		add_filter( 'logout_redirect', [ '\MillionDollarScript\Classes\Users', 'logout_redirect' ], 10, 3 );
 
-		// Update Language
-		if ( Options::get_option( 'update-language' ) == 'on' ) {
-			add_filter( 'gettext', [ '\MillionDollarScript\Classes\UpdateLanguage', 'capture_gettext_strings' ], 999, 3 );
-			add_action( 'shutdown', [ '\MillionDollarScript\Classes\UpdateLanguage', 'write_strings' ] );
-		}
-
 		// Add custom routes
 		new \MillionDollarScript\Classes\Routes();
 

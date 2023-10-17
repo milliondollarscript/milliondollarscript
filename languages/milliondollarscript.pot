@@ -1208,3 +1208,10 @@ msgstr ""
 
 msgid "Logout"
 msgstr ""
+
+msgid "Endpoint"
+msgstr ""
+
+msgid "The endpoint to use for dynamic pages. Example: /<span style=\"color: red;\">endpoint</span>/order. If left empty will use the default: milliondollarscript"
+msgstr ""
+

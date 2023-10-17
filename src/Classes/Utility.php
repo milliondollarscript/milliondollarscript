@@ -438,7 +438,9 @@ class Utility {
 	 * @return string|null
 	 */
 	public static function get_page_url( $page_name ): ?string {
-		return trailingslashit( home_url( "/" . MDS_ENDPOINT . "/{$page_name}" ) );
+		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+
+		return trailingslashit( home_url( "/" . $MDS_ENDPOINT . "/{$page_name}" ) );
 	}
 
 	/**

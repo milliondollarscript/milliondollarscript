@@ -137,8 +137,9 @@ class Functions {
 
 		if ( Config::get( 'USE_AJAX' ) == 'YES' ) {
 			global $wp_query;
-			if ( isset( $wp_query->query_vars[ MDS_ENDPOINT ] ) ) {
-				$page = $wp_query->query_vars[ MDS_ENDPOINT ];
+			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+			if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
+				$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
 				if ( $page == 'order' ) {
 					wp_register_script( 'mds-select', MDS_CORE_URL . 'js/select.min.js', [ 'jquery', 'mds' ], filemtime( MDS_CORE_PATH . 'js/select.min.js' ), true );
 					// wp_localize_script( 'mds-select', 'select', self::get_select_data() );
@@ -368,7 +369,7 @@ class Functions {
 
 					if ( $product->is_type( 'simple' ) ) {
 						$product_classname = \WC_Product_Factory::get_product_classname( $product_id, 'variable' );
-						$product       = new $product_classname( $product_id );
+						$product           = new $product_classname( $product_id );
 						$product->save();
 					}
 
