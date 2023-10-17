@@ -320,11 +320,11 @@ class Ajax {
 								$blocks   = explode( ',', $row['blocks'] );
 								$block_id = $blocks[0];
 
-								$ALT_TEXT = carbon_get_post_meta( $row['ad_id'], 'text' );
+								$ALT_TEXT = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
 								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT );
 
 								$data_values = array(
-									'id'        => $row['ad_id'],
+									'aid'        => $row['ad_id'],
 									'block_id'  => $block_id,
 									'banner_id' => $banner['banner_id'],
 									'alt_text'  => $ALT_TEXT,
