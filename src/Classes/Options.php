@@ -69,8 +69,8 @@ class Options {
 				Field::make( 'select', MDS_PREFIX . 'login-target', Language::get( 'Login Page Target' ) )
 				     ->set_default_value( 'current' )
 				     ->set_options( [
-					     'current'  => 'Current Page',
-					     'redirect' => 'Redirect',
+					     'current'  => Language::get( 'Current Page' ),
+					     'redirect' => Language::get( 'Redirect' ),
 				     ] )
 				     ->set_help_text( Language::get( 'How to open the login page when shown. When set to Current Page it will attempt to load the login page into the current page content. If that fails or it\'s set to Redirect then it will redirect to the default WP login page. If you want to further customize the login/registration page beyond the options here then you can install a plugin like Ultimate Member and set the URLs here to the pages provided by it such as Account, Register, Login, and Forgot Password pages.' ) ),
 
@@ -94,8 +94,8 @@ class Options {
 				Field::make( 'select', MDS_PREFIX . 'confirm-orders', Language::get( 'Confirm Orders Page' ) )
 				     ->set_default_value( 'yes' )
 				     ->set_options( [
-					     'yes' => 'Yes',
-					     'no'  => 'No',
+					     'yes' => Language::get( 'Yes' ),
+					     'no'  => Language::get( 'No' ),
 				     ] )
 				     ->set_help_text( Language::get( 'Enable the Confirm Order page which shows after filling out the fields and before the checkout page.' ) ),
 
@@ -161,10 +161,10 @@ class Options {
 				Field::make( 'select', MDS_PREFIX . 'link-target', Language::get( 'Link Target' ) )
 				     ->set_default_value( '_self' )
 				     ->set_options( [
-					     '_self'   => 'Open in Same Tab/Window',
-					     '_blank'  => 'Open in New Tab/Window',
-					     '_parent' => 'Open in Parent Context',
-					     '_top'    => 'Open in Full Window',
+					     '_self'   => Language::get( 'Open in Same Tab/Window' ),
+					     '_blank'  => Language::get( 'Open in New Tab/Window' ),
+					     '_parent' => Language::get( 'Open in Parent Context' ),
+					     '_top'    => Language::get( 'Open in Full Window' ),
 				     ] )
 				     ->set_help_text( Language::get( 'How to open links in the popup when they are clicked.' ) ),
 			],
@@ -175,8 +175,8 @@ class Options {
 				Field::make( 'select', MDS_PREFIX . 'expire-orders', Language::get( 'Expire Orders' ) )
 				     ->set_default_value( 'yes' )
 				     ->set_options( [
-					     'yes' => 'Yes',
-					     'no'  => 'No',
+					     'yes' => Language::get( 'Yes' ),
+					     'no'  => Language::get( 'No' ),
 				     ] )
 				     ->set_help_text( Language::get( 'Enable expiration of orders.' ) ),
 
@@ -193,7 +193,7 @@ class Options {
 				Field::make( 'checkbox', MDS_PREFIX . 'permissions', Language::get( 'Enable Permissions?' ) )
 				     ->set_default_value( 'no' )
 				     ->set_option_value( 'yes' )
-				     ->set_help_text( Language::get( 'Enable permission system for user roles and the following capabilities: mds_my_account, mds_order_pixels, mds_manage_pixels, mds_order_history, mds_logout' ) ),
+				     ->set_help_text( Language::get( 'Enable permission system for user roles and the following capabilities: ' ) . implode( ', ', $capabilities ) ),
 
 				// Enable Capabilities
 				Field::make( 'multiselect', MDS_PREFIX . 'capabilities', Language::get( 'Enable Capabilities' ) )
@@ -228,9 +228,9 @@ class Options {
 				Field::make( 'select', MDS_PREFIX . 'updates', Language::get( 'Plugin updates' ) )
 				     ->set_default_value( 'yes' )
 				     ->set_options( [
-					     'yes' => 'Update',
-					     'no'  => 'Don\'t update',
-					     'dev' => 'Development'
+					     'yes' => Language::get( 'Update' ),
+					     'no'  => Language::get( 'Don\'t update' ),
+					     'dev' => Language::get( 'Development' )
 				     ] )
 				     ->set_help_text( Language::get( 'If Update then updates will be done normally like all other plugins. If Don\'t update then no updates will be looked for. If Development then updates will be checked for in the development branch.' ) ),
 			],
@@ -278,7 +278,8 @@ class Options {
 				if ( empty( $field->get_value() ) ) {
 					$field->set_value( 'milliondollarscript' );
 					flush_rewrite_rules();
-				}if ( $field->get_value() !== 'milliondollarscript' ) {
+				}
+				if ( $field->get_value() !== 'milliondollarscript' ) {
 					flush_rewrite_rules();
 				}
 				break;
@@ -335,7 +336,7 @@ class Options {
 		self::$tabs = $tabs;
 	}
 
-	public static function enqueue_scripts() {
+	public static function enqueue_scripts(): void {
 
 		wp_register_script(
 			MDS_PREFIX . 'admin-options-js',
