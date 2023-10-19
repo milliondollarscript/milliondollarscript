@@ -140,7 +140,7 @@ class Options {
 				Field::make( 'rich_text', MDS_PREFIX . 'popup-template', Language::get( 'Popup Template' ) )
 				     ->set_settings( array( 'media_buttons' => false ) )
 				     ->set_default_value( '%text%<br/>
-<span color="green">%url%</span><br/>
+%url%<br/>
 %image%<br/>
 ' )
 				     ->set_help_text( Language::get( 'This is the template for the popup that displays when a block on the grid is interacted with. Placeholders: %text%, %url%, %image%' ) ),
