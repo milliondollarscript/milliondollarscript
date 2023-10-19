@@ -1,65 +1,10 @@
-// wp.data.dispatch( 'core/annotations' ).addAnnotation( {
-// 	source: 'my-annotations-plugin',
-// 	blockClientId: wp.data.select( 'core/block-editor' ).getBlockOrder()[ 0 ],
-// 	richTextIdentifier: 'content',
-// 	range: {
-// 		start: 50,
-// 		end: 100,
-// 	},
-// } );
-
-jQuery(document).on('carbonFields.apiLoaded', function (e, api) {
-	console.log('carbonFields.apiLoaded');
-	console.log(e, api);
-});
-(function () {
-	console.log('jQuery loaded');
-
-	const {addAction} = window.cf.hooks;
-
-	addAction('carbon-fields.init', 'carbon-fields/blocks', () => {
-		console.log('carbon fields blocks loaded');
-
-		const {select} = window.cf.vendor['@wordpress/data'];
-		console.log('select', select);
-
-		const metaboxes = select('carbon-fields/metaboxes');
-		console.log('metaboxes', metaboxes);
-
-		console.log('getCachedResolvers', metaboxes.getCachedResolvers());
-		console.log('getComplexGroupValues', metaboxes.getComplexGroupValues());
-		console.log('getContainerById', metaboxes.getContainerById());
-		console.log('getContainers', metaboxes.getContainers());
-		console.log('getFieldById', metaboxes.getFieldById());
-		console.log('getFields', metaboxes.getFields());
-		console.log('getFieldsByContainerId', metaboxes.getFieldsByContainerId());
-		console.log('getIsResolving', metaboxes.getIsResolving());
-		console.log('getResolutionError', metaboxes.getResolutionError());
-		console.log('getResolutionState', metaboxes.getResolutionState());
-		console.log('hasFinishedResolution', metaboxes.hasFinishedResolution());
-		console.log('hasResolvingSelectors', metaboxes.hasResolvingSelectors());
-		console.log('hasStartedResolution', metaboxes.hasStartedResolution());
-		console.log('isDirty', metaboxes.isDirty());
-		console.log('isFieldUpdated', metaboxes.isFieldUpdated());
-		console.log('isResolving', metaboxes.isResolving());
-		console.log('isSavingLocked', metaboxes.isSavingLocked());
-
-		const fields = metaboxes.getFieldsByContainerId('carbon-fields/million-dollar-script');
-		console.log(fields);
-
-		const typeField = fields.find((field) => field.base_name === MDS.MDS_PREFIX + 'type');
-		console.log(typeField);
-	});
-})();
-
-jQuery(document).ready(function(){
+jQuery(document).ready(function ($) {
 	let $changed = null;
 
-	// TODO: Implement some way to not change the width/height if they aren't defaults.
 	// Add a new field to lock the width/height. Should it be one field for both width/height or one lock each?
 	function update_fields() {
 		const $fields = $changed.closest('.cf-block__fields');
-		const $id = $fields.find( $('input[name="' + MDS.MDS_PREFIX + 'id"]'));
+		const $id = $fields.find($('input[name="' + MDS.MDS_PREFIX + 'id"]'));
 		const $width = $fields.find($('input[name="' + MDS.MDS_PREFIX + 'width"]'));
 		const $height = $fields.find($('input[name="' + MDS.MDS_PREFIX + 'height"]'));
 		const $type = $fields.find($('select[name="' + MDS.MDS_PREFIX + 'type"]'));
@@ -70,6 +15,8 @@ jQuery(document).ready(function(){
 			width: $width.val(),
 			height: $height.val()
 		};
+
+		const block = wp.data.select('core/block-editor').getSelectedBlock();
 
 		jQuery.ajax({
 			url: MDS.ajaxurl,
@@ -82,14 +29,13 @@ jQuery(document).ready(function(){
 			dataType: "json",
 			success: function (response) {
 				if (response.success) {
+					const width_key = MDS.MDS_PREFIX + 'width';
+					const height_key = MDS.MDS_PREFIX + 'height';
 
-					$width.val(response.data.width);
-					$height.val(response.data.height);
-					$width.trigger('change');
-					$height.trigger('change');
-					// const onChangeBorderWidth = newBorderWidth => {
-					// 	props.setAttributes( { borderWidth: newBorderWidth.target.value })
-					// }
+					block.attributes.data[width_key] = response.data.width;
+					block.attributes.data[height_key] = response.data.height;
+
+					wp.data.dispatch('core/block-editor').updateBlock(block.clientId, {attributes: block.attributes});
 				}
 			}
 		});
