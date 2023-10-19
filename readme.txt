@@ -24,8 +24,14 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add Update Language button to automatically add any missing entries to the language file.
 * Refactor Language class functions to move content to first arg.
 * Update language.
+* Add some missing Language to options.
 * Add option to allow changing /milliondollarscript endpoint.
+* Fix wrong path to admin-options.min.js and remove unnecessary slash from MDS_CORE_PATH in various places.
+* Fix new dbver insert.
+* Add additional checks to db upgrades.
 * Fix list page not showing ad.
+* Fix default Popup Template using outdated HTML.
+* Fix automatically update width and height attributes of block when the type changes.
 
 = 2.5.2 =
 * On dynamic-id check for not empty post id instead of not null.
