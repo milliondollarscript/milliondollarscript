@@ -411,7 +411,6 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 	}
 
 	$el.on('load', function () {
-		console.log('load');
 		if (isgrid) {
 			if (MDS.wp !== "") {
 				$el.parent().parent().parent().parent().css('border-bottom', '1px solid #D4D6D4').css('border-right', '1px solid #D4D6D4');
@@ -484,27 +483,6 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 jQuery(document).ready(function () {
 	// MDS ajax display method
 	window.mds_ajax = function (mds_type, mds_container_id, mds_align, mds_width, mds_height, grid_id) {
-		// jQuery(document).on('carbonFields.apiLoaded', function (e, api) {
-		// 	console.log('carbonFields.apiLoaded');
-		// 	console.log(e, api);
-		// });
-		// (function () {
-		// 	console.log('jQuery loaded');
-		//
-		// 	const {addAction} = window.cf.hooks;
-		//
-		// 	addAction('carbon-fields.init', 'carbon-fields/blocks', () => {
-		// 		console.log('carbon fields blocks loaded');
-		// 		const {select} = window.cf.vendor['@wordpress/data'];
-		// 		const fields = select('carbon-fields/metaboxes').getFieldsByContainerId('carbon_fields_container_theme_options');
-		//
-		// 		console.log(fields);
-		//
-		// 		const typeField = fields.find((field) => field.base_name === MDS.MDS_PREFIX + 'type');
-		// 		console.log(typeField);
-		// 	});
-		// })();
-
 		var container = jQuery("#" + mds_container_id);
 
 		container.width(mds_width).height(mds_height).css('max-width', '100%');

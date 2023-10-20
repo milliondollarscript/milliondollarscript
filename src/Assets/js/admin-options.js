@@ -10,12 +10,10 @@ jQuery(document).ready(function ($) {
 			action: "mds_update_language",
 			nonce: MDS.nonce
 		}, function (data) {
-			console.log(button);
 			if (data) {
 				button.css("background-color", "#006606");
 			} else {
 				button.css("background-color", "#660000");
-				console.log("error", data);
 			}
 			button.delay(5000).queue(function (next) {
 				button.css("background-color", "");
