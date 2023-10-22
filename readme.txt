@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.3.1
-Stable tag: 2.5.3
+Stable tag: 2.5.4
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -120,7 +120,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix Attempt to read property "ID" on null in src\Classes\FormFields.php on line 149
 * Fix being able to overlap existing orders in advanced pixel selection mode.
 
-= TODO =
+== TODO ==
 * Fix being able to select blocks in multi-block selection when not clicking the block. Something to do with $cannot_sel from select.php?
 * In advanced mode, if you select "reset" it will change the order to "reserved" and you can't clear this from the admin panel.
 * Handle packages on simple mode order screen.
@@ -147,7 +147,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Test order expiration, deletion, cancellation, etc.
 * Fix public grid using user Grid Block setting.
 
-= Next release =
+== Next release ==
 
 These are things that can wait until the next release or are ongoing but won't be done until next release.
 
