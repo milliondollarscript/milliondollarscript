@@ -44,7 +44,7 @@ $sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( ge
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 if ( mysqli_num_rows( $order_result ) == 0 ) { // no order id found...
-	\MillionDollarScript\Classes\Utility::redirect('no-orders');
+	\MillionDollarScript\Classes\Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 } else {
 	$order_row = mysqli_fetch_array( $order_result );
 }

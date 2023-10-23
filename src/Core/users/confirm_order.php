@@ -57,7 +57,7 @@ $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_erro
 
 // check if we have pixels...
 if ( mysqli_num_rows( $order_result ) == 0 ) {
-	\MillionDollarScript\Classes\Utility::redirect('no-orders');
+	\MillionDollarScript\Classes\Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
 $order_row = mysqli_fetch_array( $order_result );

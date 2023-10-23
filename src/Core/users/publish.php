@@ -81,7 +81,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 
 		if ( mysqli_num_rows( $order_result ) == 0 ) {
 			// no order id found...
-			\MillionDollarScript\Classes\Utility::redirect( 'no-orders' );
+			\MillionDollarScript\Classes\Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 		} else if ( $order_row = mysqli_fetch_array( $order_result ) ) {
 
 			$_REQUEST['order_id'] = reserve_pixels_for_temp_order( $order_row );
@@ -204,7 +204,7 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 	global $wpdb;
 	$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE ad_id=%d AND user_id=%d";
 	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['aid'] ), get_current_user_id(), intval( $BID ) );
-	$result = $wpdb->get_results( $prepared_sql, ARRAY_A );
+	$result       = $wpdb->get_results( $prepared_sql, ARRAY_A );
 
 	if ( ! empty( $result ) ) {
 		$row = $result[0];
@@ -306,7 +306,8 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 	}
 
 	require_once MDS_CORE_PATH . "html/footer.php";
-    return;
+
+	return;
 }
 
 $offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
