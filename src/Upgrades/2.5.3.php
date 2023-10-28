@@ -37,21 +37,16 @@ defined( 'ABSPATH' ) or exit;
 class _2_5_3 {
 
 	public function upgrade( $version ): void {
-		global $wpdb;
-
 		if ( version_compare( $version, '2.5.3', '<' ) ) {
-
-			// Convert all options to CMB2.
-
 			// Update default popup template value if not changed.
-			$popup_template = Options::get_option( '_milliondollarscript_popup-template' );
+			$popup_template = Options::get_option( '_' . MDS_DB_PREFIX . '_popup-template' );
 			if ( $popup_template == '%text%<br/>
 <span color="green">%url%</span><br/>
 %image%<br/>
 ' || $popup_template == '%text%<br />
 %url%<br />
 %image%' ) {
-				update_option( '_milliondollarscript_popup-template', '%text%<br/>
+				update_option( '_' . MDS_DB_PREFIX . '_popup-template', '%text%<br/>
 <span style="color:green;">%url%</span><br/>
 %image%<br/>
 ' );
