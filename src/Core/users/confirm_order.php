@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
 
@@ -43,7 +44,7 @@ $BID = $f2->bid();
 
 $advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
-function display_edit_order_button( $order_id ) {
+function display_edit_order_button( $order_id ): void {
 	global $BID;
 	?>
     <input type='button' class='mds-button mds-edit' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>?&amp;BID=<?php echo $BID; ?>&amp;order_id=<?php echo $order_id; ?>'">
@@ -57,7 +58,12 @@ $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_erro
 
 // check if we have pixels...
 if ( mysqli_num_rows( $order_result ) == 0 ) {
-	\MillionDollarScript\Classes\Utility::redirect( Utility::get_page_url( 'no-orders' ) );
+	if ( wp_doing_ajax() ) {
+		Functions::no_orders();
+		wp_die();
+	}
+
+	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
 $order_row = mysqli_fetch_array( $order_result );
@@ -67,6 +73,15 @@ global $BID;
 $BID = $order_row['banner_id'];
 
 $banner_data = load_banner_constants( $BID );
+
+if ( empty( $order_row['blocks'] ) ) {
+
+	require_once MDS_CORE_PATH . "html/header.php";
+	Functions::not_enough_blocks( $order_row['order_id'], $banner_data['G_MIN_BLOCKS'] );
+	require_once MDS_CORE_PATH . "html/footer.php";
+
+	return;
+}
 
 /* Login -> Select pixels -> Write ad -> Confirm order */
 if ( ! is_user_logged_in() ) {
@@ -144,6 +159,7 @@ if ( ! is_user_logged_in() ) {
 			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>', [ '%MAX_ORDERS%', '%HISTORY_URL%' ], [ $p_row['max_orders'], Utility::get_page_url( 'history' ) ] );
 		}
 	} else {
+
 		display_order( get_current_order_id(), $BID );
 
 		?>

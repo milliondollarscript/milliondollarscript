@@ -104,7 +104,7 @@ function assign_ad_template( $prams ) {
 
 function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 
-	global $f2, $error, $BID;
+	global $error, $BID;
 
 	if ( $prams == '' ) {
 		$prams              = array();
@@ -117,17 +117,17 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 	$mode      = ( isset( $mode ) && in_array( $mode, array( "edit", "user" ) ) ) ? $mode : "";
 	$ad_id     = isset( $prams['ad_id'] ) ? intval( $prams['ad_id'] ) : "";
 	$user_id   = isset( $prams['user_id'] ) ? intval( $prams['user_id'] ) : "";
-	$order_id  = isset( $prams['order_id'] ) ? intval( $prams['order_id'] ) : "";
+	$order_id  = isset( $prams['order_id'] ) ? intval( $prams['order_id'] ) : get_current_order_id();
 	$banner_id = isset( $prams['banner_id'] ) ? intval( $prams['banner_id'] ) : "";
 
-	if ( is_admin() ) {
+	if ( is_admin() && $mode == "edit" ) {
 		$mds_form_action = 'mds_admin_form_submission';
 	} else {
 		$mds_form_action = 'mds_form_submission';
 	}
 
 	?>
-    <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name="form1" enctype="multipart/form-data">
+    <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name="form1" enctype="multipart/form-data" id="mds-pixels-form">
 		<?php wp_nonce_field( 'mds-form' ); ?>
         <input type="hidden" name="action" value="<?php echo $mds_form_action; ?>">
         <input type="hidden" name="mds_dest" value="write-ad">
@@ -152,7 +152,7 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 
 			// section 1
 			// mds_display_form( $form_id, $mode, $prams, 1 );
-			FormFields::display_fields();
+			$show_required = FormFields::display_fields();
 			?>
             <div class="flex-row">
                 <input type="hidden" name="save" id="save101" value="">
@@ -160,6 +160,13 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
                     <input<?php echo( $mode == 'edit' ? ' disabled' : '' ); ?> class="mds_save_ad_button form_submit_button big_button" type="submit" name="savebutton" value="<?php esc_attr_e( Language::get( 'Save Ad' ) ); ?>" onClick="save101.value='1';">
 				<?php } ?>
             </div>
+
+			<?php
+			if ( $show_required ) {
+				echo '<span class="mds-required">' . Language::get( '* Required field' ) . '</span>';
+			}
+			?>
+
         </div>
     </form>
 
@@ -168,17 +175,9 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 
 function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '' ) {
 
-	global $BID, $wpdb;
+	global $BID, $wpdb, $column_list;
 
 	$records_per_page = 40;
-
-	$mds_pixels = get_posts(
-		[
-			'numberposts' => $records_per_page,
-			'offset'      => $offset,
-			'post_type'   => \MillionDollarScript\Classes\FormFields::$post_type,
-		]
-	);
 
 	// process search result
 	$q_string = "";
@@ -293,7 +292,7 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
                         </div>
 						<?php
 					}
-
+					$column_list = [];
 					echo_ad_list_data( $admin );
 
 					if ( ( $list_mode == 'USER' ) || ( $admin ) ) {
@@ -456,7 +455,7 @@ function disapprove_modified_order( $order_id, $BID ) {
 	mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 	// send pixel change notification
-	if ( \MillionDollarScript\Classes\Config::get('EMAIL_ADMIN_PUBLISH_NOTIFY') == 'YES' ) {
+	if ( \MillionDollarScript\Classes\Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
 		send_published_pixels_notification( get_current_user_id(), $BID );
 	}
 }
@@ -516,8 +515,8 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 				setMemoryLimit( $uploadfile );
 
 				// check image size
-				$img_size = $image->getSize();
-                $MDS_RESIZE = \MillionDollarScript\Classes\Config::get('MDS_RESIZE');
+				$img_size   = $image->getSize();
+				$MDS_RESIZE = \MillionDollarScript\Classes\Config::get( 'MDS_RESIZE' );
 
 				// check the size
 				if ( ( $MDS_RESIZE != 'YES' ) && ( ( $img_size->getWidth() > $size['x'] ) || ( $img_size->getHeight() > $size['y'] ) ) ) {

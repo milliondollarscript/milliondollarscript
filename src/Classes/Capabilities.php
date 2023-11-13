@@ -39,7 +39,7 @@ class Capabilities {
 	public static function __callStatic( $name, $arguments ) {
 		if ( $name == 'enabled' ) {
 			if ( ! isset( self::$permissions_enabled ) ) {
-				self::$permissions_enabled = Options::get_option( 'permissions', null, true, 'options' );
+				self::$permissions_enabled = Options::get_option( 'permissions', false );
 			}
 
 			return self::enabled( $arguments[0] );

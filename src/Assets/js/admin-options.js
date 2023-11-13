@@ -1,24 +1,48 @@
 jQuery(document).ready(function ($) {
-	$("#mds_update_language").click(function (e) {
-		e.preventDefault();
-		e.stopPropagation();
 
-		const button = $(this);
-		button.css("background-color", "#663600");
+	const {select, dispatch} = window.cf.vendor['@wordpress/data'];
+	const metaboxes = select('carbon-fields/metaboxes');
+	const {updateFieldValue} = dispatch('carbon-fields/metaboxes');
+	const fields = metaboxes.getFields();
 
-		$.post(MDS.ajaxurl, {
-			action: "mds_update_language",
-			nonce: MDS.nonce
-		}, function (data) {
-			if (data) {
-				button.css("background-color", "#006606");
-			} else {
-				button.css("background-color", "#660000");
-			}
-			button.delay(5000).queue(function (next) {
-				button.css("background-color", "");
-				next();
+	const buttons = [
+		'update_language',
+		'create_pages',
+		'delete_pages',
+	];
+
+	for (let i = 0; i < buttons.length; i++) {
+		$("#mds_" + buttons[i]).click(function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).prop('disabled', true);
+
+			const button = $(this);
+			button.css("background-color", "#663600");
+
+			$.post(MDS.ajaxurl, {
+				action: "mds_" + buttons[i],
+				nonce: MDS.nonce
+			}, function (data) {
+				$(this).prop('disabled', false);
+				if (data) {
+					button.css("background-color", "#006606");
+				} else {
+					button.css("background-color", "#660000");
+				}
+				button.delay(5000).queue(function (next) {
+					button.css("background-color", "");
+					next();
+				});
+
+				// Update Carbon Fields options.
+				const pages = JSON.parse(MDS.pages);
+				for (let page in pages) {
+					const option = pages[page]['option'];
+					let field = Object.values(fields).find(f => f.base_name === MDS.MDS_PREFIX + option);
+					updateFieldValue(field.id, data[option]);
+				}
 			});
 		});
-	});
+	}
 });

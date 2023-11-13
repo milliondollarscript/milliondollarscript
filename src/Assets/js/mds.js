@@ -509,7 +509,8 @@ jQuery(document).ready(function () {
 					BID: grid_id,
 					action: "mds_ajax",
 					type: mds_type,
-					mds_nonce: MDS.mds_nonce
+					mds_nonce: MDS.mds_nonce,
+					get_params: JSON.stringify(Object.fromEntries(new URLSearchParams(window.location.search)))
 				},
 				type: "POST",
 				dataType: "html",
@@ -523,11 +524,7 @@ jQuery(document).ready(function () {
 					}
 				},
 				error: function (jqXHR, textStatus, errorThrown) {
-					// if (errorThrown === "") {
-					// 	errorThrown = 'An unknown error occurred. Check that you have WP integration enabled in MDS Main Config and that you have the correct URLs set.';
-					// }
 					remove_ajax_loader();
-					// jQuery(container).html("Error: " + errorThrown);
 				}
 			});
 		}

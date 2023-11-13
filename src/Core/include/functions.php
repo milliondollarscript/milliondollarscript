@@ -1066,6 +1066,10 @@ function display_order( $order_id, $BID ): void {
 
 	?>
     <div class="mds-order-details">
+        <div>
+            <b><?php Language::out( 'Preview:' ); ?></b>
+			<?php \MillionDollarScript\Classes\Ajax::get_ad( $order_row['ad_id'] ); ?>
+        </div>
 		<?php if ( isset( $order_row['order_id'] ) && $order_row['order_id'] != '' ) { ?>
             <div>
                 <b><?php Language::out( 'Order ID:' ); ?></b>
@@ -1369,7 +1373,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 				$is_adjacent = true;
 			}
 		} else if ( ! empty( $size ) ) {
-			// take multi-selection blocks into account (1,4,6) and deselecting blocks
+			// take multi-selection blocks and deselecting blocks into account
 			$invert = Config::get( 'INVERT_PIXELS' ) === 'YES';
 
 			$pos            = get_block_position( $clicked_block, $BID );
@@ -1377,7 +1381,8 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 			$blocks_per_col = $banner_data['G_HEIGHT'];
 			$max_x_px       = $blocks_per_row * $banner_data['BLK_WIDTH'];
 			$max_y_px       = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
-			$max_size       = min( floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) ), $size );
+			$max_blocks     = $banner_data['G_MAX_BLOCKS'] == 0 ? $blocks_per_row * $blocks_per_col : $banner_data['G_MAX_BLOCKS'];
+			$max_size       = min( floor( sqrt( ( $max_blocks ) ) ), $size );
 
 			for ( $y = 0; $y < $max_size; $y ++ ) {
 				$y_pos = $pos['y'] + ( $y % $blocks_per_col ) * $banner_data['BLK_HEIGHT'];
@@ -1647,8 +1652,8 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 	$result    = $wpdb->get_results( $sql );
 
 	if ( ! empty( $result ) ) {
-		return false;
 		// the pixels are not available!
+		return false;
 	}
 
 	// approval status, default is N

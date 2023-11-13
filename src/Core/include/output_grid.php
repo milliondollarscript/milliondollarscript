@@ -59,7 +59,7 @@ defined( 'ABSPATH' ) or exit;
  *
  * @return string Progress output.
  */
-function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false ) {
+function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false, $ordering = false ) {
 	if ( ! is_numeric( $BID ) ) {
 		return false;
 	}
@@ -102,8 +102,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 		} else {
 			// The file doesn't exist so save it and then output it.
 			// save the grid image since it doesn't exist yet
-			output_grid( false, $file, $BID, $types, $user_id, false );
-			output_grid( false, $file, $BID, $types, $user_id, true );
+			output_grid( false, $file, $BID, $types, $user_id, false, $ordering );
+			output_grid( false, $file, $BID, $types, $user_id, true, $ordering );
 		}
 
 		return "Saved " . $fullfile;
@@ -145,7 +145,13 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false 
 
 	// default grid block
 	$default_block = $blank_block->copy();
-	$tmp_block     = $imagine->load( $banner_data['GRID_BLOCK'] );
+
+	if ( ! $ordering ) {
+		$tmp_block = $imagine->load( $banner_data['GRID_BLOCK'] );
+	} else {
+		$tmp_block = $imagine->load( $banner_data['USR_GRID_BLOCK'] );
+	}
+
 	$tmp_block->resize( $block_size );
 	$default_block->paste( $tmp_block, $zero_point );
 

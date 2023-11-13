@@ -613,7 +613,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                             <input type="button"
                                    style="font-size: 9px;"
                                    value="Complete"
-                                   onclick="if (!confirmLink(this, 'Payment from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) return false;"
+                                   onclick="if (!confirmLink(this, 'Payment from <?php echo esc_attr( $row['user_nicename'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) return false;"
                                    data-link="<?php echo esc_url(
 								       admin_url(
 									       'admin.php?page=mds-orders&mds-action=complete&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )

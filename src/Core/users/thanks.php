@@ -27,38 +27,14 @@
  *
  */
 
+use MillionDollarScript\Classes\Language;
+
 defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-include( "../payment/payment_manager.php" );
-//
 require_once MDS_CORE_PATH . "html/header.php";
-global $label;
-?>
 
-    <p></p>
+Language::out( 'Thank you for your order!' );
 
-    <p>&nbsp;</p>
-    <h3>
-        <center>
-			<?php
-			if ( isset( $_REQUEST['nhezk5'] ) && ! empty( $_REQUEST['nhezk5'] ) ) {
-				echo $label['payment_return_thanks_manual'];
-			} else {
-				echo $label['payment_return_thanks'];
-			}
-			?>
-        </center>
-    </h3>
-
-<?php
-
-$className = $_REQUEST['m'];
-process_payment_return( $className );
-
-?></p>
-    <p>&nbsp;</p>
-
-<?php require_once MDS_CORE_PATH . "html/footer.php";
-?>
+require_once MDS_CORE_PATH . "html/footer.php";

@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
 
@@ -62,7 +63,7 @@ if ( isset( $gd_info['PNG Support'] ) && ! empty( $gd_info['PNG Support'] ) ) {
 	$png_support = "PNG";
 }
 
-global $f2, $wpdb;
+global $BID, $f2, $wpdb;
 
 $BID = $f2->bid();
 
@@ -81,7 +82,12 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 
 		if ( mysqli_num_rows( $order_result ) == 0 ) {
 			// no order id found...
-			\MillionDollarScript\Classes\Utility::redirect( Utility::get_page_url( 'no-orders' ) );
+			if ( wp_doing_ajax() ) {
+				Functions::no_orders();
+				wp_die();
+			}
+
+			Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 		} else if ( $order_row = mysqli_fetch_array( $order_result ) ) {
 
 			$_REQUEST['order_id'] = reserve_pixels_for_temp_order( $order_row );
@@ -362,7 +368,7 @@ if ( $count > 0 ) {
 	}
 
 	// Generate the Area map form the current sold blocks.
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='sold' and banner_id='" . intval( $BID ) . "' ";
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status IN ('sold','ordered') and banner_id='" . intval( $BID ) . "' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	?>
     <div class="publish-grid">

@@ -225,7 +225,7 @@ usort( $orders, "date_sort" );
 							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
 							break;
 						case "completed":
-							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'manage' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
+							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] ."'>" . Language::get( 'Manage' ) . "</a>";
 
 							if ( $order['days_expire'] > 0 ) {
 

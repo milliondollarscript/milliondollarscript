@@ -114,7 +114,7 @@ function milliondollarscript_two_activate(): void {
  * Uninstallation
  */
 function milliondollarscript_two_uninstall(): void {
-	if ( Options::get_option( 'delete-data' ) == 'yes' ) {
+	if ( Options::get_option( 'delete-data' ) ) {
 		global $wpdb;
 
 		\MillionDollarScript\Classes\Utility::clear_orders();

@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
 
@@ -118,14 +119,7 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 		[ Utility::get_page_url( 'order' ), $BID ]
 	);
 } else if ( $not_enough_blocks ) {
-	Language::out( '<h3>Not enough blocks selected</h3>' );
-	Language::out_replace(
-		'<p>You are required to select at least %MIN_BLOCKS% blocks form the grid. Please go back to select more pixels.</p>',
-		[ '%MIN_BLOCKS%' ],
-		[ $banner_data['G_MIN_BLOCKS'] ]
-	);
-
-	display_edit_order_button( get_current_order_id() );
+	Functions::not_enough_blocks( get_current_order_id(), $banner_data['G_MIN_BLOCKS'] );
 } else {
 
 	if ( ( $has_packages ) && ( $_REQUEST['pack'] == '' ) ) {

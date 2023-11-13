@@ -111,10 +111,12 @@ class FormFields {
 	public static function get_fields(): array {
 		$fields = [
 			// Order ID
-			Field::make( 'hidden', MDS_PREFIX . 'order', Language::get( 'Order ID' ) ),
+			Field::make( 'text', MDS_PREFIX . 'order', Language::get( 'Order ID' ) )
+			     ->set_attribute( 'readOnly', true ),
 
 			// Grid ID
-			Field::make( 'hidden', MDS_PREFIX . 'grid', Language::get( 'Grid ID' ) ),
+			Field::make( 'text', MDS_PREFIX . 'grid', Language::get( 'Grid ID' ) )
+			     ->set_attribute( 'readOnly', true ),
 
 			// Text
 			Field::make( 'text', MDS_PREFIX . 'text', Language::get( 'Popup Text' ) )
@@ -139,9 +141,9 @@ class FormFields {
 	 * Display the fields.
 	 * Note: Should already be translated here.
 	 *
-	 * @return void
+	 * @return bool
 	 */
-	public static function display_fields(): void {
+	public static function display_fields(): bool {
 		$post_id = 0;
 		if ( isset( $_REQUEST['aid'] ) ) {
 			$post = get_post( $_REQUEST['aid'] );
@@ -152,7 +154,7 @@ class FormFields {
 			$args  = array(
 				'meta_query'     => array(
 					array(
-						'key'   => MDS_PREFIX . 'order_id',
+						'key'   => '_' . MDS_PREFIX . 'order',
 						'value' => $_REQUEST['order_id']
 					)
 				),
@@ -169,22 +171,58 @@ class FormFields {
 			$post_id = self::get_post_id( 'new' );
 		}
 
+		$error_message = get_user_meta( get_current_user_id(), 'error_message', true );
+		delete_user_meta( get_current_user_id(), 'error_message' );
+
+		$show_required = false;
+
 		$fields = self::get_fields();
 		foreach ( $fields as $field ) {
-			if ( $field->get_type() !== 'hidden' ) {
-				echo '<label for="' . esc_attr( $field->get_base_name() ) . '">' . esc_html( $field->get_label() ) . '</label>';
+			$field_name = $field->get_base_name();
+
+			$readOnly = $field->get_attribute( 'readOnly' );
+
+			if ( ! $readOnly ) {
+				echo '<label for="' . esc_attr( $field_name ) . '">' . esc_html( $field->get_label() );
+			}
+
+			$required = false;
+			if ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional' ) ) {
+				$required = true;
+			} else if ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional' ) ) {
+				$required = true;
+			} else if ( $field_name == MDS_PREFIX . 'image' && ! Options::get_option( 'image-optional', true ) ) {
+				$required = true;
+			}
+
+			if ( $required ) {
+				$show_required = true;
+				echo '*';
+			}
+
+			if ( ! $readOnly ) {
+				echo '</label>';
 			}
 
 			$value = "";
 
 			if ( $field->get_type() === 'text' ) {
 				if ( ! empty( $post_id ) ) {
-					$value = carbon_get_post_meta( $post_id, $field->get_base_name() );
+					$value = carbon_get_post_meta( $post_id, $field_name );
 				}
-				echo '<input type="text" id="' . esc_attr( $field->get_base_name() ) . '" name="' . esc_attr( $field->get_base_name() ) . '" value="' . esc_attr( $value ) . '">';
+
+				if ( $field_name == MDS_PREFIX . 'order' ) {
+					echo '<input type="hidden" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( get_current_order_id() ) . '">';
+				} else if ( $field_name == MDS_PREFIX . 'grid' ) {
+					global $f2;
+					$BID = $f2->bid();
+					echo '<input type="hidden" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="' . intval( $BID ) . '">';
+				} else {
+					echo '<input type="text" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( $value ) . '">';
+				}
 			} else if ( $field->get_type() === 'image' ) {
 				if ( ! empty( $post_id ) ) {
-					$image_id = carbon_get_post_meta( $post_id, $field->get_base_name() );
+					$image_id = carbon_get_post_meta( $post_id, $field_name );
 				}
 
 				if ( ! empty( $image_id ) ) {
@@ -192,17 +230,20 @@ class FormFields {
 					echo '<img src="' . esc_url( $image_url ) . '" alt="">';
 				}
 
-				echo '<input type="file" id="' . esc_attr( $field->get_base_name() ) . '" name="' . esc_attr( $field->get_base_name() ) . '">';
-			} else if ( $field->get_type() === 'hidden' ) {
-				if ( $field->get_base_name() == MDS_PREFIX . 'order' ) {
-					echo '<input type="hidden" id="' . esc_attr( $field->get_base_name() ) . '" name="' . esc_attr( $field->get_base_name() ) . '" value="' . esc_attr( get_current_order_id() ) . '">';
-				} else if ( $field->get_base_name() == MDS_PREFIX . 'grid' ) {
-					global $f2;
-					$BID = $f2->bid();
-					echo '<input type="hidden" id="' . esc_attr( $field->get_base_name() ) . '" name="' . esc_attr( $field->get_base_name() ) . '" value="' . intval( $BID ) . '">';
-				}
+				echo '<input type="file" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '">';
+			}
+
+			// Manage Pixels page
+			if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'manage' && isset( $_REQUEST['aid'] ) ) {
+				echo '<input type="hidden" id="manage-pixels" name="manage-pixels" value="' . intval( $_REQUEST['aid'] ) . '">';
+			}
+
+			if ( ! empty( $error_message[ $field_name ] ) ) {
+				echo '<div class="mds-error">' . $error_message[ $field_name ] . '</div>';
 			}
 		}
+
+		return $show_required;
 	}
 
 	/**
@@ -210,9 +251,9 @@ class FormFields {
 	 *
 	 * @param $status
 	 *
-	 * @return bool|\WP_Post
+	 * @return bool|int
 	 */
-	public static function get_post_id( $status ): bool|\WP_Post {
+	public static function get_post_id( $status ): bool|int {
 
 		// Check valid status was passed
 		if ( ! in_array( $status, array_keys( self::get_statuses() ) ) ) {
@@ -238,7 +279,8 @@ class FormFields {
 	 *
 	 * @return int|\WP_Error
 	 */
-	public static function add(): int|\WP_Error {
+	public static function add(): int|array {
+		$errors = '';
 		if ( $_SERVER['REQUEST_METHOD'] == 'POST' ) {
 
 			global $wpdb;
@@ -248,24 +290,33 @@ class FormFields {
 			// Use the text field as the post title or username as backup
 			$post_title = sanitize_title( $_POST[ MDS_PREFIX . 'text' ] ) ?? $current_user->user_login;
 
-			// First check if the user has a new mds-pixel post.
-			$user_posts = get_posts( array(
-				'author'      => $current_user->ID,
-				'post_status' => 'new',
-				'post_type'   => self::$post_type
-			) );
-
-			if ( ! empty( $user_posts ) ) {
-				// The user already has a new post of the given post type, so an order must be in progress
-				$post_id = $user_posts[0]->ID;
+			if ( isset( $_REQUEST['manage-pixels'] ) ) {
+				$post_id = intval( $_REQUEST['manage-pixels'] );
+				if ( get_current_user_id() != get_post_field( 'post_author', $post_id ) ) {
+					return new \WP_Error( 'unauthorized', Language::get( 'Sorry, you are not allowed to access this page.' ) );
+				}
 			} else {
-				// Insert a new mds-pixel post
-				$post_id = wp_insert_post( [
-					'post_title'  => $post_title,
+
+				// First check if the user has a new mds-pixel post.
+				$user_posts = get_posts( array(
+					'author'      => $current_user->ID,
 					'post_status' => 'new',
 					'post_type'   => self::$post_type
-				] );
+				) );
+
+				if ( ! empty( $user_posts ) ) {
+					// The user already has a new post of the given post type, so an order must be in progress
+					$post_id = $user_posts[0]->ID;
+				} else {
+					// Insert a new mds-pixel post
+					$post_id = wp_insert_post( [
+						'post_title'  => $post_title,
+						'post_status' => 'new',
+						'post_type'   => self::$post_type
+					] );
+				}
 			}
+
 			$fields = self::get_fields();
 
 			$errors = [];
@@ -275,21 +326,41 @@ class FormFields {
 				$value      = $_POST[ $field_name ] ?? null;
 
 				if ( isset( $_POST[ $field_name ] ) || isset( $_FILES[ $field_name ] ) ) {
-					if ( $field->get_type() === 'hidden' ) {
-						if ( $field->get_base_name() == MDS_PREFIX . 'order' ) {
-							carbon_set_post_meta( $post_id, $field_name, get_current_order_id() );
-						} else if ( $field->get_base_name() == MDS_PREFIX . 'grid' ) {
-							$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( get_current_order_id() ) ) );
-							carbon_set_post_meta( $post_id, $field_name, $grid_id );
-						}
-					} else if ( $field->get_type() === 'text' ) {
+					if ( $field->get_type() === 'text' ) {
 						if ( ! empty( $value ) ) {
-							$value = sanitize_text_field( $value );
-							carbon_set_post_meta( $post_id, $field_name, $value );
+							if ( $field_name == MDS_PREFIX . 'order' ) {
+								carbon_set_post_meta( $post_id, $field_name, get_current_order_id() );
+							} else if ( $field_name == MDS_PREFIX . 'grid' ) {
+								$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( get_current_order_id() ) ) );
+								carbon_set_post_meta( $post_id, $field_name, $grid_id );
+							} else {
+								$value = sanitize_text_field( $value );
+								carbon_set_post_meta( $post_id, $field_name, $value );
+							}
+
+							// Update blocks
+							if ( $field_name == MDS_PREFIX . 'text' ) {
+								$wpdb->update( MDS_DB_PREFIX . 'blocks', [
+									'alt_text' => $value,
+								], [
+									'ad_id' => $post_id
+								] );
+							} else if ( $field_name == MDS_PREFIX . 'url' ) {
+								$wpdb->update( MDS_DB_PREFIX . 'blocks', [
+									'url' => $value,
+								], [
+									'ad_id' => $post_id
+								] );
+							}
 						}
-						// if ( empty( $value ) ) {
-						// 	$errors[ $field_name ] = Language::get('This field is required.');
-						// }
+						if ( empty( $value ) ) {
+							// The field was empty so check if it's optional
+							if ( ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional', ) ) ||
+							     ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional' ) ) ) {
+								// The field isn't optional so add an error
+								$errors[ $field_name ] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field->get_label() );
+							}
+						}
 					} else if ( $field->get_type() === 'image' ) {
 						// Check if the file was uploaded
 						if ( isset( $_FILES[ $field_name ] ) && $_FILES[ $field_name ]['error'] === UPLOAD_ERR_OK ) {
@@ -338,7 +409,9 @@ class FormFields {
 								$errors[ $field_name ] = $upload['error'];
 							}
 						} else {
-							$errors[ $field_name ] = Language::get( 'Please upload an image.' );
+							if ( ! Options::get_option( 'image-optional', true ) ) {
+								$errors[ $field_name ] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field->get_label() );
+							}
 						}
 					}
 				} else {
@@ -374,7 +447,7 @@ class FormFields {
 			}
 		}
 
-		return new \WP_Error( 'invalid_request', Language::get( 'Invalid request.' ) );
+		return $errors;
 	}
 
 	/**
@@ -394,6 +467,11 @@ class FormFields {
 	 * @return int
 	 */
 	public static function save( $post_id ): int {
+		$post = get_post( $post_id );
+		if ( $post->post_type !== self::$post_type ) {
+			return $post_id;
+		}
+
 		global $wpdb;
 
 		$fields = self::get_fields();
@@ -464,52 +542,6 @@ class FormFields {
 		}
 
 		return $post_id;
-	}
-
-	/**
-	 * Runs when the container is saved, so we can get the post id.
-	 *
-	 * @param $post_id
-	 *
-	 * @return void
-	 */
-	public static function save_container( $post_id ): void {
-		$attachment_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'image' );
-
-		// Resize if option is enabled
-		if ( Config::get( 'MDS_RESIZE' ) == 'YES' ) {
-			$imagine = "";
-			if ( class_exists( 'Imagick' ) ) {
-				$imagine = new \Imagine\Imagick\Imagine();
-			} else if ( function_exists( 'gd_info' ) ) {
-				$imagine = new \Imagine\Gd\Imagine();
-			}
-
-			$max_image_size = Options::get_option( 'max-image-size' );
-
-			if ( ! empty( $attachment_id ) ) {
-				$image_path = get_attached_file( $attachment_id );
-
-				$image = $imagine->open( $image_path );
-				$size  = $image->getSize();
-
-				if ( $size->getWidth() > $max_image_size || $size->getHeight() > $max_image_size ) {
-					$width_ratio  = $size->getWidth() / $max_image_size;
-					$height_ratio = $size->getHeight() / $max_image_size;
-
-					$ratio = max( $width_ratio, $height_ratio );
-
-					$new_width  = $size->getWidth() / $ratio;
-					$new_height = $size->getHeight() / $ratio;
-
-					$new_size = new Box( $new_width, $new_height );
-
-					$image->resize( $new_size );
-
-					$image->save( $image_path );
-				}
-			}
-		}
 	}
 
 	/**

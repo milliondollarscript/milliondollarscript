@@ -19,6 +19,21 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 == Changelog ==
 
+= 2.5.4 =
+* Fix NFS page not working due to missing $.
+* Update vendor libs.
+* Fix infinite no-orders redirect. Thank-you Peter!
+* Add automatic page creator and delete buttons with multiple new fields for the new pages.
+* Add pages with a shortcode instead of dynamic routes in order to fix header and footer on block themes.
+* Add options to Fields tab for making Popup Text, URL and Image field optional.
+* Fix advanced pixel selection method not working properly.
+* Fix order confirmation when WooCommerce is disabled.
+* Add preview to order details on confirm page.
+* Fix Manage button not linking to the order to edit.
+* Fix editing orders in frontend and admin.
+* Optimize block selection speed in advanced pixel selection method.
+* Update language.
+
 = 2.5.3 =
 * Fix uploaded image preview size in advanced pixel selection method.
 * Add Update Language button to automatically add any missing entries to the language file.
@@ -119,55 +134,3 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix block loading.
 * Fix Attempt to read property "ID" on null in src\Classes\FormFields.php on line 149
 * Fix being able to overlap existing orders in advanced pixel selection mode.
-
-== TODO ==
-* Fix being able to select blocks in multi-block selection when not clicking the block. Something to do with $cannot_sel from select.php?
-* In advanced mode, if you select "reset" it will change the order to "reserved" and you can't clear this from the admin panel.
-* Handle packages on simple mode order screen.
-* Handle png extension when auto resize is off.
-* Fix wrong currency displaying after image upload.
-* Fix simple pixel selection method max blocks setting not working right.
-* Fix editing existing order not saving properly
-* Mobile responsiveness
-* Allow optional fields
-* Fix image not resizing
-* Fix new order being started sometimes when it shouldn't be yet.
-* Optimize Map of Orders
-* Visit all the pages without parameters and add correct error handling. Example /milliondollarscript/confirm-order/ or /milliondollarscript/payment/
-* Do something with Top Clicks page.
-* Fix manage screen grid: Red blocks have no pixels yet. Click on them to upload your pixels
-* Fix default capabilities option not loading.
-* Large image not going to edge of grid when ordering.
-* Disable selection mode if there is only one block allowed in the selected grid
-* Get rid of all the extra code that isn't used anymore
-* Verify nonces are all working for forms, etc. Maybe move the verify to the top for frontend.
-* Make WooCommerce orders completed when MDS orders are set to completed.
-* Fix list page not showing image.
-* Update translation.
-* Test order expiration, deletion, cancellation, etc.
-* Fix public grid using user Grid Block setting.
-
-== Next release ==
-
-These are things that can wait until the next release or are ongoing but won't be done until next release.
-
-* Completely migrate the Main Config admin options into Carbon Fields. Replace Config::getTypes with getType to make it easier to get the type of a specific string.
-* Implement some way to not change the width/height if they aren't defaults in admin-block.js.
-* Rewrite language file creation to scan files for Language functions instead of using gettext
-* Possible to change only part of the grid that changed when an image is add/updated.
-* Fix WooCommerce order quantity doubling if you refresh the page.
-* Add support for list to use individual grids or all.
-* Replace html/header.php and html/footer.php with proper WP functionality.
-* Add Expiration warnings. Check old EXPR.php
-* Allow order without logging in.
-* Fix clicking orders on grid in Manage Grids not working on scaled down grid.
-* Use WP functions for other things.
-* Convert all queries to wpdb.
-* Add loading to any grids in users screen.
-* Debug out of memory issue while ordering.
-* Handle refunds in MDS transaction-log
-* Avoid image processing
-  * Store all original images with max size option
-  * Store versions of images scaled to fit their order area
-  * Stream scaled images in one request to the grid on load
-  * Possibly instead just process in the background with a worker thread.

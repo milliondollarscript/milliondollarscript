@@ -417,16 +417,27 @@ class Utility {
 	 * Redirect to the previous page or fallback to home if no referrer.
 	 * TODO: implement too many redirects protection
 	 *
+	 * @param string $dest
+	 * @param array $args
+	 *
 	 * @return void
 	 */
-	public static function redirect( $dest = '' ) {
+	public static function redirect( string $dest = '', array $args = [] ): void {
+		if ( ! empty( $args ) ) {
+			$dest .= ( ! str_contains( $dest, '?' ) ? '?' : '&' ) . http_build_query( $args );
+		}
+
 		if ( ! empty( $dest ) ) {
 			wp_safe_redirect( $dest );
-		} else if ( ! empty( $_SERVER['HTTP_REFERER'] ) ) {
-			wp_safe_redirect( $_SERVER['HTTP_REFERER'] );
-		} else {
-			wp_safe_redirect( home_url() );
+			exit;
 		}
+
+		if ( ! empty( $_SERVER['HTTP_REFERER'] ) ) {
+			wp_safe_redirect( $_SERVER['HTTP_REFERER'] );
+			exit;
+		}
+
+		wp_safe_redirect( home_url() );
 		exit;
 	}
 
@@ -438,9 +449,19 @@ class Utility {
 	 * @return string|null
 	 */
 	public static function get_page_url( $page_name ): ?string {
-		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+		$pages = self::get_pages();
 
-		return trailingslashit( home_url( "/" . $MDS_ENDPOINT . "/{$page_name}" ) );
+		if ( ! isset( $pages[ $page_name ] ) ) {
+			// Non-pages like AJAX or API requests, etc.
+			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+
+			return trailingslashit( home_url( "/" . $MDS_ENDPOINT . "/{$page_name}" ) );
+		}
+
+		// Actual pages
+		$page_id = Options::get_option( $pages[ $page_name ]['option'] );
+
+		return get_permalink( $page_id );
 	}
 
 	/**
@@ -464,4 +485,68 @@ class Utility {
 		get_footer();
 	}
 
+	public static function get_pages(): array {
+		$pages = [
+			'grid'          => [
+				'option' => 'grid-page',
+				'title'  => Language::get( 'Grid' ),
+				'width'  => '1000px',
+				'height' => '1000px',
+			],
+			'account'       => [
+				'option' => 'users-home-page',
+				'title'  => Language::get( 'My Account' )
+			],
+			'order'         => [
+				'option' => 'users-order-page',
+				'title'  => Language::get( 'Order Pixels' )
+			],
+			'write-ad'      => [
+				'option' => 'users-write-ad-page',
+				'title'  => Language::get( 'Write Your Ad' )
+			],
+			'confirm-order' => [
+				'option' => 'users-confirm-order-page',
+				'title'  => Language::get( 'Confirm Order' )
+			],
+			'checkout'      => [
+				'option' => 'users-checkout-page',
+				'title'  => Language::get( 'Checkout' )
+			],
+			'payment'       => [
+				'option' => 'users-payment-page',
+				'title'  => Language::get( 'Payment' )
+			],
+			'manage'        => [
+				'option' => 'users-manage-page',
+				'title'  => Language::get( 'Manage Pixels' )
+			],
+			'history'       => [
+				'option' => 'users-history-page',
+				'title'  => Language::get( 'Order History' )
+			],
+			'publish'       => [
+				'option' => 'users-publish-page',
+				'title'  => Language::get( 'Publish' )
+			],
+			'thank-you'     => [
+				'option' => 'users-thank-you-page',
+				'title'  => Language::get( 'Thank-You!' )
+			],
+			'list'          => [
+				'option' => 'users-list-page',
+				'title'  => Language::get( 'List' )
+			],
+			'upload'        => [
+				'option' => 'users-upload-page',
+				'title'  => Language::get( 'Upload' )
+			],
+			'no-orders'     => [
+				'option' => 'users-no-orders-page',
+				'title'  => Language::get( 'No Orders' )
+			],
+		];
+
+		return apply_filters( 'mds_pages', $pages );
+	}
 }

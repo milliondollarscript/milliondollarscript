@@ -58,6 +58,8 @@ class Ajax {
 		if ( isset( $_POST ) ) {
 
 			$type = $_POST['type'] ?? null;
+			$_GET = isset( $_POST['get_params'] ) ? json_decode( stripslashes($_POST['get_params']), true ) : [];
+            $_REQUEST = array_merge( $_GET, $_POST, $_REQUEST );
 
 			// Handle core MDS AJAX calls
 			if ( isset( $type ) ) {
@@ -79,7 +81,41 @@ class Ajax {
 						self::show_list();
 						wp_die();
 					case "users":
+					case "account":
 						self::show_users();
+						wp_die();
+					case "checkout":
+						require_once MDS_CORE_PATH . 'users/checkout.php';
+						wp_die();
+					case "confirm-order":
+						require_once MDS_CORE_PATH . 'users/confirm_order.php';
+						wp_die();
+					case "history":
+						require_once MDS_CORE_PATH . 'users/orders.php';
+						wp_die();
+					case "manage":
+						require_once MDS_CORE_PATH . 'users/publish.php';
+						wp_die();
+					case "no-orders":
+						Functions::no_orders();
+						wp_die();
+					case "order":
+						\MillionDollarScript\Classes\Functions::order_screen();
+						wp_die();
+					case "payment":
+						require_once MDS_CORE_PATH . 'users/payment.php';
+						wp_die();
+					case "publish":
+						require_once MDS_CORE_PATH . 'users/publish.php';
+						wp_die();
+					case "thank-you":
+						require_once MDS_CORE_PATH . 'users/thanks.php';
+						wp_die();
+					case "upload":
+						require_once MDS_CORE_PATH . 'users/upload.php';
+						wp_die();
+					case "write-ad":
+						require_once MDS_CORE_PATH . 'users/write_ad.php';
 						wp_die();
 					default:
 						break;
@@ -190,10 +226,12 @@ class Ajax {
 		<?php
 	}
 
-	public static function get_ad(): void {
-		$post_id = intval( $_POST['aid'] );
-		$fields  = FormFields::get_fields();
-		$output  = apply_filters( 'the_content', Options::get_option( 'popup-template' ) );
+	public static function get_ad( $post_id = null ): void {
+		if ( $post_id == null ) {
+			$post_id = intval( $_POST['aid'] );
+		}
+		$fields = FormFields::get_fields();
+		$output = apply_filters( 'the_content', Options::get_option( 'popup-template' ) );
 		foreach ( $fields as $field ) {
 			$field_name = str_replace( MDS_PREFIX, '', $field->get_base_name() );
 			$value      = carbon_get_post_meta( $post_id, $field->get_base_name() );
@@ -324,7 +362,7 @@ class Ajax {
 								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT );
 
 								$data_values = array(
-									'aid'        => $row['ad_id'],
+									'aid'       => $row['ad_id'],
 									'block_id'  => $block_id,
 									'banner_id' => $banner['banner_id'],
 									'alt_text'  => $ALT_TEXT,

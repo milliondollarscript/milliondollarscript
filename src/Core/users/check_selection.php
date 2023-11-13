@@ -31,6 +31,8 @@ use MillionDollarScript\Classes\Language;
 
 defined( 'ABSPATH' ) or exit;
 
+\MillionDollarScript\Classes\Functions::verify_nonce( 'mds-order' );
+
 mds_wp_login_check();
 
 header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
@@ -85,5 +87,13 @@ function check_selection_main(): void {
 	$in_str = implode( ',', $cb_array );
 	$f2->write_log( "in_str is:" . $in_str );
 
-	check_pixels( $in_str );
+	$available = check_pixels( $in_str );
+
+	if ( $available ) {
+		echo json_encode( [
+			"error" => "false",
+			"type"  => "available",
+			"data"  => []
+		] );
+	}
 }

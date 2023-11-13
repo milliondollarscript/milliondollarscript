@@ -43,6 +43,11 @@ class Bootstrap {
 
 		$this->instance = $this;
 
+		$page = '';
+		if ( isset( $_GET['page'] ) ) {
+			$page = $_GET['page'];
+		}
+
 		// Init MDS core
 		add_action( 'init', function () {
 			require_once MDS_CORE_PATH . 'include/init.php';
@@ -64,7 +69,9 @@ class Bootstrap {
 		// Add Options page
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Options', 'register' ] );
 		add_action( 'after_setup_theme', [ '\MillionDollarScript\Classes\Options', 'load' ] );
-		add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Options', 'save' ] );
+		if ( $page == MDS_PREFIX . 'options' ) {
+			add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Options', 'save' ] );
+		}
 
 		// Add Block
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Block', 'register_style' ] );
@@ -73,7 +80,9 @@ class Bootstrap {
 		// Add Emails page
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Emails', 'register' ] );
 		add_action( 'after_setup_theme', [ '\MillionDollarScript\Classes\Emails', 'load' ] );
-		add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Emails', 'save' ] );
+		if ( $page == MDS_PREFIX . 'emails' ) {
+			add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Emails', 'save' ] );
+		}
 		add_filter( 'crb_media_buttons_html', function ( $html, $field_name ) {
 			if ( $field_name === 'rich_text_field_name_here' ) {
 				return "";
@@ -87,7 +96,6 @@ class Bootstrap {
 		add_action( 'carbon_fields_post_meta_container_saved', [ '\MillionDollarScript\Classes\FormFields', 'save' ] );
 		add_action( 'init', [ '\MillionDollarScript\Classes\FormFields', 'register_post_type' ] );
 		add_action( 'init', [ '\MillionDollarScript\Classes\FormFields', 'register_custom_post_status' ] );
-		add_action( 'carbon_fields_post_meta_container_saved', [ '\MillionDollarScript\Classes\FormFields', 'save_container' ], 10, 1 );
 		add_action( 'admin_footer-post.php', [ '\MillionDollarScript\Classes\FormFields', 'add_custom_post_status' ] );
 		add_action( 'admin_footer-post-new.php', [ '\MillionDollarScript\Classes\FormFields', 'add_custom_post_status' ] );
 		add_action( 'admin_footer-edit.php', [ '\MillionDollarScript\Classes\FormFields', 'add_quick_edit_status' ] );
@@ -108,6 +116,8 @@ class Bootstrap {
 		add_action( 'wp_ajax_mds_admin_ajax', [ '\MillionDollarScript\Classes\Admin', 'ajax' ] );
 
 		add_action( 'wp_ajax_mds_update_language', [ '\MillionDollarScript\Classes\Admin', 'update_language' ] );
+		add_action( 'wp_ajax_mds_create_pages', [ '\MillionDollarScript\Classes\Admin', 'create_pages' ] );
+		add_action( 'wp_ajax_mds_delete_pages', [ '\MillionDollarScript\Classes\Admin', 'delete_pages' ] );
 
 		// Load Block Editor JS
 		add_action( 'enqueue_block_editor_assets', [ '\MillionDollarScript\Classes\Admin', 'block_editor_scripts' ] );
@@ -136,6 +146,8 @@ class Bootstrap {
 		if ( isset( $_REQUEST['post_type'] ) && $_REQUEST['post_type'] == \MillionDollarScript\Classes\FormFields::$post_type ) {
 			add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\MillionDollarScript', 'scripts' ] );
 		}
+
+		add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\Admin', 'admin_pixels' ] );
 
 		// shortcode
 		add_shortcode( 'milliondollarscript', [ '\MillionDollarScript\Classes\Shortcode', 'shortcode' ] );

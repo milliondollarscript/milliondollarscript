@@ -87,6 +87,7 @@ class Forms {
 				break;
 			case 'upload':
 				\MillionDollarScript\Classes\Functions::verify_nonce( 'mds-form' );
+
 				require_once MDS_CORE_PATH . 'users/upload.php';
 
 				global $f2;
@@ -106,11 +107,11 @@ class Forms {
 					$selected_pixels = implode( ',', $selected_array );
 				}
 
-				$select     = isset( $_REQUEST['select'] ) ? intval( $_REQUEST['select'] ) : 0;
-				$package    = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
-				$order_id   = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+				$select         = isset( $_REQUEST['select'] ) ? intval( $_REQUEST['select'] ) : 0;
+				$package        = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+				$order_id       = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
 				$selection_size = isset( $_REQUEST['selection_size'] ) && $_REQUEST['selection_size'] >= $min_size && $_REQUEST['selection_size'] <= $max_size ? intval( $_REQUEST['selection_size'] ) : $min_size;
-				$params     .= '&select=' . $select . '&package=' . $package . '&selected_pixels=' . $selected_pixels . '&order_id=' . $order_id . '&selection_size=' . $selection_size;
+				$params         .= '&select=' . $select . '&package=' . $package . '&selected_pixels=' . $selected_pixels . '&order_id=' . $order_id . '&selection_size=' . $selection_size;
 
 				break;
 			case 'write-ad':

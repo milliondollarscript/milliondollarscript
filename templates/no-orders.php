@@ -38,16 +38,7 @@ $ob_level = ob_get_level();
 
 \MillionDollarScript\Classes\Utility::get_header();
 
-require_once MDS_CORE_PATH . "html/header.php";
-
-Language::out( '<h1>No new orders in progress</h1>' );
-Language::out_replace(
-	'<p>You don\'t have any orders in progress. Please go <a href="%ORDER_URL%">here to order pixels</a>.</p>',
-	'%ORDER_URL%',
-	Utility::get_page_url( 'order' )
-);
-
-require_once MDS_CORE_PATH . "html/footer.php";
+\MillionDollarScript\Classes\Functions::no_orders();
 
 \MillionDollarScript\Classes\Utility::get_footer();
 

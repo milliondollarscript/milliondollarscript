@@ -59,7 +59,7 @@ class Payment {
 							$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
 							$row = mysqli_fetch_array( $result );
 
-							if ( Options::get_option( 'auto-approve' ) == "yes" ) {
+							if ( Options::get_option( 'auto-approve' ) ) {
 								complete_order( $row['user_id'], $order_id );
 								debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );
 							}
@@ -93,7 +93,8 @@ class Payment {
 
 								WC()->cart->calculate_totals();
 
-								wp_redirect( add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ) );
+								// TODO: Find a better way to do this since a wp_redirect won't work due to this being inside an AJAX request
+								echo '<script>window.location.href = "' . esc_url( wc_get_checkout_url() ) . '";</script>';
 							} else {
 								wc_add_notice( Language::get( 'There was a problem adding the product to the cart.' ), 'error' );
 								wp_redirect( wc_get_cart_url() );
@@ -113,7 +114,7 @@ class Payment {
 				return;
 			}
 		} else {
-			if ( ( ( $_REQUEST['order_id'] != '' ) ) && str_contains( $checkout_url, '%' ) ) {
+			if ( ! empty( $_REQUEST['order_id'] ) && str_contains( $checkout_url, '%' ) ) {
 				$order_id = intval( $_REQUEST['order_id'] );
 				$sql      = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
 				$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
@@ -137,7 +138,7 @@ class Payment {
 	 * @return void
 	 */
 	private static function default_message(): void {
-		if ( Options::get_option( 'auto-approve' ) == 'yes' ) {
+		if ( Options::get_option( 'auto-approve' ) ) {
 			if ( ( $_REQUEST['order_id'] != '' ) ) {
 				if ( ! is_user_logged_in() ) {
 					Language::out( 'Error: You must be logged in to view this page' );
@@ -155,11 +156,12 @@ class Payment {
 
 			Language::out( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
 		} else {
+			confirm_order( get_current_user_id(), get_current_order_id() );
 			Language::out( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
 		}
 
-		$thank_you_page    = \MillionDollarScript\Classes\Options::get_option( 'thank-you-page' );
-		if(!empty($thank_you_page)){
+		$thank_you_page = \MillionDollarScript\Classes\Options::get_option( 'thank-you-page' );
+		if ( ! empty( $thank_you_page ) ) {
 			wp_safe_redirect( $thank_you_page );
 			exit;
 		}

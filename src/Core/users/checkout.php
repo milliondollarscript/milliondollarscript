@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
 
@@ -39,17 +40,22 @@ mds_wp_login_check();
 if ( isset( $_REQUEST['order_id'] ) ) {
 	set_current_order_id( $_REQUEST['order_id'] );
 }
-
-$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( get_current_order_id() ) . "' ";
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( get_current_order_id() ) . "' ";
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
-if ( mysqli_num_rows( $order_result ) == 0 ) { // no order id found...
-	\MillionDollarScript\Classes\Utility::redirect( Utility::get_page_url( 'no-orders' ) );
-} else {
-	$order_row = mysqli_fetch_array( $order_result );
+if ( mysqli_num_rows( $order_result ) == 0 ) {
+	// no order id found...
+	if ( wp_doing_ajax() ) {
+		Functions::no_orders();
+		wp_die();
+	}
+
+	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
-if ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
+$order_row = mysqli_fetch_array( $order_result );
+
+if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
 
 	// move temp order to confirmed order
 
@@ -65,6 +71,8 @@ if ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( ( $_REQUEST['mds-action'] == 
 		}
 	} else {
 		// we have a problem...
+		require_once MDS_CORE_PATH . "html/header.php";
+
 		Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
 		Language::out_replace( '<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>', '%ORDER_PAGE%', Utility::get_page_url( 'order' ) );
 
@@ -74,15 +82,10 @@ if ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( ( $_REQUEST['mds-action'] == 
 
 	$_REQUEST['order_id'] = $order_id;
 } else {
-	$order_id = $_REQUEST['order_id'];
+	$order_id = $_REQUEST['order_id'] ?? get_current_order_id();
 }
 
-if ( $_REQUEST['mds-action'] == 'confirm' ) {
-	$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	$order_row = mysqli_fetch_array( $result );
-
+if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {
+	delete_user_meta( get_current_user_id(), 'mds_confirm' );
 	\MillionDollarScript\Classes\Payment::handle_checkout();
 }
-
-require_once MDS_CORE_PATH . "html/footer.php";

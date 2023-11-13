@@ -48,7 +48,95 @@ class Options {
 		$capabilities = Capabilities::get();
 
 		self::$tabs = [
-			'Pages' => [
+			Language::get( 'Pages' ) => [
+
+				// Create Pages
+				Field::make( 'html', MDS_PREFIX . 'create-pages', Language::get( 'Create Pages' ) )
+				     ->set_html( '<div class="button button-primary" id="mds_create_pages" style="margin-top: 10px;">' . Language::get( 'Create Pages' ) . '</div/>' )
+				     ->set_help_text( Language::get( 'Clicking this button will create multiple pages for use with MDS.' ) ),
+
+				// Delete Pages
+				Field::make( 'html', MDS_PREFIX . 'delete-pages', Language::get( 'Delete Pages' ) )
+				     ->set_html( '<div class="button button-primary" id="mds_delete_pages" style="margin-top: 10px;">' . Language::get( 'Delete Pages' ) . '</div/>' )
+				     ->set_help_text( Language::get( 'Clicking this button will delete all pages created by MDS.' ) ),
+
+				// MDS Pages
+				Field::make( 'html', MDS_PREFIX . 'mds_pages', Language::get( 'MDS Pages' ) )
+				     ->set_html( Language::get( '<h3>The following options will automatically use the pages created above. You can change them. These are the page id #</h3>' ) ),
+
+				// Grid Page
+				Field::make( 'text', MDS_PREFIX . 'grid-page', Language::get( 'Grid Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The grid page.' ) ),
+
+				// Users Home Page
+				Field::make( 'text', MDS_PREFIX . 'users-home-page', Language::get( 'Users Home Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The home page for the Users/Buy Page.' ) ),
+
+				// Users Order Page
+				Field::make( 'text', MDS_PREFIX . 'users-order-page', Language::get( 'Users Order Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The order page for Users.' ) ),
+
+				// Users Write Ad Page
+				Field::make( 'text', MDS_PREFIX . 'users-write-ad-page', Language::get( 'Users Write Ad Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The write ad page for Users.' ) ),
+
+				// Users Confirm Order Page
+				Field::make( 'text', MDS_PREFIX . 'users-confirm-order-page', Language::get( 'Users Confirm Order Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The confirm order page for Users.' ) ),
+
+				// Users Checkout Page
+				Field::make( 'text', MDS_PREFIX . 'users-checkout-page', Language::get( 'Users Checkout Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The checkout page for Users.' ) ),
+
+				// Users Payment Page
+				Field::make( 'text', MDS_PREFIX . 'users-payment-page', Language::get( 'Users Payment Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The payment page for Users.' ) ),
+
+				// Users Manage Page
+				Field::make( 'text', MDS_PREFIX . 'users-manage-page', Language::get( 'Users Manage Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The manage page for Users.' ) ),
+
+				// Users History Page
+				Field::make( 'text', MDS_PREFIX . 'users-history-page', Language::get( 'Users History Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The history page for Users.' ) ),
+
+				// Users Publish Page
+				Field::make( 'text', MDS_PREFIX . 'users-publish-page', Language::get( 'Users Publish Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The publish page for Users.' ) ),
+
+				// Users Thank-You Page
+				Field::make( 'text', MDS_PREFIX . 'users-thank-you-page', Language::get( 'Users Thank You Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The thank you page for Users.' ) ),
+
+				// Users List Page
+				Field::make( 'text', MDS_PREFIX . 'users-list-page', Language::get( 'Users List Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The list page for Users.' ) ),
+
+				// Users Upload Page
+				Field::make( 'text', MDS_PREFIX . 'users-upload-page', Language::get( 'Users Upload Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The upload page for Users.' ) ),
+
+				// Users No Orders Page
+				Field::make( 'text', MDS_PREFIX . 'users-no-orders-page', Language::get( 'Users No Orders Page' ) )
+				     ->set_attribute( 'type', 'number' )
+				     ->set_help_text( Language::get( 'The no orders page for Users.' ) ),
+
+				// WP Pages
+				Field::make( 'html', MDS_PREFIX . 'wp_pages', Language::get( 'WP Pages' ) )
+				     ->set_html( Language::get( '<h3>The following options allow you to manage links and redirects to other pages.</h3>' ) ),
 
 				// Account Page
 				Field::make( 'text', MDS_PREFIX . 'account-page', Language::get( 'Account Page' ) )
@@ -84,6 +172,11 @@ class Options {
 				     ->set_default_value( '' )
 				     ->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (note that this option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
 
+				// Thank-you Page URL
+				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page URL' ) )
+				     ->set_default_value( '' )
+				     ->set_help_text( Language::get( 'The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message.' ) ),
+
 				// Dynamic Page
 				Field::make( 'text', MDS_PREFIX . 'dynamic-id', Language::get( 'Dynamic Page ID' ) )
 				     ->set_default_value( '' )
@@ -99,18 +192,13 @@ class Options {
 				     ] )
 				     ->set_help_text( Language::get( 'Enable the Confirm Order page which shows after filling out the fields and before the checkout page.' ) ),
 
-				// Thank-you Page
-				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page' ) )
-				     ->set_default_value( '' )
-				     ->set_help_text( Language::get( 'The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message.' ) ),
-
 				// Endpoint
 				Field::make( 'text', MDS_PREFIX . 'endpoint', Language::get( 'Endpoint' ) )
 				     ->set_default_value( 'milliondollarscript' )
 				     ->set_help_text( Language::get( 'The endpoint to use for dynamic pages. Example: /<span style="color: red;">endpoint</span>/order. If left empty will use the default: milliondollarscript' ) ),
 			],
 
-			'Login' => [
+			Language::get( 'Login' ) => [
 
 				// Login Redirect
 				Field::make( 'text', MDS_PREFIX . 'login-redirect', Language::get( 'Login Redirect' ) )
@@ -134,7 +222,7 @@ class Options {
 
 			],
 
-			'Popup' => [
+			Language::get( 'Popup' ) => [
 
 				// Popup Template
 				Field::make( 'rich_text', MDS_PREFIX . 'popup-template', Language::get( 'Popup Template' ) )
@@ -169,7 +257,7 @@ class Options {
 				     ->set_help_text( Language::get( 'How to open links in the popup when they are clicked.' ) ),
 			],
 
-			'Orders' => [
+			Language::get( 'Orders' ) => [
 
 				// Expire Orders
 				Field::make( 'select', MDS_PREFIX . 'expire-orders', Language::get( 'Expire Orders' ) )
@@ -182,16 +270,37 @@ class Options {
 
 				// Auto-approve
 				Field::make( 'checkbox', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-approve' ) )
-				     ->set_default_value( 'no' )
+				     ->set_default_value( '' )
 				     ->set_option_value( 'yes' )
 				     ->set_help_text( Language::get( 'Setting to Yes will automatically approve orders before payments are verified by an admin.' ) ),
 			],
 
-			'Permissions' => [
+			Language::get( 'Fields' ) => [
+
+				// Make Popup Text Optional
+				Field::make( 'checkbox', MDS_PREFIX . 'text-optional', Language::get( 'Make Popup Text Optional' ) )
+				     ->set_default_value( '' )
+				     ->set_option_value( 'yes' )
+				     ->set_help_text( Language::get( 'Setting to Yes will make the Popup Text field optional.' ) ),
+
+				// Make URL Optional
+				Field::make( 'checkbox', MDS_PREFIX . 'url-optional', Language::get( 'Make URL Optional' ) )
+				     ->set_default_value( '' )
+				     ->set_option_value( 'yes' )
+				     ->set_help_text( Language::get( 'Setting to Yes will make the URL field optional.' ) ),
+
+				// Make Image Optional
+				Field::make( 'checkbox', MDS_PREFIX . 'image-optional', Language::get( 'Make Image Optional' ) )
+				     ->set_default_value( 'yes' )
+				     ->set_option_value( 'yes' )
+				     ->set_help_text( Language::get( 'Setting to Yes will make the Image field optional.' ) ),
+			],
+
+			Language::get( 'Permissions' ) => [
 
 				// Enable Permissions?
 				Field::make( 'checkbox', MDS_PREFIX . 'permissions', Language::get( 'Enable Permissions?' ) )
-				     ->set_default_value( 'no' )
+				     ->set_default_value( '' )
 				     ->set_option_value( 'yes' )
 				     ->set_help_text( Language::get( 'Enable permission system for user roles and the following capabilities: ' ) . implode( ', ', $capabilities ) ),
 
@@ -211,7 +320,7 @@ class Options {
 
 			],
 
-			'System' => [
+			Language::get( 'System' ) => [
 
 				// Update Language
 				Field::make( 'html', MDS_PREFIX . 'update-language', Language::get( 'Update Language' ) )
@@ -220,7 +329,7 @@ class Options {
 
 				// Delete data on uninstall?
 				Field::make( 'checkbox', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
-				     ->set_default_value( 'no' )
+				     ->set_default_value( '' )
 				     ->set_option_value( 'yes' )
 				     ->set_help_text( Language::get( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.' ) ),
 
@@ -246,10 +355,6 @@ class Options {
 		foreach ( self::$tabs as $title => $fields ) {
 			$container->add_tab( Language::get( $title ), $fields );
 		}
-	}
-
-	public static function add_tab( $title, $fields ): void {
-		self::$tabs[ $title ] = $fields;
 	}
 
 	public static function load(): void {
@@ -304,7 +409,12 @@ class Options {
 	 */
 	public static function get_option( $name, $default = null, bool $carbon_fields = true, string $container_id = 'options' ): mixed {
 		if ( $carbon_fields && function_exists( 'carbon_get_theme_option' ) ) {
-			return carbon_get_theme_option( MDS_PREFIX . $name );
+			$option = carbon_get_theme_option( MDS_PREFIX . $name );
+			if ( ! empty( $option ) || $option === false ) {
+				return $option;
+			} else {
+				return $default;
+			}
 		}
 
 		$n = '_' . MDS_PREFIX . $name;
@@ -336,6 +446,10 @@ class Options {
 		self::$tabs = $tabs;
 	}
 
+	public static function add_tab( $title, $fields ): void {
+		self::$tabs[ $title ] = $fields;
+	}
+
 	public static function enqueue_scripts(): void {
 
 		wp_register_script(
@@ -347,8 +461,10 @@ class Options {
 		);
 
 		wp_localize_script( MDS_PREFIX . 'admin-options-js', 'MDS', [
-			'nonce'   => wp_create_nonce( 'mds_admin_nonce' ),
-			'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			'nonce'      => wp_create_nonce( 'mds_admin_nonce' ),
+			'ajaxurl'    => admin_url( 'admin-ajax.php' ),
+			'MDS_PREFIX' => MDS_PREFIX,
+			'pages'      => json_encode( Utility::get_pages() ),
 		] );
 
 		wp_enqueue_script( MDS_PREFIX . 'admin-options-js' );

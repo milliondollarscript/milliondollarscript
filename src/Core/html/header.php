@@ -37,6 +37,7 @@ defined( 'ABSPATH' ) or exit;
 
 $logged_in = is_user_logged_in();
 
+// error_log( var_export( debug_backtrace(), true ) );
 ?>
 <div class="mds-container<?php echo $logged_in ? ' logged-in' : ''; ?>">
     <div class="outer">

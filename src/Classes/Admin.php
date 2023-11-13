@@ -35,8 +35,8 @@ defined( 'ABSPATH' ) or exit;
 class Admin {
 
 	/**
-     * Updates the language file.
-     *
+	 * Updates the language file.
+	 *
 	 * @throws \Exception
 	 */
 	public static function update_language(): void {
@@ -48,6 +48,105 @@ class Admin {
 
 		wp_send_json( true );
 		wp_die();
+	}
+
+	/**
+	 * Creates pages for MDS.
+	 *
+	 * @return void
+	 */
+	public static function create_pages(): void {
+		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
+
+		$pages = Utility::get_pages();
+
+		$output = [];
+
+		// Create new pages in WP.
+		foreach ( $pages as $page => $data ) {
+			$option = Options::get_option( $data['option'] );
+			if ( empty( $option ) ) {
+
+				$id = 1;
+				if ( isset( $data['id'] ) ) {
+					$id = $data['id'];
+				}
+
+				$align = 'center';
+				if ( isset( $data['align'] ) ) {
+					$align = $data['align'];
+				}
+
+				$width = '100%';
+				if ( isset( $data['width'] ) ) {
+					$width = $data['width'];
+				}
+
+				$height = 'auto';
+				if ( isset( $data['height'] ) ) {
+					$height = $data['height'];
+				}
+
+				$shortcode = '[milliondollarscript id="%d" align="%s" width="%s" height="%s" type="%s"]';
+				$content   = wp_sprintf( $shortcode, $id, $align, $width, $height, $page );
+
+				$page_id = wp_insert_post( [
+					'post_type'    => 'page',
+					'post_status'  => 'publish',
+					'post_title'   => $data['title'],
+					'post_content' => $content,
+				] );
+
+				if ( is_wp_error( $page_id ) ) {
+					wp_die( $page_id->get_error_message() );
+				}
+
+				// Update the option for this page.
+				update_option( '_' . MDS_PREFIX . $data['option'], $page_id );
+
+				// Store post modified time for future use.
+				$modified_time = get_post_modified_time( 'Y-m-d H:i:s', false, $page_id );
+				update_post_meta( $page_id, '_modified_time', $modified_time );
+
+				$output[ $data['option'] ] = $page_id;
+			}
+		}
+
+		wp_send_json( $output );
+	}
+
+	/**
+	 * Deletes pages created by MDS.
+	 *
+	 * @return void
+	 */
+	public static function delete_pages(): void {
+		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
+
+		$pages = Utility::get_pages();
+
+		$output = [];
+
+		foreach ( $pages as $page => $data ) {
+			$page_id = Options::get_option( $data['option'] );
+			if ( $page_id !== false ) {
+
+				// Delete the post from WP if it's modified time is older or equal to the stored time option.
+				$modified_time          = strtotime( get_post_modified_time( 'Y-m-d H:i:s', false, $page_id ) );
+				$original_modified_time = strtotime( get_post_meta( $page_id, '_modified_time', true ) );
+
+				if ( $modified_time == $original_modified_time ) {
+					wp_delete_post( $page_id );
+
+					// Delete the options for this page.
+					delete_option( '_' . MDS_PREFIX . $data['option'] );
+
+					$output[ $data['option'] ] = '';
+				}
+			}
+		}
+
+		wp_send_json( $output );
 	}
 
 	public static function block_editor_scripts(): void {
@@ -336,5 +435,19 @@ class Admin {
 		);
 
 		wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
+	}
+
+	public static function admin_pixels(): void {
+		$post_type = get_post_type();
+
+		if ( $post_type === \MillionDollarScript\Classes\FormFields::$post_type && is_admin() ) {
+			wp_enqueue_script(
+				MDS_PREFIX . 'admin-pixels',
+				MDS_BASE_URL . 'src/Assets/js/admin-pixels.min.js',
+				[ 'jquery' ],
+				filemtime( MDS_BASE_PATH . 'admin/js/admin-pixels.min.js' ),
+				true
+			);
+		}
 	}
 }

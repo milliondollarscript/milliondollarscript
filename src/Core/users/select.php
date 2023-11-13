@@ -291,6 +291,12 @@ Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). S
 				// Set the maximum values for the selection_size and total_blocks inputs based on G_MAX_BLOCKS
 				$max_selection_size     = min( $max_size, floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) ) );
 				$max_total_blocks_input = min( $max_selection_size * $max_selection_size, $max_total_blocks );
+				if ($max_selection_size == 0) {
+					$max_selection_size = $max_size;
+				}
+				if ($max_total_blocks_input == 0) {
+					$max_total_blocks_input = $total_blocks;
+				}
 
 				// Adjust the minimum and maximum size of the pointer based on the grid dimensions
 				$min_size_adjusted = $min_size;
@@ -347,7 +353,7 @@ Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). S
                     <div class="mds-select-input">
 						<?php
 						$checked = '';
-						if ( ( $_REQUEST['erase'] == 'true' ) ) {
+						if ( ( isset( $_REQUEST['erase'] ) && $_REQUEST['erase'] == 'true' ) ) {
 							$checked = " checked ";
 						}
 						?>

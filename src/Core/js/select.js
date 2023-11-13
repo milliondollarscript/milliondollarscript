@@ -29,18 +29,20 @@
 let debug = false;
 
 // Initialize
-let USE_AJAX = select.USE_AJAX;
-let block_str = select.block_str;
+let first_load = true;
+let ajax_queue = [];
+let USE_AJAX = MDS_OBJECT.USE_AJAX;
+let block_str = MDS_OBJECT.block_str;
 let selectedBlocks = block_str !== '-1' ? block_str.split(',').map(Number) : [];
 let selecting = false;
 let ajaxing = false;
 let submitting = false;
 
-let grid_width = select.grid_width;
-let grid_height = select.grid_height;
+let grid_width = MDS_OBJECT.grid_width;
+let grid_height = MDS_OBJECT.grid_height;
 
-let BLK_WIDTH = select.BLK_WIDTH;
-let BLK_HEIGHT = select.BLK_HEIGHT;
+let BLK_WIDTH = MDS_OBJECT.BLK_WIDTH;
+let BLK_HEIGHT = MDS_OBJECT.BLK_HEIGHT;
 
 let GRD_WIDTH = BLK_WIDTH * grid_width;
 let GRD_HEIGHT = BLK_HEIGHT * grid_height;
@@ -57,12 +59,15 @@ let orig = {
 let scaled_width = 1;
 let scaled_height = 1;
 
-let myblocks;
+let $myblocks;
 let total_cost;
 let grid;
+let gridOffsetLeft;
+let gridOffsetTop;
 let submit_button1;
 let pointer;
 let pixel_container;
+let pixel_form;
 
 function add_ajax_loader(container) {
 	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
@@ -102,8 +107,8 @@ jQuery.fn.repositionStyles = function () {
 	let pos = get_block_position(id);
 
 	this.css({
-		'top': ((pos.y * scaled_height) + grid.offsetTop) + 'px',
-		'left': ((pos.x * scaled_width) + grid.offsetLeft) + 'px'
+		'top': ((pos.y * scaled_height) + gridOffsetTop) + 'px',
+		'left': ((pos.x * scaled_width) + gridOffsetLeft) + 'px'
 	});
 
 	return this;
@@ -118,129 +123,9 @@ function has_touch() {
 	}
 }
 
-document.querySelectorAll('.mds-select-input input[type="checkbox"]').forEach(function (radio) {
-	radio.addEventListener('hover', function () {
-		this.style.cursor = 'pointer';
-	});
-	radio.addEventListener('change', function () {
-		const label = this.nextElementSibling;
-		const iconErase = label.querySelector('.icon-erase');
-		const iconSelect = label.querySelector('.icon-select');
-
-		if (iconErase && iconSelect) {
-			if (this.checked) {
-				iconErase.setAttribute("stroke", "#FFFFFF");
-				iconSelect.setAttribute("stroke", "none");
-			} else {
-				iconErase.setAttribute("stroke", "none");
-				iconSelect.setAttribute("stroke", "#008000");
-			}
-		}
-	});
-});
-
-window.onload = function () {
-	grid = document.getElementById("pixelimg");
-	let $grid = jQuery(grid);
-	myblocks = document.getElementById('blocks');
-	total_cost = document.getElementById('total_cost');
-	submit_button1 = document.getElementById('submit_button1');
-	pointer = document.getElementById('block_pointer');
-	pixel_container = document.getElementById('pixel_container');
-
-	load_order();
-
-	if ($grid.length === 0) {
-		remove_ajax_loader();
-	}
-
-	window.onresize = rescale_grid;
-
-	if (has_touch()) {
-		handle_touch_events();
-	} else {
-		handle_click_events();
-	}
-
-	rescale_grid();
-
-	// disable context menu on grid
-	jQuery(grid).oncontextmenu = (e) => {
-		e.preventDefault();
-	}
-};
-
-let grid_interval;
-
-function on_grid_load() {
-	jQuery("#pixelimg").one("load", function () {
-		jQuery('.ajax-loader').remove();
-		clearInterval(grid_interval);
-	}).each(function () {
-		if (this.complete) {
-			jQuery(this).trigger('load');
-		}
-	});
-	jQuery("#pixelimg").on("loadstart", function () {
-		add_ajax_loader(".mds-pixel-wrapper");
-	});
-}
-
-grid_interval = setInterval(on_grid_load, 100);
-
-jQuery(document).ready(function ($) {
-	function add_ajax_loader(container) {
-		let $ajax_loader = $("<div class='ajax-loader'></div>");
-		$(container).append($ajax_loader)
-		$ajax_loader.css('top', $(container).position().top).css('left', ($(container).width() / 2) - ($ajax_loader.width() / 2));
-	}
-
-	add_ajax_loader('.mds-container');
-
-	const $mds_selection_size_slider = $('#mds-selection-size-slider');
-	const $mds_selection_size_value = $('#mds-selection-size-value');
-	const $mds_total_blocks_value = $('#mds-total-blocks-value');
-
-	if ($mds_selection_size_slider.length > 0) {
-		$mds_selection_size_slider.on('input', function () {
-			const blockSize = $(this).val();
-			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
-			$mds_selection_size_value.val(adjustedBlockSize);
-			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
-		});
-
-		$mds_selection_size_value.on('input', function () {
-			const blockSize = $(this).val();
-			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
-			$mds_selection_size_slider.val(adjustedBlockSize);
-			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
-		});
-
-		$mds_total_blocks_value.on('input', function () {
-			const totalBlocks = $(this).val();
-			const blockSize = Math.floor(Math.sqrt(totalBlocks));
-			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
-			$mds_selection_size_slider.val(adjustedBlockSize);
-			$mds_selection_size_value.val(adjustedBlockSize);
-		});
-	}
-});
-
-function load_order() {
-
-	for (let i = 0; i < select.blocks.length; i++) {
-		add_block(parseInt(select.blocks[i].block_id, 10), parseInt(select.blocks[i].x, 10) * scaled_width, parseInt(select.blocks[i].y, 10) * scaled_height, true);
-	}
-
-	const pixel_form = document.getElementById('pixel_form');
-	if (pixel_form !== null) {
-		pixel_form.addEventListener('submit', formSubmit);
-	}
-}
-
 function update_order() {
 	if (selectedBlocks.length > 0) {
-		document.pixel_form.selected_pixels.value = selectedBlocks.join(',');
+		pixel_form.selected_pixels.value = selectedBlocks.join(',');
 	}
 }
 
@@ -266,61 +151,49 @@ function unreserve_block(block_id) {
 	}
 }
 
-function add_block(block_id, block_x, block_y, loading) {
+function add_block(block_id, block_x, block_y) {
+	let block_left = block_x + gridOffsetLeft;
+	let block_top = block_y + gridOffsetTop;
 
-	let block_left;
-	let block_top;
+	// Create a document fragment
+	let fragment = document.createDocumentFragment();
 
-	// grid clicked
-	if (block_x == null || block_y == null) {
-		block_left = pointer.map_x + grid.offsetLeft;
-		block_top = pointer.map_y + grid.offsetTop;
+	// Create the block element
+	let $new_block = jQuery('<span>', {
+		id: 'block' + block_id.toString(),
+		css: {
+			left: block_left + 'px',
+			top: block_top + 'px',
+			lineHeight: BLK_HEIGHT + 'px',
+			fontSize: BLK_HEIGHT + 'px',
+			width: BLK_WIDTH + 'px',
+			height: BLK_HEIGHT + 'px'
+		}
+	}).addClass('mds-block');
 
-	} else if (loading !== true) {
-		block_left = block_x + grid.offsetLeft;
-		block_top = block_y + grid.offsetTop;
-	}
-
-	// block element
-	let $new_block = jQuery('<span>');
-	jQuery(myblocks).append($new_block);
-
-	$new_block.attr('id', 'block' + block_id.toString());
-
-	$new_block.css({
-		'left': block_left + 'px',
-		'top': block_top + 'px',
-		'line-height': BLK_HEIGHT + 'px',
-		'font-size': BLK_HEIGHT + 'px',
-		'width': BLK_WIDTH + 'px',
-		'height': BLK_HEIGHT + 'px',
+	// Create the block image element
+	let $new_img = jQuery('<img>', {
+		alt: '',
+		src: MDS_OBJECT.MDS_CORE_URL + 'images/selected_block.png',
+		css: {
+			lineHeight: BLK_HEIGHT + 'px',
+			fontSize: BLK_HEIGHT + 'px',
+			width: BLK_WIDTH + 'px',
+			height: BLK_HEIGHT + 'px'
+		}
 	});
 
-	if (!has_touch()) {
-		$new_block.on('mousemove', function ($event) {
-			let offset = getOffset($event.originalEvent.pageX, $event.originalEvent.pageY);
-			if (offset == null) {
-				return false;
-			}
-
-			show_pointer(offset);
-		});
-	}
-
-	jQuery($new_block).data('blockid', block_id);
-
-	// block image
-	let $new_img = jQuery('<img alt="" src="">');
+	// Append the block image to the block element
 	$new_block.append($new_img);
 
-	$new_img.attr('src', select.MDS_CORE_URL + 'images/selected_block.png');
+	// Add the block element to the document fragment
+	fragment.appendChild($new_block[0]);
 
-	$new_img.css({
-		'line-height': BLK_HEIGHT + 'px',
-		'font-size': BLK_HEIGHT + 'px',
-		'width': BLK_WIDTH + 'px',
-		'height': BLK_HEIGHT + 'px',
-	});
+	// Append the document fragment to the DOM
+	$myblocks.append(fragment);
+
+	// Store the block ID as data on the block element
+	$new_block.data('blockid', block_id);
 
 	reserve_block(block_id);
 }
@@ -397,6 +270,17 @@ function do_blocks(block, OffsetX, OffsetY, op) {
 			invert_block(clicked_block);
 		}
 	}
+
+	// Bind the mousemove event using event delegation
+	if (!has_touch()) {
+		$myblocks.on('mousemove', '.mds-block', function (event) {
+			let offset = getOffset(event.originalEvent.pageX, event.originalEvent.pageY);
+			if (offset == null) {
+				return false;
+			}
+			show_pointer(offset);
+		});
+	}
 }
 
 function select_pixels(offset) {
@@ -416,6 +300,258 @@ function select_pixels(offset) {
 	change_block_state(offset.x, offset.y);
 
 	return true;
+}
+
+function load_order() {
+	if (MDS_OBJECT.blocks.length === 0) {
+		return;
+	}
+	for (let i = 0; i < MDS_OBJECT.blocks.length; i++) {
+		add_block(parseInt(MDS_OBJECT.blocks[i].block_id, 10), parseInt(MDS_OBJECT.blocks[i].x, 10) * scaled_width, parseInt(MDS_OBJECT.blocks[i].y, 10) * scaled_height);
+	}
+
+	if (pixel_form !== null) {
+		pixel_form.addEventListener('submit', formSubmit);
+	}
+}
+
+function getObjCoords(obj) {
+	var rect = obj.getBoundingClientRect();
+	var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+	var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+	return {x: rect.left + scrollLeft, y: rect.top + scrollTop};
+}
+
+function getOffset(x, y, touch) {
+	if (grid == null) {
+		// grid may not be loaded yet
+		return null;
+	}
+
+	let pos = getObjCoords(grid);
+	let size = get_pointer_size();
+
+	let offset = {};
+	let scrollLeft = 0;
+	let scrollTop = 0;
+
+	if (touch) {
+		scrollLeft = document.documentElement.scrollLeft;
+		scrollTop = document.documentElement.scrollTop;
+	}
+
+	offset.x = x - pos.x + scrollLeft;
+	offset.y = y - pos.y + scrollTop;
+
+	// drop 1/10 from the OffsetX and OffsetY, eg 612 becomes 610
+	// expand to original scale first
+	offset.x = Math.floor((offset.x / scaled_width) / orig.BLK_WIDTH) * orig.BLK_WIDTH;
+	offset.y = Math.floor((offset.y / scaled_height) / orig.BLK_HEIGHT) * orig.BLK_HEIGHT;
+
+	// keep within range
+	offset.x = Math.max(Math.min(offset.x, GRD_WIDTH - (size.width / scaled_width)), 0);
+	offset.y = Math.max(Math.min(offset.y, GRD_HEIGHT - (size.height / scaled_height)), 0);
+
+	// scale back down if necessary
+	offset.x = offset.x * scaled_width;
+	offset.y = offset.y * scaled_height;
+
+	return offset;
+}
+
+function get_pointer_size() {
+	let size = {};
+
+	const selectedSize = parseInt(jQuery('#mds-selection-size-value').val(), 10);
+	const maxBlockSize = Math.max(GRD_WIDTH, GRD_HEIGHT);
+
+	// Cap the selected size to the maximum block size
+	const cappedSize = Math.min(selectedSize, maxBlockSize);
+
+	size.width = BLK_WIDTH * cappedSize;
+	size.height = BLK_HEIGHT * cappedSize;
+
+	return size;
+}
+
+function update_pointer_size() {
+	let size = get_pointer_size();
+	pointer.style.width = size.width + "px";
+	pointer.style.height = size.height + "px";
+}
+
+function show_pointer(offset) {
+	pointer.style.visibility = 'visible';
+	pointer.style.display = 'block';
+
+	pointer.style.top = offset.y + "px";
+	pointer.style.left = offset.x + "px";
+
+	pointer.map_x = offset.x;
+	pointer.map_y = offset.y;
+
+	update_pointer_size();
+
+	return true;
+}
+
+function formSubmit(event) {
+	event.preventDefault();
+	event.stopPropagation();
+
+	if ($myblocks.html().trim() === '') {
+		messageout(MDS_OBJECT.no_blocks_selected);
+		return false;
+	} else {
+
+		if (submitting === false) {
+
+			submit_button1.disabled = true;
+
+			let submit1_lang = submit_button1.value;
+
+			submit_button1.value = MDS_OBJECT.WAIT;
+
+			// Wait for ajax queue to finish
+			let waitInterval = setInterval(function () {
+				if (ajax_queue.length === 0) {
+					clearInterval(waitInterval);
+					if (pixel_form !== null) {
+						pixel_form.submit();
+					}
+
+					submit_button1.disabled = false;
+					submit_button1.value = submit1_lang;
+
+					submitting = false;
+				}
+			}, 1000);
+
+		}
+	}
+}
+
+function reset_pixels() {
+	ajax_queue = [];
+
+	add_ajax_loader(".mds-pixel-wrapper");
+
+	jQuery.ajax({
+		type: "POST",
+		url: MDS_OBJECT.UPDATE_ORDER,
+		data: {
+			reset: true,
+			action: 'reset',
+			_wpnonce: MDS_OBJECT.NONCE
+		},
+		success: function (data) {
+			let parsed = JSON.parse(data);
+			if (parsed.type === "removed") {
+				$myblocks.children().each(function () {
+					remove_block(jQuery(this).data('blockid'));
+				});
+			}
+		},
+		complete: function () {
+			remove_ajax_loader();
+		}
+	});
+}
+
+function rescale_grid() {
+
+	grid_width = jQuery(grid).width();
+	grid_height = jQuery(grid).height();
+
+	scaled_width = grid_width / orig.GRD_WIDTH;
+	scaled_height = grid_height / orig.GRD_HEIGHT;
+
+	BLK_WIDTH = orig.BLK_WIDTH * scaled_width;
+	BLK_HEIGHT = orig.BLK_HEIGHT * scaled_height;
+
+	gridOffsetLeft = grid.offsetLeft;
+	gridOffsetTop = grid.offsetTop;
+
+	jQuery(pointer).rescaleStyles();
+	$myblocks.find('*').each(function () {
+		jQuery(this).rescaleStyles().repositionStyles();
+	});
+}
+
+function center_block(coords) {
+	let size = get_pointer_size();
+	coords.x -= (size.width / 2) - (BLK_WIDTH / 2);
+	coords.y -= (size.height / 2) - (BLK_HEIGHT / 2);
+	return coords;
+}
+
+function handle_click_events() {
+	let clickValid = true;
+	let startX, startY;
+
+	// pixels of movement to tolerate set to half of the smallest of the block dimensions
+	const threshold = Math.min(BLK_WIDTH, BLK_HEIGHT) / 2;
+
+	jQuery(pixel_container).on('mousedown', function (event) {
+		clickValid = true;
+		startX = event.originalEvent.pageX;
+		startY = event.originalEvent.pageY;
+	});
+
+	jQuery(pixel_container).on('mousemove', function (event) {
+		if (clickValid) {
+			let currentX = event.originalEvent.pageX;
+			let currentY = event.originalEvent.pageY;
+			// If the mouse has moved more than the threshold, invalidate the click
+			if (Math.abs(startX - currentX) > threshold || Math.abs(startY - currentY) > threshold) {
+				clickValid = false;
+			}
+		}
+
+		let coords = center_block({
+			x: event.originalEvent.pageX,
+			y: event.originalEvent.pageY
+		});
+		let offset = getOffset(coords.x, coords.y);
+		if (offset == null) {
+			return false;
+		}
+		show_pointer(offset);
+	});
+
+	jQuery(pixel_container).on('click', function (event) {
+		event.preventDefault();
+		if (clickValid) {
+			let coords = center_block({
+				x: event.originalEvent.pageX,
+				y: event.originalEvent.pageY
+			});
+			let offset = getOffset(coords.x, coords.y);
+			if (offset == null) {
+				return false;
+			}
+			show_pointer(offset);
+			select_pixels(offset);
+		}
+		clickValid = true;
+		return false;
+	});
+}
+
+function handle_touch_events() {
+	let options = {
+		"supportedGestures": [Tap]
+	};
+	let pointerListener = new PointerListener(pixel_container, options);
+	pixel_container.addEventListener("tap", function (event) {
+		let offset = getOffset(event.detail.live.center.x, event.detail.live.center.y, true);
+		if (offset == null) {
+			return true;
+		}
+
+		show_pointer(offset);
+		select_pixels(offset);
+	});
 }
 
 /**
@@ -466,89 +602,17 @@ function get_clicked_block(OffsetX, OffsetY) {
 	return Math.round(X + Y);
 }
 
-let ajax_queue = [];
-
-let ajax_queue_interval = setInterval(function () {
-	if (ajax_queue.length === 0 || ajaxing) {
-		return;
-	}
-
-	ajaxing = true;
-
-	add_ajax_loader(".mds-pixel-wrapper");
-
-	let data = ajax_queue.shift();
-
-	jQuery.ajax({
-		type: 'POST',
-		url: data.url,
-		data: {
-			_wpnonce: select.NONCE,
-			erasing: data.erasing,
-		},
-		success: function (response) {
-			let parsed = JSON.parse(response);
-			if (parsed.error === 'true') {
-				switch (data.action) {
-					case 'invert':
-						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
-						break;
-					case 'remove':
-						if (!data.erasing) {
-							do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
-						}
-						break;
-					case 'add':
-						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
-						break;
-				}
-
-				messageout(parsed.data.value);
-			}
-
-			if (parsed.type === 'order_id') {
-				// save order id
-				document.pixel_form.order_id.value = parseInt(parsed.data.value, 10);
-			}
-		},
-		fail: function () {
-			switch (data.action) {
-				case 'invert':
-					do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
-					break;
-				case 'remove':
-					do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
-					break;
-				case 'add':
-					do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
-					break;
-			}
-
-			if (jQuery.isPlainObject(data)) {
-				messageout("Error: " + JSON.stringify(data));
-			} else {
-				messageout("Error: " + data);
-			}
-		},
-		complete: function () {
-			ajaxing = false;
-			remove_ajax_loader();
-		}
-	});
-
-}, 100);
-
 function change_block_state(OffsetX, OffsetY) {
 	let clicked_block = get_clicked_block(OffsetX, OffsetY);
 	let erasing = jQuery('#erase').is(':checked');
-	let selection_size = parseInt(document.getElementsByName('pixel_form')[0].elements.selection_size.value, 10);
+	let selection_size = parseInt(pixel_form.elements.selection_size.value, 10);
 
 	let data = {
 		'erasing': erasing,
 		'clicked_block': clicked_block,
 		'OffsetX': OffsetX,
 		'OffsetY': OffsetY,
-		'url': select.UPDATE_ORDER + "?selection_size=" + selection_size + "&user_id=" + select.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + select.BID + "&t=" + select.time + "&erase=" + erasing,
+		'url': MDS_OBJECT.UPDATE_ORDER + "?selection_size=" + selection_size + "&user_id=" + MDS_OBJECT.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + MDS_OBJECT.BID + "&t=" + MDS_OBJECT.time + "&erase=" + erasing,
 	};
 
 	if (is_block_selected(clicked_block)) {
@@ -556,7 +620,7 @@ function change_block_state(OffsetX, OffsetY) {
 			data.action = 'remove';
 			do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
 		} else {
-			if (select.INVERT_PIXELS === 'YES') {
+			if (MDS_OBJECT.INVERT_PIXELS === 'YES') {
 				data.action = 'invert';
 				do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
 			} else {
@@ -569,7 +633,7 @@ function change_block_state(OffsetX, OffsetY) {
 			data.action = 'remove';
 			do_blocks(clicked_block, OffsetX, OffsetY, 'remove');
 		} else {
-			if (select.INVERT_PIXELS === 'YES') {
+			if (MDS_OBJECT.INVERT_PIXELS === 'YES') {
 				data.action = 'invert';
 				do_blocks(clicked_block, OffsetX, OffsetY, 'invert');
 			} else {
@@ -599,222 +663,209 @@ function implode(myArray) {
 	return str;
 }
 
-function getObjCoords(obj) {
-	var rect = obj.getBoundingClientRect();
-	var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-	var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-	return {x: rect.left + scrollLeft, y: rect.top + scrollTop};
-}
+window.onresize = rescale_grid;
 
-function getOffset(x, y, touch) {
-	if (grid == null) {
-		// grid may not be loaded yet
-		return null;
-	}
+jQuery(document).on('ajaxComplete', function () {
 
-	let pos = getObjCoords(grid);
-	let size = get_pointer_size();
-
-	let offset = {};
-	let scrollLeft = 0;
-	let scrollTop = 0;
-
-	if (touch) {
-		scrollLeft = document.documentElement.scrollLeft;
-		scrollTop = document.documentElement.scrollTop;
-	}
-
-	offset.x = x - pos.x + scrollLeft;
-	offset.y = y - pos.y + scrollTop;
-
-	// drop 1/10 from the OffsetX and OffsetY, eg 612 becomes 610
-	// expand to original scale first
-	offset.x = Math.floor((offset.x / scaled_width) / orig.BLK_WIDTH) * orig.BLK_WIDTH;
-	offset.y = Math.floor((offset.y / scaled_height) / orig.BLK_HEIGHT) * orig.BLK_HEIGHT;
-
-	// keep within range
-	offset.x = Math.max(Math.min(offset.x, GRD_WIDTH - (size.width / scaled_width)), 0);
-	offset.y = Math.max(Math.min(offset.y, GRD_HEIGHT - (size.height / scaled_height)), 0);
-
-	// scale back down if necessary
-	offset.x = offset.x * scaled_width;
-	offset.y = offset.y * scaled_height;
-
-	return offset;
-}
-
-function get_pointer_size() {
-	let size = {};
-
-	const selectedSize = parseInt($('#mds-selection-size-value').val(), 10);
-	const maxBlockSize = Math.max(GRD_WIDTH, GRD_HEIGHT);
-
-	// Cap the selected size to the maximum block size
-	const cappedSize = Math.min(selectedSize, maxBlockSize);
-
-	size.width = BLK_WIDTH * cappedSize;
-	size.height = BLK_HEIGHT * cappedSize;
-
-	return size;
-}
-
-function show_pointer(offset) {
-	pointer.style.visibility = 'visible';
-	pointer.style.display = 'block';
-
-	pointer.style.top = offset.y + "px";
-	pointer.style.left = offset.x + "px";
-
-	pointer.map_x = offset.x;
-	pointer.map_y = offset.y;
-
-	let size = get_pointer_size();
-	pointer.style.width = size.width + "px";
-	pointer.style.height = size.height + "px";
-
-	return true;
-}
-
-function formSubmit(event) {
-	event.preventDefault();
-	event.stopPropagation();
-
-	if (myblocks.innerHTML.trim() === '') {
-		messageout(select.no_blocks_selected);
-		return false;
+	if (first_load) {
+		first_load = false;
 	} else {
+		return;
+	}
 
-		if (submitting === false) {
+	grid = document.getElementById("pixelimg");
+	let $grid = jQuery(grid);
+	$myblocks = jQuery('#blocks');
+	total_cost = document.getElementById('total_cost');
+	submit_button1 = document.getElementById('submit_button1');
+	pointer = document.getElementById('block_pointer');
+	pixel_container = document.getElementById('pixel_container');
+	pixel_form = document.getElementById('pixel_form');
 
-			submit_button1.disabled = true;
+	rescale_grid();
 
-			let submit1_lang = submit_button1.value;
+	if ($grid.length === 0) {
+		remove_ajax_loader();
+	}
 
-			submit_button1.value = select.WAIT;
+	if (has_touch()) {
+		handle_touch_events();
+	} else {
+		handle_click_events();
+	}
 
-			// Wait for ajax queue to finish
-			let waitInterval = setInterval(function () {
-				if (ajax_queue.length === 0) {
-					clearInterval(waitInterval);
-					document.pixel_form.submit();
+	// disable context menu on grid
+	jQuery(grid).oncontextmenu = (e) => {
+		e.preventDefault();
+	}
 
-					submit_button1.disabled = false;
-					submit_button1.value = submit1_lang;
+	let ajax_queue_interval = setInterval(function () {
+		if (ajax_queue.length === 0 || ajaxing) {
+			return;
+		}
 
-					submitting = false;
+		ajaxing = true;
+
+		add_ajax_loader(".mds-pixel-wrapper");
+
+		let data = ajax_queue.shift();
+
+		jQuery.ajax({
+			type: 'POST',
+			url: data.url,
+			data: {
+				_wpnonce: MDS_OBJECT.NONCE,
+				erasing: data.erasing,
+			},
+			success: function (response) {
+				let parsed = JSON.parse(response);
+				if (parsed.error === 'true') {
+					switch (data.action) {
+						case 'invert':
+							do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
+							break;
+						case 'remove':
+							if (!data.erasing) {
+								do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
+							}
+							break;
+						case 'add':
+							do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
+							break;
+					}
+
+					messageout(parsed.data.value);
 				}
-			}, 1000);
 
+				if (parsed.type === 'order_id') {
+					// save order id
+					if (pixel_form !== null) {
+						pixel_form.order_id.value = parseInt(parsed.data.value, 10);
+					}
+				}
+			},
+			fail: function () {
+				switch (data.action) {
+					case 'invert':
+						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
+						break;
+					case 'remove':
+						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'add');
+						break;
+					case 'add':
+						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'remove');
+						break;
+				}
+
+				if (jQuery.isPlainObject(data)) {
+					messageout("Error: " + JSON.stringify(data));
+				} else {
+					messageout("Error: " + data);
+				}
+			},
+			complete: function () {
+				ajaxing = false;
+				remove_ajax_loader();
+			}
+		});
+
+	}, 100);
+
+	document.querySelectorAll('.mds-select-input input[type="checkbox"]').forEach(function (radio) {
+		radio.addEventListener('hover', function () {
+			this.style.cursor = 'pointer';
+		});
+		radio.addEventListener('change', function () {
+			const label = this.nextElementSibling;
+			const iconErase = label.querySelector('.icon-erase');
+			const iconSelect = label.querySelector('.icon-select');
+
+			if (iconErase && iconSelect) {
+				if (this.checked) {
+					iconErase.setAttribute("stroke", "#FFFFFF");
+					iconSelect.setAttribute("stroke", "none");
+				} else {
+					iconErase.setAttribute("stroke", "none");
+					iconSelect.setAttribute("stroke", "#008000");
+				}
+			}
+		});
+	});
+
+	const $pixelimg = jQuery("#pixelimg");
+	$pixelimg.one("load", function () {
+		rescale_grid();
+		load_order();
+		jQuery('.ajax-loader').remove();
+	}).each(function () {
+		if (this.complete) {
+			jQuery(this).trigger('load');
+		}
+	});
+	$pixelimg.on("loadstart", function () {
+		add_ajax_loader(".mds-pixel-wrapper");
+	});
+
+	function add_ajax_loader(container) {
+		let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
+		let $container = jQuery(container);
+		if ($container.length > 0) {
+			$container.append($ajax_loader);
+			$ajax_loader.css('z-index', '10000').css('top', $container.position().top).css('left', (jQuery(container).width() / 2) - ($ajax_loader.width() / 2));
 		}
 	}
-}
 
-function reset_pixels() {
-	ajax_queue = [];
+	add_ajax_loader('.mds-pixel-wrapper');
 
-	add_ajax_loader(".mds-pixel-wrapper");
+	const $mds_selection_size_slider = jQuery('#mds-selection-size-slider');
+	const $mds_selection_size_value = jQuery('#mds-selection-size-value');
+	const $mds_total_blocks_value = jQuery('#mds-total-blocks-value');
 
-	jQuery.ajax({
-		type: "POST",
-		url: select.UPDATE_ORDER,
-		data: {
-			reset: true,
-			action: 'reset',
-			_wpnonce: select.NONCE
-		},
-		success: function (data) {
-			let parsed = JSON.parse(data);
-			if (parsed.type === "removed") {
-				jQuery(myblocks).children().each(function () {
-					remove_block(jQuery(this).data('blockid'));
-				});
-			}
-		},
-		complete: function () {
-			remove_ajax_loader();
-		}
-	});
-}
-
-function rescale_grid() {
-
-	grid_width = jQuery(grid).width();
-	grid_height = jQuery(grid).height();
-
-	scaled_width = grid_width / orig.GRD_WIDTH;
-	scaled_height = grid_height / orig.GRD_HEIGHT;
-
-	BLK_WIDTH = orig.BLK_WIDTH * scaled_width;
-	BLK_HEIGHT = orig.BLK_HEIGHT * scaled_height;
-
-	jQuery(pointer).rescaleStyles();
-	jQuery(myblocks).find('*').each(function () {
-		jQuery(this).rescaleStyles().repositionStyles();
-	});
-}
-
-function center_block(coords) {
-	let size = get_pointer_size();
-	coords.x -= (size.width / 2) - (BLK_WIDTH / 2);
-	coords.y -= (size.height / 2) - (BLK_HEIGHT / 2);
-	return coords;
-}
-
-function handle_click_events() {
-	let click = false;
-	jQuery(pixel_container).on('mousedown', function () {
-		click = true;
-	});
-
-	jQuery(pixel_container).on('mousemove', function (event) {
-		let coords = center_block({
-			x: event.originalEvent.pageX,
-			y: event.originalEvent.pageY
+	if ($mds_selection_size_slider.length > 0) {
+		$mds_selection_size_slider.on('input', function () {
+			const blockSize = parseInt(jQuery(this).val());
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
+			$mds_selection_size_value.val(adjustedBlockSize);
+			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
+			update_pointer_size();
 		});
-		let offset = getOffset(coords.x, coords.y);
-		if (offset == null) {
-			return false;
-		}
 
-		show_pointer(offset);
-		click = false;
-	});
+		$mds_selection_size_value.on('input', function () {
+			const blockSize = parseInt(jQuery(this).val());
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
+			$mds_selection_size_slider.val(adjustedBlockSize);
+			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
+			update_pointer_size();
+		});
 
-	jQuery(pixel_container).on('click', function (event) {
-		event.preventDefault();
+		let previousTotalBlocks = parseInt($mds_total_blocks_value.val());
+		$mds_total_blocks_value.on('input', function () {
+			let totalBlocks = parseInt(jQuery(this).val());
+			const isIncreasing = totalBlocks > previousTotalBlocks;
+			let blockSize;
 
-		if (click) {
-			click = false;
-
-			let coords = center_block({
-				x: event.originalEvent.pageX,
-				y: event.originalEvent.pageY
-			});
-			let offset = getOffset(coords.x, coords.y);
-			if (offset == null) {
-				return false;
+			if (isIncreasing) {
+				// Snap up to the next perfect square
+				blockSize = Math.ceil(Math.sqrt(totalBlocks));
+			} else {
+				// Snap down to the previous perfect square
+				blockSize = Math.floor(Math.sqrt(totalBlocks));
 			}
 
-			show_pointer(offset);
-			select_pixels(offset);
-		}
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
+			totalBlocks = Math.pow(adjustedBlockSize, 2);
 
-		return false;
-	});
-}
+			// Update the slider and selection size input
+			$mds_selection_size_slider.val(adjustedBlockSize);
+			$mds_selection_size_value.val(adjustedBlockSize);
 
-function handle_touch_events() {
-	let options = {
-		"supportedGestures": [Tap]
-	};
-	let pointerListener = new PointerListener(pixel_container, options);
-	pixel_container.addEventListener("tap", function (event) {
-		let offset = getOffset(event.detail.live.center.x, event.detail.live.center.y, true);
-		if (offset == null) {
-			return true;
-		}
+			// Set the total blocks value to the adjusted value
+			$mds_total_blocks_value.val(totalBlocks);
 
-		show_pointer(offset);
-		select_pixels(offset);
-	});
-}
+			// Update previous total blocks for next change
+			previousTotalBlocks = totalBlocks;
+
+			update_pointer_size();
+		});
+	}
+});

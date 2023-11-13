@@ -31,13 +31,12 @@ defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-global $f2;
+global $BID, $f2;
 $BID = $f2->bid();
 
 $sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id='$BID'";
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $b_row = mysqli_fetch_array( $result );
-
 if ( $_REQUEST['order_id'] != '' ) {
 	$order_id = $_REQUEST['order_id'];
 } else {

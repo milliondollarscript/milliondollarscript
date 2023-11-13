@@ -43,6 +43,9 @@ class MDS_Language_Scanner {
 
 	private string $contents;
 
+	/** @var $wp_filesystem \WP_Filesystem_Direct */
+	private $wp_filesystem;
+
 	/**
 	 * Constructs a new instance of the class.
 	 *
@@ -50,6 +53,13 @@ class MDS_Language_Scanner {
 	 */
 	public function __construct( string $plugin_folder ) {
 		$this->plugin_folder = $plugin_folder;
+
+		$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
+		$filesystem = new Filesystem( $url );
+		if ( $filesystem->get_filesystem() ) {
+			global $wp_filesystem;
+			$this->wp_filesystem = $wp_filesystem;
+		}
 	}
 
 	/**
@@ -58,14 +68,12 @@ class MDS_Language_Scanner {
 	 * @throws \Exception If there is an error accessing or manipulating the files.
 	 */
 	public function scan_files(): void {
-		global $wp_filesystem;
-
 		$pot_file_path = $this->plugin_folder . 'languages/milliondollarscript.pot';
 
-		$file_exists = $wp_filesystem->exists( $pot_file_path );
+		$file_exists = $this->wp_filesystem->exists( $pot_file_path );
 
 		if ( $file_exists && filesize( $pot_file_path ) > 0 ) {
-			$this->contents = $wp_filesystem->get_contents( $pot_file_path );
+			$this->contents = $this->wp_filesystem->get_contents( $pot_file_path );
 		} else if ( ! $file_exists || filesize( $pot_file_path ) == 0 ) {
 			$this->contents = $this->get_header();
 		}
@@ -75,7 +83,9 @@ class MDS_Language_Scanner {
 			$this->scan_file( $file );
 		}
 
-		$wp_filesystem->put_contents( $pot_file_path, $this->contents );
+		if ( ! $this->wp_filesystem->put_contents( $pot_file_path, $this->contents ) ) {
+			throw new \Exception( Language::get( 'Could not write to file: ' ) . $pot_file_path );
+		}
 	}
 
 	/**
@@ -108,9 +118,8 @@ class MDS_Language_Scanner {
 	 * @return void
 	 */
 	private function scan_file( string $file ): void {
-		global $wp_filesystem;
 
-		$content = $wp_filesystem->get_contents( $file );
+		$content = $this->wp_filesystem->get_contents( $file );
 		$strings = [];
 
 		preg_match_all( '/Language::(?:get_replace|out_replace|get|out)\(\s*([\'"])(.*?)\\1(?:\s*,\s*(?:\\\\?(?:\w+\\\\)*\w+(?:::\w+)*(?:\(\s*\))?|\$[\w-]+\[[^]]+]|\$\w+|\w+|\'.*?\'|".*?"))*\s*\)/', $content, $matches );

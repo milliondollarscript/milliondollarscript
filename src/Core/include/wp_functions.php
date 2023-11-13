@@ -94,7 +94,7 @@ function mds_wp_login_check(): void {
 							?>
                         </div>
                         <script>
-	                        jQuery(document).ready(function(){
+	                        jQuery(document).ready(function($){
 								const registerBtn = $('.mds-register-btn-container');
 								if (registerBtn.length) {
 									const submitBtn = $('#loginform .button[name="wp-submit"]');

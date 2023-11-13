@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
 
@@ -36,8 +37,6 @@ defined( 'ABSPATH' ) or exit;
 mds_wp_login_check();
 
 require_once MDS_CORE_PATH . "include/ads.inc.php";
-
-require_once MDS_CORE_PATH . "html/header.php";
 
 global $BID, $f2;
 
@@ -77,7 +76,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 
 		$ad_id         = insert_ad_data();
 		$sql_completed = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND ad_id=%d", get_current_user_id(), intval( $ad_id ) );
-		$row = $wpdb->get_row( $sql_completed, ARRAY_A );
+		$row           = $wpdb->get_row( $sql_completed, ARRAY_A );
 		if ( $row ) {
 			if ( $row['status'] != 'completed' ) {
 				$order_id                  = get_current_order_id();
@@ -129,10 +128,11 @@ if ( $has_packages && ! empty( $_REQUEST['pack'] ) ) {
 	}
 }
 
-// if ( isset( $_POST['mds_dest'] ) && isset( $_FILES ) ) {
-// 	wp_safe_redirect( Utility::get_page_url( 'write-ad' ) );
-//     exit;
-// }
+if ( isset( $_POST['mds_dest'] ) && isset( $_FILES ) ) {
+	return;
+}
+
+require_once MDS_CORE_PATH . "html/header.php";
 
 // check to make sure MIN_BLOCKS were selected.
 $sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='$BID' ";
@@ -317,7 +317,7 @@ if ( ! empty( $image ) ) {
 	function display_edit_order_button( $order_id ) {
 		global $BID;
 		?>
-        <input type='button' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" onclick="window.location='select.php?&jEditOrder=true&BID=<?php echo $BID; ?>&order_id=<?php echo $order_id; ?>'">
+        <input type='button' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>'">
 		<?php
 	}
 
@@ -330,14 +330,7 @@ if ( ! empty( $image ) ) {
 			[ Utility::get_page_url( 'order' ), $BID ]
 		);
 	} else if ( $not_enough_blocks ) {
-		Language::out( '<h3>Not enough blocks selected</h3>' );
-		Language::out_replace(
-			'<p>You are required to select at least %MIN_BLOCKS% blocks from the grid. Please go back to select more pixels.</p>',
-			'%MIN_BLOCKS%',
-			$banner_data['G_MIN_BLOCKS']
-		);
-
-		display_edit_order_button( $mds_order_id );
+		Functions::not_enough_blocks( $mds_order_id, $banner_data['G_MIN_BLOCKS'] );
 	} else {
 		if ( isset( $image ) ) {
 

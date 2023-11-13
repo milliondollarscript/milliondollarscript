@@ -59,62 +59,163 @@ class Functions {
 		];
 	}
 
-	// public static function get_select_data(): array {
-	//
-	// 	global $f2;
-	// 	$BID = $f2->bid();
-	//
-	// 	if ( ! is_numeric( $BID ) ) {
-	// 		die();
-	// 	}
-	//
-	// 	$banner_data = load_banner_constants( $BID );
-	//
-	// 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND status='new'";
-	// 	$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-	// 	$order_row = mysqli_fetch_array( $order_result );
-	//
-	// 	// load any existing blocks for this order
-	// 	$order_row_blocks = ! empty( $order_row['blocks'] ) ? $order_row['blocks'] : '';
-	// 	$block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
-	// 	$block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
-	// 	$order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
-	// 		$pos = get_block_position( $block_id, $BID );
-	//
-	// 		return [
-	// 			'block_id' => $block_id,
-	// 			'x'        => $pos['x'],
-	// 			'y'        => $pos['y'],
-	// 		];
-	// 	}, $block_ids );
-	//
-	// 	return [
-	// 		'NONCE'                => esc_js( wp_create_nonce( 'mds-select' ) ),
-	// 		'UPDATE_ORDER'         => esc_js( Utility::get_page_url( 'update-order' ) ),
-	// 		'USE_AJAX'             => esc_js( Config::get( 'USE_AJAX' ) ),
-	// 		'block_str'            => esc_js( $block_str ),
-	// 		'grid_width'           => intval( $banner_data['G_WIDTH'] ),
-	// 		'grid_height'          => intval( $banner_data['G_HEIGHT'] ),
-	// 		'BLK_WIDTH'            => intval( $banner_data['BLK_WIDTH'] ),
-	// 		'BLK_HEIGHT'           => intval( $banner_data['BLK_HEIGHT'] ),
-	// 		'G_PRICE'              => floatval( $banner_data['G_PRICE'] ),
-	// 		'blocks'               => esc_js( json_encode( $order_blocks ) ),
-	// 		'user_id'              => esc_js( Options::get_option( 'max-popup-size' ) ),
-	// 		'BID'                  => intval( $BID ),
-	// 		'time'                 => esc_js( time() ),
-	// 		'advertiser_max_order' => esc_js( Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ) ),
-	// 		'not_adjacent'         => esc_js( Language::get( 'You must select a block adjacent to another one.' ) ),
-	// 		'no_blocks_selected'   => esc_js( Language::get( 'You have no blocks selected.' ) ),
-	// 		'MDS_CORE_URL'         => MDS_CORE_URL,
-	// 		'INVERT_PIXELS'        => Config::get( 'INVERT_PIXELS' ),
-	// 		'WAIT'                 => esc_js( Language::get( 'Please Wait! Reserving Pixels...' ) ),
-	// 	];
-	// }
+	public static function get_select_data(): array {
+
+		global $f2;
+		$BID = $f2->bid();
+
+		if ( ! is_numeric( $BID ) ) {
+			die();
+		}
+
+		$banner_data = load_banner_constants( $BID );
+
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND status='new'";
+		$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		$order_row = mysqli_fetch_array( $order_result );
+
+		// load any existing blocks for this order
+		$order_row_blocks = ! empty( $order_row['blocks'] ) ? $order_row['blocks'] : '';
+		$block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
+		$block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
+		$order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
+			$pos = get_block_position( $block_id, $BID );
+
+			return [
+				'block_id' => $block_id,
+				'x'        => $pos['x'],
+				'y'        => $pos['y'],
+			];
+		}, $block_ids );
+
+		return [
+			'NONCE'                => wp_create_nonce( 'mds-select' ),
+			'UPDATE_ORDER'         => esc_url( Utility::get_page_url( 'update-order' ) ),
+			'USE_AJAX'             => Config::get( 'USE_AJAX' ),
+			'block_str'            => $block_str,
+			'grid_width'           => intval( $banner_data['G_WIDTH'] ),
+			'grid_height'          => intval( $banner_data['G_HEIGHT'] ),
+			'BLK_WIDTH'            => intval( $banner_data['BLK_WIDTH'] ),
+			'BLK_HEIGHT'           => intval( $banner_data['BLK_HEIGHT'] ),
+			'G_PRICE'              => floatval( $banner_data['G_PRICE'] ),
+			'blocks'               => $order_blocks,
+			'user_id'              => get_current_user_id(),
+			'BID'                  => intval( $BID ),
+			'time'                 => time(),
+			'advertiser_max_order' => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ),
+			'not_adjacent'         => Language::get( 'You must select a block adjacent to another one.' ),
+			'no_blocks_selected'   => Language::get( 'You have no blocks selected.' ),
+			'MDS_CORE_URL'         => esc_url( MDS_CORE_URL ),
+			'INVERT_PIXELS'        => Config::get( 'INVERT_PIXELS' ),
+			'WAIT'                 => Language::get( 'Please Wait! Reserving Pixels...' ),
+		];
+	}
+
+	public static function get_order_data(): array {
+
+		global $f2, $wpdb;
+		$BID = $f2->bid();
+
+		if ( ! is_numeric( $BID ) ) {
+			die();
+		}
+
+		$banner_data = load_banner_constants( $BID );
+
+		$table_name = MDS_DB_PREFIX . 'orders';
+		$user_id    = get_current_user_id();
+		$status     = 'new';
+
+		$sql          = $wpdb->prepare(
+			"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
+			$user_id,
+			$status
+		);
+		$order_result = $wpdb->get_row( $sql );
+		$order_row    = $order_result ? (array) $order_result : [];
+
+		// load any existing blocks for this order
+		$order_row_blocks = ! empty( $order_row['blocks'] ) ? $order_row['blocks'] : '';
+		$block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
+		$block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
+		$order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
+			$pos = get_block_position( $block_id, $BID );
+
+			return [
+				'block_id' => $block_id,
+				'x'        => $pos['x'],
+				'y'        => $pos['y'],
+			];
+		}, $block_ids );
+
+		$low_x = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
+		$low_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+
+		$sql    = $wpdb->prepare( "SELECT block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", get_current_order_id() );
+		$result = $wpdb->get_results( $sql );
+
+		if ( ! empty( $result ) ) {
+			$block_info = unserialize( $result[0]->block_info );
+		}
+
+		$init = false;
+		if ( isset( $block_info ) && is_array( $block_info ) ) {
+
+			foreach ( $block_info as $block ) {
+
+				if ( $low_x >= $block['map_x'] ) {
+					$low_x = $block['map_x'];
+					$init  = true;
+				}
+
+				if ( $low_y >= $block['map_y'] ) {
+					$low_y = $block['map_y'];
+					$init  = true;
+				}
+			}
+		}
+
+		$reinit = false;
+		if ( isset( $_REQUEST['banner_change'] ) && $_REQUEST['banner_change'] != '' ) {
+			$reinit = true;
+		}
+
+		if ( ! $init || $reinit === true ) {
+			$low_x     = 0;
+			$low_y     = 0;
+			$is_moving = true;
+		} else {
+			$is_moving = false;
+		}
+
+		return [
+			'NONCE'           => wp_create_nonce( 'mds-order' ),
+			'UPDATE_ORDER'    => esc_url( Utility::get_page_url( 'update-order' ) ),
+			'CHECK_SELECTION' => esc_url( Utility::get_page_url( 'check-selection' ) ),
+			'MAKE_SELECTION'  => esc_url( Utility::get_page_url( 'make-selection' ) ),
+			'low_x'           => intval( $low_x ),
+			'low_y'           => intval( $low_y ),
+			'is_moving'       => $is_moving,
+			'block_str'       => $block_str,
+			'grid_width'      => intval( $banner_data['G_WIDTH'] ),
+			'grid_height'     => intval( $banner_data['G_HEIGHT'] ),
+			'BLK_WIDTH'       => intval( $banner_data['BLK_WIDTH'] ),
+			'BLK_HEIGHT'      => intval( $banner_data['BLK_HEIGHT'] ),
+			'user_id'         => get_current_user_id(),
+			'BID'             => intval( $BID ),
+			'time'            => time(),
+			'WAIT'            => Language::get( 'Please Wait! Reserving Pixels...' ),
+			'WRITE'           => Language::get( 'Write Your Ad' ),
+		];
+	}
 
 	/**
 	 * Register scripts and styles
 	 */
 	public static function register_scripts(): void {
+		if ( wp_script_is( 'mds' ) ) {
+			return;
+		}
 
 		wp_register_style( 'mds', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
 		wp_register_style( 'tippy-light', MDS_CORE_URL . 'css/tippy/light.css', [], filemtime( MDS_CORE_PATH . 'css/tippy/light.css' ) );
@@ -133,17 +234,43 @@ class Functions {
 		wp_register_script( 'contact', MDS_CORE_URL . 'js/third-party/contact.nomodule.min.js', [ 'image-map' ], filemtime( MDS_CORE_PATH . 'js/third-party/contact.nomodule.min.js' ), true );
 
 		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.min.js', [ 'jquery', 'contact', 'image-scale', 'image-map' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
-		wp_localize_script( 'mds', 'MDS', self::get_script_data() );
+		wp_add_inline_script( 'mds', 'const MDS = ' . json_encode( self::get_script_data() ), 'before' );
 
-		if ( Config::get( 'USE_AJAX' ) == 'YES' ) {
-			global $wp_query;
-			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
-			if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
-				$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
-				if ( $page == 'order' ) {
-					wp_register_script( 'mds-select', MDS_CORE_URL . 'js/select.min.js', [ 'jquery', 'mds' ], filemtime( MDS_CORE_PATH . 'js/select.min.js' ), true );
-					// wp_localize_script( 'mds-select', 'select', self::get_select_data() );
+		$order_script  = "";
+		$data_function = "";
+
+		// select.js
+		if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'YES' ) {
+			$order_script  = 'select';
+			$data_function = self::get_select_data();
+		}
+
+		// order.js
+		if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+			$order_script  = 'order';
+			$data_function = self::get_order_data();
+		}
+
+		if ( ! empty( $order_script ) ) {
+			$register_script = false;
+
+			global $post;
+			if ( isset( $post ) && $post->ID == Options::get_option( 'users-order-page' ) ) {
+				$register_script = true;
+			} else {
+				global $wp_query;
+				$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+				if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
+					$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
+					if ( $page == 'order' ) {
+						$register_script = true;
+					}
 				}
+			}
+
+			if ( $register_script ) {
+				wp_register_script( 'mds-' . $order_script, MDS_CORE_URL . 'js/' . $order_script . '.min.js', [ 'jquery', 'mds', 'contact' ], filemtime( MDS_CORE_PATH . 'js/' . $order_script . '.min.js' ), true );
+				wp_add_inline_script( 'mds-' . $order_script, 'const MDS_OBJECT = ' . json_encode( $data_function ), 'before' );
 			}
 		}
 	}
@@ -171,6 +298,7 @@ class Functions {
 
 		wp_enqueue_script( 'mds' );
 		wp_enqueue_script( 'mds-select' );
+		wp_enqueue_script( 'mds-order' );
 	}
 
 	/**
@@ -616,7 +744,7 @@ class Functions {
 
 	public static function order_screen(): void {
 		// TODO: handle packages
-		if ( ! isset( $_REQUEST['banner_change'] ) && $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+		if ( ! isset( $_REQUEST['banner_change'] ) && $_SERVER['REQUEST_METHOD'] === 'POST' && ! isset( $_POST['type'] ) ) {
 			\MillionDollarScript\Classes\Functions::verify_nonce( 'mds-form' );
 
 			if ( isset( $_POST['mds_dest'] ) ) {
@@ -643,6 +771,29 @@ class Functions {
 
 	public static function is_wc_active(): bool {
 		return in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) );
+	}
+
+	public static function no_orders(): void {
+		require_once MDS_CORE_PATH . "html/header.php";
+
+		Language::out( '<h1>No new orders in progress</h1>' );
+		Language::out_replace(
+			'<p>You don\'t have any orders in progress. Please go <a href="%ORDER_URL%">here to order pixels</a>.</p>',
+			'%ORDER_URL%',
+			Utility::get_page_url( 'order' )
+		);
+
+		require_once MDS_CORE_PATH . "html/footer.php";
+	}
+
+	public static function not_enough_blocks( mixed $order_id, $min_blocks ): void {
+		Language::out( '<h3>Not enough blocks selected</h3>' );
+		Language::out_replace(
+			'<p>You are required to select at least %MIN_BLOCKS% blocks form the grid. Please go back to select more pixels.</p>',
+			[ '%MIN_BLOCKS%' ],
+			[ $min_blocks ]
+		);
+		display_edit_order_button( $order_id );
 	}
 
 	/**

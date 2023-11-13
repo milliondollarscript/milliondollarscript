@@ -48,20 +48,6 @@ class Shortcode {
 		);
 	}
 
-	public static function get_classname( $type ): string {
-		$classname = "gridframe";
-
-		if ( $type == "stats" ) {
-			$classname = "statsframe";
-		} else if ( $type == "list" ) {
-			$classname = "listframe";
-		} else if ( $type == "users" ) {
-			$classname = "usersframe";
-		}
-
-		return $classname;
-	}
-
 	/**
 	 * Add milliondollarscript shortcode
 	 *
@@ -86,9 +72,7 @@ class Shortcode {
 			'milliondollarscript'
 		);
 
-		$classname = self::get_classname( $atts['type'] );
-
-		$container_id = $classname . $mds_shortcodes;
+		$container_id = sanitize_title( $atts['type'] ) . $mds_shortcodes;
 
 		// compile variables to pass to javascript
 		$mds_params = array(
@@ -97,6 +81,10 @@ class Shortcode {
 			'mds_width'        => $atts['width'],
 			'mds_height'       => $atts['height'],
 		);
+
+		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'confirm' ) {
+			update_user_meta( get_current_user_id(), 'mds_confirm', true );
+		}
 
 		// escape javascript variables
 		if ( array_walk( $mds_params, 'esc_js' ) ) {

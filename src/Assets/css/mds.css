@@ -448,7 +448,8 @@ Ads list page
 	border-width: 0;
 }
 
-.mds-container .error_msg_label {
+.mds-container .error_msg_label,
+.mds-error {
 	color: #FF0000;
 	font-weight: bold;
 }

@@ -3,11 +3,11 @@
         'name' => 'milliondollarscript/milliondollarscript-two',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'bab38fa3e5391c0e04588a5e522267f8680638fe',
+        'reference' => 'ee3fec989172da65a1661db03324805164b0209c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'htmlburger/carbon-fields' => array(
@@ -31,7 +31,7 @@
         'milliondollarscript/milliondollarscript-two' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'bab38fa3e5391c0e04588a5e522267f8680638fe',
+            'reference' => 'ee3fec989172da65a1661db03324805164b0209c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

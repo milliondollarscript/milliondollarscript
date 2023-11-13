@@ -13,7 +13,6 @@ class ComposerStaticInit2b635baffc9d4b2306ae3b86c3eea2d2
     public static $prefixLengthsPsr4 = array (
         'M' => 
         array (
-            'MillionDollarScript\\Tests\\' => 26,
             'MillionDollarScript\\' => 20,
         ),
         'I' => 
@@ -27,10 +26,6 @@ class ComposerStaticInit2b635baffc9d4b2306ae3b86c3eea2d2
     );
 
     public static $prefixDirsPsr4 = array (
-        'MillionDollarScript\\Tests\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/tests/MillionDollarScript/Tests',
-        ),
         'MillionDollarScript\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',

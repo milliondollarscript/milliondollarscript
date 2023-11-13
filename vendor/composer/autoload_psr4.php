@@ -6,7 +6,6 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'MillionDollarScript\\Tests\\' => array($baseDir . '/tests/MillionDollarScript/Tests'),
     'MillionDollarScript\\' => array($baseDir . '/src'),
     'Imagine\\' => array($vendorDir . '/imagine/imagine/src'),
     'Carbon_Fields\\' => array($vendorDir . '/htmlburger/carbon-fields/core'),

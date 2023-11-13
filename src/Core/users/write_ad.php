@@ -39,38 +39,45 @@ mds_wp_login_check();
 
 require_once MDS_CORE_PATH . "include/ads.inc.php";
 
-global $f2;
+global $f2, $BID;
 
 $BID = $f2->bid();
 
 $advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
-$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
+if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 
-$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-if ( mysqli_num_rows( $order_result ) == 0 ) {
-	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
-}
+	$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
+	$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+	if ( mysqli_num_rows( $order_result ) == 0 ) {
+		if ( wp_doing_ajax() ) {
+			Functions::no_orders();
+			wp_die();
+		}
 
-$row = mysqli_fetch_array( $order_result );
+		Utility::redirect( Utility::get_page_url( 'no-orders' ) );
+	}
 
-if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-	update_temp_order_timestamp();
-}
+	$row = mysqli_fetch_array( $order_result );
 
-$has_packages = banner_get_packages( $BID );
+	if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+		update_temp_order_timestamp();
+	}
 
-function display_ad_intro() {
+	$has_packages = banner_get_packages( $BID );
 
-	show_nav_status( 2 );
+	function display_ad_intro() {
 
-	Language::out( '<h3>Please write your advertisement and click "Save Ad" when done.</h3>' );
+		show_nav_status( 2 );
 
-	if ( is_user_logged_in() ) {
-		$_REQUEST['user_id'] = get_current_user_id();
-	} else {
-		Language::out( 'Sorry there was an error with your session.' );
-		die;
+		Language::out( '<h3>Please write your advertisement and click "Save Ad" when done.</h3>' );
+
+		if ( is_user_logged_in() ) {
+			$_REQUEST['user_id'] = get_current_user_id();
+		} else {
+			Language::out( 'Sorry there was an error with your session.' );
+			die;
+		}
 	}
 }
 
@@ -80,21 +87,28 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 
 	$ad_id = FormFields::add();
 
-	if ( is_a( $ad_id, 'WP_Error' ) ) {
+	if ( ! is_int( $ad_id ) ) {
 		// we have an error
-		require_once MDS_CORE_PATH . "html/header.php";
-		$mode = "user";
-		display_ad_intro();
-		display_ad_form( 1, $mode, '', Utility::get_page_url( 'write-ad' ) );
+		update_user_meta( get_current_user_id(), 'error_message', $ad_id );
+
+		return;
 	} else {
 		// save ad_id with the temp order...
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='$ad_id' WHERE order_id='" . intval( get_current_order_id() ) . "' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
-		header( "Location: " . Utility::get_page_url( 'confirm-order' ) );
-		exit;
+		if ( isset( $_REQUEST['manage-pixels'] ) ) {
+			Utility::redirect( Utility::get_page_url( 'manage' ) );
+		}
+
+		Utility::redirect( Utility::get_page_url( 'confirm-order' ) );
 	}
 } else {
+
+	if ( isset( $_POST['mds_dest'] ) && $_POST['mds_dest'] == 'write-ad' && isset( $_POST['action'] ) && $_POST['action'] == 'mds_form_submission' ) {
+		return;
+	}
+
 	require_once MDS_CORE_PATH . "html/header.php";
 	display_ad_intro();
 

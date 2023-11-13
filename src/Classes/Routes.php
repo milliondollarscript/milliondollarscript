@@ -146,32 +146,27 @@ class Routes {
 				/**
 				 * Templates
 				 */
-				if ( $page === 'account' ) {
-					return MDS_BASE_PATH . 'templates/account.php';
-				} else if ( $page === 'order' ) {
-					return MDS_BASE_PATH . 'templates/order.php';
-				} else if ( $page === 'write-ad' ) {
-					return MDS_BASE_PATH . 'templates/write-ad.php';
-				} else if ( $page === 'confirm-order' ) {
-					return MDS_BASE_PATH . 'templates/confirm-order.php';
-				} else if ( $page === 'checkout' ) {
-					return MDS_BASE_PATH . 'templates/checkout.php';
-				} else if ( $page === 'payment' ) {
-					return MDS_BASE_PATH . 'templates/payment.php';
-				} else if ( $page === 'manage' ) {
-					return MDS_BASE_PATH . 'templates/manage.php';
-				} else if ( $page === 'history' ) {
-					return MDS_BASE_PATH . 'templates/history.php';
-				} else if ( $page === 'publish' ) {
-					return MDS_BASE_PATH . 'templates/publish.php';
-				} else if ( $page === 'thank-you' ) {
-					return MDS_BASE_PATH . 'templates/thank-you.php';
-				} else if ( $page === 'list' ) {
-					return MDS_BASE_PATH . 'templates/list.php';
-				} else if ( $page === 'upload' ) {
-					return MDS_BASE_PATH . 'templates/upload.php';
-				} else if ( $page === 'no-orders' ) {
-					return MDS_BASE_PATH . 'templates/no-orders.php';
+				$valid_pages = [
+					'account',
+					'checkout',
+					'confirm-order',
+					'history',
+					'list',
+					'manage',
+					'no-orders',
+					'order',
+					'payment',
+					'publish',
+					'thank-you',
+					'upload',
+					'write-ad',
+				];
+				$valid_pages = apply_filters( 'mds_valid_pages', $valid_pages );
+
+				foreach ( $valid_pages as $valid_page ) {
+					if ( $page === $valid_page ) {
+						return self::get_template( $valid_page );
+					}
 				}
 			}
 		}
@@ -227,5 +222,24 @@ class Routes {
 
 	public static function deactivate(): void {
 		flush_rewrite_rules();
+	}
+
+	public static function get_template( string $page ): false|string {
+		$option = Options::get_option( $page );
+		if ( ! empty( $option ) && is_page( $option ) ) {
+			// Get the default template used by WordPress for pages
+			$default_template = locate_template( array( 'page.php', 'single.php', 'index.php' ) );
+
+			if ( ! empty( $default_template ) ) {
+				return $default_template;
+			}
+		}
+
+		$default = MDS_BASE_PATH . 'templates/' . $page . '.php';
+		if ( file_exists( $default ) ) {
+			return $default;
+		}
+
+		return false;
 	}
 }
