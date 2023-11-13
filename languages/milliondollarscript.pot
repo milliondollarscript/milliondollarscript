@@ -12,16 +12,124 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2023-10-16 14:13:43\n"
-"PO-Revision-Date: 2023-10-16 14:13:43\n"
+"POT-Creation-Date: 2023-11-13 18:53:15\n"
+"PO-Revision-Date: 2023-11-13 18:53:15\n"
 "X-Generator: Million Dollar Script Two 2.5.4\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
-msgid "<h1>No new orders in progress</h1>"
+msgid "Minimum PHP version requirement not met. Million Dollar Script requires at least PHP %s"
 msgstr ""
 
-msgid "Minimum PHP version requirement not met. Million Dollar Script requires at least PHP %s"
+msgid "Pages"
+msgstr ""
+
+msgid "Create Pages"
+msgstr ""
+
+msgid "Clicking this button will create multiple pages for use with MDS."
+msgstr ""
+
+msgid "Delete Pages"
+msgstr ""
+
+msgid "Clicking this button will delete all pages created by MDS."
+msgstr ""
+
+msgid "MDS Pages"
+msgstr ""
+
+msgid "<h3>The following options allow you to link to pages created above. These are the page id #</h3>"
+msgstr ""
+
+msgid "Grid Page"
+msgstr ""
+
+msgid "The grid page."
+msgstr ""
+
+msgid "Users Home Page"
+msgstr ""
+
+msgid "The home page for the Users/Buy Page."
+msgstr ""
+
+msgid "Users Order Page"
+msgstr ""
+
+msgid "The order page for Users."
+msgstr ""
+
+msgid "Users Write Ad Page"
+msgstr ""
+
+msgid "The write ad page for Users."
+msgstr ""
+
+msgid "Users Confirm Order Page"
+msgstr ""
+
+msgid "The confirm order page for Users."
+msgstr ""
+
+msgid "Users Checkout Page"
+msgstr ""
+
+msgid "The checkout page for Users."
+msgstr ""
+
+msgid "Users Payment Page"
+msgstr ""
+
+msgid "The payment page for Users."
+msgstr ""
+
+msgid "Users Manage Page"
+msgstr ""
+
+msgid "The manage page for Users."
+msgstr ""
+
+msgid "Users History Page"
+msgstr ""
+
+msgid "The history page for Users."
+msgstr ""
+
+msgid "Users Publish Page"
+msgstr ""
+
+msgid "The publish page for Users."
+msgstr ""
+
+msgid "Users Thank You Page"
+msgstr ""
+
+msgid "The thank you page for Users."
+msgstr ""
+
+msgid "Users List Page"
+msgstr ""
+
+msgid "The list page for Users."
+msgstr ""
+
+msgid "Users Upload Page"
+msgstr ""
+
+msgid "The upload page for Users."
+msgstr ""
+
+msgid "Users No Orders Page"
+msgstr ""
+
+msgid "The no orders page for Users."
+msgstr ""
+
+msgid "WP Pages"
+msgstr ""
+
+msgid "<h3>The following options allow you to manage links and redirects to other pages.</h3>"
 msgstr ""
 
 msgid "Account Page"
@@ -43,6 +151,12 @@ msgid "The login page to redirect users to. If left empty will redirect to the d
 msgstr ""
 
 msgid "Login Page Target"
+msgstr ""
+
+msgid "Current Page"
+msgstr ""
+
+msgid "Redirect"
 msgstr ""
 
 msgid "How to open the login page when shown. When set to Current Page it will attempt to load the login page into the current page content. If that fails or it's set to Redirect then it will redirect to the default WP login page. If you want to further customize the login/registration page beyond the options here then you can install a plugin like Ultimate Member and set the URLs here to the pages provided by it such as Account, Register, Login, and Forgot Password pages."
@@ -69,13 +183,28 @@ msgstr ""
 msgid "Confirm Orders Page"
 msgstr ""
 
+msgid "Yes"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
 msgid "Enable the Confirm Order page which shows after filling out the fields and before the checkout page."
 msgstr ""
 
-msgid "Thank-you Page"
+msgid "Thank-you Page URL"
 msgstr ""
 
 msgid "The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message."
+msgstr ""
+
+msgid "Endpoint"
+msgstr ""
+
+msgid "The endpoint to use for dynamic pages. Example: /<span style=\"color: red;\">endpoint</span>/order. If left empty will use the default: milliondollarscript"
+msgstr ""
+
+msgid "Login"
 msgstr ""
 
 msgid "Login Redirect"
@@ -102,6 +231,9 @@ msgstr ""
 msgid "The text to show above the Login page. This will only be shown if there is no Login Header Image set above."
 msgstr ""
 
+msgid "Popup"
+msgstr ""
+
 msgid "Popup Template"
 msgstr ""
 
@@ -123,7 +255,22 @@ msgstr ""
 msgid "Link Target"
 msgstr ""
 
+msgid "Open in Same Tab/Window"
+msgstr ""
+
+msgid "Open in New Tab/Window"
+msgstr ""
+
+msgid "Open in Parent Context"
+msgstr ""
+
+msgid "Open in Full Window"
+msgstr ""
+
 msgid "How to open links in the popup when they are clicked."
+msgstr ""
+
+msgid "Orders"
 msgstr ""
 
 msgid "Expire Orders"
@@ -138,16 +285,43 @@ msgstr ""
 msgid "Setting to Yes will automatically approve orders before payments are verified by an admin."
 msgstr ""
 
+msgid "Fields"
+msgstr ""
+
+msgid "Make Popup Text Optional"
+msgstr ""
+
+msgid "Setting to Yes will make the Popup Text field optional."
+msgstr ""
+
+msgid "Make URL Optional"
+msgstr ""
+
+msgid "Setting to Yes will make the URL field optional."
+msgstr ""
+
+msgid "Make Image Optional"
+msgstr ""
+
+msgid "Setting to Yes will make the Image field optional."
+msgstr ""
+
+msgid "Permissions"
+msgstr ""
+
 msgid "Enable Permissions?"
 msgstr ""
 
-msgid "Enable permission system for user roles and the following capabilities: mds_my_account, mds_order_pixels, mds_manage_pixels, mds_order_history, mds_logout"
+msgid "Enable permission system for user roles and the following capabilities: "
 msgstr ""
 
 msgid "Enable Capabilities"
 msgstr ""
 
 msgid "Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability."
+msgstr ""
+
+msgid "System"
 msgstr ""
 
 msgid "Update Language"
@@ -163,6 +337,15 @@ msgid "If yes then all database tables created by this plugin will be completely
 msgstr ""
 
 msgid "Plugin updates"
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "Don't update"
+msgstr ""
+
+msgid "Development"
 msgstr ""
 
 msgid "If Update then updates will be done normally like all other plugins. If Don't update then no updates will be looked for. If Development then updates will be checked for in the development branch."
@@ -184,6 +367,9 @@ msgid "Check this to set this product as a Million Dollar Script Pixels product.
 msgstr ""
 
 msgid "Sorry, you are not allowed to access this page."
+msgstr ""
+
+msgid "Could not write to file: "
 msgstr ""
 
 msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
@@ -264,6 +450,15 @@ msgstr ""
 msgid "Please Wait! Reserving Pixels..."
 msgstr ""
 
+msgid "Write Your Ad"
+msgstr ""
+
+msgid "<h1>No new orders in progress</h1>"
+msgstr ""
+
+msgid "<h3>Not enough blocks selected</h3>"
+msgstr ""
+
 msgid "Order ID"
 msgstr ""
 
@@ -285,16 +480,7 @@ msgstr ""
 msgid "Image"
 msgstr ""
 
-msgid "This field is required."
-msgstr ""
-
 msgid "Error copying file. From: %s To: %s"
-msgstr ""
-
-msgid "Please upload an image."
-msgstr ""
-
-msgid "Invalid request."
 msgstr ""
 
 msgid "Status"
@@ -334,6 +520,45 @@ msgid "Type of MDS component to load."
 msgstr ""
 
 msgid "Error deleting folder: %s"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "My Account"
+msgstr ""
+
+msgid "Order Pixels"
+msgstr ""
+
+msgid "Confirm Order"
+msgstr ""
+
+msgid "Checkout"
+msgstr ""
+
+msgid "Payment"
+msgstr ""
+
+msgid "Manage Pixels"
+msgstr ""
+
+msgid "Order History"
+msgstr ""
+
+msgid "Publish"
+msgstr ""
+
+msgid "Thank-You!"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Upload"
+msgstr ""
+
+msgid "No Orders"
 msgstr ""
 
 msgid "Million Dollar Script Logo"
@@ -406,15 +631,6 @@ msgid "Database v%s"
 msgstr ""
 
 msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3. See %s for license information."
-msgstr ""
-
-msgid "Error getting WP file system."
-msgstr ""
-
-msgid "Error writing headers to language file."
-msgstr ""
-
-msgid "Error writing language string to file."
 msgstr ""
 
 msgid "Privileged"
@@ -609,9 +825,6 @@ msgstr ""
 msgid "Change Pixels"
 msgstr ""
 
-msgid "Upload"
-msgstr ""
-
 msgid "Supported formats:"
 msgstr ""
 
@@ -697,9 +910,6 @@ msgid "Email"
 msgstr ""
 
 msgid "X,Y"
-msgstr ""
-
-msgid "Grid"
 msgstr ""
 
 msgid "Link Text(s) & Link URL(s)"
@@ -804,9 +1014,6 @@ msgstr ""
 msgid "Reports"
 msgstr ""
 
-msgid "List"
-msgstr ""
-
 msgid "Top Customers"
 msgstr ""
 
@@ -835,6 +1042,9 @@ msgid "Never"
 msgstr ""
 
 msgid "Error: Grid not found"
+msgstr ""
+
+msgid "Preview:"
 msgstr ""
 
 msgid "Order ID:"
@@ -913,6 +1123,9 @@ msgid "ERROR: Cannot save your ad for the following reasons: "
 msgstr ""
 
 msgid "Save Ad"
+msgstr ""
+
+msgid "* Required field"
 msgstr ""
 
 msgid "Expires"
@@ -1017,15 +1230,6 @@ msgstr ""
 msgid "Edit Order"
 msgstr ""
 
-msgid "<h3>Not enough blocks selected</h3>"
-msgstr ""
-
-msgid "<p>You are required to select at least %MIN_BLOCKS% blocks from the grid. Please go back to select more pixels.</p>"
-msgstr ""
-
-msgid "Write Your Ad"
-msgstr ""
-
 msgid "<< Previous"
 msgstr ""
 
@@ -1101,6 +1305,9 @@ msgstr ""
 msgid "Sorry there was an error with your session."
 msgstr ""
 
+msgid "Thank you for your order!"
+msgstr ""
+
 msgid "<h3>Your order was completed.</h3>"
 msgstr ""
 
@@ -1129,9 +1336,6 @@ msgid "Your pixels are now approved! They are now waiting for the webmaster to p
 msgstr ""
 
 msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
-msgstr ""
-
-msgid "Order History"
 msgstr ""
 
 msgid "OrderID"
@@ -1197,21 +1401,6 @@ msgstr ""
 msgid "Confirm now"
 msgstr ""
 
-msgid "My Account"
-msgstr ""
-
-msgid "Order Pixels"
-msgstr ""
-
-msgid "Manage Pixels"
-msgstr ""
-
 msgid "Logout"
-msgstr ""
-
-msgid "Endpoint"
-msgstr ""
-
-msgid "The endpoint to use for dynamic pages. Example: /<span style=\"color: red;\">endpoint</span>/order. If left empty will use the default: milliondollarscript"
 msgstr ""
 
