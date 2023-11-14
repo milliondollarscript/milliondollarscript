@@ -1,6 +1,13 @@
 let first_load = true;
 
-jQuery(document).off('ajaxComplete').on('ajaxComplete', function () {
+jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, settings) {
+	const params = new URLSearchParams(settings.data);
+	const type = params.get('type');
+
+	// Check if the type parameter is order
+	if (type !== 'order') {
+		return;
+	}
 
 	if (first_load) {
 		first_load = false;
@@ -8,7 +15,6 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function () {
 		return;
 	}
 
-	console.log("ajaxComplete");
 	window.$block_pointer = jQuery('#block_pointer');
 	window.$pixelimg = jQuery('#pixelimg');
 
@@ -259,12 +265,9 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function () {
 	}
 
 	function do_block_click() {
-		console.log("do block click");
 		if (window.reserving) {
 			return;
 		}
-
-		console.log("do block click 2");
 
 		trip_count = 1;
 		check_selection(window.$block_pointer.map_x, window.$block_pointer.map_y);
@@ -272,7 +275,6 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function () {
 		low_y = window.$block_pointer.map_y;
 
 		is_moving = !is_moving;
-		console.log("is_moving: " + is_moving);
 	}
 
 	function move_image_to_selection() {

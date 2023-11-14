@@ -460,6 +460,11 @@ function reset_pixels() {
 
 function rescale_grid() {
 
+	if (grid == null) {
+		// grid may not be loaded yet
+		return;
+	}
+
 	grid_width = jQuery(grid).width();
 	grid_height = jQuery(grid).height();
 
@@ -665,7 +670,14 @@ function implode(myArray) {
 
 window.onresize = rescale_grid;
 
-jQuery(document).on('ajaxComplete', function () {
+jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
+	const params = new URLSearchParams(settings.data);
+	const type = params.get('type');
+
+	// Check if the type parameter is order
+	if (type !== 'order') {
+		return;
+	}
 
 	if (first_load) {
 		first_load = false;
