@@ -19,6 +19,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 == Changelog ==
 
+= 2.5.5 =
+* Fix having the stats box on the page at the same time as ordering would break the ordering process.
+
 = 2.5.4 =
 * Fix NFS page not working due to missing $.
 * Update vendor libs.
