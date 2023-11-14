@@ -3,8 +3,8 @@ Contributors: Ryan Rhode, Adam Malinowski, and the entire community.
 Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
-Tested up to: 6.3.1
-Stable tag: 2.5.4
+Tested up to: 6.4.1
+Stable tag: 2.5.5
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
