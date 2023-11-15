@@ -12,8 +12,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2023-11-15 22:02:59\n"
-"PO-Revision-Date: 2023-11-15 22:02:59\n"
+"POT-Creation-Date: 2023-11-15 23:19:25\n"
+"PO-Revision-Date: 2023-11-15 23:19:25\n"
 "X-Generator: Million Dollar Script Two 2.5.5\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
@@ -921,6 +921,21 @@ msgstr ""
 msgid "You might want to run a backup before doing this. Are you sure?"
 msgstr ""
 
+msgid "Show All"
+msgstr ""
+
+msgid "Here is the list of the top clicks. You may copy and paste this list onto your website."
+msgstr ""
+
+msgid "Advertiser's Link"
+msgstr ""
+
+msgid "Clicks"
+msgstr ""
+
+msgid "Views"
+msgstr ""
+
 msgid "Orders Approved"
 msgstr ""
 
@@ -931,9 +946,6 @@ msgid "Remember to process your Grid Image(s) <a href=\"%PROCESS_PIXELS_URL%\">h
 msgstr ""
 
 msgid "Select Grid:"
-msgstr ""
-
-msgid "Show All"
 msgstr ""
 
 msgid "Edit Links:"

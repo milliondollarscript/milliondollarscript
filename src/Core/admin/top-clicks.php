@@ -27,104 +27,93 @@
  *
  */
 
+use MillionDollarScript\Classes\Language;
+
 defined( 'ABSPATH' ) or exit;
 
-global $f2;
+global $wpdb, $f2;
 $BID = $f2->bid();
 
-$bid_sql = " AND banner_id=$BID ";
-
-if ( ( $BID == 'all' ) || ( $BID == '' ) ) {
-	$BID     = '';
-	$bid_sql = "  ";
-}
-
-$sql = "Select * from " . MDS_DB_PREFIX . "banners ";
-$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners";
+$res = $wpdb->get_results( $sql );
 
 ?>
 <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 	<?php wp_nonce_field( 'mds-admin' ); ?>
-    <input type="hidden" name="action" value="mds_admin_form_submission" />
-    <input type="hidden" name="mds_dest" value="top-clicks" />
+    <input type="hidden" name="action" value="mds_admin_form_submission"/>
+    <input type="hidden" name="mds_dest" value="top-clicks"/>
 
-    Select grid: <select name="BID" onchange="this.form.submit()">
-        <option value='all' <?php if ( $BID == 'all' ) {
-			echo 'selected';
-		} ?>>Show All
-        </option>
-		<?php
-		while ( $row = mysqli_fetch_array( $res ) ) {
-
-			if ( ( $row['banner_id'] == $BID ) && ( $BID != 'all' ) ) {
-				$sel = 'selected';
-			} else {
-				$sel = '';
+    <label><?php Language::out( 'Select grid:' ); ?>
+        <select name="BID" onchange="this.form.submit()">
+            <option value="all" <?php if ( $BID == 'all' ) {
+				echo 'selected';
+			} ?>><?php Language::out( 'Show All' ); ?>
+            </option>
+			<?php
+			foreach ( $res as $row ) {
+				if ( ( $row->banner_id == $BID ) && ( $BID != 'all' ) ) {
+					$sel = 'selected';
+				} else {
+					$sel = '';
+				}
+				echo '<option ' . $sel . ' value="' . esc_attr( $row->banner_id ) . '">' . esc_html( $row->name ) . '</option>';
 			}
-			echo '<option ' . $sel . ' value=' . $row['banner_id'] . '>' . $row['name'] . '</option>';
-		}
-		?>
-    </select>
+			?>
+        </select>
+    </label>
 </form>
 <hr>
 <p>
-    Here is the list of the top clicks. You may copy and paste this list onto your website.
+	<?php Language::out( 'Here is the list of the top clicks. You may copy and paste this list onto your website.' ); ?>
 </p>
 
-<table width="100%" border="0" cellSpacing="1" cellPadding="3" align="center" bgColor="#d9d9d9">
-
-    <tr>
-        <td>
-            <font face="arial" size="2"><b>Advertiser's Link</b></font>
-        </td>
-        <td>
-            <font face="arial" size="2"><b>Blocks</b></font>
-        </td>
-        <td>
-            <font face="arial" size="2"><b>Clicks</b></font>
-        </td>
-        <td>
-            <font face="arial" size="2"><b>Views</b></font>
-        </td>
+<table class="mds-top-clicks-table">
+    <tr class="mds-top-clicks-heading">
+        <td><?php Language::out( "Advertiser's Link" ); ?></td>
+        <td><?php Language::out( "Order ID" ); ?></td>
+        <td><?php Language::out( "Clicks" ); ?></td>
+        <td><?php Language::out( "Views" ); ?></td>
     </tr>
-
 	<?php
 
-	//$sql = "SELECT *, DATE_FORMAT(MAX(order_date), '%Y-%c-%d') as max_date, sum(quantity) AS pixels FROM orders where status='completed' $bid_sql GROUP BY user_id, banner_id order by pixels desc ";
+	$sql = "SELECT orders.order_id, blocks.url, blocks.alt_text, SUM(click_count) AS clicksum, SUM(view_count) AS viewsum 
+      FROM " . MDS_DB_PREFIX . "orders AS orders 
+      JOIN " . MDS_DB_PREFIX . "blocks AS blocks ON orders.order_id = blocks.order_id 
+      WHERE blocks.status = 'sold' 
+      AND blocks.image_data <> ''";
 
-	//$sql = "SELECT *, DATE_FORMAT(MAX(order_date), '%Y-%c-%d') as max_date, sum(quantity) AS pixels FROM orders where status='completed' $bid_sql GROUP BY user_id, banner_id order by pixels desc ";
+	if ( $BID != 'all' && $BID != '' ) {
+		$sql .= " AND blocks.banner_id = %d";
+	}
 
-	$sql = "SELECT *, sum(click_count) AS clicksum, sum(view_count) AS viewsum, count(order_id) AS b FROM " . MDS_DB_PREFIX . "blocks WHERE STATUS='sold' AND image_data <> '' $bid_sql GROUP BY order_id, block_id, click_count, view_count ORDER BY clicksum DESC";
+	$sql .= " GROUP BY orders.order_id, blocks.url, blocks.alt_text
+          ORDER BY clicksum DESC";
 
-	//echo $sql;
+	if ( $BID != 'all' && $BID != '' ) {
+		$results = $wpdb->get_results( $wpdb->prepare( $sql, $BID ) );
+	} else {
+		$results = $wpdb->get_results( $sql );
+	}
 
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
-
-	while ( $row = mysqli_fetch_array( $result ) ) {
-
+	foreach ( $results as $row ) {
+		$order_id = intval( $row->order_id );
 		?>
-        <tr bgcolor="#ffffff">
+        <tr>
             <td>
-                <font face="arial" size="2"><?php
-
-					echo "<a href='" . $row['url'] . "' target='_blank' >" . $row['alt_text'] . "</a>";
-
-					?></font>
+                <a href='<?php echo esc_url( $row->url ); ?>' target='_blank'><?php echo esc_html( $row->alt_text ); ?></a>
             </td>
             <td>
-                <font face="arial" size="2"><?php echo $row['b']; ?></font>
-            </td>
-
-            <td>
-                <font face="arial" size="2"><?php echo $row['clicksum']; ?></font>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $order_id ) ); ?>"><?php echo $order_id; ?></a>
             </td>
             <td>
-                <font face="arial" size="2"><?php echo $row['viewsum']; ?></font>
+				<?php echo intval( $row->clicksum ); ?>
+            </td>
+            <td>
+				<?php echo intval( $row->viewsum ); ?>
             </td>
         </tr>
 		<?php
 	}
 
 	?>
-
 </table>

@@ -22,6 +22,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 = 2.5.5 =
 * Fix having the stats box on the page at the same time as ordering would break the ordering process.
 * Implemented a more robust language scanner system using the nikic/PHP-Parser library.
+* Change Top Clicks page in Admin to use orders instead of blocks and implement translation for it.
 
 = 2.5.4 =
 * Fix NFS page not working due to missing $.
