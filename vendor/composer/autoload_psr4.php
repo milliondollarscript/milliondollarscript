@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'PhpParser\\' => array($vendorDir . '/nikic/php-parser/lib/PhpParser'),
     'MillionDollarScript\\' => array($baseDir . '/src'),
     'Imagine\\' => array($vendorDir . '/imagine/imagine/src'),
     'Carbon_Fields\\' => array($vendorDir . '/htmlburger/carbon-fields/core'),

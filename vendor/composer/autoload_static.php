@@ -11,6 +11,10 @@ class ComposerStaticInit2b635baffc9d4b2306ae3b86c3eea2d2
     );
 
     public static $prefixLengthsPsr4 = array (
+        'P' => 
+        array (
+            'PhpParser\\' => 10,
+        ),
         'M' => 
         array (
             'MillionDollarScript\\' => 20,
@@ -26,6 +30,10 @@ class ComposerStaticInit2b635baffc9d4b2306ae3b86c3eea2d2
     );
 
     public static $prefixDirsPsr4 = array (
+        'PhpParser\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
         'MillionDollarScript\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',
