@@ -173,7 +173,7 @@ class MillionDollarScript {
                 <h3><?php Language::out( 'Project Contributors' ); ?></h3>
                 <p><?php Language::out( 'Ryan Rhode - Developer' ); ?></p>
                 <p><?php Language::out( 'Adam Malinowski - Project Founder' ); ?></p>
-                <p><?php Language::out( 'And the many members of the community who have contributed bug reports,feature suggestions and fixes.' ); ?></p>
+                <p><?php Language::out( 'And the many members of the community who have contributed bug reports, feature suggestions and fixes.' ); ?></p>
             </div>
 
             <div class="milliondollarscript-version milliondollarscript-section">
