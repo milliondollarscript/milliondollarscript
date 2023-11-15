@@ -30,21 +30,25 @@
 
 namespace MillionDollarScript\Classes;
 
+use PhpParser\Error;
+use PhpParser\Node\Scalar\String_;
+use PhpParser\NodeTraverser;
+use PhpParser\ParserFactory;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 defined( 'ABSPATH' ) or exit;
 
-// TODO: Add function to trim non-existing strings.
 // TODO: Add function to expand strings, functions or options.
 
-class MDS_Language_Scanner {
+class LanguageScanner {
 	private string $plugin_folder;
 
-	private string $contents;
+	private array $contents;
 
 	/** @var $wp_filesystem \WP_Filesystem_Direct */
-	private $wp_filesystem;
+	private mixed $wp_filesystem;
+	private string $pot_file_path;
 
 	/**
 	 * Constructs a new instance of the class.
@@ -53,6 +57,7 @@ class MDS_Language_Scanner {
 	 */
 	public function __construct( string $plugin_folder ) {
 		$this->plugin_folder = $plugin_folder;
+		$this->pot_file_path = $plugin_folder . 'languages/milliondollarscript.pot';
 
 		$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
 		$filesystem = new Filesystem( $url );
@@ -68,23 +73,48 @@ class MDS_Language_Scanner {
 	 * @throws \Exception If there is an error accessing or manipulating the files.
 	 */
 	public function scan_files(): void {
-		$pot_file_path = $this->plugin_folder . 'languages/milliondollarscript.pot';
+		$this->contents = [];
 
-		$file_exists = $this->wp_filesystem->exists( $pot_file_path );
-
-		if ( $file_exists && filesize( $pot_file_path ) > 0 ) {
-			$this->contents = $this->wp_filesystem->get_contents( $pot_file_path );
-		} else if ( ! $file_exists || filesize( $pot_file_path ) == 0 ) {
-			$this->contents = $this->get_header();
-		}
+		$header = $this->get_header();
 
 		$file_list = $this->get_php_files( $this->plugin_folder );
 		foreach ( $file_list as $file ) {
 			$this->scan_file( $file );
 		}
 
-		if ( ! $this->wp_filesystem->put_contents( $pot_file_path, $this->contents ) ) {
-			throw new \Exception( Language::get( 'Could not write to file: ' ) . $pot_file_path );
+		$full_contents = $header . "\n" . implode( "\n", $this->contents );
+		if ( ! $this->wp_filesystem->put_contents( $this->pot_file_path, $full_contents ) ) {
+			throw new \Exception( Language::get( 'Could not write to file: ' ) . $this->pot_file_path );
+		}
+	}
+
+	/**
+	 * Scans the given file and extracts strings that match a specific pattern.
+	 *
+	 * @param string $file The path to the file to be scanned.
+	 *
+	 * @return void
+	 */
+	public function scan_file( string $file ): void {
+		$content = $this->wp_filesystem->get_contents( $file );
+
+		$parser    = ( new ParserFactory )->create( ParserFactory::PREFER_PHP7 );
+		$traverser = new NodeTraverser;
+
+		$visitor = new LanguageFunctionVisitor();
+		$traverser->addVisitor( $visitor );
+
+		try {
+			$stmts = $parser->parse( $content );
+			$traverser->traverse( $stmts );
+
+			foreach ( $visitor->strings as $string ) {
+				$this->append_strings( $string['function'], $string['string'] );
+			}
+		} catch ( Error $error ) {
+			echo "Parse error: {$error->getMessage()}\n";
+
+			return;
 		}
 	}
 
@@ -108,32 +138,6 @@ class MDS_Language_Scanner {
 		}
 
 		return $file_list;
-	}
-
-	/**
-	 * Scans the given file and extracts strings that match a specific pattern.
-	 *
-	 * @param string $file The path to the file to be scanned.
-	 *
-	 * @return void
-	 */
-	private function scan_file( string $file ): void {
-
-		$content = $this->wp_filesystem->get_contents( $file );
-		$strings = [];
-
-		preg_match_all( '/Language::(?:get_replace|out_replace|get|out)\(\s*([\'"])(.*?)\\1(?:\s*,\s*(?:\\\\?(?:\w+\\\\)*\w+(?:::\w+)*(?:\(\s*\))?|\$[\w-]+\[[^]]+]|\$\w+|\w+|\'.*?\'|".*?"))*\s*\)/', $content, $matches );
-
-		foreach ( $matches[2] as $string ) {
-			$string    = preg_replace( '/\\\\([\'"])/', '$1', $string );
-			$string    = preg_replace( '/\.\$\w+/', '', $string );
-			$string    = preg_replace( '/\\\\\\\\(?:\w+\\\\)*(\w+::\w+)\(/', '$1(', $string );
-			$strings[] = $string;
-		}
-
-		if ( ! empty( $strings ) ) {
-			$this->append_strings( $strings );
-		}
 	}
 
 	/**
@@ -166,48 +170,72 @@ msgstr ""
 "X-Generator: Million Dollar Script Two $version\\n"
 "X-Domain: milliondollarscript\\n"
 "Language: English\\n"
-\n
+
 HEADERS;
+	}
+
+	/**
+	 * Formats a POT line.
+	 *
+	 * @param string $value The value to format.
+	 *
+	 * @return string The formatted POT line.
+	 */
+	private function format_pot_line( string $value ): string {
+		$msgid  = "msgid \"$value\"\n";
+		$msgstr = "msgstr \"\"\n";
+
+		return $msgid . $msgstr;
 	}
 
 	/**
 	 * Checks if a specific line exists in the contents.
 	 *
-	 * @param mixed $line The line to search for.
+	 * @param string $value The line to search for.
 	 *
 	 * @return bool True if the line exists, false otherwise.
 	 */
-	private function line_exists( mixed $line ): bool {
-		$lines = explode( "\n", $this->contents );
+	private function line_exists( string $value ): bool {
+		$pot_line = $this->format_pot_line( $value );
 
-		foreach ( $lines as $l ) {
-			if ( trim( $l ) === trim( $line ) ) {
-				return true;
-			}
+		return in_array( $pot_line, $this->contents );
+	}
+
+	/**
+	 * Extracts the string value from a given node.
+	 *
+	 * @param mixed $node The node to extract the value from.
+	 *
+	 * @return string The string value extracted from the node.
+	 */
+	private function extract_string_value( mixed $node ): string {
+		if ( $node instanceof String_ ) {
+			return $node->value;
 		}
 
-		return false;
+		return '';
 	}
 
 	/**
 	 * Append multiple strings to the contents.
 	 *
-	 * @param array $strings The array of strings to append.
+	 * @param string $function
+	 * @param mixed $string
 	 *
 	 * @return void
 	 */
-	private function append_strings( array $strings ): void {
-		foreach ( $strings as $string ) {
-			$msgid  = $this->escape_string( $string );
-			$msgid  = "msgid \"$msgid\"\n";
-			$msgstr = "msgstr \"\"\n";
-			$break  = "\n";
+	private function append_strings( string $function, mixed $string ): void {
+		$value = $this->extract_string_value( $string );
+		$value = $this->escape_string( $value );
 
-			if ( ! $this->line_exists( $msgid ) ) {
-				$this->contents .=
-					$msgid .
-					$msgstr .
-					$break;
+		if ( ! empty( $value ) && ! $this->line_exists( $value ) ) {
+			if ( Language::is_lang_function( $function ) ) {
+
+				$msgid  = "msgid \"$value\"\n";
+				$msgstr = "msgstr \"\"\n";
+
+				$this->contents[] = $msgid .
+				                    $msgstr;;
 			}
 		}
 	}

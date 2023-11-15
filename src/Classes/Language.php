@@ -33,6 +33,13 @@ namespace MillionDollarScript\Classes;
 defined( 'ABSPATH' ) or exit;
 
 class Language {
+	// Language functions used by the language scanner to determine translatable strings.
+	const functions = [
+		'get',
+		'out',
+		'out_replace',
+		'get_replace'
+	];
 
 	/**
 	 * Returns the output of the given content. Filters for valid HTML or escapes HTML. Can optionally output the result (default).
@@ -367,5 +374,9 @@ class Language {
 		if ( ! is_writable( \MillionDollarScript\Classes\Utility::get_upload_path() . "/images/" ) ) {
 			Language::out_replace( '%UPLOAD_PATH%/images/ directory is not writable. Give write permissions (777) to the directory.<br>', '%UPLOAD_PATH%', \MillionDollarScript\Classes\Utility::get_upload_path() );
 		}
+	}
+
+	public static function is_lang_function( $function ): bool {
+		return in_array( $function, self::functions );
 	}
 }

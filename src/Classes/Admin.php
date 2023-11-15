@@ -43,7 +43,7 @@ class Admin {
 		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
 
 		$plugin_folder = plugin_dir_path( MDS_BASE_FILE );
-		$scanner       = new MDS_Language_Scanner( $plugin_folder );
+		$scanner       = new LanguageScanner( $plugin_folder );
 		$scanner->scan_files();
 
 		wp_send_json( true );
