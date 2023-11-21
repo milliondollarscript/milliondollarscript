@@ -47,7 +47,7 @@ if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 	exit;
 }
 
-if ( ! empty( $_REQUEST['change_pixels'] ) && isset( $_FILES ) ) {
+if ( empty( $_REQUEST['change_pixels'] ) && empty( $_FILES ) ) {
 	require_once MDS_CORE_PATH . "html/header.php";
 }
 
