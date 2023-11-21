@@ -209,7 +209,7 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 
 	global $wpdb;
 	$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE ad_id=%d AND user_id=%d";
-	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['aid'] ), get_current_user_id(), intval( $BID ) );
+	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['aid'] ), get_current_user_id() );
 	$result       = $wpdb->get_results( $prepared_sql, ARRAY_A );
 
 	if ( ! empty( $result ) ) {
