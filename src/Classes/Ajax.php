@@ -361,12 +361,14 @@ class Ajax {
 								$ALT_TEXT = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
 								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT );
 
+                                $url = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX .'url' );
+
 								$data_values = array(
 									'aid'       => $row['ad_id'],
 									'block_id'  => $block_id,
 									'banner_id' => $banner['banner_id'],
 									'alt_text'  => $ALT_TEXT,
-									'url'       => carbon_get_post_meta( $row['ad_id'], 'url' ),
+									'url'       => $url ?: "",
 								);
 
 								echo '<br /><a target="_blank" data-data="' . htmlspecialchars( json_encode( $data_values, JSON_HEX_QUOT | JSON_HEX_APOS ), ENT_QUOTES, 'UTF-8' ) . '" data-alt-text="' . esc_attr( $ALT_TEXT ) . '" class="list-link" href="' . esc_url( $data_values['url'] ) . '">' . esc_html( $ALT_TEXT ) . '</a>';
