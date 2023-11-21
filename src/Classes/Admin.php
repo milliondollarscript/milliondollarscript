@@ -445,7 +445,7 @@ class Admin {
 				MDS_PREFIX . 'admin-pixels',
 				MDS_BASE_URL . 'src/Assets/js/admin-pixels.min.js',
 				[ 'jquery' ],
-				filemtime( MDS_BASE_PATH . 'admin/js/admin-pixels.min.js' ),
+				filemtime( MDS_BASE_PATH . 'src/Assets/js/admin-pixels.min.js' ),
 				true
 			);
 		}
