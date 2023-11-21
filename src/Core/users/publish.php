@@ -47,7 +47,9 @@ if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 	exit;
 }
 
-require_once MDS_CORE_PATH . "html/header.php";
+if ( ! empty( $_REQUEST['change_pixels'] ) && isset( $_FILES ) ) {
+	require_once MDS_CORE_PATH . "html/header.php";
+}
 
 $gd_info      = gd_info();
 $gif_support  = '';
@@ -224,6 +226,10 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 	$size   = get_pixel_image_size( $row['order_id'] );
 	$pixels = $size['x'] * $size['y'];
 	upload_changed_pixels( $order_id, $row['banner_id'], $size, $banner_data );
+
+	if ( ! empty( $_REQUEST['change_pixels'] ) && isset( $_FILES ) ) {
+		return;
+	}
 
 	// Ad forms:
 	?>
