@@ -34,7 +34,7 @@ defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-if ( \MillionDollarScript\Classes\Config::get('DISPLAY_ORDER_HISTORY') !== "YES" ) {
+if ( \MillionDollarScript\Classes\Config::get( 'DISPLAY_ORDER_HISTORY' ) !== "YES" ) {
 	exit;
 }
 
@@ -53,13 +53,13 @@ global $wpdb;
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
 	if ( $_REQUEST['order_id'] == get_current_order_id() ) {
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval(get_current_order_id() ) . "'";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( get_current_order_id() ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
 			$row = mysqli_fetch_assoc( $result );
 
 			// delete associated ad
-			wp_delete_post(intval( $row['ad_id'] ));
+			wp_delete_post( intval( $row['ad_id'] ) );
 
 			// delete associated temp order
 			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( get_current_order_id() ) . "'";
@@ -127,10 +127,10 @@ function date_sort( $a, $b ): int {
 	$dateA = strtotime( $a['order_date'] );
 	$dateB = strtotime( $b['order_date'] );
 
-	if ($dateA == $dateB) {
+	if ( $dateA == $dateB ) {
 		return 0;
-	} elseif ($dateA < $dateB) {
-		return -1;
+	} elseif ( $dateA < $dateB ) {
+		return - 1;
 	} else {
 		return 1;
 	}
@@ -211,7 +211,7 @@ usort( $orders, "date_sort" );
 					echo "<br />";
 
 					$temp_var = '';
-					if ( \MillionDollarScript\Classes\Config::get('USE_AJAX') == 'SIMPLE' ) {
+					if ( \MillionDollarScript\Classes\Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
 						$temp_var = '&order_id=' . $order['order_id'];
 					}
 
@@ -219,13 +219,13 @@ usort( $orders, "date_sort" );
 						case "new":
 							echo Language::get( 'In progress' ) . '<br>';
 							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
-							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"orders.php?cancel=yes&order_id=" . $order['order_id'] . "\"' >";
+							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 							break;
 						case "confirmed":
 							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
 							break;
 						case "completed":
-							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] ."'>" . Language::get( 'Manage' ) . "</a>";
+							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
 
 							if ( $order['days_expire'] > 0 ) {
 
@@ -257,7 +257,7 @@ usort( $orders, "date_sort" );
 
 							$time_expired = strtotime( $order['date_stamp'] );
 
-							$time_when_cancel = $time_expired + ( \MillionDollarScript\Classes\Config::get('MINUTES_RENEW') * 60 );
+							$time_when_cancel = $time_expired + ( \MillionDollarScript\Classes\Config::get( 'MINUTES_RENEW' ) * 60 );
 
 							$days = floor( ( $time_when_cancel - time() ) / 60 );
 
@@ -277,7 +277,7 @@ usort( $orders, "date_sort" );
 					$temp_var = '&order_id=' . $order['order_id'];
 					echo Language::get( 'In progress' ) . '<br>';
 					echo "<a href='" . Utility::get_page_url( 'order' ) . "?BID={$order['banner_id']}{$temp_var}'>" . Language::get( 'Confirm now' ) . "</a>";
-					echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "}\")) return false; window.location=\"orders.php?cancel=yes{$temp_var}\"' >";
+					echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "}\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes{$temp_var}" ) . "\"' >";
 				}
 			}
 			?></td>
