@@ -226,7 +226,7 @@ class Ajax {
 		<?php
 	}
 
-	public static function get_ad( $post_id = null ): void {
+	public static function get_ad( $post_id = null, $return = false ): string|null {
 		if ( $post_id == null ) {
 			$post_id = intval( $_POST['aid'] );
 		}
@@ -255,7 +255,13 @@ class Ajax {
 			apply_filters( 'mds_field_output_after', $field );
 		}
 
+		if ( $return ) {
+			return $output;
+		}
+
 		echo $output;
+
+		return null;
 	}
 
 	public static function store_view( $data ): void {
@@ -361,7 +367,7 @@ class Ajax {
 								$ALT_TEXT = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
 								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT );
 
-                                $url = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX .'url' );
+                                $url = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'url' );
 
 								$data_values = array(
 									'aid'       => $row['ad_id'],
