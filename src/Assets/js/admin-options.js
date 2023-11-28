@@ -36,11 +36,13 @@ jQuery(document).ready(function ($) {
 				});
 
 				// Update Carbon Fields options.
-				const pages = JSON.parse(MDS.pages);
-				for (let page in pages) {
-					const option = pages[page]['option'];
-					let field = Object.values(fields).find(f => f.base_name === MDS.MDS_PREFIX + option);
-					updateFieldValue(field.id, data[option]);
+				if (button.attr('id') === 'mds_create_pages' || button.attr('id') === 'mds_delete_pages') {
+					const pages = JSON.parse(MDS.pages);
+					for (let page in pages) {
+						const option = pages[page]['option'];
+						let field = Object.values(fields).find(f => f.base_name === MDS.MDS_PREFIX + option);
+						updateFieldValue(field.id, data[option]);
+					}
 				}
 			});
 		});
