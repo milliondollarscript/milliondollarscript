@@ -51,6 +51,7 @@ class FormFields {
 				'public'      => true,
 				'has_archive' => false,
 				'searchable'  => false,
+				'rewrite'     => array( 'slug' => 'mds-pixel' ),
 			)
 		);
 	}

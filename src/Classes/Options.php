@@ -192,6 +192,15 @@ class Options {
 				     ] )
 				     ->set_help_text( Language::get( 'Enable the Confirm Order page which shows after filling out the fields and before the checkout page.' ) ),
 
+				// MDS Pixels page template
+				Field::make( 'select', MDS_PREFIX . 'mds-pixel-template', Language::get( 'Enable MDS Pixels Pages?' ) )
+				     ->set_default_value( 'no' )
+				     ->set_options( [
+					     'yes' => Language::get( 'Yes' ),
+					     'no'  => Language::get( 'No' ),
+				     ] )
+				     ->set_help_text( Language::get( 'Set to Yes to enable the MDS Pixels page template for the MDS Pixels pages. Visiting a MDS Pixels page will then display the same details shown in the popup boxes. If set to No then when visiting a MDS Pixels page it will show a 404 (Page Not Found) error page.' ) ),
+
 				// Endpoint
 				Field::make( 'text', MDS_PREFIX . 'endpoint', Language::get( 'Endpoint' ) )
 				     ->set_default_value( 'milliondollarscript' )

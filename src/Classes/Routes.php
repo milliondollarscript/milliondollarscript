@@ -86,86 +86,117 @@ class Routes {
 		}
 	}
 
+	/**
+	 * Handle template_include filter.
+	 *
+	 * @param $template
+	 *
+	 * @return false|mixed|string|void
+	 */
 	public static function template_include( $template ) {
 		global $wp_query;
-		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
 
-		if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
-			$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
+		// Handle MDS Pixel post type
+		if ( is_singular( FormFields::$post_type ) ) {
 
-			/**
-			 * requires
-			 */
-			if ( $page === 'display-map' ) {
-				require_once MDS_CORE_PATH . 'display_map.php';
-				exit;
-			} else if ( $page === 'display-stats' ) {
-				require_once MDS_CORE_PATH . 'display_stats.php';
-				exit;
-			} else if ( $page === 'ga' ) {
-				require_once MDS_CORE_PATH . 'ga.php';
-				exit;
-				// } else if ( $page === 'click' ) {
-				// 	require_once MDS_CORE_PATH . 'click.php';
-				// 	exit;
-			} else if ( $page === 'check-selection' ) {
-				require_once MDS_CORE_PATH . 'users/check_selection.php';
-				exit;
-			} else if ( $page === 'make-selection' ) {
-				require_once MDS_CORE_PATH . 'users/make_selection.php';
-				exit;
-			} else if ( $page === 'show-selection' ) {
-				require_once MDS_CORE_PATH . 'users/show_selection.php';
-				exit;
-			} else if ( $page === 'show-map' ) {
-				require_once MDS_CORE_PATH . 'users/show_map.php';
-				exit;
-			} else if ( $page === 'get-block-image' ) {
-				require_once MDS_CORE_PATH . 'users/get_block_image.php';
-				exit;
-			} else if ( $page === 'get-image' ) {
-				require_once MDS_CORE_PATH . 'users/get_image.php';
-				exit;
-			} else if ( $page === 'get-image2' ) {
-				require_once MDS_CORE_PATH . 'users/get_image2.php';
-				exit;
-			} else if ( $page === 'get-order-image' ) {
-				require_once MDS_CORE_PATH . 'users/get_order_image.php';
-				exit;
-			} else if ( $page === 'get-pointer-graphic' ) {
-				require_once MDS_CORE_PATH . 'users/get_pointer_graphic.php';
-				exit;
-			} else if ( $page === 'update-order' ) {
-				require_once MDS_CORE_PATH . 'users/update_order.php';
-				exit;
-			} else if ( $page === 'wplogout' ) {
-				require_once MDS_CORE_PATH . 'users/wplogout.php';
-				exit;
-			} else {
+			if ( \MillionDollarScript\Classes\Options::get_option( 'mds-pixel-template', 'no' ) == 'no' ) {
+				// Redirect to 404 page.
+				status_header( 404 );
+				return get_404_template();
+			}
+
+			// Try to load the template file from the theme
+			$mds_pixel_template = locate_template( 'mds-pixel/single-mds-pixel.php' );
+
+			// If the template file exists in the theme, use it
+			if ( $mds_pixel_template ) {
+				return $mds_pixel_template;
+			}
+
+			// If the template file doesn't exist in the theme, use the plugin's default template
+			$template = MDS_BASE_PATH . 'templates/mds-pixel/single-mds-pixel.php';
+		} else {
+			// Handle milliondollarscript endpoint
+
+			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+
+			if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
+				$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
 
 				/**
-				 * Templates
+				 * requires
 				 */
-				$valid_pages = [
-					'account',
-					'checkout',
-					'confirm-order',
-					'history',
-					'list',
-					'manage',
-					'no-orders',
-					'order',
-					'payment',
-					'publish',
-					'thank-you',
-					'upload',
-					'write-ad',
-				];
-				$valid_pages = apply_filters( 'mds_valid_pages', $valid_pages );
+				if ( $page === 'display-map' ) {
+					require_once MDS_CORE_PATH . 'display_map.php';
+					exit;
+				} else if ( $page === 'display-stats' ) {
+					require_once MDS_CORE_PATH . 'display_stats.php';
+					exit;
+				} else if ( $page === 'ga' ) {
+					require_once MDS_CORE_PATH . 'ga.php';
+					exit;
+					// } else if ( $page === 'click' ) {
+					// 	require_once MDS_CORE_PATH . 'click.php';
+					// 	exit;
+				} else if ( $page === 'check-selection' ) {
+					require_once MDS_CORE_PATH . 'users/check_selection.php';
+					exit;
+				} else if ( $page === 'make-selection' ) {
+					require_once MDS_CORE_PATH . 'users/make_selection.php';
+					exit;
+				} else if ( $page === 'show-selection' ) {
+					require_once MDS_CORE_PATH . 'users/show_selection.php';
+					exit;
+				} else if ( $page === 'show-map' ) {
+					require_once MDS_CORE_PATH . 'users/show_map.php';
+					exit;
+				} else if ( $page === 'get-block-image' ) {
+					require_once MDS_CORE_PATH . 'users/get_block_image.php';
+					exit;
+				} else if ( $page === 'get-image' ) {
+					require_once MDS_CORE_PATH . 'users/get_image.php';
+					exit;
+				} else if ( $page === 'get-image2' ) {
+					require_once MDS_CORE_PATH . 'users/get_image2.php';
+					exit;
+				} else if ( $page === 'get-order-image' ) {
+					require_once MDS_CORE_PATH . 'users/get_order_image.php';
+					exit;
+				} else if ( $page === 'get-pointer-graphic' ) {
+					require_once MDS_CORE_PATH . 'users/get_pointer_graphic.php';
+					exit;
+				} else if ( $page === 'update-order' ) {
+					require_once MDS_CORE_PATH . 'users/update_order.php';
+					exit;
+				} else if ( $page === 'wplogout' ) {
+					require_once MDS_CORE_PATH . 'users/wplogout.php';
+					exit;
+				} else {
 
-				foreach ( $valid_pages as $valid_page ) {
-					if ( $page === $valid_page ) {
-						return self::get_template( $valid_page );
+					/**
+					 * Templates
+					 */
+					$valid_pages = [
+						'account',
+						'checkout',
+						'confirm-order',
+						'history',
+						'list',
+						'manage',
+						'no-orders',
+						'order',
+						'payment',
+						'publish',
+						'thank-you',
+						'upload',
+						'write-ad',
+					];
+					$valid_pages = apply_filters( 'mds_valid_pages', $valid_pages );
+
+					foreach ( $valid_pages as $valid_page ) {
+						if ( $page === $valid_page ) {
+							return self::get_template( $valid_page );
+						}
 					}
 				}
 			}
