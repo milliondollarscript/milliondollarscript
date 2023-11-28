@@ -253,14 +253,25 @@ if ( ! empty( $tmp_image_file ) ) {
 
 	?>
     <style>
-		#block_pointer {
-			width: <?php echo $size[0]; ?>px;
-			height: <?php echo $size[1]; ?>px;
-			padding: 0;
-			margin: 0;
-			line-height: <?php echo $size[1]; ?>px;
-			font-size: <?php echo $size[1]; ?>px;
-		}
+        #block_pointer, #block_pointer img {
+            width: <?php echo $size[0]; ?>px;
+            height: <?php echo $size[1]; ?>px;
+            padding: 0;
+            margin: 0;
+            line-height: <?php echo $size[1]; ?>px;
+            font-size: <?php echo $size[1]; ?>px;
+            vertical-align: top;
+            pointer-events: none;
+        }
+
+        #block_pointer {
+            cursor: pointer;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: transparent;
+            visibility: hidden;
+        }
     </style>
 	<?php
 }
@@ -270,12 +281,6 @@ if ( ! empty( $messages ) ) {
 	echo $messages;
 }
 
-// pointer.png
-?>
-
-    <span id="block_pointer" style='cursor: pointer;position:absolute;left:0; top:0;background:transparent; visibility:hidden '><img src="<?php echo Utility::get_page_url( 'get-pointer-graphic' ); ?>?BID=<?php echo $BID; ?>" alt=""/></span>
-
-<?php
 show_nav_status( 1 );
 
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners ORDER BY `name`";
@@ -318,7 +323,8 @@ Language::out( '- Upload a GIF, JPEG or PNG graphics file<br />
 		<?php Language::out( '<p><strong>Upload your pixels:</strong></p>' ); ?>
         <input type='file' accept="image/*" name='graphic' style='font-size:14px;width:200px;'/><br/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
-        <input class="mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>' style=' font-size:18px;'/>
+        <input class="mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
+               style=' font-size:18px;'/>
     </form>
 
 <?php
@@ -360,17 +366,29 @@ if ( ! empty( $tmp_image_file ) ) {
         <input type="hidden" name="action" value="mds_form_submission">
         <input type="hidden" name="mds_dest" value="order">
         <p>
-            <input type="button" class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
+            <input type="button"
+                   class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
 				echo 'disabled';
-			} ?> name='submit_button1' id='submit_button1' value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ) ?>'/>
+			} ?> name='submit_button1' id='submit_button1'
+                   value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ) ?>'/>
 
         </p>
 
         <input type="hidden" value="1" name="select">
         <input type="hidden" value="<?php echo $BID; ?>" name="BID">
 
-        <img style="cursor: pointer;max-width: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>px;" id="pixelimg" <?php if ( ( $USE_AJAX == 'YES' ) || ( $USE_AJAX == 'SIMPLE' ) ) { ?><?php } ?> type="image" name="map" value='Select Pixels.' width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" src="<?php echo Utility::get_page_url( 'show-selection' ); ?>?BID=<?php echo $BID; ?>&amp;gud=<?php echo time(); ?>" alt=""/>
-
+        <div id="pixels-container">
+            <img style="cursor: pointer;max-width: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>px;"
+                 id="pixelimg" <?php if ( ( $USE_AJAX == 'YES' ) || ( $USE_AJAX == 'SIMPLE' ) ) { ?><?php } ?>
+                 type="image" name="map" value='Select Pixels.'
+                 width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                 height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                 src="<?php echo Utility::get_page_url( 'show-selection' ); ?>?BID=<?php echo $BID; ?>&amp;gud=<?php echo time(); ?>"
+                 alt=""/>
+            <span id="block_pointer"><img
+                        src="<?php echo Utility::get_page_url( 'get-pointer-graphic' ); ?>?BID=<?php echo $BID; ?>"
+                        alt=""/></span>
+        </div>
         <input type="hidden" name="form_action" value="select">
     </form>
     <div class="mds-write-button">
@@ -382,17 +400,19 @@ if ( ! empty( $tmp_image_file ) ) {
             <input type="hidden" name="selected_pixels" value=''>
             <input type="hidden" name="order_id" value="<?php echo get_current_order_id(); ?>">
             <input type="hidden" value="<?php echo $BID; ?>" name="BID">
-            <input type="submit" class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
+            <input type="submit"
+                   class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
 				echo 'disabled';
-			} ?> name='submit_button2' id='submit_button2' value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ) ?>'/>
+			} ?> name='submit_button2' id='submit_button2'
+                   value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ) ?>'/>
         </form>
     </div>
 
     <script>
-		jQuery(document).ready(function () {
-			window.pointer_width = <?php echo $reqsize[0]; ?>;
-			window.pointer_height =  <?php echo $reqsize[1]; ?>;
-		});
+        jQuery(document).ready(function () {
+            window.pointer_width = <?php echo $reqsize[0]; ?>;
+            window.pointer_height =  <?php echo $reqsize[1]; ?>;
+        });
     </script>
 
 	<?php

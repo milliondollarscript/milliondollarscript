@@ -986,3 +986,12 @@ a.mds-button {
 .mds-register-link:hover {
 	background-color: #6F5F56;
 }
+
+.mds-pixel-content {
+	margin: 1rem;
+}
+
+#pixels-container {
+	position: relative;
+	display: inline-block;
+}
