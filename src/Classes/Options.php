@@ -282,6 +282,11 @@ class Options {
 				     ->set_default_value( '' )
 				     ->set_option_value( 'yes' )
 				     ->set_help_text( Language::get( 'Setting to Yes will automatically approve orders before payments are verified by an admin.' ) ),
+
+				// Currency
+				Field::make( 'text', MDS_PREFIX . 'currency', Language::get( 'Currency' ) )
+				     ->set_default_value( 'USD' )
+				     ->set_help_text( Language::get( 'The currency to use for orders and payments when WooCommerce isn\'t enabled. If WooCommerce is enabled then it will use the setting from it\'s settings. If WooCommerce Payments plugin is enabled then it will use those settings.' ) ),
 			],
 
 			Language::get( 'Fields' ) => [

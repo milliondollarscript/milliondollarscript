@@ -3,7 +3,7 @@
         'name' => 'milliondollarscript/milliondollarscript-two',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '876dc34d6aa2f8e7046c14ea0dae934f2dc12a8a',
+        'reference' => '716b930223a1710fbe56905213bad79ac57093d4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'milliondollarscript/milliondollarscript-two' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '876dc34d6aa2f8e7046c14ea0dae934f2dc12a8a',
+            'reference' => '716b930223a1710fbe56905213bad79ac57093d4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

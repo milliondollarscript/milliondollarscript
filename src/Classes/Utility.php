@@ -333,7 +333,14 @@ class Utility {
 			return $codes;
 		}
 
-		$codes[] = 'USD';
+		if ( Functions::is_wc_active() ) {
+			$currency        = get_option( 'woocommerce_currency' );
+			$currency_symbol = get_woocommerce_currency_symbol( $currency );
+		} else {
+			$currency_symbol = Options::get_option( 'currency', 'USD' );
+		}
+
+		$codes[] = $currency_symbol;
 
 		return $codes;
 	}
@@ -472,7 +479,9 @@ class Utility {
 	public static function get_header(): void {
 		// TODO: find some way to make FSE themes work with this
 		get_header();
-		block_header_area();
+		if ( wp_is_block_theme() ) {
+			block_header_area();
+		}
 	}
 
 	/**
@@ -482,6 +491,9 @@ class Utility {
 	 */
 	public static function get_footer(): void {
 		// TODO: find some way to make FSE themes work with this
+		if ( wp_is_block_theme() ) {
+			block_template_part( 'footer' );
+		}
 		get_footer();
 	}
 
