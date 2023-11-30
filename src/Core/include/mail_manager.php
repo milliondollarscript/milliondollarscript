@@ -27,6 +27,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Config;
+
 defined( 'ABSPATH' ) or exit;
 
 function q_mail_error( $s ) {
@@ -103,12 +105,12 @@ function process_mail_queue( $send_count = 1 ) {
 			$and_mail_id = " AND mail_id=" . intval( $mail_id ) . " ";
 		}
 
-		$EMAILS_MAX_RETRY = EMAILS_MAX_RETRY;
+		$EMAILS_MAX_RETRY = Config::get('EMAILS_MAX_RETRY');
 		if ( $EMAILS_MAX_RETRY == '' ) {
 			$EMAILS_MAX_RETRY = 5;
 		}
 
-		$EMAILS_ERROR_WAIT = EMAILS_ERROR_WAIT;
+		$EMAILS_ERROR_WAIT = Config::get('EMAILS_ERROR_WAIT');
 		if ( $EMAILS_ERROR_WAIT == '' ) {
 			$EMAILS_ERROR_WAIT = 10;
 		}
@@ -128,11 +130,11 @@ function process_mail_queue( $send_count = 1 ) {
 
 		// delete old stuff
 
-		if ( ( EMAILS_DAYS_KEEP == 'EMAILS_DAYS_KEEP' ) ) {
-			define( EMAILS_DAYS_KEEP, '0' );
+		if ( ( Config::get('EMAILS_DAYS_KEEP') == 'EMAILS_DAYS_KEEP' ) ) {
+			define( Config::get('EMAILS_DAYS_KEEP'), '0' );
 		}
 
-		if ( EMAILS_DAYS_KEEP > 0 ) {
+		if ( Config::get('EMAILS_DAYS_KEEP') > 0 ) {
 
 			$now = ( gmdate( "Y-m-d H:i:s" ) );
 
