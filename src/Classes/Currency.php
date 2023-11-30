@@ -106,7 +106,7 @@ class Currency {
 			$show_code = func_get_arg( 2 );
 		}
 
-		return \MillionDollarScript\Classes\format_currency( $amount, $cur_code, $show_code, true );
+		return self::format_currency( $amount, $cur_code, $show_code, true );
 	}
 
 	public static function format_currency( $amount, $cur_code ) {
