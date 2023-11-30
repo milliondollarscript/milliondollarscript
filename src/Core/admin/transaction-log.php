@@ -27,6 +27,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
+
 defined( 'ABSPATH' ) or exit;
 
 global $f2, $wpdb;
@@ -89,11 +91,11 @@ $debits = $credits = 0;
 while ( $row = mysqli_fetch_array( $result ) ) {
 
 	if ( $row['type'] == 'CREDIT' ) {
-		$credits = $credits + convert_to_default_currency( $row['currency'], $row['mysum'] );
+		$credits = $credits + Currency::convert_to_default_currency( $row['currency'], $row['mysum'] );
 	}
 
 	if ( $row['type'] == 'DEBIT' ) {
-		$debits = $debits + convert_to_default_currency( $row['currency'], $row['mysum'] );
+		$debits = $debits + Currency::convert_to_default_currency( $row['currency'], $row['mysum'] );
 	}
 }
 
@@ -289,7 +291,7 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
                 <span style="font-family: arial,sans-serif;"><?php echo $row['reason']; ?></span>
             </td>
             <td>
-                <span style="font-family: arial,sans-serif;"><?php echo convert_to_default_currency( $row['currency'], $row['amount'] ); ?></span>
+                <span style="font-family: arial,sans-serif;"><?php echo Currency::convert_to_default_currency( $row['currency'], $row['amount'] ); ?></span>
             </td>
             <td>
                 <span style="font-family: arial,sans-serif;"><?php if ( $row['type'] == 'DEBIT' ) {

@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Utility;
@@ -49,8 +50,8 @@ function validate_or_defaults(): void {
 		$_REQUEST['price_per_block'] = 1;
 	}
 
-	if ( ! isset( $_REQUEST['currency'] ) || ! in_array( $_REQUEST['currency'], Utility::get_currencies() ) ) {
-		$_REQUEST['currency'] = get_default_currency();
+	if ( ! isset( $_REQUEST['currency'] ) || ! in_array( $_REQUEST['currency'], Currency::get_currencies() ) ) {
+		$_REQUEST['currency'] = Currency::get_default_currency();
 	}
 
 	if ( ! isset( $_REQUEST['days_expire'] ) || ! is_numeric( $_REQUEST['days_expire'] ) ) {
@@ -580,7 +581,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                         <label>
                             <select name="currency">
 								<?php
-								currency_option_list( $_REQUEST['currency'] );
+								Currency::currency_option_list( $_REQUEST['currency'] );
 
 								?>
                             </select>

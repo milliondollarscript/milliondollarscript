@@ -46,7 +46,6 @@ global $f2;
 $f2 = new functions2();
 
 require_once MDS_CORE_PATH . 'include/mail_manager.php';
-require_once MDS_CORE_PATH . 'include/currency_functions.php';
 require_once MDS_CORE_PATH . 'include/price_functions.php';
 require_once MDS_CORE_PATH . 'include/functions.php';
 require_once MDS_CORE_PATH . 'include/image_functions.php';

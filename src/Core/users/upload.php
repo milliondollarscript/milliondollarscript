@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
@@ -116,9 +117,9 @@ if ( $has_packages && ! empty( $_REQUEST['pack'] ) ) {
 		$total = $pack['price'] * $block_count;
 
 		// convert & round off
-		$total = convert_to_default_currency( $pack['currency'], $total );
+		$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "' WHERE order_id='" . intval( get_current_order_id() ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( get_current_order_id() ) . "'";
 
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	} else {

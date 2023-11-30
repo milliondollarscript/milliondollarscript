@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\FormFields;
 
 defined( 'ABSPATH' ) or exit;
@@ -404,7 +405,10 @@ $paginated_results = $wpdb->get_results( $sql, ARRAY_A );
         </tr>
         <tr>
             <td width="731" bgcolor="#EDF8FC" colspan="4">
-                <b><input type="submit" value="Find" name="B1" style="float: left"><?php if ( $search == 'search' ) { ?>&nbsp; </b><b>[<a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders' ) ); ?>&show=<?php echo $show; ?>">Start a New Search</a>]</b><?php } ?>
+                <b><input type="submit" value="Find" name="B1" style="float: left"><?php if ( $search == 'search' ) { ?>
+                    &nbsp; </b><b>[<a
+                            href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders' ) ); ?>&show=<?php echo $show; ?>">Start
+                        a New Search</a>]</b><?php } ?>
             </td>
         </tr>
     </table>
@@ -457,7 +461,8 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 
     <input type="hidden" name="show" value="<?php echo esc_attr( $show ); ?>">
     <input type="hidden" name="offset" value="<?php echo $offset; ?>">
-    <div style="text-align: center;"><b><?php echo $total_records; ?> Orders Returned (<?php echo $pages; ?> pages) </b></div>
+    <div style="text-align: center;"><b><?php echo $total_records; ?> Orders Returned (<?php echo $pages; ?> pages) </b>
+    </div>
 	<?php
 	// Calculate current page
 	$cur_page = $offset / $records_per_page + 1;
@@ -477,17 +482,21 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 					<?php
 					if ( $show != 'RE' ) {
 						?>
-                        <input type="submit" value='Complete' onclick="if (!confirmLink(this, 'Complete for all selected, are you sure?')) return false" name='mass_complete'>
+                        <input type="submit" value='Complete'
+                               onclick="if (!confirmLink(this, 'Complete for all selected, are you sure?')) return false"
+                               name='mass_complete'>
 						<?php
 					}
 					if ( $show != 'CA' ) {
 						?>
-                        | <input type="submit" value='Cancel' name='mass_cancel' onclick="if (!confirmLink(this, 'Cancel for all selected, are you sure?')) return false">
+                        | <input type="submit" value='Cancel' name='mass_cancel'
+                                 onclick="if (!confirmLink(this, 'Cancel for all selected, are you sure?')) return false">
 						<?php
 					}
 					if ( $show == 'CA' ) {
 						?>
-                        | <input type="submit" value='Delete' name='mass_delete' onclick="if (!confirmLink(this, 'Delete for all selected, are you sure?')) return false">
+                        | <input type="submit" value='Delete' name='mass_delete'
+                                 onclick="if (!confirmLink(this, 'Delete for all selected, are you sure?')) return false">
 						<?php
 					}
 				} ?></td>
@@ -561,17 +570,22 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 			}
 
 			?>
-            <tr onmouseover="old_bg=this.getAttribute('bgcolor');this.setAttribute('bgcolor', '#FBFDDB', 0);" onmouseout="this.setAttribute('bgcolor', old_bg, 0);" bgColor="<?php if ( ( $_REQUEST['order_id'] ?? '' ) == $row['order_id'] ) {
-				echo '#FFFF99';
-			} else {
-				echo '#ffffff';
-			} ?>">
+            <tr onmouseover="old_bg=this.getAttribute('bgcolor');this.setAttribute('bgcolor', '#FBFDDB', 0);"
+                onmouseout="this.setAttribute('bgcolor', old_bg, 0);"
+                bgColor="<?php if ( ( $_REQUEST['order_id'] ?? '' ) == $row['order_id'] ) {
+				    echo '#FFFF99';
+			    } else {
+				    echo '#ffffff';
+			    } ?>">
                 <td><input type="checkbox" name="orders[]" value="<?php echo $row['order_id']; ?>"></td>
                 <td><?php echo get_date_from_gmt( $row['order_date'] ); ?></td>
                 <td><?php echo esc_html( $row['FirstName'] . " " . $row['LastName'] ); ?></td>
-                <td><?php echo esc_html( $row['Username'] ); ?> (<a href='<?php echo esc_url( admin_url( 'user-edit.php?user_id=' . $row['ID'] ) ); ?>'>#<?php echo intval( $row['ID'] ); ?></a>)</td>
+                <td><?php echo esc_html( $row['Username'] ); ?> (<a
+                            href='<?php echo esc_url( admin_url( 'user-edit.php?user_id=' . $row['ID'] ) ); ?>'>#<?php echo intval( $row['ID'] ); ?></a>)
+                </td>
                 <td>#<?php echo intval( $row['order_id'] ); ?></td>
-                <td><?php if ( ! empty( $row['ad_id'] ) ) { ?><a href='<?php echo esc_url( $pixel_link ); ?>'>#<?php echo intval( $row['ad_id'] ); ?></a><?php } ?></td>
+                <td><?php if ( ! empty( $row['ad_id'] ) ) { ?><a href='<?php echo esc_url( $pixel_link ); ?>'>
+                        #<?php echo intval( $row['ad_id'] ); ?></a><?php } ?></td>
                 <td><?php
 
 					$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . $row['banner_id'];
@@ -584,7 +598,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 
 					?></td>
                 <td><?php echo intval( $row['quantity'] ); ?></td>
-                <td><?php echo esc_html( convert_to_default_currency_formatted( $row['currency'], $row['price'] ) ); ?></td>
+                <td><?php echo esc_html( Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] ) ); ?></td>
                 <td><?php echo esc_html( $row['status'] ); ?><br>
 					<?php
 					$refunded = false;

@@ -27,6 +27,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
+
 defined( 'ABSPATH' ) or exit;
 
 global $BID, $f2, $banner_data;
@@ -332,7 +334,7 @@ if ( $BID != '' ) {
                 </tr>
                 <tr bgcolor="#ffffff">
                     <td><span>Currency:</span></td>
-                    <td><select size="1" name="currency"><?php currency_option_list( $_REQUEST['currency'] ?? '' ); ?>The price's currency</td>
+                    <td><select size="1" name="currency"><?php Currency::currency_option_list( $_REQUEST['currency'] ?? '' ); ?>The price's currency</td>
                 </tr>
 
             </table>

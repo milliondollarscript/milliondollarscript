@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Language;
 
 defined( 'ABSPATH' ) or exit;
@@ -111,7 +112,7 @@ function display_package_options_table( $banner_id, string $selected = '', bool 
                     <label for="P<?php echo $row['package_id']; ?>"><?php if ( $row['price'] == 0 ) {
 							Language::out( 'free' );
 						} else {
-							echo convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
+							echo Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
 							$banner_data = load_banner_constants( $banner_id );
 							echo " " . Language::get_replace( '/ %NUM_PIXELS% pixels', '%NUM_PIXELS%', $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 						} ?><?php ?></label>

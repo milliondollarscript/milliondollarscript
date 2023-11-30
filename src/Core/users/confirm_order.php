@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
@@ -116,15 +117,15 @@ if ( ! is_user_logged_in() ) {
 			$total = $pack['price'] * $block_count;
 
 			// convert & round off
-			$total = convert_to_default_currency( $pack['currency'], $total );
+			$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
+			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			$order_row['price']       = $total;
 			$order_row['pack']        = $_REQUEST['pack'];
 			$order_row['days_expire'] = $pack['days_expire'];
-			$order_row['currency']    = get_default_currency();
+			$order_row['currency']    = Currency::get_default_currency();
 		} else {
 			$selected_pack      = $_REQUEST['pack'];
 			$_REQUEST['pack']   = '';

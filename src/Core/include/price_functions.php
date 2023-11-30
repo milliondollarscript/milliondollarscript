@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Language;
 
 defined( 'ABSPATH' ) or exit;
@@ -134,7 +135,7 @@ function get_zone_price( $banner_id, $row, $col ) {
 				continue;
 			}
 			if ( ( ( $val['row_from'] <= $row ) && ( $val['row_to'] >= $row ) ) && ( ( $val['col_from'] <= $col ) && ( $val['col_to'] >= $col ) ) ) {
-				return convert_to_default_currency( $val['currency'], $val['price'] );
+				return Currency::convert_to_default_currency( $val['currency'], $val['price'] );
 			}
 		}
 	}
@@ -144,7 +145,7 @@ function get_zone_price( $banner_id, $row, $col ) {
 	$result2 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	$block_row = mysqli_fetch_array( $result2 );
 
-	return convert_to_default_currency( $block_row['currency'], $block_row['price'] );
+	return Currency::convert_to_default_currency( $block_row['currency'], $block_row['price'] );
 }
 
 function show_price_area( $banner_id ) {
@@ -216,7 +217,7 @@ function display_price_table( $banner_id ) {
                     <td><span style="font-family: Aria,serif; font-size: x-small; "><?php if ( $row['price'] == 0 ) {
 								Language::out( 'free' );
 							} else {
-								echo convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
+								echo Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
 							} ?></span></td>
                     <td bgcolor="<?php if ( $row['color'] == 'yellow' ) {
 						echo '#FFFF00';

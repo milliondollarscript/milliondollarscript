@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
 
@@ -174,7 +175,7 @@ usort( $orders, "date_sort" );
 					}
 
 					?></td>
-                <td><?php echo convert_to_default_currency_formatted( $order['currency'], $order['price'] ); ?></td>
+                <td><?php echo Currency::convert_to_default_currency_formatted( $order['currency'], $order['price'] ); ?></td>
                 <td><?php
 				if ( isset( $order['status'] ) ) {
 					switch ( $order['status'] ) {

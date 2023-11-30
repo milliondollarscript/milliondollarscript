@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Emails;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Mail;
@@ -371,7 +372,7 @@ function complete_order( $user_id, $order_id ) {
 		$banner_data = load_banner_constants( $order_row['banner_id'] );
 		$block_count = $order_row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
-		$price = convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
+		$price = Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
 		$search = [
 			'%SITE_NAME%',
@@ -467,7 +468,7 @@ function confirm_order( $user_id, $order_id ) {
 		$banner_data = load_banner_constants( $row['banner_id'] );
 		$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
-		$price = convert_to_default_currency_formatted( $row['currency'], $row['price'] );
+		$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
 		$search = [
 			'%SITE_NAME%',
@@ -560,7 +561,7 @@ function pend_order( $user_id, $order_id ) {
 		$banner_data = load_banner_constants( $row['banner_id'] );
 		$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
-		$price = convert_to_default_currency_formatted( $row['currency'], $row['price'] );
+		$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
 		$search = [
 			'%SITE_NAME%',
@@ -665,7 +666,7 @@ function expire_order( $order_id ) {
 		$banner_data = load_banner_constants( $row['banner_id'] );
 		$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
-		$price = convert_to_default_currency_formatted( $row['currency'], $row['price'] );
+		$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
 		$search = [
 			'%SITE_NAME%',
@@ -929,7 +930,7 @@ function complete_renew_order( $order_id ) {
 		$banner_data = load_banner_constants( $order_row['banner_id'] );
 		$block_count = $order_row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
-		$price = convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
+		$price = Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
 		$search = [
 			'%SITE_NAME%',
@@ -1109,7 +1110,7 @@ function display_order( $order_id, $BID ): void {
         </div>
         <div>
             <b><?php Language::out( 'Price:' ); ?></b>
-			<?php echo esc_html( convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] ) ); ?>
+			<?php echo esc_html( Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] ) ); ?>
         </div>
 		<?php if ( isset( $order_row['order_id'] ) && $order_row['order_id'] != '' ) { ?>
             <div>
@@ -1531,7 +1532,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 				];
 			}
 
-			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved) VALUES (" . get_current_user_id() . ", " . $orderid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $order_blocks ) . "', 'new', NOW(), " . floatval( $price ) . ", " . intval( $quantity ) . ", " . intval( $BID ) . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "', " . intval( $banner_data['DAYS_EXPIRE'] ) . ", '$now', " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "') ";
+			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved) VALUES (" . get_current_user_id() . ", " . $orderid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $order_blocks ) . "', 'new', NOW(), " . floatval( $price ) . ", " . intval( $quantity ) . ", " . intval( $BID ) . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "', " . intval( $banner_data['DAYS_EXPIRE'] ) . ", '$now', " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "') ";
 
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 			$order_id = mysqli_insert_id( $GLOBALS['connection'] );
@@ -1559,7 +1560,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 						$price = get_zone_price( $BID, $y, $x );
 
 						// reserve block
-						$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "blocks` ( `block_id` , `user_id` , `status` , `x` , `y` , `image_data` , `url` , `alt_text`, `approved`, `banner_id`, `ad_id`, `currency`, `price`, `order_id`, `click_count`, `view_count`) VALUES (" . intval( $cell ) . ",  " . get_current_user_id() . " , 'reserved' , " . intval( $x ) . " , " . intval( $y ) . " , '' , '' , '', '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "', " . intval( $BID ) . ", " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], get_default_currency() ) . "', " . floatval( $price ) . ", " . intval( $order_id ) . ", 0, 0)";
+						$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "blocks` ( `block_id` , `user_id` , `status` , `x` , `y` , `image_data` , `url` , `alt_text`, `approved`, `banner_id`, `ad_id`, `currency`, `price`, `order_id`, `click_count`, `view_count`) VALUES (" . intval( $cell ) . ",  " . get_current_user_id() . " , 'reserved' , " . intval( $x ) . " , " . intval( $y ) . " , '' , '' , '', '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "', " . intval( $BID ) . ", " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "', " . floatval( $price ) . ", " . intval( $order_id ) . ", 0, 0)";
 						mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 						$total += $price;
@@ -1684,7 +1685,7 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 		floatval( $temp_order_row['price'] ),
 		intval( $temp_order_row['quantity'] ),
 		intval( $temp_order_row['banner_id'] ),
-		get_default_currency(),
+		Currency::get_default_currency(),
 		intval( $temp_order_row['days_expire'] ),
 		$now,
 		intval( $temp_order_row['package_id'] ),
@@ -1716,7 +1717,7 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 				$alt_text,
 				$approved,
 				intval( $temp_order_row['banner_id'] ),
-				get_default_currency(),
+				Currency::get_default_currency(),
 				floatval( $block['price'] ),
 				intval( $order_id ),
 				intval( $temp_order_row['ad_id'] )

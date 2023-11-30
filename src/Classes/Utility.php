@@ -322,29 +322,6 @@ class Utility {
 		return $grid_img;
 	}
 
-	public static function get_currencies(): array {
-		$codes = [];
-		if ( class_exists( 'WC_Payments_Utils' ) && \WC_Payments_Features::is_customer_multi_currency_enabled() && Options::get_option( 'woocommerce', 'no', false, 'options' ) == 'yes' ) {
-			$currencies = \WC_Payments_Multi_Currency()->get_enabled_currencies();
-			foreach ( $currencies as $currency ) {
-				$codes[] = $currency->get_code();
-			}
-
-			return $codes;
-		}
-
-		if ( Functions::is_wc_active() ) {
-			$currency        = get_option( 'woocommerce_currency' );
-			$currency_symbol = get_woocommerce_currency_symbol( $currency );
-		} else {
-			$currency_symbol = Options::get_option( 'currency', 'USD' );
-		}
-
-		$codes[] = $currency_symbol;
-
-		return $codes;
-	}
-
 	/**
 	 * Deletes all blocks, orders, user meta data related to MDS orders, and mds-pixel posts and associated attachments.
 	 *

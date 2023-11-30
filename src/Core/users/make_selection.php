@@ -27,6 +27,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Currency;
+
 defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
@@ -95,7 +97,7 @@ function place_temp_order( $in_str ) {
 		'quantity'          => intval( $quantity ),
 		'days_expire'       => intval( $banner_data['DAYS_EXPIRE'] ),
 		'banner_id'         => $BID,
-		'currency'          => get_default_currency(),
+		'currency'          => Currency::get_default_currency(),
 		'date_stamp'        => $now,
 		'ad_id'             => $ad_id,
 		'published'         => 'N',
@@ -152,7 +154,7 @@ function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 
 		$price = get_zone_price( $BID, $block['map_y'], $block['map_x'] );
 
-		$currency = get_default_currency();
+		$currency = Currency::get_default_currency();
 
 		// enhance block info...
 		$block_info[ $key ]['currency']  = $currency;
