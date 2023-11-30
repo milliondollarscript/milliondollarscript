@@ -54,6 +54,10 @@ if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
 			debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
 		}
 	}
+
+	if ( ! isset( $_REQUEST['page'] ) ) {
+		return;
+	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
@@ -64,27 +68,37 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 
 	complete_order( $_REQUEST['user_id'], $_REQUEST['order_id'] );
 	debit_transaction( $_REQUEST['order_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
-	echo "Order completed.";
+
+	if ( ! isset( $_REQUEST['page'] ) ) {
+		return;
+	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' ) {
 	cancel_order( $_REQUEST['order_id'] );
-	echo "Order cancelled.";
+
+	if ( ! isset( $_REQUEST['page'] ) ) {
+		return;
+	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'unreserve' ) {
 	unreserve_block( $_REQUEST['block_id'], $_REQUEST['banner_id'] );
-	echo "Order unreserved.";
+
+	if ( ! isset( $_REQUEST['page'] ) ) {
+		return;
+	}
 }
 
 if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
-
-	echo "cancelling...";
-
 	foreach ( $_REQUEST['orders'] as $oid ) {
 
 		//echo "$order_id ";
 		cancel_order( $oid );
+	}
+
+	if ( ! isset( $_REQUEST['page'] ) ) {
+		return;
 	}
 }
 
@@ -92,13 +106,19 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 
 	delete_order( $_REQUEST['order_id'] );
 
-	echo "Order deleted.";
+	if ( ! isset( $_REQUEST['page'] ) ) {
+		return;
+	}
 }
 
 if ( isset( $_REQUEST['mass_delete'] ) && $_REQUEST['mass_delete'] != '' ) {
 
 	foreach ( $_REQUEST['orders'] as $oid ) {
 		delete_order( $oid );
+	}
+
+	if ( ! isset( $_REQUEST['page'] ) ) {
+		return;
 	}
 }
 
