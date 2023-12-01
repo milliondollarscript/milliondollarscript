@@ -71,6 +71,7 @@ class Cron {
 	 */
 	public static function clear_cron(): void {
 		wp_clear_scheduled_hook( 'milliondollarscript_cron_minute' );
+		wp_clear_scheduled_hook( 'milliondollarscript_clean_temp_files' );
 	}
 
 	/**
