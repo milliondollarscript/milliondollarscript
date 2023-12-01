@@ -58,6 +58,10 @@ class Cron {
 		if ( ! wp_next_scheduled( 'milliondollarscript_cron_minute' ) ) {
 			wp_schedule_event( time(), 'everyminute', 'milliondollarscript_cron_minute' );
 		}
+
+		if ( ! wp_next_scheduled( 'milliondollarscript_clean_temp_files' ) ) {
+			wp_schedule_event( time(), 'hourly', 'milliondollarscript_clean_temp_files' );
+		}
 	}
 
 	/**
@@ -78,6 +82,24 @@ class Cron {
 		// Expire orders
 		if ( Options::get_option( 'expire-orders' ) == 'yes' ) {
 			\expire_orders();
+		}
+	}
+
+	public static function clean_temp_files(): void {
+		// delete temp_* files older than 24 hours
+		$upload_dir = Utility::get_upload_path() . "images/";
+		$dh        = opendir( $upload_dir );
+		while ( ( $file = readdir( $dh ) ) !== false ) {
+			// 24 hours
+			$elapsed_time = 60 * 60 * 24;
+
+			// delete old files
+			$stat = stat( $upload_dir . $file );
+			if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
+				if ( str_contains( $file, 'tmp_' . get_current_order_id() ) ) {
+					unlink( $upload_dir . $file );
+				}
+			}
 		}
 	}
 }

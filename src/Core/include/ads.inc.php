@@ -483,22 +483,6 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 			echo $error;
 		} else {
 
-			// delete temp_* files older than 24 hours
-			$dh = opendir( $uploaddir );
-			while ( ( $file = readdir( $dh ) ) !== false ) {
-
-				// 24 hours
-				$elapsed_time = 60 * 60 * 24;
-
-				// delete old files
-				$stat = stat( $uploaddir . $file );
-				if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
-					if ( str_contains( $file, 'tmp_' . get_current_order_id() ) ) {
-						unlink( $uploaddir . $file );
-					}
-				}
-			}
-
 			$uploadfile = $uploaddir . "tmp_" . get_current_order_id() . ".$ext";
 
 			// move the file

@@ -62,8 +62,14 @@ class Bootstrap {
 		// Add user fields
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Users', 'custom_fields' ] );
 		add_filter( 'manage_users_columns', [ '\MillionDollarScript\Classes\Users', 'add_custom_user_columns' ] );
-		add_filter( 'manage_users_custom_column', [ '\MillionDollarScript\Classes\Users', 'show_custom_user_columns_content' ], 10, 3 );
-		add_filter( 'manage_users_sortable_columns', [ '\MillionDollarScript\Classes\Users', 'make_custom_user_columns_sortable' ] );
+		add_filter( 'manage_users_custom_column', [
+			'\MillionDollarScript\Classes\Users',
+			'show_custom_user_columns_content'
+		], 10, 3 );
+		add_filter( 'manage_users_sortable_columns', [
+			'\MillionDollarScript\Classes\Users',
+			'make_custom_user_columns_sortable'
+		] );
 		add_action( 'pre_get_users', [ '\MillionDollarScript\Classes\Users', 'sort_users_by_custom_column' ] );
 
 		// Add Options page
@@ -97,11 +103,23 @@ class Bootstrap {
 		add_action( 'init', [ '\MillionDollarScript\Classes\FormFields', 'register_post_type' ] );
 		add_action( 'init', [ '\MillionDollarScript\Classes\FormFields', 'register_custom_post_status' ] );
 		add_action( 'admin_footer-post.php', [ '\MillionDollarScript\Classes\FormFields', 'add_custom_post_status' ] );
-		add_action( 'admin_footer-post-new.php', [ '\MillionDollarScript\Classes\FormFields', 'add_custom_post_status' ] );
+		add_action( 'admin_footer-post-new.php', [
+			'\MillionDollarScript\Classes\FormFields',
+			'add_custom_post_status'
+		] );
 		add_action( 'admin_footer-edit.php', [ '\MillionDollarScript\Classes\FormFields', 'add_quick_edit_status' ] );
-		add_filter( 'manage_mds-pixel_posts_columns', [ '\MillionDollarScript\Classes\FormFields', 'add_status_column' ] );
-		add_action( 'manage_mds-pixel_posts_custom_column', [ '\MillionDollarScript\Classes\FormFields', 'fill_status_column' ] );
-		add_filter( 'manage_edit-mds-pixel_sortable_columns', [ '\MillionDollarScript\Classes\FormFields', 'sortable_columns' ] );
+		add_filter( 'manage_mds-pixel_posts_columns', [
+			'\MillionDollarScript\Classes\FormFields',
+			'add_status_column'
+		] );
+		add_action( 'manage_mds-pixel_posts_custom_column', [
+			'\MillionDollarScript\Classes\FormFields',
+			'fill_status_column'
+		] );
+		add_filter( 'manage_edit-mds-pixel_sortable_columns', [
+			'\MillionDollarScript\Classes\FormFields',
+			'sortable_columns'
+		] );
 		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'orderby_status' ] );
 
 		// Add Widget
@@ -181,18 +199,18 @@ class Bootstrap {
 		add_filter( 'logout_redirect', [ '\MillionDollarScript\Classes\Users', 'logout_redirect' ], 10, 3 );
 
 		// Add custom routes
-		new \MillionDollarScript\Classes\Routes();
+		new Routes();
 
 		// Add form handlers
-		new \MillionDollarScript\Classes\Forms();
+		new Forms();
 
 		// Update checker
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Update', 'checker' ] );
 
 		// Cron
-		$cron = new Cron();
-		add_filter( 'cron_schedules', [ $cron, 'add_minute' ] );
-		add_action( 'milliondollarscript_cron_minute', [ $cron, 'minute' ] );
+		add_filter( 'cron_schedules', [ '\MillionDollarScript\Classes\Cron', 'add_minute' ] );
+		add_action( 'milliondollarscript_cron_minute', [ '\MillionDollarScript\Classes\Cron', 'minute' ] );
+		add_action( 'milliondollarscript_clean_temp_files', [ '\MillionDollarScript\Classes\Cron', 'clean_temp_files' ] );
 
 		// Hook for when loaded
 		do_action( 'mds-loaded', $this );

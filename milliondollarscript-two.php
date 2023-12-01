@@ -43,9 +43,7 @@
 namespace MillionDollarScript;
 
 use MillionDollarScript\Classes\Bootstrap;
-use MillionDollarScript\Classes\Cron;
 use MillionDollarScript\Classes\Database;
-use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Utility;
 
@@ -154,8 +152,7 @@ if ( $mds_bootstrap == null ) {
 }
 
 // Registering scheduled events...
-$cron = new Cron();
-register_activation_hook( __FILE__, [ $cron, 'schedule_cron' ] );
-register_deactivation_hook( __FILE__, [ $cron, 'clear_cron' ] );
+register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\Cron', 'schedule_cron' ] );
+register_deactivation_hook( __FILE__, [ '\MillionDollarScript\Classes\Cron', 'clear_cron' ] );
 
 // Done!
