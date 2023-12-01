@@ -19,10 +19,25 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 == Changelog ==
 
+= 2.5.6 =
+* Fix fatal error on activation when too low of PHP version was detected.
+* Force quantity when adding new item to cart.
+* Fix order operations not redirecting properly in MDS admin.
+* Refactor currency functions to their own Currency class.
+* Add an option for Currency to use when WooCommerce isn't enabled.
+* Fix cancel button links on Order History page.
+* Fix order page in simple pixel selection method on certain themes that have relative positioning in some page containers.
+* Add single-mds-pixel page template to output MDS Pixels in their own pages.
+* Also added an option to enable them as they are disabled by default.
+* Fix incorrect fetching of url field on list page.
+* Fix user uploading new image redirecting to admin-post.php.
+* Update language.
+
 = 2.5.5 =
 * Fix having the stats box on the page at the same time as ordering would break the ordering process.
 * Implemented a more robust language scanner system using the nikic/PHP-Parser library.
 * Change Top Clicks page in Admin to use orders instead of blocks and implement translation for it.
+* Update language.
 
 = 2.5.4 =
 * Fix NFS page not working due to missing $.
