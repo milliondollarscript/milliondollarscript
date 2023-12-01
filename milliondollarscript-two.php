@@ -75,6 +75,28 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 }
 
 /**
+ * Upgrades the MillionDollarScript database.
+ *
+ * @throws \Exception if there is an error during the upgrade process.
+ */
+function milliondollarscript_two_upgrade(): void {
+	$mdsdb   = new Database();
+	$version = $mdsdb->upgrade();
+	if ( $version !== false ) {
+		$mdsdb->up_dbver( $version );
+	}
+
+	// Reset cron.
+	\MillionDollarScript\Classes\Cron::clear_cron();
+	\MillionDollarScript\Classes\Cron::schedule_cron();
+
+	// Flush permalinks.
+	flush_rewrite_rules();
+}
+
+add_action( 'upgrader_process_complete', '\MillionDollarScript\milliondollarscript_two_upgrade' );
+
+/**
  * Activation
  * @throws \Exception
  */
@@ -86,11 +108,7 @@ function milliondollarscript_two_activate(): void {
 	update_option( MDS_PREFIX . 'activation', '1' );
 
 	// Check if database requires upgrades and do them before install deltas happen.
-	$mdsdb   = new Database();
-	$version = $mdsdb->upgrade();
-	if ( $version !== false ) {
-		$mdsdb->up_dbver( $version );
-	}
+	milliondollarscript_two_upgrade();
 
 	// Install MDS database
 	require_once MDS_CORE_PATH . 'admin/install.php';
