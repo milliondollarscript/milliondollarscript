@@ -86,7 +86,8 @@ class Payment {
 								} else {
 									// Product is not in the cart, so add it
 									try {
-										$cart->add_to_cart( $product_id, $quantity, $variation_id );
+										$cart_item_key = $cart->add_to_cart( $product_id, $quantity, $variation_id );
+										$cart->set_quantity( $cart_item_key, $quantity );
 									} catch ( \Exception $e ) {
 									}
 								}
