@@ -32,6 +32,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix incorrect fetching of url field on list page.
 * Fix user uploading new image redirecting to admin-post.php.
 * Update language.
+* Add cron schedule for cleaning temp upload files.
+* Add upgrader_process_complete hook to upgrade database, reset cron and flush permalinks on plugin update.
+* Fix user uploading new image not saving properly.
 
 = 2.5.5 =
 * Fix having the stats box on the page at the same time as ordering would break the ordering process.
