@@ -71,7 +71,7 @@ defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.5' );
 // Detect PHP version
 $minimum_version = '8.0.0';
 if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
-	$error_message = wp_sprintf( Language::get( 'Minimum PHP version requirement not met. Million Dollar Script requires at least PHP %s' ), $minimum_version );
+	$error_message = wp_sprintf( __( 'Minimum PHP version requirement not met. Million Dollar Script requires at least PHP %s' ), $minimum_version );
 	esc_html_e( $error_message );
 	exit;
 }
