@@ -45,7 +45,7 @@ if ( isset( $_REQUEST['block_id'] ) && $_REQUEST['block_id'] != '' ) {
 	$order_id = $row['order_id'];
 } else if ( isset( $_REQUEST['aid'] ) && $_REQUEST['aid'] != '' ) {
 	$post_id  = intval( $_REQUEST['aid'] );
-	$order_id = carbon_get_post_meta( $post_id, 'order' );
+	$order_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'order' );
 }
 
 if ( $order_id == 0 ) {

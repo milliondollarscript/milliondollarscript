@@ -73,7 +73,7 @@ class functions2 {
 				// $_REQUEST['aid']
 				$mds_pixel_post = get_post( $_REQUEST['aid'] );
 				if ( ! empty( $mds_pixel_post ) ) {
-					$ret = intval( carbon_get_post_meta( intval( $_REQUEST['aid'] ), 'grid' ) );
+					$ret = intval( carbon_get_post_meta( intval( $_REQUEST['aid'] ), MDS_PREFIX . 'grid' ) );
 				}
 			} else if ( get_current_user_id() > 0 ) {
 				// User is logged in

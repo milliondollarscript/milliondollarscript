@@ -85,6 +85,15 @@ if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 	Functions::verify_nonce( 'mds-form' );
 
+	if ( isset( $_REQUEST['manage-pixels'] ) && isset( $_REQUEST['order_id'] ) ) {
+		$order_id = intval( $_REQUEST['order_id'] );
+		if ( empty( $order_id ) && $order_id > 0 ) {
+			$order_id = get_current_order_id();
+		} else {
+			set_current_order_id( $order_id );
+		}
+	}
+
 	$ad_id = FormFields::add();
 
 	if ( ! is_int( $ad_id ) ) {
@@ -94,7 +103,9 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		return;
 	} else {
 		// save ad_id with the temp order...
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='$ad_id' WHERE order_id='" . intval( get_current_order_id() ) . "' ";
+
+		$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
+		$sql      = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='$ad_id' WHERE order_id='" . intval( $order_id ) . "' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		if ( isset( $_REQUEST['manage-pixels'] ) ) {
@@ -112,11 +123,33 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 	require_once MDS_CORE_PATH . "html/header.php";
 	display_ad_intro();
 
+	if ( ! empty( $_REQUEST['aid'] ) ) {
+		// Get the desired MDS Pixels post owned by the current user
+		$pixels = get_posts( [
+			'post_type'   => \MillionDollarScript\Classes\FormFields::$post_type,
+			'post_status' => 'any',
+			'p'           => intval( $_REQUEST['aid'] ),
+			'author'      => get_current_user_id(),
+		] );
+
+		if ( ! empty( $pixels ) ) {
+			$ad_id    = $pixels[0]->ID;
+			$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
+			set_current_order_id( $order_id );
+		}
+	}
+
+	if ( empty( $order_id ) ) {
+		$order_id = get_current_order_id();
+	}
+
 	// get the ad_id form the temp_orders table.
-	$sql = "SELECT ad_id FROM " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-	$row   = mysqli_fetch_array( $result );
-	$ad_id = $row['ad_id'];
+	if ( empty( $ad_id ) ) {
+		$sql = "SELECT ad_id FROM " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "'";
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$row   = mysqli_fetch_array( $result );
+		$ad_id = $row['ad_id'];
+	}
 
 	// user is not logged in
 	$prams = load_ad_values( $ad_id );

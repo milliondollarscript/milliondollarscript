@@ -198,7 +198,7 @@ if ( isset( $_REQUEST['block_id'] ) && ! empty( $_REQUEST['block_id'] ) ) {
 }
 
 // Display ad editing forms if the ad was clicked, or 'Edit' button was pressed.
-if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
+if ( ! empty( $_REQUEST['aid'] ) ) {
 
 	if ( empty( $mds_pixel ) ) {
 		// Make sure the mds-pixel exists.
@@ -242,10 +242,14 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
         <tr>
             <td><b><?php Language::out( 'Pixels' ); ?></b><br>
 				<?php
-				if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
-					?><img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&aid=<?php echo $_REQUEST['aid']; ?>" alt=""><?php
+				if ( ! empty( $_REQUEST['aid'] ) ) {
+					?><img
+                    src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&aid=<?php echo $_REQUEST['aid']; ?>"
+                    alt=""><?php
 				} else {
-					?><img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&block_id=<?php echo $_REQUEST['block_id']; ?>" alt=""><?php
+					?><img
+                    src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&block_id=<?php echo $_REQUEST['block_id']; ?>"
+                    alt=""><?php
 				} ?>
             </td>
             <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
@@ -262,13 +266,15 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 					[ $size['x'], $size['y'] ]
 				);
 				?>
-                <form name="change" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" method="post">
+                <form name="change" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+                      enctype="multipart/form-data" method="post">
 					<?php wp_nonce_field( 'mds-form' ); ?>
                     <input type="hidden" name="action" value="mds_form_submission">
                     <input type="hidden" name="mds_dest" value="publish">
                     <input type="file" name='pixels'><br>
                     <input type="hidden" name="aid" value="<?php echo $_REQUEST['aid']; ?>">
-                    <input type="submit" name="change_pixels" value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>">
+                    <input type="submit" name="change_pixels"
+                           value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>">
                 </form>
 				<?php Language::out( 'Supported formats:' ); ?><?php echo "$gif_support $jpeg_support $png_support"; ?>
             </td>
@@ -278,14 +284,30 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
     <p><b><?php Language::out( 'Edit Your Ad:' ); ?></b></p>
 	<?php
 
-	if ( isset( $_REQUEST['save'] ) && ! empty( $_REQUEST['save'] ) ) {
+	global $prams;
+
+	// Get the desired MDS Pixels post owned by the current user
+	$pixels = get_posts( [
+		'post_type'   => \MillionDollarScript\Classes\FormFields::$post_type,
+		'post_status' => 'any',
+		'p'           => intval( $_REQUEST['aid'] ),
+		'author'      => get_current_user_id(),
+	] );
+
+	if ( ! empty( $pixels ) ) {
+		$ad_id    = $pixels[0]->ID;
+		$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
+		set_current_order_id( $order_id );
+	}
+
+	if ( empty( $ad_id ) ) {
+		$ad_id = insert_ad_data();
+	}
+
+	if ( ! empty( $_REQUEST['save'] ) ) {
 		\MillionDollarScript\Classes\Functions::verify_nonce( 'mds_form' );
 
-		$ad_id = insert_ad_data();
-
-		global $prams;
 		$prams = load_ad_values( $ad_id );
-
 		?>
         <div class='ok_msg_label'><?php Language::out( 'Ad Saved' ); ?></div>
 		<?php
@@ -312,8 +334,7 @@ if ( isset( $_REQUEST['aid'] ) && ! empty( $_REQUEST['aid'] ) ) {
 			send_published_pixels_notification( get_current_user_id(), $BID );
 		}
 	} else {
-
-		$prams = load_ad_values( $_REQUEST['aid'] );
+		$prams = load_ad_values( $ad_id );
 		display_ad_form( 1, 'user', $prams );
 	}
 
@@ -382,12 +403,18 @@ if ( $count > 0 ) {
 			<?php
 			while ( $row = mysqli_fetch_array( $result ) ) {
 				?>
-                <area shape="RECT" coords="<?php echo $row['x']; ?>,<?php echo $row['y']; ?>,<?php echo $row['x'] + $banner_data['BLK_WIDTH']; ?>,<?php echo $row['y'] + $banner_data['BLK_HEIGHT']; ?>" href="<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?BID=<?php echo $BID; ?>&amp;block_id=<?php echo( $row['block_id'] ); ?>" title="<?php echo( $row['alt_text'] ); ?>" alt="<?php echo( $row['alt_text'] ); ?>"/>
+                <area shape="RECT"
+                      coords="<?php echo $row['x']; ?>,<?php echo $row['y']; ?>,<?php echo $row['x'] + $banner_data['BLK_WIDTH']; ?>,<?php echo $row['y'] + $banner_data['BLK_HEIGHT']; ?>"
+                      href="<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?BID=<?php echo $BID; ?>&amp;block_id=<?php echo( $row['block_id'] ); ?>"
+                      title="<?php echo( $row['alt_text'] ); ?>" alt="<?php echo( $row['alt_text'] ); ?>"/>
 				<?php
 			}
 			?>
         </map>
-        <img id="publish-grid" src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&amp;time=<?php echo( time() ); ?>" width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>" height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" usemap="#main" alt=""/>
+        <img id="publish-grid"
+             src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&amp;time=<?php echo( time() ); ?>"
+             width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>"
+             height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" usemap="#main" alt=""/>
     </div>
 	<?php
 } else {

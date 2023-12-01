@@ -47,11 +47,11 @@ function load_ad_values( $ad_id ) {
 
 		$prams['ad_id']     = $ad_id;
 		$prams['user_id']   = $mds_pixel->post_author;
-		$prams['order_id']  = carbon_get_post_meta( $ad_id, 'order' );
-		$prams['banner_id'] = carbon_get_post_meta( $ad_id, 'grid' );
-		$prams['text']      = carbon_get_post_meta( $ad_id, 'text' );
-		$prams['url']       = carbon_get_post_meta( $ad_id, 'url' );
-		$prams['image']     = carbon_get_post_meta( $ad_id, 'image' );
+		$prams['order_id']  = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
+		$prams['banner_id'] = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'grid' );
+		$prams['text']      = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' );
+		$prams['url']       = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' );
+		$prams['image']     = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'image' );
 
 		return $prams;
 	} else {
@@ -127,7 +127,8 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 	}
 
 	?>
-    <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name="form1" enctype="multipart/form-data" id="mds-pixels-form">
+    <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name="form1"
+          enctype="multipart/form-data" id="mds-pixels-form">
 		<?php wp_nonce_field( 'mds-form' ); ?>
         <input type="hidden" name="action" value="<?php echo $mds_form_action; ?>">
         <input type="hidden" name="mds_dest" value="write-ad">
@@ -157,7 +158,9 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
             <div class="flex-row">
                 <input type="hidden" name="save" id="save101" value="">
 				<?php if ( $mode == 'edit' || $mode == 'user' ) { ?>
-                    <input<?php echo( $mode == 'edit' ? ' disabled' : '' ); ?> class="mds_save_ad_button form_submit_button big_button" type="submit" name="savebutton" value="<?php esc_attr_e( Language::get( 'Save Ad' ) ); ?>" onClick="save101.value='1';">
+                    <input<?php echo( $mode == 'edit' ? ' disabled' : '' ); ?>
+                            class="mds_save_ad_button form_submit_button big_button" type="submit" name="savebutton"
+                            value="<?php esc_attr_e( Language::get( 'Save Ad' ) ); ?>" onClick="save101.value='1';">
 				<?php } ?>
             </div>
 
@@ -280,7 +283,8 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 					if ( $admin ) {
 						?>
                         <div>
-                            <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>" onClick="window.location.href='<?php echo esc_url( '?mds-action=edit&aid=' . $prams['ad_id'] ); ?>">
+                            <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
+                                   onClick="window.location.href='<?php echo esc_url( '?mds-action=edit&aid=' . $prams['ad_id'] ); ?>">
                         </div>
 						<?php
 					}
@@ -288,7 +292,8 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 					if ( $list_mode == 'USER' ) {
 						?>
                         <div>
-                            <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>" onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>'">
+                            <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
+                                   onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>'">
                         </div>
 						<?php
 					}
@@ -297,7 +302,9 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 
 					if ( ( $list_mode == 'USER' ) || ( $admin ) ) {
 						?>
-                        <div><img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>" alt=""></div>
+                        <div>
+                            <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>"
+                                 alt=""></div>
                         <div>
 							<?php
 							if ( $prams['days_expire'] > 0 ) {
@@ -461,6 +468,9 @@ function disapprove_modified_order( $order_id, $BID ) {
 }
 
 function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
+	error_log( 'upload_changed_pixels' );
+	error_log( var_export( $_REQUEST, true ) );
+	error_log( var_export( debug_backtrace(), true ) );
 	global $f2;
 
 	$imagine = new Imagine\Gd\Imagine();
@@ -480,13 +490,16 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 		}
 
 		if ( ! empty( $error ) ) {
+			error_log( $error );
 			echo $error;
 		} else {
 
 			$uploadfile = $uploaddir . "tmp_" . get_current_order_id() . ".$ext";
+			error_log( $uploadfile );
 
 			// move the file
 			if ( move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
+				error_log( 1 );
 				// convert to png
 				$image    = $imagine->open( $uploadfile );
 				$fileinfo = pathinfo( $uploadfile );
@@ -509,11 +522,14 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 							[ '%SIZE_X%', '%SIZE_Y%' ],
 							[ $size['x'], $size['y'] ]
 						) . "<br>";
+					error_log( 2 );
 				}
 
 				if ( ! empty( $error ) ) {
+					error_log( $error );
 					echo $error;
 				} else {
+					error_log( 3 );
 					// size is ok. change the blocks.
 
 					// Imagine some things
@@ -525,6 +541,7 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 					$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks WHERE order_id=" . intval( $order_id );
 					$blocks_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 					while ( $block_row = mysqli_fetch_array( $blocks_result ) ) {
+						error_log( 4 );
 
 						$high_x = ! isset( $high_x ) ? $block_row['x'] : $high_x;
 						$high_y = ! isset( $high_y ) ? $block_row['y'] : $high_y;
@@ -566,11 +583,13 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 					if ( $MDS_RESIZE == 'YES' ) {
 						$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
 						$image->resize( $resize );
+						error_log( 5 );
 					}
 
 					// Paste image into selected blocks (AJAX mode allows individual block selection)
 					for ( $y = 0; $y < $size['y']; $y += $banner_data['BLK_HEIGHT'] ) {
 						for ( $x = 0; $x < $size['x']; $x += $banner_data['BLK_WIDTH'] ) {
+							error_log( 6 );
 
 							// create new destination image
 							$dest = $imagine->create( $block_size, $color );
@@ -607,11 +626,13 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 				}
 
 				if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
+					error_log( 7 );
 					process_image( $BID );
 					publish_image( $BID );
 					process_map( $BID );
 				}
 			} else {
+				error_log( 8 );
 				// Possible file upload attack!
 				Language::out( 'Upload failed. Please try again, or try a different file.' );
 			}
