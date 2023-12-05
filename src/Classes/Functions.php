@@ -360,6 +360,7 @@ class Functions {
 				$variation->set_parent_id( $product->get_id() );
 				$variation->set_regular_price( $grid->price_per_block );
 				$variation->set_virtual( true );
+				$variation->set_downloadable( true );
 				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
 				$variation->save();
 			} else if ( $new_attribute_value == $BID ) {
@@ -367,6 +368,7 @@ class Functions {
 				$variation = wc_get_product( $variation_id );
 				$variation->set_regular_price( $grid->price_per_block );
 				$variation->set_virtual( true );
+				$variation->set_downloadable( true );
 				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
 				$variation->save();
 			}
@@ -572,6 +574,7 @@ class Functions {
 			$variation->set_regular_price( $grid->price_per_block );
 			$variation->set_parent_id( $product_id );
 			$variation->set_virtual( true );
+			$variation->set_downloadable( true );
 
 			$variation->set_attributes( [
 				'grid' => $grid->banner_id
