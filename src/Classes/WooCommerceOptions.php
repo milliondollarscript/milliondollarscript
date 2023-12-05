@@ -107,6 +107,20 @@ class WooCommerceOptions {
 				     )
 			     ) )
 			     ->set_help_text( Language::get( 'Checking this will remove all duplicate variations on the MDS product when the options are saved.' ) ),
+
+			// WooCommerce Auto-complete
+			Field::make( 'checkbox', $prefix . 'wc-auto-complete', Language::get( 'Auto-complete Orders' ) )
+			     ->set_default_value( 'yes' )
+			     ->set_option_value( 'yes' )
+			     ->set_conditional_logic( array(
+				     'relation' => 'AND',
+				     array(
+					     'field'   => $prefix . 'woocommerce',
+					     'compare' => '=',
+					     'value'   => true,
+				     )
+			     ) )
+			     ->set_help_text( Language::get( 'Auto-complete WooCommerce orders when a payment successfully completes.' ) ),
 		];
 
 		return $tabs;

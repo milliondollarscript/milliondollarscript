@@ -58,7 +58,10 @@ class WooCommerce {
 //		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'add_discount' ] );
 
 		add_filter( 'woocommerce_update_cart_validation', [ __CLASS__, 'validate_cart' ], 10, 4 );
-		add_filter( 'woocommerce_update_cart_action_cart_updated', [ __CLASS__, 'update_cart_action_cart_updated' ], 10, 1 );
+		add_filter( 'woocommerce_update_cart_action_cart_updated', [
+			__CLASS__,
+			'update_cart_action_cart_updated'
+		], 10, 1 );
 		//woocommerce_stock_amount_cart_item
 
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'add_to_cart_validation' ], 10, 5 );
@@ -72,6 +75,21 @@ class WooCommerce {
 
 		add_action( 'woocommerce_thankyou', [ __CLASS__, 'reset_session_variables' ], 10, 1 );
 		add_action( 'woocommerce_thankyou', [ __CLASS__, 'thank_you_redirect' ], 11, 1 );
+
+		add_action( 'woocommerce_payment_complete', [ __CLASS__, 'payment_complete' ] );
+	}
+
+	public static function payment_complete( $order_id ): void {
+		$order = wc_get_order( $order_id );
+
+		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', 'yes' );
+		if ( 'yes' === $auto_complete ) {
+			$to = 'completed';
+		} else {
+			$to = 'processing';
+		}
+
+		$order->update_status( $to );
 	}
 
 	public static function thank_you_redirect( $order_id ): void {
@@ -385,7 +403,7 @@ class WooCommerce {
 
 		$order = wc_get_order( $id );
 
-		// Check if there is a MDS item in the order
+		// Check if there is an MDS item in the order
 		foreach ( $order->get_items() as $item ) {
 			$meta_values = get_post_custom( $item['product_id'] );
 
@@ -575,6 +593,13 @@ class WooCommerce {
 		$coinbase_id = get_post_meta( $id, '_coinbase_charge_id', true );
 		if ( ! empty( $coinbase_id ) ) {
 			$order->add_order_note( "Coinbase Charge ID: " . $coinbase_id );
+		}
+
+		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', 'yes' );
+		if ( 'yes' === $auto_complete ) {
+			$to = 'completed';
+		} else {
+			$to = 'processing';
 		}
 
 		// Action hook for MDS status change
