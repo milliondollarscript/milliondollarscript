@@ -136,22 +136,22 @@ class WooCommerceOptions {
 		switch ( $name ) {
 			case 'woocommerce':
 				if ( class_exists( 'woocommerce' ) && $field->get_value() == 'yes' ) {
-					Functions::enable_woocommerce_payments();
+					WooCommerceFunctions::enable_woocommerce_payments();
 				} else {
-					Functions::disable_woocommerce_payments();
+					WooCommerceFunctions::disable_woocommerce_payments();
 				}
 				break;
 			case 'product':
 				if ( class_exists( 'woocommerce' ) ) {
-					$field = Functions::set_default_product( $field );
+					$field = WooCommerceFunctions::set_default_product( $field );
 				}
 				break;
 			case 'auto-approve':
-				Functions::woocommerce_auto_approve( $field->get_value() );
+				WooCommerceFunctions::woocommerce_auto_approve( $field->get_value() );
 				break;
 			case 'dedupe':
 				if ( $field->get_value() == 'yes' ) {
-					\MillionDollarScript\Classes\WooCommerce::delete_duplicate_variations( Functions::get_product() );
+					WooCommerceFunctions::delete_duplicate_variations( WooCommerceFunctions::get_product() );
 				}
 				break;
 			default:

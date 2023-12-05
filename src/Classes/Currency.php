@@ -61,7 +61,7 @@ class Currency {
 			return $codes;
 		}
 
-		if ( Functions::is_wc_active() ) {
+		if ( WooCommerceFunctions::is_wc_active() ) {
 			$currency        = get_option( 'woocommerce_currency' );
 			$currency_symbol = get_woocommerce_currency_symbol( $currency );
 		} else {

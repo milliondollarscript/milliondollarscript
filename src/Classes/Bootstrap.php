@@ -171,9 +171,9 @@ class Bootstrap {
 		add_shortcode( 'milliondollarscript', [ '\MillionDollarScript\Classes\Shortcode', 'shortcode' ] );
 
 		// load WooCommerce integration
-		if ( Functions::is_wc_active() ) {
+		if ( WooCommerceFunctions::is_wc_active() ) {
 			// Migrate product if necessary.
-			add_action( 'wp_loaded', [ '\MillionDollarScript\Classes\Functions', 'migrate_product' ] );
+			add_action( 'wp_loaded', [ '\MillionDollarScript\Classes\WooCommerceFunctions', 'migrate_product' ] );
 
 			new WooCommerceOptions();
 

@@ -67,8 +67,8 @@ class Payment {
 							$banner_data = load_banner_constants( $row['banner_id'] );
 							$quantity    = intval( $row['quantity'] ) / intval( $banner_data['block_width'] ) / intval( $banner_data['block_height'] );
 
-							$variation_id = \MillionDollarScript\Classes\Functions::get_variation_id( $row['banner_id'] );
-							$product_id   = \MillionDollarScript\Classes\Functions::get_product_id();
+							$variation_id = WooCommerceFunctions::get_variation_id( $row['banner_id'] );
+							$product_id   = WooCommerceFunctions::get_product_id();
 
 							WC()->session->set( "mds_order_id", $order_id );
 							WC()->session->set( "mds_variation_id", $variation_id );
