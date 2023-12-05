@@ -86,6 +86,10 @@ class Shortcode {
 			update_user_meta( get_current_user_id(), 'mds_confirm', true );
 		}
 
+		if ( $atts['type'] == 'payment' ) {
+			Payment::handle_checkout( true );
+		}
+
 		// escape javascript variables
 		if ( array_walk( $mds_params, 'esc_js' ) ) {
 			// ajax display method
