@@ -31,6 +31,7 @@ use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -48,13 +49,16 @@ $advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 function display_edit_order_button( $order_id ): void {
 	global $BID;
 	?>
-    <input type='button' class='mds-button mds-edit' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>?&amp;BID=<?php echo $BID; ?>&amp;order_id=<?php echo $order_id; ?>'">
+    <input type='button' class='mds-button mds-edit' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>"
+           onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>?&amp;BID=<?php echo $BID; ?>&amp;order_id=<?php echo $order_id; ?>'">
 	<?php
 }
 
 update_temp_order_timestamp();
 
-$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
+$order_id = get_current_order_id();
+
+$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $order_id ) . "' ";
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 // check if we have pixels...
@@ -88,7 +92,70 @@ if ( empty( $order_row['blocks'] ) ) {
 if ( ! is_user_logged_in() ) {
 	mds_wp_login_check();
 } else {
-	// The user is singed in
+	// The user is logged in
+
+	// Get the MDS Pixels post id by the order id
+	$mds_pixel_id = \MillionDollarScript\Classes\FormFields::get_post_id_by_meta_value( 'new', 'order', $order_id );
+
+	// Check if there is a pixel post for this order yet.
+	if ( empty( $mds_pixel_id ) ) {
+		Functions::no_orders();
+
+		return;
+	}
+
+	// Check if the required fields were filled
+	$errors = [];
+	$fields = \MillionDollarScript\Classes\FormFields::get_fields();
+	foreach ( $fields as $field ) {
+		$field_name  = $field->get_base_name();
+		$field_label = $field->get_label();
+
+		$field_value = carbon_get_post_meta( $mds_pixel_id, $field_name );
+
+		if ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional' ) ) {
+			if ( empty( $field_value ) && ! Options::get_option( 'text-optional', true ) ) {
+				$errors[] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field_label );
+			}
+
+		} else if ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional' ) ) {
+			if ( empty( $field_value ) && ! Options::get_option( 'url-optional', true ) ) {
+				$errors[] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field_label );
+			}
+
+		} else if ( $field_name == MDS_PREFIX . 'image' && ! Options::get_option( 'image-optional', true ) ) {
+			if ( empty( $field_value ) && ! Options::get_option( 'image-optional', true ) ) {
+				$errors[] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field_label );
+			}
+		}
+
+		/**
+		 * Apply filter to validate an order.
+		 *
+		 * @param string $field_name The name of the field being validated.
+		 * @param mixed $field_value The value of the field being validated.
+		 * @param string $field_label The label of the field being validated.
+		 * @param array $errors The array of validation errors.
+		 *
+		 * @return string|null  The error message returned by the filter, or null if no error.
+		 */
+		$filter_result = apply_filters( 'mds-confirm-order-validation', $field_name, $field_value, $field_label, $errors );
+
+		if ( ! empty( $filter_result ) ) {
+			$errors[] = $filter_result;
+		}
+	}
+
+	// Display errors
+	if ( ! empty( $errors ) ) {
+		foreach ( $errors as $error ) {
+			echo '<div class="mds-error">' . $error . '</div>';
+		}
+
+		display_edit_order_button( get_current_order_id() );
+
+		return;
+	}
 
 	$has_packages = banner_get_packages( $BID );
 
@@ -140,13 +207,15 @@ if ( ! is_user_logged_in() ) {
 			<?php wp_nonce_field( 'mds-form' ); ?>
             <input type="hidden" name="action" value="mds_form_submission">
             <input type="hidden" name="mds_dest" value="confirm-order">
-            <input type="hidden" name="selected_pixels" value="<?php echo htmlspecialchars( $_REQUEST['selected_pixels'] ); ?>">
+            <input type="hidden" name="selected_pixels"
+                   value="<?php echo htmlspecialchars( $_REQUEST['selected_pixels'] ); ?>">
             <input type="hidden" name="order_id" value="<?php echo intval( $_REQUEST['order_id'] ); ?>">
             <input type="hidden" name="BID" value="<?php echo $BID; ?>">
 			<?php
 			display_package_options_table( $BID, $_REQUEST['pack'], true );
 			?>
-            <input class='big_button' type='button' value='<?php echo esc_attr( Language::get( '<< Previous' ) ); ?>' onclick='window.location="<?php echo esc_url( Utility::get_page_url( 'write-ad' ) ); ?>?BID=<?php echo intval( $BID ); ?>&amp;aid=<?php echo intval( $order_row['ad_id'] ); ?>"'>
+            <input class='big_button' type='button' value='<?php echo esc_attr( Language::get( '<< Previous' ) ); ?>'
+                   onclick='window.location="<?php echo esc_url( Utility::get_page_url( 'write-ad' ) ); ?>?BID=<?php echo intval( $BID ); ?>&amp;aid=<?php echo intval( $order_row['ad_id'] ); ?>"'>
             <input class='big_button' type='submit' value='<?php echo esc_attr( Language::get( 'Next >>' ) ); ?>'>
         </form>
 		<?php
@@ -157,7 +226,10 @@ if ( ! is_user_logged_in() ) {
 			$p_row     = mysqli_fetch_array( $p_result );
 			$p_max_ord = $p_row['max_orders'];
 
-			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>', [ '%MAX_ORDERS%', '%HISTORY_URL%' ], [ $p_row['max_orders'], Utility::get_page_url( 'history' ) ] );
+			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>', [
+				'%MAX_ORDERS%',
+				'%HISTORY_URL%'
+			], [ $p_row['max_orders'], Utility::get_page_url( 'history' ) ] );
 		}
 	} else {
 
@@ -178,7 +250,10 @@ if ( ! is_user_logged_in() ) {
 				$max = $p_max_ord;
 			}
 
-			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>', [ '%MAX_ORDERS%', '%HISTORY_URL%' ], [ $max, Utility::get_page_url( 'history' ) ] );
+			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>', [
+				'%MAX_ORDERS%',
+				'%HISTORY_URL%'
+			], [ $max, Utility::get_page_url( 'history' ) ] );
 		} else {
 			$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
 
@@ -188,22 +263,30 @@ if ( ! is_user_logged_in() ) {
 					// go straight to publish...
 					if ( $advanced_order ) {
 						?>
-                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>&order_id=<?php echo intval( $order_row['order_id'] ); ?>'">
+                        <input type='button' class='mds-button mds-complete'
+                               value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
+                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>&order_id=<?php echo intval( $order_row['order_id'] ); ?>'">
 						<?php
 					} else {
 						?>
-                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&BID=<?php echo $BID; ?>&order_id=<?php echo get_current_order_id(); ?>'">
+                        <input type='button' class='mds-button mds-complete'
+                               value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
+                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&BID=<?php echo $BID; ?>&order_id=<?php echo get_current_order_id(); ?>'">
 						<?php
 					}
 				} else {
 					// go to payment
 					if ( $advanced_order ) {
 						?>
-                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment' ) ); ?>?mds-action=confirm&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>'">
+                        <input type='button' class='mds-button mds-complete'
+                               value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
+                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment' ) ); ?>?mds-action=confirm&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>'">
 						<?php
 					} else {
 						?>
-                        <input type='button' class='mds-button mds-complete' value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'checkout' ) ); ?>?mds-action=confirm&BID=<?php echo $BID; ?>'">
+                        <input type='button' class='mds-button mds-complete'
+                               value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
+                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'checkout' ) ); ?>?mds-action=confirm&BID=<?php echo $BID; ?>'">
 						<?php
 					}
 				}

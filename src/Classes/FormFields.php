@@ -77,27 +77,27 @@ class FormFields {
 			$statuses = self::get_statuses();
 			?>
             <script>
-				jQuery(document).ready(function ($) {
-					let $post_status = $("select#post_status");
-					let $post_status_display, text;
+                jQuery(document).ready(function ($) {
+                    let $post_status = $("select#post_status");
+                    let $post_status_display, text;
 					<?php
 					foreach($statuses as $status => $label) {
 					$selected = $post->post_status == $status ? 'selected=\'selected\'' : '';
 					?>
-					$post_status.append("<option value='<?php echo esc_attr( $status ); ?>' <?php echo $selected; ?>><?php Language::out( $label ); ?></option>");
-					$post_status_display = $('#post-status-display');
-					text = $post_status_display.text();
-					if (text.toLowerCase() === '<?php echo esc_js( $status ); ?>') {
-						$post_status_display.text('<?php echo esc_js( Language::get( $label ) ); ?>');
-					}
+                    $post_status.append("<option value='<?php echo esc_attr( $status ); ?>' <?php echo $selected; ?>><?php Language::out( $label ); ?></option>");
+                    $post_status_display = $('#post-status-display');
+                    text = $post_status_display.text();
+                    if (text.toLowerCase() === '<?php echo esc_js( $status ); ?>') {
+                        $post_status_display.text('<?php echo esc_js( Language::get( $label ) ); ?>');
+                    }
 					<?php } ?>
 
-					$post_status.find('option').each(function () {
-						if ($(this).val() === 'draft' || $(this).val() === 'publish' || $(this).val() === 'future') {
-							$(this).remove();
-						}
-					});
-				});
+                    $post_status.find('option').each(function () {
+                        if ($(this).val() === 'draft' || $(this).val() === 'publish' || $(this).val() === 'future') {
+                            $(this).remove();
+                        }
+                    });
+                });
             </script>
 			<?php
 		}
@@ -270,6 +270,40 @@ class FormFields {
 
 		if ( ! empty( $user_posts ) ) {
 			return $user_posts[0]->ID;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Retrieves the post ID by searching for a specific meta value.
+	 *
+	 * @param string $status The post status to search for.
+	 * @param string $key The meta key to search for.
+	 * @param mixed $value The meta value to search for.
+	 *
+	 * @return int|bool The post ID if found, false otherwise.
+	 */
+	public static function get_post_id_by_meta_value( string $status, string $key, mixed $value ): bool|int {
+		$args = array(
+			'post_type'   => self::$post_type,
+			'post_status' => $status,
+			'meta_query'  => array(
+				array(
+					'key'     => MDS_PREFIX . $key,
+					'value'   => $value,
+					'compare' => '=',
+				),
+			),
+		);
+
+		$query = new \WP_Query( $args );
+
+		if ( $query->have_posts() ) {
+			$post_ids = $query->posts;
+			wp_reset_postdata();
+
+			return $post_ids[0]->ID;
 		}
 
 		return false;
@@ -558,24 +592,24 @@ class FormFields {
 		$statuses = self::get_statuses();
 		?>
         <script type="text/javascript">
-			jQuery(document).ready(function ($) {
-				$(document).on('click', '.editinline', function () {
-					const $post_status = $('.inline-edit-row select[name="_status"]');
-					const validStatuses = <?php echo json_encode( $statuses ); ?>;
+            jQuery(document).ready(function ($) {
+                $(document).on('click', '.editinline', function () {
+                    const $post_status = $('.inline-edit-row select[name="_status"]');
+                    const validStatuses = <?php echo json_encode( $statuses ); ?>;
 
-					// Loop through each status in the PHP array
+                    // Loop through each status in the PHP array
 					<?php foreach ($statuses as $status_key => $status_label) : ?>
-					$post_status.append(new Option('<?php echo $status_label; ?>', '<?php echo $status_key; ?>'));
+                    $post_status.append(new Option('<?php echo $status_label; ?>', '<?php echo $status_key; ?>'));
 					<?php endforeach; ?>
 
-					// Remove options not in the status array
-					$post_status.find('option').each(function () {
-						if (!validStatuses.hasOwnProperty($(this).val())) {
-							$(this).remove();
-						}
-					});
-				});
-			});
+                    // Remove options not in the status array
+                    $post_status.find('option').each(function () {
+                        if (!validStatuses.hasOwnProperty($(this).val())) {
+                            $(this).remove();
+                        }
+                    });
+                });
+            });
         </script>
 		<?php
 	}
