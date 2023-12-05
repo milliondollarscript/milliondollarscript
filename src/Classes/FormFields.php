@@ -72,9 +72,9 @@ class FormFields {
 
 	public static function add_custom_post_status(): void {
 		global $post;
-		$statuses = self::get_statuses();
 
 		if ( $post->post_type == self::$post_type ) {
+			$statuses = self::get_statuses();
 			?>
             <script>
 				jQuery(document).ready(function ($) {
