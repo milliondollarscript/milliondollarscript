@@ -468,9 +468,6 @@ function disapprove_modified_order( $order_id, $BID ) {
 }
 
 function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
-	error_log( 'upload_changed_pixels' );
-	error_log( var_export( $_REQUEST, true ) );
-	error_log( var_export( debug_backtrace(), true ) );
 	global $f2;
 
 	$imagine = new Imagine\Gd\Imagine();
@@ -490,16 +487,13 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 		}
 
 		if ( ! empty( $error ) ) {
-			error_log( $error );
 			echo $error;
 		} else {
 
 			$uploadfile = $uploaddir . "tmp_" . get_current_order_id() . ".$ext";
-			error_log( $uploadfile );
 
 			// move the file
 			if ( move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
-				error_log( 1 );
 				// convert to png
 				$image    = $imagine->open( $uploadfile );
 				$fileinfo = pathinfo( $uploadfile );
@@ -522,14 +516,11 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 							[ '%SIZE_X%', '%SIZE_Y%' ],
 							[ $size['x'], $size['y'] ]
 						) . "<br>";
-					error_log( 2 );
 				}
 
 				if ( ! empty( $error ) ) {
-					error_log( $error );
 					echo $error;
 				} else {
-					error_log( 3 );
 					// size is ok. change the blocks.
 
 					// Imagine some things
@@ -541,7 +532,6 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 					$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks WHERE order_id=" . intval( $order_id );
 					$blocks_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 					while ( $block_row = mysqli_fetch_array( $blocks_result ) ) {
-						error_log( 4 );
 
 						$high_x = ! isset( $high_x ) ? $block_row['x'] : $high_x;
 						$high_y = ! isset( $high_y ) ? $block_row['y'] : $high_y;
@@ -583,13 +573,11 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 					if ( $MDS_RESIZE == 'YES' ) {
 						$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
 						$image->resize( $resize );
-						error_log( 5 );
 					}
 
 					// Paste image into selected blocks (AJAX mode allows individual block selection)
 					for ( $y = 0; $y < $size['y']; $y += $banner_data['BLK_HEIGHT'] ) {
 						for ( $x = 0; $x < $size['x']; $x += $banner_data['BLK_WIDTH'] ) {
-							error_log( 6 );
 
 							// create new destination image
 							$dest = $imagine->create( $block_size, $color );
@@ -626,13 +614,11 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 				}
 
 				if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
-					error_log( 7 );
 					process_image( $BID );
 					publish_image( $BID );
 					process_map( $BID );
 				}
 			} else {
-				error_log( 8 );
 				// Possible file upload attack!
 				Language::out( 'Upload failed. Please try again, or try a different file.' );
 			}
