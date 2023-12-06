@@ -58,12 +58,14 @@ class Payment {
 
 							if ( count( $row ) == 0 ) {
 								Functions::no_orders();
+
 								return;
 							}
 
 							if ( Options::get_option( 'auto-approve' ) ) {
 								complete_order( $row['user_id'], $order_id );
 								debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );
+								Utility::redirect( Utility::get_page_url( 'thank-you' ) );
 							}
 
 							$banner_data = load_banner_constants( $row['banner_id'] );
