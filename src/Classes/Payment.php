@@ -52,9 +52,14 @@ class Payment {
 
 							$order_id = intval( $_REQUEST['order_id'] );
 
-							$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+							$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id . " AND user_id=" . get_current_user_id();
 							$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
 							$row = mysqli_fetch_array( $result );
+
+							if ( count( $row ) == 0 ) {
+								Functions::no_orders();
+								return;
+							}
 
 							if ( Options::get_option( 'auto-approve' ) ) {
 								complete_order( $row['user_id'], $order_id );
