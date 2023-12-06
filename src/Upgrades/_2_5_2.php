@@ -28,6 +28,8 @@
  *
  */
 
+namespace MillionDollarScript\Upgrades;
+
 use MillionDollarScript\Classes\DatabaseStatic;
 use MillionDollarScript\Classes\Utility;
 

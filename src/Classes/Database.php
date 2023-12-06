@@ -132,17 +132,24 @@ class Database {
 
 		// Sort upgrade files by version.
 		usort( $upgrade_files, function ( $a, $b ) {
-			return version_compare( basename( $a, '.php' ), basename( $b, '.php' ) );
+			$verA = str_replace( '_', '.', basename( $a, '.php' ) );
+			$verB = str_replace( '_', '.', basename( $b, '.php' ) );
+
+			return version_compare( $verA, $verB );
 		} );
 
 		// Perform upgrades.
 		foreach ( $upgrade_files as $upgrade_file ) {
-			$upgrade_version = basename( $upgrade_file, '.php' );
-			if ( version_compare( $upgrade_version, $current_version, '>' ) ) {
-				require_once $upgrade_file;
+			$upgrade_version = str_replace( '_', '.', basename( $upgrade_file, '.php' ) );
 
-				$classname = '_' . str_replace( '.', '_', $upgrade_version );
-				$upgrade   = new $classname();
+			if ( version_compare( $upgrade_version, $current_version, '>' ) ) {
+				$classname = '\\MillionDollarScript\\Upgrades\\' . basename( $upgrade_file, '.php' );
+
+				if ( ! class_exists( $classname ) ) {
+					require_once $upgrade_file;
+				}
+
+				$upgrade = new $classname();
 				$upgrade->upgrade( $current_version );
 
 				// Update database version.

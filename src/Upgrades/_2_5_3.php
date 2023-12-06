@@ -28,6 +28,8 @@
  *
  */
 
+namespace MillionDollarScript\Upgrades;
+
 use MillionDollarScript\Classes\Options;
 
 defined( 'ABSPATH' ) or exit;

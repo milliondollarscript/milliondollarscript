@@ -28,6 +28,10 @@
  *
  */
 
+namespace MillionDollarScript\Upgrades;
+
+use MillionDollarScript\Classes\Options;
+
 defined( 'ABSPATH' ) or exit;
 
 /** @noinspection PhpUnused */
@@ -54,6 +58,22 @@ class _2_5_7 {
 						$variation_product->save();
 					}
 				}
+			}
+
+			// Delete checkout page
+			$page_id = Options::get_option( 'users-checkout-page' );
+			if ( $page_id !== false ) {
+
+				// Delete the post from WP if it's modified time is older or equal to the stored time option.
+				$modified_time          = strtotime( get_post_modified_time( 'Y-m-d H:i:s', false, $page_id ) );
+				$original_modified_time = strtotime( get_post_meta( $page_id, '_modified_time', true ) );
+
+				if ( $modified_time == $original_modified_time ) {
+					wp_delete_post( $page_id );
+				}
+
+				// Delete the options for this page.
+				delete_option( '_' . MDS_PREFIX . 'users-checkout-page' );
 			}
 		}
 	}
