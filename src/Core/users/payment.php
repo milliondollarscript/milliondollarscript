@@ -27,6 +27,11 @@
  *
  */
 
+use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Functions;
+use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Utility;
+
 defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
@@ -34,23 +39,64 @@ mds_wp_login_check();
 global $BID, $f2;
 $BID = $f2->bid();
 
-$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id='$BID'";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$b_row = mysqli_fetch_array( $result );
-if ( $_REQUEST['order_id'] != '' ) {
-	$order_id = $_REQUEST['order_id'];
+if ( ! empty( $_REQUEST['order_id'] ) ) {
+	$order_id = intval( $_REQUEST['order_id'] );
+	set_current_order_id( $order_id );
 } else {
 	$order_id = get_current_order_id();
 }
 
-$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $order_id );
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$order_row = mysqli_fetch_array( $result );
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . intval( $order_id ) . " AND user_id=" . get_current_user_id();
+$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
-// Process confirmation
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'confirm' ) {
-	// move temp order to confirmed order
-	confirm_order( get_current_user_id(), $order_id );
+// Handle when no order id is found.
+if ( mysqli_num_rows( $order_result ) == 0 ) {
+	if ( wp_doing_ajax() ) {
+		Functions::no_orders();
+		wp_die();
+	}
+
+	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
-\MillionDollarScript\Classes\Payment::handle_checkout();
+$order_row = mysqli_fetch_array( $order_result );
+
+// Process confirmation
+if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
+	// move temp order to confirmed order
+
+	$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
+
+	if ( ! $advanced_order ) {
+		$order_id = reserve_pixels_for_temp_order( $order_row );
+	}
+
+	if ( ! empty( $order_id ) ) {
+
+		// check the user's rank
+		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+
+		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
+			complete_order( get_current_user_id(), $order_id );
+		} else {
+			confirm_order( get_current_user_id(), $order_id );
+		}
+
+	} else {
+		// we have a problem...
+		require_once MDS_CORE_PATH . "html/header.php";
+
+		Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
+		Language::out_replace( '<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>', '%ORDER_PAGE%', Utility::get_page_url( 'order' ) );
+
+		require_once MDS_CORE_PATH . "html/footer.php";
+		die();
+	}
+
+	$_REQUEST['order_id'] = $order_id;
+}
+
+if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {
+	delete_user_meta( get_current_user_id(), 'mds_confirm' );
+	\MillionDollarScript\Classes\Payment::handle_checkout();
+}

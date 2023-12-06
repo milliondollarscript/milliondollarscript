@@ -498,10 +498,6 @@ class Utility {
 				'option' => 'users-confirm-order-page',
 				'title'  => Language::get( 'Confirm Order' )
 			],
-			'checkout'      => [
-				'option' => 'users-checkout-page',
-				'title'  => Language::get( 'Checkout' )
-			],
 			'payment'       => [
 				'option' => 'users-payment-page',
 				'title'  => Language::get( 'Payment' )

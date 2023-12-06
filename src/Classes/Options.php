@@ -89,11 +89,6 @@ class Options {
 				     ->set_attribute( 'type', 'number' )
 				     ->set_help_text( Language::get( 'The confirm order page for Users.' ) ),
 
-				// Users Checkout Page
-				Field::make( 'text', MDS_PREFIX . 'users-checkout-page', Language::get( 'Users Checkout Page' ) )
-				     ->set_attribute( 'type', 'number' )
-				     ->set_help_text( Language::get( 'The checkout page for Users.' ) ),
-
 				// Users Payment Page
 				Field::make( 'text', MDS_PREFIX . 'users-payment-page', Language::get( 'Users Payment Page' ) )
 				     ->set_attribute( 'type', 'number' )

@@ -178,7 +178,6 @@ class Routes {
 					 */
 					$valid_pages = [
 						'account',
-						'checkout',
 						'confirm-order',
 						'history',
 						'list',
@@ -219,7 +218,6 @@ class Routes {
 			'order',
 			'order-pixels',
 			'confirm-order',
-			'checkout',
 			'manage',
 			'history',
 			'publish',

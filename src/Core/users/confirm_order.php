@@ -27,7 +27,6 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
@@ -43,8 +42,6 @@ require_once( __DIR__ . "/../include/ads.inc.php" );
 global $f2;
 
 $BID = $f2->bid();
-
-$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
 function display_edit_order_button( $order_id ): void {
 	global $BID;
@@ -132,16 +129,16 @@ if ( ! is_user_logged_in() ) {
 		/**
 		 * Apply filter to validate an order.
 		 *
-		 * @param array  $errors       The array of validation errors.
-		 * @param string $field_name   The name of the field being validated.
-		 * @param mixed  $field_value  The value of the field being validated.
-		 * @param string $field_label  The label of the field being validated.
+		 * @param array $errors The array of validation errors.
+		 * @param string $field_name The name of the field being validated.
+		 * @param mixed $field_value The value of the field being validated.
+		 * @param string $field_label The label of the field being validated.
 		 *
 		 * @return string|null  The error message returned by the filter, or null if no error.
 		 */
 		$filter_result = apply_filters( 'mds-confirm-order-validation', $errors, $field_name, $field_value, $field_label );
 
-        // Check if the filter result is a non-empty string indicating an error
+		// Check if the filter result is a non-empty string indicating an error
 		if ( is_string( $filter_result ) && ! empty( $filter_result ) ) {
 			$errors[] = $filter_result;
 		} else {
@@ -265,34 +262,18 @@ if ( ! is_user_logged_in() ) {
 				// Confirm order page buttons
 				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 					// go straight to publish...
-					if ( $advanced_order ) {
-						?>
-                        <input type='button' class='mds-button mds-complete'
-                               value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
-                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>&order_id=<?php echo intval( $order_row['order_id'] ); ?>'">
-						<?php
-					} else {
-						?>
-                        <input type='button' class='mds-button mds-complete'
-                               value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
-                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&BID=<?php echo $BID; ?>&order_id=<?php echo get_current_order_id(); ?>'">
-						<?php
-					}
+					?>
+                    <input type='button' class='mds-button mds-complete'
+                           value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
+                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&BID=<?php echo $BID; ?>&order_id=<?php echo get_current_order_id(); ?>'">
+					<?php
 				} else {
 					// go to payment
-					if ( $advanced_order ) {
-						?>
-                        <input type='button' class='mds-button mds-complete'
-                               value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
-                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment' ) ); ?>?mds-action=confirm&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>'">
-						<?php
-					} else {
-						?>
-                        <input type='button' class='mds-button mds-complete'
-                               value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
-                               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'checkout' ) ); ?>?mds-action=confirm&BID=<?php echo $BID; ?>'">
-						<?php
-					}
+					?>
+                    <input type='button' class='mds-button mds-complete'
+                           value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
+                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment' ) ); ?>?mds-action=confirm&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>'">
+					<?php
 				}
 				?>
                 </div>
@@ -300,18 +281,10 @@ if ( ! is_user_logged_in() ) {
 			} else {
 				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 					// go straight to publish...
-					if ( $advanced_order ) {
-						wp_safe_redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . $order_row['order_id'] );
-					} else {
-						wp_safe_redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . get_current_order_id() );
-					}
+					wp_safe_redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . $order_row['order_id'] );
 				} else {
 					// go to payment
-					if ( $advanced_order ) {
-						wp_safe_redirect( Utility::get_page_url( 'payment' ) . '?mds-action=confirm&order_id=' . $order_row['order_id'] . '&BID=' . $BID );
-					} else {
-						wp_safe_redirect( Utility::get_page_url( 'checkout' ) . '?mds-action=confirm&BID=' . $BID . '&order_id=' . get_current_order_id() );
-					}
+					wp_safe_redirect( Utility::get_page_url( 'payment' ) . '?mds-action=confirm&order_id=' . $order_row['order_id'] . '&BID=' . $BID );
 				}
 				exit;
 			}

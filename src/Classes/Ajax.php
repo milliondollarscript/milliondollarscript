@@ -84,9 +84,6 @@ class Ajax {
 					case "account":
 						self::show_users();
 						wp_die();
-					case "checkout":
-						require_once MDS_CORE_PATH . 'users/checkout.php';
-						wp_die();
 					case "confirm-order":
 						require_once MDS_CORE_PATH . 'users/confirm_order.php';
 						wp_die();
@@ -102,6 +99,7 @@ class Ajax {
 					case "order":
 						\MillionDollarScript\Classes\Functions::order_screen();
 						wp_die();
+					case "checkout":
 					case "payment":
 						require_once MDS_CORE_PATH . 'users/payment.php';
 						wp_die();
