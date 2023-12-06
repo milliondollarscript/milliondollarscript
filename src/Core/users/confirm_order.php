@@ -132,17 +132,21 @@ if ( ! is_user_logged_in() ) {
 		/**
 		 * Apply filter to validate an order.
 		 *
-		 * @param string $field_name The name of the field being validated.
-		 * @param mixed $field_value The value of the field being validated.
-		 * @param string $field_label The label of the field being validated.
-		 * @param array $errors The array of validation errors.
+		 * @param array  $errors       The array of validation errors.
+		 * @param string $field_name   The name of the field being validated.
+		 * @param mixed  $field_value  The value of the field being validated.
+		 * @param string $field_label  The label of the field being validated.
 		 *
 		 * @return string|null  The error message returned by the filter, or null if no error.
 		 */
-		$filter_result = apply_filters( 'mds-confirm-order-validation', $field_name, $field_value, $field_label, $errors );
+		$filter_result = apply_filters( 'mds-confirm-order-validation', $errors, $field_name, $field_value, $field_label );
 
-		if ( ! empty( $filter_result ) ) {
+        // Check if the filter result is a non-empty string indicating an error
+		if ( is_string( $filter_result ) && ! empty( $filter_result ) ) {
 			$errors[] = $filter_result;
+		} else {
+			// No error returned by the filter
+			$filter_result = null;
 		}
 	}
 
