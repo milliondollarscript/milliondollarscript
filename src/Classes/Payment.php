@@ -52,9 +52,6 @@ class Payment {
 
 							$order_id = intval( $_REQUEST['order_id'] );
 
-							// Save order id in cookie for later
-							$_COOKIE['mds_order_id'] = $order_id;
-
 							$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
 							$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
 							$row = mysqli_fetch_array( $result );
