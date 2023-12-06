@@ -87,7 +87,7 @@ class Shortcode {
 		}
 
 		if ( $atts['type'] == 'payment' ) {
-			Payment::handle_checkout( true );
+			require_once MDS_CORE_PATH . 'users/payment.php';
 		}
 
 		// escape javascript variables
