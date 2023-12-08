@@ -1644,7 +1644,7 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 	$in_str = $temp_order_row['blocks'];
 
 	// Validate $in_str is comma separated integers.
-	if ( ! preg_match( '/^(\d+(,\s*\d+)*)?$/', $in_str ) ) {
+	if ( ! preg_match( '/^(\d+(,\s*\d+)*)$/', $in_str ) ) {
 		return false;
 	}
 
@@ -2312,7 +2312,9 @@ function elapsedtime( $sec ) {
 
 function powered_by_mds() {
 	?>
-    <div style="font-size:xx-small; text-align:center">Powered By <a target="_blank" style="font-size:7pt;color:black" href="https://milliondollarscript.com/">Million Dollar Script</a></div>
+    <div class="powered-by-mds">
+        Powered By <a target="_blank" href="https://milliondollarscript.com/">Million Dollar Script</a>
+    </div>
 	<?php
 }
 
@@ -2474,14 +2476,13 @@ function get_current_order_id( $get_grid = true ) {
 		$order_id = get_user_meta( $user_id, MDS_PREFIX . 'current_order_id', true );
 		if ( empty( $order_id ) ) {
 			$sql = $wpdb->prepare(
-				"SELECT * from " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
 				$user_id,
 				$BID
 			);
 
 			$order_result = $wpdb->get_results( $sql, ARRAY_A );
-
-			if ( ! empty( $order_result ) ) {
+			if ( $order_result->num_rows > 0 ) {
 				$order_row = $order_result[0];
 
 				if ( $order_row['user_id'] != '' && (int) $order_row['user_id'] !== $user_id ) {
