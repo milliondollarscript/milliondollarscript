@@ -442,7 +442,7 @@ function confirm_order( $user_id, $order_id ) {
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 	$row = mysqli_fetch_array( $result );
 
-	if ( $row['status'] != 'confirmed' ) {
+	if ( $row['status'] != 'confirmed' && $row['status'] != 'completed' ) {
 		$user_info = get_userdata( $row['ID'] );
 
 		// Update mds-pixel post status
