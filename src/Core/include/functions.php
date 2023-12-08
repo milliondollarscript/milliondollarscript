@@ -432,6 +432,8 @@ function complete_order( $user_id, $order_id ) {
 			publish_image( $order_row['banner_id'] );
 			process_map( $order_row['banner_id'] );
 		}
+
+		delete_current_order_id();
 	}
 }
 
@@ -458,8 +460,6 @@ function confirm_order( $user_id, $order_id ) {
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-
-		delete_current_order_id();
 
 		if ( $row['days_expire'] == 0 ) {
 			$row['days_expire'] = Language::get( 'Never' );
