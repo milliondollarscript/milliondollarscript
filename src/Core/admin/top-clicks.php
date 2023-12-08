@@ -76,7 +76,7 @@ $res = $wpdb->get_results( $sql );
     </tr>
 	<?php
 
-	$sql = "SELECT orders.order_id, blocks.url, blocks.alt_text, SUM(click_count) AS clicksum, SUM(view_count) AS viewsum 
+	$sql = "SELECT orders.order_id, blocks.banner_id, blocks.url, blocks.alt_text, SUM(click_count) AS clicksum, SUM(view_count) AS viewsum 
       FROM " . MDS_DB_PREFIX . "orders AS orders 
       JOIN " . MDS_DB_PREFIX . "blocks AS blocks ON orders.order_id = blocks.order_id 
       WHERE blocks.status = 'sold' 
