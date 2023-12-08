@@ -57,9 +57,9 @@ class BlockFields {
 			Field::make( 'select', MDS_PREFIX . 'align', Language::get( 'Alignment' ) )
 			     ->set_default_value( 'center' )
 			     ->set_options( array(
-				     'left'   => 'Left',
-				     'right'  => 'Right',
-				     'center' => 'Center',
+				     'left'   => Language::get( 'Left' ),
+				     'right'  => Language::get( 'Right' ),
+				     'center' => Language::get( 'Center' ),
 			     ) )
 			     ->set_help_text( Language::get( 'Align to the left, right or center.' ) ),
 
@@ -77,20 +77,20 @@ class BlockFields {
 			Field::make( 'select', MDS_PREFIX . 'type', Language::get( 'Type' ) )
 			     ->set_default_value( 'grid' )
 			     ->set_options( array(
-				     'grid'          => 'Grid',
-				     'stats'         => 'Stats box',
-				     'list'          => 'Ads List',
-				     'users'         => 'My Account',
-				     'order'         => 'Order Pixels',
-				     'write-ad'      => 'Write Your Ad',
-				     'confirm-order' => 'Confirm Order',
-				     'payment'       => 'Payment',
-				     'manage'        => 'Manage Pixels',
-				     'history'       => 'Order History',
-				     'publish'       => 'Publish',
-				     'thank-you'     => 'Thank-You!',
-				     'upload'        => 'Upload',
-				     'no-orders'     => 'No Orders',
+				     'grid'          => Language::get( 'Grid' ),
+				     'stats'         => Language::get( 'Stats box' ),
+				     'list'          => Language::get( 'Ads List' ),
+				     'users'         => Language::get( 'My Account' ),
+				     'order'         => Language::get( 'Order Pixels' ),
+				     'write-ad'      => Language::get( 'Write Your Ad' ),
+				     'confirm-order' => Language::get( 'Confirm Order' ),
+				     'payment'       => Language::get( 'Payment' ),
+				     'manage'        => Language::get( 'Manage Pixels' ),
+				     'history'       => Language::get( 'Order History' ),
+				     'publish'       => Language::get( 'Publish' ),
+				     'thank-you'     => Language::get( 'Thank-You!' ),
+				     'upload'        => Language::get( 'Upload' ),
+				     'no-orders'     => Language::get( 'No Orders' ),
 			     ) )
 			     ->set_help_text( Language::get( 'Type of MDS component to load.' ) ),
 		];
