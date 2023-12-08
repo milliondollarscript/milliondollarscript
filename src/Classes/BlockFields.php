@@ -37,6 +37,7 @@ defined( 'ABSPATH' ) or exit;
 class BlockFields {
 
 	protected static array $fields;
+
 	// private static int $counter = 0;
 
 	public static function get_fields(): array {
@@ -76,10 +77,20 @@ class BlockFields {
 			Field::make( 'select', MDS_PREFIX . 'type', Language::get( 'Type' ) )
 			     ->set_default_value( 'grid' )
 			     ->set_options( array(
-				     'grid'     => 'Grid',
-				     'stats'    => 'Stats box',
-				     'list'     => 'Ads List',
-				     'users'    => 'Users/Buy Page',
+				     'grid'          => 'Grid',
+				     'stats'         => 'Stats box',
+				     'list'          => 'Ads List',
+				     'users'         => 'My Account',
+				     'order'         => 'Order Pixels',
+				     'write-ad'      => 'Write Your Ad',
+				     'confirm-order' => 'Confirm Order',
+				     'payment'       => 'Payment',
+				     'manage'        => 'Manage Pixels',
+				     'history'       => 'Order History',
+				     'publish'       => 'Publish',
+				     'thank-you'     => 'Thank-You!',
+				     'upload'        => 'Upload',
+				     'no-orders'     => 'No Orders',
 			     ) )
 			     ->set_help_text( Language::get( 'Type of MDS component to load.' ) ),
 		];
@@ -117,7 +128,7 @@ class BlockFields {
 	 * @return bool|string
 	 */
 	private static function get_preview_html(): bool|string {
-        return "<img src='" . MDS_CORE_URL . "images/bg-main.gif' />";
+		return "<img src='" . MDS_CORE_URL . "images/bg-main.gif' />";
 	}
 
 	// TODO: Add preview for Show Preview eye icon on block
