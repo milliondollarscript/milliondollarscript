@@ -12,8 +12,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2023-12-01 01:59:13\n"
-"PO-Revision-Date: 2023-12-01 01:59:13\n"
+"POT-Creation-Date: 2023-12-08 19:41:12\n"
+"PO-Revision-Date: 2023-12-08 19:41:12\n"
 "X-Generator: Million Dollar Script Two 2.5.6\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
@@ -88,12 +88,6 @@ msgid "Users Confirm Order Page"
 msgstr ""
 
 msgid "The confirm order page for Users."
-msgstr ""
-
-msgid "Users Checkout Page"
-msgstr ""
-
-msgid "The checkout page for Users."
 msgstr ""
 
 msgid "Users Payment Page"
@@ -429,6 +423,12 @@ msgstr ""
 msgid "Checking this will remove all duplicate variations on the MDS product when the options are saved."
 msgstr ""
 
+msgid "Auto-complete Orders"
+msgstr ""
+
+msgid "Auto-complete WooCommerce orders when a payment successfully completes."
+msgstr ""
+
 msgid "Million Dollar Script"
 msgstr ""
 
@@ -558,6 +558,9 @@ msgstr ""
 msgid "There was a problem adding the product to the cart."
 msgstr ""
 
+msgid "There was a problem processing your order. Please go back and try again."
+msgstr ""
+
 msgid "Your order has been successfully submitted and is now being processed. Thank you for your purchase!"
 msgstr ""
 
@@ -588,6 +591,15 @@ msgstr ""
 msgid "Alignment"
 msgstr ""
 
+msgid "Left"
+msgstr ""
+
+msgid "Right"
+msgstr ""
+
+msgid "Center"
+msgstr ""
+
 msgid "Align to the left, right or center."
 msgstr ""
 
@@ -606,16 +618,13 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-msgid "Type of MDS component to load."
-msgstr ""
-
-msgid "Error copying file. From: %s To: %s"
-msgstr ""
-
-msgid "Error deleting folder: %s"
-msgstr ""
-
 msgid "Grid"
+msgstr ""
+
+msgid "Stats box"
+msgstr ""
+
+msgid "Ads List"
 msgstr ""
 
 msgid "My Account"
@@ -628,9 +637,6 @@ msgid "Write Your Ad"
 msgstr ""
 
 msgid "Confirm Order"
-msgstr ""
-
-msgid "Checkout"
 msgstr ""
 
 msgid "Payment"
@@ -648,13 +654,22 @@ msgstr ""
 msgid "Thank-You!"
 msgstr ""
 
-msgid "List"
-msgstr ""
-
 msgid "Upload"
 msgstr ""
 
 msgid "No Orders"
+msgstr ""
+
+msgid "Type of MDS component to load."
+msgstr ""
+
+msgid "Error copying file. From: %s To: %s"
+msgstr ""
+
+msgid "Error deleting folder: %s"
+msgstr ""
+
+msgid "List"
 msgstr ""
 
 msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
@@ -1311,6 +1326,12 @@ msgstr ""
 msgid "You might want to run a backup before doing this. Are you sure?"
 msgstr ""
 
+msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
+msgstr ""
+
+msgid "<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>"
+msgstr ""
+
 msgid "No Access"
 msgstr ""
 
@@ -1497,12 +1518,6 @@ msgstr ""
 msgid "You are not logged in. Please log in or sign up for a new account."
 msgstr ""
 
-msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
-msgstr ""
-
-msgid "<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>"
-msgstr ""
-
 msgid "<h3>Your order was completed.</h3>"
 msgstr ""
 
@@ -1552,7 +1567,4 @@ msgid "Complete Order >>"
 msgstr ""
 
 msgid "Confirm & Pay >>"
-msgstr ""
-
-msgid "Minimum PHP version requirement not met. Million Dollar Script requires at least PHP %s"
 msgstr ""
