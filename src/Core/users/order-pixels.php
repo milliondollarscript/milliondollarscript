@@ -64,7 +64,7 @@ if ( ! mds_is_new_order( $order_id ) ) {
 		$BID
 	);
 	$order_result = $wpdb->get_results( $sql, ARRAY_A );
-	if ( count($order_result) == 0 ) {
+	if ( count( $order_result ) == 0 ) {
 		// Make new order
 		set_current_order_id();
 	}
@@ -131,8 +131,8 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 
 			// delete old files
 			$stat = stat( $uploaddir . $file );
-			if ( $stat[9] < ( time() - $elapsed_time ) ) {
-				if ( strpos( $file, 'tmp_' . get_current_order_id() ) !== false ) {
+			if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
+				if ( str_contains( $file, 'tmp_' . get_current_order_id() ) ) {
 					unlink( $uploaddir . $file );
 				}
 			}
