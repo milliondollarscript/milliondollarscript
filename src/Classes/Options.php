@@ -386,7 +386,11 @@ class Options {
 				$field->set_value( wp_normalize_path( $field->get_value() ) );
 				break;
 			case 'popup-template':
-				$field->set_value( nl2br( $field->get_value() ) );
+				$text = $field->get_value();
+				if ( ! str_contains( $text, '<br>' ) && ! str_contains( $text, '<br/>' ) && ! str_contains( $text, '<br />' ) ) {
+					$text = nl2br( $field->get_value() );
+				}
+				$field->set_value( $text );
 				break;
 			case 'endpoint':
 				if ( empty( $field->get_value() ) ) {
