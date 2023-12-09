@@ -64,7 +64,11 @@ if ( ! mds_is_new_order( $order_id ) ) {
 		$BID
 	);
 	$order_result = $wpdb->get_results( $sql, ARRAY_A );
-	if ( count( $order_result ) == 0 ) {
+	if ( count( $order_result ) > 0 ) {
+		// Found existing new order
+		$order_id = $order_result[0]['order_id'];
+		set_current_order_id( $order_id );
+	} else {
 		// Make new order
 		set_current_order_id();
 	}
