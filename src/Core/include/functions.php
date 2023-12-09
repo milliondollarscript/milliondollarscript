@@ -432,8 +432,6 @@ function complete_order( $user_id, $order_id ) {
 			publish_image( $order_row['banner_id'] );
 			process_map( $order_row['banner_id'] );
 		}
-
-		delete_current_order_id();
 	}
 }
 
@@ -2438,11 +2436,30 @@ function delete_current_order_id(): void {
 	}
 }
 
+function mds_is_new_order( $order_id ): bool {
+	global $wpdb;
+
+	$user_id = get_current_user_id();
+	if ( ! empty( $user_id ) ) {
+		$sql          = $wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND order_id=%d",
+			$user_id,
+			$order_id
+		);
+		$order_result = $wpdb->get_results( $sql, ARRAY_A );
+		if ( count( $order_result ) > 0 ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 function set_current_order_id( $order_id = null ): void {
 	global $wpdb;
 
 	$user_id = get_current_user_id();
-	if ( $user_id > 0 ) {
+	if ( ! empty( $user_id ) ) {
 		if ( is_null( $order_id ) ) {
 			// Add new order to database
 			$wpdb->insert( MDS_DB_PREFIX . "orders", [
@@ -2464,7 +2481,7 @@ function set_current_order_id( $order_id = null ): void {
 }
 
 function get_current_order_id( $get_grid = true ) {
-	global $wpdb, $f2;
+	global $BID, $wpdb, $f2;
 
 	if ( $get_grid ) {
 		$BID = $f2->bid();
@@ -2472,7 +2489,7 @@ function get_current_order_id( $get_grid = true ) {
 
 	$user_id = get_current_user_id();
 
-	if ( $user_id > 0 ) {
+	if ( ! empty( $user_id ) ) {
 		$order_id = get_user_meta( $user_id, MDS_PREFIX . 'current_order_id', true );
 		if ( empty( $order_id ) ) {
 			$sql = $wpdb->prepare(
@@ -2482,7 +2499,7 @@ function get_current_order_id( $get_grid = true ) {
 			);
 
 			$order_result = $wpdb->get_results( $sql, ARRAY_A );
-			if ( $order_result->num_rows > 0 ) {
+			if ( count( $order_result ) > 0 ) {
 				$order_row = $order_result[0];
 
 				if ( $order_row['user_id'] != '' && (int) $order_row['user_id'] !== $user_id ) {

@@ -43,13 +43,30 @@ if ( ! mds_check_permission( "mds_order_pixels" ) ) {
 	exit;
 }
 
-global $f2;
+global $f2, $wpdb;
 $BID = $f2->bid();
 
 if ( isset( $_REQUEST['order_id'] ) && ! empty( $_REQUEST['order_id'] ) ) {
 	set_current_order_id( $_REQUEST['order_id'] );
 	if ( ! is_numeric( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
 		die();
+	}
+}
+
+// Check for new order
+$order_id = get_current_order_id();
+if ( ! mds_is_new_order( $order_id ) ) {
+	// Search for new order
+	$user_id      = get_current_user_id();
+	$sql          = $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
+		$user_id,
+		$BID
+	);
+	$order_result = $wpdb->get_results( $sql, ARRAY_A );
+	if ( count($order_result) == 0 ) {
+		// Make new order
+		set_current_order_id();
 	}
 }
 
@@ -60,33 +77,11 @@ if ( isset( $_REQUEST['banner_change'] ) && $_REQUEST['banner_change'] != '' ) {
 	return;
 }
 
-// load order from php
-// only allowed 1 new order per banner
-
-global $wpdb;
-
-$sql = $wpdb->prepare(
-	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
-	get_current_user_id(),
-	$BID
-);
-
-$order_result = $wpdb->get_results( $sql, ARRAY_A );
-
-if ( ! empty( $order_result ) ) {
-	$order_row = $order_result[0];
-
-	if ( $order_row['user_id'] != '' && (int) $order_row['user_id'] !== get_current_user_id() ) {
-		die( Language::get( 'You do not own this order!' ) );
-	}
-}
-
 $USE_AJAX = Config::get( 'USE_AJAX' );
 
 $banner_data = load_banner_constants( $BID );
 
 // Update time stamp on temp order (if exists)
-
 update_temp_order_timestamp();
 
 $sql     = $wpdb->prepare( "SELECT block_id, status, user_id FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id=%d", $BID );
