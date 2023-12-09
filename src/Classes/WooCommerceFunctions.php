@@ -718,4 +718,34 @@ class WooCommerceFunctions {
 			WC()->cart->empty_cart();
 		}
 	}
+
+	public static function reset_session_variables( $user_id ): void {
+		$keys = [ 'mds_order_id', 'mds_variation_id', 'mds_quantity' ];
+
+		// Check if WooCommerce is active
+		if ( class_exists( 'WooCommerce' ) ) {
+			// Check if the session is not null
+			if ( is_null( WC()->session ) ) {
+				// Initialize session
+				WC()->session = new \WC_Session_Handler;
+			}
+
+			// Load the user session data
+			WC()->session->set_customer_session_cookie( true );
+
+			// Get user sessions
+			$session_handler = new \WC_Session_Handler();
+			$session         = $session_handler->get_session( $user_id );
+
+			if ( $session ) {
+				foreach ( $keys as $key ) {
+					// Reset the relevant session data.
+					WC()->session->__unset( $key );
+				}
+			}
+		}
+
+		delete_user_meta( $user_id, MDS_PREFIX . 'current_order_id' );
+		delete_user_meta( $user_id, 'mds_confirm' );
+	}
 }

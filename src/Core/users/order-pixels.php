@@ -66,7 +66,7 @@ if ( isset( $_REQUEST['banner_change'] ) && $_REQUEST['banner_change'] != '' ) {
 global $wpdb;
 
 $sql = $wpdb->prepare(
-	"SELECT * from " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
+	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
 	get_current_user_id(),
 	$BID
 );

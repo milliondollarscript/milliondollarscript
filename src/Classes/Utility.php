@@ -347,10 +347,13 @@ class Utility {
 		// Delete any orders in progress from user meta.
 		$users = get_users();
 		foreach ( $users as $user ) {
-			delete_user_meta( $user->ID, MDS_PREFIX . 'current_order_id' );
-			delete_user_meta( $user->ID, MDS_PREFIX . 'click_count' );
-			delete_user_meta( $user->ID, MDS_PREFIX . 'view_count' );
-			delete_user_meta( $user->ID, '_' . MDS_PREFIX . 'privileged' );
+			$user_id = $user->ID;
+			delete_user_meta( $user_id, MDS_PREFIX . 'current_order_id' );
+			delete_user_meta( $user_id, MDS_PREFIX . 'click_count' );
+			delete_user_meta( $user_id, MDS_PREFIX . 'view_count' );
+			delete_user_meta( $user_id, '_' . MDS_PREFIX . 'privileged' );
+
+			WooCommerceFunctions::reset_session_variables( $user_id );
 		}
 
 		// Delete mds-pixel posts and attachments.
@@ -442,10 +445,7 @@ class Utility {
 			return trailingslashit( home_url( "/" . $MDS_ENDPOINT . "/{$page_name}" ) );
 		}
 
-		// Actual pages
-		$page_id = Options::get_option( $pages[ $page_name ]['option'] );
-
-		return get_permalink( $page_id );
+		return get_permalink( $pages[ $page_name ]['page_id'] );
 	}
 
 	/**
@@ -474,64 +474,114 @@ class Utility {
 		get_footer();
 	}
 
+	public static function get_page_ids(): array {
+		global $mds_page_ids;
+
+		if ( ! empty( $mds_page_ids ) ) {
+			return $mds_page_ids;
+		}
+
+		$pagesArray = [
+			'grid-page',
+			'users-home-page',
+			'users-order-page',
+			'users-write-ad-page',
+			'users-confirm-order-page',
+			'users-payment-page',
+			'users-manage-page',
+			'users-history-page',
+			'users-publish-page',
+			'users-thank-you-page',
+			'users-list-page',
+			'users-upload-page',
+			'users-no-orders-page',
+		];
+
+		foreach ( $pagesArray as $page ) {
+			$mds_page_ids[ $page ] = Options::get_option( $page );
+		}
+
+		return apply_filters( 'mds_page_ids', $mds_page_ids );
+	}
+
 	public static function get_pages(): array {
-		$pages = [
+		global $mds_pages;
+
+		if ( ! empty( $mds_pages ) ) {
+			return $mds_pages;
+		}
+
+		$page_ids  = self::get_page_ids();
+		$mds_pages = [
 			'grid'          => [
-				'option' => 'grid-page',
-				'title'  => Language::get( 'Grid' ),
-				'width'  => '1000px',
-				'height' => '1000px',
+				'option'  => 'grid-page',
+				'title'   => Language::get( 'Grid' ),
+				'width'   => '1000px',
+				'height'  => '1000px',
+				'page_id' => $page_ids['grid-page'],
 			],
 			'account'       => [
-				'option' => 'users-home-page',
-				'title'  => Language::get( 'My Account' )
+				'option'  => 'users-home-page',
+				'title'   => Language::get( 'My Account' ),
+				'page_id' => $page_ids['users-home-page'],
 			],
 			'order'         => [
-				'option' => 'users-order-page',
-				'title'  => Language::get( 'Order Pixels' )
+				'option'  => 'users-order-page',
+				'title'   => Language::get( 'Order Pixels' ),
+				'page_id' => $page_ids['users-order-page'],
 			],
 			'write-ad'      => [
-				'option' => 'users-write-ad-page',
-				'title'  => Language::get( 'Write Your Ad' )
+				'option'  => 'users-write-ad-page',
+				'title'   => Language::get( 'Write Your Ad' ),
+				'page_id' => $page_ids['users-write-ad-page'],
 			],
 			'confirm-order' => [
-				'option' => 'users-confirm-order-page',
-				'title'  => Language::get( 'Confirm Order' )
+				'option'  => 'users-confirm-order-page',
+				'title'   => Language::get( 'Confirm Order' ),
+				'page_id' => $page_ids['users-confirm-order-page'],
 			],
 			'payment'       => [
-				'option' => 'users-payment-page',
-				'title'  => Language::get( 'Payment' )
+				'option'  => 'users-payment-page',
+				'title'   => Language::get( 'Payment' ),
+				'page_id' => $page_ids['users-payment-page'],
 			],
 			'manage'        => [
-				'option' => 'users-manage-page',
-				'title'  => Language::get( 'Manage Pixels' )
+				'option'  => 'users-manage-page',
+				'title'   => Language::get( 'Manage Pixels' ),
+				'page_id' => $page_ids['users-manage-page'],
 			],
 			'history'       => [
-				'option' => 'users-history-page',
-				'title'  => Language::get( 'Order History' )
+				'option'  => 'users-history-page',
+				'title'   => Language::get( 'Order History' ),
+				'page_id' => $page_ids['users-history-page'],
 			],
 			'publish'       => [
-				'option' => 'users-publish-page',
-				'title'  => Language::get( 'Publish' )
+				'option'  => 'users-publish-page',
+				'title'   => Language::get( 'Publish' ),
+				'page_id' => $page_ids['users-publish-page'],
 			],
 			'thank-you'     => [
-				'option' => 'users-thank-you-page',
-				'title'  => Language::get( 'Thank-You!' )
+				'option'  => 'users-thank-you-page',
+				'title'   => Language::get( 'Thank-You!' ),
+				'page_id' => $page_ids['users-thank-you-page'],
 			],
 			'list'          => [
-				'option' => 'users-list-page',
-				'title'  => Language::get( 'List' )
+				'option'  => 'users-list-page',
+				'title'   => Language::get( 'List' ),
+				'page_id' => $page_ids['users-list-page'],
 			],
 			'upload'        => [
-				'option' => 'users-upload-page',
-				'title'  => Language::get( 'Upload' )
+				'option'  => 'users-upload-page',
+				'title'   => Language::get( 'Upload' ),
+				'page_id' => $page_ids['users-upload-page'],
 			],
 			'no-orders'     => [
-				'option' => 'users-no-orders-page',
-				'title'  => Language::get( 'No Orders' )
+				'option'  => 'users-no-orders-page',
+				'title'   => Language::get( 'No Orders' ),
+				'page_id' => $page_ids['users-no-orders-page'],
 			],
 		];
 
-		return apply_filters( 'mds_pages', $pages );
+		return apply_filters( 'mds_pages', $mds_pages );
 	}
 }

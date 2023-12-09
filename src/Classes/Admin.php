@@ -64,8 +64,7 @@ class Admin {
 
 		// Create new pages in WP.
 		foreach ( $pages as $page => $data ) {
-			$option = Options::get_option( $data['option'] );
-			if ( empty( $option ) ) {
+			if ( empty( $data['page_id'] ) ) {
 
 				$id = 1;
 				if ( isset( $data['id'] ) ) {
@@ -128,7 +127,7 @@ class Admin {
 		$output = [];
 
 		foreach ( $pages as $page => $data ) {
-			$page_id = Options::get_option( $data['option'] );
+			$page_id = $data['page_id'];
 			if ( $page_id !== false ) {
 
 				// Delete the post from WP if it's modified time is older or equal to the stored time option.
@@ -153,7 +152,14 @@ class Admin {
 		wp_register_script(
 			MDS_PREFIX . 'admin-block-js',
 			MDS_BASE_URL . 'src/Assets/js/admin-block.min.js',
-			[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form', 'carbon-fields-vendor' ],
+			[
+				'jquery',
+				'jquery-ui-core',
+				'jquery-ui-dialog',
+				'jquery-ui-button',
+				'jquery-form',
+				'carbon-fields-vendor'
+			],
 			filemtime( MDS_BASE_PATH . 'src/Assets/js/admin-block.min.js' ),
 			true
 		);
@@ -242,7 +248,10 @@ class Admin {
 	public static function menu(): void {
 		global $mds_menus;
 
-		$handle = \add_submenu_page( 'milliondollarscript', 'Million Dollar Script Admin', 'Admin', 'manage_options', 'milliondollarscript_admin', [ __CLASS__, 'html' ], 2 );
+		$handle = \add_submenu_page( 'milliondollarscript', 'Million Dollar Script Admin', 'Admin', 'manage_options', 'milliondollarscript_admin', [
+			__CLASS__,
+			'html'
+		], 2 );
 
 		// Add styles for admin page
 		add_action( 'admin_print_styles-' . $handle, [ __CLASS__, 'styles' ] );

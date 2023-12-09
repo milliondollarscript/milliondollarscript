@@ -34,48 +34,24 @@ defined( 'ABSPATH' ) or exit;
 
 class WooCommerce {
 
-	private $_PAYMENT_OBJECTS;
-
 	function __construct() {
-//		add_filter( 'product_type_selector', [ __CLASS__, 'product_type_selector' ] );
-//		add_filter( 'woocommerce_product_class', [ __CLASS__, 'woocommerce_product_class' ], 10, 3 );
-//		add_action( 'admin_footer', [ __CLASS__, 'admin_footer' ] );
 		add_filter( 'product_type_options', [ __CLASS__, 'product_type_options' ] );
-		//add_action( 'woocommerce_process_product_meta_milliondollarscript', [ __CLASS__, 'save_option_field' ] );
 		add_action( 'woocommerce_process_product_meta', [ __CLASS__, 'save_option_field' ] );
 		add_action( 'woocommerce_update_product', [ __CLASS__, 'update_product' ], 10, 1 );
 		add_action( 'pre_get_posts', [ __CLASS__, 'pre_get_posts' ] );
-
 		add_action( 'woocommerce_order_status_changed', [ __CLASS__, 'status_changed' ], 20, 4 );
 		add_action( 'woocommerce_order_edit_status', [ __CLASS__, 'status_edit' ], 20, 2 );
-
-		// add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'maybe_clear_cart' ] );
 		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'validate_order' ], 10, 1 );
-
 		add_filter( 'woocommerce_checkout_update_order_meta', [ __CLASS__, 'create_order' ], 10, 2 );
-
-//		add_action( 'woocommerce_before_cart', [ __CLASS__, 'add_discount' ] );
-//		add_action( 'woocommerce_before_checkout_form', [ __CLASS__, 'add_discount' ] );
-
 		add_filter( 'woocommerce_update_cart_validation', [ __CLASS__, 'validate_cart' ], 10, 4 );
-		add_filter( 'woocommerce_update_cart_action_cart_updated', [
-			__CLASS__,
-			'update_cart_action_cart_updated'
-		], 10, 1 );
-		//woocommerce_stock_amount_cart_item
-
+		add_filter( 'woocommerce_update_cart_action_cart_updated', [ __CLASS__, 'update_cart_action_cart_updated' ] );
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'add_to_cart_validation' ], 10, 5 );
-
 		add_action( 'woocommerce_before_calculate_totals', [ __CLASS__, 'before_calculate_totals' ] );
-
 		add_action( 'woocommerce_after_calculate_totals', [ __CLASS__, 'reset_quantity' ] );
-
 		add_filter( 'woocommerce_cart_item_quantity', [ __CLASS__, 'disable_quantity_field' ], 10, 3 );
 		add_filter( 'woocommerce_quantity_input_args', [ __CLASS__, 'disable_product_quantity_input' ], 10, 2 );
-
-		add_action( 'woocommerce_thankyou', [ __CLASS__, 'reset_session_variables' ], 10, 1 );
+		add_action( 'woocommerce_thankyou', [ __CLASS__, 'complete_order' ], 9, 1 );
 		add_action( 'woocommerce_thankyou', [ __CLASS__, 'thank_you_redirect' ], 11, 1 );
-
 		add_action( 'woocommerce_payment_complete', [ __CLASS__, 'payment_complete' ] );
 	}
 
@@ -85,11 +61,53 @@ class WooCommerce {
 		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', 'yes' );
 		if ( 'yes' === $auto_complete ) {
 			$to = 'completed';
-		} else {
-			$to = 'processing';
+
+			$order->update_status( $to );
+		}
+	}
+
+	public static function complete_order( $order_id ): void {
+		if ( ! WooCommerceFunctions::is_mds_order( $order_id ) ) {
+			// Not a Million Dollar Script order
+			return;
 		}
 
-		$order->update_status( $to );
+		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+		if ( empty( $mds_order_id ) ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+
+		if ( ! empty( get_current_order_id() ) ) {
+			$order = wc_get_order( $order_id );
+
+			if ( Options::get_option( 'auto-approve' ) ) {
+
+				$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+				$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
+				$row = mysqli_fetch_array( $result );
+
+				complete_order( $user_id, $mds_order_id );
+
+				$transaction_id = $order->get_transaction_id();
+				debit_transaction( $mds_order_id, $row['price'], $row['currency'], $transaction_id, 'order', 'WC' );
+
+			} else {
+				// Should already be confirmed at this point, but sometimes they may not follow the exact checkout path
+				confirm_order( $user_id, $mds_order_id );
+			}
+
+			// If the order doesn't have mds_order_id yet then add it and a note.
+			$post_meta_mds_order_id = get_post_meta( $order_id, 'mds_order_id', true );
+			if ( empty( $post_meta_mds_order_id ) ) {
+				update_post_meta( $order_id, "mds_order_id", $mds_order_id );
+				$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
+				$order->save();
+			}
+		}
+
+		WooCommerceFunctions::reset_session_variables( $user_id );
 	}
 
 	public static function thank_you_redirect( $order_id ): void {
@@ -109,16 +127,6 @@ class WooCommerce {
 		}
 
 		return $args;
-	}
-
-	public static function reset_session_variables( $order_id ): void {
-		$keys = [ 'mds_order_id', 'mds_variation_id', 'mds_quantity' ];
-
-		foreach ( $keys as $key ) {
-			WC()->session->__unset( $key );
-		}
-
-		delete_user_meta( get_current_user_id(), MDS_PREFIX . 'current_order_id' );
 	}
 
 	public static function reset_quantity( $cart ): void {
@@ -278,59 +286,6 @@ class WooCommerce {
 		return $passed;
 	}
 
-	/*
-	public static function register_product_type() {
-		require_once __DIR__ . '/ProductType.php';
-	}
-
-	public static function product_type_selector( $types ) {
-		$types['milliondollarscript'] = 'Million Dollar Script';
-
-		return $types;
-	}
-
-	public static function woocommerce_product_class( $classname, $product_type, $product_id ): string {
-		if ( $product_type == 'milliondollarscript' ) {
-			$classname = '\MillionDollarScript\Classes\ProductType';
-		}
-
-		return $classname;
-	}
-
-	function admin_footer() {
-		if ( 'product' != get_post_type() ) {
-			return;
-		}
-
-		?>
-		<script type='text/javascript'>
-			jQuery(document).ready(function () {
-				jQuery('.options_group.pricing').addClass('show_if_milliondollarscript').show();
-
-				// check which product type is selected
-				let selectedProductType = jQuery('#product-type').val();
-				if (selectedProductType === 'milliondollarscript') {
-					// Deactivate Shipping panel in left Menu
-					jQuery('.shipping_tab').removeClass('active');
-					// Hide Shipping panel on load
-					jQuery('#shipping_product_data').addClass('hidden').hide();
-
-					// Deactivate Linked Products panel in left Menu
-					jQuery('.linked_product_tab').removeClass('active');
-					// Hide Shipping panel on load
-					jQuery('#linked_product_data').addClass('hidden').hide();
-
-					// Activate General panel in left Menu
-					jQuery('.general_tab').addClass('active').show();
-					// Show General panel on load
-					jQuery('#general_product_data').removeClass('hidden').show();
-				}
-			});
-		</script>
-		<?php
-	}
-	*/
-
 	public static function product_type_options( $product_type_options ) {
 		$product_type_options['milliondollarscript'] = array(
 			'id'            => '_milliondollarscript',
@@ -395,12 +350,12 @@ class WooCommerce {
 	/**
 	 * Add order notes with order id numbers when the order status changes.
 	 *
-	 * @param $id
-	 * @param $from
-	 * @param $to
-	 * @param $order
+	 * @param $id int
+	 * @param $from string
+	 * @param $to string
+	 * @param $order \WC_order
 	 */
-	public static function status_changed( $id, $from, $to, $order ): void {
+	public static function status_changed( int $id, string $from, string $to, \WC_order $order ): void {
 		if ( ! WooCommerceFunctions::is_mds_order( $id ) ) {
 			// Not a Million Dollar Script order
 			return;
@@ -408,7 +363,7 @@ class WooCommerce {
 
 		$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
 		if ( ! empty( $mds_order_id ) ) {
-			$order->add_order_note( "MDS order id: " . $mds_order_id );
+			$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 		}
 
 		$btcpay_id = get_post_meta( $id, 'BTCPay_id', true );
@@ -429,8 +384,6 @@ class WooCommerce {
 		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', 'yes' );
 		if ( 'yes' === $auto_complete ) {
 			$to = 'completed';
-		} else {
-			$to = 'processing';
 		}
 
 		// Action hook for MDS status change
@@ -458,36 +411,12 @@ class WooCommerce {
 			$order        = wc_get_order( $id );
 			$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
 			if ( ! empty( $mds_order_id ) ) {
-				$order->add_order_note( "MDS order id: " . $mds_order_id );
+				$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 			}
 
 			WooCommerceFunctions::complete_mds_order( $id );
 		}
 	}
-
-	/**
-	 * Check if we should clear WooCommerce cart when viewing the checkout form.
-	 * Returns true of cart is cleared otherwise returns false.
-	 *
-	 * @return void
-	 */
-	// public static function maybe_clear_cart(): void {
-	// 	$product_id = Functions::get_product_id();
-	// 	$cart       = WC()->cart->get_cart();
-	// 	foreach ( $cart as $cart_item_key => $cart_item ) {
-	// 		if ( $cart_item['product_id'] == $product_id ) {
-	// 			$meta_value = get_post_meta( $product_id, '_milliondollarscript', true );
-	// 			if ( $meta_value == 'yes' ) {
-	// 				// MDS item found
-	//
-	// 				if ( ! self::valid_mds_order() ) {
-	// 					WC()->cart->remove_cart_item( $cart_item_key );
-	// 					WC()->cart->calculate_totals();
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 	/**
 	 * Save MDS Order id
@@ -513,7 +442,7 @@ class WooCommerce {
 			$message = "Quantity does not match! (3)";
 			throw new \Exception( '<a href="' . wc_get_cart_url() . '" class="button wc-forward">' . __( 'View cart', 'woocommerce' ) . '</a> ' . $message );
 		}
-		$order->add_order_note( "MDS order id: " . $mds_order_id );
+		$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 
 		return null;
 	}
