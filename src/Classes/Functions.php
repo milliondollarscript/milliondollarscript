@@ -229,47 +229,60 @@ class Functions {
 			$deps = '';
 		}
 
-		wp_register_script( 'image-scale', MDS_CORE_URL . 'js/third-party/image-scale.min.js', [ 'jquery', $deps ], filemtime( MDS_CORE_PATH . 'js/third-party/image-scale.min.js' ), true );
+		wp_register_script( 'image-scale', MDS_CORE_URL . 'js/third-party/image-scale.min.js', [
+			'jquery',
+			$deps
+		], filemtime( MDS_CORE_PATH . 'js/third-party/image-scale.min.js' ), true );
 		wp_register_script( 'image-map', MDS_CORE_URL . 'js/third-party/image-map.min.js', [ 'image-scale' ], filemtime( MDS_CORE_PATH . 'js/third-party/image-map.min.js' ), true );
 		wp_register_script( 'contact', MDS_CORE_URL . 'js/third-party/contact.nomodule.min.js', [ 'image-map' ], filemtime( MDS_CORE_PATH . 'js/third-party/contact.nomodule.min.js' ), true );
 
-		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.min.js', [ 'jquery', 'contact', 'image-scale', 'image-map' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
+		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.min.js', [
+			'jquery',
+			'contact',
+			'image-scale',
+			'image-map'
+		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
 		wp_add_inline_script( 'mds', 'const MDS = ' . json_encode( self::get_script_data() ), 'before' );
 
 		$order_script  = "";
 		$data_function = "";
 
-		// select.js
-		if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'YES' ) {
-			$order_script  = 'select';
-			$data_function = self::get_select_data();
-		}
+		$register_order_script = false;
 
-		// order.js
-		if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-			$order_script  = 'order';
-			$data_function = self::get_order_data();
-		}
-
-		if ( ! empty( $order_script ) ) {
-			$register_script = false;
-
-			global $post;
-			if ( isset( $post ) && $post->ID == Options::get_option( 'users-order-page' ) ) {
-				$register_script = true;
-			} else {
-				global $wp_query;
-				$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
-				if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
-					$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
-					if ( $page == 'order' ) {
-						$register_script = true;
-					}
+		global $post;
+		if ( isset( $post ) && $post->ID == Options::get_option( 'users-order-page' ) ) {
+			$register_order_script = true;
+		} else {
+			global $wp_query;
+			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+			if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
+				$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
+				if ( $page == 'order' ) {
+					$register_order_script = true;
 				}
 			}
+		}
 
-			if ( $register_script ) {
-				wp_register_script( 'mds-' . $order_script, MDS_CORE_URL . 'js/' . $order_script . '.min.js', [ 'jquery', 'mds', 'contact' ], filemtime( MDS_CORE_PATH . 'js/' . $order_script . '.min.js' ), true );
+		if ( $register_order_script ) {
+
+			// select.js
+			if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'YES' ) {
+				$order_script  = 'select';
+				$data_function = self::get_select_data();
+			}
+
+			// order.js
+			if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				$order_script  = 'order';
+				$data_function = self::get_order_data();
+			}
+
+			if ( ! empty( $order_script ) ) {
+				wp_register_script( 'mds-' . $order_script, MDS_CORE_URL . 'js/' . $order_script . '.min.js', [
+					'jquery',
+					'mds',
+					'contact'
+				], filemtime( MDS_CORE_PATH . 'js/' . $order_script . '.min.js' ), true );
 				wp_add_inline_script( 'mds-' . $order_script, 'const MDS_OBJECT = ' . json_encode( $data_function ), 'before' );
 			}
 		}
