@@ -17,6 +17,7 @@ class ComposerStaticInit2b635baffc9d4b2306ae3b86c3eea2d2
         ),
         'M' => 
         array (
+            'MillionDollarScript\\Tests\\' => 26,
             'MillionDollarScript\\' => 20,
         ),
         'I' => 
@@ -33,6 +34,10 @@ class ComposerStaticInit2b635baffc9d4b2306ae3b86c3eea2d2
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'MillionDollarScript\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/tests/MillionDollarScript/Tests',
         ),
         'MillionDollarScript\\' => 
         array (
