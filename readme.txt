@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.1
-Stable tag: 2.5.6
+Stable tag: 2.5.7
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -18,6 +18,18 @@ Million Dollar Script enables you to sell pixel-based advertising space on your 
 Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.com/million-dollar-script-wordpress-plugin/) page on the website for additional documentation.
 
 == Changelog ==
+
+= 2.5.7 =
+* Add an option to the WooCommerce tab to Auto-complete Orders.
+* Refactor some WooCommerce related functions to their own WooCommerceFunctions class.
+* Make checkout page redirect without using JS.
+* Add more validation to confirm order page. Includes a mds-confirm-order-validation filter.
+* Add user verification to order retrieval.
+* Add redirect in auto-approve orders.
+* Use payment page for both advanced and simple order methods.
+* Remove MDS checkout page.
+* Add additional MDS page types to the block.
+
 
 = 2.5.6 =
 * Fix fatal error on activation when too low of PHP version was detected.
