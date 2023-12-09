@@ -2446,7 +2446,7 @@ function mds_is_new_order( $order_id ): bool {
 			$user_id,
 			$order_id
 		);
-		$order_result = $wpdb->get_results( $sql, ARRAY_A );
+		$order_result = $wpdb->get_results( $sql );
 		if ( count( $order_result ) > 0 ) {
 			return true;
 		}
