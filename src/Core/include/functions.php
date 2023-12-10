@@ -340,7 +340,7 @@ function complete_order( $user_id, $order_id ) {
 		$steps        = Steps::get_steps( false );
 		$current_step = $steps['complete'];
 
-		$table_name   = $wpdb->prefix . MDS_DB_PREFIX . "orders";
+		$table_name   = MDS_DB_PREFIX . "orders";
 		$data         = array(
 			'status'            => 'completed',
 			'date_published'    => null,
