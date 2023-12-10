@@ -463,7 +463,17 @@ function disapprove_modified_order( $order_id, $BID ) {
 	}
 }
 
-function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
+/**
+ * Upload the changed pixels.
+ *
+ * @param $order_id int
+ * @param $BID int
+ * @param $size array
+ * @param $banner_data array
+ *
+ * @return void
+ */
+function upload_changed_pixels( int $order_id, int $BID, array $size, array $banner_data ): void {
 	global $f2;
 
 	$imagine = new Imagine\Gd\Imagine();
@@ -473,7 +483,8 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 
 		$uploaddir  = \MillionDollarScript\Classes\Utility::get_upload_path() . "images/";
 		$files      = $_FILES['pixels'] ?? ( $_FILES['graphic'] ?? '' );
-		$file_parts = pathinfo( $files['name'] );
+		$filename   = sanitize_file_name( $files['name'] );
+		$file_parts = pathinfo( $filename );
 		$ext        = $f2->filter( strtolower( $file_parts['extension'] ) );
 
 		$mime_type          = mime_content_type( $files['tmp_name'] );
@@ -486,7 +497,7 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 			echo $error;
 		} else {
 
-			$uploadfile = $uploaddir . "tmp_" . Orders::get_current_order_id() . ".$ext";
+			$uploadfile = $uploaddir . "tmp_" . $order_id . ".$ext";
 
 			// move the file
 			if ( move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
