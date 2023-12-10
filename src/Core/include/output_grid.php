@@ -78,23 +78,21 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			$ext = \MillionDollarScript\Classes\Utility::get_file_extension();
 		}
 
-		// TODO: Make it save the time somewhere when publishing or updating an order and use that instead of this since this will get slow
-		// Get the table checksum
-		global $wpdb;
-		$checksum = $wpdb->get_var( "CHECKSUM TABLE `" . MDS_DB_PREFIX . "orders`", 1 );
+		// Get the last modification time of the orders
+		$last_modification_time = \MillionDollarScript\Classes\Orders::get_last_order_modification_time();
 
 		// Get the hash value of the types of blocks to show in the grid
 		$typehash = md5( serialize( $types ) );
 
 		// Get the file path and url
-		$filename = "grid$BID-$checksum-$typehash";
+		$filename = "grid$BID-$last_modification_time-$typehash";
 		$file     = $BANNER_PATH . $filename;
 		$fullfile = wp_normalize_path( $file . '.' . $ext );
 
 		//MillionDollarScript\Classes\Debug::output( $fullfile, 'log' );
 
 		// grid1-856848500-1bf8f4d8717252cf8010a67f0b3c50b0.png
-		if ( file_exists( $fullfile ) ) {
+		if ( file_exists( $fullfile ) && filemtime( $fullfile ) >= $last_modification_time ) {
 			// If the file exists then output it directly.
 			header( 'Content-Type:' . 'image/' . $ext );
 			header( 'Content-Length: ' . filesize( $fullfile ) );
