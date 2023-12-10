@@ -69,7 +69,7 @@ class Language {
 	 *
 	 */
 	public static function out( string $content, bool $html = true ): void {
-		self::get( $content, $html );
+		$content = self::get( $content, $html );
 
 		echo $content;
 	}
