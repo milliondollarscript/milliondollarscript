@@ -29,7 +29,10 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Use payment page for both advanced and simple order methods.
 * Remove MDS checkout page.
 * Add additional MDS page types to the block.
-
+* Fix new order being started sometimes when it shouldn't be yet.
+* Refine how orders are handled for non-automated order methods like bank, COD, money order, etc.
+* Fix Options > Popup Template adding extra br tags when no visual editor is present.
+* Fix uploaded image not being reset on new order.
 
 = 2.5.6 =
 * Fix fatal error on activation when too low of PHP version was detected.
