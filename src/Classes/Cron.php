@@ -87,9 +87,31 @@ class Cron {
 	}
 
 	public static function clean_temp_files(): void {
-		// delete temp_* files older than 24 hours
+		// delete grid#-* files older than 24 hours
+		global $wpdb;
+
+		$banners = $wpdb->get_results( "SELECT `banner_id` FROM " . MDS_DB_PREFIX . "banners ORDER BY banner_id", ARRAY_A );
+
+		foreach ( $banners as $banner ) {
+			$upload_dir = Utility::get_upload_path() . "grids/";
+			$dh         = opendir( $upload_dir );
+			while ( ( $file = readdir( $dh ) ) !== false ) {
+				// 24 hours
+				$elapsed_time = 60 * 60 * 24;
+
+				// delete old files
+				$stat = stat( $upload_dir . $file );
+				if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
+					if ( str_starts_with( $file, 'grid' . $banner['banner_id'] . '-' ) ) {
+						unlink( $upload_dir . $file );
+					}
+				}
+			}
+		}
+
+		// delete tmp_* files older than 24 hours
 		$upload_dir = Utility::get_upload_path() . "images/";
-		$dh        = opendir( $upload_dir );
+		$dh         = opendir( $upload_dir );
 		while ( ( $file = readdir( $dh ) ) !== false ) {
 			// 24 hours
 			$elapsed_time = 60 * 60 * 24;
@@ -97,7 +119,7 @@ class Cron {
 			// delete old files
 			$stat = stat( $upload_dir . $file );
 			if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
-				if ( str_contains( $file, 'tmp_' . get_current_order_id() ) ) {
+				if ( str_starts_with( $file, 'tmp_' ) ) {
 					unlink( $upload_dir . $file );
 				}
 			}
