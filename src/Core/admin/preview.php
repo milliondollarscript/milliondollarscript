@@ -36,9 +36,6 @@ $BID = $f2->bid();
 $sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $BID );
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 $b_row = mysqli_fetch_array( $result );
-if ( $_REQUEST['order_id'] ) {
-	set_current_order_id( $_REQUEST['order_id'] );
-}
 
 $sql = "select block_id, status, user_id, url, alt_text FROM " . MDS_DB_PREFIX . "blocks where  status='sold' AND banner_id=" . intval( $BID );
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );

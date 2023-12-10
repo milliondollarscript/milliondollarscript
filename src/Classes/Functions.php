@@ -151,7 +151,7 @@ class Functions {
 		$low_x = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
 		$low_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
 
-		$sql    = $wpdb->prepare( "SELECT block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", get_current_order_id() );
+		$sql    = $wpdb->prepare( "SELECT block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", \MillionDollarScript\Classes\Orders::get_current_order_id() );
 		$result = $wpdb->get_results( $sql );
 
 		if ( ! empty( $result ) ) {

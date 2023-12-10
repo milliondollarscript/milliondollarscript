@@ -29,6 +29,7 @@
 
 use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -52,9 +53,9 @@ require_once MDS_CORE_PATH . "html/header.php";
 global $wpdb;
 
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
-	if ( $_REQUEST['order_id'] == get_current_order_id() ) {
+	if ( $_REQUEST['order_id'] == Orders::get_current_order_id() ) {
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( get_current_order_id() ) . "'";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( Orders::get_current_order_id() ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
 			$row = mysqli_fetch_assoc( $result );
@@ -63,7 +64,7 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 			wp_delete_post( intval( $row['ad_id'] ) );
 
 			// delete associated temp order
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( get_current_order_id() ) . "'";
+			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "'";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			// delete associated uploaded image
@@ -72,9 +73,9 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 				unlink( $imagefile );
 			}
 
-			// if deleted order is the current order unset current order id
-			if ( $_REQUEST['order_id'] == get_current_order_id() ) {
-				delete_current_order_id();
+			// If the cancelled order is in progress then reset the progress.
+			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
+				Orders::reset_progress();
 			}
 		}
 	} else {
@@ -83,9 +84,9 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 		if ( mysqli_num_rows( $result ) > 0 ) {
 			delete_order( intval( $_REQUEST['order_id'] ) );
 
-			// if deleted order is the current order unset current order id
-			if ( $_REQUEST['order_id'] == get_current_order_id() ) {
-				delete_current_order_id();
+			// If the cancelled order is in progress then reset the progress.
+			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
+				Orders::reset_progress();
 			}
 		}
 	}
@@ -95,19 +96,19 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 
     <script>
 
-		function confirmLink(theLink, theConfirmMsg) {
+        function confirmLink(theLink, theConfirmMsg) {
 
-			if (theConfirmMsg === '') {
-				return true;
-			}
+            if (theConfirmMsg === '') {
+                return true;
+            }
 
-			var is_confirmed = confirm(theConfirmMsg + '\n');
-			if (is_confirmed) {
-				theLink.href += '&is_js_confirmed=1';
-			}
+            var is_confirmed = confirm(theConfirmMsg + '\n');
+            if (is_confirmed) {
+                theLink.href += '&is_js_confirmed=1';
+            }
 
-			return is_confirmed;
-		} // end of the 'confirmLink()' function
+            return is_confirmed;
+        } // end of the 'confirmLink()' function
 
     </script>
 

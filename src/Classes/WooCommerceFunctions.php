@@ -745,7 +745,7 @@ class WooCommerceFunctions {
 			}
 		}
 
-		delete_user_meta( $user_id, MDS_PREFIX . 'current_order_id' );
+		Orders::reset_progress( $user_id );
 		delete_user_meta( $user_id, 'mds_confirm' );
 	}
 }

@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -67,17 +68,17 @@ if ( $order_row != null ) {
 
 	// only 1 new order allowed per user per grid
 	if ( ! empty( $_REQUEST['banner_change'] ) ) {
-		// clear the current order
-		delete_current_order_id();
+		// Reset order progress
+		Orders::reset_progress();
 
 		// delete the old order and associated blocks
 		$sql = "delete from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $order_row['order_id'] );
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		$sql = "delete from " . MDS_DB_PREFIX . "blocks where order_id=" . intval( $order_row['order_id'] );
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	} else if ( ( empty( get_current_order_id() ) ) || ( $USE_AJAX == 'YES' ) ) {
+	} else if ( ( empty( Orders::get_current_order_id() ) ) || ( $USE_AJAX == 'YES' ) ) {
 		// save the order id to session
-		set_current_order_id( $order_row['order_id'] );
+		Orders::set_current_order_id( $order_row['order_id'] );
 	}
 }
 

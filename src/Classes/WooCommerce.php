@@ -53,6 +53,21 @@ class WooCommerce {
 		add_action( 'woocommerce_thankyou', [ __CLASS__, 'complete_order' ], 9, 1 );
 		add_action( 'woocommerce_thankyou', [ __CLASS__, 'thank_you_redirect' ], 11, 1 );
 		add_action( 'woocommerce_payment_complete', [ __CLASS__, 'payment_complete' ] );
+		add_action( 'woocommerce_after_cart_item_quantity_update', [ __CLASS__, 'adjust_cart_item_quantity_after_update' ], 20, 4 );
+	}
+
+	public static function adjust_cart_item_quantity_after_update( $cart_item_key, $quantity, $old_quantity, $cart ): void {
+		$product_id   = WooCommerceFunctions::get_product_id();
+		$variation_id = absint( WC()->session->get( "mds_variation_id" ) );
+
+		$cart_item = $cart->get_cart_item( $cart_item_key );
+		if ( $cart_item['product_id'] == $product_id && ( ! empty( $cart_item['variation_id'] ) && $cart_item['variation_id'] == $variation_id ) ) {
+			// This is the product we're interested in, set the quantity back to the desired value
+			$desired_quantity = absint( WC()->session->get( "mds_quantity" ) );
+			if ( $quantity != $desired_quantity ) {
+				$cart->set_quantity( $cart_item_key, $desired_quantity, false );
+			}
+		}
 	}
 
 	public static function payment_complete( $order_id ): void {
@@ -79,7 +94,7 @@ class WooCommerce {
 
 		$user_id = get_current_user_id();
 
-		if ( ! empty( get_current_order_id() ) ) {
+		if ( ! empty( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) {
 			$order = wc_get_order( $order_id );
 
 			if ( Options::get_option( 'auto-approve' ) ) {
@@ -163,8 +178,9 @@ class WooCommerce {
 
 			$product_id   = WooCommerceFunctions::get_product_id();
 			$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+			$quantity     = absint( WC()->session->get( "mds_quantity" ) );
 
-			foreach ( $cart_object->get_cart() as $cart_item ) {
+			foreach ( $cart_object->get_cart() as $cart_item_key => $cart_item ) {
 				if ( $cart_item['product_id'] == $product_id ) {
 					$table = MDS_DB_PREFIX . 'orders';
 					$price = $wpdb->get_var( $wpdb->prepare(
@@ -173,9 +189,18 @@ class WooCommerce {
 					) );
 
 					if ( $price ) {
-						// Order total is the price of all blocks in all price zones.
-						// Here we will divide by the quantity to get the right price since we are using the total order price from the MDS table and WC will multiply that by the quantity.
-						$cart_item['data']->set_price( $price / $cart_item['quantity'] );
+						// Check if the price is already the desired value before setting it
+						$current_price = $cart_item['data']->get_price();
+						$new_price     = $price / $quantity;
+						if ( $current_price != $new_price ) {
+							$cart_item['data']->set_price( $new_price );
+						}
+					}
+
+					// Check if the quantity is already the desired value before setting it
+					$current_quantity = $cart_item['quantity'];
+					if ( $current_quantity != $quantity ) {
+						$cart_object->set_quantity( $cart_item_key, $quantity );
 					}
 				}
 			}

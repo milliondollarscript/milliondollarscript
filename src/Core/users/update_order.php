@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -97,7 +98,7 @@ if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
 	$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='" . intval( $BID ) . "'";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
-	$order_id = get_current_order_id();
+	$order_id = Orders::get_current_order_id();
 
 	if ( ! empty( $order_id ) ) {
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET blocks='' WHERE order_id=" . intval( $order_id );

@@ -110,7 +110,9 @@ if ( isset( $_REQUEST['reset_image'] ) && $_REQUEST['reset_image'] != '' ) {
 function display_reset_link( $BID, $image_name ): void {
 	if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'edit' ) {
 		?>
-        <a class="inventory-reset-link" title="Reset to default" onclick="if (! confirmLink(this, 'Reset this image to deafult, are you sure?')) return false;" href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>'>x</a>
+        <a class="inventory-reset-link" title="Reset to default"
+           onclick="if (! confirmLink(this, 'Reset this image to deafult, are you sure?')) return false;"
+           href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>'>x</a>
 		<?php
 	}
 }
@@ -267,11 +269,11 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 			mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			// DELETE ADS
-            // TODO: delete mds-pixels
+			// TODO: delete mds-pixels
 			// $sql = "select * FROM " . MDS_DB_PREFIX . "ads where banner_id='" . $BID . "' ";
 			// $res2 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 			// while ( $row2 = mysqli_fetch_array( $res2 ) ) {
-            //
+			//
 			// 	delete_ads_files( $row2['ad_id'] );
 			// 	$sql = "DELETE from " . MDS_DB_PREFIX . "ads where ad_id='" . intval( $row2['ad_id'] ) . "' ";
 			// 	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -297,7 +299,7 @@ function get_banner_image_data( $b_row, $image_name ): string {
 	$uploaddir = Utility::get_upload_path() . "grids/";
 	if ( isset( $_FILES ) && isset( $_FILES[ $image_name ] ) && isset( $_FILES[ $image_name ]['tmp_name'] ) && $_FILES[ $image_name ]['tmp_name'] ) {
 		// a new image was uploaded
-		$uploadfile = $uploaddir . get_current_order_id() . $image_name . $_FILES[ $image_name ]['name'];
+		$uploadfile = $uploaddir . $image_name . $_FILES[ $image_name ]['name'];
 		move_uploaded_file( $_FILES[ $image_name ]['tmp_name'], $uploadfile );
 		$fh       = fopen( $uploadfile, 'rb' );
 		$contents = fread( $fh, filesize( $uploadfile ) );
@@ -352,7 +354,7 @@ function validate_block_size( $image_name, $BID ): bool {
 		return false;
 	}
 
-	$temp_file = Utility::get_upload_path() . "temp_block" . get_current_order_id() . ".png";
+	$temp_file = Utility::get_upload_path() . "temp_block.png";
 	$img->save( $temp_file );
 	$size = $img->getSize();
 
@@ -424,14 +426,19 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 			$product->save();
 		}
 	}
-    return;
+
+	return;
 }
 
 ?>
-    <p>Here you can manage your grid(s) expiration, max/min orders per grid, price, dimensions, images, or add and delete them.</p>
-    <p>Note: A grid with 100 rows and 100 columns and a block size of 10x10 is a million pixels. Setting this to a larger value may affect the memory & performance of the script.</p>
+    <p>Here you can manage your grid(s) expiration, max/min orders per grid, price, dimensions, images, or add and
+        delete them.</p>
+    <p>Note: A grid with 100 rows and 100 columns and a block size of 10x10 is a million pixels. Setting this to a
+        larger value may affect the memory & performance of the script.</p>
 
-    <input type="button" style="background-color:#66FF33" value="New Grid..." onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=new&new=1' ) ); ?>'"><br>
+    <input type="button" style="background-color:#66FF33" value="New Grid..."
+           onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=new&new=1' ) ); ?>'">
+    <br>
 
 <?php
 
@@ -477,11 +484,19 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
         <input type="hidden" name="action" value="mds_admin_form_submission"/>
         <input type="hidden" name="mds_dest" value="manage-grids"/>
 
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['new'] ) ? htmlspecialchars( $_REQUEST['new'] ) : "" ); ?>" name="new">
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['edit'] ) ? htmlspecialchars( $_REQUEST['edit'] ) : "" ); ?>" name="edit">
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['mds-action'] ) ? htmlspecialchars( $_REQUEST['mds-action'] ) : "" ); ?>" name="mds-action">
+        <input type="hidden"
+               value="<?php echo( isset( $_REQUEST['new'] ) ? htmlspecialchars( $_REQUEST['new'] ) : "" ); ?>"
+               name="new">
+        <input type="hidden"
+               value="<?php echo( isset( $_REQUEST['edit'] ) ? htmlspecialchars( $_REQUEST['edit'] ) : "" ); ?>"
+               name="edit">
+        <input type="hidden"
+               value="<?php echo( isset( $_REQUEST['mds-action'] ) ? htmlspecialchars( $_REQUEST['mds-action'] ) : "" ); ?>"
+               name="mds-action">
         <input type="hidden" value="<?php echo( isset( $_REQUEST['BID'] ) ? $BID : "" ); ?>" name="BID">
-        <input type="hidden" value="<?php echo( isset( $_REQUEST['edit_anyway'] ) ? htmlspecialchars( $_REQUEST['edit_anyway'] ) : "" ); ?>" name="edit_anyway">
+        <input type="hidden"
+               value="<?php echo( isset( $_REQUEST['edit_anyway'] ) ? htmlspecialchars( $_REQUEST['edit_anyway'] ) : "" ); ?>"
+               name="edit_anyway">
 
         <input class="inventory-save" type="submit" name="submit" value="Save Grid Settings">
 
@@ -491,14 +506,15 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Grid Name</div>
                     <div class="inventory-content">
                         <label>
-                            <input id="inventory-grid-name" autofocus tabindex="0" size="30" type="text" name="name" value="<?php echo( isset( $_REQUEST['name'] ) ? htmlspecialchars( $_REQUEST['name'] ) : "" ); ?>"/>
+                            <input id="inventory-grid-name" autofocus tabindex="0" size="30" type="text" name="name"
+                                   value="<?php echo( isset( $_REQUEST['name'] ) ? htmlspecialchars( $_REQUEST['name'] ) : "" ); ?>"/>
                             <script>
-								jQuery(function () {
-									let grid_name = jQuery("#inventory-grid-name");
-									if (grid_name.val().length === 0) {
-										grid_name.focus();
-									}
-								});
+                                jQuery(function () {
+                                    let grid_name = jQuery("#inventory-grid-name");
+                                    if (grid_name.val().length === 0) {
+                                        grid_name.focus();
+                                    }
+                                });
                             </script>
                         </label> eg. My Million Pixel Grid
                     </div>
@@ -545,11 +561,17 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 						if ( ! $locked ) {
 							?>
                             <label>
-                                <input <?php echo $disabled; ?> size="2" type="text" name="grid_width" value="<?php echo htmlspecialchars( $_REQUEST['grid_width'] ); ?>"/>
+                                <input <?php echo $disabled; ?> size="2" type="text" name="grid_width"
+                                                                value="<?php echo htmlspecialchars( $_REQUEST['grid_width'] ); ?>"/>
                             </label> Measured in blocks (default block size is 10x10 pixels)
 						<?php } else { ?>
                             <b><?php echo htmlspecialchars( $_REQUEST['grid_width'] ); ?>
-                                <input type='hidden' value='<?php echo( isset( $row ) ? ( $row['grid_width'] ?? '' ) : '' ); ?>' name='grid_width'> Blocks.</b> Note: Cannot change width because the grid is in use by an advertiser. [<a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $BID; ?>&edit_anyway=1'>Edit Anyway</a>]
+                                <input type='hidden'
+                                       value='<?php echo( isset( $row ) ? ( $row['grid_width'] ?? '' ) : '' ); ?>'
+                                       name='grid_width'>
+                                Blocks.</b> Note: Cannot change width because the grid is in use by an advertiser. [<a
+                                    href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $BID; ?>&edit_anyway=1'>Edit
+                                Anyway</a>]
 						<?php } ?>
                     </div>
                 </div>
@@ -561,11 +583,17 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 						if ( ! $locked ) {
 							?>
                             <label>
-                                <input <?php echo $disabled; ?> size="2" type="text" name="grid_height" value="<?php echo htmlspecialchars( $_REQUEST['grid_height'] ); ?>"/>
+                                <input <?php echo $disabled; ?> size="2" type="text" name="grid_height"
+                                                                value="<?php echo htmlspecialchars( $_REQUEST['grid_height'] ); ?>"/>
                             </label> Measured in blocks (default block size is 10x10 pixels)
 						<?php } else { ?>
                             <b><?php echo htmlspecialchars( $_REQUEST['grid_height'] ); ?>
-                                <input type='hidden' value='<?php echo( isset( $row ) ? ( $row['grid_height'] ?? '' ) : '' ); ?>' name='grid_height'> Blocks.</b>  Note: Cannot change height because the grid is in use by an advertiser. [<a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $BID; ?>&edit_anyway=1'>Edit Anyway</a>]";
+                                <input type='hidden'
+                                       value='<?php echo( isset( $row ) ? ( $row['grid_height'] ?? '' ) : '' ); ?>'
+                                       name='grid_height'>
+                                Blocks.</b>  Note: Cannot change height because the grid is in use by an advertiser. [<a
+                                    href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $BID; ?>&edit_anyway=1'>Edit
+                                Anyway</a>]";
 						<?php } ?>
                     </div>
                 </div>
@@ -573,7 +601,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Price per block</div>
                     <div class="inventory-content">
                         <label>
-                            <input size="1" type="text" name="price_per_block" value="<?php echo htmlspecialchars( $_REQUEST['price_per_block'] ); ?>"/>
+                            <input size="1" type="text" name="price_per_block"
+                                   value="<?php echo htmlspecialchars( $_REQUEST['price_per_block'] ); ?>"/>
                         </label>(How much for 1 block of pixels?)
                     </div>
                     <div class="inventory-title">Currency</div>
@@ -592,7 +621,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Days to Expire</div>
                     <div class="inventory-content">
                         <label>
-                            <input <?php echo $disabled; ?> size="1" type="text" name="days_expire" value="<?php echo htmlspecialchars( $_REQUEST['days_expire'] ); ?>"/>
+                            <input <?php echo $disabled; ?> size="1" type="text" name="days_expire"
+                                                            value="<?php echo htmlspecialchars( $_REQUEST['days_expire'] ); ?>"/>
                         </label>(How many days until pixels expire? Enter 0 for unlimited.)
                     </div>
                 </div>
@@ -600,7 +630,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Max orders Per Customer</div>
                     <div class="inventory-content">
                         <label>
-                            <input <?php echo $disabled; ?> size="1" type="text" name="max_orders" value="<?php echo htmlspecialchars( $_REQUEST['max_orders'] ); ?>"/>
+                            <input <?php echo $disabled; ?> size="1" type="text" name="max_orders"
+                                                            value="<?php echo htmlspecialchars( $_REQUEST['max_orders'] ); ?>"/>
                         </label>(How many orders per 1 customer? Enter 0 for unlimited.)<br>
                     </div>
                 </div>
@@ -608,28 +639,34 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Max blocks</div>
                     <div class="inventory-content">
                         <label>
-                            <input size="1" type="text" name="max_blocks" value="<?php echo htmlspecialchars( $_REQUEST['max_blocks'] ); ?>"/>
-                        </label>(Maximum amount of blocks the customer is allowerd to purchase? Enter 0 for unlimited.)<br>
+                            <input size="1" type="text" name="max_blocks"
+                                   value="<?php echo htmlspecialchars( $_REQUEST['max_blocks'] ); ?>"/>
+                        </label>(Maximum amount of blocks the customer is allowerd to purchase? Enter 0 for
+                        unlimited.)<br>
                     </div>
                 </div>
                 <div class="inventory-entry">
                     <div class="inventory-title">Min blocks</div>
                     <div class="inventory-content">
                         <label>
-                            <input size="1" type="text" name="min_blocks" value="<?php echo htmlspecialchars( $_REQUEST['min_blocks'] ); ?>"/>
-                        </label>(Minumum amount of blocks the customer has to purchase per order? Enter 1 or 0 for no limit.)<br>
+                            <input size="1" type="text" name="min_blocks"
+                                   value="<?php echo htmlspecialchars( $_REQUEST['min_blocks'] ); ?>"/>
+                        </label>(Minumum amount of blocks the customer has to purchase per order? Enter 1 or 0 for no
+                        limit.)<br>
                     </div>
                 </div>
                 <div class="inventory-entry">
                     <div class="inventory-title">Approve Automatically?</div>
                     <div class="inventory-content">
                         <label>
-                            <input type="radio" name="auto_approve" value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
+                            <input type="radio" name="auto_approve"
+                                   value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
 								echo " checked ";
 							} ?> >
                         </label>Yes. Approve all pixels automatically as they are submitted.<br>
                         <label>
-                            <input type="radio" name="auto_approve" value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
+                            <input type="radio" name="auto_approve"
+                                   value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
 								echo " checked ";
 							} ?> >
                         </label>No, approve manually from the Admin.<br>
@@ -639,12 +676,15 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Publish Automatically?</div>
                     <div class="inventory-content">
                         <label>
-                            <input type="radio" name="auto_publish" value="Y" <?php if ( $_REQUEST['auto_publish'] == 'Y' ) {
+                            <input type="radio" name="auto_publish"
+                                   value="Y" <?php if ( $_REQUEST['auto_publish'] == 'Y' ) {
 								echo " checked ";
 							} ?> >
-                        </label>Yes. Process the grid image(s) automatically, every time when the pixels are approved, expired or disapproved.<br>
+                        </label>Yes. Process the grid image(s) automatically, every time when the pixels are approved,
+                        expired or disapproved.<br>
                         <label>
-                            <input type="radio" name="auto_publish" value="N" <?php if ( $_REQUEST['auto_publish'] == 'N' ) {
+                            <input type="radio" name="auto_publish"
+                                   value="N" <?php if ( $_REQUEST['auto_publish'] == 'N' ) {
 								echo " checked ";
 							} ?> >
                         </label>No, Process manually from the admin<br>
@@ -657,11 +697,13 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Block Size</div>
                     <div class="inventory-content">
                         <label>
-                            <input type="text" name="block_width" size="2" style="font-size: 18pt" value="<?php echo intval( $_REQUEST['block_width'] ); ?>">
+                            <input type="text" name="block_width" size="2" style="font-size: 18pt"
+                                   value="<?php echo intval( $_REQUEST['block_width'] ); ?>">
                         </label>
                         &nbsp;X&nbsp;
                         <label>
-                            <input type="text" name="block_height" size="2" style="font-size: 18pt" value="<?php echo intval( $_REQUEST['block_height'] ); ?>">
+                            <input type="text" name="block_height" size="2" style="font-size: 18pt"
+                                   value="<?php echo intval( $_REQUEST['block_height'] ); ?>">
                         </label>
                         <br/>(Width X Height, default is 10x10 in pixels)
                     </div>
@@ -670,14 +712,16 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-title">Not For Sale Image Coverage</div>
                     <div class="inventory-content">
                         <label>
-                            <input type="radio" name="nfs_covered" value="N" <?php if ( $_REQUEST['nfs_covered'] == 'N' ) {
+                            <input type="radio" name="nfs_covered"
+                                   value="N" <?php if ( $_REQUEST['nfs_covered'] == 'N' ) {
 								echo " checked ";
 							} ?> >
                             Show the NFS image on every NFS block.
                         </label>
                         <br/>
                         <label>
-                            <input type="radio" name="nfs_covered" value="Y" <?php if ( $_REQUEST['nfs_covered'] == 'Y' ) {
+                            <input type="radio" name="nfs_covered"
+                                   value="Y" <?php if ( $_REQUEST['nfs_covered'] == 'Y' ) {
 								echo " checked ";
 							} ?> >
                             Show a single image across all NFS blocks.
@@ -696,7 +740,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 						<?php
 						display_reset_link( $BID, 'grid_block' );
 						?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=grid_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=grid_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -715,7 +760,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 					}
 					?>">
 						<?php display_reset_link( $BID, 'nfs_block' ); ?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=nfs_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=nfs_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -736,16 +782,20 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 							$bgstyle = ' style="background-color:' . $banner_data['G_BGCOLOR'] . ';"';
 						}
 						?>
-                        <img<?php echo $bgstyle; ?> src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=tile" alt=""/>
+                        <img<?php echo $bgstyle; ?>
+                                src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=tile"
+                                alt=""/>
                         <input type="file" name="tile" size="10"/>
-                        <br/>(This tile is used the fill the space behind the grid image. The tile will be seen before the grid image is loaded.)
+                        <br/>(This tile is used the fill the space behind the grid image. The tile will be seen before
+                        the grid image is loaded.)
                     </div>
                 </div>
                 <div class="inventory-entry">
                     <div class="inventory-title">Background Color</div>
                     <div class="inventory-content">
                         <label>
-                            <input type='text' name='bgcolor' size='7' value='<?php echo htmlspecialchars( $_REQUEST['bgcolor'] ); ?>'/>
+                            <input type='text' name='bgcolor' size='7'
+                                   value='<?php echo htmlspecialchars( $_REQUEST['bgcolor'] ); ?>'/>
                         </label> eg. #ffffff
                     </div>
                 </div>
@@ -761,7 +811,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 					}
 					?>">
 						<?php display_reset_link( $BID, 'usr_grid_block' ); ?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_grid_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_grid_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -780,7 +831,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 					}
 					?>">
 						<?php display_reset_link( $BID, 'usr_nfs_block' ); ?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_nfs_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_nfs_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -799,7 +851,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 					}
 					?>">
 						<?php display_reset_link( $BID, 'usr_ord_block' ); ?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_ord_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_ord_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -818,7 +871,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 					}
 					?>">
 						<?php display_reset_link( $BID, 'usr_res_block' ); ?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_res_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_res_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -837,7 +891,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 					}
 					?>">
 						<?php display_reset_link( $BID, 'usr_sel_block' ); ?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_sel_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_sel_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -856,7 +911,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 					}
 					?>">
 						<?php display_reset_link( $BID, 'usr_sol_block' ); ?>
-                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_sol_block" alt=""/>
+                        <img src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=usr_sol_block"
+                             alt=""/>
 						<?php
 						if ( ! $valid ) {
 							echo $size_error_msg;
@@ -933,7 +989,9 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 		while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
 			?>
             <div class="inventory2-content">
-                <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a> <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>packages&BID=<?php echo $row['banner_id']; ?>"> Packages</a>
+                <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>packages&BID=<?php echo $row['banner_id']; ?>">
+                    Packages</a>
 				<?php
 				if ( $row['enabled'] == 'Y' ) {
 					?>
@@ -946,7 +1004,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 				}
 				if ( $row['banner_id'] != '1' ) {
 					?>
-                    <a onclick="if (! confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')) return false;" href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
+                    <a onclick="if (! confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')) return false;"
+                       href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
 					<?php
 				}
 				?>

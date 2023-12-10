@@ -29,6 +29,7 @@
 
 use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -46,37 +47,30 @@ if ( ! mds_check_permission( "mds_order_pixels" ) ) {
 global $f2, $wpdb;
 $BID = $f2->bid();
 
-if ( isset( $_REQUEST['order_id'] ) && ! empty( $_REQUEST['order_id'] ) ) {
-	set_current_order_id( $_REQUEST['order_id'] );
-	if ( ! is_numeric( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
-		die();
-	}
-}
-
-// Check for new order
-$order_id = get_current_order_id();
-if ( ! mds_is_new_order( $order_id ) ) {
-	// Search for new order
-	$user_id      = get_current_user_id();
-	$sql          = $wpdb->prepare(
-		"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
-		$user_id,
-		$BID
-	);
-	$order_result = $wpdb->get_results( $sql, ARRAY_A );
-	if ( count( $order_result ) > 0 ) {
-		// Found existing new order
-		$order_id = $order_result[0]['order_id'];
-		set_current_order_id( $order_id );
+if ( ! empty( $_REQUEST['order_id'] ) ) {
+    // If an order id was passed
+	if ( ! is_numeric( $_REQUEST['order_id'] ) ) {
+        // If it was not numeric redirect to the no orders page
+		\MillionDollarScript\Classes\Functions::no_orders();
 	} else {
-		// Make new order
-		set_current_order_id();
+        // If it was numeric check if it's in progress
+		$order_id = intval( $_REQUEST['order_id'] );
+		if ( ! \MillionDollarScript\Classes\Orders::is_order_in_progress( $order_id ) ) {
+            // Not in progress so redirect to the no orders page
+            \MillionDollarScript\Classes\Functions::no_orders();
+		}
+
+        // Was found to be an order in progress so set the current order to it
+		Orders::set_order_in_progress( $order_id );
 	}
+} else {
+	// No order_id in request, start a new order
+	$order_id = Orders::create_order();
 }
 
 // Delete temporary order when the banner was changed.
 if ( isset( $_REQUEST['banner_change'] ) && $_REQUEST['banner_change'] != '' ) {
-	delete_temp_order( get_current_order_id() );
+	delete_temp_order( Orders::get_current_order_id() );
 
 	return;
 }
@@ -136,13 +130,13 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 			// delete old files
 			$stat = stat( $uploaddir . $file );
 			if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
-				if ( str_contains( $file, 'tmp_' . get_current_order_id() ) ) {
+				if ( str_contains( $file, 'tmp_' . Orders::get_current_order_id() ) ) {
 					unlink( $uploaddir . $file );
 				}
 			}
 		}
 
-		$uploadfile = $uploaddir . "tmp_" . get_current_order_id() . ".$ext";
+		$uploadfile = $uploaddir . "tmp_" . Orders::get_current_order_id() . ".$ext";
 
 		if ( move_uploaded_file( $_FILES['graphic']['tmp_name'], $uploadfile ) ) {
 			//echo "File is valid, and was successfully uploaded.\n";
@@ -289,7 +283,7 @@ if ( count( $res ) > 1 ) {
 	?>
     <div class="fancy-heading"><?php Language::out( 'Available Grids' ); ?></div>
     <p>
-		<?php display_banner_selecton_form( $BID, get_current_order_id(), $res, 'order' ); ?>
+		<?php display_banner_selecton_form( $BID, Orders::get_current_order_id(), $res, 'order' ); ?>
     </p>
 	<?php
 }
@@ -366,7 +360,7 @@ if ( ! empty( $tmp_image_file ) ) {
         <input type="hidden" name="mds_dest" value="order">
         <p>
             <input type="button"
-                   class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
+                   class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != Orders::get_current_order_id() ) {
 				echo 'disabled';
 			} ?> name='submit_button1' id='submit_button1'
                    value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ) ?>'/>
@@ -397,10 +391,10 @@ if ( ! empty( $tmp_image_file ) ) {
             <input type="hidden" name="mds_dest" value="write-ad">
             <input type="hidden" name="package" value="">
             <input type="hidden" name="selected_pixels" value=''>
-            <input type="hidden" name="order_id" value="<?php echo get_current_order_id(); ?>">
+            <input type="hidden" name="order_id" value="<?php echo Orders::get_current_order_id(); ?>">
             <input type="hidden" value="<?php echo $BID; ?>" name="BID">
             <input type="submit"
-                   class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != get_current_order_id() ) {
+                   class='big_button' <?php if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != Orders::get_current_order_id() ) {
 				echo 'disabled';
 			} ?> name='submit_button2' id='submit_button2'
                    value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ) ?>'/>

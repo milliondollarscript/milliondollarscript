@@ -30,6 +30,7 @@
 use Imagine\Filter\Basic\Autorotate;
 use MillionDollarScript\Classes\FormFields;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -117,7 +118,7 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 	$mode      = ( isset( $mode ) && in_array( $mode, array( "edit", "user" ) ) ) ? $mode : "";
 	$ad_id     = isset( $prams['ad_id'] ) ? intval( $prams['ad_id'] ) : "";
 	$user_id   = isset( $prams['user_id'] ) ? intval( $prams['user_id'] ) : "";
-	$order_id  = isset( $prams['order_id'] ) ? intval( $prams['order_id'] ) : get_current_order_id();
+	$order_id  = isset( $prams['order_id'] ) ? intval( $prams['order_id'] ) : Orders::get_current_order_id();
 	$banner_id = isset( $prams['banner_id'] ) ? intval( $prams['banner_id'] ) : "";
 
 	if ( is_admin() && $mode == "edit" ) {
@@ -374,18 +375,10 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 	return $count;
 }
 
-function insert_ad_data() {
+function insert_ad_data( $order_id = 0, $admin = false ) {
 	global $wpdb;
 
-	$admin = false;
-	if ( func_num_args() > 0 ) {
-		// admin mode.
-		$admin = func_get_arg( 0 );
-	}
-
 	$current_user = wp_get_current_user();
-
-	$order_id = ( ! empty( $_REQUEST['order_id'] ) ) ? $_REQUEST['order_id'] : ( get_current_order_id() ?? 0 );
 
 	$sql          = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE user_id=%d AND status='new' AND order_id=%d";
 	$prepared_sql = $wpdb->prepare( $sql, $current_user->ID, intval( $order_id ) );
@@ -449,6 +442,9 @@ function insert_ad_data() {
 			$sql          = "UPDATE " . MDS_DB_PREFIX . "blocks SET file_name=%s, url=%s, alt_text=%s, ad_id=%d WHERE FIND_IN_SET(block_id, %s) AND banner_id=%d;";
 			$prepared_sql = $wpdb->prepare( $sql, $image, $url, $text, $ad_id, $blocks, $order_row['banner_id'] );
 			$wpdb->query( $prepared_sql );
+
+			// Update the last modification time
+			Orders::set_last_order_modification_time();
 		}
 	}
 
@@ -490,7 +486,7 @@ function upload_changed_pixels( $order_id, $BID, $size, $banner_data ) {
 			echo $error;
 		} else {
 
-			$uploadfile = $uploaddir . "tmp_" . get_current_order_id() . ".$ext";
+			$uploadfile = $uploaddir . "tmp_" . Orders::get_current_order_id() . ".$ext";
 
 			// move the file
 			if ( move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {

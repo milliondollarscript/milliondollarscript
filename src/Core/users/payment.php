@@ -30,6 +30,8 @@
 use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
+use MillionDollarScript\Classes\Steps;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -41,9 +43,9 @@ $BID = $f2->bid();
 
 if ( ! empty( $_REQUEST['order_id'] ) ) {
 	$order_id = intval( $_REQUEST['order_id'] );
-	set_current_order_id( $order_id );
+	Orders::set_current_order_id( $order_id );
 } else {
-	$order_id = get_current_order_id();
+	$order_id = Orders::get_current_order_id();
 }
 
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . intval( $order_id ) . " AND user_id=" . get_current_user_id();
@@ -97,6 +99,6 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 }
 
 if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {
-	delete_user_meta( get_current_user_id(), 'mds_confirm' );
+	Steps::update_step( 'payment' );
 	\MillionDollarScript\Classes\Payment::handle_checkout();
 }

@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Currency;
+use MillionDollarScript\Classes\Orders;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -70,7 +71,11 @@ function place_temp_order( $in_str ) {
 	$now = ( gmdate( "Y-m-d H:i:s" ) );
 
 	// preserve ad_id & block info...
-	$order_id = get_current_order_id();
+	$order_id = Orders::get_current_order_in_progress();
+	if ( ! $order_id ) {
+		$order_id = Orders::create_order();
+	}
+
 	$sql      = $wpdb->prepare( "SELECT ad_id, block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $order_id );
 	$row      = $wpdb->get_row( $sql, ARRAY_A );
 
@@ -86,7 +91,7 @@ function place_temp_order( $in_str ) {
 	$table_name = MDS_DB_PREFIX . 'orders';
 
 	// TODO: add any extra columns necessary such as package_id
-	$order_id = get_current_order_id();
+	$order_id = Orders::get_current_order_id();
 	$data     = array(
 		'user_id'           => get_current_user_id(),
 		'order_id'          => $order_id,
@@ -129,8 +134,6 @@ function place_temp_order( $in_str ) {
 	}
 	$f2->write_log( 'Placed Temp order. ' . $sql );
 
-	get_current_order_id();
-
 	return true;
 }
 
@@ -168,10 +171,13 @@ function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 		"UPDATE " . MDS_DB_PREFIX . "orders SET price=%f, block_info=%s WHERE order_id=%d",
 		floatval( $total ),
 		serialize( $block_info ),
-		get_current_order_id()
+		Orders::get_current_order_id()
 	);
 	$wpdb->query( $sql ) or mds_sql_log_die( $sql );
 	$f2->write_log( 'Reserved Temp order. ' . $sql );
+
+	// Update the last modification time
+	Orders::set_last_order_modification_time();
 
 	return true;
 }

@@ -31,6 +31,7 @@ use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -75,12 +76,12 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 	if ( $uploadok ) {
 		global $wpdb;
 
-		$ad_id         = insert_ad_data();
+		$ad_id         = insert_ad_data( Orders::get_current_order_id() );
 		$sql_completed = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND ad_id=%d", get_current_user_id(), intval( $ad_id ) );
 		$row           = $wpdb->get_row( $sql_completed, ARRAY_A );
 		if ( $row ) {
 			if ( $row['status'] != 'completed' ) {
-				$order_id                  = get_current_order_id();
+				$order_id                  = Orders::get_current_order_id();
 				$blocks                    = explode( ',', $row['blocks'] );
 				$size                      = get_pixel_image_size( $order_id );
 				$pixels                    = $size['x'] * $size['y'];
@@ -119,7 +120,7 @@ if ( $has_packages && ! empty( $_REQUEST['pack'] ) ) {
 		// convert & round off
 		$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( get_current_order_id() ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( Orders::get_current_order_id() ) . "'";
 
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	} else {
@@ -190,7 +191,7 @@ if ( isset( $order_exists ) && $order_exists ) {
 // 	display_price_table( $BID );
 // }
 
-$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( get_current_order_id() ) . "' and banner_id='$BID'";
+$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( Orders::get_current_order_id() ) . "' and banner_id='$BID'";
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $order_row = mysqli_fetch_array( $result );
 
@@ -224,7 +225,8 @@ Language::out_replace(
 		<?php Language::out( '<p><strong>Upload your pixels:</strong></p>' ); ?>
         <input type='file' accept="image/*" name='graphic' style=' font-size:14px;width:200px;'/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
-        <input class="mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>' style=' font-size:18px;'/>
+        <input class="mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
+               style=' font-size:18px;'/>
     </form>
 
 <?php
@@ -287,7 +289,10 @@ if ( ! empty( $image ) ) {
 				Language::out_replace(
 					'<strong style="color:red;">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>',
 					[ '%MIN_PIXELS%', '%COUNT%' ],
-					[ $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'], $pixel_count ]
+					[
+						$banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'],
+						$pixel_count
+					]
 				);
 
 				unset( $tmp_image_file );
@@ -318,11 +323,12 @@ if ( ! empty( $image ) ) {
 	function display_edit_order_button( $order_id ) {
 		global $BID;
 		?>
-        <input type='button' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>'">
+        <input type='button' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>"
+               onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>'">
 		<?php
 	}
 
-	$mds_order_id = get_current_order_id();
+	$mds_order_id = Orders::get_current_order_id();
 
 	if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) ) {
 		Language::out_replace(
@@ -344,11 +350,14 @@ if ( ! empty( $image ) ) {
                 <input type="hidden" name="selected_pixels" value=''>
                 <input type="hidden" name="order_id" value="<?php echo $mds_order_id; ?>">
                 <input type="hidden" value="<?php echo $BID; ?>" name="BID">
-                <input type="submit" class='big_button' name='submit_button2' id='submit_button2' value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ); ?>'>
+                <input type="submit" class='big_button' name='submit_button2' id='submit_button2'
+                       value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ); ?>'>
                 <hr/>
             </form>
             <!--suppress HtmlRequiredAltAttribute, HtmlUnknownAnchorTarget -->
-            <img src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&time=<?php echo( time() ); ?>" width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>" height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" usemap="#main"/>
+            <img src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&time=<?php echo( time() ); ?>"
+                 width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>"
+                 height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" usemap="#main"/>
 			<?php
 		}
 	}

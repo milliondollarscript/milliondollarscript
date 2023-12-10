@@ -344,14 +344,14 @@ class Utility {
 		/** @noinspection SqlWithoutWhere */
 		$wpdb->query( "DELETE FROM " . MDS_DB_PREFIX . "orders" );
 
+		Orders::set_last_order_modification_time();
+
 		// Delete any orders in progress from user meta.
 		$users = get_users();
 		foreach ( $users as $user ) {
 			$user_id = $user->ID;
-			delete_user_meta( $user_id, MDS_PREFIX . 'current_order_id' );
 			delete_user_meta( $user_id, MDS_PREFIX . 'click_count' );
 			delete_user_meta( $user_id, MDS_PREFIX . 'view_count' );
-			delete_user_meta( $user_id, '_' . MDS_PREFIX . 'privileged' );
 
 			WooCommerceFunctions::reset_session_variables( $user_id );
 		}

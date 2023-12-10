@@ -90,9 +90,13 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
                 <div style="text-align: center;">
 					<?php
 					if ( $_REQUEST['aid'] != '' ) {
-						?><img id="order_image_preview" src="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>get-order-image&amp;BID=<?php echo $BID; ?>&amp;aid=<?php echo intval( $_REQUEST['aid'] ); ?>" border=1><?php
+						?><img id="order_image_preview"
+                               src="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>get-order-image&amp;BID=<?php echo $BID; ?>&amp;aid=<?php echo intval( $_REQUEST['aid'] ); ?>"
+                               border=1><?php
 					} else {
-						?><img id="order_image_preview" src="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>get-order-image&amp;BID=<?php echo $BID; ?>&amp;block_id=<?php echo intval( $_REQUEST['block_id'] ); ?>" border=1><?php
+						?><img id="order_image_preview"
+                               src="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>get-order-image&amp;BID=<?php echo $BID; ?>&amp;block_id=<?php echo intval( $_REQUEST['block_id'] ); ?>"
+                               border=1><?php
 					} ?>
                 </div>
             </td>
@@ -113,14 +117,16 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 					[ $size['x'], $size['y'] ]
 				);
 				?>
-                <form name="change" enctype="multipart/form-data" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <form name="change" enctype="multipart/form-data" method="post"
+                      action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'mds-admin' ); ?>
                     <input type="hidden" name="action" value="mds_admin_form_submission"/>
                     <input type="hidden" name="mds_dest" value="list"/>
 
                     <input type="file" name='pixels'><br>
                     <input type="hidden" name="aid" value="<?php echo intval( $_REQUEST['aid'] ); ?>">
-                    <input type="submit" name="change_pixels" value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>"></form><?php if ( $error ) {
+                    <input type="submit" name="change_pixels"
+                           value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>"></form><?php if ( $error ) {
 					echo "<span style=\"color: red; \">" . $error . "</span>";
 					$error = '';
 				} ?>
@@ -135,12 +141,12 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 	if ( ! empty( $_REQUEST['save'] ) ) {
 
 		// saving
-
-		insert_ad_data( true ); // admin mode
+		// admin mode
+		insert_ad_data( $order_id, true );
 		$prams = load_ad_values( $_REQUEST['aid'] );
 
 		display_ad_form( 1, "user", $prams );
-		// disapprove the pixels because the ad was modified..
+		// disapprove the pixels because the ad was modified...
 
 		if ( $banner_data['AUTO_APPROVE'] != 'Y' ) {
 			// to be approved by the admin
@@ -176,9 +182,11 @@ if ( isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ) {
 	?>
 
 
-    <b><?php Language::out( 'Customer:' ); ?></b><?php echo esc_html( $user_info->last_name ) . ', ' . esc_html( $user_info->first_name ); ?><BR>
+    <b><?php Language::out( 'Customer:' ); ?></b><?php echo esc_html( $user_info->last_name ) . ', ' . esc_html( $user_info->first_name ); ?>
+    <BR>
     <b><?php Language::out( 'Order #:' ); ?></b><?php echo $prams['order_id']; ?><br>
-    <b><?php Language::out( 'Grid:' ); ?></b><a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>map-of-orders&amp;banner_id=<?php echo intval( $prams['banner_id'] ); ?>'><?php echo esc_html( $prams['banner_id'] . " - " . $b_row['name'] ); ?></a>
+    <b><?php Language::out( 'Grid:' ); ?></b><a
+            href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>map-of-orders&amp;banner_id=<?php echo intval( $prams['banner_id'] ); ?>'><?php echo esc_html( $prams['banner_id'] . " - " . $b_row['name'] ); ?></a>
 
 	<?php
 	echo '<hr>';

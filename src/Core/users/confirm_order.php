@@ -31,6 +31,8 @@ use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Options;
+use MillionDollarScript\Classes\Orders;
+use MillionDollarScript\Classes\Steps;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -53,7 +55,7 @@ function display_edit_order_button( $order_id ): void {
 
 update_temp_order_timestamp();
 
-$order_id = get_current_order_id();
+$order_id = Orders::get_current_order_id();
 
 $sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $order_id ) . "' ";
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
@@ -153,7 +155,7 @@ if ( ! is_user_logged_in() ) {
 			echo '<div class="mds-error">' . $error . '</div>';
 		}
 
-		display_edit_order_button( get_current_order_id() );
+		display_edit_order_button( Orders::get_current_order_id() );
 
 		return;
 	}
@@ -173,7 +175,7 @@ if ( ! is_user_logged_in() ) {
 
 		if ( can_user_get_package( get_current_user_id(), $_REQUEST['pack'] ) ) {
 
-			$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
+			$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "'";
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 			$row      = mysqli_fetch_array( $result );
 			$quantity = $row['quantity'];
@@ -187,7 +189,7 @@ if ( ! is_user_logged_in() ) {
 			// convert & round off
 			$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "'";
+			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "'";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			$order_row['price']       = $total;
@@ -234,13 +236,13 @@ if ( ! is_user_logged_in() ) {
 		}
 	} else {
 
-		display_order( get_current_order_id(), $BID );
+		display_order( Orders::get_current_order_id(), $BID );
 
 		?>
         <div class="mds-button-container">
 		<?php
 
-		display_edit_order_button( get_current_order_id() );
+		display_edit_order_button( Orders::get_current_order_id() );
 
 		if ( ! can_user_order( $banner_data, get_current_user_id(), ( $_REQUEST['pack'] ?? 0 ) ) ) {
 			// one more check before continue
@@ -265,7 +267,7 @@ if ( ! is_user_logged_in() ) {
 					?>
                     <input type='button' class='mds-button mds-complete'
                            value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
-                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&BID=<?php echo $BID; ?>&order_id=<?php echo get_current_order_id(); ?>'">
+                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=complete&BID=<?php echo $BID; ?>&order_id=<?php echo Orders::get_current_order_id(); ?>'">
 					<?php
 				} else {
 					// go to payment
@@ -280,9 +282,13 @@ if ( ! is_user_logged_in() ) {
 				<?php
 			} else {
 				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
+					Steps::update_step( 'complete' );
+
 					// go straight to publish...
 					wp_safe_redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . $order_row['order_id'] );
 				} else {
+					Steps::update_step( 'payment' );
+
 					// go to payment
 					wp_safe_redirect( Utility::get_page_url( 'payment' ) . '?mds-action=confirm&order_id=' . $order_row['order_id'] . '&BID=' . $BID );
 				}

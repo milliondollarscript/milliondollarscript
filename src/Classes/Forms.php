@@ -122,6 +122,9 @@ class Forms {
 				break;
 		}
 
+		// Update the current step
+		Steps::update_step( $mds_dest );
+
 		if ( isset( $_REQUEST['BID'] ) ) {
 			Utility::redirect( Utility::get_page_url( $mds_dest ) . '?BID=' . intval( $_REQUEST['BID'] ) . $params );
 		} else {
@@ -211,7 +214,14 @@ class Forms {
 			require_once MDS_CORE_PATH . 'admin/process-pixels.php';
 		}
 
-		if ( in_array( $mds_dest, [ 'orders-cancelled', 'orders-completed', 'orders-deleted', 'orders-expired', 'orders-reserved', 'orders-waiting' ] ) && isset( $_REQUEST['search'] ) ) {
+		if ( in_array( $mds_dest, [
+				'orders-cancelled',
+				'orders-completed',
+				'orders-deleted',
+				'orders-expired',
+				'orders-reserved',
+				'orders-waiting'
+			] ) && isset( $_REQUEST['search'] ) ) {
 			// Orders
 			$q_aday     = isset( $_REQUEST['q_aday'] ) ? intval( $_REQUEST['q_aday'] ) : 0;
 			$q_amon     = isset( $_REQUEST['q_amon'] ) ? intval( $_REQUEST['q_amon'] ) : 0;

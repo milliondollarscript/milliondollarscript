@@ -93,6 +93,7 @@ class Payment {
 										$cart_item_key = $cart->add_to_cart( $product_id, $quantity, $variation_id );
 										$cart->set_quantity( $cart_item_key, $quantity );
 									} catch ( \Exception $e ) {
+										error_log( Language::get( 'Error adding product to cart: ' ) . $e->getMessage() );
 									}
 								}
 
@@ -173,7 +174,7 @@ class Payment {
 
 			Language::out( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
 		} else {
-			confirm_order( get_current_user_id(), get_current_order_id() );
+			confirm_order( get_current_user_id(), \MillionDollarScript\Classes\Orders::get_current_order_id() );
 			Language::out( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
 		}
 

@@ -29,6 +29,7 @@
 
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -71,15 +72,13 @@ $BID = $f2->bid();
 
 $banner_data = load_banner_constants( $BID );
 
-// Entry point for completion of orders which are made by super users or if the order was for free
+// Entry point for completion of orders
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
 
-	// check if order is $0 & complete it
-
-	if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == get_current_order_id() ) {
+	if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == Orders::get_current_order_id() ) {
 		// convert the temp order to an order.
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( get_current_order_id() ) . "' ";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "' ";
 		$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		if ( mysqli_num_rows( $order_result ) == 0 ) {
@@ -107,9 +106,13 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 		}
 	}
 
-	$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $_REQUEST['order_id'] ) . "' AND user_id='" . get_current_user_id() . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-	$row = mysqli_fetch_array( $result );
+	$sql = $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
+		intval( $_REQUEST['order_id'] ),
+		get_current_user_id()
+	);
+
+	$row = $wpdb->get_row( $sql, ARRAY_A );
 
 	$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
 
@@ -151,7 +154,7 @@ if ( count( $res ) > 1 ) {
 		count( $res )
 	);
 	echo '<br />';
-	display_banner_selecton_form( $BID, get_current_order_id(), $res, 'publish' );
+	display_banner_selecton_form( $BID, Orders::get_current_order_id(), $res, 'publish' );
 }
 
 // A block was clicked. Fetch the ad_id and initialize $_REQUEST['ad_id']
@@ -159,9 +162,11 @@ if ( count( $res ) > 1 ) {
 $mds_pixel = null;
 if ( isset( $_REQUEST['block_id'] ) && ! empty( $_REQUEST['block_id'] ) ) {
 
-	$sql = "SELECT user_id, ad_id, order_id FROM " . MDS_DB_PREFIX . "blocks where banner_id='$BID' AND block_id='" . intval( $_REQUEST['block_id'] ) . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	$blk_row = mysqli_fetch_array( $result );
+	$BID      = intval( $BID );
+	$block_id = intval( $_REQUEST['block_id'] );
+
+	$sql     = $wpdb->prepare( "SELECT `user_id`, `ad_id`, `order_id` FROM " . MDS_DB_PREFIX . "blocks WHERE `banner_id`=%d AND `block_id`=%d", $BID, $block_id );
+	$blk_row = $wpdb->get_row( $sql, ARRAY_A );
 
 	if ( ! isset( $blk_row['ad_id'] ) || empty( $blk_row['ad_id'] ) ) { // no ad exists, create a new ad_id
 		$_POST[ MDS_PREFIX . 'url' ]  = '';
@@ -170,7 +175,7 @@ if ( isset( $_REQUEST['block_id'] ) && ! empty( $_REQUEST['block_id'] ) ) {
 		$_REQUEST['BID']              = $BID;
 		$_REQUEST['user_id']          = get_current_user_id();
 		$_REQUEST['aid']              = "";
-		$ad_id                        = insert_ad_data();
+		$ad_id                        = insert_ad_data( $blk_row['order_id'] );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='" . intval( $ad_id ) . "' WHERE order_id='" . intval( $blk_row['order_id'] ) . "' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
@@ -220,6 +225,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		$row = array();
 	}
 
+	// TODO: handle if the order wasn't found from the query above
 	$order_id = $row['order_id'];
 	$blocks   = explode( ',', $row['blocks'] );
 
@@ -297,11 +303,10 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	if ( ! empty( $pixels ) ) {
 		$ad_id    = $pixels[0]->ID;
 		$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
-		set_current_order_id( $order_id );
 	}
 
 	if ( empty( $ad_id ) ) {
-		$ad_id = insert_ad_data();
+		$ad_id = insert_ad_data( $order_id );
 	}
 
 	if ( ! empty( $_REQUEST['save'] ) ) {

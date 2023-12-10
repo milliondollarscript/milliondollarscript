@@ -30,6 +30,7 @@
 use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -68,7 +69,7 @@ if ( $has_packages && $_REQUEST['pack'] != '' ) {
 		// convert & round off
 		$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( get_current_order_id() ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( Orders::get_current_order_id() ) . "'";
 
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	} else {
@@ -101,7 +102,7 @@ Language::out_replace(
 	],
 );
 
-$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( get_current_order_id() ) . "' and banner_id='$BID'";
+$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( Orders::get_current_order_id() ) . "' and banner_id='$BID'";
 
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $order_row = mysqli_fetch_array( $result );
@@ -120,7 +121,7 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 		[ Utility::get_page_url( 'order' ), $BID ]
 	);
 } else if ( $not_enough_blocks ) {
-	Functions::not_enough_blocks( get_current_order_id(), $banner_data['G_MIN_BLOCKS'] );
+	Functions::not_enough_blocks( Orders::get_current_order_id(), $banner_data['G_MIN_BLOCKS'] );
 } else {
 
 	if ( ( $has_packages ) && ( $_REQUEST['pack'] == '' ) ) {
@@ -176,7 +177,7 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 			);
 		}
 	} else {
-		display_order( get_current_order_id(), $BID );
+		display_order( Orders::get_current_order_id(), $BID );
 
 		display_edit_order_button( $order_row['order_id'] );
 

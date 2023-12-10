@@ -32,6 +32,8 @@ use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Emails;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Mail;
+use MillionDollarScript\Classes\Orders;
+use MillionDollarScript\Classes\Steps;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -255,9 +257,6 @@ function delete_temp_order( $sid, $delete_ad = true ) {
 	if ( file_exists( $f ) ) {
 		unlink( $f );
 	}
-
-	// reset session order id
-	delete_current_order_id();
 }
 
 /*
@@ -336,8 +335,31 @@ function complete_order( $user_id, $order_id ) {
 	if ( $order_row['status'] != 'completed' ) {
 		$now = ( gmdate( "Y-m-d H:i:s" ) );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='completed', date_published=NULL, date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "'";
-		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+		global $wpdb;
+
+		$steps        = Steps::get_steps( false );
+		$current_step = $steps['complete'];
+
+		$table_name   = $wpdb->prefix . MDS_DB_PREFIX . "orders";
+		$data         = array(
+			'status'            => 'completed',
+			'date_published'    => null,
+			'date_stamp'        => $now,
+			'order_in_progress' => 'N',
+			'current_step'      => $current_step
+		);
+		$data_format  = array(
+			'%s',
+			null,
+			'%s',
+			'%s',
+			'%d'
+		);
+		$where        = array(
+			'order_id' => intval( $order_id )
+		);
+		$where_format = array( '%d' );
+		$wpdb->update( $table_name, $data, $where, $data_format, $where_format );
 
 		// Update mds-pixel post status
 		wp_update_post( [
@@ -1349,7 +1371,11 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 
 	if ( ( $blocksrow == null || $blocksrow['status'] == '' ) || ( ( $blocksrow['status'] == 'reserved' ) && ( $blocksrow['user_id'] == get_current_user_id() ) ) ) {
 
-		$orderid = get_current_order_id();
+		$orderid = Orders::get_current_order_in_progress();
+
+		if ( $orderid == null ) {
+			$orderid = Orders::create_order();
+		}
 
 		// put block on order
 		$sql = "SELECT blocks,status,ad_id,order_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id=" . get_current_user_id() . " AND order_id=" . $orderid . " AND banner_id=" . intval( $BID ) . " AND status!='deleted'";
@@ -1534,7 +1560,8 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 			$order_id = mysqli_insert_id( $GLOBALS['connection'] );
-			set_current_order_id( $order_id );
+			Orders::set_order_in_progress( $order_id );
+			Orders::set_current_step( $order_id, 1 );
 
 			$return_val = [
 				"error" => "false",
@@ -1631,7 +1658,7 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 
 	// Session may have expired if they waited too long so tell them to start over, even though we might still have the file it doesn't match the current session id anymore.
 	$block_info       = array();
-	$current_order_id = get_current_order_id();
+	$current_order_id = Orders::get_current_order_id();
 	$sql              = $wpdb->prepare( "SELECT block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $current_order_id );
 	$row              = $wpdb->get_row( $sql, ARRAY_A );
 
@@ -1689,10 +1716,10 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 		intval( $temp_order_row['package_id'] ),
 		intval( $temp_order_row['ad_id'] ),
 		$approved,
-		get_current_order_id()
+		Orders::get_current_order_id()
 	);
 	$wpdb->query( $sql );
-	$order_id = get_current_order_id();
+	$order_id = Orders::get_current_order_id();
 
 	global $f2;
 	$f2->debug( "Changed temp order to a real order - " . $sql );
@@ -2161,7 +2188,7 @@ function deleteFile( $table_name, $object_name, $object_id, $field_id ) {
 
 function get_tmp_img_name(): string {
 	$uploaddir = Utility::get_upload_path() . "images/";
-	$filter    = "tmp_" . get_current_order_id() . '.png';
+	$filter    = "tmp_" . Orders::get_current_order_id() . '.png';
 	$file      = $uploaddir . $filter;
 
 	if ( file_exists( $file ) ) {
@@ -2173,7 +2200,7 @@ function get_tmp_img_name(): string {
 
 function update_temp_order_timestamp(): void {
 	$now = ( gmdate( "Y-m-d H:i:s" ) );
-	$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET order_date='$now' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
+	$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET order_date='$now' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "' ";
 	mysqli_query( $GLOBALS['connection'], $sql );
 }
 
@@ -2429,100 +2456,6 @@ function validate_mail( $email ): bool {
 	return true;
 }
 
-function delete_current_order_id(): void {
-	$user_id = get_current_user_id();
-	if ( $user_id > 0 ) {
-		delete_user_meta( $user_id, MDS_PREFIX . 'current_order_id' );
-	}
-}
-
-function mds_is_new_order( $order_id ): bool {
-	global $wpdb;
-
-	$user_id = get_current_user_id();
-	if ( ! empty( $user_id ) ) {
-		$sql          = $wpdb->prepare(
-			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND order_id=%d",
-			$user_id,
-			$order_id
-		);
-		$order_result = $wpdb->get_results( $sql );
-		if ( count( $order_result ) > 0 ) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-function set_current_order_id( $order_id = null ): void {
-	global $wpdb;
-
-	$user_id = get_current_user_id();
-	if ( ! empty( $user_id ) ) {
-		if ( is_null( $order_id ) ) {
-			// Add new order to database
-			$wpdb->insert( MDS_DB_PREFIX . "orders", [
-				'user_id' => $user_id,
-				'status'  => 'new',
-			] );
-			$order_id = $wpdb->insert_id;
-		} else {
-			// Check if order id is owned by the user first
-			$order = $wpdb->get_var( $wpdb->prepare( "SELECT user_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id =%d AND order_id=%d", $user_id, $order_id ) );
-			if ( empty( $order ) ) {
-				return;
-			}
-		}
-
-		// Update user meta with current order id
-		update_user_meta( $user_id, MDS_PREFIX . 'current_order_id', $order_id );
-	}
-}
-
-function get_current_order_id( $get_grid = true ) {
-	global $BID, $wpdb, $f2;
-
-	if ( $get_grid ) {
-		$BID = $f2->bid();
-	}
-
-	$user_id = get_current_user_id();
-
-	if ( ! empty( $user_id ) ) {
-		$order_id = get_user_meta( $user_id, MDS_PREFIX . 'current_order_id', true );
-		if ( empty( $order_id ) ) {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new' AND banner_id=%d",
-				$user_id,
-				$BID
-			);
-
-			$order_result = $wpdb->get_results( $sql, ARRAY_A );
-			if ( count( $order_result ) > 0 ) {
-				$order_row = $order_result[0];
-
-				if ( $order_row['user_id'] != '' && (int) $order_row['user_id'] !== $user_id ) {
-					die( Language::get( 'You do not own this order!' ) );
-				}
-			} else {
-				// Insert new order to use id of
-				$wpdb->insert( MDS_DB_PREFIX . "orders", [
-					'user_id'   => $user_id,
-					'status'    => 'new',
-					'banner_id' => $BID
-				] );
-				$order_id = $wpdb->insert_id;
-				set_current_order_id( $order_id );
-			}
-		}
-
-		return $order_id;
-	} else {
-		return null;
-	}
-}
-
 /**
  * Check available pixels
  *
@@ -2562,7 +2495,7 @@ function check_pixels( $in_str ): bool {
 
 	// TODO: optimize or remove this but make sure blocks are added so they get checked above.
 	if ( $available ) {
-		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %s", $BID, get_current_order_id() );
+		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %s", $BID, Orders::get_current_order_id() );
 		$result = $wpdb->get_results( $sql );
 
 		$selected = explode( ",", $in_str );

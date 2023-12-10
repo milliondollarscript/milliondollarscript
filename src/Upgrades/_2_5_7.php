@@ -41,6 +41,8 @@ class _2_5_7 {
 	public function upgrade( $version ): void {
 		if ( version_compare( $version, '2.5.7', '<' ) ) {
 
+			global $wpdb;
+
 			// Loop through each WooCommerce product
 			$products = wc_get_products( array( 'status' => 'publish' ) );
 			foreach ( $products as $product ) {
@@ -74,6 +76,34 @@ class _2_5_7 {
 
 				// Delete the options for this page.
 				delete_option( '_' . MDS_PREFIX . 'users-checkout-page' );
+			}
+
+			// Add order_in_progress column to orders table
+			$sql    = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "orders` LIKE 'order_in_progress';";
+			$result = $wpdb->get_results( $sql );
+			if ( ! $result ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "orders` ADD COLUMN `order_in_progress` SET('Y', 'N') NOT NULL default 'N';";
+				$wpdb->query( $sql );
+			}
+
+			// Add current_step column to orders table
+			$sql    = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "orders` LIKE 'current_step';";
+			$result = $wpdb->get_results( $sql );
+			if ( ! $result ) {
+				$sql = "ALTER TABLE `" . MDS_DB_PREFIX . "orders` ADD COLUMN `current_step` INT NOT NULL default '0';";
+				$wpdb->query( $sql );
+			}
+
+			// Update any MDS_PREFIX . current_order_id meta for all users to be in progress in the orders table.
+			// This is to fix any orders that were created before the order_in_progress and current_step columns were added.
+			$users = get_users();
+			foreach ( $users as $user ) {
+				$meta_key = MDS_PREFIX . 'current_order_id';
+				$order_id = get_user_meta( $user->ID, $meta_key, true );
+				if ( ! empty( $order_id ) ) {
+					$sql = "UPDATE `" . MDS_DB_PREFIX . "orders` SET `order_in_progress`='Y', `current_step`=1 WHERE `order_id`=" . $order_id;
+					$wpdb->query( $sql );
+				}
 			}
 		}
 	}

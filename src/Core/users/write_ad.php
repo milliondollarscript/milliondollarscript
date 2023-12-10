@@ -31,6 +31,8 @@ use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\FormFields;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Orders;
+use MillionDollarScript\Classes\Steps;
 use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -47,7 +49,7 @@ $advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
 if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 
-	$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], get_current_order_id() ) . "' ";
+	$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "' ";
 	$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 	if ( mysqli_num_rows( $order_result ) == 0 ) {
 		if ( wp_doing_ajax() ) {
@@ -88,9 +90,9 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 	if ( isset( $_REQUEST['manage-pixels'] ) && isset( $_REQUEST['order_id'] ) ) {
 		$order_id = intval( $_REQUEST['order_id'] );
 		if ( empty( $order_id ) && $order_id > 0 ) {
-			$order_id = get_current_order_id();
+			$order_id = Orders::get_current_order_id();
 		} else {
-			set_current_order_id( $order_id );
+			Orders::set_current_order_id( $order_id );
 		}
 	}
 
@@ -111,6 +113,8 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		if ( isset( $_REQUEST['manage-pixels'] ) ) {
 			Utility::redirect( Utility::get_page_url( 'manage' ) );
 		}
+
+		Steps::update_step( 'confirm_order' );
 
 		Utility::redirect( Utility::get_page_url( 'confirm-order' ) );
 	}
@@ -135,12 +139,12 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		if ( ! empty( $pixels ) ) {
 			$ad_id    = $pixels[0]->ID;
 			$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
-			set_current_order_id( $order_id );
+			Orders::set_current_order_id( $order_id );
 		}
 	}
 
 	if ( empty( $order_id ) ) {
-		$order_id = get_current_order_id();
+		$order_id = Orders::get_current_order_id();
 	}
 
 	// get the ad_id form the temp_orders table.

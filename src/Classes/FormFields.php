@@ -213,7 +213,7 @@ class FormFields {
 				}
 
 				if ( $field_name == MDS_PREFIX . 'order' ) {
-					echo '<input type="hidden" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( get_current_order_id() ) . '">';
+					echo '<input type="hidden" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( \MillionDollarScript\Classes\Orders::get_current_order_id() ) . '">';
 				} else if ( $field_name == MDS_PREFIX . 'grid' ) {
 					global $f2;
 					$BID = $f2->bid();
@@ -364,9 +364,9 @@ class FormFields {
 					if ( $field->get_type() === 'text' ) {
 						if ( ! empty( $value ) ) {
 							if ( $field_name == MDS_PREFIX . 'order' ) {
-								carbon_set_post_meta( $post_id, $field_name, get_current_order_id() );
+								carbon_set_post_meta( $post_id, $field_name, \MillionDollarScript\Classes\Orders::get_current_order_id() );
 							} else if ( $field_name == MDS_PREFIX . 'grid' ) {
-								$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( get_current_order_id() ) ) );
+								$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) );
 								carbon_set_post_meta( $post_id, $field_name, $grid_id );
 							} else {
 								$value = sanitize_text_field( $value );
@@ -693,17 +693,18 @@ class FormFields {
 	public static function get_statuses(): array {
 		// Valid MDS order statuses: 'pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid'
 		// Note: pending is a default WP status, so it isn't included here.
+        // Note: waiting is confirmed OR pending
 		return array(
-			'completed'  => 'Completed',
 			'cancelled'  => 'Cancelled',
+			'completed'  => 'Completed',
 			'confirmed'  => 'Confirmed',
-			'new'        => 'New',
-			'expired'    => 'Expired',
 			'deleted'    => 'Deleted',
-			'renew_wait' => 'Awaiting Renewal',
+			'expired'    => 'Expired',
+			'new'        => 'New',
 			'renew_paid' => 'Renewed',
-			'waiting'    => 'Waiting',
+			'renew_wait' => 'Awaiting Renewal',
 			'reserved'   => 'Reserved',
+			'waiting'    => 'Waiting',
 		);
 	}
 }

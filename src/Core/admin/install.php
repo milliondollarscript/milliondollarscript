@@ -157,6 +157,7 @@ function install_db(): void {
 ) $charset_collate;" );
 
 	// Orders table
+	// Note: For more info on statuses see \MillionDollarScript\Classes\FormFields::get_statuses
 	dbDelta( "CREATE TABLE `{$tables['orders']}` (
     `user_id` INT NOT NULL DEFAULT '0',
     `order_id` INT NOT NULL AUTO_INCREMENT,
@@ -179,6 +180,8 @@ function install_db(): void {
     `original_order_id` INT DEFAULT NULL,
     `previous_order_id` INT NOT NULL DEFAULT '0',
     `block_info` LONGTEXT NOT NULL,
+    `order_in_progress` SET('Y', 'N') NOT NULL DEFAULT 'N',
+    `current_step` INT NOT NULL DEFAULT '0',
     PRIMARY KEY  (`order_id`)
 ) $charset_collate;" );
 
@@ -319,7 +322,7 @@ function install_db(): void {
 				$tables['config'],
 				array(
 					'config_key' => $key,
-					'val' => $default['value'],
+					'val'        => $default['value'],
 				),
 				array(
 					'%s',

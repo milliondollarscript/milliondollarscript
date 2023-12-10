@@ -27,6 +27,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Orders;
+
 defined( 'ABSPATH' ) or exit;
 
 function publish_image( $BID ) {
@@ -89,6 +91,9 @@ function publish_image( $BID ) {
 	// update the time-stamp on the banner
 	$sql = "UPDATE " . MDS_DB_PREFIX . "banners SET time_stamp='" . time() . "' WHERE banner_id='" . intval( $BID ) . "' ";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+
+	// Update the last modification time
+	Orders::set_last_order_modification_time();
 }
 
 function process_image( $BID ) {
