@@ -212,6 +212,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 
 	if ( empty( $mds_pixel ) ) {
 		Language::out( 'Unable to find pixels.' );
+        return;
 	}
 
 	global $wpdb;
@@ -223,9 +224,10 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		$row = $result[0];
 	} else {
 		$row = array();
+		Language::out( 'Unable to find pixels.' );
+        return;
 	}
 
-	// TODO: handle if the order wasn't found from the query above
 	$order_id = $row['order_id'];
 	$blocks   = explode( ',', $row['blocks'] );
 
