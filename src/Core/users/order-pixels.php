@@ -47,25 +47,38 @@ if ( ! mds_check_permission( "mds_order_pixels" ) ) {
 global $f2, $wpdb;
 $BID = $f2->bid();
 
-if ( ! empty( $_REQUEST['order_id'] ) ) {
-    // If an order id was passed
-	if ( ! is_numeric( $_REQUEST['order_id'] ) ) {
-        // If it was not numeric redirect to the no orders page
-		\MillionDollarScript\Classes\Functions::no_orders();
-	} else {
-        // If it was numeric check if it's in progress
-		$order_id = intval( $_REQUEST['order_id'] );
-		if ( ! \MillionDollarScript\Classes\Orders::is_order_in_progress( $order_id ) ) {
-            // Not in progress so redirect to the no orders page
-            \MillionDollarScript\Classes\Functions::no_orders();
+$order_id = Orders::get_current_order_in_progress();
+if ( empty( $order_id ) ) {
+	// No order in progress so check if an order id was passed
+
+	if ( ! empty( $_REQUEST['order_id'] ) ) {
+		// If an order id was passed
+		if ( ! is_numeric( $_REQUEST['order_id'] ) ) {
+			// If it was not numeric redirect to the no orders page
+			\MillionDollarScript\Classes\Functions::no_orders();
+		} else {
+			// If it was numeric check
+
+			// Verify ownership
+			$order_id = intval( $_REQUEST['order_id'] );
+			if ( ! Orders::is_owned_by( $order_id ) ) {
+				\MillionDollarScript\Classes\Functions::no_orders();
+			}
+
+			// Check if the order is in progress
+			if ( ! \MillionDollarScript\Classes\Orders::is_order_in_progress( $order_id ) ) {
+				// Not in progress so redirect to the no orders page
+				\MillionDollarScript\Classes\Functions::no_orders();
+			}
+
+			// Was found to be an order in progress so set the current order to it
+			Orders::set_order_in_progress( $order_id );
 		}
 
-        // Was found to be an order in progress so set the current order to it
-		Orders::set_order_in_progress( $order_id );
+	} else {
+		// No order_id in request, start a new order
+		$order_id = Orders::create_order();
 	}
-} else {
-	// No order_id in request, start a new order
-	$order_id = Orders::create_order();
 }
 
 // Delete temporary order when the banner was changed.
