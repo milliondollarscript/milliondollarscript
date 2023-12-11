@@ -120,7 +120,7 @@ class WooCommerceOptions {
 					     'value'   => true,
 				     )
 			     ) )
-			     ->set_help_text( Language::get( 'Auto-complete WooCommerce orders when a payment successfully completes.' ) ),
+			     ->set_help_text( Language::get( 'Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab.' ) ),
 		];
 
 		return $tabs;

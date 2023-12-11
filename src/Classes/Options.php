@@ -276,7 +276,7 @@ class Options {
 				Field::make( 'checkbox', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-approve' ) )
 				     ->set_default_value( '' )
 				     ->set_option_value( 'yes' )
-				     ->set_help_text( Language::get( 'Setting to Yes will automatically approve orders before payments are verified by an admin.' ) ),
+				     ->set_help_text( Language::get( 'Enabling this will automatically approve orders before payments are verified by an admin.' ) ),
 
 				// Currency
 				Field::make( 'text', MDS_PREFIX . 'currency', Language::get( 'Currency' ) )
