@@ -27,6 +27,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Orders;
@@ -217,10 +218,22 @@ usort( $orders, "date_sort" );
 						$temp_var = '&order_id=' . $order['order_id'];
 					}
 
+					$steps    = \MillionDollarScript\Classes\Steps::get_steps();
+					$USE_AJAX = Config::get( 'USE_AJAX' );
+
 					switch ( $order['status'] ) {
 						case "new":
 							echo Language::get( 'In progress' ) . '<br>';
-							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
+							$current_step = \MillionDollarScript\Classes\Steps::get_current_step( $order['order_id'] );
+							if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_WRITE_AD ) {
+								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'write-ad' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Write Ad' ) . "</a>";
+							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_CONFIRM_ORDER ) {
+								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
+							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_PAYMENT ) {
+								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
+							} else {
+								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Continue' ) . "</a>";
+							}
 							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 							break;
 						/** @noinspection PhpMissingBreakStatementInspection */
