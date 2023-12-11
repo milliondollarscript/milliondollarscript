@@ -3,7 +3,7 @@ Contributors: Ryan Rhode, Adam Malinowski, and the entire community.
 Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
-Tested up to: 6.4.1
+Tested up to: 6.4.2
 Stable tag: 2.5.7
 Requires PHP: 8.0
 License: GPLv3 or later
@@ -33,6 +33,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Refine how orders are handled for non-automated order methods like bank, COD, money order, etc.
 * Fix Options > Popup Template adding extra br tags when no visual editor is present.
 * Fix uploaded image not being reset on new order.
+* Allow users to cancel and delete confirmed but not paid orders.
+* Update buttons on Order History page based on current step in the order process.
+* Update language.
 
 = 2.5.6 =
 * Fix fatal error on activation when too low of PHP version was detected.
