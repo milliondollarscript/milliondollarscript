@@ -29,6 +29,7 @@
 
 use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Orders;
+use MillionDollarScript\Classes\Steps;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -76,8 +77,8 @@ function place_temp_order( $in_str ) {
 		$order_id = Orders::create_order();
 	}
 
-	$sql      = $wpdb->prepare( "SELECT ad_id, block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $order_id );
-	$row      = $wpdb->get_row( $sql, ARRAY_A );
+	$sql = $wpdb->prepare( "SELECT ad_id, block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $order_id );
+	$row = $wpdb->get_row( $sql, ARRAY_A );
 
 	if ( $row ) {
 		$ad_id      = intval( $row['ad_id'] );
@@ -90,9 +91,12 @@ function place_temp_order( $in_str ) {
 	// DAYS_EXPIRE comes form load_banner_constants()
 	$table_name = MDS_DB_PREFIX . 'orders';
 
+	// Get current step
+	$steps        = Steps::get_steps( false );
+	$current_step = $steps['write-ad'];
+
 	// TODO: add any extra columns necessary such as package_id
-	$order_id = Orders::get_current_order_id();
-	$data     = array(
+	$data = array(
 		'user_id'           => get_current_user_id(),
 		'order_id'          => $order_id,
 		'blocks'            => $in_str,
@@ -108,6 +112,8 @@ function place_temp_order( $in_str ) {
 		'published'         => 'N',
 		'block_info'        => $block_info,
 		'original_order_id' => $order_id,
+		'order_in_progress' => 'Y',
+		'current_step'      => $current_step
 	);
 
 	$format = array(
@@ -126,6 +132,8 @@ function place_temp_order( $in_str ) {
 		'%s', // published
 		'%s', // block_info
 		'%s', // original_order_id
+		'%s', // order_in_progress
+		'%d', // current_step
 	);
 
 	$result = $wpdb->replace( $table_name, $data, $format );
