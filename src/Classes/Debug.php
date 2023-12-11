@@ -32,7 +32,13 @@ namespace MillionDollarScript\Classes;
 defined( 'ABSPATH' ) or exit;
 
 class Debug {
-	public static function output( $what, $where = 'screen', $label = '', $encapsulate = true, $type = 'var_export', $user = 1 ) {
+
+	public static function log_trace(): void {
+		$e = new \Exception();
+		error_log( $e->getTraceAsString() );
+	}
+
+	public static function output( $what, $where = 'screen', $label = '', $encapsulate = true, $type = 'var_export', $user = 1 ): void {
 		if ( get_current_user_id() !== $user ) {
 			return;
 		}
