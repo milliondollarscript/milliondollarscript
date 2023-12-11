@@ -225,7 +225,10 @@ usort( $orders, "date_sort" );
 						case "new":
 							echo Language::get( 'In progress' ) . '<br>';
 							$current_step = \MillionDollarScript\Classes\Steps::get_current_step( $order['order_id'] );
-							if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_WRITE_AD ) {
+
+							if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_UPLOAD ) {
+								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'upload' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Upload' ) . "</a>";
+							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_WRITE_AD ) {
 								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'write-ad' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Write Ad' ) . "</a>";
 							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_CONFIRM_ORDER ) {
 								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
