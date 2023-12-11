@@ -277,9 +277,9 @@ usort( $orders, "date_sort" );
 							break;
 						case "pending":
 						case "cancelled":
+						case "deleted":
 							break;
 						default:
-							throw new \Exception( 'Unexpected value' );
 					}
 				} else {
 					$temp_var = '&order_id=' . $order['order_id'];
