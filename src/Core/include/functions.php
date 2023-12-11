@@ -1561,7 +1561,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 			$order_id = mysqli_insert_id( $GLOBALS['connection'] );
 			Orders::set_order_in_progress( $order_id );
-			Orders::set_current_step( $order_id, 1 );
+			Steps::set_current_step( $order_id, 1 );
 
 			$return_val = [
 				"error" => "false",

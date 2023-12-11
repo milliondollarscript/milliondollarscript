@@ -93,7 +93,51 @@ class Steps {
 		if ( ! empty( $order_id ) ) {
 			// Get the numeric step value for the given step.
 			$step = $steps[ $mds_dest ];
-			Orders::set_current_step( $order_id, $step );
+			self::set_current_step( $order_id, $step );
 		}
+	}
+
+	/**
+	 * Get the current step in the order process.
+	 *
+	 * @param int $order_id
+	 *
+	 * @return string|null
+	 */
+	public static function get_current_step( int $order_id ): ?string {
+		global $wpdb;
+
+		return $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT `current_step` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id` = %d",
+				$order_id
+			)
+		);
+	}
+
+	/**
+	 * Set the current step in the order process.
+	 *
+	 * @param int $order_id
+	 * @param int $step
+	 *
+	 * The first two steps are different based on the Pixel Selection Method and are as follows:
+	 * 1 - simple: upload, advanced: placement
+	 * 2 - simple: placement, advanced: upload
+	 * 3 - details
+	 * 4 - confirm (optional)
+	 * 5 - payment
+	 *
+	 * @return void
+	 */
+	public static function set_current_step( int $order_id, int $step ): void {
+		global $wpdb;
+		$wpdb->update(
+			MDS_DB_PREFIX . "orders",
+			[ 'current_step' => $step ],
+			[ 'order_id' => $order_id ],
+			[ '%d' ],
+			[ '%d' ]
+		);
 	}
 }
