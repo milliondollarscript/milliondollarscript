@@ -584,4 +584,22 @@ class Utility {
 
 		return apply_filters( 'mds_pages', $mds_pages );
 	}
+
+	/**
+	 * Get any error messages.
+	 * WARNING: This is not sanitized. Do not output directly to the browser.
+	 *
+	 * @return string|null
+	 */
+	public static function get_error(): ?string {
+		$error = null;
+
+		if ( isset( $_GET['mds_error'] ) ) {
+			$error = urldecode( $_GET['mds_error'] );
+		} else if ( isset( $_POST['mds_error'] ) ) {
+			$error = urldecode( $_POST['mds_error'] );
+		}
+
+		return $error;
+	}
 }

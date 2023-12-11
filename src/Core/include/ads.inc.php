@@ -471,18 +471,25 @@ function disapprove_modified_order( $order_id, $BID ) {
  * @param $size array
  * @param $banner_data array
  *
- * @return void
+ * @return bool
  */
-function upload_changed_pixels( int $order_id, int $BID, array $size, array $banner_data ): void {
+function upload_changed_pixels( int $order_id, int $BID, array $size, array $banner_data ): bool {
 	global $f2;
 
 	$imagine = new Imagine\Gd\Imagine();
 
-	if ( ( isset( $_REQUEST['change_pixels'] ) && ! empty( $_REQUEST['change_pixels'] ) ) && isset( $_FILES ) ) {
+	if ( ( ! empty( $_REQUEST['change_pixels'] ) ) && isset( $_FILES ) ) {
 		// a new image was uploaded...
 
-		$uploaddir  = \MillionDollarScript\Classes\Utility::get_upload_path() . "images/";
-		$files      = $_FILES['pixels'] ?? ( $_FILES['graphic'] ?? '' );
+		$uploaddir = \MillionDollarScript\Classes\Utility::get_upload_path() . "images/";
+		$files     = $_FILES['pixels'] ?? ( $_FILES['graphic'] ?? '' );
+
+		if ( empty( $files['tmp_name'] ) ) {
+			echo "<b>" . Language::get( 'No file was uploaded.' ) . "</b><br />";
+
+			return false;
+		}
+
 		$filename   = sanitize_file_name( $files['name'] );
 		$file_parts = pathinfo( $filename );
 		$ext        = $f2->filter( strtolower( $file_parts['extension'] ) );
@@ -490,11 +497,13 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 		$mime_type          = mime_content_type( $files['tmp_name'] );
 		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
 		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-			$error = "<b>" . Language::get( 'File type not supported.' ) . "</b><br>";
+			$error = "<b>" . Language::get( 'File type not supported.' ) . "</b><br />";
 		}
 
 		if ( ! empty( $error ) ) {
 			echo $error;
+
+			return false;
 		} else {
 
 			$uploadfile = $uploaddir . "tmp_" . $order_id . ".$ext";
@@ -527,6 +536,9 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 
 				if ( ! empty( $error ) ) {
 					echo $error;
+
+					return false;
+
 				} else {
 					// size is ok. change the blocks.
 
@@ -631,4 +643,6 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 			}
 		}
 	}
+
+	return true;
 }

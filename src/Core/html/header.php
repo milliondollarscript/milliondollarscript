@@ -108,4 +108,8 @@ $logged_in = is_user_logged_in();
 
 				<?php
 			}
-			?>
+
+            $mds_error = Utility::get_error();
+            if ( ! empty( $mds_error ) ) {
+                 Language::out( $mds_error );
+            }

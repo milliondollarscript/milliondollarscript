@@ -51,6 +51,8 @@ class Forms {
 			Utility::redirect();
 		}
 
+		global $mds_error;
+
 		$mds_dest = $_POST['mds_dest'];
 
 		$params = '';
@@ -120,6 +122,10 @@ class Forms {
 			case 'confirm_order':
 				require_once MDS_CORE_PATH . 'users/confirm_order.php';
 				break;
+		}
+
+		if ( ! empty( $mds_error ) ) {
+			$params .= ( ! str_contains( $params, '?' ) ? '?' : '&' ) . 'mds_error=' . urlencode( $mds_error );
 		}
 
 		// Update the current step

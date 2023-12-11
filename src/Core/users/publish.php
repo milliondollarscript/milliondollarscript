@@ -211,8 +211,10 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	}
 
 	if ( empty( $mds_pixel ) ) {
-		Language::out( 'Unable to find pixels.' );
-        return;
+		global $mds_error;
+		$mds_error = Language::get( 'Unable to find pixels.' );
+
+		return;
 	}
 
 	global $wpdb;
@@ -224,18 +226,23 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		$row = $result[0];
 	} else {
 		$row = array();
-		Language::out( 'Unable to find pixels.' );
-        return;
+		global $mds_error;
+		$mds_error = Language::get( 'Unable to find pixels.' );
+
+		return;
 	}
 
 	$order_id = $row['order_id'];
 	$blocks   = explode( ',', $row['blocks'] );
 
-	$size   = get_pixel_image_size( $row['order_id'] );
-	$pixels = $size['x'] * $size['y'];
-	upload_changed_pixels( $order_id, $row['banner_id'], $size, $banner_data );
+	$size          = get_pixel_image_size( $row['order_id'] );
+	$pixels        = $size['x'] * $size['y'];
+	$upload_result = upload_changed_pixels( $order_id, $row['banner_id'], $size, $banner_data );
 
-	if ( ! empty( $_REQUEST['change_pixels'] ) && isset( $_FILES ) ) {
+	if ( ! $upload_result ) {
+        global $mds_error;
+        $mds_error = Language::get( 'No file was uploaded.' );
+
 		return;
 	}
 
