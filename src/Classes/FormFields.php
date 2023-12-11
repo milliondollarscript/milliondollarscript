@@ -363,12 +363,23 @@ class FormFields {
 				if ( isset( $_POST[ $field_name ] ) || isset( $_FILES[ $field_name ] ) ) {
 					if ( $field->get_type() === 'text' ) {
 						if ( ! empty( $value ) ) {
-							if ( $field_name == MDS_PREFIX . 'order' ) {
-								carbon_set_post_meta( $post_id, $field_name, \MillionDollarScript\Classes\Orders::get_current_order_id() );
-							} else if ( $field_name == MDS_PREFIX . 'grid' ) {
-								$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) );
-								carbon_set_post_meta( $post_id, $field_name, $grid_id );
-							} else {
+
+							// If post already has an order and grid don't set them again.
+							$order_id = carbon_get_post_meta( $post_id, $field_name );
+							if ( empty( $order_id ) ) {
+
+								// No order or grid set on this post yet, so it's a new one, and we must set them.
+								if ( $field_name == MDS_PREFIX . 'order' ) {
+									carbon_set_post_meta( $post_id, $field_name, \MillionDollarScript\Classes\Orders::get_current_order_id() );
+								} else if ( $field_name == MDS_PREFIX . 'grid' ) {
+									$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) );
+									carbon_set_post_meta( $post_id, $field_name, $grid_id );
+								}
+
+							}
+
+							if ( $field_name != 'order' && $field_name != 'grid' ) {
+								// Update other fields besides order and grid if it's new or not.
 								$value = sanitize_text_field( $value );
 								carbon_set_post_meta( $post_id, $field_name, $value );
 							}
@@ -693,7 +704,7 @@ class FormFields {
 	public static function get_statuses(): array {
 		// Valid MDS order statuses: 'pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid'
 		// Note: pending is a default WP status, so it isn't included here.
-        // Note: waiting is confirmed OR pending
+		// Note: waiting is confirmed OR pending
 		return array(
 			'cancelled'  => 'Cancelled',
 			'completed'  => 'Completed',
