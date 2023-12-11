@@ -85,14 +85,13 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 		}
 
 	} else {
-		// we have a problem...
-		require_once MDS_CORE_PATH . "html/header.php";
+		if ( wp_doing_ajax() ) {
+			Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
+			Language::out_replace( '<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>', '%ORDER_PAGE%', Utility::get_page_url( 'order' ) );
+			wp_die();
+		}
 
-		Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
-		Language::out_replace( '<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>', '%ORDER_PAGE%', Utility::get_page_url( 'order' ) );
-
-		require_once MDS_CORE_PATH . "html/footer.php";
-		die();
+		Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 	}
 
 	$_REQUEST['order_id'] = $order_id;
