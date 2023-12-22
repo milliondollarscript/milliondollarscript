@@ -38,11 +38,11 @@ function q_mail_error( $s ) {
 
 function queue_mail( $to_address, $to_name, $from_address, $from_name, $subject, $message, $html_message, $template_id, $att = false ) {
 
-	$to_address   = trim( $to_address );
-	$to_name      = trim( $to_name );
-	$from_address = trim( $from_address );
-	$from_name    = trim( $from_name );
-	$subject      = trim( $subject );
+	$to_address   = substr( trim( $to_address ), 0, 128 );
+	$to_name      = substr( trim( $to_name ), 0, 128 );
+	$from_address = substr( trim( $from_address ), 0, 128 );
+	$from_name    = substr( trim( $from_name ), 0, 128 );
+	$subject      = substr( trim( $subject ), 0, 255 );
 	$message      = trim( $message );
 	$html_message = trim( $html_message );
 
@@ -105,12 +105,12 @@ function process_mail_queue( $send_count = 1 ) {
 			$and_mail_id = " AND mail_id=" . intval( $mail_id ) . " ";
 		}
 
-		$EMAILS_MAX_RETRY = Config::get('EMAILS_MAX_RETRY');
+		$EMAILS_MAX_RETRY = Config::get( 'EMAILS_MAX_RETRY' );
 		if ( $EMAILS_MAX_RETRY == '' ) {
 			$EMAILS_MAX_RETRY = 5;
 		}
 
-		$EMAILS_ERROR_WAIT = Config::get('EMAILS_ERROR_WAIT');
+		$EMAILS_ERROR_WAIT = Config::get( 'EMAILS_ERROR_WAIT' );
 		if ( $EMAILS_ERROR_WAIT == '' ) {
 			$EMAILS_ERROR_WAIT = 10;
 		}
@@ -130,11 +130,11 @@ function process_mail_queue( $send_count = 1 ) {
 
 		// delete old stuff
 
-		if ( ( Config::get('EMAILS_DAYS_KEEP') == 'EMAILS_DAYS_KEEP' ) ) {
-			define( Config::get('EMAILS_DAYS_KEEP'), '0' );
+		if ( ( Config::get( 'EMAILS_DAYS_KEEP' ) == 'EMAILS_DAYS_KEEP' ) ) {
+			define( Config::get( 'EMAILS_DAYS_KEEP' ), '0' );
 		}
 
-		if ( Config::get('EMAILS_DAYS_KEEP') > 0 ) {
+		if ( Config::get( 'EMAILS_DAYS_KEEP' ) > 0 ) {
 
 			$now = ( gmdate( "Y-m-d H:i:s" ) );
 
