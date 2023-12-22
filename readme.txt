@@ -23,6 +23,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix JSON output in error message when selecting a block that is already reserved.
 * Fix plugin database migrations not running.
 * Add option to exclude MDS Pixel pages from search results.
+* Fix mail string sizes being too large to fit in the database.
 
 = 2.5.7 =
 * Add an option to the WooCommerce tab to Auto-complete Orders.
