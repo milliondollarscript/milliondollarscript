@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -55,7 +55,13 @@ $banner_data = load_banner_constants( $BID );
 
 $USE_AJAX = \MillionDollarScript\Classes\Config::get( 'USE_AJAX' );
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND status='new'";
+$order_id = Orders::get_current_order_id();
+
+if ( ! empty( $order_id ) ) {
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( $order_id ) . "'";
+} else {
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND status='new'";
+}
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $order_row = mysqli_fetch_array( $order_result );
 
@@ -88,7 +94,7 @@ if ( file_exists( $tmp_image_file ) ) {
 }
 
 // load any existing blocks for this order
-$order_row_blocks = ! empty( $order_row['blocks'] ) ? $order_row['blocks'] : '';
+$order_row_blocks = ! empty( $order_row['blocks'] ) || $order_row['blocks'] == '0' ? $order_row['blocks'] : '';
 $block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
 $block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
 $order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
@@ -100,89 +106,88 @@ $order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
 		'y'        => $pos['y'],
 	];
 }, $block_ids );
-
 ?>
     <script>
-		const select = {
-			NONCE: '<?php echo wp_create_nonce( 'mds-select' ); ?>',
-			UPDATE_ORDER: '<?php echo Utility::get_page_url( 'update-order' ); ?>',
-			USE_AJAX: '<?php echo $USE_AJAX; ?>',
-			block_str: '<?php echo $block_str; ?>',
-			grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>', 10),
-			grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>', 10),
-			BLK_WIDTH: parseInt('<?php echo $banner_data['BLK_WIDTH']; ?>', 10),
-			BLK_HEIGHT: parseInt('<?php echo $banner_data['BLK_HEIGHT']; ?>', 10),
-			G_PRICE: parseFloat('<?php echo $banner_data['G_PRICE']; ?>'),
-			blocks: JSON.parse('<?php echo json_encode( $order_blocks ); ?>'),
-			user_id: parseInt('<?php echo get_current_user_id(); ?>', 10),
-			BID: parseInt('<?php echo $BID; ?>', 10),
-			time: '<?php echo time(); ?>',
-			advertiser_max_order: '<?php echo esc_js( Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ) ); ?>',
-			not_adjacent: '<?php echo esc_js( Language::get( 'You must select a block adjacent to another one.' ) ); ?>',
-			no_blocks_selected: '<?php echo esc_js( Language::get( 'You have no blocks selected.' ) ); ?>',
-			MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL ); ?>',
-			INVERT_PIXELS: '<?php echo \MillionDollarScript\Classes\Config::get( 'INVERT_PIXELS' ); ?>',
-			WAIT: '<?php echo esc_js( Language::get( 'Please Wait! Reserving Pixels...' ) ); ?>'
-		}
+        const select = {
+            NONCE: '<?php echo wp_create_nonce( 'mds-select' ); ?>',
+            UPDATE_ORDER: '<?php echo Utility::get_page_url( 'update-order' ); ?>',
+            USE_AJAX: '<?php echo $USE_AJAX; ?>',
+            block_str: '<?php echo $block_str; ?>',
+            grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>', 10),
+            grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>', 10),
+            BLK_WIDTH: parseInt('<?php echo $banner_data['BLK_WIDTH']; ?>', 10),
+            BLK_HEIGHT: parseInt('<?php echo $banner_data['BLK_HEIGHT']; ?>', 10),
+            G_PRICE: parseFloat('<?php echo $banner_data['G_PRICE']; ?>'),
+            blocks: JSON.parse('<?php echo json_encode( $order_blocks ); ?>'),
+            user_id: parseInt('<?php echo get_current_user_id(); ?>', 10),
+            BID: parseInt('<?php echo $BID; ?>', 10),
+            time: '<?php echo time(); ?>',
+            advertiser_max_order: '<?php echo esc_js( Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ) ); ?>',
+            not_adjacent: '<?php echo esc_js( Language::get( 'You must select a block adjacent to another one.' ) ); ?>',
+            no_blocks_selected: '<?php echo esc_js( Language::get( 'You have no blocks selected.' ) ); ?>',
+            MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL ); ?>',
+            INVERT_PIXELS: '<?php echo \MillionDollarScript\Classes\Config::get( 'INVERT_PIXELS' ); ?>',
+            WAIT: '<?php echo esc_js( Language::get( 'Please Wait! Reserving Pixels...' ) ); ?>'
+        }
     </script>
 
     <style>
-		#block_pointer {
-			padding: 0;
-			margin: 0;
-			cursor: pointer;
-			position: absolute;
-			left: 0;
-			top: 0;
-			background-color: transparent;
-			visibility: hidden;
-			height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			width: <?php echo $banner_data['BLK_WIDTH']; ?>px;
-			line-height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			font-size: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			user-select: none;
-			-webkit-user-select: none;
-			-webkit-touch-callout: none;
-			-moz-user-select: none;
-			box-shadow: inset 0 0 0 1px #000;
-			z-index: 10001;
-		}
+        #block_pointer {
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: transparent;
+            visibility: hidden;
+            height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+            width: <?php echo $banner_data['BLK_WIDTH']; ?>px;
+            line-height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+            font-size: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -moz-user-select: none;
+            box-shadow: inset 0 0 0 1px #000;
+            z-index: 10001;
+        }
 
-		span[id^='block'] {
-			padding: 0;
-			margin: 0;
-			cursor: pointer;
-			position: absolute;
-			background-color: #FFFFFF;
-			width: <?php echo $banner_data['BLK_WIDTH']; ?>px;
-			height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			line-height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			font-size: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
-			z-index: 10000;
-		}
+        span[id^='block'] {
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            position: absolute;
+            background-color: #FFFFFF;
+            width: <?php echo $banner_data['BLK_WIDTH']; ?>px;
+            height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+            line-height: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+            font-size: <?php echo $banner_data['BLK_HEIGHT']; ?>px;
+            z-index: 10000;
+        }
 
-		#pixel_container {
-			width: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>px;
-			position: relative;
-			margin: 0 auto;
-			max-width: 100%;
-		}
+        #pixel_container {
+            width: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>px;
+            position: relative;
+            margin: 0 auto;
+            max-width: 100%;
+        }
 
-		#pixelimg {
-			width: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>px;
-			height: auto;
-			border: none;
-			outline: none;
-			cursor: pointer;
-			user-select: none;
-			-moz-user-select: none;
-			-webkit-tap-highlight-color: transparent !important;
-			margin: 0 auto;
-			float: none;
-			display: block;
-			background: transparent;
-			max-width: 100%;
-		}
+        #pixelimg {
+            width: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>px;
+            height: auto;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            user-select: none;
+            -moz-user-select: none;
+            -webkit-tap-highlight-color: transparent !important;
+            margin: 0 auto;
+            float: none;
+            display: block;
+            background: transparent;
+            max-width: 100%;
+        }
     </style>
 
 <?php
@@ -271,107 +276,140 @@ Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). S
         <input type="hidden" name="order_id" value="<?php echo( isset( $order_row['order_id'] ) ? intval( $order_row['order_id'] ) : '' ); ?>">
         <input type="hidden" name="BID" value="<?php echo intval( $BID ); ?>">
 
-        <div class="mds-select-wrapper">
-            <div class="mds-select-prompt">
-				<?php
-				if ( \MillionDollarScript\Classes\Config::get( 'BLOCK_SELECTION_MODE' ) == 'YES' ) {
-				?>
-            </div>
-            <div class="mds-select-items">
-				<?php
+		<?php
+		// If the grid max blocks isn't set to unlimited and is greater than 1 and has a max and min block size that aren't equal then display the selection size options.
+		$max_min_equal = $banner_data['G_MAX_BLOCKS'] == $banner_data['G_MIN_BLOCKS'];
+		if ( ( $banner_data['G_MAX_BLOCKS'] == 0 || $banner_data['G_MAX_BLOCKS'] > 1 ) && ! $max_min_equal ) {
 
-				// Calculate the minimum and maximum block sizes based on the grid dimensions
-				$min_size       = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
-				$max_size       = min( intval( $banner_data['G_WIDTH'] ), intval( $banner_data['G_HEIGHT'] ) );
-				$selection_size = isset( $_REQUEST['selection_size'] ) ? intval( $_REQUEST['selection_size'] ) : $min_size;
-				$total_blocks   = $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'];
-
-				// Calculate the maximum allowed total blocks based on the grid dimensions and G_MAX_BLOCKS
-				$max_total_blocks = min( $banner_data['G_MAX_BLOCKS'], $total_blocks );
-
-				// Set the maximum values for the selection_size and total_blocks inputs based on G_MAX_BLOCKS
-				$max_selection_size     = min( $max_size, floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) ) );
-				$max_total_blocks_input = min( $max_selection_size * $max_selection_size, $max_total_blocks );
-				if ($max_selection_size == 0) {
-					$max_selection_size = $max_size;
-				}
-				if ($max_total_blocks_input == 0) {
-					$max_total_blocks_input = $total_blocks;
-				}
-
-				// Adjust the minimum and maximum size of the pointer based on the grid dimensions
-				$min_size_adjusted = $min_size;
-				$max_size_adjusted = $max_selection_size;
-
-				// Adjust the block size and total blocks based on the total blocks and the grid dimensions
-				if ( $total_blocks > $max_total_blocks_input ) {
-					$total_blocks = $max_total_blocks_input;
-				}
-
-				if ( $total_blocks > 0 ) {
-					$selection_size_adjusted = floor( sqrt( $max_total_blocks_input / $total_blocks ) );
-				} else {
-					$selection_size_adjusted = $min_size_adjusted;
-				}
-
-				$block_size_adjusted   = floor( $max_size / $selection_size_adjusted );
-				$total_blocks_adjusted = min( $selection_size_adjusted * $selection_size_adjusted, $max_total_blocks_input );
-				$total_blocks          = $max_total_blocks_input / ( $selection_size_adjusted * $selection_size_adjusted );
-				$total_blocks          = max( 1, $total_blocks );
-
-				// Swap min_size and max_size if min_size_adjusted is greater than max_size_adjusted
-				if ( $min_size_adjusted > $max_size_adjusted ) {
-					$temp              = $min_size_adjusted;
-					$min_size_adjusted = $max_size_adjusted;
-					$max_size_adjusted = $temp;
-				}
-
-				?>
-                <div class="mds-input-item">
-                    <div class="mds-input-item mds-slider">
-                        <label for="mds-selection-size-slider"><?php Language::out( 'Selection Size' ); ?></label>
-                        <input type="range" id="mds-selection-size-slider" name="selection_size" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_selection_size; ?>" value="<?php echo $selection_size_adjusted; ?>">
-                    </div>
-                    <div class="mds-break"></div>
-                    <div class="mds-input-item mds-number">
-                        <label for="mds-selection-size-value"><?php Language::out( 'Size' ); ?></label>
-                        <input type="number" id="mds-selection-size-value" value="<?php echo $selection_size_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_selection_size; ?>">
-                    </div>
-                    <div class="mds-input-item mds-number">
-                        <label for="mds-total-blocks-value"><?php Language::out( 'Blocks' ); ?></label>
-                        <input type="number" id="mds-total-blocks-value" value="<?php echo $total_blocks_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_total_blocks_input; ?>">
-                    </div>
-                </div>
-				<?php
-				} else {
-					$min_size = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
-					?>
-                    <input type="hidden" id='selection_size' name='selection_size' value='<?php echo $min_size; ?>>'/>
+			?>
+            <div class="mds-select-wrapper">
+                <div class="mds-select-prompt">
 					<?php
-				}
-				?>
-                <div class="mds-input-item">
-                    <div class="mds-select-input">
-						<?php
-						$checked = '';
-						if ( ( isset( $_REQUEST['erase'] ) && $_REQUEST['erase'] == 'true' ) ) {
-							$checked = " checked ";
-						}
+					if ( \MillionDollarScript\Classes\Config::get( 'BLOCK_SELECTION_MODE' ) == 'YES' ) {
+					?>
+                </div>
+                <div class="mds-select-items">
+					<?php
+
+					// Calculate the minimum and maximum block sizes based on the grid dimensions
+					$min_size       = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
+					$max_size       = min( intval( $banner_data['G_WIDTH'] ), intval( $banner_data['G_HEIGHT'] ) );
+					$selection_size = isset( $_REQUEST['selection_size'] ) ? intval( $_REQUEST['selection_size'] ) : $min_size;
+					$total_blocks   = $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'];
+
+					// Calculate the maximum allowed total blocks based on the grid dimensions and G_MAX_BLOCKS
+					$max_total_blocks = min( $banner_data['G_MAX_BLOCKS'], $total_blocks );
+
+					// Set the maximum values for the selection_size and total_blocks inputs based on G_MAX_BLOCKS
+					$max_selection_size     = min( $max_size, floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) ) );
+					$max_total_blocks_input = min( $max_selection_size * $max_selection_size, $max_total_blocks );
+					if ( $max_selection_size == 0 ) {
+						$max_selection_size = $max_size;
+					}
+					if ( $max_total_blocks_input == 0 ) {
+						$max_total_blocks_input = $total_blocks;
+					}
+
+					// Adjust the minimum and maximum size of the pointer based on the grid dimensions
+					$min_size_adjusted = $min_size;
+					$max_size_adjusted = $max_selection_size;
+
+					// Adjust the block size and total blocks based on the total blocks and the grid dimensions
+					if ( $total_blocks > $max_total_blocks_input ) {
+						$total_blocks = $max_total_blocks_input;
+					}
+
+					if ( $total_blocks > 0 ) {
+						$selection_size_adjusted = floor( sqrt( $max_total_blocks_input / $total_blocks ) );
+					} else {
+						$selection_size_adjusted = $min_size_adjusted;
+					}
+
+					$block_size_adjusted   = floor( $max_size / $selection_size_adjusted );
+					$total_blocks_adjusted = min( $selection_size_adjusted * $selection_size_adjusted, $max_total_blocks_input );
+					$total_blocks          = $max_total_blocks_input / ( $selection_size_adjusted * $selection_size_adjusted );
+					$total_blocks          = max( 1, $total_blocks );
+
+					// Swap min_size and max_size if min_size_adjusted is greater than max_size_adjusted
+					if ( $min_size_adjusted > $max_size_adjusted ) {
+						$temp              = $min_size_adjusted;
+						$min_size_adjusted = $max_size_adjusted;
+						$max_size_adjusted = $temp;
+					}
+
+					?>
+                    <div class="mds-input-item">
+                        <div class="mds-input-item mds-slider">
+                            <label for="mds-selection-size-slider"><?php Language::out( 'Selection Size' ); ?></label>
+                            <input type="range" id="mds-selection-size-slider" name="selection_size" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_selection_size; ?>"
+                                   value="<?php echo $selection_size_adjusted; ?>">
+                        </div>
+                        <div class="mds-break"></div>
+                        <div class="mds-input-item mds-number">
+                            <label for="mds-selection-size-value"><?php Language::out( 'Size' ); ?></label>
+                            <input type="number" id="mds-selection-size-value" value="<?php echo $selection_size_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>"
+                                   max="<?php echo $max_selection_size; ?>">
+                        </div>
+                        <div class="mds-input-item mds-number">
+                            <label for="mds-total-blocks-value"><?php Language::out( 'Blocks' ); ?></label>
+                            <input type="number" id="mds-total-blocks-value" value="<?php echo $total_blocks_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>"
+                                   max="<?php echo $max_total_blocks_input; ?>">
+                        </div>
+                    </div>
+					<?php
+					} else {
+						$min_size = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
 						?>
-                        <input type="checkbox" name='erase' id='erase' value='true' <?php echo $checked; ?> />
-                        <label for="erase">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-erase">
-                                <polyline points="3 6 5 6 21 6"/>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                <line x1="10" y1="11" x2="10" y2="17"/>
-                                <line x1="14" y1="11" x2="14" y2="17"/>
-                            </svg>
-							<?php Language::out( 'Erase' ); ?>
-                        </label>
+                        <input type="hidden" id='selection_size' name='selection_size' value='<?php echo $min_size; ?>'/>
+						<?php
+					}
+					?>
+                    <div class="mds-input-item">
+                        <div class="mds-select-input">
+							<?php
+							$checked = '';
+							if ( ( isset( $_REQUEST['erase'] ) && $_REQUEST['erase'] == 'true' ) ) {
+								$checked = " checked ";
+							}
+							?>
+                            <input type="checkbox" name='erase' id='erase' value='true' <?php echo $checked; ?> />
+                            <label for="erase">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round" class="icon-erase">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    <line x1="10" y1="11" x2="10" y2="17"/>
+                                    <line x1="14" y1="11" x2="14" y2="17"/>
+                                </svg>
+								<?php Language::out( 'Erase' ); ?>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+			<?php
+		} else {
+			// Size selection is not enabled so set the selection size to the maximum allowed blocks.
+			if ( $max_min_equal ) {
+				$size_value = intval( $banner_data['G_MAX_BLOCKS'] );
+			} else {
+				$size_value = 1;
+			}
+
+			// Calculate the maximum square size that can be fit within the maximum block limit
+			$max_square_size = floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) );
+
+			// Calculate the total blocks value
+			$total_blocks_value = $max_square_size * $max_square_size;
+
+			// Set the values of the slider and size inputs to the maximum square size
+			?>
+            <input type="hidden" id="mds-selection-size-slider" name="selection_size" value="<?php echo $max_square_size; ?>">
+            <input type="hidden" id="mds-selection-size-value" value="<?php echo $max_square_size; ?>">
+            <input type="hidden" id="mds-total-blocks-value" value="<?php echo $total_blocks_value; ?>">
+			<?php
+		}
+		?>
         <div id="submit-buttons">
             <input type="button" name='submit_button1' id='submit_button1' value='<?php echo esc_attr( Language::get( 'Buy Pixels Now' ) ); ?>' onclick='formSubmit(event)'>
             <input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>' onclick='reset_pixels()'>
@@ -381,7 +419,8 @@ Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). S
             <div id="blocks"></div>
             <span id='block_pointer'></span>
             <div class="mds-pixel-wrapper">
-                <img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection' ) ); ?>?BID=<?php echo $BID; ?>&amp;gud=<?php echo time(); ?>" alt=""/>
+                <img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection' ) ); ?>?BID=<?php echo $BID; ?>&amp;gud=<?php echo time(); ?>"
+                     alt=""/>
             </div>
         </div>
 

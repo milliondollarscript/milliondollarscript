@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.2
-Stable tag: 2.5.7
+Stable tag: 2.5.8
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -18,6 +18,11 @@ Million Dollar Script enables you to sell pixel-based advertising space on your 
 Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.com/million-dollar-script-wordpress-plugin/) page on the website for additional documentation.
 
 == Changelog ==
+
+= 2.5.8 =
+* Fix JSON output in error message when selecting a block that is already reserved.
+* Fix plugin database migrations not running.
+* Add option to exclude MDS Pixel pages from search results.
 
 = 2.5.7 =
 * Add an option to the WooCommerce tab to Auto-complete Orders.

@@ -1,7 +1,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -33,7 +33,7 @@ let first_load = true;
 let ajax_queue = [];
 let USE_AJAX = MDS_OBJECT.USE_AJAX;
 let block_str = MDS_OBJECT.block_str;
-let selectedBlocks = block_str !== '-1' ? block_str.split(',').map(Number) : [];
+let selectedBlocks = block_str !== '' ? block_str.split(',').map(Number) : [];
 let selecting = false;
 let ajaxing = false;
 let submitting = false;
@@ -43,6 +43,9 @@ let grid_height = MDS_OBJECT.grid_height;
 
 let BLK_WIDTH = MDS_OBJECT.BLK_WIDTH;
 let BLK_HEIGHT = MDS_OBJECT.BLK_HEIGHT;
+
+let G_MAX_BLOCKS = MDS_OBJECT.G_MAX_BLOCKS;
+let G_MIN_BLOCKS = MDS_OBJECT.G_MIN_BLOCKS;
 
 let GRD_WIDTH = BLK_WIDTH * grid_width;
 let GRD_HEIGHT = BLK_HEIGHT * grid_height;
@@ -362,14 +365,57 @@ function getOffset(x, y, touch) {
 function get_pointer_size() {
 	let size = {};
 
-	const selectedSize = parseInt(jQuery('#mds-selection-size-value').val(), 10);
-	const maxBlockSize = Math.max(GRD_WIDTH, GRD_HEIGHT);
+	const $mds_selection_size_slider = jQuery('#mds-selection-size-slider');
+	const $mds_selection_size_value = jQuery('#mds-selection-size-value');
+	const $mds_total_blocks_value = jQuery('#mds-total-blocks-value');
 
-	// Cap the selected size to the maximum block size
-	const cappedSize = Math.min(selectedSize, maxBlockSize);
+	if ($mds_selection_size_slider.attr('type') === 'hidden') {
 
-	size.width = BLK_WIDTH * cappedSize;
-	size.height = BLK_HEIGHT * cappedSize;
+		let selectedSize = parseInt($mds_selection_size_value.val(), 10);
+		const maxBlockSize = Math.max(GRD_WIDTH, GRD_HEIGHT);
+
+		// Calculate the number of blocks left to select
+		let blocksLeft = G_MAX_BLOCKS - selectedBlocks.length;
+
+		// Calculate the square root of the number of blocks left to select
+		let sqrtBlocksLeft = Math.floor(Math.sqrt(blocksLeft));
+
+		// If the selected size is 0, set it to the original maximum square size
+		if (selectedSize === 0) {
+			selectedSize = Math.floor(Math.sqrt(G_MAX_BLOCKS));
+		}
+
+		// Cap the selected size to the maximum block size and the square root of the number of blocks left to select
+		let cappedSize = Math.min(selectedSize, maxBlockSize, sqrtBlocksLeft);
+
+		// If there are no blocks left to select, set cappedSize to 1
+		if (blocksLeft === 0) {
+			cappedSize = 1;
+		}
+
+		// Try to enlarge the area if possible
+		while ((cappedSize + 1) * (cappedSize + 1) <= blocksLeft) {
+			cappedSize++;
+			blocksLeft = blocksLeft - (cappedSize * cappedSize);
+		}
+
+		size.width = BLK_WIDTH * cappedSize;
+		size.height = BLK_HEIGHT * cappedSize;
+
+		// Update the field values
+		$mds_selection_size_slider.val(cappedSize);
+		$mds_selection_size_value.val(cappedSize);
+		$mds_total_blocks_value.val(cappedSize * cappedSize);
+	} else {
+		const selectedSize = parseInt(jQuery('#mds-selection-size-value').val(), 10);
+		const maxBlockSize = Math.max(GRD_WIDTH, GRD_HEIGHT);
+
+		// Cap the selected size to the maximum block size
+		const cappedSize = Math.min(selectedSize, maxBlockSize);
+
+		size.width = BLK_WIDTH * cappedSize;
+		size.height = BLK_HEIGHT * cappedSize;
+	}
 
 	return size;
 }

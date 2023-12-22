@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -240,8 +240,8 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	$upload_result = upload_changed_pixels( $order_id, $row['banner_id'], $size, $banner_data );
 
 	if ( ! $upload_result ) {
-        global $mds_error;
-        $mds_error = Language::get( 'No file was uploaded.' );
+		global $mds_error;
+		$mds_error = Language::get( 'No file was uploaded.' );
 
 		return;
 	}
@@ -416,11 +416,12 @@ if ( $count > 0 ) {
         <map name="main" id="main">
 			<?php
 			while ( $row = mysqli_fetch_array( $result ) ) {
+				$text = sanitize_text_field( $row['alt_text'] );
 				?>
                 <area shape="RECT"
                       coords="<?php echo $row['x']; ?>,<?php echo $row['y']; ?>,<?php echo $row['x'] + $banner_data['BLK_WIDTH']; ?>,<?php echo $row['y'] + $banner_data['BLK_HEIGHT']; ?>"
                       href="<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?BID=<?php echo $BID; ?>&amp;block_id=<?php echo( $row['block_id'] ); ?>"
-                      title="<?php echo( $row['alt_text'] ); ?>" alt="<?php echo( $row['alt_text'] ); ?>"/>
+                      title="<?php echo esc_attr( $text ); ?>" alt="<?php echo esc_attr( $text ); ?>"/>
 				<?php
 			}
 			?>

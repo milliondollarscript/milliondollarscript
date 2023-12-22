@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -44,14 +44,15 @@ class FormFields {
 	public static function register_post_type(): void {
 		register_post_type( self::$post_type,
 			array(
-				'labels'      => array(
+				'labels'              => array(
 					'name'          => __( 'MDS Pixels' ),
 					'singular_name' => __( 'MDS Pixel' )
 				),
-				'public'      => true,
-				'has_archive' => false,
-				'searchable'  => false,
-				'rewrite'     => array( 'slug' => 'mds-pixel' ),
+				'public'              => true,
+				'has_archive'         => false,
+				'searchable'          => true,
+				'exclude_from_search' => false,
+				'rewrite'             => array( 'slug' => 'mds-pixel' ),
 			)
 		);
 	}
@@ -77,27 +78,27 @@ class FormFields {
 			$statuses = self::get_statuses();
 			?>
             <script>
-                jQuery(document).ready(function ($) {
-                    let $post_status = $("select#post_status");
-                    let $post_status_display, text;
+				jQuery(document).ready(function ($) {
+					let $post_status = $("select#post_status");
+					let $post_status_display, text;
 					<?php
 					foreach($statuses as $status => $label) {
 					$selected = $post->post_status == $status ? 'selected=\'selected\'' : '';
 					?>
-                    $post_status.append("<option value='<?php echo esc_attr( $status ); ?>' <?php echo $selected; ?>><?php Language::out( $label ); ?></option>");
-                    $post_status_display = $('#post-status-display');
-                    text = $post_status_display.text();
-                    if (text.toLowerCase() === '<?php echo esc_js( $status ); ?>') {
-                        $post_status_display.text('<?php echo esc_js( Language::get( $label ) ); ?>');
-                    }
+					$post_status.append("<option value='<?php echo esc_attr( $status ); ?>' <?php echo $selected; ?>><?php Language::out( $label ); ?></option>");
+					$post_status_display = $('#post-status-display');
+					text = $post_status_display.text();
+					if (text.toLowerCase() === '<?php echo esc_js( $status ); ?>') {
+						$post_status_display.text('<?php echo esc_js( Language::get( $label ) ); ?>');
+					}
 					<?php } ?>
 
-                    $post_status.find('option').each(function () {
-                        if ($(this).val() === 'draft' || $(this).val() === 'publish' || $(this).val() === 'future') {
-                            $(this).remove();
-                        }
-                    });
-                });
+					$post_status.find('option').each(function () {
+						if ($(this).val() === 'draft' || $(this).val() === 'publish' || $(this).val() === 'future') {
+							$(this).remove();
+						}
+					});
+				});
             </script>
 			<?php
 		}
@@ -375,7 +376,6 @@ class FormFields {
 									$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) );
 									carbon_set_post_meta( $post_id, $field_name, $grid_id );
 								}
-
 							}
 
 							if ( $field_name != 'order' && $field_name != 'grid' ) {
@@ -603,24 +603,24 @@ class FormFields {
 		$statuses = self::get_statuses();
 		?>
         <script type="text/javascript">
-            jQuery(document).ready(function ($) {
-                $(document).on('click', '.editinline', function () {
-                    const $post_status = $('.inline-edit-row select[name="_status"]');
-                    const validStatuses = <?php echo json_encode( $statuses ); ?>;
+			jQuery(document).ready(function ($) {
+				$(document).on('click', '.editinline', function () {
+					const $post_status = $('.inline-edit-row select[name="_status"]');
+					const validStatuses = <?php echo json_encode( $statuses ); ?>;
 
-                    // Loop through each status in the PHP array
+					// Loop through each status in the PHP array
 					<?php foreach ($statuses as $status_key => $status_label) : ?>
-                    $post_status.append(new Option('<?php echo $status_label; ?>', '<?php echo $status_key; ?>'));
+					$post_status.append(new Option('<?php echo $status_label; ?>', '<?php echo $status_key; ?>'));
 					<?php endforeach; ?>
 
-                    // Remove options not in the status array
-                    $post_status.find('option').each(function () {
-                        if (!validStatuses.hasOwnProperty($(this).val())) {
-                            $(this).remove();
-                        }
-                    });
-                });
-            });
+					// Remove options not in the status array
+					$post_status.find('option').each(function () {
+						if (!validStatuses.hasOwnProperty($(this).val())) {
+							$(this).remove();
+						}
+					});
+				});
+			});
         </script>
 		<?php
 	}
@@ -717,5 +717,98 @@ class FormFields {
 			'reserved'   => 'Reserved',
 			'waiting'    => 'Waiting',
 		);
+	}
+
+	/**
+	 * Exclude from search.
+	 *
+	 * @param \WP_Query $query
+	 */
+	public static function modify_search_query( \WP_Query $query ): void {
+		if ( is_admin() || ! $query->is_main_query() || ! $query->is_search() ) {
+			return;
+		}
+
+		if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'no' || Options::get_option( 'exclude-from-search', false ) === true ) {
+			$post_types_to_exclude = [ self::$post_type ];
+
+			if ( $query->get( 'post_type' ) ) {
+				$query_post_types = $query->get( 'post_type' );
+
+				if ( is_string( $query_post_types ) ) {
+					$query_post_types = explode( ',', $query_post_types );
+				}
+			} else {
+				$query_post_types = get_post_types( [ 'exclude_from_search' => false ] );
+			}
+
+			apply_filters( 'mds_modify_search_query', $query_post_types, $post_types_to_exclude );
+
+			if ( sizeof( array_intersect( $query_post_types, $post_types_to_exclude ) ) ) {
+				$query->set( 'post_type', array_diff( $query_post_types, $post_types_to_exclude ) );
+			}
+		}
+	}
+
+	/**
+	 * Use posts search filter to add the ability to also search by our custom text field.
+	 *
+	 * @param string $search
+	 * @param \WP_Query $query
+	 *
+	 * @return string
+	 */
+	public static function posts_search( string $search, \WP_Query $query ): string {
+		global $wpdb;
+
+		$s = $query->get( 's' );
+
+		if ( empty( $s ) ) {
+			return $search;
+		}
+
+		if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'yes' && Options::get_option( 'exclude-from-search', true ) === false ) {
+
+			$s = sanitize_text_field( $s );
+
+			$search = "
+            AND (
+                (
+                    {$wpdb->posts}.post_type = '" . self::$post_type . "'
+                    AND {$wpdb->posts}.ID IN (
+                        SELECT post_id
+                        FROM {$wpdb->postmeta}
+                        WHERE meta_key = '_" . MDS_PREFIX . "text'
+                        AND meta_value LIKE '%{$s}%'
+                    )
+                    AND {$wpdb->posts}.post_status = 'completed'
+                )
+                OR (
+                    {$wpdb->posts}.post_title LIKE '%{$s}%'
+                    AND {$wpdb->posts}.post_type != '" . self::$post_type . "'
+                )
+                OR (
+                    {$wpdb->posts}.post_content LIKE '%{$s}%'
+                    AND {$wpdb->posts}.post_type != '" . self::$post_type . "'
+                )
+            )";
+
+			apply_filters( 'mds_posts_search', $search, $s, $query );
+		}
+
+		// Exclude the specific MDS pages from search results
+
+		// Get the array of page IDs to exclude
+		$exclude_ids = Utility::get_page_ids();
+
+		// Filter out empty values
+		$exclude_ids = array_filter( $exclude_ids );
+
+		$exclude_ids_string = implode( ',', $exclude_ids );
+
+		// Modify the $search query
+		$search .= " AND {$wpdb->posts}.ID NOT IN (" . $exclude_ids_string . ")";
+
+		return $search;
 	}
 }

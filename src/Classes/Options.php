@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -195,6 +195,12 @@ class Options {
 					     'no'  => Language::get( 'No' ),
 				     ] )
 				     ->set_help_text( Language::get( 'Set to Yes to enable the MDS Pixels page template for the MDS Pixels pages. Visiting a MDS Pixels page will then display the same details shown in the popup boxes. If set to No then when visiting a MDS Pixels page it will show a 404 (Page Not Found) error page.' ) ),
+
+				// Exclude from search
+				Field::make( 'checkbox', MDS_PREFIX . 'exclude-from-search', Language::get( 'Exclude from search' ) )
+				     ->set_default_value( '' )
+				     ->set_option_value( 'yes' )
+				     ->set_help_text( Language::get( 'If checked then pixels will be excluded from search results. Note: Only the text and title fields are searchable.' ) ),
 
 				// Endpoint
 				Field::make( 'text', MDS_PREFIX . 'endpoint', Language::get( 'Endpoint' ) )

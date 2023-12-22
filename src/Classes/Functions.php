@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -61,7 +61,7 @@ class Functions {
 
 	public static function get_select_data(): array {
 
-		global $f2;
+		global $f2, $wpdb;
 		$BID = $f2->bid();
 
 		if ( ! is_numeric( $BID ) ) {
@@ -70,12 +70,30 @@ class Functions {
 
 		$banner_data = load_banner_constants( $BID );
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND status='new'";
-		$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		$order_row = mysqli_fetch_array( $order_result );
+		$table_name = MDS_DB_PREFIX . 'orders';
+		$user_id    = get_current_user_id();
+
+		$order_id = Orders::get_current_order_id();
+
+		if ( ! empty( $order_id ) ) {
+			$sql = $wpdb->prepare(
+				"SELECT * FROM $table_name WHERE user_id = %d AND order_id = %d",
+				$user_id,
+				$order_id
+			);
+		} else {
+			$status = 'new';
+			$sql    = $wpdb->prepare(
+				"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
+				$user_id,
+				$status
+			);
+		}
+		$order_result = $wpdb->get_row( $sql );
+		$order_row    = $order_result ? (array) $order_result : [];
 
 		// load any existing blocks for this order
-		$order_row_blocks = ! empty( $order_row['blocks'] ) ? $order_row['blocks'] : '';
+		$order_row_blocks = ! empty( $order_row['blocks'] ) || $order_row['blocks'] == '0' ? $order_row['blocks'] : '';
 		$block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
 		$block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
 		$order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
@@ -97,6 +115,8 @@ class Functions {
 			'grid_height'          => intval( $banner_data['G_HEIGHT'] ),
 			'BLK_WIDTH'            => intval( $banner_data['BLK_WIDTH'] ),
 			'BLK_HEIGHT'           => intval( $banner_data['BLK_HEIGHT'] ),
+			'G_MAX_BLOCKS'         => intval( $banner_data['G_MAX_BLOCKS'] ),
+			'G_MIN_BLOCKS'         => intval( $banner_data['G_MIN_BLOCKS'] ),
 			'G_PRICE'              => floatval( $banner_data['G_PRICE'] ),
 			'blocks'               => $order_blocks,
 			'user_id'              => get_current_user_id(),
@@ -126,16 +146,26 @@ class Functions {
 		$user_id    = get_current_user_id();
 		$status     = 'new';
 
-		$sql          = $wpdb->prepare(
-			"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
-			$user_id,
-			$status
-		);
+		$order_id = Orders::get_current_order_id();
+
+		if ( ! empty( $order_id ) ) {
+			$sql = $wpdb->prepare(
+				"SELECT * FROM $table_name WHERE user_id = %d AND order_id = %d",
+				$user_id,
+				$order_id
+			);
+		} else {
+			$sql = $wpdb->prepare(
+				"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
+				$user_id,
+				$status
+			);
+		}
 		$order_result = $wpdb->get_row( $sql );
 		$order_row    = $order_result ? (array) $order_result : [];
 
 		// load any existing blocks for this order
-		$order_row_blocks = ! empty( $order_row['blocks'] ) ? $order_row['blocks'] : '';
+		$order_row_blocks = ! empty( $order_row['blocks'] ) || $order_row['blocks'] == '0' ? $order_row['blocks'] : '';
 		$block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
 		$block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
 		$order_blocks     = array_map( function ( $block_id ) use ( $BID ) {

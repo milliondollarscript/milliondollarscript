@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -352,7 +352,6 @@ if ( ! empty( $image ) ) {
                 <input type="hidden" value="<?php echo $BID; ?>" name="BID">
                 <input type="submit" class='big_button' name='submit_button2' id='submit_button2'
                        value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ); ?>'>
-                <hr/>
             </form>
             <!--suppress HtmlRequiredAltAttribute, HtmlUnknownAnchorTarget -->
             <img src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&time=<?php echo( time() ); ?>"

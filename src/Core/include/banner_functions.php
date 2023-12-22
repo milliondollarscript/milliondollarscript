@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -49,13 +49,13 @@ function load_banner_row( $BID ) {
 	return $row;
 }
 
-function load_banner_constants( $BID ) {
+function load_banner_constants( $BID ): ?array {
 
 	$row = load_banner_row( $BID );
 
 	// Check non-existent grid.
 	if ( $row == null ) {
-		return;
+		return null;
 	}
 
 	// defaults
@@ -95,16 +95,16 @@ function load_banner_constants( $BID ) {
 	// define constants
 
 	$row["G_NAME"]     = $row['name'];
-	$row["G_PRICE"]    = $row['price_per_block'];
+	$row["G_PRICE"]    = floatval($row['price_per_block']);
 	$row["G_CURRENCY"] = $row['currency'];
 
-	$row["DAYS_EXPIRE"] = $row['days_expire'];
+	$row["DAYS_EXPIRE"] = intval($row['days_expire']);
 
-	$row["BLK_WIDTH"]  = $row['block_width'];
-	$row["BLK_HEIGHT"] = $row['block_height'];
-	$row["BANNER_ID"]  = $row['banner_id'];
-	$row["G_WIDTH"]    = $row['grid_width'];
-	$row["G_HEIGHT"]   = $row['grid_height'];
+	$row["BLK_WIDTH"]  = intval($row['block_width']);
+	$row["BLK_HEIGHT"] = intval($row['block_height']);
+	$row["BANNER_ID"]  = intval($row['banner_id']);
+	$row["G_WIDTH"]    = intval($row['grid_width']);
+	$row["G_HEIGHT"]   = intval($row['grid_height']);
 
 	$row["NFS_COVERED"] = $row['nfs_covered'];
 
@@ -122,11 +122,11 @@ function load_banner_constants( $BID ) {
 	$row["AUTO_APPROVE"] = $row['auto_approve'];
 	$row["AUTO_PUBLISH"] = $row['auto_publish'];
 
-	$row["G_MAX_ORDERS"] = $row['max_orders'];
-	$row["G_MAX_BLOCKS"] = $row['max_blocks'];
-	$row["G_MIN_BLOCKS"] = $row['min_blocks'];
+	$row["G_MAX_ORDERS"] = intval($row['max_orders']);
+	$row["G_MAX_BLOCKS"] = intval($row['max_blocks']);
+	$row["G_MIN_BLOCKS"] = intval($row['min_blocks']);
 
-	$row["TIME"] = $row['time_stamp'];
+	$row["TIME"] = intval($row['time_stamp']);
 
 	//$row["BANNER_ROW", serialize($row));
 

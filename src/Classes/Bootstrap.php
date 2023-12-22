@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -121,6 +121,17 @@ class Bootstrap {
 			'sortable_columns'
 		] );
 		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'orderby_status' ] );
+		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'modify_search_query' ] );
+		add_filter( 'posts_search', [ '\MillionDollarScript\Classes\FormFields', 'posts_search' ], 10, 2 );
+
+		// For debugging search SQL
+//		add_filter( 'posts_request', function( $request, $query ) {
+//			if ( $query->is_search() && $query->is_main_query() ) {
+//				// Print the entire SQL query
+//				var_dump( $request );
+//			}
+//			return $request;
+//		}, 10, 2 );
 
 		// Add Widget
 		// add_action( 'widgets_init', function () {

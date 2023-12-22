@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.7\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.8\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2023-12-10 21:11:34\n"
-"PO-Revision-Date: 2023-12-10 21:11:34\n"
-"X-Generator: Million Dollar Script Two 2.5.7\n"
+"POT-Creation-Date: 2023-12-21 12:33:55\n"
+"PO-Revision-Date: 2023-12-21 12:33:55\n"
+"X-Generator: Million Dollar Script Two 2.5.8\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -216,6 +216,12 @@ msgstr ""
 msgid "Set to Yes to enable the MDS Pixels page template for the MDS Pixels pages. Visiting a MDS Pixels page will then display the same details shown in the popup boxes. If set to No then when visiting a MDS Pixels page it will show a 404 (Page Not Found) error page."
 msgstr ""
 
+msgid "Exclude from search"
+msgstr ""
+
+msgid "If checked then pixels will be excluded from search results. Note: Only the text and title fields are searchable."
+msgstr ""
+
 msgid "Endpoint"
 msgstr ""
 
@@ -300,7 +306,7 @@ msgstr ""
 msgid "Auto-approve"
 msgstr ""
 
-msgid "Setting to Yes will automatically approve orders before payments are verified by an admin."
+msgid "Enabling this will automatically approve orders before payments are verified by an admin."
 msgstr ""
 
 msgid "Currency"
@@ -426,7 +432,7 @@ msgstr ""
 msgid "Auto-complete Orders"
 msgstr ""
 
-msgid "Auto-complete WooCommerce orders when a payment successfully completes."
+msgid "Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab."
 msgstr ""
 
 msgid "Million Dollar Script"

@@ -110,10 +110,10 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
             method: 'POST',
             url: MDS_OBJECT.MAKE_SELECTION,
             data: ajax_data,
-            dataType: 'html',
-        }).done(function (data) {
-            if (data.indexOf('E432') > -1) {
-                alert(data);
+            dataType: 'json',
+        }).done(function (response) {
+            if (response && response.type === 'unavailable') {
+                alert(response.data.value);
                 window.$block_pointer.css('cursor', 'pointer');
                 window.$pixelimg.css('cursor', 'pointer');
                 document.body.style.cursor = 'pointer';

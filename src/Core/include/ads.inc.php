@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -156,6 +156,7 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 			// mds_display_form( $form_id, $mode, $prams, 1 );
 			$show_required = FormFields::display_fields();
 			?>
+            <br/>
             <div class="flex-row">
                 <input type="hidden" name="save" id="save101" value="">
 				<?php if ( $mode == 'edit' || $mode == 'user' ) { ?>
@@ -624,7 +625,6 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 					}
 				}
 
-//				unlink( $tmp_image_file );
 				unset( $tmp_image_file );
 
 				if ( $banner_data['AUTO_APPROVE'] != 'Y' ) {

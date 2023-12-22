@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -28,6 +28,7 @@
  */
 
 use MillionDollarScript\Classes\Currency;
+use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Steps;
 
@@ -262,5 +263,21 @@ function check_selection_main(): void {
 	place_temp_order( $in_str );
 //	$f2->write_log( "in_str is:" . $in_str );
 //	$f2->write_log( '$block_info: '. print_r($block_info, true) );
-	reserve_temp_order_pixels( $block_info, $in_str );
+	$result = reserve_temp_order_pixels( $block_info, $in_str );
+
+	if( $result ) {
+		echo json_encode( [
+			"error" => "false",
+			"type"  => "available",
+			"data"  => []
+		] );
+	} else {
+		echo json_encode( [
+			"error" => "true",
+			"type"  => "unavailable",
+			"data"  => [
+				"value" => Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E434)",
+			]
+		] );
+	}
 }

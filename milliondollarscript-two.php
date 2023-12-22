@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.7
+  Version: 2.5.8
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -15,7 +15,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -63,8 +63,8 @@ defined( 'MDS_CORE_URL' ) or define( 'MDS_CORE_URL', MDS_BASE_URL . 'src/Core/' 
 defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript' );
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
-defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.7' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.7' );
+defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.8' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.8' );
 
 // Detect PHP version
 $minimum_version = '8.0.0';
@@ -75,11 +75,13 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 }
 
 /**
- * Upgrades the MillionDollarScript database.
+ * Performs upgrade operations.
+ *
+ * @return void
  *
  * @throws \Exception if there is an error during the upgrade process.
  */
-function milliondollarscript_two_upgrade(): void {
+function perform_upgrade_operations(): void {
 	$mdsdb   = new Database();
 	$version = $mdsdb->upgrade();
 	if ( $version !== false ) {
@@ -94,7 +96,24 @@ function milliondollarscript_two_upgrade(): void {
 	flush_rewrite_rules();
 }
 
-add_action( 'upgrader_process_complete', '\MillionDollarScript\milliondollarscript_two_upgrade' );
+/**
+ * Upgrades the MillionDollarScript database.
+ *
+ * @param bool $response Installation response.
+ * @param array $hook_extra Extra arguments passed to hooked filters.
+ * @param array $result Installation result data.
+ *
+ * @throws \Exception if there is an error during the upgrade process.
+ */
+function milliondollarscript_two_upgrade( bool $response, array $hook_extra, array $result ): array {
+	if ( $hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin' && isset( $hook_extra['plugin'] ) && $hook_extra['plugin'] === plugin_basename( __FILE__ ) ) {
+		perform_upgrade_operations();
+	}
+
+	return $result;
+}
+
+add_action( 'upgrader_post_install', '\MillionDollarScript\milliondollarscript_two_upgrade', 10, 3 );
 
 /**
  * Activation
@@ -108,7 +127,7 @@ function milliondollarscript_two_activate(): void {
 	update_option( MDS_PREFIX . 'activation', '1' );
 
 	// Check if database requires upgrades and do them before install deltas happen.
-	milliondollarscript_two_upgrade();
+	perform_upgrade_operations();
 
 	// Install MDS database
 	require_once MDS_CORE_PATH . 'admin/install.php';

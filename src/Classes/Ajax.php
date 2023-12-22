@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -57,9 +57,9 @@ class Ajax {
 		// Handle POST input
 		if ( isset( $_POST ) ) {
 
-			$type = $_POST['type'] ?? null;
-			$_GET = isset( $_POST['get_params'] ) ? json_decode( stripslashes($_POST['get_params']), true ) : [];
-            $_REQUEST = array_merge( $_GET, $_POST, $_REQUEST );
+			$type     = $_POST['type'] ?? null;
+			$_GET     = isset( $_POST['get_params'] ) ? json_decode( stripslashes( $_POST['get_params'] ), true ) : [];
+			$_REQUEST = array_merge( $_GET, $_POST, $_REQUEST );
 
 			// Handle core MDS AJAX calls
 			if ( isset( $type ) ) {
@@ -165,7 +165,9 @@ class Ajax {
                 <div class="grid-container <?php echo $container; ?>"<?php echo $bgstyle ?>>
                     <div class='grid-inner' id='<?php echo $container; ?>'>
 						<?php include_once( $map_file ); ?>
-                        <img id="theimage" src="<?php echo $BANNER_URL; ?>grid<?php echo $BID; ?>.<?php echo $ext; ?>?v=<?php echo filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" ); ?>" width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0" usemap="#main" alt=""/>
+                        <img id="theimage" src="<?php echo $BANNER_URL; ?>grid<?php echo $BID; ?>.<?php echo $ext; ?>?v=<?php echo filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" ); ?>"
+                             width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0"
+                             usemap="#main" alt=""/>
                         <div class="tooltip-source">
                             <img src="<?php echo esc_url( MDS_CORE_URL ); ?>images/periods.gif" alt=""/>
                         </div>
@@ -365,7 +367,7 @@ class Ajax {
 								$ALT_TEXT = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
 								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT );
 
-                                $url = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'url' );
+								$url = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'url' );
 
 								$data_values = array(
 									'aid'       => $row['ad_id'],

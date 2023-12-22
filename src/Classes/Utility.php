@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -353,7 +353,7 @@ class Utility {
 			delete_user_meta( $user_id, MDS_PREFIX . 'click_count' );
 			delete_user_meta( $user_id, MDS_PREFIX . 'view_count' );
 
-			WooCommerceFunctions::reset_session_variables( $user_id );
+			self::reset_order_progress( $user_id );
 		}
 
 		// Delete mds-pixel posts and attachments.
@@ -601,5 +601,21 @@ class Utility {
 		}
 
 		return $error;
+	}
+
+	/**
+	 * Reset the given user's order progress. Used when all orders are cleared.
+	 *
+	 * @param int $user_id
+	 *
+	 * @return void
+	 */
+	public static function reset_order_progress( int $user_id ): void {
+		if ( WooCommerceFunctions::is_wc_active() ) {
+			WooCommerceFunctions::reset_session_variables( $user_id );
+		} else {
+			Orders::reset_progress( $user_id );
+			delete_user_meta( $user_id, 'mds_confirm' );
+		}
 	}
 }

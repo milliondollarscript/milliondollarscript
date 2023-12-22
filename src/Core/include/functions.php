@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -1363,15 +1363,16 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 
 	$blocks         = array();
 	$clicked_blocks = array();
+	$removed_blocks = array();
 	$return_val     = "";
 
-	$sql = "SELECT status, user_id, ad_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=" . intval( $clicked_block ) . " AND banner_id=" . intval( $BID );
+	$sql = "SELECT status, user_id, ad_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=" . intval( $clicked_block ) . " AND banner_id=" . intval( $BID );
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 	$blocksrow = mysqli_fetch_array( $result );
 
-	if ( ( $blocksrow == null || $blocksrow['status'] == '' ) || ( ( $blocksrow['status'] == 'reserved' ) && ( $blocksrow['user_id'] == get_current_user_id() ) ) ) {
+	$orderid = Orders::get_current_order_in_progress();
 
-		$orderid = Orders::get_current_order_in_progress();
+	if ( ( $blocksrow == null || $blocksrow['status'] == '' ) || ( ( $blocksrow['status'] == 'reserved' || $blocksrow['order_id'] == $orderid ) && ( $blocksrow['user_id'] == get_current_user_id() ) ) ) {
 
 		if ( $orderid == null ) {
 			$orderid = Orders::create_order();
@@ -1395,7 +1396,8 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 			if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 				// deselect
 				unset( $blocks2[ $block ] );
-				$is_adjacent = true;
+				$removed_blocks[] = $clicked_block;
+				$is_adjacent      = true;
 			}
 		} else if ( ! empty( $size ) ) {
 			// take multi-selection blocks and deselecting blocks into account
@@ -1420,6 +1422,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 						if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 							// deselect
 							unset( $blocks2[ $block ] );
+							$removed_blocks[] = $clicked_block;
 						} else {
 							// select
 							$clicked_blocks[] = $clicked_block;
@@ -1525,8 +1528,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 		}
 
 		// if conditions are met then select new blocks
-		if ( ! $max_selected && $is_adjacent && ! $existing_blocks && ! empty( $order_blocks ) ) {
-
+		if ( ! $max_selected && $is_adjacent && ! $existing_blocks && ( ( ! empty( $order_blocks ) || $order_blocks == '0' ) || ! empty( $removed_blocks ) || $removed_blocks == '0' ) ) {
 			$price      = $total = 0;
 			$num_blocks = sizeof( $new_blocks );
 			$quantity   = ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] ) * $num_blocks;
@@ -1543,17 +1545,19 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 			}
 
 			// One last check to make sure we aren't replacing existing blocks from other orders
-			$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != " . $orderid . " AND block_id IN(" . $order_blocks . ") AND banner_id=" . intval( $BID );
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-			$num_rows = mysqli_num_rows( $result );
-			if ( $num_rows > 0 ) {
-				return [
-					"error" => "true",
-					"type"  => "advertiser_sel_sold_error",
-					"data"  => [
-						"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID% ", '' ),
-					]
-				];
+			if ( ! empty( $order_blocks ) || $order_blocks == '0' ) {
+				$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != " . $orderid . " AND block_id IN(" . $order_blocks . ") AND banner_id=" . intval( $BID );
+				$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+				$num_rows = mysqli_num_rows( $result );
+				if ( $num_rows > 0 ) {
+					return [
+						"error" => "true",
+						"type"  => "advertiser_sel_sold_error",
+						"data"  => [
+							"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID% ", '' ),
+						]
+					];
+				}
 			}
 
 			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved) VALUES (" . get_current_user_id() . ", " . $orderid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $order_blocks ) . "', 'new', NOW(), " . floatval( $price ) . ", " . intval( $quantity ) . ", " . intval( $BID ) . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "', " . intval( $banner_data['DAYS_EXPIRE'] ) . ", '$now', " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "') ";
@@ -1571,7 +1575,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 				]
 			];
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . get_current_user_id() . " AND status='reserved' AND banner_id='" . intval( $BID ) . "' ";
+			$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . get_current_user_id() . " AND (status='reserved' OR order_id='" . $order_id . "') AND banner_id='" . intval( $BID ) . "' ";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			$cell = 0;
@@ -1608,6 +1612,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 				$_REQUEST['user_id']  = get_current_user_id();
 			}
 		}
+
 	} else {
 
 		if ( $blocksrow['status'] == 'nfs' ) {
@@ -2057,7 +2062,8 @@ function can_user_order( $banner_data, $user_id, int $package_id = 0 ) {
 				return true;
 			}
 		} else {
-			return true; // can make unlimited orders
+			// can make unlimited orders
+			return true;
 		}
 	}
 }

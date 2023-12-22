@@ -2,7 +2,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.7
+ * @version     2.5.8
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -95,15 +95,20 @@ if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
 
 // reset blocks
 if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
-	$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='" . intval( $BID ) . "'";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 	$order_id = Orders::get_current_order_id();
 
 	if ( ! empty( $order_id ) ) {
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET blocks='' WHERE order_id=" . intval( $order_id );
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+
+		// Assemble query to delete all blocks for the current order for the current user.
+		$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND banner_id='" . intval( $BID ) . "' AND order_id='" . intval( $order_id ) . "'";
+	} else {
+		// Assemble query to delete all reserved blocks for the current user.
+		$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='" . intval( $BID ) . "'";
 	}
+	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 	echo json_encode( [
 		"error" => "false",
