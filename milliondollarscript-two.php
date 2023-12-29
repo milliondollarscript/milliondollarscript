@@ -84,7 +84,7 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 function perform_upgrade_operations(): void {
 	$mdsdb   = new Database();
 	$version = $mdsdb->upgrade();
-	error_log( '$version: ', var_export( $version, true ) );
+	error_log( '$version: '. var_export( $version, true ) );
 	if ( $version !== false ) {
 		$mdsdb->up_dbver( $version );
 	}
