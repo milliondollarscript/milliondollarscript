@@ -84,6 +84,7 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 function perform_upgrade_operations(): void {
 	$mdsdb   = new Database();
 	$version = $mdsdb->upgrade();
+	error_log('$version: ', var_export($version, true));
 	if ( $version !== false ) {
 		$mdsdb->up_dbver( $version );
 	}
@@ -106,6 +107,9 @@ function perform_upgrade_operations(): void {
  * @throws \Exception if there is an error during the upgrade process.
  */
 function milliondollarscript_two_upgrade( bool $response, array $hook_extra, array $result ): array {
+	error_log('$hook_extra: ', var_export($hook_extra, true));
+	error_log('plugin_basename( __FILE__ ): '. plugin_basename( __FILE__ ));
+
 	if ( $hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin' && isset( $hook_extra['plugin'] ) && $hook_extra['plugin'] === plugin_basename( __FILE__ ) ) {
 		perform_upgrade_operations();
 	}
