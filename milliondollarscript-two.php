@@ -113,7 +113,7 @@ function milliondollarscript_two_upgrade( bool $response, array $hook_extra, arr
 	return $result;
 }
 
-add_action( 'upgrader_post_install', '\MillionDollarScript\milliondollarscript_two_upgrade', 10, 3 );
+add_filter( 'upgrader_post_install', '\MillionDollarScript\milliondollarscript_two_upgrade', 10, 3 );
 
 /**
  * Activation
