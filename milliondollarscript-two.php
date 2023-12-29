@@ -84,7 +84,7 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 function perform_upgrade_operations(): void {
 	$mdsdb   = new Database();
 	$version = $mdsdb->upgrade();
-	error_log('$version: ', var_export($version, true));
+	error_log( '$version: ', var_export( $version, true ) );
 	if ( $version !== false ) {
 		$mdsdb->up_dbver( $version );
 	}
@@ -100,24 +100,23 @@ function perform_upgrade_operations(): void {
 /**
  * Upgrades the MillionDollarScript database.
  *
- * @param bool $response Installation response.
+ * @param \WP_Upgrader $upgrader
  * @param array $hook_extra Extra arguments passed to hooked filters.
- * @param array $result Installation result data.
  *
  * @throws \Exception if there is an error during the upgrade process.
  */
-function milliondollarscript_two_upgrade( bool $response, array $hook_extra, array $result ): array {
-	error_log('$hook_extra: ', var_export($hook_extra, true));
-	error_log('plugin_basename( __FILE__ ): '. plugin_basename( __FILE__ ));
+function milliondollarscript_two_upgrade( \WP_Upgrader $upgrader, array $hook_extra ): void {
+	error_log( '$hook_extra: ', var_export( $hook_extra, true ) );
+	error_log( 'plugin_basename( __FILE__ ): ' . plugin_basename( __FILE__ ) );
 
-	if ( $hook_extra['action'] === 'update' && $hook_extra['type'] === 'plugin' && isset( $hook_extra['plugin'] ) && $hook_extra['plugin'] === plugin_basename( __FILE__ ) ) {
-		perform_upgrade_operations();
+	if ( $hook_extra['action'] == 'update' && $hook_extra['type'] == 'plugin' && isset( $hook_extra['plugins'] ) ) {
+		if ( in_array( plugin_basename( __FILE__ ), $hook_extra['plugins'] ) ) {
+			perform_upgrade_operations();
+		}
 	}
-
-	return $result;
 }
 
-add_filter( 'upgrader_post_install', '\MillionDollarScript\milliondollarscript_two_upgrade', 10, 3 );
+add_action( 'upgrader_process_complete', '\MillionDollarScript\milliondollarscript_two_upgrade', 10, 2 );
 
 /**
  * Activation
