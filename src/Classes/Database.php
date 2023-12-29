@@ -140,7 +140,12 @@ class Database {
 
 		// Perform upgrades.
 		foreach ( $upgrade_files as $upgrade_file ) {
+
+			// Replace underscores with periods in the upgrade file name to get the version.
 			$upgrade_version = str_replace( '_', '.', basename( $upgrade_file, '.php' ) );
+
+			// Remove leading periods.
+			$upgrade_version = ltrim( $upgrade_version, '.' );
 
 			if ( version_compare( $upgrade_version, $current_version, '>' ) ) {
 				$classname = '\\MillionDollarScript\\Upgrades\\' . basename( $upgrade_file, '.php' );
