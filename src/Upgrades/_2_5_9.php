@@ -3,7 +3,7 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.8
+ * @version     2.5.9
  * @author      Ryan Rhode
  * @copyright   (C) 2023, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
@@ -28,38 +28,24 @@
  *
  */
 
-namespace MillionDollarScript\Classes;
+namespace MillionDollarScript\Upgrades;
 
-use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+use MillionDollarScript\Classes\Options;
 
 defined( 'ABSPATH' ) or exit;
 
-class Update {
-	public static function checker(): void {
-		$updates = Options::get_option( 'updates' );
-		if ( $updates == 'yes' ) {
-			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
-				'https://gitlab.com/MillionDollarScript/milliondollarscript-two/',
-				MDS_BASE_FILE,
-				'milliondollarscript-two'
-			);
-			$MDSUpdateChecker->setBranch('main');
+/** @noinspection PhpUnused */
 
-		} else if ( $updates == 'dev' ) {
-			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
-				'https://gitlab.com/MillionDollarScript/milliondollarscript-two/',
-				MDS_BASE_FILE,
-				'milliondollarscript-two-dev'
-			);
-			$MDSUpdateChecker->setBranch('dev');
+class _2_5_9 {
 
-		} else if ( $updates == 'snapshot' ) {
-			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
-				'https://gitlab.com/MillionDollarScript/milliondollarscript-two/',
-				MDS_BASE_FILE,
-				'milliondollarscript-two-snapshot'
-			);
-			$MDSUpdateChecker->setBranch('snapshot');
+	public function upgrade( $version ): void {
+		if ( version_compare( $version, '2.5.9', '<' ) ) {
+
+			// Update Plugin updates option from dev to snapshot
+			$updates = Options::get_option( 'updates' );
+			if ( $updates == 'dev' ) {
+				Options::update_option( 'updates', 'snapshot' );
+			}
 		}
 	}
 }
