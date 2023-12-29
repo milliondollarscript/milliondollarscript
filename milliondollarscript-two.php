@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.9
+  Version: 2.5.8
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -106,7 +106,7 @@ function perform_upgrade_operations(): void {
  * @throws \Exception if there is an error during the upgrade process.
  */
 function milliondollarscript_two_upgrade( \WP_Upgrader $upgrader, array $hook_extra ): void {
-	error_log( '$hook_extra: ', var_export( $hook_extra, true ) );
+	error_log( '$hook_extra: '. var_export( $hook_extra, true ) );
 	error_log( 'plugin_basename( __FILE__ ): ' . plugin_basename( __FILE__ ) );
 
 	if ( $hook_extra['action'] == 'update' && $hook_extra['type'] == 'plugin' && isset( $hook_extra['plugins'] ) ) {
