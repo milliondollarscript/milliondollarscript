@@ -23,6 +23,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix another issue that could cause plugin database migrations to not run.
 * Add a "snapshot" branch to replace the "dev" branch. The dev branch will now be used for ongoing development while the new snapshot branch will be used as the dev branch was before. For lightly tested, periodic snapshots of the dev branch when new features or fixes are ready for wider testing.
 * Update vendor libraries.
+* Fix PHP Warning:  Undefined array key "blocks" in src/Classes/Functions.php on line 168
 
 = 2.5.8 =
 * Fix JSON output in error message when selecting a block that is already reserved.
