@@ -103,7 +103,7 @@ class Orders {
 
 		return $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT `order_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `user_id` = %d AND `order_in_progress` = 'Y'",
+				"SELECT `order_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `user_id` = %d AND `order_in_progress` = 'Y' ORDER BY `order_id` DESC LIMIT 1",
 				$user_id
 			)
 		);
