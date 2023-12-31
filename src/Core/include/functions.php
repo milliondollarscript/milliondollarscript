@@ -1560,11 +1560,43 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 				}
 			}
 
-			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved) VALUES (" . get_current_user_id() . ", " . $orderid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $order_blocks ) . "', 'new', NOW(), " . floatval( $price ) . ", " . intval( $quantity ) . ", " . intval( $BID ) . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "', " . intval( $banner_data['DAYS_EXPIRE'] ) . ", '$now', " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "') ";
+			global $wpdb;
 
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$order_id = mysqli_insert_id( $GLOBALS['connection'] );
-			Orders::set_order_in_progress( $order_id );
+			$user_id = get_current_user_id();
+
+			$current_order_id = Orders::get_current_order_in_progress( $user_id );
+			if ( $current_order_id != null ) {
+				error_log( "Current order id: " . $current_order_id );
+				\MillionDollarScript\Classes\Debug::log_trace();
+
+				// Set all orders as not in progress for the current user.
+				$sql = $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "orders SET order_in_progress='N' WHERE user_id=%d",
+					$user_id
+				);
+				$wpdb->query( $sql );
+			}
+
+			$sql = $wpdb->prepare(
+				"REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved, order_in_progress) VALUES (%d, %d, %s, 'new', NOW(), %f, %d, %d, %s, %d, %s, %d, %s, %s)",
+				$user_id,
+				$orderid,
+				mysqli_real_escape_string( $GLOBALS['connection'], $order_blocks ),
+				floatval( $price ),
+				intval( $quantity ),
+				intval( $BID ),
+				mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ),
+				intval( $banner_data['DAYS_EXPIRE'] ),
+				$now,
+				$adid,
+				mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ),
+				'Y'
+			);
+
+			$wpdb->query( $sql );
+
+			$order_id = $wpdb->insert_id;
+
 			Steps::set_current_step( $order_id, 1 );
 
 			$return_val = [
