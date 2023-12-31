@@ -618,4 +618,32 @@ class Utility {
 			delete_user_meta( $user_id, 'mds_confirm' );
 		}
 	}
+
+	/**
+	 * Check if the current WP page has the endpoint at the start of the URL path or is an AJAX request to determine if messages should be output.
+	 *
+	 * @return bool
+	 */
+	public static function has_endpoint_or_ajax(): bool {
+		if ( wp_doing_ajax() ) {
+			return true;
+		}
+
+		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
+
+		// Get the current URL
+		$current_url = home_url( add_query_arg( null, null ) );
+
+		// Parse the URL and get the path
+		$path = parse_url( $current_url, PHP_URL_PATH );
+
+		// Remove the leading slash if it exists
+		if ( str_starts_with( $path, '/' ) ) {
+			$path = substr( $path, 1 );
+		}
+
+		// Check if the path starts with the MDS endpoint
+		return str_starts_with( $path, $MDS_ENDPOINT );
+
+	}
 }

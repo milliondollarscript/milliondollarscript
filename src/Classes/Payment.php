@@ -156,10 +156,13 @@ class Payment {
 	 * @return void
 	 */
 	private static function default_message(): void {
+
 		if ( Options::get_option( 'auto-approve' ) ) {
 			if ( ( $_REQUEST['order_id'] != '' ) ) {
 				if ( ! is_user_logged_in() ) {
-					Language::out( 'Error: You must be logged in to view this page' );
+					if ( Utility::has_endpoint_or_ajax() ) {
+						Language::out( 'Error: You must be logged in to view this page' );
+					}
 				} else {
 
 					$order_id = intval( $_REQUEST['order_id'] );
@@ -172,10 +175,18 @@ class Payment {
 				}
 			}
 
-			Language::out( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
+			// Only output if the URL has the endpoint in it or is an AJAX request.
+			if ( Utility::has_endpoint_or_ajax() ) {
+				Language::out( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
+			}
 		} else {
 			confirm_order( get_current_user_id(), \MillionDollarScript\Classes\Orders::get_current_order_id() );
-			Language::out( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+
+			// Only output if the URL has the endpoint in it or is an AJAX request.
+			if ( Utility::has_endpoint_or_ajax() ) {
+				Language::out( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+			}
+
 		}
 
 		$thank_you_page = \MillionDollarScript\Classes\Options::get_option( 'thank-you-page' );
