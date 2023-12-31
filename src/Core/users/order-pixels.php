@@ -70,9 +70,6 @@ if ( empty( $order_id ) ) {
 				// Not in progress so redirect to the no orders page
 				\MillionDollarScript\Classes\Functions::no_orders();
 			}
-
-			// Was found to be an order in progress so set the current order to it
-			Orders::set_order_in_progress( $order_id );
 		}
 
 	} else {
