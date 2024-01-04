@@ -86,6 +86,9 @@ class Admin {
 					$height = $data['height'];
 				}
 
+                // TODO: Add an option to use blocks for new pages instead of shortcodes:
+                // <!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_preview":"\u003cdiv class=\u0022cf-preview\u0022\u003e\u003cimg src='https://mds.ddev.site/app/plugins/milliondollarscript-two/src/Core/images/bg-main.gif' /\u003e\u003c/div\u003e\u003c!\u002d\u002d /.cf-preview \u002d\u002d\u003e","milliondollarscript_id":"1","milliondollarscript_align":"center","milliondollarscript_width":"100%","milliondollarscript_height":"auto","milliondollarscript_type":"users"}} /-->
+
 				$shortcode = '[milliondollarscript id="%d" align="%s" width="%s" height="%s" type="%s"]';
 				$content   = wp_sprintf( $shortcode, $id, $align, $width, $height, $page );
 
