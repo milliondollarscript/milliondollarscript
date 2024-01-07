@@ -299,6 +299,10 @@ function mds_load_tippy(tippy, $el, scalemap, type, isgrid) {
 	return tooltips;
 }
 
+function mds_handle_mouseenter() {
+	window.click_data = jQuery(this).data('data');
+}
+
 function mds_handle_click() {
 	window.click_data = jQuery(this).data('data');
 
@@ -422,6 +426,14 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 				rescale($el);
 			}
 			let tooltips = mds_load_tippy(tippy, $el, scalemap, type, isgrid);
+
+			if (MDS.TOOLTIP_TRIGGER === 'mouseenter') {
+				jQuery('area').off('mouseenter').on('mouseenter', function (e) {
+					e.preventDefault();
+					e.stopPropagation();
+					mds_handle_mouseenter.call(this);
+				});
+			}
 
 			jQuery('area').off('click').on('click', function (e) {
 				e.preventDefault();

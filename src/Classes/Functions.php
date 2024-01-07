@@ -239,21 +239,18 @@ class Functions {
 		}
 
 		wp_register_style( 'mds', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
-		wp_register_style( 'tippy-light', MDS_CORE_URL . 'css/tippy/light.css', [], filemtime( MDS_CORE_PATH . 'css/tippy/light.css' ) );
 
 		self::$tooltips = Config::get( 'ENABLE_MOUSEOVER' );
 		if ( self::$tooltips == 'POPUP' ) {
 			wp_register_script( 'popper', MDS_CORE_URL . 'js/third-party/popper.min.js', [], filemtime( MDS_CORE_PATH . 'js/third-party/popper.min.js' ), true );
 			wp_register_script( 'tippy', MDS_CORE_URL . 'js/third-party/tippy-bundle.umd.min.js', [ 'popper' ], filemtime( MDS_CORE_PATH . 'js/third-party/tippy-bundle.umd.min.js' ), true );
-			$deps = 'tippy';
+			wp_register_style( 'tippy-light', MDS_CORE_URL . 'css/tippy/light.css', [], filemtime( MDS_CORE_PATH . 'css/tippy/light.css' ) );
+			$deps = [ 'jquery', 'tippy' ];
 		} else {
-			$deps = '';
+			$deps = [];
 		}
 
-		wp_register_script( 'image-scale', MDS_CORE_URL . 'js/third-party/image-scale.min.js', [
-			'jquery',
-			$deps
-		], filemtime( MDS_CORE_PATH . 'js/third-party/image-scale.min.js' ), true );
+		wp_register_script( 'image-scale', MDS_CORE_URL . 'js/third-party/image-scale.min.js', $deps, filemtime( MDS_CORE_PATH . 'js/third-party/image-scale.min.js' ), true );
 		wp_register_script( 'image-map', MDS_CORE_URL . 'js/third-party/image-map.min.js', [ 'image-scale' ], filemtime( MDS_CORE_PATH . 'js/third-party/image-map.min.js' ), true );
 		wp_register_script( 'contact', MDS_CORE_URL . 'js/third-party/contact.nomodule.min.js', [ 'image-map' ], filemtime( MDS_CORE_PATH . 'js/third-party/contact.nomodule.min.js' ), true );
 
@@ -316,12 +313,12 @@ class Functions {
 		wp_enqueue_script( 'jquery' );
 
 		wp_enqueue_style( 'mds' );
-		wp_enqueue_style( 'tippy-light' );
 
 		self::$tooltips = Config::get( 'ENABLE_MOUSEOVER' );
 		if ( self::$tooltips == 'POPUP' ) {
 			wp_enqueue_script( 'popper' );
 			wp_enqueue_script( 'tippy' );
+			wp_enqueue_style( 'tippy-light' );
 		}
 
 		wp_enqueue_script( 'image-scale' );

@@ -453,32 +453,32 @@ defined( 'ABSPATH' ) or exit;
 
     <div class="admin-config">
         <div class="admin-config-heading">
-            Tooltip box
+            Popup box
         </div>
 
         <div class="admin-config-left">
-            Show a box when the clicking a block?
+            Show a box when interacting with a block?
         </div>
         <div class="admin-config-right">
             <label>
 			    <?php
 			    $ENABLE_MOUSEOVER = Config::get( 'ENABLE_MOUSEOVER' );
 			    ?>
-                <input type="radio" name="ENABLE_MOUSEOVER" value="POPUP" <?php echo( $ENABLE_MOUSEOVER == 'POPUP' ? 'checked' : '' ); ?> /> Yes - Simple popup box, with no animation<br/>
-                <input type="radio" name="ENABLE_MOUSEOVER" value="NO" <?php echo( $ENABLE_MOUSEOVER == 'NO' ? 'checked' : '' ); ?> /> No, turn off
+                <input type="radio" name="ENABLE_MOUSEOVER" value="POPUP" <?php echo( $ENABLE_MOUSEOVER == 'POPUP' ? 'checked' : '' ); ?> /> Yes - Show a popup box<br/>
+                <input type="radio" name="ENABLE_MOUSEOVER" value="NO" <?php echo( $ENABLE_MOUSEOVER == 'NO' ? 'checked' : '' ); ?> /> No - No popup box
             </label>
         </div>
 
         <div class="admin-config-left">
-            Tooltip trigger
+            Popup interaction method
         </div>
         <div class="admin-config-right">
             <label>
 			    <?php
 			    $TOOLTIP_TRIGGER = Config::get( 'TOOLTIP_TRIGGER' );
 			    ?>
-                <input type="radio" name="TOOLTIP_TRIGGER" value="click" <?php echo( $TOOLTIP_TRIGGER == 'click' ? 'checked' : '' ); ?> /> Click - Tooltips will popup when ads are clicked on the grid.<br/>
-                <input type="radio" name="TOOLTIP_TRIGGER" value="mouseenter" <?php echo( $TOOLTIP_TRIGGER == 'mouseenter' ? 'checked' : '' ); ?> /> Hover - Tooltips will popup when ads are hovered over on the grid.
+                <input type="radio" name="TOOLTIP_TRIGGER" value="click" <?php echo( $TOOLTIP_TRIGGER == 'click' ? 'checked' : '' ); ?> /> Click - A box will popup when blocks are clicked on the grid.<br/>
+                <input type="radio" name="TOOLTIP_TRIGGER" value="mouseenter" <?php echo( $TOOLTIP_TRIGGER == 'mouseenter' ? 'checked' : '' ); ?> /> Hover - A box will popup when blocks are hovered over on the grid.
             </label>
         </div>
     </div>
