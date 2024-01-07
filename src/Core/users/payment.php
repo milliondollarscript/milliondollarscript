@@ -38,6 +38,10 @@ defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
+if ( ! Utility::has_endpoint_or_ajax() ) {
+	return;
+}
+
 global $BID, $f2;
 $BID = $f2->bid();
 
@@ -66,7 +70,6 @@ $order_row = mysqli_fetch_array( $order_result );
 // Process confirmation
 if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
 	// move temp order to confirmed order
-
 	$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
 	if ( ! $advanced_order ) {
