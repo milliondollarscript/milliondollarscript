@@ -500,6 +500,20 @@ class Options {
 	 */
 	public static function update_option( string $name, string $value ): bool {
 		$key = '_' . MDS_PREFIX . $name;
+
 		return update_option( $key, $value );
+	}
+
+	/**
+	 * Delete Carbon Fields options.
+	 *
+	 * @param string $name
+	 *
+	 * @return bool
+	 */
+	public static function delete( string $name ): bool {
+		$key = '_' . MDS_PREFIX . $name;
+
+		return delete_option( $key );
 	}
 }
