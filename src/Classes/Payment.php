@@ -115,11 +115,13 @@ class Payment {
 					}
 				} else {
 					self::default_message();
+					Orders::reset_order_progress();
 
 					return;
 				}
 			} else {
 				self::default_message();
+				Orders::reset_order_progress();
 
 				return;
 			}
@@ -144,6 +146,8 @@ class Payment {
 					$checkout_url
 				);
 			}
+
+			Orders::reset_order_progress();
 
 			wp_safe_redirect( $checkout_url );
 			exit;
