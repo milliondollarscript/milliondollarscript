@@ -89,8 +89,6 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		$file     = $BANNER_PATH . $filename;
 		$fullfile = wp_normalize_path( $file . '.' . $ext );
 
-		//MillionDollarScript\Classes\Debug::output( $fullfile, 'log' );
-
 		// grid1-856848500-1bf8f4d8717252cf8010a67f0b3c50b0.png
 		if ( file_exists( $fullfile ) && filemtime( $fullfile ) >= $last_modification_time ) {
 			// If the file exists then output it directly.
