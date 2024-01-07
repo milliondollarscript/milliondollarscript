@@ -143,7 +143,7 @@ function expire_orders(): void {
 
 		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`=%s", 'new' );
 		if ( $MINUTES_UNCONFIRMED != - 1 ) {
-			$sql .= $wpdb->prepare( " AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, intval( $MINUTES_UNCONFIRMED ) );
+			$sql .= $wpdb->prepare( " AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, $MINUTES_UNCONFIRMED );
 		}
 		$results = $wpdb->get_results( $sql, ARRAY_A );
 
@@ -171,7 +171,7 @@ function expire_orders(): void {
 
 		$additional_condition = "";
 		if ( $MINUTES_CONFIRMED != - 1 ) {
-			$additional_condition = $wpdb->prepare( " AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, intval( $MINUTES_CONFIRMED ) );
+			$additional_condition = $wpdb->prepare( " AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, $MINUTES_CONFIRMED );
 		}
 
 		$sql     = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status` = 'confirmed' %s", $additional_condition );
@@ -189,12 +189,12 @@ function expire_orders(): void {
 	}
 
 	// EXPIRED Orders -> Cancel
-	$MINUTES_RENEW = Config::get( 'MINUTES_RENEW' );
+	$MINUTES_RENEW = intval( Config::get( 'MINUTES_RENEW' ) );
 	if ( $MINUTES_RENEW != 0 ) {
 
 		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`='expired'";
 		if ( $MINUTES_RENEW != - 1 ) {
-			$sql .= " AND DATE_SUB('$now',INTERVAL " . intval( $MINUTES_RENEW ) . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL";
+			$sql .= " AND DATE_SUB('$now',INTERVAL " . $MINUTES_RENEW . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL";
 		}
 
 		$result = @mysqli_query( $GLOBALS['connection'], $sql );
@@ -210,7 +210,7 @@ function expire_orders(): void {
 	}
 
 	// Cancelled Orders -> Delete
-	$MINUTES_CANCEL = Config::get( 'MINUTES_CANCEL' );
+	$MINUTES_CANCEL = intval( Config::get( 'MINUTES_CANCEL' ) );
 	if ( $MINUTES_CANCEL != 0 ) {
 
 		$MINUTES_CANCEL = intval( $MINUTES_CANCEL );
@@ -277,7 +277,7 @@ function credit_transaction( $order_id, $amount, $currency, $txn_id, $reason, $o
 
 	$type = "CREDIT";
 
-	$date = ( gmdate( "Y-m-d H:i:s" ) );
+	$date = current_time( 'mysql' );
 
 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "transactions where txn_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $txn_id ) . "' and `type`='CREDIT' ";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
@@ -313,7 +313,7 @@ $order_id = the corresponding order id.
 function debit_transaction( $order_id, $amount, $currency, $txn_id, $reason, $origin ) {
 
 	$type = "DEBIT";
-	$date = ( gmdate( "Y-m-d H:i:s" ) );
+	$date = current_time( 'mysql' );
 	// check to make sure that there is no debit for this transaction already
 
 	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "transactions where txn_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $txn_id ) . "' and `type`='DEBIT' AND order_id=" . intval( $order_id );
@@ -333,7 +333,7 @@ function complete_order( $user_id, $order_id ) {
 	$order_row = mysqli_fetch_array( $result );
 
 	if ( $order_row['status'] != 'completed' ) {
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		global $wpdb;
 
@@ -473,7 +473,7 @@ function confirm_order( $user_id, $order_id ) {
 			'post_status' => 'confirmed',
 		] );
 
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='confirmed', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -559,7 +559,7 @@ function pend_order( $user_id, $order_id ) {
 			'post_status' => 'pending',
 		] );
 
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='pending', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
 		//echo $sql;
@@ -653,7 +653,7 @@ function expire_order( $order_id ) {
 			'post_status' => 'expired',
 		] );
 
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='expired', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
 		//echo "$sql<br>";
@@ -755,7 +755,7 @@ function delete_order( $order_id ): void {
 			'post_status' => 'deleted',
 		] );
 
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='deleted', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "'";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -787,7 +787,7 @@ function cancel_order( $order_id ) {
 			'post_status' => 'cancelled',
 		] );
 
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `status`='cancelled', date_stamp='$now', approved='N' WHERE order_id='" . intval( $order_id ) . "'";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -844,7 +844,7 @@ function unreserve_block( $block_id, $banner_id ) {
 /*function allocate_renew_order( $original_order_id ) {
 
 	# if no waiting renew order, insert a new one
-	$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 	if ( is_renew_order_paid( $original_order_id ) ) { // cannot allocate a renew_wait, this order was already paid and waiting to be completed.
 		return false;
@@ -912,7 +912,7 @@ function complete_renew_order( $order_id ) {
 			'post_status' => 'completed',
 		] );
 
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='completed', date_published=NULL, date_stamp='$now' WHERE order_id=" . intval( $order_id );
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -1532,7 +1532,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 			$price      = $total = 0;
 			$num_blocks = sizeof( $new_blocks );
 			$quantity   = ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] ) * $num_blocks;
-			$now        = gmdate( "Y-m-d H:i:s" );
+			$now        = current_time( 'mysql' );
 
 			$orderid = 0;
 			if ( isset( $ordersrow['order_id'] ) ) {
@@ -1723,7 +1723,7 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 	$banner_row = load_banner_row( $temp_order_row['banner_id'] );
 	$approved   = $banner_row['auto_approve'];
 
-	$now = ( gmdate( "Y-m-d H:i:s" ) );
+	$now = current_time( 'mysql' );
 
 	$sql = $wpdb->prepare(
 		"UPDATE " . MDS_DB_PREFIX . "orders
@@ -2019,7 +2019,7 @@ function get_required_size( $x, $y, $banner_data ): array {
 // If $user_id is null then return for all banners
 function get_clicks_for_today( $BID, $user_id = 0 ) {
 
-	$date = gmDate( 'Y' ) . "-" . gmDate( 'm' ) . "-" . gmDate( 'd' );
+	$date = current_time( 'Y-m-d' );
 
 	$sql = "SELECT *, SUM(clicks) AS clk FROM `" . MDS_DB_PREFIX . "clicks` where banner_id='" . intval( $BID ) . "' AND `date`='$date' GROUP BY banner_id, block_id, user_id, date";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
@@ -2237,7 +2237,7 @@ function get_tmp_img_name(): string {
 }
 
 function update_temp_order_timestamp(): void {
-	$now = ( gmdate( "Y-m-d H:i:s" ) );
+	$now = current_time( 'mysql' );
 	$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET order_date='$now' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "' ";
 	mysqli_query( $GLOBALS['connection'], $sql );
 }

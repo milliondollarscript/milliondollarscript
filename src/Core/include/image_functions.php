@@ -65,7 +65,7 @@ function publish_image( $BID ) {
 
 	while ( $row = mysqli_fetch_array( $r ) ) {
 		// set the 'date_published' only if it was not set before, date_published can only be set once.
-		$now = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set `date_published`='$now' where order_id='" . intval( $row['order_id'] ) . "' AND date_published IS NULL ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 

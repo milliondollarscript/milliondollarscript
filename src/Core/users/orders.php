@@ -252,12 +252,12 @@ usort( $orders, "date_sort" );
 							if ( $order['days_expire'] > 0 ) {
 
 								if ( $order['published'] != 'Y' ) {
-									$time_start = strtotime( gmdate( 'r' ) );
+									$time_start = current_time('timestamp');
 								} else {
-									$time_start = strtotime( $order['date_published'] . " GMT" );
+									$time_start = strtotime( $order['date_published'] );
 								}
 
-								$elapsed_time = strtotime( gmdate( 'r' ) ) - $time_start;
+								$elapsed_time = current_time('timestamp') - $time_start;
 								$elapsed_days = floor( $elapsed_time / 60 / 60 );
 
 								$exp_time = ( $order['days_expire'] * 60 * 60 );

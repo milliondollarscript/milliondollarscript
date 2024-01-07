@@ -43,63 +43,6 @@ defined( 'ABSPATH' ) or exit;
 
     <div class="admin-config">
         <div class="admin-config-heading">
-            Localization - Time and Date
-        </div>
-
-        <div class="admin-config-left">
-            Display Date Format
-        </div>
-        <div class="admin-config-right">
-            <label>
-                <input type="text" name="DATE_FORMAT" size="49" value="<?php echo Config::get( 'DATE_FORMAT', true ); ?>"/>
-                <br/> Note: See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">here</a> for formatting info.
-            </label>
-        </div>
-
-        <div class="admin-config-left">
-            Display Time Format
-        </div>
-        <div class="admin-config-right">
-            <label>
-                <input type="text" name="TIME_FORMAT" size="49" value="<?php echo Config::get( 'TIME_FORMAT', true ); ?>"/>
-                <br/> Note: See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">here</a> for formatting info.
-            </label>
-        </div>
-
-        <div class="admin-config-left">
-            Input Date Sequence
-        </div>
-        <div class="admin-config-right">
-            <label>
-                <input type="text" name="DATE_INPUT_SEQ" size="49" value="<?php echo Config::get( 'DATE_INPUT_SEQ', true ); ?>"/>
-                <br/>Eg. YMD for the international date standard (ISO 8601). The sequence should always contain one D, one M and one Y only, in any order.
-            </label>
-        </div>
-
-        <div class="admin-config-left">
-            GMT Difference
-        </div>
-        <div class="admin-config-right">
-            <label>
-                <select name="GMT_DIF">
-					<?php
-					$GMT_DIF              = Config::get( 'GMT_DIF' );
-					$timezone_identifiers = DateTimeZone::listIdentifiers();
-					for ( $i = 0; $i < count( $timezone_identifiers ); $i ++ ) {
-						?>
-                        <option value="<?php echo $timezone_identifiers[ $i ]; ?>" <?php echo( $GMT_DIF == $timezone_identifiers[ $i ] ? " selected " : '' ); ?> >
-							<?php echo $timezone_identifiers[ $i ]; ?>
-                        </option>
-						<?php
-					}
-					?>
-                </select>
-            </label>
-        </div>
-    </div>
-
-    <div class="admin-config">
-        <div class="admin-config-heading">
             Grid Image Settings
         </div>
 

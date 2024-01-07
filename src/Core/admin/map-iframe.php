@@ -377,7 +377,7 @@ if ( isset( $_REQUEST['move_type'] ) && ! empty( $_REQUEST['move_type'] ) ) {
 		set_transient( $transient_key, $blocks, 6 * HOUR_IN_SECONDS );
 	}
 
-	$current_time = strtotime( gmdate( 'r' ) );
+	$current_time = current_time('timestamp');
 
 	foreach ( $blocks as $row ) {
 		$size = get_pixel_image_size( $row->order_id );
@@ -397,9 +397,9 @@ if ( isset( $_REQUEST['move_type'] ) && ! empty( $_REQUEST['move_type'] ) ) {
 		if ( isset( $order_row->days_expire ) && $order_row->days_expire > 0 ) {
 
 			if ( $order_row->published != 'Y' ) {
-				$time_start = strtotime( gmdate( 'r' ) );
+				$time_start = current_time('timestamp');
 			} else {
-				$time_start = strtotime( $order_row->date_published . " GMT" );
+				$time_start = strtotime( $order_row->date_published );
 			}
 
 			$elapsed_time = $current_time - $time_start;

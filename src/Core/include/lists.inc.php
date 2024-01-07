@@ -124,10 +124,10 @@ function echo_ad_list_data( $admin ) {
 		if ( $template_tag == 'DATE' ) {
 
 			// the last date modified
-			$init_date = strtotime( trim_date( $val ) . " GMT" );
+			$init_date = strtotime( trim_date( $val ) );
 
 			// now
-			$dst_date = strtotime( gmdate( "Y-m-d" ) . " GMT" );
+			$dst_date = current_time('timestamp');
 
 			if ( ! $init_date ) {
 				$days = "x";

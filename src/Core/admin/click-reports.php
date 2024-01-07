@@ -65,8 +65,7 @@ $res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql 
     <hr>
 <?php
 
-$local_date = ( gmdate( "Y-m-d H:i:s" ) );
-$local_time = strtotime( $local_date );
+$local_time = current_time('timestamp');
 
 if ( ! isset( $_REQUEST['from_day'] ) || $_REQUEST['from_day'] == '' ) {
 	$_REQUEST['from_day'] = "1";

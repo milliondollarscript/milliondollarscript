@@ -382,7 +382,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 	} else {
 		$image_sql_fields = ', grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block ';
 		$image_sql_values = get_banner_image_sql_values( $BID );
-		$now              = ( gmdate( "Y-m-d H:i:s" ) );
+		$now = current_time( 'mysql' );
 
 		$new = false;
 		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'new' ) {

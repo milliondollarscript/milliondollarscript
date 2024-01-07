@@ -70,7 +70,7 @@ function place_temp_order( $in_str ) {
 
 	$quantity = sizeof( $blocks ) * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
-	$now = ( gmdate( "Y-m-d H:i:s" ) );
+	$now = current_time( 'mysql' );
 
 	// preserve ad_id & block info...
 	$order_id = Orders::get_current_order_in_progress();

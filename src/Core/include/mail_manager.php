@@ -48,7 +48,7 @@ function queue_mail( $to_address, $to_name, $from_address, $from_name, $subject,
 
 	$attachments = 'N';
 
-	$now = ( gmdate( "Y-m-d H:i:s" ) );
+	$now = current_time( 'mysql' );
 
 	$sql = "INSERT INTO " . MDS_DB_PREFIX . "mail_queue (mail_date, to_address, to_name, from_address, from_name, subject, message, html_message, attachments, status, error_msg, retry_count, template_id, date_stamp) VALUES('$now', '" . mysqli_real_escape_string( $GLOBALS['connection'], $to_address ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $to_name ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $from_address ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $from_name ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $subject ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $message ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $html_message ) . "', '$attachments', 'queued', '', 0, '" . intval( $template_id ) . "', '$now')"; // 2006 copyr1ght jam1t softwar3
 
@@ -61,7 +61,7 @@ function queue_mail( $to_address, $to_name, $from_address, $from_name, $subject,
 
 function process_mail_queue( $send_count = 1 ) {
 
-	$now       = ( gmdate( "Y-m-d H:i:s" ) );
+	$now       = current_time( 'mysql' );
 	$unix_time = time();
 
 	// get the time of last run
@@ -119,7 +119,7 @@ function process_mail_queue( $send_count = 1 ) {
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		while ( ( $row = mysqli_fetch_array( $result ) ) && ( $send_count > 0 ) ) {
 			$time_stamp = strtotime( $row['date_stamp'] );
-			$now        = strtotime( gmdate( "Y-m-d H:i:s" ) );
+			$now        = current_time('timestamp');
 			$wait       = $EMAILS_ERROR_WAIT * 60;
 			//echo "(($now - $wait) > $time_stamp) status:".$row['status']."\n";
 			if ( ( ( ( $now - $wait ) > $time_stamp ) && ( $row['status'] == 'error' ) ) || ( $row['status'] == 'queued' ) ) {
@@ -136,7 +136,7 @@ function process_mail_queue( $send_count = 1 ) {
 
 		if ( Config::get( 'EMAILS_DAYS_KEEP' ) > 0 ) {
 
-			$now = ( gmdate( "Y-m-d H:i:s" ) );
+			$now = current_time( 'mysql' );
 
 			$sql = "SELECT mail_id, att1_name, att2_name, att3_name from " . MDS_DB_PREFIX . "mail_queue where status='sent' AND DATE_SUB('$now',INTERVAL " . intval( EMAILS_DAYS_KEEP ) . " DAY) >= date_stamp  ";
 

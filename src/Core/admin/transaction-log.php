@@ -101,8 +101,8 @@ while ( $row = mysqli_fetch_array( $result ) ) {
 
 $bal = $debits - $credits;
 
-$local_date = ( gmdate( "Y-m-d H:i:s" ) );
-$local_time = strtotime( $local_date );
+$local_date = current_time( 'mysql' );
+$local_time = current_time('timestamp');
 
 if ( ! isset( $_REQUEST['from_day'] ) || $_REQUEST['from_day'] == '' ) {
 	$_REQUEST['from_day'] = "1";
