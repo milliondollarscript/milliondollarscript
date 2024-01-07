@@ -353,7 +353,7 @@ class Utility {
 			delete_user_meta( $user_id, MDS_PREFIX . 'click_count' );
 			delete_user_meta( $user_id, MDS_PREFIX . 'view_count' );
 
-			self::reset_order_progress( $user_id );
+			Orders::reset_order_progress( $user_id );
 		}
 
 		// Delete mds-pixel posts and attachments.
@@ -604,31 +604,11 @@ class Utility {
 	}
 
 	/**
-	 * Reset the given user's order progress. Used when all orders are cleared.
-	 *
-	 * @param int $user_id
-	 *
-	 * @return void
-	 */
-	public static function reset_order_progress( int $user_id ): void {
-		if ( WooCommerceFunctions::is_wc_active() ) {
-			WooCommerceFunctions::reset_session_variables( $user_id );
-		} else {
-			Orders::reset_progress( $user_id );
-			delete_user_meta( $user_id, 'mds_confirm' );
-		}
-	}
-
-	/**
-	 * Check if the current WP page has the endpoint at the start of the URL path or is an AJAX request to determine if messages should be output.
+	 * Check if the current WP page has the endpoint at the start of the URL path.
 	 *
 	 * @return bool
 	 */
-	public static function has_endpoint_or_ajax(): bool {
-		if ( wp_doing_ajax() ) {
-			return true;
-		}
-
+	public static function has_endpoint(): bool {
 		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
 
 		// Get the current URL
@@ -644,6 +624,18 @@ class Utility {
 
 		// Check if the path starts with the MDS endpoint
 		return str_starts_with( $path, $MDS_ENDPOINT );
+	}
 
+	/**
+	 * Check if the current WP page has the endpoint at the start of the URL path or is an AJAX request to determine if messages should be output.
+	 *
+	 * @return bool
+	 */
+	public static function has_endpoint_or_ajax(): bool {
+		if ( wp_doing_ajax() ) {
+			return true;
+		}
+
+		return self::has_endpoint();
 	}
 }

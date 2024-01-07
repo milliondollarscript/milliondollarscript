@@ -148,6 +148,31 @@ class Orders {
 	}
 
 	/**
+	 * Reset the given user's order progress. Used when all orders are cleared.
+	 *
+	 * @param int|null $user_id
+	 *
+	 * @return void
+	 */
+	public static function reset_order_progress( int $user_id = null ): void {
+		// Check for filter return value to determine if we should reset the order progress.
+		if ( apply_filters( 'mds_reset_order_progress', true ) === false ) {
+			return;
+		}
+
+		if ( is_null( $user_id ) ) {
+			$user_id = get_current_user_id();
+		}
+
+		if ( WooCommerceFunctions::is_wc_active() ) {
+			WooCommerceFunctions::reset_session_variables( $user_id );
+		} else {
+			Orders::reset_progress( $user_id );
+			delete_user_meta( $user_id, 'mds_confirm' );
+		}
+	}
+
+	/**
 	 * Get the status of the order.
 	 *
 	 * @param $order_id
