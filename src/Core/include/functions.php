@@ -1686,7 +1686,21 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 
 	// check if the user can get the order
 	if ( ! can_user_order( $banner_data, get_current_user_id(), intval( $temp_order_row['package_id'] ) ) ) {
-		Language::out( 'You do not have permission to reserve pixels for this order.' );
+		$error_message = Language::get( 'You do not have permission to reserve pixels for this order.' );
+
+		if ( wp_doing_ajax() ) {
+			echo json_encode( [
+				"error" => "true",
+				"type"  => "no_permission",
+				"data"  => [
+					"value" => $error_message,
+				]
+			] );
+
+			return false;
+		}
+
+		echo $error_message;
 
 		return false;
 	}
@@ -1711,7 +1725,7 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 	}
 
 	$banner_id = intval( $temp_order_row['banner_id'] );
-	$sql       = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id=%d AND block_id IN($in_str)", $banner_id );
+	$sql       = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id=%d AND block_id IN($in_str) AND order_id != %d", $banner_id, $current_order_id );
 	$result    = $wpdb->get_results( $sql );
 
 	if ( ! empty( $result ) ) {
@@ -1758,9 +1772,6 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 	$wpdb->query( $sql );
 	$order_id = Orders::get_current_order_id();
 
-	global $f2;
-	$f2->debug( "Changed temp order to a real order - " . $sql );
-
 	$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders SET original_order_id=%d WHERE order_id=%d", $order_id, $order_id );
 	$wpdb->query( $sql );
 
@@ -1785,9 +1796,6 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 				intval( $temp_order_row['ad_id'] )
 			);
 			$wpdb->query( $sql );
-
-			global $f2;
-			$f2->debug( "Updated block - " . $sql );
 		}
 	}
 
