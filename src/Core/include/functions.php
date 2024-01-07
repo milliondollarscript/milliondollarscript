@@ -1709,9 +1709,10 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 
 	// Session may have expired if they waited too long so tell them to start over, even though we might still have the file it doesn't match the current session id anymore.
 	$block_info       = array();
-	$current_order_id = Orders::get_current_order_id();
-	$sql              = $wpdb->prepare( "SELECT block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $current_order_id );
-	$row              = $wpdb->get_row( $sql, ARRAY_A );
+	$current_order_id = $temp_order_row['order_id'];
+
+	$sql = $wpdb->prepare( "SELECT block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $current_order_id );
+	$row = $wpdb->get_row( $sql, ARRAY_A );
 
 	if ( ! empty( $row ) ) {
 		$block_info = unserialize( $row['block_info'] );
