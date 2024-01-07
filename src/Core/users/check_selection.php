@@ -56,7 +56,7 @@ check_selection_main();
 
 function check_selection_main(): void {
 
-	global $f2, $banner_data;
+	global $banner_data;
 
 	$upload_image_file = get_tmp_img_name();
 
@@ -85,7 +85,6 @@ function check_selection_main(): void {
 	}
 
 	$in_str = implode( ',', $cb_array );
-	$f2->write_log( "in_str is:" . $in_str );
 
 	$available = check_pixels( $in_str );
 

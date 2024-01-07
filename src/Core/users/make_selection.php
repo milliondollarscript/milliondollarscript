@@ -31,6 +31,7 @@ use MillionDollarScript\Classes\Currency;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Steps;
+use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -141,7 +142,6 @@ function place_temp_order( $in_str ) {
 	if ( false === $result ) {
 		mds_sql_error( 'Error: ' . $wpdb->last_error );
 	}
-	$f2->write_log( 'Placed Temp order. ' . $sql );
 
 	return true;
 }
@@ -156,8 +156,6 @@ function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 
 	// cannot reserve pixels if there is no session
 	if ( ! is_user_logged_in() ) {
-		$f2->write_log( 'Cannot reserve pixels if there is no session!' );
-
 		return false;
 	}
 
@@ -183,7 +181,6 @@ function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 		Orders::get_current_order_id()
 	);
 	$wpdb->query( $sql ) or mds_sql_log_die( $sql );
-	$f2->write_log( 'Reserved Temp order. ' . $sql );
 
 	// Update the last modification time
 	Orders::set_last_order_modification_time();
@@ -261,11 +258,34 @@ function check_selection_main(): void {
 
 	// create a temporary order and place the blocks on a temp order
 	place_temp_order( $in_str );
-//	$f2->write_log( "in_str is:" . $in_str );
-//	$f2->write_log( '$block_info: '. print_r($block_info, true) );
 	$result = reserve_temp_order_pixels( $block_info, $in_str );
 
-	if( $result ) {
+	// Reserve pixels
+	global $wpdb;
+
+	$order_id = intval( \MillionDollarScript\Classes\Orders::get_current_order_id() );
+	$user_id  = get_current_user_id();
+
+	$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d", $order_id, $user_id ), ARRAY_A );
+
+	// Handle when no order id is found.
+	if ( null === $order_row ) {
+		if ( wp_doing_ajax() ) {
+			echo json_encode( [
+				"error" => "true",
+				"type"  => "no_orders",
+				"data"  => [
+					"value" => Language::get( '<h1>No new orders in progress</h1>' ),
+				]
+			] );
+			wp_die();
+		}
+		Utility::redirect( Utility::get_page_url( 'no-orders' ) );
+	}
+
+	$order_id = reserve_pixels_for_temp_order( $order_row );
+
+	if ( $result && $order_id ) {
 		echo json_encode( [
 			"error" => "false",
 			"type"  => "available",
