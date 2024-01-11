@@ -44,10 +44,9 @@ $BID         = $f2->bid();
 $banner_data = load_banner_constants( $BID );
 
 // normalize...
-
-$_REQUEST['map_x']    = floor( $_REQUEST['map_x'] / $banner_data['BLK_WIDTH'] ) * $banner_data['BLK_WIDTH'];
-$_REQUEST['map_y']    = floor( $_REQUEST['map_y'] / $banner_data['BLK_HEIGHT'] ) * $banner_data['BLK_HEIGHT'];
-$_REQUEST['block_id'] = floor( $_REQUEST['block_id'] );
+$_REQUEST['map_x']    = intval( floor( $_REQUEST['map_x'] ) / $banner_data['BLK_WIDTH'] * $banner_data['BLK_WIDTH'] );
+$_REQUEST['map_y']    = intval( floor( $_REQUEST['map_y'] ) / $banner_data['BLK_HEIGHT'] * $banner_data['BLK_HEIGHT'] );
+$_REQUEST['block_id'] = intval( floor( $_REQUEST['block_id'] ) );
 
 // MAIN
 // return true, or false if the image can fit
@@ -68,8 +67,8 @@ function check_selection_main(): void {
 
 	$imagine = new Imagine\Gd\Imagine();
 
-	$image = $imagine->open( $upload_image_file );
-	$size  = $image->getSize();
+	$image     = $imagine->open( $upload_image_file );
+	$size      = $image->getSize();
 
 	$cb_array = array();
 	for ( $y = 0; $y < ( $size->getHeight() ); $y += $banner_data['BLK_HEIGHT'] ) {
