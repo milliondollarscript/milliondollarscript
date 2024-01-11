@@ -30,16 +30,28 @@
 use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Steps;
 use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-if ( ! Utility::has_endpoint_or_ajax() ) {
-	return;
+$checkout_url = Options::get_option( 'checkout-url' );
+if (
+	// If using WooCommerce.
+	( empty( $checkout_url ) && WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) == 'yes' && ! empty( $_REQUEST['order_id'] ) && is_user_logged_in() ) ||
+
+	// Checkout URL is not empty.
+	( ! empty( $checkout_url ) )
+) {
+	// If not using WooCommerce check for endpoint or ajax request.
+	if ( ! Utility::has_endpoint_or_ajax() ) {
+		return;
+	}
 }
 
 global $BID, $f2;

@@ -88,6 +88,17 @@ class Shortcode {
 
 		if ( $atts['type'] == 'payment' ) {
 			require_once MDS_CORE_PATH . 'users/payment.php';
+
+			$checkout_url = Options::get_option( 'checkout-url' );
+			if (
+				// If using WooCommerce output nothing here because it redirects to the checkout.
+				( empty( $checkout_url ) && WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) == 'yes' && ! empty( $_REQUEST['order_id'] ) && is_user_logged_in() ) ||
+
+				// Checkout URL is not empty so output nothing here because it redirects to the checkout URL.
+				( ! empty( $checkout_url ) )
+			) {
+				return '';
+			}
 		}
 
 		// escape javascript variables
