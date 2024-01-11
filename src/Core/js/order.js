@@ -39,14 +39,14 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 
 	document.form1.selected_pixels.value = block_str;
 
-	function check_selection(OffsetX, OffsetY) {
+	function check_selection() {
 		// Trip to the database.
 
 		let ajax_data = {
 			_wpnonce: MDS_OBJECT.NONCE,
 			user_id: user_id,
-			map_x: OffsetX,
-			map_y: OffsetY,
+			map_x: window.$block_pointer.data('map_x'),
+			map_y: window.$block_pointer.data('map_y'),
 			block_id: get_clicked_block(),
 			BID: BID,
 			t: MDS_OBJECT.time
@@ -177,8 +177,8 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 	}
 
 	function get_clicked_block() {
-		let map_x = window.$block_pointer.data('map_x');
-		let map_y = window.$block_pointer.data('map_y');
+		let map_x = window.$block_pointer.data('map_x') / blk_width;
+		let map_y = window.$block_pointer.data('map_y')/ blk_height;
 		return map_y * (grid_width / blk_width) + map_x;
 	}
 
@@ -188,7 +188,7 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 		}
 
 		trip_count = 1;
-		check_selection(window.$block_pointer.data('map_x'), window.$block_pointer.data('map_y'));
+		check_selection();
 		low_x = window.$block_pointer.position().left;
 		low_y = window.$block_pointer.position().top;
 
@@ -203,8 +203,8 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 		});
 
 		window.$block_pointer.data({
-			'map_y': low_y / blk_height,
-			'map_x': low_x / blk_width
+			'map_y': low_y,
+			'map_x': low_x
 		});
 	}
 
