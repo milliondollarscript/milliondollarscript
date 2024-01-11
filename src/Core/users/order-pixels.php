@@ -92,14 +92,6 @@ $banner_data = load_banner_constants( $BID );
 // Update time stamp on temp order (if exists)
 update_temp_order_timestamp();
 
-$sql     = $wpdb->prepare( "SELECT block_id, status, user_id FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id=%d", $BID );
-$results = $wpdb->get_results( $sql, ARRAY_A );
-
-$blocks = array();
-foreach ( $results as $row ) {
-	$blocks[ $row['block_id'] ] = $row['status'];
-}
-
 // Handle file upload
 $uploaddir      = \MillionDollarScript\Classes\Utility::get_upload_path() . "images/";
 $tmp_image_file = get_tmp_img_name();
