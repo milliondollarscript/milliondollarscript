@@ -41,7 +41,7 @@ class Payment {
 	public static function handle_checkout( $from_shortcode = false ): void {
 		$checkout_url = Options::get_option( 'checkout-url' );
 		if ( empty( $checkout_url ) ) {
-			if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+			if ( WooCommerceFunctions::is_wc_active() ) {
 				if ( Options::get_option( 'woocommerce' ) == 'yes' ) {
 
 					if ( ! empty( $_REQUEST['order_id'] ) ) {
