@@ -73,12 +73,13 @@ class WooCommerce {
 	public static function payment_complete( $order_id ): void {
 		$order = wc_get_order( $order_id );
 
-		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', 'yes' );
-		if ( 'yes' === $auto_complete ) {
+		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', true );
+		if ( $auto_complete ) {
 			$to = 'completed';
-
-			$order->update_status( $to );
+		} else {
+			$to = 'processing';
 		}
+		$order->update_status( $to );
 	}
 
 	public static function complete_order( $order_id ): void {
@@ -406,9 +407,11 @@ class WooCommerce {
 			$order->add_order_note( "Coinbase Charge ID: " . $coinbase_id );
 		}
 
-		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', 'yes' );
-		if ( 'yes' === $auto_complete ) {
+		$auto_complete = \MillionDollarScript\Classes\Options::get_option( 'wc-auto-complete', true );
+		if ( $auto_complete ) {
 			$to = 'completed';
+		} else {
+			$to = 'processing';
 		}
 
 		// Action hook for MDS status change
