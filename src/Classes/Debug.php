@@ -38,7 +38,7 @@ class Debug {
 		error_log( $e->getTraceAsString() );
 	}
 
-	public static function output( $what, $where = 'screen', $label = '', $encapsulate = true, $type = 'var_export', $user = 1 ): void {
+	public static function output( $what, $label = '', $where = 'log', $encapsulate = false, $type = 'var_export', $user = 1 ): void {
 		if ( get_current_user_id() !== $user ) {
 			return;
 		}
