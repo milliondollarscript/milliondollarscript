@@ -82,14 +82,16 @@ if ( $has_packages && $_REQUEST['pack'] != '' ) {
 }
 
 // check to make sure MIN_BLOCKS were selected.
-$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='$BID' ";
-$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$count             = mysqli_num_rows( $res );
+global $wpdb;
+$BID = intval($BID);
+$current_user_id = get_current_user_id();
+
+$query = $wpdb->prepare("SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND status='reserved' AND banner_id=%d", $current_user_id, $BID);
+$results = $wpdb->get_results($query);
+
+$count = count($results);
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
-?>
-
-<?php
 Language::out_replace(
 	'<p>1. <a href="%ORDER_URL%?BID=%BID%">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>',
 	[
