@@ -528,11 +528,38 @@ jQuery(document).ready(function () {
 				dataType: "html",
 				success: function (data) {
 					remove_ajax_loader();
-					jQuery(container).html(data);
+
+					if (mds_type !== 'payment') {
+						jQuery(container).html(data);
+					}
+
 					if (mds_type === 'grid') {
 						mds_init('#theimage', true, MDS.ENABLE_MOUSEOVER !== 'NO', false, true);
 					} else if (mds_type === 'list') {
 						mds_init('#' + mds_container_id, false, true, 'list', false);
+					} else if (mds_type === 'payment') {
+						let parsed = jQuery.parseJSON(data);
+						if (parsed.success === true) {
+							if (parsed.data) {
+								if (parsed.data.redirect) {
+									jQuery(container).html(parsed.data.message);
+									window.location = parsed.data.redirect;
+								} else {
+									jQuery(container).html(parsed.data);
+								}
+							}
+						} else if (parsed.success === false) {
+							if (parsed.data) {
+								if (parsed.data.message) {
+									jQuery(container).html(parsed.data.message);
+								} else {
+									jQuery(container).html(parsed.data);
+								}
+							}
+						} else {
+							console.log("Unknown data: ", parsed);
+						}
+					} else {
 					}
 				},
 				error: function (jqXHR, textStatus, errorThrown) {

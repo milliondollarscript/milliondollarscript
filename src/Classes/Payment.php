@@ -47,7 +47,10 @@ class Payment {
 					if ( ! empty( $_REQUEST['order_id'] ) ) {
 
 						if ( ! is_user_logged_in() ) {
-							Language::out( 'Error: You must be logged in to view this page' );
+							Utility::output_message( [
+								'success' => false,
+								'message' => Language::get( 'Error: You must be logged in to view this page' ),
+							] );
 						} else {
 
 							$order_id = intval( $_REQUEST['order_id'] );
@@ -65,6 +68,7 @@ class Payment {
 							if ( Options::get_option( 'auto-approve' ) ) {
 								complete_order( $row['user_id'], $order_id );
 								debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );
+
 								Utility::redirect( Utility::get_page_url( 'thank-you' ) );
 							}
 
@@ -99,8 +103,22 @@ class Payment {
 
 								WC()->cart->calculate_totals();
 
+								// Redirect to WooCommerce checkout from within an AJAX request.
+								if ( wp_doing_ajax() ) {
+									wp_send_json_success( [
+										'redirect' => add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ),
+										'message'  => Language::get( 'Please wait...' ),
+									] );
+								}
+
 								wp_redirect( add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ) );
+
 							} else {
+								Utility::output_message( [
+									'success' => false,
+									'message' => Language::get( 'There was a problem adding the product to the cart.' ),
+								] );
+
 								wc_add_notice( Language::get( 'There was a problem adding the product to the cart.' ), 'error' );
 								wp_redirect( wc_get_cart_url() );
 							}
@@ -149,6 +167,13 @@ class Payment {
 
 			Orders::reset_order_progress();
 
+			if ( wp_doing_ajax() ) {
+				wp_send_json_success( [
+					'redirect' => $checkout_url,
+					'message'  => Language::get( 'Please wait...' ),
+				] );
+			}
+
 			wp_safe_redirect( $checkout_url );
 			exit;
 		}
@@ -165,7 +190,11 @@ class Payment {
 			if ( ( $_REQUEST['order_id'] != '' ) ) {
 				if ( ! is_user_logged_in() ) {
 					if ( Utility::has_endpoint_or_ajax() ) {
-						Language::out( 'Error: You must be logged in to view this page' );
+						$message = Language::get( 'Error: You must be logged in to view this page' );
+						Utility::output_message( [
+							'success' => false,
+							'message' => $message,
+						] );
 					}
 				} else {
 
@@ -176,25 +205,45 @@ class Payment {
 
 					complete_order( $row['user_id'], $order_id );
 					debit_transaction( $order_id, $row['price'], $row['currency'], '', 'order', 'MDS' );
+
+					$message = Language::get( 'Your order has been successfully completed. Thank you for your purchase!' );
+					Utility::output_message( [
+						'success' => true,
+						'message' => $message,
+					] );
 				}
 			}
 
 			// Only output if the URL has the endpoint in it or is an AJAX request.
 			if ( Utility::has_endpoint_or_ajax() ) {
-				Language::out( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
+				$message = Language::get( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
+				Utility::output_message( [
+					'success' => true,
+					'message' => $message,
+				] );
 			}
 		} else {
 			confirm_order( get_current_user_id(), \MillionDollarScript\Classes\Orders::get_current_order_id() );
 
 			// Only output if the URL has the endpoint in it or is an AJAX request.
 			if ( Utility::has_endpoint_or_ajax() ) {
-				Language::out( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+				$message = Language::get( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+				Utility::output_message( [
+					'success' => true,
+					'message' => $message,
+				] );
 			}
 
 		}
 
 		$thank_you_page = \MillionDollarScript\Classes\Options::get_option( 'thank-you-page' );
 		if ( ! empty( $thank_you_page ) ) {
+			if ( wp_doing_ajax() ) {
+				wp_send_json_success( [
+					'redirect' => $thank_you_page,
+					'message'  => Language::get( 'Please wait...' ),
+				] );
+			}
 			wp_safe_redirect( $thank_you_page );
 			exit;
 		}

@@ -415,13 +415,41 @@ class Utility {
 		}
 
 		if ( ! empty( $dest ) ) {
+
+			if ( wp_doing_ajax() ) {
+				wp_send_json_success( [
+					'redirect' => $dest,
+					'message'  => Language::get( 'Please wait...' ),
+				] );
+			}
+
 			wp_safe_redirect( $dest );
 			exit;
 		}
 
 		if ( ! empty( $_SERVER['HTTP_REFERER'] ) ) {
+
+			$location     = wp_sanitize_redirect( $_SERVER['HTTP_REFERER'] );
+			$fallback_url = apply_filters( 'wp_safe_redirect_fallback', admin_url(), 302 );
+			$location     = wp_validate_redirect( $location, $fallback_url );
+
+			if ( wp_doing_ajax() ) {
+				wp_send_json_success( [
+					'redirect' => $location,
+					'message'  => Language::get( 'Please wait...' ),
+				] );
+			}
+
 			wp_safe_redirect( $_SERVER['HTTP_REFERER'] );
 			exit;
+		}
+
+
+		if ( wp_doing_ajax() ) {
+			wp_send_json_success( [
+				'redirect' => home_url(),
+				'message'  => Language::get( 'Please wait...' ),
+			] );
 		}
 
 		wp_safe_redirect( home_url() );
@@ -637,5 +665,24 @@ class Utility {
 		}
 
 		return self::has_endpoint();
+	}
+
+	public static function is_ajax() {
+		return wp_doing_ajax();
+	}
+
+	public static function output_message( $data = [] ): void {
+		if ( wp_doing_ajax() ) {
+			if ( isset( $data['success'] ) ) {
+				if ( $data['success'] === false ) {
+					wp_send_json_error( $data['message'] );
+				} else {
+					wp_send_json_success( $data['message'] );
+				}
+			}
+		} else {
+			echo $data['message'];
+		}
+
 	}
 }

@@ -40,18 +40,8 @@ defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-$checkout_url = Options::get_option( 'checkout-url' );
-if (
-	// If using WooCommerce.
-	( empty( $checkout_url ) && WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) == 'yes' && ! empty( $_REQUEST['order_id'] ) && is_user_logged_in() ) ||
-
-	// Checkout URL is not empty.
-	( ! empty( $checkout_url ) )
-) {
-	// If not using WooCommerce check for endpoint or ajax request.
-	if ( ! Utility::has_endpoint_or_ajax() ) {
-		return;
-	}
+if ( ! Utility::has_endpoint_or_ajax() ) {
+	return;
 }
 
 global $BID, $f2;
@@ -101,9 +91,11 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 
 	} else {
 		if ( wp_doing_ajax() ) {
-			Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
-			Language::out_replace( '<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>', '%ORDER_PAGE%', Utility::get_page_url( 'order' ) );
-			wp_die();
+			$message = Language::get( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
+			$message .= Language::get_replace( '<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>', '%ORDER_PAGE%', Utility::get_page_url( 'order' ) );
+			Utility::output_message( [
+				'message' => $message,
+			] );
 		}
 
 		Utility::redirect( Utility::get_page_url( 'no-orders' ) );
