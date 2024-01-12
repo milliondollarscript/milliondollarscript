@@ -2,9 +2,9 @@
 /*
  * Million Dollar Script Two
  *
- * @version     2.5.9
+ * @version     2.5.10
  * @author      Ryan Rhode
- * @copyright   (C) 2023, Ryan Rhode
+ * @copyright   (C) 2024, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
