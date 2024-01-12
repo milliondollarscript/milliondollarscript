@@ -1780,6 +1780,20 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 	$alt_text = carbon_get_post_meta( $temp_order_row['ad_id'], MDS_PREFIX . 'text' );
 
 	if ( is_array( $block_info ) ) {
+
+		// Remove previously reserved blocks for this order.
+		$wpdb->delete(
+			MDS_DB_PREFIX . "blocks",
+			array(
+				'status'   => 'reserved',
+				'order_id' => $order_id
+			),
+			array(
+				'%s',
+				'%d'
+			)
+		);
+
 		foreach ( $block_info as $key => $block ) {
 			$sql = $wpdb->prepare( "REPLACE INTO `" . MDS_DB_PREFIX . "blocks` ( `block_id`, `user_id`, `status`, `x`, `y`, `image_data`, `url`, `alt_text`, `approved`, `banner_id`, `currency`, `price`, `order_id`, `ad_id`, `click_count`, `view_count`) VALUES (%d, %d, 'reserved', %d, %d, %s, %s, %s, %s, %d, %s, %f, %d, %d, 0, 0)",
 				intval( $key ),
@@ -2517,15 +2531,16 @@ function check_pixels( $in_str ): bool {
 	// cannot reserve pixels if user isn't logged in
 	mds_wp_login_check();
 
-	$BID = $f2->bid();
+	$BID      = $f2->bid();
+	$order_id = Orders::get_current_order_id();
 
 	// check if it is free
 	$available = true;
 
-	$in_array = explode( ',', $in_str );
-	$in_array = array_map( 'intval', $in_array );
+	$selected = explode( ",", $in_str );
+	$in_array = array_map( 'intval', $selected );
 	$in_str   = implode( ',', $in_array );
-	$sql      = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id=%d AND block_id IN($in_str)", $BID );
+	$sql      = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id=%d AND block_id IN($in_str) AND order_id != %d", $BID, $order_id );
 	$wpdb->get_results( $sql );
 
 	if ( $wpdb->num_rows > 0 ) {
@@ -2542,10 +2557,9 @@ function check_pixels( $in_str ): bool {
 
 	// TODO: optimize or remove this but make sure blocks are added so they get checked above.
 	if ( $available ) {
-		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %s", $BID, Orders::get_current_order_id() );
+		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %d", $BID, $order_id );
 		$result = $wpdb->get_results( $sql );
 
-		$selected = explode( ",", $in_str );
 		foreach ( $result as $row ) {
 			$entries = explode( ",", $row->blocks );
 			if ( ! empty( array_intersect( $entries, $selected ) ) ) {
