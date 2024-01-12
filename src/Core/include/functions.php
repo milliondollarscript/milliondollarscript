@@ -1566,8 +1566,8 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 
 			$current_order_id = Orders::get_current_order_in_progress( $user_id );
 			if ( $current_order_id != null ) {
-				error_log( "Current order id: " . $current_order_id );
-				\MillionDollarScript\Classes\Debug::log_trace();
+//				error_log( "Current order id: " . $current_order_id );
+//				\MillionDollarScript\Classes\Debug::log_trace();
 
 				// Set all orders as not in progress for the current user.
 				$sql = $wpdb->prepare(
