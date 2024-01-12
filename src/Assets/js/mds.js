@@ -512,9 +512,8 @@ jQuery(document).ready(function () {
 				break;
 		}
 
-		add_ajax_loader(container);
-
 		if (container.length > 0) {
+			add_ajax_loader(container);
 			window.mds_ajax_request = jQuery.ajax({
 				url: MDS.ajaxurl,
 				data: {
