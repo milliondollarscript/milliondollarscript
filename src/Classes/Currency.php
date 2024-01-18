@@ -65,10 +65,15 @@ class Currency {
 			$currency        = get_option( 'woocommerce_currency' );
 			$currency_symbol = get_woocommerce_currency_symbol( $currency );
 		} else {
-			$currency_symbol = Options::get_option( 'currency', 'USD' );
+			$currency = Options::get_option( 'currency', 'USD' );
+			if ( $currency == 'USD' ) {
+				$currency_symbol = '$';
+			} else {
+				$currency_symbol = Options::get_option( 'currency-symbol', '$' );
+			}
 		}
 
-		$codes[] = $currency_symbol;
+		$codes[ $currency ] = $currency_symbol;
 
 		return $codes;
 	}
@@ -79,9 +84,15 @@ class Currency {
 			$wc_currency = \WC_Payments_Multi_Currency()->get_selected_currency();
 
 			return $wc_currency->get_code();
+		} else if ( WooCommerceFunctions::is_wc_active() ) {
+			// Fall back to WooCommerce default currency
+			if ( function_exists( 'get_woocommerce_currency' ) ) {
+				return get_woocommerce_currency();
+			}
 		}
 
-		return 'USD';
+		// Fall back to MDS default currency
+		return Options::get_option( 'currency', 'USD' );
 	}
 
 	public static function convert_to_default_currency( $cur_code, $amount ) {
@@ -133,23 +144,22 @@ class Currency {
 		// Support for WooCommerce Payments Multi-currency
 		if ( class_exists( 'WC_Payments_Utils' ) && WC_Payments_Features::is_customer_multi_currency_enabled() ) {
 			$currencies = \WC_Payments_Multi_Currency()->get_enabled_currencies();
-			$default    = Currency::get_default_currency();
 
 			foreach ( $currencies as $currency ) {
 				$code = $currency->get_code();
-				if ( $code === $selected ) {
-					$sel = " selected ";
-				} else {
-					$sel = "";
-				}
-				echo "<option $sel value=" . $code . ">" . $code . " " . $currency->get_symbol() . "</option>";
+				$sel  = $code === $selected ? " selected " : "";
+				echo "<option " . esc_html( $sel ) . " value=" . esc_attr( $code ) . ">" . esc_html( $code ) . " " . esc_html( $currency->get_symbol() ) . "</option>";
 			}
-
-			return;
+		} else {
+			// Fallback to Currency class methods
+			if ( empty( $selected ) ) {
+				$selected = self::get_default_currency();
+			}
+			$currencies = self::get_currencies();
+			foreach ( $currencies as $currency => $symbol ) {
+				$sel = $currency === $selected ? " selected " : "";
+				echo "<option " . esc_html( $sel ) . " value=" . esc_attr( $currency ) . ">" . esc_html( $currency ) . " " . esc_html( $symbol ) . "</option>";
+			}
 		}
-
-		?>
-        <option value="USD">USD $</option>";
-		<?php
 	}
 }

@@ -12,8 +12,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-01-12 01:53:15\n"
-"PO-Revision-Date: 2024-01-12 01:53:15\n"
+"POT-Creation-Date: 2024-01-18 15:41:51\n"
+"PO-Revision-Date: 2024-01-18 15:41:51\n"
 "X-Generator: Million Dollar Script Two 2.5.10\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
@@ -183,7 +183,7 @@ msgstr ""
 msgid "Checkout URL"
 msgstr ""
 
-msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (note that this option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
+msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
 msgstr ""
 
 msgid "Thank-you Page URL"
@@ -313,6 +313,12 @@ msgid "Currency"
 msgstr ""
 
 msgid "The currency to use for orders and payments when WooCommerce isn't enabled. If WooCommerce is enabled then it will use the setting from it's settings. If WooCommerce Payments plugin is enabled then it will use those settings."
+msgstr ""
+
+msgid "Currency Symbol"
+msgstr ""
+
+msgid "The currency symbol to use for orders and payments when WooCommerce isn't enabled. If WooCommerce is enabled then it will use the setting from it's settings. If WooCommerce Payments plugin is enabled then it will use those settings."
 msgstr ""
 
 msgid "Fields"

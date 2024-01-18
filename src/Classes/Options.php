@@ -165,7 +165,7 @@ class Options {
 				// Checkout URL
 				Field::make( 'text', MDS_PREFIX . 'checkout-url', Language::get( 'Checkout URL' ) )
 				     ->set_default_value( '' )
-				     ->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (note that this option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
+				     ->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
 
 				// Thank-you Page URL
 				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page URL' ) )
@@ -286,8 +286,29 @@ class Options {
 
 				// Currency
 				Field::make( 'text', MDS_PREFIX . 'currency', Language::get( 'Currency' ) )
+				     ->set_conditional_logic( array(
+					     'relation' => 'AND',
+					     array(
+						     'field'   => MDS_PREFIX . 'woocommerce',
+						     'compare' => '=',
+						     'value'   => false,
+					     )
+				     ) )
 				     ->set_default_value( 'USD' )
 				     ->set_help_text( Language::get( 'The currency to use for orders and payments when WooCommerce isn\'t enabled. If WooCommerce is enabled then it will use the setting from it\'s settings. If WooCommerce Payments plugin is enabled then it will use those settings.' ) ),
+
+				// Currency Symbol
+				Field::make( 'text', MDS_PREFIX . 'currency-symbol', Language::get( 'Currency Symbol' ) )
+				     ->set_conditional_logic( array(
+					     'relation' => 'AND',
+					     array(
+						     'field'   => MDS_PREFIX . 'woocommerce',
+						     'compare' => '=',
+						     'value'   => false,
+					     )
+				     ) )
+				     ->set_default_value( '$' )
+				     ->set_help_text( Language::get( 'The currency symbol to use for orders and payments when WooCommerce isn\'t enabled. If WooCommerce is enabled then it will use the setting from it\'s settings. If WooCommerce Payments plugin is enabled then it will use those settings.' ) ),
 			],
 
 			Language::get( 'Fields' ) => [
