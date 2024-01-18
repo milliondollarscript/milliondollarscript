@@ -135,7 +135,7 @@ class Currency {
 			$show_code = " " . $cur_code;
 		}
 		$amount = number_format( $amount, 2, '.', ',' );
-		$amount = "$" . $amount . $show_code;
+		$amount = Options::get_option( 'currency-symbol' ) . $amount . $show_code;
 
 		return $amount;
 	}
