@@ -1283,13 +1283,10 @@ function nav_pages_struct( $q_string, $count, $REC_PER_PAGE ) {
 	return $nav;
 }
 
-function render_nav_pages( &$nav_pages_struct, $LINKS, $q_string = '' ) {
+function render_nav_pages( &$nav_pages_struct, $LINKS, $q_string = '', $page = '' ) {
 
 	global $BID;
 
-	$page = isset( $_SERVER['PHP_SELF'] ) ? $_SERVER['PHP_SELF'] : '';
-
-	$offset   = isset( $_REQUEST["offset"] ) ? intval( $_REQUEST["offset"] ) : 0;
 	$show_emp = isset( $_REQUEST["show_emp"] ) ? $_REQUEST["show_emp"] : '';
 
 	if ( $show_emp != '' ) {

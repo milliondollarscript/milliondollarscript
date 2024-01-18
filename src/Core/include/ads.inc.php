@@ -241,7 +241,7 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 
 			$nav   = nav_pages_struct( $q_string, $count, $records_per_page );
 			$LINKS = 10;
-			render_nav_pages( $nav, $LINKS, $q_string );
+			render_nav_pages( $nav, $LINKS, $q_string, Utility::get_page_url( 'manage' ) );
 		}
 
 		?>
@@ -312,12 +312,12 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 							if ( $prams['days_expire'] > 0 ) {
 
 								if ( $prams['published'] != 'Y' ) {
-									$time_start = current_time('timestamp');
+									$time_start = current_time( 'timestamp' );
 								} else {
 									$time_start = strtotime( $prams['date_published'] );
 								}
 
-								$elapsed_time = current_time('timestamp') - $time_start;
+								$elapsed_time = current_time( 'timestamp' ) - $time_start;
 
 								$exp_time = ( $prams['days_expire'] * 60 * 60 );
 
