@@ -94,7 +94,12 @@ if ( file_exists( $tmp_image_file ) ) {
 }
 
 // load any existing blocks for this order
-$order_row_blocks = ! empty( $order_row['blocks'] ) || $order_row['blocks'] == '0' ? $order_row['blocks'] : '';
+$order_row_blocks = '';
+if ( isset( $order_row['blocks'] ) ) {
+	if ( ! empty( $order_row['blocks'] ) || $order_row['blocks'] == '0' ) {
+		$order_row_blocks = $order_row['blocks'];
+	}
+}
 $block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
 $block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
 $order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
