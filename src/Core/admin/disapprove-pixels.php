@@ -31,4 +31,4 @@ defined( 'ABSPATH' ) or exit;
 
 $_REQUEST['app'] = 'Y';
 
-require_once __DIR__ . 'approve-pixels.php';
+require_once __DIR__ . '/approve-pixels.php';
