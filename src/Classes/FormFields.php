@@ -366,19 +366,36 @@ class FormFields {
 						if ( ! empty( $value ) ) {
 
 							// If post already has an order and grid don't set them again.
-							$order_id = carbon_get_post_meta( $post_id, $field_name );
-							if ( empty( $order_id ) ) {
+							if ( $field_name == MDS_PREFIX . 'order' || $field_name == MDS_PREFIX . 'grid' ) {
+								$grid_id  = carbon_get_post_meta( $post_id, MDS_PREFIX . 'grid' );
+								$order_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'order' );
+								if ( empty( $grid_id ) || empty( $order_id ) ) {
+									// No order or grid set on this post yet, so it's a new one, and we must set them.
+									if ( $field_name == MDS_PREFIX . 'order' ) {
+										carbon_set_post_meta( $post_id, $field_name, \MillionDollarScript\Classes\Orders::get_current_order_id() );
+									} else if ( $field_name == MDS_PREFIX . 'grid' ) {
+										$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) );
+										carbon_set_post_meta( $post_id, $field_name, $grid_id );
+									}
+								} else {
+									// Order or grid already set on this post, so user is editing their order.
 
-								// No order or grid set on this post yet, so it's a new one, and we must set them.
-								if ( $field_name == MDS_PREFIX . 'order' ) {
-									carbon_set_post_meta( $post_id, $field_name, \MillionDollarScript\Classes\Orders::get_current_order_id() );
-								} else if ( $field_name == MDS_PREFIX . 'grid' ) {
-									$grid_id = $wpdb->get_var( $wpdb->prepare( "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", intval( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) );
-									carbon_set_post_meta( $post_id, $field_name, $grid_id );
+									if ( $field_name == MDS_PREFIX . 'grid' ) {
+										// Disapprove order if auto-approve is disabled for this grid.
+										$auto_approve = $wpdb->get_var( $wpdb->prepare( "SELECT auto_approve FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d", $grid_id ) );
+										if ( $auto_approve == 'N' ) {
+											$wpdb->update( MDS_DB_PREFIX . 'orders', [
+												'approved' => 'N',
+											], [
+												'banner_id' => $grid_id,
+												'order_id'  => $order_id
+											] );
+										}
+									}
 								}
 							}
 
-							if ( $field_name != 'order' && $field_name != 'grid' ) {
+							if ( $field_name != MDS_PREFIX . 'order' && $field_name != MDS_PREFIX . 'grid' ) {
 								// Update other fields besides order and grid if it's new or not.
 								$value = sanitize_text_field( $value );
 								carbon_set_post_meta( $post_id, $field_name, $value );
