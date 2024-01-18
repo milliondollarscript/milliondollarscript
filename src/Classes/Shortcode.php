@@ -86,6 +86,29 @@ class Shortcode {
 			update_user_meta( get_current_user_id(), 'mds_confirm', true );
 		}
 
+		// Handle payment shortcode here so that it can immediately redirect to the checkout page.
+		if ( $atts['type'] == 'payment' ) {
+			require_once MDS_CORE_PATH . 'users/payment.php';
+
+			$checkout_url         = Options::get_option( 'checkout-url' );
+			$is_wc_active         = WooCommerceFunctions::is_wc_active();
+			$is_wc_option_enabled = Options::get_option( 'woocommerce' ) == 'yes';
+			$is_order_id_present  = ! empty( $_REQUEST['order_id'] );
+			$is_user_logged_in    = is_user_logged_in();
+
+			if ( ! empty( $checkout_url ) || ( $is_wc_active && $is_wc_option_enabled && $is_order_id_present && $is_user_logged_in ) ) {
+				if ( ! empty( $checkout_url ) ) {
+					wp_safe_redirect( $checkout_url );
+					exit;
+				}
+
+				if ( ! wp_doing_ajax() ) {
+					wp_safe_redirect( add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ) );
+					exit;
+				}
+			}
+		}
+
 		// escape javascript variables
 		if ( array_walk( $mds_params, 'esc_js' ) ) {
 			// ajax display method
