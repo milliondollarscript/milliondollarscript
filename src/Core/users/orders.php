@@ -97,19 +97,19 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 
     <script>
 
-        function confirmLink(theLink, theConfirmMsg) {
+		function confirmLink(theLink, theConfirmMsg) {
 
-            if (theConfirmMsg === '') {
-                return true;
-            }
+			if (theConfirmMsg === '') {
+				return true;
+			}
 
-            var is_confirmed = confirm(theConfirmMsg + '\n');
-            if (is_confirmed) {
-                theLink.href += '&is_js_confirmed=1';
-            }
+			var is_confirmed = confirm(theConfirmMsg + '\n');
+			if (is_confirmed) {
+				theLink.href += '&is_js_confirmed=1';
+			}
 
-            return is_confirmed;
-        } // end of the 'confirmLink()' function
+			return is_confirmed;
+		} // end of the 'confirmLink()' function
 
     </script>
 
@@ -227,7 +227,12 @@ usort( $orders, "date_sort" );
 							$current_step = \MillionDollarScript\Classes\Steps::get_current_step( $order['order_id'] );
 
 							if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_UPLOAD ) {
-								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'upload' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Upload' ) . "</a>";
+								if ( $USE_AJAX == 'SIMPLE' ) {
+									$url = Utility::get_page_url( 'order' );
+								} else {
+									$url = Utility::get_page_url( 'upload' );
+								}
+								echo "<a class='mds-button mds-complete' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Upload' ) . "</a>";
 							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_WRITE_AD ) {
 								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'write-ad' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Write Ad' ) . "</a>";
 							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_CONFIRM_ORDER ) {
@@ -252,12 +257,12 @@ usort( $orders, "date_sort" );
 							if ( $order['days_expire'] > 0 ) {
 
 								if ( $order['published'] != 'Y' ) {
-									$time_start = current_time('timestamp');
+									$time_start = current_time( 'timestamp' );
 								} else {
 									$time_start = strtotime( $order['date_published'] );
 								}
 
-								$elapsed_time = current_time('timestamp') - $time_start;
+								$elapsed_time = current_time( 'timestamp' ) - $time_start;
 								$elapsed_days = floor( $elapsed_time / 60 / 60 );
 
 								$exp_time = ( $order['days_expire'] * 60 * 60 );
