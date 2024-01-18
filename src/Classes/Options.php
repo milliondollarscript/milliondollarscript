@@ -338,7 +338,7 @@ class Options {
 				Field::make( 'checkbox', MDS_PREFIX . 'permissions', Language::get( 'Enable Permissions?' ) )
 				     ->set_default_value( '' )
 				     ->set_option_value( 'yes' )
-				     ->set_help_text( Language::get( 'Enable permission system for user roles and the following capabilities: ' ) . implode( ', ', $capabilities ) ),
+				     ->set_help_text( Language::get( 'If you want to control access to MDS user pages you can enable permissions. This will require you to use a plugin like User Role Editor or to code it yourself in order to implement the proper roles and capabilities for your users. Only enable this if you want to enable the permission system for user roles and the following capabilities: ' ) . implode( ', ', $capabilities ) ),
 
 				// Enable Capabilities
 				Field::make( 'multiselect', MDS_PREFIX . 'capabilities', Language::get( 'Enable Capabilities' ) )
