@@ -165,6 +165,7 @@ class Orders {
 		}
 
 		if ( WooCommerceFunctions::is_wc_active() ) {
+			WooCommerceFunctions::clear_cart();
 			WooCommerceFunctions::reset_session_variables( $user_id );
 		} else {
 			Orders::reset_progress( $user_id );

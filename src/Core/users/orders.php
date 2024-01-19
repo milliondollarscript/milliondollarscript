@@ -62,7 +62,7 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 
 			// If the cancelled order is in progress then reset the progress.
 			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
-				Orders::reset_progress();
+				Orders::reset_order_progress();
 			}
 
 			$row = mysqli_fetch_assoc( $result );
