@@ -214,11 +214,7 @@ class Language {
 					'height' => [],
 					'hspace' => [],
 					'id'     => [],
-					'src'    => [
-						'data:image/png;base64,'  => true,
-						'data:image/jpeg;base64,' => true,
-						'data:image/gif;base64,'  => true,
-					],
+					'src'    => [],
 					'style'  => [],
 					'usemap' => [],
 					'vspace' => [],
