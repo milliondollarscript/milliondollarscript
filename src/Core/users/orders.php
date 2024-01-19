@@ -56,16 +56,22 @@ global $wpdb;
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
 	if ( $_REQUEST['order_id'] == Orders::get_current_order_id() ) {
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( Orders::get_current_order_id() ) . "'";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( $_REQUEST['order_id'] ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
+
+			// If the cancelled order is in progress then reset the progress.
+			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
+				Orders::reset_progress();
+			}
+
 			$row = mysqli_fetch_assoc( $result );
 
 			// delete associated ad
 			wp_delete_post( intval( $row['ad_id'] ) );
 
 			// delete associated temp order
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "'";
+			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $_REQUEST['order_id'] ) . "'";
 			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 			// delete associated uploaded image
@@ -73,22 +79,18 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 			if ( file_exists( $imagefile ) ) {
 				unlink( $imagefile );
 			}
-
-			// If the cancelled order is in progress then reset the progress.
-			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
-				Orders::reset_progress();
-			}
 		}
 	} else {
 		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( $_REQUEST['order_id'] ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
-			delete_order( intval( $_REQUEST['order_id'] ) );
 
 			// If the cancelled order is in progress then reset the progress.
 			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
 				Orders::reset_progress();
 			}
+
+			delete_order( intval( $_REQUEST['order_id'] ) );
 		}
 	}
 }
@@ -223,26 +225,27 @@ usort( $orders, "date_sort" );
 
 					switch ( $order['status'] ) {
 						case "new":
-							echo Language::get( 'In progress' ) . '<br>';
 							$current_step = \MillionDollarScript\Classes\Steps::get_current_step( $order['order_id'] );
-
-							if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_UPLOAD ) {
-								if ( $USE_AJAX == 'SIMPLE' ) {
-									$url = Utility::get_page_url( 'order' );
+							if ( $current_step != 0 ) {
+								echo Language::get( 'In progress' ) . '<br>';
+								if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_UPLOAD ) {
+									if ( $USE_AJAX == 'SIMPLE' ) {
+										$url = Utility::get_page_url( 'order' );
+									} else {
+										$url = Utility::get_page_url( 'upload' );
+									}
+									echo "<a class='mds-button mds-complete' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Upload' ) . "</a>";
+								} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_WRITE_AD ) {
+									echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'write-ad' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Write Ad' ) . "</a>";
+								} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_CONFIRM_ORDER ) {
+									echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
+								} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_PAYMENT ) {
+									echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
 								} else {
-									$url = Utility::get_page_url( 'upload' );
+									echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Continue' ) . "</a>";
 								}
-								echo "<a class='mds-button mds-complete' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Upload' ) . "</a>";
-							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_WRITE_AD ) {
-								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'write-ad' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Write Ad' ) . "</a>";
-							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_CONFIRM_ORDER ) {
-								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
-							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_PAYMENT ) {
-								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
-							} else {
-								echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Continue' ) . "</a>";
+								echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 							}
-							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 							break;
 						/** @noinspection PhpMissingBreakStatementInspection */
 						case "confirmed":
