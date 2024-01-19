@@ -270,7 +270,7 @@ URLS:<br />
 - To view and approve the pixels, please visit here:<br />
 <a href=\'%VIEW_URL%\'>Click Here...</a><br />
 ' ) )
-			     ->set_help_text( Language::get( 'This email is sent when an order is expired. Placeholders: %SITE_NAME%, %GRID_NAME%, %FIRST_NAME%, %LAST_NAME%, %USER_LOGIN%, %URL_LIST%, %VIEW_URL%' ) ),
+			     ->set_help_text( Language::get_replace( 'This email is sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
 
 		];
 
@@ -329,7 +329,7 @@ URLS:<br />
 	}
 
 	/**
-	 * Get options from database
+	 * Get options from database.
 	 *
 	 * @param $name
 	 * @param bool $carbon_fields
@@ -358,4 +358,105 @@ URLS:<br />
 		return apply_filters( 'the_content', $val );
 	}
 
+	/**
+	 * Get search placeholders for the published notification email.
+	 *
+	 * @return array
+	 */
+	public static function get_search_for_published_notification(): array {
+		$search = [
+			'%SITE_NAME%',
+			'%GRID_NAME%',
+			'%FIRST_NAME%',
+			'%LAST_NAME%',
+			'%USER_LOGIN%',
+			'%URL_LIST%',
+			'%VIEW_URL%',
+			'%ORDER_ID%',
+		];
+
+		$fields = \MillionDollarScript\Classes\FormFields::get_fields();
+		foreach ( $fields as $field ) {
+			// Get the key without prefix and value from the field.
+			$field_name = $field->get_base_name();
+			$key        = str_replace( MDS_PREFIX, '', $field_name );
+
+			// Update search array with the keys.
+			$search[] = '%' . strtoupper( $key ) . '%';
+		}
+
+		return $search;
+	}
+
+	/**
+	 * Get replace values for the published notification email.
+	 *
+	 * @param int $user_id
+	 * @param int $ad_id
+	 * @param int $order_id
+	 *
+	 * @return array
+	 */
+	public static function get_replace_for_published_notification( int $user_id, int $order_id, int $ad_id ): array {
+		$user_info = get_userdata( $user_id );
+
+		global $wpdb;
+
+		$grid = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'grid' );
+		$text = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' );
+		$url  = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' );
+
+		$sql   = $wpdb->prepare( "SELECT `name` from " . MDS_DB_PREFIX . "banners where banner_id=%d", $grid );
+		$b_row = $wpdb->get_row( $sql, ARRAY_A );
+		$name  = '';
+		if ( ! empty( $b_row ) ) {
+			$name = $b_row['name'];
+		}
+
+		$url_list = '';
+		if ( $text != null && $url != null ) {
+			$url_list .= sanitize_email( $url ) . " - " . sanitize_email( $text ) . "\n";
+		}
+
+		$view_url = get_admin_url();
+
+		$replace = [
+			get_bloginfo( 'name' ),
+			$name,
+			$user_info->first_name,
+			$user_info->last_name,
+			$user_info->user_login,
+			$url_list,
+			$view_url,
+			$order_id,
+		];
+
+		$values = [];
+		$fields = \MillionDollarScript\Classes\FormFields::get_fields();
+		foreach ( $fields as $field ) {
+			// Get the key without prefix and value from the field.
+			$field_name     = $field->get_base_name();
+			$key            = str_replace( MDS_PREFIX, '', $field_name );
+			$values[ $key ] = carbon_get_post_meta( $ad_id, $field_name );
+
+			// Update replace array with the values.
+			$replace[] = $values[ $key ];
+		}
+
+		return $replace;
+	}
+
+	/**
+	 * Get order published placeholders text.
+	 *
+	 * @return string
+	 */
+	public static function get_order_published_placeholders_text(): string {
+		$search = Emails::get_search_for_published_notification();
+
+		// Remove unnecessary hidden fields.
+		$search = array_diff( $search, [ '%ORDER%', '%GRID%', '%URL_LIST%' ] );
+
+		return implode( ', ', $search );
+	}
 }

@@ -1017,53 +1017,27 @@ function complete_renew_order( $order_id ) {
 	}
 }
 
-function send_published_pixels_notification( $user_id, $BID ) {
+function send_published_pixels_notification( $user_id, $order_id ) {
 
-	$sql = "SELECT * from " . MDS_DB_PREFIX . "banners where banner_id='" . intval( $BID ) . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	$b_row = mysqli_fetch_array( $result );
-
-	$user_info = get_userdata( intval( $user_id ) );
-
-	$sql = "SELECT  url, alt_text FROM " . MDS_DB_PREFIX . "blocks where user_id='" . intval( $user_id ) . "' AND banner_id='" . intval( $BID ) . "' GROUP by url, alt_text ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	$url_list = '';
-	while ( $row = mysqli_fetch_array( $result ) ) {
-		$url_list .= $row['url'] . " - " . $row['alt_text'] . "\n";
+	// Get the post ID from the order ID
+	$ad_id = Orders::get_ad_id_from_order_id( $order_id );
+	if ( $ad_id == null ) {
+		return;
 	}
 
-	$view_url = get_admin_url();
-
-	$search = [
-		'%SITE_NAME%',
-		'%GRID_NAME%',
-		'%FIRST_NAME%',
-		'%LAST_NAME%',
-		'%USER_LOGIN%',
-		'%URL_LIST%',
-		'%VIEW_URL%',
-	];
-
-	$replace = [
-		get_bloginfo( 'name' ),
-		$b_row['name'],
-		$user_info->first_name,
-		$user_info->last_name,
-		$user_info->user_login,
-		$url_list,
-		$view_url,
-	];
+	$search = Emails::get_search_for_published_notification();
+    $replace = Emails::get_replace_for_published_notification( $user_id, $order_id, $ad_id );
 
 	$message = Emails::get_email_replace(
 		$search,
 		$replace,
-		'order-completed-renewal-content'
+		'order-published-content'
 	);
 
 	$subject = Emails::get_email_replace(
 		$search,
 		$replace,
-		'order-completed-renewal-subject'
+		'order-published-subject'
 	);
 
 	Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, 'Admin', get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 7 );

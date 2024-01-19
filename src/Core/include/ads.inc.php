@@ -453,14 +453,35 @@ function insert_ad_data( $order_id = 0, $admin = false ) {
 }
 
 function disapprove_modified_order( $order_id, $BID ) {
-	$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET approved='N' WHERE order_id='" . intval( $order_id ) . "' AND banner_id='" . intval( $BID ) . "' ";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-	$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET approved='N' WHERE order_id='" . intval( $order_id ) . "' AND banner_id='" . intval( $BID ) . "' ";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+
+	// Check if order exists first
+	$order = Orders::get_order( $order_id );
+	if ( empty( $order ) ) {
+		return;
+	}
+
+	// disapprove the order
+	global $wpdb;
+
+	$wpdb->update(
+		MDS_DB_PREFIX . "orders",
+		[ 'approved' => 'N' ],
+		[ 'order_id' => $order_id, 'banner_id' => $BID ],
+		[ '%s' ],
+		[ '%d', '%d' ]
+	);
+
+	$wpdb->update(
+		MDS_DB_PREFIX . "blocks",
+		[ 'approved' => 'N' ],
+		[ 'order_id' => $order_id, 'banner_id' => $BID ],
+		[ '%s' ],
+		[ '%d', '%d' ]
+	);
 
 	// send pixel change notification
 	if ( \MillionDollarScript\Classes\Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
-		send_published_pixels_notification( get_current_user_id(), $BID );
+		send_published_pixels_notification( $order['user_id'], $order_id );
 	}
 }
 

@@ -340,12 +340,11 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 			process_image( $BID );
 			publish_image( $BID );
 			process_map( $BID );
-			//echo 'published.';
 		}
 
 		// send pixel change notification
 		if ( \MillionDollarScript\Classes\Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
-			send_published_pixels_notification( get_current_user_id(), $BID );
+			send_published_pixels_notification( get_current_user_id(), $prams['order_id'] );
 		}
 	} else {
 		$prams = load_ad_values( $ad_id );

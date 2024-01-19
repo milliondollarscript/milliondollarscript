@@ -140,6 +140,32 @@ class FormFields {
 	}
 
 	/**
+	 * Get the ad id from the order id.
+	 *
+	 * @param $order_id
+	 *
+	 * @return \WP_Post|null
+	 */
+	public static function get_pixel_from_order_id( $order_id ): \WP_Post|null {
+		$args  = array(
+			'meta_query'     => array(
+				array(
+					'key'   => '_' . MDS_PREFIX . 'order',
+					'value' => $order_id
+				)
+			),
+			'post_type'      => self::$post_type,
+			'posts_per_page' => 1
+		);
+		$posts = get_posts( $args );
+		if ( count( $posts ) > 0 ) {
+			return $posts[0];
+		}
+
+		return null;
+	}
+
+	/**
 	 * Display the fields.
 	 * Note: Should already be translated here.
 	 *
@@ -153,19 +179,9 @@ class FormFields {
 				$post_id = $post->ID;
 			}
 		} else if ( isset( $_REQUEST['order_id'] ) ) {
-			$args  = array(
-				'meta_query'     => array(
-					array(
-						'key'   => '_' . MDS_PREFIX . 'order',
-						'value' => $_REQUEST['order_id']
-					)
-				),
-				'post_type'      => self::$post_type,
-				'posts_per_page' => 1
-			);
-			$posts = get_posts( $args );
-			if ( count( $posts ) > 0 ) {
-				$post_id = $posts[0];
+			$post = self::get_pixel_from_order_id( $_REQUEST['order_id'] );
+			if ( $post != null ) {
+				$post_id = $post->ID;
 			}
 		}
 

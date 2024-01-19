@@ -269,4 +269,33 @@ class Orders {
 
 		return $wpdb->insert_id;
 	}
+
+	/**
+	 * Get the order for the given order id.
+	 *
+	 * @param $order_id
+	 *
+	 * @return array|\stdClass|null
+	 */
+	public static function get_order( $order_id ): array|\stdClass|null {
+		global $wpdb;
+
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id` = %d",
+				$order_id
+			)
+		);
+	}
+	
+	public static function get_ad_id_from_order_id( $order_id ): int {
+		global $wpdb;
+
+		return $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT `ad_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id` = %d",
+				$order_id
+			)
+		);
+	}
 }
