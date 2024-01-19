@@ -100,9 +100,9 @@ if ( isset( $order_row['blocks'] ) ) {
 		$order_row_blocks = $order_row['blocks'];
 	}
 }
-$block_ids        = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
-$block_str        = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
-$order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
+$block_ids    = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
+$block_str    = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
+$order_blocks = array_map( function ( $block_id ) use ( $BID ) {
 	$pos = get_block_position( $block_id, $BID );
 
 	return [
@@ -113,27 +113,27 @@ $order_blocks     = array_map( function ( $block_id ) use ( $BID ) {
 }, $block_ids );
 ?>
     <script>
-        const select = {
-            NONCE: '<?php echo wp_create_nonce( 'mds-select' ); ?>',
-            UPDATE_ORDER: '<?php echo Utility::get_page_url( 'update-order' ); ?>',
-            USE_AJAX: '<?php echo $USE_AJAX; ?>',
-            block_str: '<?php echo $block_str; ?>',
-            grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>', 10),
-            grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>', 10),
-            BLK_WIDTH: parseInt('<?php echo $banner_data['BLK_WIDTH']; ?>', 10),
-            BLK_HEIGHT: parseInt('<?php echo $banner_data['BLK_HEIGHT']; ?>', 10),
-            G_PRICE: parseFloat('<?php echo $banner_data['G_PRICE']; ?>'),
-            blocks: JSON.parse('<?php echo json_encode( $order_blocks ); ?>'),
-            user_id: parseInt('<?php echo get_current_user_id(); ?>', 10),
-            BID: parseInt('<?php echo $BID; ?>', 10),
-            time: '<?php echo time(); ?>',
-            advertiser_max_order: '<?php echo esc_js( Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ) ); ?>',
-            not_adjacent: '<?php echo esc_js( Language::get( 'You must select a block adjacent to another one.' ) ); ?>',
-            no_blocks_selected: '<?php echo esc_js( Language::get( 'You have no blocks selected.' ) ); ?>',
-            MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL ); ?>',
-            INVERT_PIXELS: '<?php echo \MillionDollarScript\Classes\Config::get( 'INVERT_PIXELS' ); ?>',
-            WAIT: '<?php echo esc_js( Language::get( 'Please Wait! Reserving Pixels...' ) ); ?>'
-        }
+		const select = {
+			NONCE: '<?php echo wp_create_nonce( 'mds-select' ); ?>',
+			UPDATE_ORDER: '<?php echo Utility::get_page_url( 'update-order' ); ?>',
+			USE_AJAX: '<?php echo $USE_AJAX; ?>',
+			block_str: '<?php echo $block_str; ?>',
+			grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>', 10),
+			grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>', 10),
+			BLK_WIDTH: parseInt('<?php echo $banner_data['BLK_WIDTH']; ?>', 10),
+			BLK_HEIGHT: parseInt('<?php echo $banner_data['BLK_HEIGHT']; ?>', 10),
+			G_PRICE: parseFloat('<?php echo $banner_data['G_PRICE']; ?>'),
+			blocks: JSON.parse('<?php echo json_encode( $order_blocks ); ?>'),
+			user_id: parseInt('<?php echo get_current_user_id(); ?>', 10),
+			BID: parseInt('<?php echo $BID; ?>', 10),
+			time: '<?php echo time(); ?>',
+			advertiser_max_order: '<?php echo esc_js( Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ) ); ?>',
+			not_adjacent: '<?php echo esc_js( Language::get( 'You must select a block adjacent to another one.' ) ); ?>',
+			no_blocks_selected: '<?php echo esc_js( Language::get( 'You have no blocks selected.' ) ); ?>',
+			MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL ); ?>',
+			INVERT_PIXELS: '<?php echo \MillionDollarScript\Classes\Config::get( 'INVERT_PIXELS' ); ?>',
+			WAIT: '<?php echo esc_js( Language::get( 'Please Wait! Reserving Pixels...' ) ); ?>'
+		}
     </script>
 
     <style>
@@ -245,18 +245,11 @@ if ( $has_packages ) {
     <div class="fancy-heading"><?php Language::out( 'Select Pixels' ); ?></div>
     <div class="mds-select-instructions">
 		<?php
+
+        // Instructions
 		Language::out_replace(
 			'<h3>Instructions:</h3>
-<p>
-Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). Select the blocks that you want, and then press the \'Buy Pixels Now\' button.<br /><br />
-- Click on a White block to select it.<br />
-- Green blocks are selected by you.<br />
-- Click on a Green block to un-select.<br />
-- Red blocks have been sold.<br />
-- Yellow blocks are reserved by someone else.<br />
-- Orange have been ordered by you.<br />
-- Click the \'Buy Pixels Now\' button below when you are finished.<br />
-</p>',
+                    <p>Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). Select the blocks that you want, and then press the \'Buy Pixels Now\' button.</p>',
 			[
 				'%PIXEL_C%',
 				'%BLK_HEIGHT%',
@@ -266,7 +259,44 @@ Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). S
 				$banner_data['BLK_HEIGHT'] * $banner_data['BLK_WIDTH'],
 				$banner_data['BLK_HEIGHT'],
 				$banner_data['BLK_WIDTH'],
-			]
+			],
+		);
+
+        // Legend
+		$imagine    = new Imagine\Gd\Imagine();
+		$banner_row = load_banner_row( $BID );
+		$usr_grid_block = '<img class="mds-legend-block" src="data:image/png;base64,' . $banner_row['usr_grid_block'] . '" alt="" />';
+		$usr_sel_block = '<img class="mds-legend-block" src="data:image/png;base64,' . $banner_row['usr_sel_block'] . '" alt="" />';
+		$usr_sol_block = '<img class="mds-legend-block" src="data:image/png;base64,' . $banner_row['usr_sol_block'] . '" alt="" />';
+		$usr_res_block = '<img class="mds-legend-block" src="data:image/png;base64,' . $banner_row['usr_res_block'] . '" alt="" />';
+		$usr_ord_block = '<img class="mds-legend-block" src="data:image/png;base64,' . $banner_row['usr_ord_block'] . '" alt="" />';
+		$usr_nfs_block = '<img class="mds-legend-block" src="data:image/png;base64,' . $banner_row['usr_nfs_block'] . '" alt="" />';
+
+		Language::out_replace(
+			'%USR_GRID_BLOCK% Available<br />
+%USR_SEL_BLOCK% Selected (click to deselect)<br />
+%USR_SOL_BLOCK% Sold<br />
+%USR_RES_BLOCK% Reserved<br />
+%USR_ORD_BLOCK% Ordered<br />
+%USR_NFS_BLOCK% Not for sale<br />',
+			[
+				'%USR_GRID_BLOCK%',
+				'%USR_SEL_BLOCK%',
+				'%USR_SOL_BLOCK%',
+				'%USR_RES_BLOCK%',
+				'%USR_ORD_BLOCK%',
+				'%USR_NFS_BLOCK%',
+			],
+			[
+				$usr_grid_block,
+				$usr_sel_block,
+				$usr_sol_block,
+				$usr_res_block,
+				$usr_ord_block,
+				$usr_nfs_block,
+			],
+			true,
+			true
 		);
 		?>
     </div>

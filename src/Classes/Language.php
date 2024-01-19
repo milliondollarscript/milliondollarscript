@@ -84,13 +84,17 @@ class Language {
 	 *
 	 * @return string
 	 */
-	public static function get_replace( string $content, string|array $search, string|array $replace, bool $html = true ): string {
+	public static function get_replace( string $content, string|array $search, string|array $replace, bool $html = true, $allow_data = false ): string {
 		$content = __( $content, MDS_TEXT_DOMAIN );
 
 		$content = str_replace( $search, $replace, $content );
 
 		if ( $html ) {
-			$content = wp_kses( $content, Language::allowed_html(), Language::allowed_protocols() );
+			$protocols = Language::allowed_protocols();
+			if ( $allow_data ) {
+				$protocols[] = 'data';
+			}
+			$content = wp_kses( $content, Language::allowed_html(), $protocols );
 		} else {
 			$content = esc_html( $content );
 		}
@@ -105,8 +109,8 @@ class Language {
 	 * @param bool $html If true, filters valid HTML tags. If false, escapes HTML.
 	 *
 	 */
-	public static function out_replace( string $content, string|array $search, string|array $replace, bool $html = true ): void {
-		echo self::get_replace( $content, $search, $replace, $html );
+	public static function out_replace( string $content, string|array $search, string|array $replace, bool $html = true, $allow_data = false ): void {
+		echo self::get_replace( $content, $search, $replace, $html, $allow_data );
 	}
 
 	/**
@@ -210,7 +214,11 @@ class Language {
 					'height' => [],
 					'hspace' => [],
 					'id'     => [],
-					'src'    => [],
+					'src'    => [
+						'data:image/png;base64,'  => true,
+						'data:image/jpeg;base64,' => true,
+						'data:image/gif;base64,'  => true,
+					],
 					'style'  => [],
 					'usemap' => [],
 					'vspace' => [],

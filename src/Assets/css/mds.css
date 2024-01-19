@@ -995,3 +995,11 @@ a.mds-button {
 	position: relative;
 	display: inline-block;
 }
+
+.mds-legend-block {
+	background: #ccc;
+	padding: 1px;
+	display: inline-block;
+	line-height: 1;
+	font-size: 1px;
+}
