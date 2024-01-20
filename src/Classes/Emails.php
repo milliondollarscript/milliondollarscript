@@ -255,7 +255,7 @@ Note: This is an automated email.<br />
 
 			Field::make( 'text', MDS_PREFIX . 'order-published-subject', Language::get( 'Order Published Subject' ) )
 			     ->set_default_value( Language::get( 'Order Published' ) )
-			     ->set_help_text( Language::get( 'The subject line of the email sent when an order is published. Placeholders: %SITE_NAME%, %GRID_NAME%, %FIRST_NAME%, %LAST_NAME%, %USER_LOGIN%, %URL_LIST%, %VIEW_URL%' ) ),
+				->set_help_text( Language::get_replace( 'The subject line of the email sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
 
 			Field::make( 'rich_text', MDS_PREFIX . 'order-published-content', Language::get( 'Order Published Content' ) )
 			     ->set_settings( array( 'media_buttons' => false ) )
