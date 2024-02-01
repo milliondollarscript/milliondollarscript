@@ -481,7 +481,7 @@ function disapprove_modified_order( $order_id, $BID ) {
 
 	// send pixel change notification
 	if ( \MillionDollarScript\Classes\Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
-		send_published_pixels_notification( $order['user_id'], $order_id );
+		send_published_pixels_notification( $order->user_id, $order_id );
 	}
 }
 
