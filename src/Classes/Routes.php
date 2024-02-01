@@ -58,6 +58,11 @@ class Routes {
 	 * @return void
 	 */
 	public static function parse_query( $wp_query ): void {
+		if ( ! did_action( 'carbon_fields_register_fields' ) || ! did_action( 'carbon_fields_fields_registered' ) ) {
+			// Carbon Fields is not ready yet.
+			return;
+		}
+
 		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
 
 		if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
@@ -102,6 +107,7 @@ class Routes {
 			if ( \MillionDollarScript\Classes\Options::get_option( 'mds-pixel-template', 'no' ) == 'no' ) {
 				// Redirect to 404 page.
 				status_header( 404 );
+
 				return get_404_template();
 			}
 
