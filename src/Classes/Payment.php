@@ -110,7 +110,15 @@ class Payment {
 								] );
 							}
 
-							wp_redirect( add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ) );
+							if ( ! headers_sent() ) {
+								wp_redirect( add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ) );
+							} else {
+								echo '
+							    <script>
+						        window.location.href = "' . esc_js( add_query_arg( 'update_cart', wp_create_nonce( 'woocommerce-cart' ), wc_get_checkout_url() ) ) . '";
+							    </script>
+							    ';
+							}
 
 						} else {
 							Utility::output_message( [
@@ -119,7 +127,15 @@ class Payment {
 							] );
 
 							wc_add_notice( Language::get( 'There was a problem adding the product to the cart.' ), 'error' );
-							wp_redirect( wc_get_cart_url() );
+							if ( ! headers_sent() ) {
+								wp_redirect( wc_get_cart_url() );
+							} else {
+								echo '
+							    <script>
+						        window.location.href = "' . esc_js( wc_get_cart_url() ) . '";
+							    </script>
+							    ';
+							}
 						}
 
 						exit;
@@ -171,7 +187,15 @@ class Payment {
 				] );
 			}
 
-			wp_safe_redirect( $checkout_url );
+			if ( ! headers_sent() ) {
+				wp_safe_redirect( $checkout_url );
+			} else {
+				echo '
+			    <script>
+		        window.location.href = "' . esc_js( $checkout_url ) . '";
+			    </script>
+			    ';
+			}
 			exit;
 		}
 	}
@@ -255,7 +279,16 @@ class Payment {
 					'message'  => Language::get( 'Please wait...' ),
 				] );
 			}
-			wp_safe_redirect( $thank_you_page );
+
+			if ( ! headers_sent() ) {
+				wp_safe_redirect( $thank_you_page );
+			} else {
+				echo '
+			    <script>
+		        window.location.href = "' . esc_js( $thank_you_page ) . '";
+			    </script>
+			    ';
+			}
 			exit;
 		}
 	}
