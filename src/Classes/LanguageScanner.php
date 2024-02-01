@@ -98,7 +98,7 @@ class LanguageScanner {
 	public function scan_file( string $file ): void {
 		$content = $this->wp_filesystem->get_contents( $file );
 
-		$parser    = ( new ParserFactory )->create( ParserFactory::PREFER_PHP7 );
+		$parser    = ( new ParserFactory )->createForHostVersion();
 		$traverser = new NodeTraverser;
 
 		$visitor = new LanguageFunctionVisitor();
