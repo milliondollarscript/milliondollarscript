@@ -208,11 +208,11 @@ class Mail {
 
 		$data = array(
 			'mail_date'    => $now,
-			'to_address'   => $to_address,
-			'to_name'      => $to_name,
-			'from_address' => $from_address,
-			'from_name'    => $from_name,
-			'subject'      => $subject,
+			'to_address'   => substr( trim( $to_address ), 0, 128 ),
+			'to_name'      => substr( trim( $to_name ), 0, 128 ),
+			'from_address' => substr( trim( $from_address ), 0, 128 ),
+			'from_name'    => substr( trim( $from_name ), 0, 128 ),
+			'subject'      => substr( trim( $subject ), 0, 255 ),
 			'message'      => $message,
 			'attachments'  => $attachments,
 			'status'       => 'sent',
