@@ -54,25 +54,34 @@ require_once MDS_CORE_PATH . "html/header.php";
 global $wpdb;
 
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
-	if ( $_REQUEST['order_id'] == Orders::get_current_order_id() ) {
+	$order_id = intval( $_REQUEST['order_id'] );
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( $_REQUEST['order_id'] ) . "'";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		if ( mysqli_num_rows( $result ) > 0 ) {
+	if ( $order_id == Orders::get_current_order_id() ) {
+
+		global $wpdb;
+
+		$user_id = get_current_user_id();
+
+		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND order_id=%d", $user_id, $order_id );
+		$row = $wpdb->get_row( $sql );
+
+		if ( $row ) {
 
 			// If the cancelled order is in progress then reset the progress.
-			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
+			if ( Orders::is_order_in_progress( $order_id ) ) {
 				Orders::reset_order_progress();
 			}
 
-			$row = mysqli_fetch_assoc( $result );
-
 			// delete associated ad
-			wp_delete_post( intval( $row['ad_id'] ) );
+			wp_delete_post( intval( $row->ad_id ) );
 
-			// delete associated temp order
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $_REQUEST['order_id'] ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			// delete blocks
+			$sql = $wpdb->prepare( "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d", $order_id );
+			$wpdb->query( $sql );
+
+			// delete associated order
+			$sql = $wpdb->prepare( "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id );
+			$wpdb->query( $sql );
 
 			// delete associated uploaded image
 			$imagefile = get_tmp_img_name();
@@ -80,17 +89,18 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_RE
 				unlink( $imagefile );
 			}
 		}
+
 	} else {
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( $_REQUEST['order_id'] ) . "'";
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . $order_id . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
 		if ( mysqli_num_rows( $result ) > 0 ) {
 
 			// If the cancelled order is in progress then reset the progress.
-			if ( Orders::is_order_in_progress( $_REQUEST['order_id'] ) ) {
+			if ( Orders::is_order_in_progress( $order_id ) ) {
 				Orders::reset_progress();
 			}
 
-			delete_order( intval( $_REQUEST['order_id'] ) );
+			delete_order( $order_id );
 		}
 	}
 }
