@@ -1756,11 +1756,9 @@ function reserve_pixels_for_temp_order( $temp_order_row ) {
 		$wpdb->delete(
 			MDS_DB_PREFIX . "blocks",
 			array(
-				'status'   => 'reserved',
 				'order_id' => $order_id
 			),
 			array(
-				'%s',
 				'%d'
 			)
 		);
