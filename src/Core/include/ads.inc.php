@@ -381,11 +381,11 @@ function insert_ad_data( $order_id = 0, $admin = false ) {
 
 	$current_user = wp_get_current_user();
 
-	$sql          = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE user_id=%d AND status='new' AND order_id=%d";
+	$sql          = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE user_id=%d AND order_id=%d";
 	$prepared_sql = $wpdb->prepare( $sql, $current_user->ID, intval( $order_id ) );
 	$ad_id        = $wpdb->get_var( $prepared_sql );
 
-	if ( empty( $ad_id ) && ( ! isset( $_REQUEST['aid'] ) || empty( $_REQUEST['aid'] ) ) ) {
+	if ( empty( $ad_id ) && empty( $_REQUEST['aid'] ) ) {
 
 		// Insert a new mds-pixel post
 		$ad_id = wp_insert_post( [
@@ -407,17 +407,12 @@ function insert_ad_data( $order_id = 0, $admin = false ) {
 				return false;
 			} else {
 				// user is logged in
-				// First check if the user has a new mds-pixel post.
-				$user_posts = get_posts( array(
-					'author'         => $current_user->ID,
-					'post_status'    => 'new',
-					'post_type'      => FormFields::$post_type,
-					'posts_per_page' => 1
-				) );
+				// Check if the user has an MDS Pixel post.
+				$post = FormFields::get_pixel_from_order_id( $order_id );
 
-				if ( ! empty( $user_posts ) ) {
+				if ( ! empty( $post ) ) {
 					// The user already has a new post of the given post type, so an order must be in progress
-					$ad_id = $user_posts[0]->ID;
+					$ad_id = $post->ID;
 				}
 			}
 		} else {

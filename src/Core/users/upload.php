@@ -76,12 +76,12 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 	if ( $uploadok ) {
 		global $wpdb;
 
-		$ad_id         = insert_ad_data( Orders::get_current_order_id() );
+		$order_id      = Orders::get_current_order_id();
+		$ad_id         = insert_ad_data( $order_id );
 		$sql_completed = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND ad_id=%d", get_current_user_id(), intval( $ad_id ) );
 		$row           = $wpdb->get_row( $sql_completed, ARRAY_A );
 		if ( $row ) {
 			if ( $row['status'] != 'completed' ) {
-				$order_id                  = Orders::get_current_order_id();
 				$blocks                    = explode( ',', $row['blocks'] );
 				$size                      = get_pixel_image_size( $order_id );
 				$pixels                    = $size['x'] * $size['y'];
@@ -136,10 +136,18 @@ if ( isset( $_POST['mds_dest'] ) && isset( $_FILES ) ) {
 
 require_once MDS_CORE_PATH . "html/header.php";
 
+global $wpdb;
+
 // check to make sure MIN_BLOCKS were selected.
-$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='$BID' ";
-$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$count             = mysqli_num_rows( $res );
+$order_id      = Orders::get_current_order_id();
+$current_user_id = get_current_user_id();
+$order_id = intval($order_id);
+$BID = intval($BID);
+
+$sql = $wpdb->prepare("SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND order_id=%d AND banner_id=%d", $current_user_id, $order_id, $BID);
+$res = $wpdb->get_results($sql);
+
+$count = count($res);
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
 Language::out_replace(

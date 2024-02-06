@@ -155,7 +155,8 @@ class FormFields {
 				)
 			),
 			'post_type'      => self::$post_type,
-			'posts_per_page' => 1
+			'posts_per_page' => 1,
+			'post_status'    => 'any'
 		);
 		$posts = get_posts( $args );
 		if ( count( $posts ) > 0 ) {
@@ -185,8 +186,13 @@ class FormFields {
 			}
 		}
 
+        // Check for any pixel post for the current order id.
 		if ( empty( $post_id ) ) {
-			$post_id = self::get_post_id( 'new' );
+			$order_id = Orders::get_current_order_id();
+			$post    = self::get_pixel_from_order_id( $order_id );
+			if ( $post != null ) {
+				$post_id = $post->ID;
+			}
 		}
 
 		$error_message = get_user_meta( get_current_user_id(), 'error_message', true );
