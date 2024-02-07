@@ -145,6 +145,9 @@ function expire_orders(): void {
 		if ( $MINUTES_UNCONFIRMED != - 1 ) {
 			$sql .= $wpdb->prepare( " AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, $MINUTES_UNCONFIRMED );
 		}
+
+        // Debug: SELECT * FROM wp_mds_orders WHERE `status`='new' AND DATE_SUB('2024-02-07 11:28:31', INTERVAL 1 MINUTE) >= date_stamp AND date_stamp IS NOT NULL
+
 		$results = $wpdb->get_results( $sql, ARRAY_A );
 
 		foreach ( $results as $row ) {
@@ -2229,9 +2232,16 @@ function get_tmp_img_name(): string {
 }
 
 function update_temp_order_timestamp(): void {
+	global $wpdb;
 	$now = current_time( 'mysql' );
-	$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET order_date='$now' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "' ";
-	mysqli_query( $GLOBALS['connection'], $sql );
+	$order_id = Orders::get_current_order_id();
+	if ($order_id !== null) {
+		$sql = $wpdb->prepare("UPDATE " . MDS_DB_PREFIX . "orders 
+						    SET order_date=%s, date_stamp=%s
+						    WHERE order_id=%d",
+			$now, $now, $order_id);
+		$wpdb->query($sql);
+	}
 }
 
 function show_nav_status( $page_id ): void {

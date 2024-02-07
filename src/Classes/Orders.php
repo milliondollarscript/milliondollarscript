@@ -224,7 +224,8 @@ class Orders {
 	 * @return int|null
 	 */
 	public static function get_current_order_id(): int|null {
-		return self::get_current_order_in_progress();
+		$order_id = self::get_current_order_in_progress();
+		return !empty($order_id) ? (int)$order_id : null;
 	}
 
 	/**
@@ -259,12 +260,17 @@ class Orders {
 			$user_id = get_current_user_id();
 		}
 
+		$now = current_time( 'mysql' );
+
 		// Add new order to database
 		$wpdb->insert( MDS_DB_PREFIX . "orders", [
 			'user_id'           => $user_id,
 			'status'            => 'new',
 			'order_in_progress' => 'Y',
-			'current_step'      => 1
+			'current_step'      => 1,
+			'order_date'        => $now,
+			'date_published'    => $now,
+			'date_stamp'        => $now,
 		] );
 
 		return $wpdb->insert_id;
@@ -287,7 +293,7 @@ class Orders {
 			)
 		);
 	}
-	
+
 	public static function get_ad_id_from_order_id( $order_id ): int {
 		global $wpdb;
 
