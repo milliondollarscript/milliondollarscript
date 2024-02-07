@@ -47,7 +47,7 @@ class Forms {
 	 * @return void
 	 */
 	public static function mds_form_submission(): void {
-		if ( ! isset( $_POST['mds_dest'] ) ) {
+		if ( ! isset( $_POST['mds_dest'] ) || ! is_user_logged_in() ) {
 			Utility::redirect();
 		}
 
