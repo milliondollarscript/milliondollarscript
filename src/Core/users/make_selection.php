@@ -199,6 +199,17 @@ function check_selection_main(): void {
 
 	$upload_image_file = get_tmp_img_name();
 
+	if ( empty( $upload_image_file ) && $_POST['action'] == 'make-selection' ) {
+		wp_send_json( [
+			"error"    => "true",
+			"type"     => "no_orders",
+			"data"     => [
+				"value" => Language::get( '<h1>No new orders in progress</h1>' ),
+			],
+			'redirect' => Utility::get_page_url( 'no-orders' ),
+		] );
+	}
+
 	$imagine = new Imagine\Gd\Imagine();
 
 	$image = $imagine->open( $upload_image_file );

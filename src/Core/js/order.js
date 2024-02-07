@@ -98,6 +98,7 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 
 		let ajax_data = {
 			_wpnonce: MDS_OBJECT.NONCE,
+			action: 'make-selection',
 			user_id: user_id,
 			map_x: window.$block_pointer.data('map_x'),
 			map_y: window.$block_pointer.data('map_y'),
@@ -125,6 +126,8 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 				submit2.style.cursor = 'pointer';
 				window.reserving = false;
 				is_moving = true;
+			} else if (response && response.redirect) {
+				window.location.href = response.redirect;
 			} else {
 				document.form1.submit();
 			}
@@ -178,7 +181,7 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 
 	function get_clicked_block() {
 		let map_x = window.$block_pointer.data('map_x') / blk_width;
-		let map_y = window.$block_pointer.data('map_y')/ blk_height;
+		let map_y = window.$block_pointer.data('map_y') / blk_height;
 		return map_y * (grid_width / blk_width) + map_x;
 	}
 
