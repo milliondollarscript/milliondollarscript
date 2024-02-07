@@ -35,7 +35,16 @@ use MillionDollarScript\Classes\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-mds_wp_login_check();
+if ( ! is_user_logged_in() ) {
+	wp_send_json( [
+		"error"    => "true",
+		"type"     => "logged_out",
+		"data"     => [
+			"value" => Language::get( 'You are not logged in. Please log in or sign up for a new account.' ),
+		],
+		'redirect' => wp_login_url( Utility::get_page_url( 'order' ) ),
+	] );
+}
 
 header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
 header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );   // Date in the past
