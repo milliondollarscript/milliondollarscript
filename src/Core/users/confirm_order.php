@@ -77,7 +77,7 @@ $BID = $order_row['banner_id'];
 
 $banner_data = load_banner_constants( $BID );
 
-if ( empty( $order_row['blocks'] ) ) {
+if ( empty( $order_row['blocks'] ) && $order_row['blocks'] != '0' ) {
 
 	require_once MDS_CORE_PATH . "html/header.php";
 	Functions::not_enough_blocks( $order_row['order_id'], $banner_data['G_MIN_BLOCKS'] );
@@ -93,7 +93,8 @@ if ( ! is_user_logged_in() ) {
 	// The user is logged in
 
 	// Get the MDS Pixels post id by the order id
-	$mds_pixel_id = \MillionDollarScript\Classes\FormFields::get_post_id_by_meta_value( 'new', 'order', $order_id );
+	$post = \MillionDollarScript\Classes\FormFields::get_pixel_from_order_id( $order_id );
+	$mds_pixel_id = $post?->ID;
 
 	// Check if there is a pixel post for this order yet.
 	if ( empty( $mds_pixel_id ) ) {
