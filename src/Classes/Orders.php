@@ -164,7 +164,7 @@ class Orders {
 		}
 
 		if ( WooCommerceFunctions::is_wc_active() ) {
-			WooCommerceFunctions::clear_cart();
+			WooCommerceFunctions::remove_item_from_cart( $user_id, self::get_current_order_id() );
 			WooCommerceFunctions::reset_session_variables( $user_id );
 		} else {
 			Orders::reset_progress( $user_id );
@@ -224,7 +224,8 @@ class Orders {
 	 */
 	public static function get_current_order_id(): int|null {
 		$order_id = self::get_current_order_in_progress();
-		return !empty($order_id) ? (int)$order_id : null;
+
+		return ! empty( $order_id ) ? (int) $order_id : null;
 	}
 
 	/**

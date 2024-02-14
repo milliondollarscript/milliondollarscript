@@ -747,4 +747,57 @@ class WooCommerceFunctions {
 		Orders::reset_progress( $user_id );
 		delete_user_meta( $user_id, 'mds_confirm' );
 	}
+
+	public static function reset_wc_session_variables_by_order_id( $mds_order_id ): void {
+		global $wpdb;
+
+		// Get all sessions from the database
+		$sessions = $wpdb->get_results( "SELECT * FROM wp_woocommerce_sessions" );
+
+		foreach ( $sessions as $session ) {
+			// Unserialize the session data
+			$session_data = maybe_unserialize( $session->session_value );
+
+			// Check if the session contains the mds_order_id
+			if ( isset( $session_data['mds_order_id'] ) && $session_data['mds_order_id'] == $mds_order_id ) {
+				// Reset the relevant session data
+				unset( $session_data['mds_order_id'] );
+				unset( $session_data['mds_variation_id'] );
+				unset( $session_data['mds_quantity'] );
+
+				// Serialize the session data again
+				$session_data = maybe_serialize( $session_data );
+
+				// Update the session data in the database
+				$wpdb->update( 'wp_woocommerce_sessions', [ 'session_value' => $session_data ], [ 'session_key' => $session->session_key ] );
+			}
+		}
+	}
+
+	/**
+	 * Reset the MDS order id for the given MDS order id.
+	 */
+	public static function remove_item_from_cart( $user_id, $mds_order_id ): void {
+		// Get the user's cart data
+		$cart_data = get_user_meta( $user_id, '_woocommerce_persistent_cart_' . get_current_blog_id(), true );
+
+		if ( ! empty( $cart_data ) && isset( $cart_data['cart'] ) ) {
+			// Loop through the cart items
+			foreach ( $cart_data['cart'] as $cart_item_key => $cart_item ) {
+				// Get the MDS order id of the cart item
+				$cart_item_mds_order_id = $cart_item['mds_order_id'] ?? null;
+
+				// If the MDS order id of the cart item matches the given MDS order id, remove the item from the cart
+				if ( $cart_item_mds_order_id == $mds_order_id ) {
+					unset( $cart_data['cart'][ $cart_item_key ] );
+					break;
+				}
+			}
+
+			// Update the user's cart data
+			update_user_meta( $user_id, '_woocommerce_persistent_cart_' . get_current_blog_id(), $cart_data );
+		}
+
+		self::reset_wc_session_variables_by_order_id( $mds_order_id );
+	}
 }

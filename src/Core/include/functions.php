@@ -34,6 +34,7 @@ use MillionDollarScript\Classes\Mail;
 use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Steps;
 use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -145,7 +146,7 @@ function expire_orders(): void {
 			$sql .= $wpdb->prepare( " AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, $MINUTES_UNCONFIRMED );
 		}
 
-        // Debug: SELECT * FROM wp_mds_orders WHERE `status`='new' AND DATE_SUB('2024-02-07 11:28:31', INTERVAL 1 MINUTE) >= date_stamp AND date_stamp IS NOT NULL
+		// Debug: SELECT * FROM wp_mds_orders WHERE `status`='new' AND DATE_SUB('2024-02-07 11:28:31', INTERVAL 1 MINUTE) >= date_stamp AND date_stamp IS NOT NULL
 
 		$results = $wpdb->get_results( $sql, ARRAY_A );
 
@@ -176,7 +177,7 @@ function expire_orders(): void {
 			$additional_condition = $wpdb->prepare( " AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, $MINUTES_CONFIRMED );
 		}
 
-		$sql     = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status` = 'confirmed' %s", $additional_condition );
+		$sql     = sprintf( "SELECT * FROM %sorders WHERE `status` = 'confirmed' %s", MDS_DB_PREFIX, $additional_condition );
 		$results = $wpdb->get_results( $sql, ARRAY_A );
 
 		foreach ( $results as $row ) {
@@ -690,6 +691,10 @@ function expire_order( $order_id ) {
 
 		$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
+		// Clear the order from the users cart.
+		WooCommerceFunctions::remove_item_from_cart( $row['user_id'], $order_id );
+		Orders::reset_progress( $row['user_id'] );
+
 		$search = [
 			'%SITE_NAME%',
 			'%FIRST_NAME%',
@@ -1027,8 +1032,8 @@ function send_published_pixels_notification( $user_id, $order_id ) {
 		return;
 	}
 
-	$search = Emails::get_search_for_published_notification();
-    $replace = Emails::get_replace_for_published_notification( $user_id, $order_id, $ad_id );
+	$search  = Emails::get_search_for_published_notification();
+	$replace = Emails::get_replace_for_published_notification( $user_id, $order_id, $ad_id );
 
 	$message = Emails::get_email_replace(
 		$search,
@@ -2232,14 +2237,14 @@ function get_tmp_img_name(): string {
 
 function update_temp_order_timestamp(): void {
 	global $wpdb;
-	$now = current_time( 'mysql' );
+	$now      = current_time( 'mysql' );
 	$order_id = Orders::get_current_order_id();
-	if ($order_id !== null) {
-		$sql = $wpdb->prepare("UPDATE " . MDS_DB_PREFIX . "orders 
+	if ( $order_id !== null ) {
+		$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders 
 						    SET order_date=%s, date_stamp=%s
 						    WHERE order_id=%d",
-			$now, $now, $order_id);
-		$wpdb->query($sql);
+			$now, $now, $order_id );
+		$wpdb->query( $sql );
 	}
 }
 
