@@ -55,6 +55,7 @@ if ( empty( $order_id ) ) {
 		if ( ! is_numeric( $_REQUEST['order_id'] ) ) {
 			// If it was not numeric redirect to the no orders page
 			\MillionDollarScript\Classes\Functions::no_orders();
+            return;
 		} else {
 			// If it was numeric check
 
@@ -62,12 +63,14 @@ if ( empty( $order_id ) ) {
 			$order_id = intval( $_REQUEST['order_id'] );
 			if ( ! Orders::is_owned_by( $order_id ) ) {
 				\MillionDollarScript\Classes\Functions::no_orders();
+				return;
 			}
 
 			// Check if the order is in progress
 			if ( ! \MillionDollarScript\Classes\Orders::is_order_in_progress( $order_id ) ) {
 				// Not in progress so redirect to the no orders page
 				\MillionDollarScript\Classes\Functions::no_orders();
+				return;
 			}
 		}
 
