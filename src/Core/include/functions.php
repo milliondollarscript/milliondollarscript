@@ -2535,7 +2535,7 @@ function check_pixels( $in_str ): bool {
 
 	// TODO: optimize or remove this but make sure blocks are added so they get checked above.
 	if ( $available ) {
-		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %d", $BID, $order_id );
+		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %d AND status != 'deleted'", $BID, $order_id );
 		$result = $wpdb->get_results( $sql );
 
 		foreach ( $result as $row ) {
