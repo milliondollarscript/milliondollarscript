@@ -41,12 +41,45 @@ defined( 'ABSPATH' ) or exit;
  */
 class Routes {
 	public function __construct() {
-		add_action( 'init', [ __CLASS__, 'add_rewrite_rules' ] );
+		add_action( 'wp_loaded', [ __CLASS__, 'add_rewrite_rules' ] );
 		add_filter( 'template_include', [ __CLASS__, 'template_include' ], 99 );
 		add_action( 'parse_query', [ __CLASS__, 'parse_query' ], 10, 1 );
 
 		register_activation_hook( MDS_BASE_FILE, [ __CLASS__, 'activate' ] );
 		register_deactivation_hook( MDS_BASE_FILE, [ __CLASS__, 'deactivate' ] );
+	}
+
+	private static function get_routes(): array {
+		return [
+			'account',
+			'order',
+			'order-pixels',
+			'confirm-order',
+			'manage',
+			'history',
+			'publish',
+			'display-map',
+			'display-stats',
+			'thank-you',
+			'list',
+			'ga',
+			'click',
+			'check-selection',
+			'make-selection',
+			'show-selection',
+			'show-map',
+			'get-block-image',
+			'get-image',
+			'get-image2',
+			'get-order-image',
+			'get-pointer-graphic',
+			'update-order',
+			'wplogout',
+			'write-ad',
+			'payment',
+			'upload',
+			'no-orders',
+		];
 	}
 
 	/**
@@ -214,48 +247,19 @@ class Routes {
 		flush_rewrite_rules();
 	}
 
+	public static function deactivate(): void {
+		flush_rewrite_rules();
+	}
+
 	public static function add_rewrite_rules(): void {
 		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
 		add_rewrite_tag( '%' . $MDS_ENDPOINT . '%', '([^&]+)' );
 
-		$routes = [
-			'account',
-			'order',
-			'order-pixels',
-			'confirm-order',
-			'manage',
-			'history',
-			'publish',
-			'display-map',
-			'display-stats',
-			'thank-you',
-			'list',
-			'ga',
-			'click',
-			'check-selection',
-			'make-selection',
-			'show-selection',
-			'show-map',
-			'get-block-image',
-			'get-image',
-			'get-image2',
-			'get-order-image',
-			'get-pointer-graphic',
-			'update-order',
-			'wplogout',
-			'write-ad',
-			'payment',
-			'upload',
-			'no-orders',
-		];
+		$routes = self::get_routes();
 
 		foreach ( $routes as $route ) {
 			add_rewrite_rule( '^' . $MDS_ENDPOINT . '/' . $route . '/?', 'index.php?' . $MDS_ENDPOINT . '=' . $route, 'top' );
 		}
-	}
-
-	public static function deactivate(): void {
-		flush_rewrite_rules();
 	}
 
 	public static function get_template( string $page ): false|string {
