@@ -271,6 +271,11 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 			$i = 0;
 			global $prams;
 			foreach ( $result as $prams ) {
+				// Skip if the status is not valid.
+				if ( in_array( $prams['status'], [ 'pending', 'confirmed', 'new', 'deleted' ] ) ) {
+					continue;
+				}
+
 				if ( $i >= $records_per_page ) {
 					break;
 				}
