@@ -284,7 +284,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
                       enctype="multipart/form-data" method="post">
 					<?php wp_nonce_field( 'mds-form' ); ?>
                     <input type="hidden" name="action" value="mds_form_submission">
-                    <input type="hidden" name="mds_dest" value="publish">
+                    <input type="hidden" name="mds_dest" value="manage">
                     <input type="file" name='pixels'><br>
                     <input type="hidden" name="aid" value="<?php echo $_REQUEST['aid']; ?>">
                     <input type="submit" name="change_pixels"

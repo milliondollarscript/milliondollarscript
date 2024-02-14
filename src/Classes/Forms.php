@@ -72,8 +72,9 @@ class Forms {
 				$params        .= '&old_order_id=' . $old_order_id . '&banner_change=' . $banner_change;
 
 				break;
+			case 'publish':
 			case 'banner_publish':
-				$mds_dest = 'publish';
+				$mds_dest = 'manage';
 				require_once MDS_CORE_PATH . 'users/publish.php';
 				break;
 			case 'banner_upload':
@@ -83,7 +84,7 @@ class Forms {
 			case 'order-pixels':
 				require_once MDS_CORE_PATH . 'users/order-pixels.php';
 				break;
-			case 'publish':
+			case 'manage':
 				require_once MDS_CORE_PATH . 'users/publish.php';
 				break;
 			case 'upload':
