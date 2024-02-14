@@ -159,7 +159,7 @@ if ( count( $res ) > 1 ) {
 // A block was clicked. Fetch the ad_id and initialize $_REQUEST['ad_id']
 // If no ad exists for this block, create it.
 $mds_pixel = null;
-if ( isset( $_REQUEST['block_id'] ) && ! empty( $_REQUEST['block_id'] ) ) {
+if ( ! empty( $_REQUEST['block_id'] ) || ( isset( $_REQUEST['block_id'] ) && $_REQUEST['block_id'] != 0 ) ) {
 
 	$BID      = intval( $BID );
 	$block_id = intval( $_REQUEST['block_id'] );
@@ -243,6 +243,22 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		$mds_error = Language::get( 'No file was uploaded.' );
 
 		return;
+	}
+
+	// If not uploading a new image, check if the order is valid.
+	if ( empty( $_REQUEST['change_pixels'] ) ) {
+		$sql           = $wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status IN ('pending', 'confirmed', 'new', 'deleted') AND order_id=%d;",
+			$order_id
+		);
+		$check_results = $wpdb->get_results( $sql, ARRAY_A );
+		if ( ! empty( $check_results ) ) {
+			// The order is not valid so don't display it.
+			Language::out( 'Sorry, you are not allowed to access this page.' );
+
+			return;
+		}
+		unset( $sql, $check_results );
 	}
 
 	// Ad forms:
@@ -407,29 +423,77 @@ if ( $count > 0 ) {
 	}
 
 	// Generate the Area map form the current sold blocks.
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status IN ('sold','ordered') and banner_id='" . intval( $BID ) . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	?>
-    <div class="publish-grid">
-        <map name="main" id="main">
-			<?php
-			while ( $row = mysqli_fetch_array( $result ) ) {
-				$text = sanitize_text_field( $row['alt_text'] );
-				?>
-                <area shape="RECT"
-                      coords="<?php echo $row['x']; ?>,<?php echo $row['y']; ?>,<?php echo $row['x'] + $banner_data['BLK_WIDTH']; ?>,<?php echo $row['y'] + $banner_data['BLK_HEIGHT']; ?>"
-                      href="<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?BID=<?php echo $BID; ?>&amp;block_id=<?php echo( $row['block_id'] ); ?>"
-                      title="<?php echo esc_attr( $text ); ?>" alt="<?php echo esc_attr( $text ); ?>"/>
+	$sql = $wpdb->prepare(
+		"SELECT b.* FROM " . MDS_DB_PREFIX . "blocks AS b
+    INNER JOIN " . MDS_DB_PREFIX . "orders AS o ON b.order_id = o.order_id
+    WHERE b.user_id=%d AND b.status IN ('sold','ordered') AND b.banner_id=%d
+    AND o.status NOT IN ('pending', 'confirmed', 'new', 'deleted')",
+		get_current_user_id(),
+		intval( $BID )
+	);
+
+	$results = $wpdb->get_results( $sql, ARRAY_A );
+	if ( ! empty( $results ) ) { ?>
+        <div class="publish-grid">
+            <map name="main" id="main">
 				<?php
-			}
+				foreach ( $results as $row ) {
+
+					// Sanitize alt_text
+					$text = sanitize_text_field( $row['alt_text'] );
+
+					// Prepare coordinates
+					$coords = sprintf(
+						"%d,%d,%d,%d",
+						$row['x'],
+						$row['y'],
+						$row['x'] + $banner_data['BLK_WIDTH'],
+						$row['y'] + $banner_data['BLK_HEIGHT']
+					);
+
+					// Prepare href
+					$href = esc_url(
+						add_query_arg(
+							[ 'BID' => $BID, 'block_id' => $row['block_id'] ],
+							Utility::get_page_url( 'manage' )
+						)
+					);
+
+					// Output area
+					printf(
+						'<area shape="RECT" coords="%s" href="%s" title="%s" alt="%s"/>',
+						$coords,
+						$href,
+						esc_attr( $text ),
+						esc_attr( $text )
+					);
+
+				}
+				?>
+            </map>
+			<?php
+			// Prepare src
+			$src = esc_url(
+				add_query_arg(
+					[ 'BID' => $BID, 'time' => time() ],
+					Utility::get_page_url( 'show-map' )
+				)
+			);
+
+			// Prepare width and height
+			$width  = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
+			$height = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+
+			// Output img
+			printf(
+				'<img id="publish-grid" src="%s" width="%d" height="%d" usemap="#main" alt=""/>',
+				$src,
+				$width,
+				$height
+			);
 			?>
-        </map>
-        <img id="publish-grid"
-             src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&amp;time=<?php echo( time() ); ?>"
-             width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>"
-             height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" usemap="#main" alt=""/>
-    </div>
-	<?php
+        </div>
+	<?php }
 } else {
 	Language::out_replace( 'You have no pixels yet. Go <a href="%ORDER_URL%">here</a> to order pixels.', '%ORDER_URL%', Utility::get_page_url( 'order' ) );
 }
