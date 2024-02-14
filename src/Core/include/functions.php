@@ -658,16 +658,11 @@ function expire_order( $order_id ) {
 
 		$now = current_time( 'mysql' );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='expired', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='expired', date_stamp='$now', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' ";
 		//echo "$sql<br>";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['BID'] ) . "'";
-		//echo "$sql<br>";
-		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (expire order)" );
-
-		// update approve status on orders.
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `approved`='N' WHERE order_id='" . intval( $order_id ) . "'";
 		//echo "$sql<br>";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (expire order)" );
 
