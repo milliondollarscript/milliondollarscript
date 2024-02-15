@@ -548,34 +548,27 @@ function confirm_order( $user_id, $order_id ) {
 
 function pend_order( $user_id, $order_id ) {
 	global $wpdb;
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND t1.user_id='" . intval( $user_id ) . "' AND order_id='" . intval( $order_id ) . "' ";
+	$sql = "SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id='" . intval( $order_id ) . "' ";
 
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 	$row = mysqli_fetch_array( $result );
 
-	if ( $row['status'] != 'pending' ) {
+	if ( $row['status'] != 'pending' && $row['status'] != 'completed' ) {
 		$user_info = get_userdata( $row['ID'] );
 
 		// Update mds-pixel post status
 		wp_update_post( [
-			'ID'          => $row['ad_id'],
+			'ID'          => $row['AID'],
 			'post_status' => 'pending',
 		] );
 
 		$now = current_time( 'mysql' );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='pending', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
-		//echo $sql;
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
-		$blocks = explode( ',', $row['blocks'] );
-		//echo $order_row['blocks'];
-		foreach ( $blocks as $key => $val ) {
-
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered' WHERE block_id='" . intval( $val ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
-			//echo $sql;
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		}
+		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
+		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 		if ( $row['days_expire'] == 0 ) {
 			$row['days_expire'] = Language::get( 'Never' );
@@ -614,16 +607,16 @@ function pend_order( $user_id, $order_id ) {
 			get_site_url(),
 		];
 
-		$message = Emails::get_email_replace(
-			$search,
-			$replace,
-			'order-pending-content'
-		);
-
 		$subject = Emails::get_email_replace(
 			$search,
 			$replace,
 			'order-pending-subject'
+		);
+
+		$message = Emails::get_email_replace(
+			$search,
+			$replace,
+			'order-pending-content'
 		);
 
 		if ( Config::get( 'EMAIL_USER_ORDER_PENDED' ) == 'YES' ) {
@@ -1154,170 +1147,6 @@ function display_banner_selecton_form( $BID, $order_id, $res, $mds_dest ): void 
         <input type="submit" name="submit" value="<?php echo esc_attr( Language::get( 'Select Grid' ) ); ?>">
     </form>
 	<?php
-}
-
-// function move_uploaded_image( $img_key ) {
-//
-// 	$img_name = $_FILES[ $img_key ]['name'];
-//
-// 	$temp  = explode( '.', $img_name );
-// 	$ext   = array_pop( $temp );
-// 	$fname = array_pop( $temp );
-//
-// 	$img_name = preg_replace( '/[^\w]+/', "", $fname );
-// 	$img_name = $img_name . "." . $ext;
-//
-// 	$img_tmp = $_FILES[ $img_key ]['tmp_name'];
-//
-// 	$t = time();
-//
-// 	$new_name = \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/" . $t . "$img_name";
-//
-// 	move_uploaded_file( $img_tmp, $new_name );
-// 	chmod( $new_name, 0666 );
-//
-// 	return $new_name;
-// }
-
-function nav_pages_struct( $q_string, $count, $REC_PER_PAGE ) {
-
-	global $BID;
-
-	$nav = array(
-		'prev'         => '',
-		'cur_page'     => 1,
-		'pages_after'  => array(),
-		'pages_before' => array(),
-		'next'         => '',
-	);
-
-	$offset   = isset( $_REQUEST["offset"] ) ? intval( $_REQUEST["offset"] ) : 0;
-	$show_emp = isset( $_REQUEST["show_emp"] ) ? $_REQUEST["show_emp"] : '';
-
-	if ( $show_emp != '' ) {
-		$show_emp = "&show_emp=" . $show_emp;
-	}
-
-	$cat = isset( $_REQUEST["cat"] ) ? $_REQUEST["cat"] : '';
-	if ( $cat != '' ) {
-		$cat = ( "&cat=$cat" );
-	}
-
-	$order_by = isset( $_REQUEST["order_by"] ) ? $_REQUEST["order_by"] : '';
-	if ( $order_by != '' ) {
-		$order_by = "&order_by=" . $order_by;
-	}
-
-	$cur_page = $offset / $REC_PER_PAGE;
-	$cur_page ++;
-
-	// estimate number of pages.
-	$pages = ceil( $count / $REC_PER_PAGE );
-	if ( $pages == 1 ) {
-		return $nav;
-	}
-
-	$off  = 0;
-	$p    = 1;
-	$prev = $offset - $REC_PER_PAGE;
-	$next = $offset + $REC_PER_PAGE;
-
-	$b = '&BID=' . $BID;
-
-	if ( $prev === 0 ) {
-		$prev = '';
-	}
-
-	if ( $prev > - 1 ) {
-		$nav['prev'] = "<a href='" . esc_attr( "?offset=" . $prev . $q_string . $show_emp . $cat . $order_by . $b ) . "'>" . Language::get( '<-Previous' ) . "</a> ";
-	}
-
-	for ( $i = 0; $i < $count; $i = $i + $REC_PER_PAGE ) {
-		if ( $p == $cur_page ) {
-			$nav['cur_page'] = $p;
-		} else {
-			if ( $off === 0 ) {
-				$off = '';
-			}
-
-			if ( $nav['cur_page'] != '' ) {
-				$nav['pages_after'][ $p ] = $off;
-			} else {
-				$nav['pages_before'][ $p ] = $off;
-			}
-		}
-
-		$p ++;
-
-		$off = intval( $off ) + $REC_PER_PAGE;
-	}
-
-	if ( $next < $count ) {
-		$nav['next'] = " | <a  href='" . esc_attr( "?offset=" . $next . $q_string . $show_emp . $cat . $order_by . $b ) . "'> " . Language::get( 'Next ->' ) . "</a>";
-	}
-
-	return $nav;
-}
-
-function render_nav_pages( &$nav_pages_struct, $LINKS, $q_string = '', $page = '' ) {
-
-	global $BID;
-
-	$show_emp = isset( $_REQUEST["show_emp"] ) ? $_REQUEST["show_emp"] : '';
-
-	if ( $show_emp != '' ) {
-		$show_emp = "&show_emp=" . $show_emp;
-	}
-
-	$cat = isset( $_REQUEST["cat"] ) ? $_REQUEST["cat"] : '';
-	if ( $cat != '' ) {
-		$cat = ( "&cat=$cat" );
-	}
-
-	$order_by = isset( $_REQUEST["order_by"] ) ? $_REQUEST["order_by"] : '';
-	if ( $order_by != '' ) {
-		$order_by = "&order_by=" . $order_by;
-	}
-
-	if ( $nav_pages_struct['cur_page'] > $LINKS - 1 ) {
-		$LINKS  = round( $LINKS / 2 ) * 2;
-		$NLINKS = $LINKS;
-	} else {
-		$NLINKS = $LINKS - $nav_pages_struct['cur_page'];
-	}
-
-	$b = '&BID=' . $BID;
-
-	echo $nav_pages_struct['prev'];
-	$b_count = isset( $nav_pages_struct['pages_before'] ) ? count( $nav_pages_struct['pages_before'] ) : 0;
-	$pipe    = "";
-
-	for ( $i = $b_count - $LINKS; $i <= $b_count; $i ++ ) {
-		if ( $i > 0 ) {
-			//echo " <a href='?offset=".$nav['pages_before'][$i]."'>".$i."</a></b>";
-			echo " | <a  href='" . esc_attr( $page . "?offset=" . $nav_pages_struct['pages_before'][ $i ] . $q_string . $show_emp . $cat . $order_by . $b ) . "'>" . $i . "</a>";
-			$pipe = "|";
-		}
-	}
-
-	echo " $pipe <b>" . $nav_pages_struct['cur_page'] . " </b>  ";
-	$a_count = isset( $nav_pages_struct['pages_after'] ) ? count( $nav_pages_struct['pages_after'] ) : 0;
-
-	if ( $a_count > 0 ) {
-		$i = 0;
-
-		foreach ( $nav_pages_struct['pages_after'] as $key => $pa ) {
-			$i ++;
-			if ( $i > $NLINKS ) {
-				break;
-			}
-
-			//echo " <a href='?offset=".$pa."'>".$key."</a>";
-			echo " | <a  href='" . esc_attr( $page . "?offset=" . $pa . $q_string . $show_emp . $cat . $order_by . $b ) . "'>" . $key . "</a>  ";
-		}
-	}
-
-	echo $nav_pages_struct['next'];
 }
 
 function select_block( $clicked_block, $banner_data, $size, $user_id ) {

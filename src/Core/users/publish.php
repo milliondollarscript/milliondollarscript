@@ -248,7 +248,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	// If not uploading a new image, check if the order is valid.
 	if ( empty( $_REQUEST['change_pixels'] ) ) {
 		$sql           = $wpdb->prepare(
-			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status IN ('pending', 'confirmed', 'new', 'deleted') AND order_id=%d;",
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status IN ('confirmed', 'new', 'deleted') AND order_id=%d;",
 			$order_id
 		);
 		$check_results = $wpdb->get_results( $sql, ARRAY_A );
@@ -427,7 +427,7 @@ if ( $count > 0 ) {
 		"SELECT b.* FROM " . MDS_DB_PREFIX . "blocks AS b
     INNER JOIN " . MDS_DB_PREFIX . "orders AS o ON b.order_id = o.order_id
     WHERE b.user_id=%d AND b.status IN ('sold','ordered') AND b.banner_id=%d
-    AND o.status NOT IN ('pending', 'confirmed', 'new', 'deleted')",
+    AND o.status NOT IN ('confirmed', 'new', 'deleted')",
 		get_current_user_id(),
 		intval( $BID )
 	);

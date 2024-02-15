@@ -251,7 +251,7 @@ class Payment {
 		} else {
 			$order_id = \MillionDollarScript\Classes\Orders::get_current_order_id();
 			if ( ! empty( $order_id ) ) {
-				confirm_order( get_current_user_id(), \MillionDollarScript\Classes\Orders::get_current_order_id() );
+				pend_order( get_current_user_id(), \MillionDollarScript\Classes\Orders::get_current_order_id() );
 
 				// Only output if the URL has the endpoint in it or is an AJAX request.
 				if ( Utility::has_endpoint_or_ajax() ) {
