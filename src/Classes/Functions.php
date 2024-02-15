@@ -397,4 +397,68 @@ class Functions {
 		display_edit_order_button( $order_id );
 	}
 
+	/**
+	 * Generate navigation links.
+	 *
+	 * @param int $current_page
+	 * @param int $total_records
+	 * @param int $records_per_page
+	 * @param array $additional_params
+	 * @param string $page
+	 * @param string $order_by
+	 *
+	 * @return string
+	 */
+	public static function generate_navigation( int $current_page, int $total_records, int $records_per_page, array $additional_params = [], string $page = '', string $order_by = '' ): string {
+		$total_pages       = ceil( $total_records / $records_per_page );
+		$additional_params = array_map( 'sanitize_text_field', $additional_params );
+		$order_by          = sanitize_text_field( $order_by );
+		$navigation        = "";
+
+		// First page link
+		if ( $current_page > 1 ) {
+			$first_params = array_merge( [ 'offset' => 0, 'order_by' => $order_by ], $additional_params );
+			$first_url    = add_query_arg( $first_params, $page );
+			$navigation   .= "<a href='" . esc_url( $first_url ) . "'>«</a>";
+		}
+
+		// Previous link
+		if ( $current_page > 1 ) {
+			$previous_page = $current_page - 1;
+			$prev_params   = array_merge( [ 'offset' => ( ( $previous_page - 1 ) * $records_per_page ), 'order_by' => $order_by ], $additional_params );
+			$prev_url      = add_query_arg( $prev_params, $page );
+			$navigation    .= "<a href='" . esc_url( $prev_url ) . "'><</a>";
+		}
+
+		// Page links
+		$start_page = max( 1, $current_page - 2 );
+		$end_page   = min( $total_pages, $current_page + 2 );
+		for ( $i = $start_page; $i <= $end_page; $i ++ ) {
+			$page_params = array_merge( [ 'offset' => ( ( $i - 1 ) * $records_per_page ), 'order_by' => $order_by ], $additional_params );
+			$page_url    = add_query_arg( $page_params, $page );
+			if ( $i == $current_page ) {
+				$navigation .= "<span>" . $i . "</span>";
+			} else {
+				$navigation .= "<a href='" . esc_url( $page_url ) . "'>" . $i . "</a>";
+			}
+		}
+
+		// Next link
+		if ( $current_page < $total_pages ) {
+			$next_page   = $current_page + 1;
+			$next_params = array_merge( [ 'offset' => ( ( $next_page - 1 ) * $records_per_page ), 'order_by' => $order_by ], $additional_params );
+			$next_url    = add_query_arg( $next_params, $page );
+			$navigation  .= "<a href='" . esc_url( $next_url ) . "'>></a>";
+		}
+
+		// Last page link
+		if ( $current_page < $total_pages ) {
+			$last_page   = $total_pages;
+			$last_params = array_merge( [ 'offset' => ( ( $last_page - 1 ) * $records_per_page ), 'order_by' => $order_by ], $additional_params );
+			$last_url    = add_query_arg( $last_params, $page );
+			$navigation  .= "<a href='" . esc_url( $last_url ) . "'>»</a>";
+		}
+
+		return '<div class="mds-navigation">' . $navigation . '</div>';
+	}
 }

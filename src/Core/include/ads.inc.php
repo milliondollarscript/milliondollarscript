@@ -28,6 +28,7 @@
 
 use Imagine\Filter\Basic\Autorotate;
 use MillionDollarScript\Classes\FormFields;
+use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
@@ -184,12 +185,12 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 	$records_per_page = 40;
 
 	// process search result
-	$q_string = "";
+	$additional_params = [];
 	if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'search' ) {
-		$q_string = '&mds-action=search';
+		$additional_params['mds-action'] = 'search';
 	}
 
-	$order = ( isset( $_REQUEST['order_by'] ) && $_REQUEST['order_by'] ) ? $_REQUEST['order_by'] : '';
+	$order_by = ( isset( $_REQUEST['order_by'] ) && $_REQUEST['order_by'] ) ? $_REQUEST['order_by'] : '';
 
 	if ( isset( $_REQUEST['ord'] ) && $_REQUEST['ord'] == 'asc' ) {
 		$ord = 'ASC';
@@ -199,10 +200,11 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 		$ord = 'DESC';
 	}
 
-	if ( $order == null || $order == '' ) {
-		$order = " `ad_date` ";
+	if ( $order_by == null || $order_by == '' ) {
+		$order    = " `ad_date` ";
+		$order_by = 'ad_date';
 	} else {
-		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order ) . "` ";
+		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order_by ) . "` ";
 	}
 
 	if ( $list_mode == 'USER' ) {
@@ -228,19 +230,10 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 
 		if ( $count > $records_per_page ) {
 
-			$pages    = ceil( $count / $records_per_page );
 			$cur_page = intval( $offset ) / $records_per_page;
 			$cur_page ++;
 
-			Language::out_replace(
-				'<span>Page %CUR_PAGE% of %PAGES% - </span>',
-				[ "%CUR_PAGE%", "%PAGES%" ],
-				[ $cur_page, $pages ]
-			);
-
-			$nav   = nav_pages_struct( $q_string, $count, $records_per_page );
-			$LINKS = 10;
-			render_nav_pages( $nav, $LINKS, $q_string, Utility::get_page_url( 'manage' ) );
+			echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, Utility::get_page_url( 'manage' ), $order_by );
 		}
 
 		?>

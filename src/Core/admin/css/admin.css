@@ -215,3 +215,106 @@ a:hover {
 .mds-top-clicks-table tr:not(:first-child):hover {
 	background-color: #f5f5f5;
 }
+
+.mds-navigation {
+	text-align: center;
+	padding: 20px 0;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.mds-navigation a, .mds-navigation span {
+	color: #333;
+	text-decoration: none;
+	margin: 5px;
+	padding: 10px 15px;
+	border: 1px solid #333;
+	border-radius: 5px;
+	transition: all 0.3s ease;
+	background-color: #fff;
+	line-height: 1.5;
+}
+
+.mds-navigation a:hover {
+	color: #fff;
+	border-color: #333;
+	background-color: #333;
+}
+
+.mds-navigation span {
+	color: #fff;
+	background-color: #333;
+	border-color: #333;
+}
+
+@media screen and (max-width: 600px) {
+	.mds-navigation a, .mds-navigation span {
+		font-size: 14px;
+		padding: 5px 10px;
+	}
+}
+
+/* Basic table styles */
+.table-responsive {
+  width: 100%;
+  max-width: 100%;
+  margin: auto;
+}
+
+.table-responsive table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  display: table;
+}
+
+.table-responsive th, .table-responsive td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+/* Styles for screens smaller than 800px */
+@media screen and (max-width: 800px) {
+  .table-responsive table, .table-responsive thead, .table-responsive tbody, .table-responsive tr {
+    display: block;
+    border: 1px solid #ddd;
+  }
+
+  .table-responsive thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .table-responsive tr {
+    margin-bottom: 1rem;
+    border: 2px solid #ddd;
+  }
+
+  .table-responsive th, .table-responsive td {
+    display: block;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+  }
+
+  .table-responsive td:before {
+    position: absolute;
+    top: 0;
+    left: 6px;
+    width: 25%;
+    padding-right: 10px;
+    white-space: nowrap;
+    content: attr(data-column);
+  }
+}
+
+.table-responsive .tr-normal {
+	background-color: #ffffff;
+}
+
+.table-responsive .tr-normal:hover {
+	background-color: #FBFDDB;
+}

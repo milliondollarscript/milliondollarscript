@@ -26,6 +26,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
 
 defined( 'ABSPATH' ) or exit;
@@ -305,12 +306,8 @@ $cur_page ++;
 if ( $count > $records_per_page ) {
 	// calculate number of pages & current page
 
-	echo "<div style=\"text-align: center;\">";
-	$q_string = "&app=" . $Y_or_N;
-	$nav      = nav_pages_struct( $q_string, $count, $records_per_page );
-	$LINKS    = 40;
-	render_nav_pages( $nav, $LINKS, $q_string );
-	echo "</div>";
+	$additional_params = [ 'app' => $Y_or_N ];
+	echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, admin_url( 'admin.php?page=mds-approve-pixels' ) );
 }
 
 // Determine if auto publish should be checked
@@ -339,8 +336,10 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
     <table style="background:#ffffff;">
         <tr style="background:#ffffff;">
             <td colspan="12">
-                With selected: <input type="submit" value='Approve' style="font-size: 9px; background-color: #33FF66 " onclick="if (!confirmLink(this, '<?php Language::out( 'Approve for all selected, are you sure?' ); ?>')) return false" name='mass_approve'>
-                <input type="submit" value='Disapprove' style="font-size: 9px; background-color: #FF6600" onclick="if (!confirmLink(this, '<?php Language::out( 'Disapprove all selected, are you sure?' ); ?>')) return false" name='mass_disapprove'>
+                With selected: <input type="submit" value='Approve' style="font-size: 9px; background-color: #33FF66 "
+                                      onclick="if (!confirmLink(this, '<?php Language::out( 'Approve for all selected, are you sure?' ); ?>')) return false" name='mass_approve'>
+                <input type="submit" value='Disapprove' style="font-size: 9px; background-color: #FF6600"
+                       onclick="if (!confirmLink(this, '<?php Language::out( 'Disapprove all selected, are you sure?' ); ?>')) return false" name='mass_disapprove'>
                 <label>
                     <input type="checkbox" name="do_it_now" <?php if ( $do_it_now_checked ) {
 						echo ' checked ';
@@ -401,7 +400,9 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 						$t_result = mysqli_query( $GLOBALS['connection'], $sql );
 						$t_row    = mysqli_fetch_array( $t_result );
 						echo $t_row['name']; ?></span></td>
-                <td><span style="font-family: Arial,serif; "><img src="<?php echo esc_url( \MillionDollarScript\Classes\Utility::get_page_url( 'get-order-image' ) . '?BID=' . $row['banner_id'] . '&aid=' . $row['ad_id'] ); ?>" alt=""/></span></td>
+                <td><span style="font-family: Arial,serif; "><img
+                                src="<?php echo esc_url( \MillionDollarScript\Classes\Utility::get_page_url( 'get-order-image' ) . '?BID=' . $row['banner_id'] . '&aid=' . $row['ad_id'] ); ?>" alt=""/></span>
+                </td>
                 <td><span style="font-family: Arial,serif; "><?php
 						$text = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
 						$url  = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'url' );
@@ -416,12 +417,14 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
                 <td><span style="font-family: Arial,serif; "><?php
 						if ( $row['approved'] == 'N' ) {
 							?>
-                            <input type="button" style="font-size: 9px; background-color: #33FF66" value="Approve" onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=approve&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked"><?php
+                            <input type="button" style="font-size: 9px; background-color: #33FF66" value="Approve"
+                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=approve&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked"><?php
 						}
 
 						if ( $row['approved'] != 'N' ) {
 							?>
-                            <input type="button" style="font-size: 9px;" value="Disapprove" onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>disapprove-pixels&mds-action=disapprove&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo $row['order_id']; ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked"><?php
+                            <input type="button" style="font-size: 9px;" value="Disapprove"
+                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>disapprove-pixels&mds-action=disapprove&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo $row['order_id']; ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked"><?php
 						}
 
 						?>
@@ -435,11 +438,8 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 <?php
 if ( $count > $records_per_page ) {
 	// calculate number of pages & current page
-	echo "<div style=\"text-align: center;\">";
-	$nav   = nav_pages_struct( $q_string, $count, $records_per_page );
-	$LINKS = 40;
-	render_nav_pages( $nav, $LINKS, $q_string );
-	echo "</div>";
+	$additional_params = [ 'app' => $Y_or_N ];
+	echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, admin_url( 'admin.php?page=mds-approve-pixels' ) );
 }
 ?>
 
