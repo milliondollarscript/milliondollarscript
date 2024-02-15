@@ -218,7 +218,7 @@ function expire_orders(): void {
 
 		$MINUTES_CANCEL = intval( $MINUTES_CANCEL );
 		$sql            = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`='cancelled' AND DATE_SUB(%s, INTERVAL %d MINUTE) >= date_stamp AND date_stamp IS NOT NULL", $now, $MINUTES_CANCEL );
-		$results        = $wpdb->get_results( $sql );
+		$results        = $wpdb->get_results( $sql, ARRAY_A );
 		foreach ( $results as $row ) {
 			// $order_date = strtotime( $row['order_date'] );
 			// $order_date = date( 'Y-m-d H:i:s', $order_date );
