@@ -80,10 +80,11 @@ class Language {
 	 * @param string|array $search
 	 * @param string|array $replace
 	 * @param bool $html
+	 * @param bool $allow_data
 	 *
 	 * @return string
 	 */
-	public static function get_replace( string $content, string|array $search, string|array $replace, bool $html = true, $allow_data = false ): string {
+	public static function get_replace( string $content, string|array $search, string|array $replace, bool $html = true, bool $allow_data = false ): string {
 		$content = __( $content, MDS_TEXT_DOMAIN );
 
 		$content = str_replace( $search, $replace, $content );
