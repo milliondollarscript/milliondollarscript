@@ -150,8 +150,12 @@ class Payment {
 				}
 
 			} else {
-				self::default_message();
-				Orders::reset_order_progress();
+				if ( Utility::has_endpoint_or_ajax() ) {
+					self::default_message();
+					Orders::reset_order_progress();
+
+					return;
+				}
 
 				return;
 			}
