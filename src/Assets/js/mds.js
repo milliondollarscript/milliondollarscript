@@ -535,7 +535,7 @@ jQuery(document).ready(function () {
 						mds_init('#theimage', true, MDS.ENABLE_MOUSEOVER !== 'NO', false, true);
 					} else if (mds_type === 'list') {
 						mds_init('#' + mds_container_id, false, true, 'list', false);
-					} else if (mds_type === 'payment') {
+					} else if (mds_type === 'payment' || mds_type === 'confirm-order') {
 						let parsed = jQuery.parseJSON(data);
 						if (parsed.success === true) {
 							if (parsed.data) {

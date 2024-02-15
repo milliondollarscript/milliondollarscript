@@ -162,10 +162,6 @@ if ( ! is_user_logged_in() ) {
 
 	$has_packages = banner_get_packages( $BID );
 
-	require_once MDS_CORE_PATH . "html/header.php";
-
-	show_nav_status( 3 );
-
 	$cannot_get_package = false;
 
 	if ( $has_packages && isset( $_REQUEST['pack'] ) && $_REQUEST['pack'] != '' ) {
@@ -202,6 +198,27 @@ if ( ! is_user_logged_in() ) {
 			$cannot_get_package = true;
 		}
 	}
+
+	$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+
+	if ( \MillionDollarScript\Classes\Options::get_option( 'confirm-orders' ) != 'yes' ) {
+		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
+			Steps::update_step( 'complete' );
+
+			// go straight to publish...
+			Utility::redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . $order_row['order_id'] );
+		} else {
+			Steps::update_step( 'payment' );
+
+			// go to payment
+			Utility::redirect( Utility::get_page_url( 'payment' ) . '?mds-action=confirm&order_id=' . $order_row['order_id'] . '&BID=' . $BID );
+		}
+		exit;
+	}
+
+	require_once MDS_CORE_PATH . "html/header.php";
+
+	show_nav_status( 3 );
 
 	$p_max_ord = 0;
 	if ( ( $has_packages ) && ( isset( $_REQUEST['pack'] ) && $_REQUEST['pack'] == '' ) ) {
@@ -258,7 +275,6 @@ if ( ! is_user_logged_in() ) {
 				'%HISTORY_URL%'
 			], [ $max, Utility::get_page_url( 'history' ) ] );
 		} else {
-			$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
 
 			if ( \MillionDollarScript\Classes\Options::get_option( 'confirm-orders' ) == 'yes' ) {
 				// Confirm order page buttons
@@ -280,19 +296,6 @@ if ( ! is_user_logged_in() ) {
 				?>
                 </div>
 				<?php
-			} else {
-				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
-					Steps::update_step( 'complete' );
-
-					// go straight to publish...
-					wp_safe_redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . $order_row['order_id'] );
-				} else {
-					Steps::update_step( 'payment' );
-
-					// go to payment
-					wp_safe_redirect( Utility::get_page_url( 'payment' ) . '?mds-action=confirm&order_id=' . $order_row['order_id'] . '&BID=' . $BID );
-				}
-				exit;
 			}
 		}
 		?>
