@@ -539,7 +539,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                 </td>
                 <td>Order Date</td>
                 <td>Customer Name</td>
-                <td>Username & ID</td>
+                <td>Username &amp; ID</td>
                 <td>OrderID</td>
                 <td>AdID</td>
                 <td>Grid</td>
