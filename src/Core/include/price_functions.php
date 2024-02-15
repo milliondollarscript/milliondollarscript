@@ -243,7 +243,7 @@ function display_price_table( $banner_id ) {
 			?>
 
         </table>
-
+        <br />
 		<?php
 	}
 }
