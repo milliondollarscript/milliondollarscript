@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.10\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.10.19\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-01-19 20:43:31\n"
-"PO-Revision-Date: 2024-01-19 20:43:31\n"
-"X-Generator: Million Dollar Script Two 2.5.10\n"
+"POT-Creation-Date: 2024-02-14 23:59:36\n"
+"PO-Revision-Date: 2024-02-14 23:59:36\n"
+"X-Generator: Million Dollar Script Two 2.5.10.19\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -888,9 +888,6 @@ msgstr ""
 msgid "* Required field"
 msgstr ""
 
-msgid "<span>Page %CUR_PAGE% of %PAGES% - </span>"
-msgstr ""
-
 msgid "Expires"
 msgstr ""
 
@@ -1024,12 +1021,6 @@ msgid "Status:"
 msgstr ""
 
 msgid "Select Grid"
-msgstr ""
-
-msgid "<-Previous"
-msgstr ""
-
-msgid "Next ->"
 msgstr ""
 
 msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href=\"%HISTORY_URL%\">Order History.</a></b>"
@@ -1545,10 +1536,10 @@ msgstr ""
 msgid "Confirm & Pay"
 msgstr ""
 
-msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
+msgid "You are not logged in. Please log in or sign up for a new account."
 msgstr ""
 
-msgid "You are not logged in. Please log in or sign up for a new account."
+msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
 msgstr ""
 
 msgid "<h3>Your order was completed.</h3>"
