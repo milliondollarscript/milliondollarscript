@@ -752,7 +752,7 @@ class WooCommerceFunctions {
 		global $wpdb;
 
 		// Get all sessions from the database
-		$sessions = $wpdb->get_results( "SELECT * FROM wp_woocommerce_sessions" );
+		$sessions = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}woocommerce_sessions" );
 
 		foreach ( $sessions as $session ) {
 			// Unserialize the session data
@@ -769,7 +769,7 @@ class WooCommerceFunctions {
 				$session_data = maybe_serialize( $session_data );
 
 				// Update the session data in the database
-				$wpdb->update( 'wp_woocommerce_sessions', [ 'session_value' => $session_data ], [ 'session_key' => $session->session_key ] );
+				$wpdb->update( $wpdb->prefix . 'woocommerce_sessions', [ 'session_value' => $session_data ], [ 'session_key' => $session->session_key ] );
 			}
 		}
 	}
