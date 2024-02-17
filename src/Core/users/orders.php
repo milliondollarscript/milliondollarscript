@@ -293,19 +293,27 @@ usort( $orders, "date_sort" );
 
 							break;
 						case "expired":
-
 							$time_expired = strtotime( $order['date_stamp'] );
 
 							$time_when_cancel = $time_expired + ( \MillionDollarScript\Classes\Config::get( 'MINUTES_RENEW' ) * 60 );
 
-							$days = floor( ( $time_when_cancel - time() ) / 60 );
+							$total_minutes = ( $time_when_cancel - time() ) / 60;
+
+							$days              = floor( $total_minutes / 1440 );
+							$remaining_minutes = round( $total_minutes ) % 1440;
+
+							$hours   = floor( $remaining_minutes / 60 );
+							$minutes = $remaining_minutes % 60;
 
 							// check to see if there is a renew_wait or renew_paid order
+							$sql   = $wpdb->prepare( "SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE (status = 'renew_paid' OR status = 'renew_wait') AND original_order_id=%d", intval( $order['original_order_id'] ) );
+							$res_c = $wpdb->get_results( $sql );
 
-							$sql   = "select order_id from " . MDS_DB_PREFIX . "orders where (status = 'renew_paid' OR status = 'renew_wait') AND original_order_id='" . intval( $order['original_order_id'] ) . "' ";
-							$res_c = mysqli_query( $GLOBALS['connection'], $sql );
-							if ( mysqli_num_rows( $res_c ) == 0 ) {
-								echo "<a class='mds-button mds-order-renew' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get_replace( 'Renew Now! %DAYS_TO_RENEW% days left to renew', '%DAYS_TO_RENEW%', $days ) . "</a>";
+							if ( count( $res_c ) == 0 ) {
+								$searchArray  = [ '%DAYS_TO_RENEW%', '%HOURS_TO_RENEW%', '%MINUTES_TO_RENEW%' ];
+								$replaceArray = [ $days, $hours, $minutes ];
+
+								echo "<a class='mds-button mds-order-renew' href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $order['order_id'] ) . "&BID=" . esc_attr( $order['banner_id'] ) . "'>" . esc_html( Language::get_replace( 'Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew', $searchArray, $replaceArray ) ) . "</a>";
 							}
 							break;
 						case "pending":
