@@ -316,7 +316,7 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 
 								$elapsed_time = current_time( 'timestamp' ) - $time_start;
 
-								$exp_time = ( $prams['days_expire'] * 60 * 60 );
+								$exp_time = ( $prams['days_expire'] * 24 * 60 * 60 );
 
 								$exp_time_to_go = $exp_time - $elapsed_time;
 

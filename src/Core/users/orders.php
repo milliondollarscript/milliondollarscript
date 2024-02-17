@@ -266,32 +266,36 @@ usort( $orders, "date_sort" );
 						case "completed":
 							echo "<a class='mds-button mds-complete' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
 
-							if ( $order['days_expire'] > 0 ) {
-
-								if ( $order['published'] != 'Y' ) {
-									$time_start = current_time( 'timestamp' );
-								} else {
-									$time_start = strtotime( $order['date_published'] );
-								}
-
-								$elapsed_time = current_time( 'timestamp' ) - $time_start;
-								$elapsed_days = floor( $elapsed_time / 60 / 60 );
-
-								$exp_time = ( $order['days_expire'] * 60 * 60 );
-
-								$exp_time_to_go = $exp_time - $elapsed_time;
-								$exp_days_to_go = floor( $exp_time_to_go / 60 / 60 );
-
-								$to_go = elapsedtime( $exp_time_to_go );
-
-								$elapsed = elapsedtime( $elapsed_time );
+							if ( $order['published'] == 'N' ) {
+								Language::out( 'Not Yet Published' );
+							} else if ( $order['days_expire'] > 0 ) {
 
 								if ( $order['date_published'] != '' ) {
-									echo "<br>Expires in: " . $to_go;
+									$time_start = strtotime( $order['date_published'] );
+								} else {
+									$time_start = current_time( 'timestamp' );
+									echo $time_start;
+								}
+
+								$elapsed_time   = current_time( 'timestamp' ) - $time_start;
+								$exp_time       = $order['days_expire'] * 24 * 60 * 60;
+								$exp_time_to_go = $exp_time - $elapsed_time;
+
+								if ( $exp_time_to_go < 0 ) {
+									$to_go = "Expired";
+								} else {
+									$to_go = elapsedtime( $exp_time_to_go );
+								}
+
+								if ( $order['date_published'] != '' ) {
+									echo "<br />";
+									echo Language::get_replace( 'Expires in: %TIME%', '%TIME%', $to_go );
+									echo "<br />";
 								}
 							}
 
 							break;
+						case 'renew_wait':
 						case "expired":
 							$time_expired = strtotime( $order['date_stamp'] );
 
@@ -313,7 +317,7 @@ usort( $orders, "date_sort" );
 								$searchArray  = [ '%DAYS_TO_RENEW%', '%HOURS_TO_RENEW%', '%MINUTES_TO_RENEW%' ];
 								$replaceArray = [ $days, $hours, $minutes ];
 
-								echo "<a class='mds-button mds-order-renew' href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $order['order_id'] ) . "&BID=" . esc_attr( $order['banner_id'] ) . "'>" . esc_html( Language::get_replace( 'Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew', $searchArray, $replaceArray ) ) . "</a>";
+								echo "<a class='mds-button mds-order-renew' href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $order['order_id'] ) . "&BID=" . esc_attr( $order['banner_id'] ) . "&renew=true'>" . esc_html( Language::get_replace( 'Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew', $searchArray, $replaceArray ) ) . "</a>";
 							}
 							break;
 						case "pending":

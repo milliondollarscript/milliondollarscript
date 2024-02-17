@@ -103,5 +103,14 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 
 if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {
 	Steps::update_step( 'payment' );
-	\MillionDollarScript\Classes\Payment::handle_checkout();
+	$_REQUEST['order_id'] = $order_id;
+	\MillionDollarScript\Classes\Payment::handle_checkout( $order_id );
+} else {
+	if ( $_REQUEST['renew'] === 'true' ) {
+		$order = Orders::get_order( $order_id );
+		if ( in_array( $order->status, [ 'expired', 'renew_wait' ] ) ) {
+			$_REQUEST['order_id'] = $order_id;
+			\MillionDollarScript\Classes\Payment::handle_checkout( $order_id );
+		}
+	}
 }

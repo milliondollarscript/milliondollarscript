@@ -579,10 +579,13 @@ function pend_order( $user_id, $order_id ) {
 
 		$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
+        // TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email.
 		$search = [
 			'%SITE_NAME%',
 			'%FIRST_NAME%',
 			'%LAST_NAME%',
+			'%FNAME%',
+			'%LNAME%',
 			'%USER_LOGIN%',
 			'%ORDER_ID%',
 			'%PIXEL_COUNT%',
@@ -595,6 +598,8 @@ function pend_order( $user_id, $order_id ) {
 
 		$replace = [
 			get_bloginfo( 'name' ),
+			$user_info->first_name,
+			$user_info->last_name,
 			$user_info->first_name,
 			$user_info->last_name,
 			$user_info->user_login,
@@ -947,10 +952,13 @@ function complete_renew_order( $order_id ) {
 
 		$price = Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
+		// TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email.
 		$search = [
 			'%SITE_NAME%',
 			'%FIRST_NAME%',
 			'%LAST_NAME%',
+			'%FNAME%',
+			'%LNAME%',
 			'%USER_LOGIN%',
 			'%ORDER_ID%',
 			'%ORIGINAL_ORDER_ID%',
@@ -964,6 +972,8 @@ function complete_renew_order( $order_id ) {
 
 		$replace = [
 			get_bloginfo( 'name' ),
+			$user_info->first_name,
+			$user_info->last_name,
 			$user_info->first_name,
 			$user_info->last_name,
 			$user_info->user_login,

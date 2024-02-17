@@ -39,9 +39,9 @@ class Orders {
 	 * @param int|null $user_id
 	 * @param bool $return_order_id
 	 *
-	 * @return bool
+	 * @return bool|int
 	 */
-	public static function is_owned_by( int $order_id, int $user_id = null, bool $return_order_id = false ): bool {
+	public static function is_owned_by( int $order_id, int $user_id = null, bool $return_order_id = false ): bool|int {
 		global $wpdb;
 
 		if ( is_null( $user_id ) ) {
@@ -302,6 +302,122 @@ class Orders {
 				"SELECT `ad_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id` = %d",
 				$order_id
 			)
+		);
+	}
+
+	/**
+	 * Get the valid statuses of an order.
+	 *
+	 * @return string[]
+	 */
+	public static function valid_order_statuses(): array {
+		return [
+			'pending',
+			'completed',
+			'cancelled',
+			'confirmed',
+			'new',
+			'expired',
+			'deleted',
+			'renew_wait',
+			'renew_paid'
+		];
+	}
+
+	public static function valid_block_statuses(): array {
+		return [
+			'cancelled',
+			'reserved',
+			'sold',
+			'free',
+			'ordered',
+			'nfs'
+		];
+	}
+
+	/**
+	 * Update order status.
+	 *
+	 * TODO: Finish and implement into core functions.php in various places.
+	 * TODO: Add additional parameters to update other fields, perhaps one array for each orders and blocks containing all keys and values to update.
+	 * TODO: Separate blocks to their own class.
+	 *
+	 * @param int $order_id The ID of the order to update.
+	 * @param string $status The new status to set for the order.
+	 * @param bool $update_date
+	 * @param bool $update_blocks
+	 * @param string|null $block_status
+	 *
+	 * @return void
+	 */
+	public static function update( int $order_id, string $status, bool $update_date = false, bool $update_blocks = false, ?string $block_status = null ): void {
+		global $wpdb;
+
+		if ( in_array( $status, self::valid_order_statuses() ) ) {
+			if ( $update_date ) {
+				$wpdb->update(
+					MDS_DB_PREFIX . "orders",
+					[
+						'status'     => $status,
+						'date_stamp' => current_time( 'mysql' )
+					],
+					[ 'order_id' => $order_id ],
+					[
+						'%s',
+						'%s'
+					],
+					[ '%d' ]
+				);
+			} else {
+				$wpdb->update(
+					MDS_DB_PREFIX . "orders",
+					[ 'status' => $status ],
+					[ 'order_id' => $order_id ],
+					[ '%s' ],
+					[ '%d' ]
+				);
+			}
+
+		} else {
+			Debug::output( 'Invalid status: ' . $status );
+			Debug::log_trace();
+		}
+
+		if ( $update_blocks ) {
+			if ( in_array( $block_status, self::valid_block_statuses() ) ) {
+				$wpdb->update(
+					MDS_DB_PREFIX . "blocks",
+					[ 'status' => $block_status ],
+					[ 'order_id' => $order_id ],
+					[ '%s' ],
+					[ '%d' ]
+				);
+			} else {
+				Debug::output( 'Invalid block status: ' . $block_status );
+				Debug::log_trace();
+			}
+		}
+	}
+
+	/**
+	 * Renew an order.
+	 *
+	 * @param int $order_id The ID of the order to be renewed.
+	 *
+	 * @return void
+	 */
+	public static function renew( int $order_id): void {
+		global $wpdb;
+
+		$wpdb->update(
+			MDS_DB_PREFIX . "orders",
+			[
+				'status' => 'renew_paid',
+				'date_stamp' => current_time( 'mysql' )
+			],
+			[ 'order_id' => $order_id ],
+			[ '%s', '%s' ],
+			[ '%d' ]
 		);
 	}
 }

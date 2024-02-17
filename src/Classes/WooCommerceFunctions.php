@@ -696,7 +696,7 @@ class WooCommerceFunctions {
 		// We only want to check for new or confirmed
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d AND (`status`='new' OR `status`='confirmed')",
+				"SELECT COUNT(*) FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d AND (`status`='new' OR `status`='confirmed' OR `status`='expired')",
 				$mds_order_id
 			)
 		);

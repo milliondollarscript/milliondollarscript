@@ -97,20 +97,29 @@ class WooCommerce {
 		if ( ! empty( \MillionDollarScript\Classes\Orders::get_current_order_id() ) ) {
 			$order = wc_get_order( $order_id );
 
-			if ( Options::get_option( 'auto-approve' ) ) {
-
-				$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
-				$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
-				$row = mysqli_fetch_array( $result );
-
-				complete_order( $user_id, $mds_order_id );
-
-				$transaction_id = $order->get_transaction_id();
-				debit_transaction( $mds_order_id, $row['price'], $row['currency'], $transaction_id, 'order', 'WC' );
+			$mds_order = \MillionDollarScript\Classes\Orders::get_order( $mds_order_id );
+			if ( $mds_order->status == 'expired' ) {
+				// Renew the order
+				Orders::renew( $mds_order_id );
 
 			} else {
-				// Should already be confirmed at this point, but sometimes they may not follow the exact checkout path
-				confirm_order( $user_id, $mds_order_id );
+				if ( Options::get_option( 'auto-approve' ) ) {
+					// Complete the order
+
+					$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+					$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
+					$row = mysqli_fetch_array( $result );
+
+					complete_order( $user_id, $mds_order_id );
+
+					$transaction_id = $order->get_transaction_id();
+					debit_transaction( $mds_order_id, $row['price'], $row['currency'], $transaction_id, 'order', 'WC' );
+
+				} else {
+					// Confirm the order
+					// Should already be confirmed at this point, but sometimes they may not follow the exact checkout path
+					confirm_order( $user_id, $mds_order_id );
+				}
 			}
 
 			// If the order doesn't have mds_order_id yet then add it and a note.

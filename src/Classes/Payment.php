@@ -35,14 +35,18 @@ class Payment {
 	/**
 	 * Handles the checkout process.
 	 *
+	 * @param int $order_id
+	 *
 	 * @return void
 	 */
-	public static function handle_checkout( $from_shortcode = false ): void {
+	public static function handle_checkout( int $order_id ): void {
+		\MillionDollarScript\Classes\Orders::set_current_order_id( $order_id );
+
 		$checkout_url = Options::get_option( 'checkout-url' );
 		if ( empty( $checkout_url ) ) {
 			if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) == 'yes' ) {
 
-				if ( ! empty( $_REQUEST['order_id'] ) ) {
+				if ( ! empty( $order_id ) ) {
 
 					if ( ! is_user_logged_in() ) {
 						Utility::output_message( [
@@ -50,8 +54,6 @@ class Payment {
 							'message' => Language::get( 'Error: You must be logged in to view this page' ),
 						] );
 					} else {
-
-						$order_id = intval( $_REQUEST['order_id'] );
 
 						$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id . " AND user_id=" . get_current_user_id();
 						$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
@@ -120,10 +122,10 @@ class Payment {
 							}
 
 						} else {
-							Utility::output_message( [
-								'success' => false,
-								'message' => Language::get( 'There was a problem adding the product to the cart.' ),
-							] );
+//							Utility::output_message( [
+//								'success' => false,
+//								'message' => Language::get( 'There was a problem adding the product to the cart.' ),
+//							] );
 
 							wc_add_notice( Language::get( 'There was a problem adding the product to the cart.' ), 'error' );
 							if ( ! headers_sent() ) {
@@ -139,19 +141,11 @@ class Payment {
 
 						exit;
 					}
-				} else {
-					// If not called from a shortcode output a message. This causes the AJAX request to display the message.
-					if ( ! $from_shortcode ) {
-						Utility::output_message( [
-							'success' => false,
-							'message' => Language::get( "There was a problem processing your order. Please go back and try again." ),
-						] );
-					}
 				}
 
 			} else {
 				if ( Utility::has_endpoint_or_ajax() ) {
-					self::default_message();
+					self::default_message( $order_id );
 					Orders::reset_order_progress();
 
 					return;
@@ -160,9 +154,8 @@ class Payment {
 				return;
 			}
 		} else {
-			if ( ! empty( $_REQUEST['order_id'] ) && str_contains( $checkout_url, '%' ) ) {
-				$order_id = intval( $_REQUEST['order_id'] );
-				$sql      = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+			if ( ! empty( $order_id ) && str_contains( $checkout_url, '%' ) ) {
+				$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
 				$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
 				$row = mysqli_fetch_array( $result );
 
@@ -206,12 +199,25 @@ class Payment {
 	/**
 	 * Outputs default checkout messages for when WooCommerce integration isn't enabled.
 	 *
+	 * @param int $order_id
+	 *
 	 * @return void
 	 */
-	private static function default_message(): void {
+	private static function default_message( int $order_id ): void {
+		if ( empty( $order_id ) || ! Orders::is_owned_by( $order_id ) ) {
+			if ( Utility::has_endpoint_or_ajax() ) {
+				$message = Language::get( 'There was a problem processing your order. Please go back and try again.' );
+				Utility::output_message( [
+					'success' => false,
+					'message' => $message,
+				] );
+			}
+
+			return;
+		}
 
 		if ( Options::get_option( 'auto-approve' ) ) {
-			if ( ( $_REQUEST['order_id'] != '' ) ) {
+			if ( $order_id != '' ) {
 				if ( ! is_user_logged_in() ) {
 					if ( Utility::has_endpoint_or_ajax() ) {
 						$message = Language::get( 'Error: You must be logged in to view this page' );
@@ -221,9 +227,7 @@ class Payment {
 						] );
 					}
 				} else {
-
-					$order_id = intval( $_REQUEST['order_id'] );
-					$sql      = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
+					$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
 					$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
 					$row = mysqli_fetch_array( $result );
 
@@ -249,27 +253,17 @@ class Payment {
 				] );
 			}
 		} else {
-			$order_id = \MillionDollarScript\Classes\Orders::get_current_order_id();
-			if ( ! empty( $order_id ) ) {
-				pend_order( get_current_user_id(), \MillionDollarScript\Classes\Orders::get_current_order_id() );
 
-				// Only output if the URL has the endpoint in it or is an AJAX request.
-				if ( Utility::has_endpoint_or_ajax() ) {
-					Orders::reset_order_progress();
-					$message = Language::get( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
-					Utility::output_message( [
-						'success' => true,
-						'message' => $message,
-					] );
-				}
-			} else {
-				if ( Utility::has_endpoint_or_ajax() ) {
-					$message = Language::get( 'There was a problem processing your order. Please go back and try again.' );
-					Utility::output_message( [
-						'success' => false,
-						'message' => $message,
-					] );
-				}
+			pend_order( get_current_user_id(), $order_id );
+
+			// Only output if the URL has the endpoint in it or is an AJAX request.
+			if ( Utility::has_endpoint_or_ajax() ) {
+				Orders::reset_order_progress();
+				$message = Language::get( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+				Utility::output_message( [
+					'success' => true,
+					'message' => $message,
+				] );
 			}
 		}
 
