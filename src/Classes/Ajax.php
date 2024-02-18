@@ -267,7 +267,7 @@ class Ajax {
 		if ( ADVANCED_VIEW_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
-			$date = current_time('Y-m-d' );
+			$date = current_time( 'Y-m-d' );
 			$sql  = "UPDATE " . MDS_DB_PREFIX . "views set views = views + 1 where banner_id='" . intval( $data['bid'] ) . "' AND `date`='$date' AND `block_id`=" . intval( $data['block_id'] );
 			mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 			$x = @mysqli_affected_rows( $GLOBALS['connection'] );
@@ -298,7 +298,7 @@ class Ajax {
 
 			global $wpdb;
 
-			$date         = current_time('Y-m-d' );
+			$date         = current_time( 'Y-m-d' );
 			$sql          = "UPDATE `" . MDS_DB_PREFIX . "clicks` SET `clicks` = `clicks` + 1 WHERE `banner_id`=%d AND `date`=%s AND `block_id`=%d";
 			$prepared_sql = $wpdb->prepare( $sql, intval( $data['bid'] ), $date, intval( $data['block_id'] ) );
 			$wpdb->query( $prepared_sql );
