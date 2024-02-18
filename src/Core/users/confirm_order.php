@@ -56,6 +56,15 @@ update_temp_order_timestamp();
 
 $order_id = Orders::get_current_order_id();
 
+if( empty( $order_id ) ) {
+	if ( wp_doing_ajax() ) {
+		Functions::no_orders();
+		wp_die();
+	}
+
+	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
+}
+
 $sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $order_id ) . "' ";
 $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
