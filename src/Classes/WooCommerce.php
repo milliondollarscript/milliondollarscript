@@ -53,6 +53,8 @@ class WooCommerce {
 		add_action( 'woocommerce_thankyou', [ __CLASS__, 'thank_you_redirect' ], 11, 1 );
 		add_action( 'woocommerce_payment_complete', [ __CLASS__, 'payment_complete' ] );
 		add_action( 'woocommerce_after_cart_item_quantity_update', [ __CLASS__, 'adjust_cart_item_quantity_after_update' ], 20, 4 );
+		add_action( 'woocommerce_store_api_checkout_update_order_from_request', [ __CLASS__, 'validate_checkout' ], 10, 2 );
+		add_filter( 'woocommerce_add_error', [ __CLASS__, 'custom_wc_error_msg' ] );
 	}
 
 	public static function adjust_cart_item_quantity_after_update( $cart_item_key, $quantity, $old_quantity, $cart ): void {
@@ -466,7 +468,7 @@ class WooCommerce {
 	 *
 	 */
 	public static function create_order( $order_id, $data ): mixed {
-		if ( ! WooCommerceFunctions::is_mds_order( $order_id ) ) {
+		if ( ! WooCommerceFunctions::is_mds_order( $order_id ) || ! WooCommerceFunctions::valid_mds_order() ) {
 			// Not a Million Dollar Script order
 			return null;
 		}
@@ -483,4 +485,39 @@ class WooCommerce {
 		return null;
 	}
 
+	/**
+	 * Validates the checkout process for an order.
+	 *
+	 * @param $order \WC_Order The WooCommerce order object.
+	 * @param $request \WP_REST_Request The WordPress REST request object.
+	 *
+	 * @return void
+	 */
+	public static function validate_checkout( \WC_Order $order, \WP_REST_Request $request ): void {
+		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+
+		if ( empty( $mds_order_id ) && WooCommerceFunctions::is_mds_order( $order->get_id() ) && ! WooCommerceFunctions::valid_mds_order() ) {
+			wc_add_notice( 'MDS_VALIDATION_ERROR', 'error' );
+		}
+	}
+
+	/**
+	 * Custom error message for WooCommerce notice.
+	 *
+	 * @param String $message
+	 *
+	 * @return string
+	 */
+	public static function custom_wc_error_msg( string $message ): string {
+		if ( $message == 'MDS_VALIDATION_ERROR' ) {
+			$message = Language::get_replace(
+				'<p>You don\'t have any orders in progress. Please go <a href="%ORDER_URL%">here to order pixels</a>.</p>',
+				'%ORDER_URL%',
+				esc_url( Utility::get_page_url( 'order' ) ),
+				false,
+			);
+		}
+
+		return $message;
+	}
 }
