@@ -186,7 +186,7 @@ function expire_orders(): void {
 			// $order_date = date( 'Y-m-d H:i:s', $order_date );
 			// $diff       = strtotime( $order_date ) - strtotime( $now );
 			// if ( $diff > intval( $MINUTES_CONFIRMED ) ) {
-			cancel_order( $row['order_id'] );
+			delete_order( $row['order_id'] );
 			// }
 		}
 	}
