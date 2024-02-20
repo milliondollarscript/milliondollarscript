@@ -107,19 +107,26 @@ class Bootstrap {
 			'add_custom_post_status'
 		] );
 		add_action( 'admin_footer-edit.php', [ '\MillionDollarScript\Classes\FormFields', 'add_quick_edit_status' ] );
+
+		// Add custom columns
 		add_filter( 'manage_mds-pixel_posts_columns', [
 			'\MillionDollarScript\Classes\FormFields',
-			'add_status_column'
+			'add_custom_columns'
 		] );
 		add_action( 'manage_mds-pixel_posts_custom_column', [
 			'\MillionDollarScript\Classes\FormFields',
-			'fill_status_column'
+			'fill_custom_columns'
 		] );
 		add_filter( 'manage_edit-mds-pixel_sortable_columns', [
 			'\MillionDollarScript\Classes\FormFields',
 			'sortable_columns'
 		] );
+		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'orderby_grid' ] );
+		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'orderby_expiry' ] );
+		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'orderby_approved' ] );
+		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'orderby_published' ] );
 		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'orderby_status' ] );
+
 		add_action( 'pre_get_posts', [ '\MillionDollarScript\Classes\FormFields', 'modify_search_query' ] );
 		add_filter( 'posts_search', [ '\MillionDollarScript\Classes\FormFields', 'posts_search' ], 10, 2 );
 

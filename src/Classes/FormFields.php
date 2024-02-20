@@ -452,7 +452,7 @@ class FormFields {
 						}
 						if ( empty( $value ) ) {
 							// The field was empty so check if it's optional
-							if ( ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional', ) ) ||
+							if ( ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional' ) ) ||
 							     ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional' ) ) ) {
 								// The field isn't optional so add an error
 								$errors[ $field_name ] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field->get_label() );
@@ -677,17 +677,22 @@ class FormFields {
 	}
 
 	/**
-	 * Adds a 'status' column to the given array of columns.
+	 * Adds custom columns.
 	 *
-	 * @param array $columns The array of columns to add the 'status' column to.
+	 * @param array $columns The array of columns to add custom columns to.
 	 *
 	 * @return array The updated array of columns.
 	 */
-	public static function add_status_column( $columns ): array {
-		$new_columns           = array();
-		$new_columns['cb']     = $columns['cb'];
-		$new_columns['title']  = $columns['title'];
-		$new_columns['status'] = Language::get( 'Status' );
+	public static function add_custom_columns( array $columns ): array {
+		$new_columns              = array();
+		$new_columns['cb']        = $columns['cb'];
+		$new_columns['title']     = $columns['title'];
+		$new_columns['pixels']    = Language::get( 'Pixels' );
+		$new_columns['grid']      = Language::get( 'Grid' );
+		$new_columns['expiry']    = Language::get( 'Expiry Date' );
+		$new_columns['approved']  = Language::get( 'Approved' );
+		$new_columns['published'] = Language::get( 'Published' );
+		$new_columns['status']    = Language::get( 'Status' );
 		foreach ( $columns as $key => $title ) {
 			if ( $key == 'cb' || $key == 'title' ) {
 				continue;
@@ -699,15 +704,53 @@ class FormFields {
 	}
 
 	/**
-	 * A function to fill the status column.
+	 * A function to fill the custom columns.
 	 *
 	 * @param string $column The name of the column.
 	 *
 	 * @return void
 	 */
-	public static function fill_status_column( $column ): void {
+	public static function fill_custom_columns( string $column ): void {
 		global $post;
-		if ( $column == 'status' ) {
+		if ( $column == 'grid' ) {
+			$grid_id = carbon_get_post_meta( $post->ID, MDS_PREFIX . 'grid' );
+			echo '<a href="' . esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=edit&BID=' . intval( $grid_id ) ) ) . '">' . intval( $grid_id ) . '</a>';
+		} else if ( $column == 'pixels' ) {
+			// Get the blocks for this order to display
+			$grid_id = carbon_get_post_meta( $post->ID, MDS_PREFIX . 'grid' );
+			?>
+            <img style="max-width:50px;height:auto;" src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo intval( $grid_id ); ?>&aid=<?php echo $post->ID; ?>" alt=""/>
+			<?php
+		} else if ( $column == 'expiry' ) {
+			// Get the order id
+			$order_id = carbon_get_post_meta( $post->ID, MDS_PREFIX . 'order' );
+
+			// Get the order expiration date
+			$expiry = Orders::get_order_expiration_date( $order_id );
+			echo $expiry;
+
+			// Output if it's expired
+			if ( strtotime( $expiry ) < time() ) {
+				echo ' <span style="color:red;">' . Language::get( 'Expired' ) . '</span>';
+			}
+
+		} else if ( $column == 'approved' ) {
+			$approved = Orders::get_order_approved_status( $post->ID );
+			if ( $approved == 'Y' ) {
+				echo '<a style="color:green;" href="' . esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ) ) . '">' . Language::get( 'Yes' ) . '</a>';
+			} else {
+				echo '<a style="color:red;" href="' . esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N' ) ) . '">' . Language::get( 'No' ) . '</a>';
+			}
+
+		} else if ( $column == 'published' ) {
+			$published = Orders::get_order_published_status( $post->ID );
+			if ( $published == 'Y' ) {
+				echo '<a style="color:green;" href="' . esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ) . '">' . Language::get( 'Yes' ) . '</a>';
+			} else {
+				echo '<a style="color:red;" href="' . esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ) . '">' . Language::get( 'No' ) . '</a>';
+			}
+
+		} else if ( $column == 'status' ) {
 			$status_object = get_post_status_object( $post->post_status );
 			Language::out( $status_object->label );
 		}
@@ -720,10 +763,195 @@ class FormFields {
 	 *
 	 * @return array The updated array of columns.
 	 */
-	public static function sortable_columns( $columns ) {
-		$columns['status'] = 'status';
+	public static function sortable_columns( array $columns ): array {
+		$columns['grid']      = 'grid';
+		$columns['pixels']    = 'pixels';
+		$columns['expiry']    = 'expiry';
+		$columns['approved']  = 'approved';
+		$columns['published'] = 'published';
+		$columns['status']    = 'status';
 
 		return $columns;
+	}
+
+	/**
+	 * Orders the query by grid.
+	 *
+	 * @param mixed $query The WP_Query instance.
+	 *
+	 * @return void
+	 */
+	public static function orderby_grid( mixed $query ): void {
+		if ( ! is_admin() || ! $query->is_main_query() ) {
+			return;
+		}
+
+		if ( 'grid' === $query->get( 'orderby' ) ) {
+			add_filter( 'posts_clauses', [ __CLASS__, 'modify_orderby_grid' ], 10, 2 );
+		}
+	}
+
+	/**
+	 * Modifies the query to order by grid.
+	 *
+	 * @param array $clauses The query clauses.
+	 * @param \WP_Query $query The WP_Query instance.
+	 *
+	 * @return array The modified query clauses.
+	 */
+	public static function modify_orderby_grid( array $clauses, \WP_Query $query ): array {
+		global $wpdb;
+
+		if ( 'grid' === $query->get( 'orderby' ) ) {
+
+			// Define the post meta key that will be used for the join and order by
+			$grid_meta_key = '_' . MDS_PREFIX . 'grid';
+
+			// Join the posts table with the postmeta table using the meta_key
+			$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '$grid_meta_key'";
+
+			// Order by the Grid ID
+			$clauses['orderby'] = "{$wpdb->postmeta}.meta_value " . $query->get( 'order' );
+		}
+
+		return $clauses;
+	}
+
+	/**
+	 * Orders the query by expiry.
+	 *
+	 * @param mixed $query The WP_Query instance.
+	 *
+	 * @return void
+	 */
+	public static function orderby_expiry( mixed $query ): void {
+		if ( ! is_admin() || ! $query->is_main_query() ) {
+			return;
+		}
+
+		if ( 'expiry' === $query->get( 'orderby' ) ) {
+			// Add filter to modify the query
+			add_filter( 'posts_clauses', [ __CLASS__, 'modify_orderby_expiry' ], 10, 2 );
+		}
+	}
+
+	/**
+	 * Modifies the query to order by expiry.
+	 *
+	 * @param array $clauses The query clauses.
+	 * @param \WP_Query $query The WP_Query instance.
+	 *
+	 * @return array The modified query clauses.
+	 */
+	public static function modify_orderby_expiry( array $clauses, \WP_Query $query ): array {
+		global $wpdb;
+
+		if ( 'expiry' === $query->get( 'orderby' ) ) {
+
+			// Define the post meta key that will be used for the join
+			$order_meta_key = '_' . MDS_PREFIX . 'order';
+
+			// Join the orders table and banners table with the posts table using the meta_key
+			$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '$order_meta_key'
+                              LEFT JOIN " . MDS_DB_PREFIX . "orders ON " . MDS_DB_PREFIX . "orders.order_id = {$wpdb->postmeta}.meta_value
+                              LEFT JOIN " . MDS_DB_PREFIX . "banners ON " . MDS_DB_PREFIX . "banners.banner_id = " . MDS_DB_PREFIX . "orders.banner_id";
+
+			// Order by the calculated `expiry` date
+			$clauses['orderby'] = "DATE_ADD(" . MDS_DB_PREFIX . "orders.date_published, INTERVAL " . MDS_DB_PREFIX . "banners.days_expire DAY) " . $query->get( 'order' );
+		}
+
+		return $clauses;
+	}
+
+	/**
+	 * Orders the query by approved.
+	 *
+	 * @param mixed $query The WP_Query instance.
+	 *
+	 * @return void
+	 */
+	public static function orderby_approved( mixed $query ): void {
+		if ( ! is_admin() || ! $query->is_main_query() ) {
+			return;
+		}
+
+		if ( 'approved' === $query->get( 'orderby' ) ) {
+			// Add filter to modify the query
+			add_filter( 'posts_clauses', [ __CLASS__, 'modify_orderby_approved' ], 10, 2 );
+		}
+	}
+
+	/**
+	 * Modifies the query to order by approved.
+	 *
+	 * @param array $clauses The query clauses.
+	 * @param \WP_Query $query The WP_Query instance.
+	 *
+	 * @return array The modified query clauses.
+	 */
+	public static function modify_orderby_approved( array $clauses, \WP_Query $query ): array {
+		global $wpdb;
+
+		if ( 'approved' === $query->get( 'orderby' ) ) {
+
+			// MDS order meta key
+			$order_meta_key = '_' . MDS_PREFIX . 'order';
+
+			// Join the orders table with the posts table using the meta_key
+			$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '$order_meta_key'
+                              LEFT JOIN " . MDS_DB_PREFIX . "orders ON " . MDS_DB_PREFIX . "orders.order_id = {$wpdb->postmeta}.meta_value";
+
+			// Order by the `approved` status
+			$clauses['orderby'] = MDS_DB_PREFIX . "orders.approved " . $query->get( 'order' );
+		}
+
+		return $clauses;
+	}
+
+
+	/**
+	 * Orders the query by published.
+	 *
+	 * @param mixed $query The WP_Query instance.
+	 *
+	 * @return void
+	 */
+	public static function orderby_published( mixed $query ): void {
+		if ( ! is_admin() || ! $query->is_main_query() ) {
+			return;
+		}
+
+		if ( 'published' === $query->get( 'orderby' ) ) {
+			// Add filter to modify the query
+			add_filter( 'posts_clauses', [ __CLASS__, 'modify_orderby_published' ], 10, 2 );
+		}
+	}
+
+	/**
+	 * Modifies the query to order by published.
+	 *
+	 * @param array $clauses The query clauses.
+	 * @param \WP_Query $query The WP_Query instance.
+	 *
+	 * @return array The modified query clauses.
+	 */
+	public static function modify_orderby_published( array $clauses, \WP_Query $query ): array {
+		global $wpdb;
+
+		if ( 'published' === $query->get( 'orderby' ) ) {
+
+			// MDS order meta key
+			$order_meta_key = '_' . MDS_PREFIX . 'order';
+
+			// Join the orders table with the posts table using the meta_key
+			$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id AND {$wpdb->postmeta}.meta_key = '$order_meta_key'
+                              LEFT JOIN " . MDS_DB_PREFIX . "orders ON " . MDS_DB_PREFIX . "orders.order_id = {$wpdb->postmeta}.meta_value";
+
+			// Order by the `published` status
+			$clauses['orderby'] = MDS_DB_PREFIX . "orders.published " . $query->get( 'order' );
+		}
+
+		return $clauses;
 	}
 
 	/**
@@ -733,7 +961,7 @@ class FormFields {
 	 *
 	 * @return void
 	 */
-	public static function orderby_status( $query ): void {
+	public static function orderby_status( mixed $query ): void {
 		if ( ! is_admin() || ! $query->is_main_query() ) {
 			return;
 		}

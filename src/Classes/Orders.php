@@ -33,6 +33,88 @@ defined( 'ABSPATH' ) or exit;
 class Orders {
 
 	/**
+	 * Get the order approved status.
+	 *
+	 * @param $post_id int The post id of the order.
+	 *
+	 * @return string The approved status of the order.
+	 */
+	public static function get_order_approved_status( int $post_id ): string {
+		global $wpdb;
+		$order_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'order' );
+		$order    = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT `approved` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id` = %d",
+				$order_id
+			)
+		);
+
+		return $order->approved;
+	}
+
+	/**
+	 * Get the published status of an order.
+	 *
+	 * @param int $post_id The post ID of the order.
+	 *
+	 * @return string The published status of the order.
+	 */
+	public static function get_order_published_status( int $post_id ): string {
+		global $wpdb;
+		$order_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'order' );
+		$order    = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT `published` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id` = %d",
+				$order_id
+			)
+		);
+
+		return $order->published;
+	}
+
+	/**
+	 * Get the expiration date of an order.
+	 *
+	 * @param int $order_id The ID of the order.
+	 *
+	 * @return string The expiration date of the order in the format specified by the WordPress date format setting.
+	 */
+	public static function get_order_expiration_date( int $order_id ): string {
+		global $wpdb;
+
+		$order = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT `banner_id`, `date_published` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id` = %d",
+				$order_id
+			)
+		);
+
+		$days_expire = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT `days_expire` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id` = %d",
+				$order->banner_id
+			)
+		);
+
+		try {
+			$timezone = get_option( 'timezone_string' ) ?: 'UTC';
+
+			$date = new \DateTime( $order->date_published, new \DateTimeZone( $timezone ) );
+			$date->modify( '+' . $days_expire . ' days' );
+
+			$date_format = get_option( 'date_format' ) ?: 'Y-m-d';
+			$time_format = get_option( 'time_format' ) ?: 'H:i:s';
+
+			return $date->format( $date_format . ' ' . $time_format );
+		} catch ( \Exception $e ) {
+			Debug::output( $e->getMessage() );
+			Debug::log_trace();
+		}
+
+		return '';
+	}
+
+	/**
 	 * Check if an order is owned by a user. If $user_id is omitted or null then it will use the current user id.
 	 *
 	 * @param int $order_id
@@ -406,13 +488,13 @@ class Orders {
 	 *
 	 * @return void
 	 */
-	public static function renew( int $order_id): void {
+	public static function renew( int $order_id ): void {
 		global $wpdb;
 
 		$wpdb->update(
 			MDS_DB_PREFIX . "orders",
 			[
-				'status' => 'renew_paid',
+				'status'     => 'renew_paid',
 				'date_stamp' => current_time( 'mysql' )
 			],
 			[ 'order_id' => $order_id ],
