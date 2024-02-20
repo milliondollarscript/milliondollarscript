@@ -76,7 +76,7 @@ defined( 'ABSPATH' ) or exit;
     <hr>
 
     <b><?php Language::out('Reports'); ?>       </b><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-list' ); ?>"><?php Language::out('List'); ?></a><br/>
+    - <a href="<?php echo admin_url( 'edit.php?post_type=' . \MillionDollarScript\Classes\FormFields::$post_type ); ?>"><?php Language::out('List'); ?></a><br/>
     - <a href="<?php echo admin_url( 'admin.php?page=mds-top-customers' ); ?>"><?php Language::out('Top Customers'); ?></a><br/>
     - <a href="<?php echo admin_url( 'admin.php?page=mds-outgoing-email' ); ?>"><?php Language::out('Outgoing Email'); ?></a><br/>
     <span><?php Language::out('Clicks:'); ?></span><br>

@@ -178,7 +178,7 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 	<?php
 }
 
-function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '' ) {
+function list_ads( $offset = 0, $user_id = '' ) {
 
 	global $BID, $wpdb, $column_list;
 
@@ -207,17 +207,11 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order_by ) . "` ";
 	}
 
-	if ( $list_mode == 'USER' ) {
-
-		if ( ! is_numeric( $user_id ) ) {
-			$user_id = get_current_user_id();
-		}
-
-		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND (`status` IN ('pending','completed','confirmed','new','expired','renew_wait','renew_paid')) ORDER BY %s %s", $BID, $user_id, $order, $ord );
-	} else {
-		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND status != 'deleted' ORDER BY %s %s", $BID, $order, $ord );
+	if ( ! is_numeric( $user_id ) ) {
+		$user_id = get_current_user_id();
 	}
 
+	$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND (`status` IN ('pending','completed','confirmed','new','expired','renew_wait','renew_paid')) ORDER BY %s %s", $BID, $user_id, $order, $ord );
 	$result = $wpdb->get_results( $sql, ARRAY_A );
 
 	$count = count( $result );
@@ -239,25 +233,10 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 		?>
         <div class="mds-pixels-list">
             <div class="mds-pixels-list-heading">
-				<?php
-				if ( $admin ) {
-					echo '<div>&nbsp;</div>';
-				}
-
-				if ( $list_mode == 'USER' ) {
-					echo '<div>&nbsp;</div>';
-				}
-
-				//echo_list_head_data( 1, $admin );
-
-				if ( ( $list_mode == 'USER' ) || ( $admin ) ) {
-					echo '<div>' . Language::get( 'Pixels' ) . '</div>';
-					echo '<div>' . Language::get( 'Expires' ) . '</div>';
-					echo '<div>' . Language::get( 'Status' ) . '</div>';
-				}
-
-				?>
-
+                <div>&nbsp;</div>
+                <div><?php Language::out( 'Pixels' ); ?></div>
+                <div><?php Language::out( 'Expires' ); ?></div>
+                <div><?php Language::out( 'Status' ); ?></div>
             </div>
 
 			<?php
@@ -279,84 +258,72 @@ function list_ads( $admin = false, $offset = 0, $list_mode = 'ALL', $user_id = '
 
 					<?php
 
-					if ( $admin ) {
-						?>
-                        <div>
-                            <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
-                                   onClick="window.location.href='<?php echo esc_url( '?mds-action=edit&aid=' . $prams['ad_id'] ); ?>">
-                        </div>
-						<?php
-					}
+					?>
+                    <div>
+                        <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
+                               onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>'">
+                    </div>
+					<?php
 
-					if ( $list_mode == 'USER' ) {
-						?>
-                        <div>
-                            <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
-                                   onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>'">
-                        </div>
-						<?php
-					}
 					$column_list = [];
-					echo_ad_list_data( $admin );
+					echo_ad_list_data();
 
-					if ( ( $list_mode == 'USER' ) || ( $admin ) ) {
-						?>
-                        <div>
-                            <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>"
-                                 alt=""></div>
-                        <div>
-							<?php
-							if ( $prams['days_expire'] > 0 ) {
+					?>
+                    <div>
+                        <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>"
+                             alt=""></div>
+                    <div>
+						<?php
+						if ( $prams['days_expire'] > 0 ) {
 
-								if ( $prams['published'] != 'Y' ) {
-									$time_start = current_time( 'timestamp' );
-								} else {
-									$time_start = strtotime( $prams['date_published'] );
-								}
-
-								$elapsed_time = current_time( 'timestamp' ) - $time_start;
-
-								$exp_time = ( $prams['days_expire'] * 24 * 60 * 60 );
-
-								$exp_time_to_go = $exp_time - $elapsed_time;
-
-								$to_go = elapsedtime( $exp_time_to_go );
-
-								$elapsed = elapsedtime( $elapsed_time );
-
-								if ( $prams['status'] == 'expired' ) {
-									$days = "<a href='" . esc_url( admin_url( 'admin.php?page=mds-' ) ) . "orders'>" . Language::get( 'Expired!' ) . "</a>";
-								} else if ( $prams['date_published'] == '' ) {
-									$days = Language::get( 'Not Yet Published' );
-								} else {
-									$days = Language::get_replace(
-										'%ELAPSED% elapsed<br> %TO_GO% to go',
-										[ '%ELAPSED%', '%TO_GO%' ],
-										[ $elapsed, $to_go ]
-									);
-								}
+							if ( $prams['published'] != 'Y' ) {
+								$time_start = current_time( 'timestamp' );
 							} else {
-
-								$days = Language::get( 'Never' );
+								$time_start = strtotime( $prams['date_published'] );
 							}
-							echo $days;
-							?>
-                        </div>
-						<?php
-						if ( $prams['published'] == 'Y' ) {
-							$pub = Language::get( 'Published' );
+
+							$elapsed_time = current_time( 'timestamp' ) - $time_start;
+
+							$exp_time = ( $prams['days_expire'] * 24 * 60 * 60 );
+
+							$exp_time_to_go = $exp_time - $elapsed_time;
+
+							$to_go = elapsedtime( $exp_time_to_go );
+
+							$elapsed = elapsedtime( $elapsed_time );
+
+							if ( $prams['status'] == 'expired' ) {
+								$days = "<a href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $prams['order_id'] ) . "&BID=" . esc_attr( $prams['banner_id'] ) . "&renew=true'>" . Language::get( 'Expired!' ) . "</a>";
+							} else if ( $prams['date_published'] == '' ) {
+								$days = Language::get( 'Not Yet Published' );
+							} else {
+								$days = Language::get_replace(
+									'%ELAPSED% elapsed<br> %TO_GO% to go',
+									[ '%ELAPSED%', '%TO_GO%' ],
+									[ $elapsed, $to_go ]
+								);
+							}
 						} else {
-							$pub = Language::get( 'Not Published' );
+
+							$days = Language::get( 'Never' );
 						}
-						if ( $prams['approved'] == 'Y' ) {
-							$app = Language::get( 'Approved' ) . ', ';
-						} else {
-							$app = Language::get( 'Not Approved' ) . ', ';
-						}
+						echo $days;
 						?>
-                        <div><?php echo $app . $pub; ?></div>
-						<?php
+                    </div>
+					<?php
+					if ( $prams['published'] == 'Y' ) {
+						$pub = Language::get( 'Published' );
+					} else {
+						$pub = Language::get( 'Not Published' );
 					}
+					if ( $prams['approved'] == 'Y' ) {
+						$app = Language::get( 'Approved' ) . ', ';
+					} else {
+						$app = Language::get( 'Not Approved' ) . ', ';
+					}
+					?>
+                    <div><?php echo $app . $pub; ?></div>
+					<?php
 
 					?>
 

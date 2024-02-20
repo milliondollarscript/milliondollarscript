@@ -163,8 +163,6 @@ class Forms {
 
 		if ( $mds_dest == 'manage-grids' ) {
 			require_once MDS_CORE_PATH . 'admin/manage-grids.php';
-		} else if ( $mds_dest == 'list2' ) {
-			require_once MDS_CORE_PATH . 'admin/list2.php';
 		} else if ( $mds_dest == 'approve-pixels' ) {
 			require_once MDS_CORE_PATH . 'admin/approve-pixels.php';
 		} else if ( $mds_dest == 'edit-template' ) {

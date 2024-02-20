@@ -263,7 +263,6 @@ class Admin {
 
 		$mds_menus = [
 			'hidden' => [
-				'list2',
 				'approve-pixels',
 				'check',
 				'edit-template',

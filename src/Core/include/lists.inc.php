@@ -33,64 +33,7 @@ defined( 'ABSPATH' ) or exit;
 $column_list = array(); // column structure, global variable to cache the column info
 $column_info = array();
 
-/*
-Display table heading, initalize column_struct.
-*/
-function echo_list_head_data( $form_id, $admin ) {
-
-	global $q_string, $column_list, $column_info;
-
-	$ord = isset( $_REQUEST['ord'] ) ? $_REQUEST['ord'] : 'asc';
-	if ( $ord == 'asc' ) {
-		$ord = 'desc';
-	} else if ( $ord == 'desc' ) {
-		$ord = 'asc';
-	} else {
-		$ord = 'desc';
-	}
-
-	$colspan = 0;
-
-	$sql    = "SELECT * FROM " . MDS_DB_PREFIX . "form_lists where form_id='" . intval( $form_id ) . "' ORDER BY sort_order ASC ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql );
-	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
-		$colspan ++;
-		$column_list[ $row['template_tag'] ]            = $row['template_tag'];
-		$column_info[ $row['template_tag'] ]['trunc']   = $row['truncate_length'];
-		$column_info[ $row['template_tag'] ]['admin']   = $row['admin'];
-		$column_info[ $row['template_tag'] ]['link']    = $row['linked'];
-		$column_info[ $row['template_tag'] ]['is_bold'] = $row['is_bold'];
-		$column_info[ $row['template_tag'] ]['no_wrap'] = $row['no_wrap'];
-		$column_info[ $row['template_tag'] ]['clean']   = $row['clean_format'];
-		//$column_info[$row['template_tag']]['is_sortable'] = $row['is_sortable'];
-		if ( ( $row['admin'] == 'Y' ) && ( ! $admin ) ) {
-			continue; // do not render this column
-		}
-		?>
-        <td class="list_header_cell" <?php if ( $row['template_tag'] == 'POST_SUMMARY' ) {
-			echo ' width="100%" ';
-		} ?>>
-			<?php
-			$page = defined( 'MDS_PAGE_NAME' ) ? MDS_PAGE_NAME : '';
-
-			if ( $row['is_sortable'] == 'Y' ) { // show column order by link?
-			?><a class="list_header_cell" href='<?php echo esc_url( $page ); ?>?order_by=&amp;ord=<?php echo $ord; ?><?php echo $q_string; ?>'>
-				<?php
-				}
-				if ( $row['is_sortable'] == 'Y' ) { // show column order by link?
-				?></a><?php
-		}
-		?>
-        </td>
-		<?php
-	}
-	?>
-	<?php
-
-	return $colspan;
-}
-
-function echo_ad_list_data( $admin ) {
+function echo_ad_list_data() {
 
 	global $column_list, $column_info, $cur_offset, $order_str;
 
@@ -111,7 +54,7 @@ function echo_ad_list_data( $admin ) {
 	foreach ( $column_list as $template_tag ) {
 
 		//$val = $val.$template_tag;
-		if ( ( $column_info[ $template_tag ]['admin'] == 'Y' ) && ( ! $admin ) ) {
+		if ( ( $column_info[ $template_tag ]['admin'] == 'Y' ) ) {
 			continue; // do not render this column
 		}
 
@@ -170,30 +113,6 @@ function echo_ad_list_data( $admin ) {
 		} ?>>
 			<?php echo $b1 . $val . $b2; ?>
         </div>
-		<?php
-	}
-}
-
-// Admin Stuff
-
-function echo_list_head_data_admin( $form_id ) {
-	global $column_list;
-
-	$sql    = "SELECT * FROM " . MDS_DB_PREFIX . "form_lists where form_id='" . intval( $form_id ) . "' ORDER BY sort_order ASC ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql );
-	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
-		$column_list[ $row['field_id'] ] = $row['template_tag'];
-		?>
-        <td class="list_header_cell" nowrap>
-			<?php echo '<small>(' . esc_html( $row['sort_order'] ) . ')</small>'; ?>
-            <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-list2&mds-action=edit&column_id=' . intval( $row['column_id'] ) ) ); ?>'>
-				<?php echo get_template_field_label( $row['template_tag'], $form_id ); ?></a>
-            <a onclick="return confirmLink(this, 'Delete this column from view, are you sure?')"
-               href="<?php echo esc_url( admin_url( 'admin.php?page=mds-list2&mds-action=del&column_id=' . intval( $row['column_id'] ) ) ); ?>">
-                <img src='images/delete.gif' width="16" height="16" alt='Delete'></a>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-list2&mds-action=edit&column_id=' . intval( $row['column_id'] ) ) ); ?>">
-                <img src="images/edit.gif" width="16" height="16" alt="Edit">
-        </td>
 		<?php
 	}
 }

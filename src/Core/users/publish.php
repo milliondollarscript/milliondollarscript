@@ -375,7 +375,7 @@ $offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
 
 # List Ads
 ob_start();
-$count    = list_ads( false, $offset, 'USER' );
+$count    = list_ads( $offset );
 $contents = ob_get_contents();
 ob_end_clean();
 
