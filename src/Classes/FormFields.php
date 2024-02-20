@@ -185,10 +185,10 @@ class FormFields {
 			}
 		}
 
-        // Check for any pixel post for the current order id.
+		// Check for any pixel post for the current order id.
 		if ( empty( $post_id ) ) {
 			$order_id = Orders::get_current_order_id();
-			$post    = self::get_pixel_from_order_id( $order_id );
+			$post     = self::get_pixel_from_order_id( $order_id );
 			if ( $post != null ) {
 				$post_id = $post->ID;
 			}
@@ -405,7 +405,7 @@ class FormFields {
 										// Disapprove order if auto-approve is disabled for this grid.
 										$auto_approve = $wpdb->get_var( $wpdb->prepare( "SELECT auto_approve FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d", $grid_id ) );
 										if ( $auto_approve == 'N' ) {
-                                            // Disapprove order
+											// Disapprove order
 											$wpdb->update( MDS_DB_PREFIX . 'orders', [
 												'approved' => 'N',
 											], [
@@ -413,12 +413,17 @@ class FormFields {
 												'order_id'  => $order_id
 											] );
 
-                                            // Disapprove blocks
-                                            $wpdb->update( MDS_DB_PREFIX . 'blocks', [
-                                                'approved' => 'N',
-                                            ], [
-                                                'ad_id' => $post_id
-                                            ] );
+											// Disapprove blocks
+											$wpdb->update( MDS_DB_PREFIX . 'blocks', [
+												'approved' => 'N',
+											], [
+												'ad_id' => $post_id
+											] );
+
+											// Process pixels
+											process_image( $grid_id );
+											publish_image( $grid_id );
+											process_map( $grid_id );
 										}
 									}
 								}
