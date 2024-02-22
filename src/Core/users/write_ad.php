@@ -85,6 +85,30 @@ if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 // saving
 if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 	Functions::verify_nonce( 'mds-form' );
+	$user_id = get_current_user_id();
+
+	if ( \MillionDollarScript\Classes\Options::get_option( 'order-locking', false ) ) {
+		// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
+		$is_error = false;
+		if ( isset( $_REQUEST['manage-pixels'] ) && isset( $_REQUEST['order_id'] ) ) {
+			// This is a request to manage pixels, so we need to check the order status.
+
+			$order_id = intval( $_REQUEST['order_id'] );
+			if ( empty( $order_id ) ) {
+				$is_error = true;
+			} else {
+				$completion_status = Orders::get_completion_status( $order_id, $user_id );
+				if ( $completion_status ) {
+					$is_error = true;
+				}
+			}
+		}
+
+		if ( $is_error ) {
+			// User should never get here, so we will just redirect them to the manage page.
+			Utility::redirect( Utility::get_page_url( 'manage' ) );
+		}
+	}
 
 	if ( isset( $_REQUEST['manage-pixels'] ) && isset( $_REQUEST['order_id'] ) ) {
 		$order_id = intval( $_REQUEST['order_id'] );
@@ -99,7 +123,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 
 	if ( ! is_int( $ad_id ) ) {
 		// we have an error
-		update_user_meta( get_current_user_id(), 'error_message', $ad_id );
+		update_user_meta( $user_id, 'error_message', $ad_id );
 
 		return;
 	} else {

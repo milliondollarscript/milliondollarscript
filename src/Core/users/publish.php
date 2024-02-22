@@ -120,8 +120,8 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 		// no transaction for this order
 		Language::out( '<h3>Your order was completed.</h3>' );
 	}
-	// publish
 
+	// publish
 	if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
 		process_image( $BID );
 		publish_image( $BID );
@@ -217,8 +217,10 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	}
 
 	global $wpdb;
+
+	$user_id      = get_current_user_id();
 	$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE ad_id=%d AND user_id=%d";
-	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['aid'] ), get_current_user_id() );
+	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['aid'] ), $user_id );
 	$result       = $wpdb->get_results( $prepared_sql, ARRAY_A );
 
 	if ( ! empty( $result ) ) {
@@ -232,7 +234,17 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	}
 
 	$order_id = $row['order_id'];
-	$blocks   = explode( ',', $row['blocks'] );
+
+	if ( ! empty( $_REQUEST['change_pixels'] ) && \MillionDollarScript\Classes\Options::get_option( 'order-locking', false ) ) {
+		// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
+		$order_status = Orders::get_completion_status( $order_id, $user_id );
+		if ( $order_status ) {
+			// User should never get here, so we will just redirect them to the manage page.
+			Utility::redirect( Utility::get_page_url( 'manage' ) );
+		}
+	}
+
+	$blocks = explode( ',', $row['blocks'] );
 
 	$size          = get_pixel_image_size( $row['order_id'] );
 	$pixels        = $size['x'] * $size['y'];
@@ -321,7 +333,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		'post_type'   => \MillionDollarScript\Classes\FormFields::$post_type,
 		'post_status' => 'any',
 		'p'           => intval( $_REQUEST['aid'] ),
-		'author'      => get_current_user_id(),
+		'author'      => $user_id,
 	] );
 
 	if ( ! empty( $pixels ) ) {
@@ -359,7 +371,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 
 		// send pixel change notification
 		if ( \MillionDollarScript\Classes\Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
-			send_published_pixels_notification( get_current_user_id(), $prams['order_id'] );
+			send_published_pixels_notification( $user_id, $prams['order_id'] );
 		}
 	} else {
 		$prams = load_ad_values( $ad_id );
