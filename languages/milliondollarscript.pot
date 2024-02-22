@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.10.37\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.10.43\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-02-22 05:06:59\n"
-"PO-Revision-Date: 2024-02-22 05:06:59\n"
-"X-Generator: Million Dollar Script Two 2.5.10.37\n"
+"POT-Creation-Date: 2024-02-22 15:48:25\n"
+"PO-Revision-Date: 2024-02-22 15:48:25\n"
+"X-Generator: Million Dollar Script Two 2.5.10.43\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -321,6 +321,12 @@ msgstr ""
 msgid "The currency symbol to use for orders and payments when WooCommerce isn't enabled. If WooCommerce is enabled then it will use the setting from it's settings. If WooCommerce Payments plugin is enabled then it will use those settings."
 msgstr ""
 
+msgid "Order Locking"
+msgstr ""
+
+msgid "Enabling this will prevent users from editing their orders after they are approved or completed."
+msgstr ""
+
 msgid "Fields"
 msgstr ""
 
@@ -490,6 +496,9 @@ msgid "Orders Waiting"
 msgstr ""
 
 msgid "Orders Cancelled"
+msgstr ""
+
+msgid "Orders Denied"
 msgstr ""
 
 msgid "Orders Completed"
@@ -741,6 +750,9 @@ msgstr ""
 msgid "Expired"
 msgstr ""
 
+msgid "Not Yet Published"
+msgstr ""
+
 msgid "Order Confirmed"
 msgstr ""
 
@@ -843,6 +855,27 @@ msgstr ""
 msgid "This email is sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%"
 msgstr ""
 
+msgid "Order denied"
+msgstr ""
+
+msgid "Order Denied Subject"
+msgstr ""
+
+msgid "Order Denied"
+msgstr ""
+
+msgid "The subject line of the email sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "Order Denied Content"
+msgstr ""
+
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Denied' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have been denied and will\nnot be show on the grid.<br />\n<br />\nPlease log in and update your order:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Order History'<br />\n<br />\n3. Click on 'Manage' on the Order shown as 'Denied'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Denied<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "This email is sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
 msgid "Million Dollar Script Emails"
 msgstr ""
 
@@ -924,9 +957,6 @@ msgstr ""
 msgid "Expired!"
 msgstr ""
 
-msgid "Not Yet Published"
-msgstr ""
-
 msgid "%ELAPSED% elapsed<br> %TO_GO% to go"
 msgstr ""
 
@@ -937,6 +967,33 @@ msgid "Not Published"
 msgstr ""
 
 msgid "Not Approved"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Confirmed"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "Denied"
+msgstr ""
+
+msgid "Deleted"
+msgstr ""
+
+msgid "Renew Now"
+msgstr ""
+
+msgid "Renewal Paid"
 msgstr ""
 
 msgid "No ads were found."
@@ -1176,6 +1233,9 @@ msgstr ""
 msgid "Orders: Expired"
 msgstr ""
 
+msgid "Orders: Denied"
+msgstr ""
+
 msgid "Orders: Cancelled"
 msgstr ""
 
@@ -1240,6 +1300,9 @@ msgid "License"
 msgstr ""
 
 msgid "Orders Approved"
+msgstr ""
+
+msgid "Order Disapproved"
 msgstr ""
 
 msgid "Orders Disapproved"
@@ -1378,30 +1441,6 @@ msgid "No orders found."
 msgstr ""
 
 msgid "In progress"
-msgstr ""
-
-msgid "Pending"
-msgstr ""
-
-msgid "Completed"
-msgstr ""
-
-msgid "Cancelled"
-msgstr ""
-
-msgid "Confirmed"
-msgstr ""
-
-msgid "New"
-msgstr ""
-
-msgid "Deleted"
-msgstr ""
-
-msgid "Renew Now"
-msgstr ""
-
-msgid "Renewal Paid"
 msgstr ""
 
 msgid "Write Ad"
