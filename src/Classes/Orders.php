@@ -99,7 +99,12 @@ class Orders {
 		try {
 			$timezone = get_option( 'timezone_string' ) ?: 'UTC';
 
-			$date = new \DateTime( $order->date_published, new \DateTimeZone( $timezone ) );
+			$date_published = $order->date_published;
+			if ( empty( $date_published ) ) {
+				return '';
+			}
+
+			$date = new \DateTime( $date_published, new \DateTimeZone( $timezone ) );
 			$date->modify( '+' . $days_expire . ' days' );
 
 			$date_format = get_option( 'date_format' ) ?: 'Y-m-d';
@@ -347,6 +352,8 @@ class Orders {
 		}
 
 		$now = current_time( 'mysql' );
+
+		// TODO: Change default date_published to NULL in the database and set it to null below.
 
 		// Add new order to database
 		$wpdb->insert( MDS_DB_PREFIX . "orders", [

@@ -727,11 +727,16 @@ class FormFields {
 
 			// Get the order expiration date
 			$expiry = Orders::get_order_expiration_date( $order_id );
-			echo $expiry;
+			if ( ! empty( $expiry ) ) {
+				echo esc_html( $expiry );
 
-			// Output if it's expired
-			if ( strtotime( $expiry ) < time() ) {
-				echo ' <span style="color:red;">' . Language::get( 'Expired' ) . '</span>';
+				// Output if it's expired
+				if ( strtotime( $expiry ) < time() ) {
+					echo ' <span style="color:red;">' . Language::get( 'Expired' ) . '</span>';
+				}
+
+			} else {
+				Language::out( 'Not Yet Published' );
 			}
 
 		} else if ( $column == 'approved' ) {
