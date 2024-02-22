@@ -297,7 +297,7 @@ if ( ! is_user_logged_in() ) {
 				} else {
 					// go to payment
 					?>
-                    <input type='button' class='mds-button mds-complete'
+                    <input type='button' class='mds-button mds-confirm'
                            value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
                            onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment' ) ); ?>?mds-action=confirm&order_id=<?php echo intval( $order_row['order_id'] ); ?>&BID=<?php echo $BID; ?>'">
 					<?php

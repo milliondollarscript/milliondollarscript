@@ -925,4 +925,18 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 			update_pointer_size();
 		});
 	}
+
+	jQuery(submit_button1).on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		formSubmit(e);
+		return false;
+	});
+
+	jQuery('#reset_button').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		reset_pixels();
+		return false;
+	});
 });

@@ -54,7 +54,12 @@ class Functions {
 			'TOOLTIP_TRIGGER'  => esc_js( Config::get( 'TOOLTIP_TRIGGER' ) ),
 			'MAX_POPUP_SIZE'   => esc_js( Options::get_option( 'max-popup-size' ) ),
 			// 'BID'              => intval( $BID ),
-			'link_target'      => esc_js( \MillionDollarScript\Classes\Options::get_option( 'link-target' ) )
+			'link_target'      => esc_js( \MillionDollarScript\Classes\Options::get_option( 'link-target' ) ),
+			'WAIT'             => Language::get( 'Please Wait...' ),
+			'UPLOADING'        => Language::get( 'Uploading...' ),
+			'SAVING'           => Language::get( 'Saving...' ),
+			'COMPLETING'       => Language::get( 'Completing...' ),
+			'CONFIRMING'       => Language::get( 'Confirming...' ),
 		];
 	}
 

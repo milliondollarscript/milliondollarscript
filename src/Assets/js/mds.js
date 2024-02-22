@@ -596,12 +596,17 @@ jQuery(document).ready(function () {
 			return false;
 		});
 	}
+});
 
+jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	jQuery('.mds_upload_image').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
 		let $el = jQuery(this);
 		$el.prop('disabled', true);
-		$el.attr('value', 'Uploading...');
+		$el.attr('value', MDS.UPLOADING);
 		$el.parent('form').submit();
+		return false;
 	});
 
 	jQuery('.mds_pointer_graphic').on('load', function (e) {
@@ -612,7 +617,7 @@ jQuery(document).ready(function () {
 	jQuery('.mds_save_ad_button').on('click', function () {
 		let $el = jQuery(this);
 		$el.prop('disabled', true);
-		$el.attr('value', 'Saving...');
+		$el.attr('value', MDS.SAVING);
 		$el.closest('form').submit();
 	});
 
@@ -621,7 +626,7 @@ jQuery(document).ready(function () {
 		e.stopPropagation();
 		let $el = jQuery(this);
 		$el.prop('disabled', true);
-		$el.attr('value', 'Completing...');
+		$el.attr('value', MDS.COMPLETING);
 		window.location = MDS.publishurl + '?mds-action=complete&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
 		return false;
 	});
@@ -631,9 +636,31 @@ jQuery(document).ready(function () {
 		e.stopPropagation();
 		let $el = jQuery(this);
 		$el.prop('disabled', true);
-		$el.attr('value', 'Confirming...');
+		$el.attr('value', MDS.CONFIRMING);
 		window.location = MDS.paymenturl + '?mds-action=confirm&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
 		return false;
+	});
+
+	jQuery('.mds-write.big_button').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		jQuery(this).closest('form').submit();
+		jQuery(this).prop('disabled', true).attr('value', MDS.WAIT);
+		return false;
+	});
+
+	jQuery('.mds-button').on('click', function () {
+		jQuery('.mds-button').prop('disabled', true).attr('value', MDS.WAIT);
+	});
+
+	jQuery('.mds-upload-submit').on('click', function () {
+		jQuery(this).attr('value', MDS.UPLOADING);
+		jQuery(this).closest('form').append(jQuery('<input>').attr({
+			type: 'hidden',
+			name: this.name,
+			value: this.value
+		}));
+		jQuery(this).closest('form').submit();
 	});
 });
 

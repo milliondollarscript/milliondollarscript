@@ -161,7 +161,7 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
                 <input type="hidden" name="save" id="save101" value="">
 				<?php if ( $mode == 'edit' || $mode == 'user' ) { ?>
                     <input<?php echo( $mode == 'edit' ? ' disabled' : '' ); ?>
-                            class="mds_save_ad_button form_submit_button big_button" type="submit" name="savebutton"
+                            class="mds-button mds_save_ad_button form_submit_button big_button" type="submit" name="savebutton"
                             value="<?php esc_attr_e( Language::get( 'Save Ad' ) ); ?>" onClick="save101.value='1';">
 				<?php } ?>
             </div>
@@ -260,7 +260,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 
 					?>
                     <div>
-                        <input type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
+                        <input class="mds-button" type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
                                onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>'">
                     </div>
 					<?php

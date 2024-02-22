@@ -303,7 +303,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
                     <input type="hidden" name="mds_dest" value="manage">
                     <input type="file" name='pixels'><br>
                     <input type="hidden" name="aid" value="<?php echo $_REQUEST['aid']; ?>">
-                    <input type="submit" name="change_pixels"
+                    <input type="submit" name="change_pixels" class="mds-button mds-upload-submit"
                            value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>">
                 </form>
 				<?php Language::out( 'Supported formats:' ); ?><?php echo "$gif_support $jpeg_support $png_support"; ?>

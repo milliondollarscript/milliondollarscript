@@ -232,7 +232,7 @@ Language::out_replace(
 		<?php Language::out( '<p><strong>Upload your pixels:</strong></p>' ); ?>
         <input type='file' accept="image/*" name='graphic' style=' font-size:14px;width:200px;'/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
-        <input class="mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
+        <input class="mds-button mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
                style=' font-size:18px;'/>
     </form>
 
@@ -357,7 +357,7 @@ if ( ! empty( $image ) ) {
                 <input type="hidden" name="selected_pixels" value=''>
                 <input type="hidden" name="order_id" value="<?php echo $mds_order_id; ?>">
                 <input type="hidden" value="<?php echo $BID; ?>" name="BID">
-                <input type="submit" class='big_button' name='submit_button2' id='submit_button2'
+                <input type="submit" class='mds-write big_button' name='submit_button2' id='submit_button2'
                        value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ); ?>'>
             </form>
             <!--suppress HtmlRequiredAltAttribute, HtmlUnknownAnchorTarget -->

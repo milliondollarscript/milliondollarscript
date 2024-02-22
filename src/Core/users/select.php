@@ -445,8 +445,8 @@ if ( $has_packages ) {
 		}
 		?>
         <div id="submit-buttons">
-            <input type="button" name='submit_button1' id='submit_button1' value='<?php echo esc_attr( Language::get( 'Buy Pixels Now' ) ); ?>' onclick='formSubmit(event)'>
-            <input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>' onclick='reset_pixels()'>
+            <input type="button" name='submit_button1' id='submit_button1' value='<?php echo esc_attr( Language::get( 'Buy Pixels Now' ) ); ?>'>
+            <input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>'>
         </div>
 
         <div id="pixel_container">

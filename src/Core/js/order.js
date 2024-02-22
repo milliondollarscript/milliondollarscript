@@ -1,6 +1,6 @@
 let first_load = true;
 
-jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, settings) {
+jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	const params = new URLSearchParams(settings.data);
 	const type = params.get('type');
 
@@ -258,8 +258,16 @@ jQuery(document).off('ajaxComplete').on('ajaxComplete', function (event, xhr, se
 	jQuery(window).on('resize', move_image_to_selection);
 
 	jQuery(document).off('click', '#submit_button1, #submit_button2').on('click', '#submit_button1, #submit_button2', function (event) {
+		let $el = jQuery(this);
+		$el.prop('disabled', true);
+		$el.attr('value', MDS_OBJECT.WAIT);
 		make_selection(event);
 		return false;
+	});
+
+	jQuery('.mds_pointer_graphic').off('load').on('load', function () {
+		jQuery('.mds_upload_image').prop('disabled', false);
+		jQuery(this).attr('value', 'Upload');
 	});
 
 	add_ajax_loader(window.$pixelimg.parent());

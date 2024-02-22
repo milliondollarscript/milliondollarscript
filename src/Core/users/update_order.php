@@ -33,8 +33,8 @@ defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
-header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );   // Date in the past
+header( "Cache-Control: no-cache, must-revalidate" );
+header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );
 
 check_ajax_referer( 'mds-select' );
 
@@ -95,19 +95,58 @@ if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
 // reset blocks
 if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
 
+	global $wpdb;
+
 	$order_id = Orders::get_current_order_id();
 
 	if ( ! empty( $order_id ) ) {
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET blocks='' WHERE order_id=" . intval( $order_id );
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		// Check if order has any blocks
+		$sql = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
-		// Assemble query to delete all blocks for the current order for the current user.
-		$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND banner_id='" . intval( $BID ) . "' AND order_id='" . intval( $order_id ) . "'";
+		if ( ! empty( $row['blocks'] ) ) {
+
+			$wpdb->update(
+				MDS_DB_PREFIX . 'orders',
+				[ 'blocks' => '' ],
+				[ 'order_id' => $order_id ]
+			);
+
+			// Assemble query to delete all blocks for the current order for the current user.
+			$current_user_id = get_current_user_id();
+			$wpdb->delete(
+				MDS_DB_PREFIX . 'blocks',
+				[
+					'user_id'   => $current_user_id,
+					'banner_id' => intval( $BID ),
+					'order_id'  => $order_id
+				]
+			);
+
+			// Update the last modification time
+			Orders::set_last_order_modification_time();
+		}
+
 	} else {
 		// Assemble query to delete all reserved blocks for the current user.
-		$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id='" . get_current_user_id() . "' AND status='reserved' AND banner_id='" . intval( $BID ) . "'";
+		$user_id = get_current_user_id();
+		$result  = $wpdb->delete(
+			MDS_DB_PREFIX . "blocks",
+			[
+				"user_id"   => $user_id,
+				"status"    => 'reserved',
+				"banner_id" => $BID
+			],
+			[
+				"%d",
+				"%s",
+				"%d"
+			]
+		);
+
+		// Update the last modification time
+		Orders::set_last_order_modification_time();
 	}
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 
 	echo json_encode( [
 		"error" => "false",
@@ -125,5 +164,10 @@ if ( ! empty( $_REQUEST['selection_size'] ) ) {
 }
 
 $output_result = select_block( $block_id, $banner_data, $size, $user_id );
+
+if ( $output_result['error'] == 'false' ) {
+	// Update the last modification time
+	Orders::set_last_order_modification_time();
+}
 
 echo json_encode( $output_result );

@@ -852,8 +852,17 @@ a.mds-button {
 	background-color: #6F5F56;
 }
 
-.mds-container input[type='button'].mds-complete,
+.mds-container input[type='button'].mds-confirm,
+.mds-container input[type='button'].mds-upload,
+.mds-container input[type='button'].mds-write,
+.mds-container input[type='button'].mds-pay,
+.mds-container input[type='button'].mds-continue,
 .mds-container input[type='submit'].mds-complete,
+.mds-button.mds-confirm,
+.mds-button.mds-upload,
+.mds-button.mds-write,
+.mds-button.mds-pay,
+.mds-button.mds-continue,
 .mds-button.mds-complete,
 .mds-container #submit_button1,
 .mds-container #submit_button2 {
