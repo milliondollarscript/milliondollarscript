@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.10.32
+  Version: 2.5.10.33
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -63,7 +63,7 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.10' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.32' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.33' );
 
 // Detect PHP version
 $minimum_version = '8.0.0';
@@ -90,6 +90,9 @@ function perform_upgrade_operations(): void {
 	// Reset cron.
 	\MillionDollarScript\Classes\Cron::clear_cron();
 	\MillionDollarScript\Classes\Cron::schedule_cron();
+
+	// Register mds-pixel post type.
+	\MillionDollarScript\Classes\FormFields::register_post_type();
 
 	// Flush permalinks.
 	flush_rewrite_rules();
@@ -166,6 +169,14 @@ function milliondollarscript_two_activate(): void {
 }
 
 /**
+ * Deactivation
+ */
+function milliondollarscript_two_deactivate(): void {
+	// Flush permalinks.
+	flush_rewrite_rules();
+}
+
+/**
  * Uninstallation
  */
 function milliondollarscript_two_uninstall(): void {
@@ -200,6 +211,7 @@ require_once MDS_BASE_PATH . 'vendor/autoload.php';
 
 // WP plugin activation actions.
 register_activation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_activate' );
+register_deactivation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_deactivate' );
 register_uninstall_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_uninstall' );
 
 // Starting up...
