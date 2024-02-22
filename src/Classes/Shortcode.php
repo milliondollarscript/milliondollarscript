@@ -61,6 +61,10 @@ class Shortcode {
 	 * @return string
 	 */
 	public static function shortcode( $atts ): string {
+		if ( is_admin() ) {
+			return '';
+		}
+
 		global $mds_shortcodes;
 
 		$mds_shortcodes ++;
