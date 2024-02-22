@@ -579,7 +579,7 @@ function pend_order( $user_id, $order_id ) {
 
 		$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
-        // TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email.
+		// TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email.
 		$search = [
 			'%SITE_NAME%',
 			'%FIRST_NAME%',
@@ -1166,7 +1166,13 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 	// Check if max_orders < order count
 	if ( ! can_user_order( $banner_data, $user_id ) ) {
 		// order count > max orders
-		return Language::get_replace( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="%HISTORY_URL%">Order History.</a></b>', '%HISTORY_URL%', esc_url( Utility::get_page_url( 'history' ) ) );
+		return [
+			"error" => "true",
+			"type"  => "max_orders",
+			"data"  => [
+				"value" => Language::get_replace( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="%HISTORY_URL%">Order History.</a></b>', '%HISTORY_URL%', esc_url( Utility::get_page_url( 'history' ) ) ),
+			]
+		];
 	}
 
 	if ( ! function_exists( 'load_ad_values' ) ) {
