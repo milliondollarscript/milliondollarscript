@@ -296,6 +296,10 @@ class Orders {
 				[ '%s' ],
 				[ '%d' ]
 			);
+
+			// Reset other orders to not be in progress
+			$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders SET order_in_progress = %s WHERE user_id = %d AND order_id != %d", 'N', $user_id, $order_id );
+			$wpdb->query( $sql );
 		}
 	}
 
