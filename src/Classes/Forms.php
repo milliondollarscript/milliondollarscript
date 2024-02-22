@@ -200,6 +200,8 @@ class Forms {
 			require_once MDS_CORE_PATH . 'admin/orders-deleted.php';
 		} else if ( $mds_dest == 'orders-expired' ) {
 			require_once MDS_CORE_PATH . 'admin/orders-expired.php';
+		} else if ( $mds_dest == 'orders-denied' ) {
+			require_once MDS_CORE_PATH . 'admin/orders-denied.php';
 		} else if ( $mds_dest == 'orders-reserved' ) {
 			require_once MDS_CORE_PATH . 'admin/orders-reserved.php';
 		} else if ( $mds_dest == 'orders-waiting' ) {
@@ -223,6 +225,7 @@ class Forms {
 				'orders-completed',
 				'orders-deleted',
 				'orders-expired',
+				'orders-denied',
 				'orders-reserved',
 				'orders-waiting'
 			] ) && isset( $_REQUEST['search'] ) ) {

@@ -95,7 +95,7 @@ function install_db(): void {
 	dbDelta( "CREATE TABLE `{$tables['blocks']}` (
     `block_id` INT NOT NULL DEFAULT '0',
     `user_id` INT DEFAULT NULL,
-    `status` SET('cancelled','reserved','sold','free','ordered','nfs') NOT NULL DEFAULT '',
+    `status` SET('denied','cancelled','reserved','sold','free','ordered','nfs') NOT NULL DEFAULT '',
     `x` INT NOT NULL DEFAULT '0',
     `y` INT NOT NULL DEFAULT '0',
     `image_data` TEXT NOT NULL,
@@ -161,7 +161,7 @@ function install_db(): void {
     `user_id` INT NOT NULL DEFAULT '0',
     `order_id` INT NOT NULL AUTO_INCREMENT,
     `blocks` TEXT NOT NULL,
-    `status` SET('pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid') NOT NULL DEFAULT '',
+    `status` SET('denied','pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid') NOT NULL DEFAULT '',
     `order_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `price` FLOAT NOT NULL DEFAULT '0',
     `quantity` INT NOT NULL DEFAULT '0',

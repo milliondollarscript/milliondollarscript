@@ -518,9 +518,9 @@ class Orders {
 	 * @param mixed $order_id
 	 * @param int $user_id
 	 *
-	 * @return string
+	 * @return ?string
 	 */
-	public static function get_completion_status( mixed $order_id, int $user_id ): string {
+	public static function get_completion_status( mixed $order_id, int $user_id ): ?string {
 		global $wpdb;
 		$sql = $wpdb->prepare(
 			"SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d AND status NOT IN ('new', 'pending') OR approved='Y'",

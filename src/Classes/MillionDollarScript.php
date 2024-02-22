@@ -136,6 +136,8 @@ class MillionDollarScript {
 
 			$orders_cancelled = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='cancelled')" );
 
+			$orders_denied = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='denied')" );
+
 			$orders_completed = $wpdb->get_var( "SELECT COUNT(order_id) FROM " . MDS_DB_PREFIX . "orders WHERE (status ='completed')" );
 
 			$waiting = $wpdb->get_var( "SELECT COUNT(block_id) FROM " . MDS_DB_PREFIX . "blocks WHERE approved='N' and image_data <> ''" );
@@ -158,7 +160,10 @@ class MillionDollarScript {
 						?></a>
                 </div>
                 <div>
-					<?php echo $orders_cancelled; ?> <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-cancelled' ) ); ?>"><?php Language::out( 'Orders Cancelled' ); ?></a>
+		            <?php echo $orders_cancelled; ?> <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-cancelled' ) ); ?>"><?php Language::out( 'Orders Cancelled' ); ?></a>
+                </div>
+                <div>
+		            <?php echo $orders_denied; ?> <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-denied' ) ); ?>"><?php Language::out( 'Orders Denied' ); ?></a>
                 </div>
                 <div>
 					<?php echo $orders_completed; ?> <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-completed' ) ); ?>"><?php Language::out( 'Orders Completed' ); ?></a>

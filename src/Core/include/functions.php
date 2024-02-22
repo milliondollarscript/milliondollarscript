@@ -546,7 +546,7 @@ function confirm_order( $user_id, $order_id ) {
 	}
 }
 
-function pend_order( $user_id, $order_id ) {
+function pend_order( $order_id ) {
 	global $wpdb;
 	$sql = "SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id='" . intval( $order_id ) . "' ";
 

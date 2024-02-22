@@ -47,7 +47,7 @@ if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 	exit;
 }
 
-if ( empty( $_REQUEST['change_pixels'] ) && empty( $_FILES ) ) {
+if ( empty( $_REQUEST['change_pixels'] ) && empty( $_FILES ) && ! isset( $_REQUEST['json'] ) ) {
 	require_once MDS_CORE_PATH . "html/header.php";
 }
 
@@ -70,74 +70,102 @@ global $BID, $f2, $wpdb;
 $BID = $f2->bid();
 
 $banner_data = load_banner_constants( $BID );
+$user_id     = get_current_user_id();
 
 // Entry point for completion of orders
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
+if ( isset( $_REQUEST['mds-action'] ) ) {
+	if ( $_REQUEST['mds-action'] == 'complete' ) {
 
-	if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == Orders::get_current_order_id() ) {
-		// convert the temp order to an order.
+		if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == Orders::get_current_order_id() ) {
+			// convert the temp order to an order.
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "' ";
-		$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "' ";
+			$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
-		if ( mysqli_num_rows( $order_result ) == 0 ) {
-			// no order id found...
-			if ( wp_doing_ajax() ) {
-				Functions::no_orders();
-				wp_die();
+			if ( mysqli_num_rows( $order_result ) == 0 ) {
+				// no order id found...
+				if ( wp_doing_ajax() ) {
+					Functions::no_orders();
+					wp_die();
+				}
+
+				Utility::redirect( Utility::get_page_url( 'no-orders' ) );
+			} else if ( $order_row = mysqli_fetch_array( $order_result ) ) {
+
+				$_REQUEST['order_id'] = reserve_pixels_for_temp_order( $order_row );
+			} else {
+
+				Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
+				Language::out_replace(
+					'<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>',
+					'%ORDER_PAGE%',
+					Utility::get_page_url( 'order' )
+				);
+
+				require_once MDS_CORE_PATH . "html/footer.php";
+				die();
 			}
+		}
 
-			Utility::redirect( Utility::get_page_url( 'no-orders' ) );
-		} else if ( $order_row = mysqli_fetch_array( $order_result ) ) {
+		$sql = $wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
+			intval( $_REQUEST['order_id'] ),
+			get_current_user_id()
+		);
 
-			$_REQUEST['order_id'] = reserve_pixels_for_temp_order( $order_row );
-		} else {
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
-			Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
-			Language::out_replace(
-				'<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>',
-				'%ORDER_PAGE%',
-				Utility::get_page_url( 'order' )
+		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+
+		if ( ( $row['price'] == 0 ) || ( $privileged == '1' ) ) {
+			complete_order( $row['user_id'], $row['order_id'] );
+			// no transaction for this order
+			Language::out( '<h3>Your order was completed.</h3>' );
+		}
+
+		// publish
+		if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
+			process_image( $BID );
+			publish_image( $BID );
+			process_map( $BID );
+		}
+	} else if ( isset( $_REQUEST['aid'] ) ) {
+
+		$order_id = Orders::get_current_order_id();
+		if ( empty( $order_id ) ) {
+			$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE ad_id='" . intval( $_REQUEST['aid'] ) . "'";
+			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+			$row      = mysqli_fetch_array( $result );
+			$order_id = $row['order_id'];
+		}
+
+		if ( Orders::is_order_in_progress( $order_id ) && \MillionDollarScript\Classes\Options::get_option( 'order-locking', false ) ) {
+			// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
+
+			$sql = $wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
+				intval( $order_id ),
+				get_current_user_id()
 			);
 
-			require_once MDS_CORE_PATH . "html/footer.php";
-			die();
+			$row          = $wpdb->get_row( $sql, ARRAY_A );
+			$order_status = Orders::get_completion_status( $order_id, $user_id );
+			if ( $order_status && $row['status'] !== 'denied' ) {
+				// User should never get here, so we will just redirect them to the manage page.
+				Utility::redirect( Utility::get_page_url( 'manage' ) . '?json=true' );
+			}
 		}
-	}
-
-	$sql = $wpdb->prepare(
-		"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
-		intval( $_REQUEST['order_id'] ),
-		get_current_user_id()
-	);
-
-	$row = $wpdb->get_row( $sql, ARRAY_A );
-
-	$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
-
-	if ( ( $row['price'] == 0 ) || ( $privileged == '1' ) ) {
-		complete_order( $row['user_id'], $row['order_id'] );
-		// no transaction for this order
-		Language::out( '<h3>Your order was completed.</h3>' );
-	}
-
-	// publish
-	if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
-		process_image( $BID );
-		publish_image( $BID );
-		process_map( $BID );
 	}
 }
 
 // Banner Selection form
 // Load this form only if more than 1 grid exists with pixels purchased.
 
-$user_id = get_current_user_id();
-$sql     = $wpdb->prepare(
+$sql = $wpdb->prepare(
 	"SELECT DISTINCT b.banner_id, b.name, b.enabled 
     FROM " . MDS_DB_PREFIX . "orders AS o
     INNER JOIN " . MDS_DB_PREFIX . "banners AS b ON o.banner_id = b.banner_id 
-    WHERE o.user_id = %d AND (o.status = 'completed' OR o.status = 'expired') 
+    WHERE o.user_id = %d AND (o.status = 'completed' OR o.status = 'expired' OR o.status = 'denied') 
     ORDER BY b.name", $user_id );
 
 $res = $wpdb->get_results( $sql, ARRAY_A );
@@ -238,7 +266,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	if ( ! empty( $_REQUEST['change_pixels'] ) && \MillionDollarScript\Classes\Options::get_option( 'order-locking', false ) ) {
 		// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
 		$order_status = Orders::get_completion_status( $order_id, $user_id );
-		if ( $order_status ) {
+		if ( $order_status && $row['status'] !== 'denied' ) {
 			// User should never get here, so we will just redirect them to the manage page.
 			Utility::redirect( Utility::get_page_url( 'manage' ) );
 		}
@@ -255,6 +283,11 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		$mds_error = Language::get( 'No file was uploaded.' );
 
 		return;
+	} else if ( ! empty( $_REQUEST['change_pixels'] ) && isset( $_FILES ) ) {
+		// The image was uploaded successfully.
+		if ( $row['status'] == 'denied' ) {
+			pend_order( $order_id );
+		}
 	}
 
 	// If not uploading a new image, check if the order is valid.
@@ -408,7 +441,7 @@ if ( $count > 0 ) {
 
 	if ( mysqli_num_rows( $result4 ) > 0 ) {
 		?>
-        <div style="border-color:#FF9797; border-style:solid;padding:5px;"><?php Language::out( 'Note: Your pixels are waiting for approval. They will be scheduled to go live once they are approved.' ); ?></div>
+        <div class="mds-error"><?php Language::out( 'Note: Your pixels are waiting for approval. They will be scheduled to go live once they are approved.' ); ?></div>
 		<?php
 	} else {
 
@@ -438,7 +471,7 @@ if ( $count > 0 ) {
 	$sql = $wpdb->prepare(
 		"SELECT b.* FROM " . MDS_DB_PREFIX . "blocks AS b
     INNER JOIN " . MDS_DB_PREFIX . "orders AS o ON b.order_id = o.order_id
-    WHERE b.user_id=%d AND b.status IN ('sold','ordered') AND b.banner_id=%d
+    WHERE b.user_id=%d AND b.status IN ('sold','ordered','denied') AND b.banner_id=%d
     AND o.status NOT IN ('confirmed', 'new', 'deleted')",
 		get_current_user_id(),
 		intval( $BID )

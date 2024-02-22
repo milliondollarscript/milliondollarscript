@@ -227,6 +227,32 @@ defined( 'ABSPATH' ) or exit;
         </div>
 
         <div class="admin-config-left">
+            Email Advertiser when an order is Denied?
+        </div>
+        <div class="admin-config-right">
+            <label>
+			    <?php
+			    $EMAIL_USER_ORDER_DENIED = Config::get( 'EMAIL_USER_ORDER_DENIED' );
+			    ?>
+                <input type="radio" name="EMAIL_USER_ORDER_DENIED" value="YES" <?php echo( $EMAIL_USER_ORDER_DENIED == 'YES' ? 'checked' : '' ); ?> /> Yes<br/>
+                <input type="radio" name="EMAIL_USER_ORDER_DENIED" value="NO" <?php echo( $EMAIL_USER_ORDER_DENIED == 'NO' ? 'checked' : '' ); ?> /> No
+            </label>
+        </div>
+
+        <div class="admin-config-left">
+            Email Admin when an order is Denied?
+        </div>
+        <div class="admin-config-right">
+            <label>
+			    <?php
+			    $EMAIL_ADMIN_ORDER_DENIED = Config::get( 'EMAIL_ADMIN_ORDER_DENIED' );
+			    ?>
+                <input type="radio" name="EMAIL_ADMIN_ORDER_DENIED" value="YES" <?php echo( $EMAIL_ADMIN_ORDER_DENIED == 'YES' ? 'checked' : '' ); ?> /> Yes<br/>
+                <input type="radio" name="EMAIL_ADMIN_ORDER_DENIED" value="NO" <?php echo( $EMAIL_ADMIN_ORDER_DENIED == 'NO' ? 'checked' : '' ); ?> /> No
+            </label>
+        </div>
+
+        <div class="admin-config-left">
             Pixels Modified: Send a notification email to Admin?
         </div>
         <div class="admin-config-right">

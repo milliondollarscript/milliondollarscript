@@ -211,7 +211,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 		$user_id = get_current_user_id();
 	}
 
-	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND (`status` IN ('pending','completed','expired','renew_wait','renew_paid')) ORDER BY %s %s", $BID, $user_id, $order, $ord );
+	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND (`status` IN ('denied','pending','completed','expired','renew_wait','renew_paid')) ORDER BY %s %s", $BID, $user_id, $order, $ord );
 	$result = $wpdb->get_results( $sql, ARRAY_A );
 
 	$count = count( $result );
@@ -235,12 +235,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 		?>
         <div class="mds-pixels-list">
             <div class="mds-pixels-list-heading">
-				<?php
-				if ( ! $order_locking ) {
-					?>
-                    <div>&nbsp;</div><?php
-				}
-				?>
+                <div>&nbsp;</div>
                 <div><?php Language::out( 'Pixels' ); ?></div>
                 <div><?php Language::out( 'Expires' ); ?></div>
                 <div><?php Language::out( 'Status' ); ?></div>
@@ -258,16 +253,19 @@ function list_ads( $offset = 0, $user_id = '' ) {
 
 				?>
                 <div class="mds-pixels-list-row">
-					<?php
-					if ( ! $order_locking ) {
-						?>
-                        <div>
+                    <div>
+						<?php
+						$order_status = Orders::get_completion_status( $prams['order_id'], $user_id );
+						if ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) {
+
+							?>
                             <input class="mds-button" type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
                                    onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>'">
-                        </div>
-						<?php
-					}
-
+							<?php
+						}
+						?>
+                    </div>
+					<?php
 					$column_list = [];
 					echo_ad_list_data();
 
@@ -325,7 +323,47 @@ function list_ads( $offset = 0, $user_id = '' ) {
 						$app = Language::get( 'Not Approved' ) . ', ';
 					}
 					?>
-                    <div><?php echo $app . $pub; ?></div>
+                    <div>
+						<?php
+						switch ( $prams['status'] ) {
+							case 'pending':
+								Language::out( 'Pending' );
+								break;
+							case 'completed':
+								Language::out( 'Completed' );
+								break;
+							case 'cancelled':
+								Language::out( 'Cancelled' );
+								break;
+							case 'confirmed':
+								Language::out( 'Confirmed' );
+								break;
+							case 'new':
+								Language::out( 'New' );
+								break;
+							case 'expired':
+								Language::out( 'Expired' );
+								break;
+							case 'denied':
+								Language::out( 'Denied' );
+								break;
+							case 'deleted':
+								Language::out( 'Deleted' );
+								break;
+							case 'renew_wait':
+								Language::out( 'Renew Now' );
+								break;
+							case 'renew_paid':
+								Language::out( 'Renewal Paid' );
+								break;
+							default:
+								break;
+						}
+						echo "<br />";
+
+						echo $app . $pub;
+						?>
+                    </div>
 					<?php
 
 					?>

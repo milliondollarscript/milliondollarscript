@@ -73,6 +73,8 @@ class Config {
 			'EMAIL_ADMIN_ORDER_PENDED'    => [ 'value' => 'YES', 'type' => 's' ],
 			'EMAIL_USER_ORDER_EXPIRED'    => [ 'value' => 'YES', 'type' => 's' ],
 			'EMAIL_ADMIN_ORDER_EXPIRED'   => [ 'value' => 'YES', 'type' => 's' ],
+			'EMAIL_USER_ORDER_DENIED'     => [ 'value' => 'YES', 'type' => 's' ],
+			'EMAIL_ADMIN_ORDER_DENIED'    => [ 'value' => 'YES', 'type' => 's' ],
 			'EMAIL_ADMIN_PUBLISH_NOTIFY'  => [ 'value' => 'YES', 'type' => 's' ],
 			'EMAIL_USER_EXPIRE_WARNING'   => [ 'value' => '', 'type' => 's' ],
 			'EMAILS_DAYS_KEEP'            => [ 'value' => '30', 'type' => 's' ],

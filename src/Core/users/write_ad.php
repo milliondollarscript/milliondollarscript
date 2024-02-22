@@ -97,8 +97,16 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 			if ( empty( $order_id ) ) {
 				$is_error = true;
 			} else {
+				global $wpdb;
+				$sql = $wpdb->prepare(
+					"SELECT status FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d",
+					$order_id,
+					$user_id
+				);
+
+				$status = $wpdb->get_var( $sql );
 				$completion_status = Orders::get_completion_status( $order_id, $user_id );
-				if ( $completion_status ) {
+				if ( $completion_status && $status !== 'denied') {
 					$is_error = true;
 				}
 			}
@@ -132,6 +140,18 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
 		$sql      = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='$ad_id' WHERE order_id='" . intval( $order_id ) . "' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+
+		global $wpdb;
+		$sql = $wpdb->prepare(
+			"SELECT status FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d",
+			$order_id,
+			$user_id
+		);
+
+		$status = $wpdb->get_var( $sql );
+		if ( $status == 'denied' ) {
+			pend_order( $order_id );
+		}
 
 		if ( isset( $_REQUEST['manage-pixels'] ) ) {
 			Utility::redirect( Utility::get_page_url( 'manage' ) );
@@ -172,7 +192,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 
 	// get the ad_id form the temp_orders table.
 	if ( empty( $ad_id ) ) {
-		$sql = "SELECT ad_id FROM " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "'";
+		$sql = "SELECT ad_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $order_id ) . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 		$row   = mysqli_fetch_array( $result );
 		$ad_id = $row['ad_id'];

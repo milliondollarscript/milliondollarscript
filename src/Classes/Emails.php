@@ -271,6 +271,54 @@ URLS:<br />
 ' ) )
 			     ->set_help_text( Language::get_replace( 'This email is sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
 
+			// Order Denied
+			Field::make( 'separator', MDS_PREFIX . 'order-denied-separator', Language::get( 'Order denied' ) ),
+
+			Field::make( 'text', MDS_PREFIX . 'order-denied-subject', Language::get( 'Order Denied Subject' ) )
+			     ->set_default_value( Language::get( 'Order Denied' ) )
+			     ->set_help_text( Language::get( 'The subject line of the email sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+
+			Field::make( 'rich_text', MDS_PREFIX . 'order-denied-content', Language::get( 'Order Denied Content' ) )
+			     ->set_settings( array( 'media_buttons' => false ) )
+			     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
+<br />
+Dear %FIRST_NAME% %LAST_NAME%,<br />
+<br />
+Your order status changed to \'Denied\' on %SITE_NAME%.<br />
+<br />
+This means that your pixels have been denied and will
+not be show on the grid.<br />
+<br />
+Please log in and update your order:<br />
+<br />
+1. Log in to your account<br />
+<br />
+2. Go to \'Order History\'<br />
+<br />
+3. Click on \'Manage\' on the Order shown as \'Denied\'.<br />
+<br />
+4. Complete the payment<br />
+<br />
+========================<br />
+ORDER DETAILS<br />
+=========================<br />
+Order ID: #%ORDER_ID%<br />
+Pixels: %PIXEL_COUNT%<br />
+Days: %PIXEL_DAYS%<br />
+Price: %PRICE%<br />
+Status: Denied<br />
+--------------------------.<br />
+<br />
+Feel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> 
+<br />
+Thank you!<br />
+<br />
+%SITE_NAME% team.<br />
+%SITE_URL%<br />
+<br />
+Note: This is an automated email.<br />
+' ) )
+			     ->set_help_text( Language::get( 'This email is sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
 		];
 
 		$fields = apply_filters( 'mds_email_fields', $fields, MDS_PREFIX );

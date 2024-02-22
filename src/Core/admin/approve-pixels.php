@@ -26,8 +26,12 @@
  *
  */
 
+use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Currency;
+use MillionDollarScript\Classes\Emails;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Mail;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -119,7 +123,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disapprove'
 	$sql = "UPDATE " . MDS_DB_PREFIX . "orders set approved='N' WHERE order_id='" . intval( $_REQUEST['order_id'] ) . "' {$bid_sql}";
 	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
-	Language::out( 'Orders Disapproved' );
+	Language::out( 'Order Disapproved' );
 	echo "<br/>";
 }
 
@@ -136,6 +140,103 @@ if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != ''
 		Language::out( 'Orders Disapproved' );
 		echo "<br/>";
 	}
+}
+
+if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
+    global $wpdb;
+
+    // TODO: Add denied order status.
+
+	$order_id = intval( $_REQUEST['order_id'] );
+	$wpdb->update(
+		MDS_DB_PREFIX . "blocks",
+		[
+			'approved' => 'N',
+			'status'   => 'denied',
+		],
+		[ 'order_id' => $order_id ]
+	);
+	$wpdb->update(
+		MDS_DB_PREFIX . "orders",
+		[
+			'approved' => 'N',
+			'status'   => 'denied'
+		],
+		[ 'order_id' => $order_id ]
+	);
+
+	// Send email
+	global $wpdb;
+	$sql = $wpdb->prepare(
+		"SELECT *, t1.banner_id as BID, t1.user_id as UID, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id=%s",
+		$order_id
+	);
+	$row = $wpdb->get_row( $sql, ARRAY_A );
+
+	$user_info = get_userdata( $row['UID'] );
+	wp_update_post( [
+		'ID'          => $row['ad_id'],
+		'post_status' => 'private',
+	] );
+
+	$banner_data = load_banner_constants( $row['banner_id'] );
+	$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+
+	$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
+
+	$search = [
+		'%SITE_NAME%',
+		'%FIRST_NAME%',
+		'%LAST_NAME%',
+		'%USER_LOGIN%',
+		'%ORDER_ID%',
+		'%PIXEL_COUNT%',
+		'%BLOCK_COUNT%',
+		'%PIXEL_DAYS%',
+		'%PRICE%',
+		'%SITE_CONTACT_EMAIL%',
+		'%SITE_URL%',
+	];
+
+	$replace = [
+		get_bloginfo( 'name' ),
+		$user_info->first_name,
+		$user_info->last_name,
+		$user_info->user_login,
+		$row['order_id'],
+		$row['quantity'],
+		$block_count,
+		$row['days_expire'],
+		$price,
+		get_bloginfo( 'admin_email' ),
+		get_site_url(),
+	];
+
+	$subject = Emails::get_email_replace(
+		$search,
+		$replace,
+		'order-denied-subject'
+	);
+
+	$message = Emails::get_email_replace(
+		$search,
+		$replace,
+		'order-denied-content'
+	);
+
+	$EMAIL_USER_ORDER_DENIED = Config::get( 'EMAIL_USER_ORDER_DENIED' );
+	if ( $EMAIL_USER_ORDER_DENIED == 'YES' ) {
+		Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 4 );
+	}
+
+	// send a copy to admin
+	$EMAIL_ADMIN_ORDER_DENIED = Config::get( 'EMAIL_ADMIN_ORDER_DENIED' );
+	if ( $EMAIL_ADMIN_ORDER_DENIED == 'YES' ) {
+		Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 4 );
+	}
+
+	Language::out( 'Order Denied' );
+	echo "<br/>";
 }
 
 if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) {
@@ -286,6 +387,7 @@ SELECT " . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.user_id, 
     FROM " . MDS_DB_PREFIX . "blocks, " . MDS_DB_PREFIX . "orders 
     WHERE " . MDS_DB_PREFIX . "orders.approved='" . $Y_or_N . "' 
       AND " . MDS_DB_PREFIX . "orders.order_id=" . MDS_DB_PREFIX . "blocks.order_id 
+      AND " . MDS_DB_PREFIX . "orders.status!='denied' 
       {$bid_sql2}
     GROUP BY " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.order_date, " . MDS_DB_PREFIX . "blocks.approved, " . MDS_DB_PREFIX . "blocks.status, " . MDS_DB_PREFIX . "blocks.user_id, " . MDS_DB_PREFIX . "blocks.banner_id, " . MDS_DB_PREFIX . "blocks.ad_id
     ORDER BY " . MDS_DB_PREFIX . "orders.order_date
@@ -417,17 +519,21 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
                 <td><span style="font-family: Arial,serif; "><?php
 						if ( $row['approved'] == 'N' ) {
 							?>
-                            <input type="button" style="font-size: 9px; background-color: #33FF66" value="Approve"
-                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=approve&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked"><?php
+                            <input type="button" style="background-color: #33FF66" value="Approve"
+                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=approve&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
+ 							<?php
 						}
 
 						if ( $row['approved'] != 'N' ) {
 							?>
-                            <input type="button" style="font-size: 9px;" value="Disapprove"
-                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>disapprove-pixels&mds-action=disapprove&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo $row['order_id']; ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked"><?php
+                            <input type="button" style="" value="Disapprove"
+                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>disapprove-pixels&mds-action=disapprove&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo $row['order_id']; ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
+							<?php
 						}
 
 						?>
+                           <input type="button" style="background-color: #ff3333;color:#fff;" value="Deny"
+                                  onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=deny&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
 	 </span></td>
             </tr>
 			<?php

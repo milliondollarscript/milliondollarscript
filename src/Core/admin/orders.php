@@ -133,7 +133,7 @@ $q_email    = isset( $_REQUEST['q_email'] ) && filter_var( $_REQUEST['q_email'],
 $q_company  = isset( $_REQUEST['q_company'] ) && is_string( $_REQUEST['q_company'] ) ? $_REQUEST['q_company'] : '';
 $search     = isset( $_REQUEST['search'] ) && is_string( $_REQUEST['search'] ) ? $_REQUEST['search'] : '';
 
-$valid_show  = [ 'reserved', 'waiting', 'completed', 'expired', 'cancelled', 'deleted' ];
+$valid_show  = [ 'reserved', 'waiting', 'completed', 'expired', 'denied', 'cancelled', 'deleted' ];
 $show        = isset( $_REQUEST['show'] ) && in_array( $_REQUEST['show'], $valid_show ) ? $_REQUEST['show'] : '';
 $show_suffix = ! empty( $show ) ? '-' . $show : '';
 
@@ -154,6 +154,9 @@ if ( $show == 'reserved' ) {
 } else if ( $show == 'expired' ) {
 	$where_sql = " AND (status ='expired') ";
 	$date_link = "&show=expired";
+} else if ( $show == 'denied' ) {
+	$where_sql = " AND (status ='denied') ";
+	$date_link = "&show=denied";
 } else if ( $show == 'deleted' ) {
 	$where_sql = " AND (status ='deleted') ";
 	$date_link = "&show=deleted";
@@ -458,6 +461,9 @@ switch ( $show ) {
 		break;
 	case 'expired':
 		echo '<p>Showing expired orders.</p>';
+		break;
+	case 'denied':
+		echo '<p>Showing denied orders.</p>';
 		break;
 	case 'cancelled':
 		echo '<p>Showing cancelled orders. Note: Blocks are kept reserved for cancelled orders. Delete the order to free the blocks.</p>';

@@ -283,6 +283,7 @@ class Admin {
 				'Orders: Completed',
 				'Orders: Reserved',
 				'Orders: Expired',
+				'Orders: Denied',
 				'Orders: Cancelled',
 				'Orders: Deleted',
 				'Map of Orders',

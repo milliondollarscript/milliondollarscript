@@ -562,6 +562,31 @@ jQuery(document).ready(function () {
 							jQuery(container).html(data);
 						}
 					} else {
+						try {
+							let parsed = jQuery.parseJSON(data);
+							if (parsed.success === true) {
+								if (parsed.data) {
+									if (parsed.data.redirect) {
+										jQuery(container).html(parsed.data.message);
+										window.location = parsed.data.redirect;
+									} else {
+										jQuery(container).html(parsed.data);
+									}
+								}
+							} else if (parsed.success === false) {
+								if (parsed.data) {
+									if (parsed.data.message) {
+										jQuery(container).html(parsed.data.message);
+									} else {
+										jQuery(container).html(parsed.data);
+									}
+								}
+							} else {
+								console.log("Unknown data: ", parsed);
+							}
+						} catch (e) {
+							jQuery(container).html(data);
+						}
 					}
 				},
 				error: function (jqXHR, textStatus, errorThrown) {

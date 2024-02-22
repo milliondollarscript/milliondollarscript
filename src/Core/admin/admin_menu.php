@@ -59,6 +59,7 @@ defined( 'ABSPATH' ) or exit;
     - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-reserved' ); ?>"><?php Language::out('Orders: Reserved'); ?></a><br/>
     <span><?php Language::out('Non-current orders:'); ?></span><br>
     - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-expired' ); ?>"><?php Language::out('Orders: Expired'); ?></a><br/>
+    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-denied' ); ?>"><?php Language::out('Orders: Denied'); ?></a><br/>
     - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-cancelled' ); ?>"><?php Language::out('Orders: Cancelled'); ?></a><br/>
     - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-deleted' ); ?>"><?php Language::out('Orders: Deleted'); ?></a><br/>
     <span><?php Language::out('Map:'); ?></span><br>

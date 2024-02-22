@@ -254,7 +254,7 @@ class Payment {
 			}
 		} else {
 
-			pend_order( get_current_user_id(), $order_id );
+			pend_order( $order_id );
 
 			// Only output if the URL has the endpoint in it or is an AJAX request.
 			if ( Utility::has_endpoint_or_ajax() ) {

@@ -210,6 +210,9 @@ usort( $orders, "date_sort" );
 						case 'expired':
 							Language::out( 'Expired' );
 							break;
+						case 'denied':
+							Language::out( 'Denied' );
+							break;
 						case 'deleted':
 							Language::out( 'Deleted' );
 							break;
@@ -324,6 +327,9 @@ usort( $orders, "date_sort" );
 						case "pending":
 						case "cancelled":
 						case "deleted":
+							break;
+						case "denied":
+							echo "<a class='mds-button mds-manage' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
 							break;
 						default:
 					}
