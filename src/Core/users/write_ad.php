@@ -151,6 +151,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		$status = $wpdb->get_var( $sql );
 		if ( $status == 'denied' ) {
 			pend_order( $order_id );
+			Orders::reset_order_progress();
 		}
 
 		if ( isset( $_REQUEST['manage-pixels'] ) ) {

@@ -287,6 +287,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		// The image was uploaded successfully.
 		if ( $row['status'] == 'denied' ) {
 			pend_order( $order_id );
+			Orders::reset_order_progress();
 		}
 	}
 
