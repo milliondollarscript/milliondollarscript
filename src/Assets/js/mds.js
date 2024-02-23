@@ -513,6 +513,17 @@ jQuery(document).ready(function () {
 
 		if (container.length > 0) {
 			add_ajax_loader(container);
+
+			// strip "json" parameter from URL
+			const url = new URL(window.location);
+			const params = new URLSearchParams(url.search);
+			const jsonParam = params.get('json');
+			if (jsonParam === '1') {
+				params.delete('json');
+				url.search = params.toString();
+				window.history.replaceState({}, '', url.toString());
+			}
+
 			window.mds_ajax_request = jQuery.ajax({
 				url: MDS.ajaxurl,
 				data: {

@@ -47,9 +47,15 @@ if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 	exit;
 }
 
-if ( empty( $_REQUEST['change_pixels'] ) && empty( $_FILES ) && ! isset( $_REQUEST['json'] ) ) {
+$wrap = false;
+if ( empty( $_REQUEST['change_pixels'] ) && empty( $_FILES ) && empty( $_REQUEST['json'] ) ) {
+	$wrap = true;
+}
+
+if ( $wrap ) {
 	require_once MDS_CORE_PATH . "html/header.php";
 }
+
 
 $gd_info      = gd_info();
 $gif_support  = '';
@@ -131,7 +137,8 @@ if ( isset( $_REQUEST['mds-action'] ) ) {
 		}
 	} else if ( isset( $_REQUEST['aid'] ) ) {
 
-		$order_id = Orders::get_current_order_id();
+		$order_id = carbon_get_post_meta( intval( $_REQUEST['aid'] ), MDS_PREFIX . 'order' );
+		Orders::set_current_order_id( $order_id );
 		if ( empty( $order_id ) ) {
 			$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE ad_id='" . intval( $_REQUEST['aid'] ) . "'";
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
@@ -152,7 +159,7 @@ if ( isset( $_REQUEST['mds-action'] ) ) {
 			$order_status = Orders::get_completion_status( $order_id, $user_id );
 			if ( $order_status && $row['status'] !== 'denied' ) {
 				// User should never get here, so we will just redirect them to the manage page.
-				Utility::redirect( Utility::get_page_url( 'manage' ) . '?json=true' );
+				Utility::redirect( Utility::get_page_url( 'manage' ) );
 			}
 		}
 	}
@@ -543,4 +550,7 @@ if ( $count > 0 ) {
 } else {
 	Language::out_replace( 'You have no pixels yet. Go <a href="%ORDER_URL%">here</a> to order pixels.', '%ORDER_URL%', Utility::get_page_url( 'order' ) );
 }
-require_once MDS_CORE_PATH . "html/footer.php";
+
+if ( $wrap ) {
+	require_once MDS_CORE_PATH . "html/footer.php";
+}

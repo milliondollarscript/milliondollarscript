@@ -117,9 +117,6 @@ class Ajax {
 					default:
 						break;
 				}
-
-				global $ajax_call;
-				$ajax_call = true;
 			}
 		}
 
