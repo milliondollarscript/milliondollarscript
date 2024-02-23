@@ -256,14 +256,14 @@ class FormFields {
 				echo '<input type="file" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '">';
 			}
 
-			// Manage Pixels page
-			if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'manage' && isset( $_REQUEST['aid'] ) ) {
-				echo '<input type="hidden" id="manage-pixels" name="manage-pixels" value="' . intval( $_REQUEST['aid'] ) . '">';
-			}
-
 			if ( ! empty( $error_message[ $field_name ] ) ) {
 				echo '<div class="mds-error">' . $error_message[ $field_name ] . '</div>';
 			}
+		}
+
+		// Manage Pixels page
+		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'manage' && isset( $_REQUEST['aid'] ) ) {
+			echo '<input type="hidden" id="manage-pixels" name="manage-pixels" value="' . intval( $_REQUEST['aid'] ) . '">';
 		}
 
 		return $show_required;
