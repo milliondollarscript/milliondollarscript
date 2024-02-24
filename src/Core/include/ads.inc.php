@@ -517,7 +517,13 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 
 		$filename   = sanitize_file_name( $files['name'] );
 		$file_parts = pathinfo( $filename );
-		$ext        = $f2->filter( strtolower( $file_parts['extension'] ) );
+
+		// Check if the 'extension' key exists
+		if ( isset( $file_parts['extension'] ) ) {
+			$ext = $f2->filter( strtolower( $file_parts['extension'] ) );
+		} else {
+			$ext = '';
+		}
 
 		$mime_type          = mime_content_type( $files['tmp_name'] );
 		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
@@ -643,8 +649,19 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 							$cb        = ( ( $map_x ) / $banner_data['BLK_WIDTH'] ) + ( ( $map_y / $banner_data['BLK_HEIGHT'] ) * ( $GRD_WIDTH / $banner_data['BLK_WIDTH'] ) );
 
 							// save to db
-							$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET image_data='" . mysqli_real_escape_string( $GLOBALS['connection'], $image_data ) . "' where block_id=" . intval( $cb ) . " AND banner_id=" . intval( $BID ) . ' AND order_id=' . intval( $order_id );
-							mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+							global $wpdb;
+
+							// prepare SQL query and sanitize variables
+							$sql = $wpdb->prepare(
+								"UPDATE " . MDS_DB_PREFIX . "blocks SET image_data=%s WHERE block_id=%d AND banner_id=%d AND order_id=%d",
+								$image_data,
+								intval( $cb ),
+								intval( $BID ),
+								intval( $order_id )
+							);
+
+							// execute SQL query
+							$wpdb->query( $sql );
 						}
 					}
 				}
