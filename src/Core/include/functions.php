@@ -1183,10 +1183,14 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 		require_once( MDS_CORE_PATH . "include/ads.inc.php" );
 	}
 
-	$blocks         = array();
-	$clicked_blocks = array();
-	$removed_blocks = array();
-	$return_val     = "";
+	$blocks         = [];
+	$clicked_blocks = [];
+	$removed_blocks = [];
+	$return_val     = [
+		'error' => false,
+		'type'  => '',
+		'data'  => []
+	];
 
 	$sql = "SELECT status, user_id, ad_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=" . intval( $clicked_block ) . " AND banner_id=" . intval( $BID );
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
