@@ -205,28 +205,24 @@ class Users {
 			require_once MDS_CORE_PATH . "html/header.php";
 		}
 
-		global $f2;
+		global $f2, $wpdb;
 		$BID = $f2->bid();
-		$sql = "SELECT grid_width,grid_height, block_width, block_height, bgcolor, time_stamp FROM " . MDS_DB_PREFIX . "banners WHERE (banner_id = '$BID')";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$b_row = mysqli_fetch_array( $result );
 
-		if ( ! $b_row['block_width'] ) {
-			$b_row['block_width'] = 10;
-		}
-		if ( ! $b_row['block_height'] ) {
-			$b_row['block_height'] = 10;
-		}
+		$sql   = $wpdb->prepare( "SELECT grid_width,grid_height, block_width, block_height, bgcolor, time_stamp FROM " . MDS_DB_PREFIX . "banners WHERE (banner_id = %d)", $BID );
+		$b_row = $wpdb->get_row( $sql, ARRAY_A );
+
+		$b_row['block_width']  = ( ! empty( $b_row['block_width'] ) ) ? $b_row['block_width'] : 10;
+		$b_row['block_height'] = ( ! empty( $b_row['block_height'] ) ) ? $b_row['block_height'] : 10;
 
 		$user_id = get_current_user_id();
 
-		$sql = "select block_id from " . MDS_DB_PREFIX . "blocks where user_id='" . $user_id . "' and status='sold' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$pixels = mysqli_num_rows( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
+		$sql    = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE (user_id = %d) AND (status = 'sold')", $user_id );
+		$result = $wpdb->get_results( $sql );
+		$pixels = count( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
 
-		$sql = "select block_id from " . MDS_DB_PREFIX . "blocks where user_id='" . $user_id . "' and status='ordered' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$ordered = mysqli_num_rows( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
+		$sql     = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE (user_id = %d) AND (status = 'ordered')", $user_id );
+		$result  = $wpdb->get_results( $sql );
+		$ordered = count( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
 
 		// Replacements for custom page links in WP
 		$order_page   = Utility::get_page_url( 'order' );
