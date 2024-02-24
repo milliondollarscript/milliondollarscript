@@ -48,9 +48,16 @@ $advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
 if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 
-	$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "' ";
-	$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-	if ( mysqli_num_rows( $order_result ) == 0 ) {
+	global $wpdb;
+
+	$sql = $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+		intval( Orders::get_current_order_id() )
+	);
+
+	$order_result = $wpdb->get_results( $sql );
+
+	if ( count( $order_result ) == 0 ) {
 		if ( wp_doing_ajax() ) {
 			Functions::no_orders();
 			wp_die();
@@ -59,7 +66,7 @@ if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 		Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 	}
 
-	$row = mysqli_fetch_array( $order_result );
+	$row = $order_result[0];
 
 	if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
 		update_temp_order_timestamp();
@@ -137,10 +144,17 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		// save ad_id with the temp order...
 
 		$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
-		$sql      = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='$ad_id' WHERE order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		global $wpdb;
+
+		$update = $wpdb->update(
+			MDS_DB_PREFIX . 'orders',
+			array( 'ad_id' => intval( $ad_id ) ),
+			array( 'order_id' => intval( $order_id ) ),
+			array( '%d' ),
+			array( '%d' )
+		);
+
 		$sql = $wpdb->prepare(
 			"SELECT status FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d",
 			$order_id,
@@ -192,10 +206,14 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 
 	// get the ad_id form the temp_orders table.
 	if ( empty( $ad_id ) ) {
-		$sql = "SELECT ad_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $order_id ) . "'";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$row   = mysqli_fetch_array( $result );
-		$ad_id = $row['ad_id'];
+		global $wpdb;
+
+		$ad_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT ad_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				intval( $order_id )
+			)
+		);
 	}
 
 	// user is not logged in
