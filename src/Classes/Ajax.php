@@ -56,8 +56,24 @@ class Ajax {
 		// Handle POST input
 		if ( isset( $_POST ) ) {
 
-			$type     = $_POST['type'] ?? null;
-			$_GET     = isset( $_POST['get_params'] ) ? json_decode( stripslashes( $_POST['get_params'] ), true ) : [];
+			$type = $_POST['type'] ?? null;
+			$_GET = [];
+
+			// Check if 'get_params' is set
+			if ( isset( $_POST['get_params'] ) ) {
+				$json = json_decode( stripslashes( $_POST['get_params'] ), true );
+
+				// Catch broken JSON in get_params
+				if ( json_last_error() === JSON_ERROR_NONE ) {
+					$_GET = $json;
+				}
+			}
+
+			// Make sure $_POST and $_REQUEST are arrays
+			$_POST    = is_array( $_POST ) ? $_POST : [];
+			$_REQUEST = is_array( $_REQUEST ) ? $_REQUEST : [];
+
+			// Merge arrays
 			$_REQUEST = array_merge( $_GET, $_POST, $_REQUEST );
 
 			// Handle core MDS AJAX calls
