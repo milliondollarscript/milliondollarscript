@@ -95,7 +95,16 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 $tmp_image_file = get_tmp_img_name();
 
 if ( file_exists( $tmp_image_file ) ) {
-	$image = $imagine->open( $tmp_image_file );
+	try {
+		$image = $imagine->open( $tmp_image_file );
+	} catch ( Exception $e ) {
+		if ( isset( $_POST['mds_dest'] ) && isset( $_FILES ) ) {
+			global $mds_error;
+			$mds_error = Language::get( "There was an error with the image file." );
+
+			return;
+		}
+	}
 }
 
 $cannot_get_package = false;
