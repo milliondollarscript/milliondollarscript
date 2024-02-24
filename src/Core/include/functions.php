@@ -1218,7 +1218,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 
 		$is_adjacent = false;
 
-		if ( $_REQUEST['erase'] == "true" ) {
+		if ( isset( $_REQUEST['erase'] ) && $_REQUEST['erase'] == "true" ) {
 			if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 				// deselect
 				unset( $blocks2[ $block ] );
