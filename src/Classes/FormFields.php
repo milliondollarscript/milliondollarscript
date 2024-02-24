@@ -141,11 +141,11 @@ class FormFields {
 	/**
 	 * Get the ad id from the order id.
 	 *
-	 * @param $order_id
+	 * @param int $order_id
 	 *
 	 * @return \WP_Post|null
 	 */
-	public static function get_pixel_from_order_id( $order_id ): \WP_Post|null {
+	public static function get_pixel_from_order_id( int $order_id ): \WP_Post|null {
 		$args  = array(
 			'meta_query'     => array(
 				array(
@@ -179,7 +179,7 @@ class FormFields {
 				$post_id = $post->ID;
 			}
 		} else if ( isset( $_REQUEST['order_id'] ) ) {
-			$post = self::get_pixel_from_order_id( $_REQUEST['order_id'] );
+			$post = self::get_pixel_from_order_id( intval( $_REQUEST['order_id'] ) );
 			if ( $post != null ) {
 				$post_id = $post->ID;
 			}
