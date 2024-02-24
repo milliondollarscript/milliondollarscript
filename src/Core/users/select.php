@@ -111,30 +111,6 @@ $order_blocks = array_map( function ( $block_id ) use ( $BID ) {
 	];
 }, $block_ids );
 ?>
-    <script>
-		const select = {
-			NONCE: '<?php echo wp_create_nonce( 'mds-select' ); ?>',
-			UPDATE_ORDER: '<?php echo Utility::get_page_url( 'update-order' ); ?>',
-			USE_AJAX: '<?php echo $USE_AJAX; ?>',
-			block_str: '<?php echo $block_str; ?>',
-			grid_width: parseInt('<?php echo $banner_data['G_WIDTH']; ?>', 10),
-			grid_height: parseInt('<?php echo $banner_data['G_HEIGHT']; ?>', 10),
-			BLK_WIDTH: parseInt('<?php echo $banner_data['BLK_WIDTH']; ?>', 10),
-			BLK_HEIGHT: parseInt('<?php echo $banner_data['BLK_HEIGHT']; ?>', 10),
-			G_PRICE: parseFloat('<?php echo $banner_data['G_PRICE']; ?>'),
-			blocks: JSON.parse('<?php echo json_encode( $order_blocks ); ?>'),
-			user_id: parseInt('<?php echo get_current_user_id(); ?>', 10),
-			BID: parseInt('<?php echo $BID; ?>', 10),
-			time: '<?php echo time(); ?>',
-			advertiser_max_order: '<?php echo esc_js( Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ) ); ?>',
-			not_adjacent: '<?php echo esc_js( Language::get( 'You must select a block adjacent to another one.' ) ); ?>',
-			no_blocks_selected: '<?php echo esc_js( Language::get( 'You have no blocks selected.' ) ); ?>',
-			MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL ); ?>',
-			INVERT_PIXELS: '<?php echo \MillionDollarScript\Classes\Config::get( 'INVERT_PIXELS' ); ?>',
-			WAIT: '<?php echo esc_js( Language::get( 'Please Wait! Reserving Pixels...' ) ); ?>'
-		}
-    </script>
-
     <style>
         #block_pointer {
             padding: 0;

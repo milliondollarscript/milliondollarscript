@@ -26,8 +26,11 @@
  *
  */
 
+use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\FormFields;
 use MillionDollarScript\Classes\Functions;
 use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Options;
 use MillionDollarScript\Classes\Orders;
 use MillionDollarScript\Classes\Utility;
 
@@ -56,18 +59,17 @@ if ( $wrap ) {
 	require_once MDS_CORE_PATH . "html/header.php";
 }
 
-
 $gd_info      = gd_info();
 $gif_support  = '';
 $jpeg_support = '';
 $png_support  = '';
-if ( isset( $gd_info['GIF Read Support'] ) && ! empty( $gd_info['GIF Read Support'] ) ) {
+if ( ! empty( $gd_info['GIF Read Support'] ) ) {
 	$gif_support = "GIF";
 }
-if ( isset( $gd_info['JPEG Support'] ) && ! empty( $gd_info['JPEG Support'] ) || ( isset( $gd_info['JPG Support'] ) && ! empty( $gd_info['JPG Support'] ) ) ) {
+if ( ! empty( $gd_info['JPEG Support'] ) || ( ! empty( $gd_info['JPG Support'] ) ) ) {
 	$jpeg_support = "JPG";
 }
-if ( isset( $gd_info['PNG Support'] ) && ! empty( $gd_info['PNG Support'] ) ) {
+if ( ! empty( $gd_info['PNG Support'] ) ) {
 	$png_support = "PNG";
 }
 
@@ -137,27 +139,19 @@ if ( isset( $_REQUEST['mds-action'] ) ) {
 		}
 	} else if ( isset( $_REQUEST['aid'] ) ) {
 
-		$order_id = carbon_get_post_meta( intval( $_REQUEST['aid'] ), MDS_PREFIX . 'order' );
-		Orders::set_current_order_id( $order_id );
-		if ( empty( $order_id ) ) {
-			$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE ad_id='" . intval( $_REQUEST['aid'] ) . "'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-			$row      = mysqli_fetch_array( $result );
-			$order_id = $row['order_id'];
-		}
-
-		if ( Orders::is_order_in_progress( $order_id ) && \MillionDollarScript\Classes\Options::get_option( 'order-locking', false ) ) {
+		$order_id = Orders::get_order_id_from_ad_id( intval( $_REQUEST['aid'] ) );
+		if ( Options::get_option( 'order-locking', false ) ) {
 			// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
 
 			$sql = $wpdb->prepare(
 				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
-				intval( $order_id ),
+				$order_id,
 				get_current_user_id()
 			);
 
-			$row          = $wpdb->get_row( $sql, ARRAY_A );
-			$order_status = Orders::get_completion_status( $order_id, $user_id );
-			if ( $order_status && $row['status'] !== 'denied' ) {
+			$row               = $wpdb->get_row( $sql, ARRAY_A );
+			$completion_status = Orders::get_completion_status( $order_id, $user_id );
+			if ( $completion_status && $row['status'] !== 'denied' ) {
 				// User should never get here, so we will just redirect them to the manage page.
 				Utility::redirect( Utility::get_page_url( 'manage' ) );
 			}
@@ -202,7 +196,8 @@ if ( ! empty( $_REQUEST['block_id'] ) || ( isset( $_REQUEST['block_id'] ) && $_R
 	$sql     = $wpdb->prepare( "SELECT `user_id`, `ad_id`, `order_id` FROM " . MDS_DB_PREFIX . "blocks WHERE `banner_id`=%d AND `block_id`=%d", $BID, $block_id );
 	$blk_row = $wpdb->get_row( $sql, ARRAY_A );
 
-	if ( ! isset( $blk_row['ad_id'] ) || empty( $blk_row['ad_id'] ) ) { // no ad exists, create a new ad_id
+	if ( empty( $blk_row['ad_id'] ) ) {
+		// no ad exists, create a new ad_id
 		$_POST[ MDS_PREFIX . 'url' ]  = '';
 		$_POST[ MDS_PREFIX . 'text' ] = 'Pixel text';
 		$_REQUEST['order_id']         = $blk_row['order_id'];
@@ -237,11 +232,12 @@ if ( ! empty( $_REQUEST['block_id'] ) || ( isset( $_REQUEST['block_id'] ) && $_R
 }
 
 // Display ad editing forms if the ad was clicked, or 'Edit' button was pressed.
-if ( ! empty( $_REQUEST['aid'] ) ) {
+if ( ( ( isset( $_REQUEST['mds_dest'] ) && $_REQUEST['mds_dest'] == 'manage' ) || isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'manage' ) && ! empty( $_REQUEST['aid'] ) ) {
+	$ad_id = intval( $_REQUEST['aid'] );
 
 	if ( empty( $mds_pixel ) ) {
 		// Make sure the mds-pixel exists.
-		$mds_pixel = get_post( $_REQUEST['aid'] );
+		$mds_pixel = get_post( $ad_id );
 	}
 
 	if ( empty( $mds_pixel ) ) {
@@ -255,7 +251,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 
 	$user_id      = get_current_user_id();
 	$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE ad_id=%d AND user_id=%d";
-	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['aid'] ), $user_id );
+	$prepared_sql = $wpdb->prepare( $sql, $ad_id, $user_id );
 	$result       = $wpdb->get_results( $prepared_sql, ARRAY_A );
 
 	if ( ! empty( $result ) ) {
@@ -269,13 +265,18 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	}
 
 	$order_id = $row['order_id'];
-
-	if ( ! empty( $_REQUEST['change_pixels'] ) && \MillionDollarScript\Classes\Options::get_option( 'order-locking', false ) ) {
+	if ( /*! empty( $_REQUEST['change_pixels'] ) && */
+	Options::get_option( 'order-locking', false ) ) {
 		// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
-		$order_status = Orders::get_completion_status( $order_id, $user_id );
-		if ( $order_status && $row['status'] !== 'denied' ) {
+		$completion_status = Orders::get_completion_status( $order_id, $user_id );
+		if ( ! $completion_status && $row['status'] !== 'denied' ) {
 			// User should never get here, so we will just redirect them to the manage page.
-			Utility::redirect( Utility::get_page_url( 'manage' ) );
+			if ( empty( $_REQUEST['json'] ) ) {
+				echo '<script>window.location.href="' . esc_url( Utility::get_page_url( 'manage' ) ) . '";</script>';
+                wp_die();
+			} else {
+				Utility::redirect( Utility::get_page_url( 'manage' ) );
+			}
 		}
 	}
 
@@ -300,6 +301,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 
 	// If not uploading a new image, check if the order is valid.
 	if ( empty( $_REQUEST['change_pixels'] ) ) {
+		$order_id      = Orders::get_order_id_from_ad_id( $ad_id );
 		$sql           = $wpdb->prepare(
 			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status IN ('confirmed', 'new', 'deleted') AND order_id=%d;",
 			$order_id
@@ -325,15 +327,10 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
         <tr>
             <td><b><?php Language::out( 'Pixels' ); ?></b><br>
 				<?php
-				if ( ! empty( $_REQUEST['aid'] ) ) {
-					?><img
-                    src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&aid=<?php echo $_REQUEST['aid']; ?>"
-                    alt=""><?php
-				} else {
-					?><img
-                    src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&block_id=<?php echo $_REQUEST['block_id']; ?>"
-                    alt=""><?php
-				} ?>
+				?><img
+                        src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&aid=<?php echo $ad_id; ?>"
+                        alt=""><?php
+				?>
             </td>
             <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
 				Language::out_replace(
@@ -355,8 +352,8 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
                     <input type="hidden" name="action" value="mds_form_submission">
                     <input type="hidden" name="mds_dest" value="manage">
                     <input type="file" name='pixels'><br>
-                    <input type="hidden" name="aid" value="<?php echo $_REQUEST['aid']; ?>">
-                    <input type="submit" name="change_pixels" class="mds-button mds-upload-submit"
+                    <input type="hidden" name="aid" value="<?php echo $ad_id; ?>">
+                    <input type="submit" name="change_pixels" class="mds-upload-submit"
                            value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>">
                 </form>
 				<?php Language::out( 'Supported formats:' ); ?><?php echo "$gif_support $jpeg_support $png_support"; ?>
@@ -371,9 +368,9 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 
 	// Get the desired MDS Pixels post owned by the current user
 	$pixels = get_posts( [
-		'post_type'   => \MillionDollarScript\Classes\FormFields::$post_type,
+		'post_type'   => FormFields::$post_type,
 		'post_status' => 'any',
-		'p'           => intval( $_REQUEST['aid'] ),
+		'p'           => $ad_id,
 		'author'      => $user_id,
 	] );
 
@@ -387,7 +384,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 	}
 
 	if ( ! empty( $_REQUEST['save'] ) ) {
-		\MillionDollarScript\Classes\Functions::verify_nonce( 'mds_form' );
+		Functions::verify_nonce( 'mds_form' );
 
 		$prams = load_ad_values( $ad_id );
 		?>
@@ -411,7 +408,7 @@ if ( ! empty( $_REQUEST['aid'] ) ) {
 		}
 
 		// send pixel change notification
-		if ( \MillionDollarScript\Classes\Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
+		if ( Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
 			send_published_pixels_notification( $user_id, $prams['order_id'] );
 		}
 	} else {

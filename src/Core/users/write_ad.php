@@ -104,9 +104,9 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 					$user_id
 				);
 
-				$status = $wpdb->get_var( $sql );
+				$status            = $wpdb->get_var( $sql );
 				$completion_status = Orders::get_completion_status( $order_id, $user_id );
-				if ( $completion_status && $status !== 'denied') {
+				if ( ! $completion_status && $status !== 'denied' ) {
 					$is_error = true;
 				}
 			}
@@ -118,12 +118,11 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 		}
 	}
 
+	// Verify order id
 	if ( isset( $_REQUEST['manage-pixels'] ) && isset( $_REQUEST['order_id'] ) ) {
 		$order_id = intval( $_REQUEST['order_id'] );
-		if ( empty( $order_id ) && $order_id > 0 ) {
-			$order_id = Orders::get_current_order_id();
-		} else {
-			Orders::set_current_order_id( $order_id );
+		if ( empty( $order_id ) || ! Orders::is_owned_by( $order_id ) ) {
+			Utility::redirect( Utility::get_page_url( 'manage' ) );
 		}
 	}
 

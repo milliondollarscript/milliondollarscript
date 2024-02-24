@@ -138,15 +138,15 @@ require_once MDS_CORE_PATH . "html/header.php";
 global $wpdb;
 
 // check to make sure MIN_BLOCKS were selected.
-$order_id      = Orders::get_current_order_id();
+$order_id        = Orders::get_current_order_id();
 $current_user_id = get_current_user_id();
-$order_id = intval($order_id);
-$BID = intval($BID);
+$order_id        = intval( $order_id );
+$BID             = intval( $BID );
 
-$sql = $wpdb->prepare("SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND order_id=%d AND banner_id=%d", $current_user_id, $order_id, $BID);
-$res = $wpdb->get_results($sql);
+$sql = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND order_id=%d AND banner_id=%d", $current_user_id, $order_id, $BID );
+$res = $wpdb->get_results( $sql );
 
-$count = count($res);
+$count             = count( $res );
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
 Language::out_replace(
@@ -198,18 +198,24 @@ if ( isset( $order_exists ) && $order_exists ) {
 // 	display_price_table( $BID );
 // }
 
-$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( Orders::get_current_order_id() ) . "' and banner_id='$BID'";
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "' AND banner_id='$BID'";
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $order_row = mysqli_fetch_array( $result );
 
 if ( $result->num_rows == 0 ) {
-	Language::out_replace(
-		'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
-		[ '%ORDER_URL%', '%BID%' ],
-		[ Utility::get_page_url( 'order' ), $BID ]
-	);
+	// Check for any new orders
+	$order_row = Orders::find_new_order();
+	if ( $order_row == null ) {
 
-	return;
+		// Nothing found
+		Language::out_replace(
+			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
+			[ '%ORDER_URL%', '%BID%' ],
+			[ Utility::get_page_url( 'order' ), $BID ]
+		);
+
+		return;
+	}
 }
 $price = $order_row['price'] . ' ' . $order_row['currency'];
 
@@ -337,20 +343,23 @@ if ( ! empty( $image ) ) {
 
 	$mds_order_id = Orders::get_current_order_id();
 
-	if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) ) {
+	// Check for any new orders
+	$order_row = Orders::find_new_order();
+
+	if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) {
 		Language::out_replace(
 			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
 			[ '%ORDER_URL%', '%BID%' ],
 			[ Utility::get_page_url( 'order' ), $BID ]
 		);
-	} else if ( $not_enough_blocks ) {
+	} else if ( $order_row['status'] != 'new' && $not_enough_blocks ) {
 		Functions::not_enough_blocks( $mds_order_id, $banner_data['G_MIN_BLOCKS'] );
 	} else {
 		if ( isset( $image ) ) {
 
 			?>
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name="form1">
-				<?php wp_nonce_field( 'mds_write_ad' ); ?>
+				<?php wp_nonce_field( 'mds-form' ); ?>
                 <input type="hidden" name="action" value="mds_form_submission">
                 <input type="hidden" name="mds_dest" value="write-ad">
                 <input type="hidden" name="package" value="">

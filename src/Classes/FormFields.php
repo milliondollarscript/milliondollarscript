@@ -979,7 +979,7 @@ class FormFields {
 	/**
 	 * Returns an array of valid MDS order statuses.
 	 *
-	 * The valid MDS order statuses are: 'completed', 'cancelled',
+	 * The valid MDS order statuses are: 'paid', 'denied', 'completed', 'cancelled',
 	 * 'confirmed', 'new', 'expired', 'deleted', 'renew_wait',
 	 * 'renew_paid', 'waiting', and 'reserved'.
 	 *
@@ -1000,6 +1000,7 @@ class FormFields {
 			'renew_wait' => 'Awaiting Renewal',
 			'reserved'   => 'Reserved',
 			'waiting'    => 'Waiting',
+			'paid'       => 'Paid',
 		);
 	}
 

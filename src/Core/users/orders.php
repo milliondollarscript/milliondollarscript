@@ -222,6 +222,9 @@ usort( $orders, "date_sort" );
 						case 'renew_paid':
 							Language::out( 'Renewal Paid' );
 							break;
+						case 'paid':
+							Language::out( 'Paid' );
+							break;
 						default:
 							break;
 					}
@@ -256,11 +259,21 @@ usort( $orders, "date_sort" );
 								} else {
 									echo "<a class='mds-button mds-continue' href='" . Utility::get_page_url( 'order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Continue' ) . "</a>";
 								}
-								echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
+							} else {
+								if ( $USE_AJAX == 'SIMPLE' ) {
+									$text = Language::get( 'Upload' );
+									$url  = Utility::get_page_url( 'upload' );
+								} else {
+									$text = Language::get( 'Order' );
+									$url  = Utility::get_page_url( 'order' );
+								}
+								echo "<a class='mds-button mds-upload' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . $text . "</a>";
 							}
+							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 							break;
 						case "confirmed":
-							if ( Orders::is_order_in_progress( $order['order_id'] ) ) {
+							if ( Orders::is_order_in_progress( $order['order_id'] ) || ( \MillionDollarScript\Classes\WooCommerceFunctions::is_wc_active() ) ) {
+								update_user_meta( get_current_user_id(), 'mds_confirm', true );
 								echo "<a class='mds-button mds-pay' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
 								echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 							}
@@ -331,6 +344,9 @@ usort( $orders, "date_sort" );
 						case "denied":
 							echo "<a class='mds-button mds-manage' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
 							break;
+                        case "paid":
+                            Language::out("Thank you for your payment! Your order is awaiting approval.");
+                            break;
 						default:
 					}
 				} else {

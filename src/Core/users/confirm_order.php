@@ -56,7 +56,7 @@ update_temp_order_timestamp();
 
 $order_id = Orders::get_current_order_id();
 
-if( empty( $order_id ) ) {
+if ( empty( $order_id ) ) {
 	if ( wp_doing_ajax() ) {
 		Functions::no_orders();
 		wp_die();
@@ -86,7 +86,10 @@ $BID = $order_row['banner_id'];
 
 $banner_data = load_banner_constants( $BID );
 
-if ( empty( $order_row['blocks'] ) && $order_row['blocks'] != '0' ) {
+// Check for any new orders
+$order_row = Orders::find_new_order();
+
+if ( $order_row['status'] != 'new' && empty( $order_row['blocks'] ) && $order_row['blocks'] != '0' ) {
 
 	require_once MDS_CORE_PATH . "html/header.php";
 	Functions::not_enough_blocks( $order_row['order_id'], $banner_data['G_MIN_BLOCKS'] );
@@ -102,7 +105,7 @@ if ( ! is_user_logged_in() ) {
 	// The user is logged in
 
 	// Get the MDS Pixels post id by the order id
-	$post = \MillionDollarScript\Classes\FormFields::get_pixel_from_order_id( $order_id );
+	$post         = \MillionDollarScript\Classes\FormFields::get_pixel_from_order_id( $order_id );
 	$mds_pixel_id = $post?->ID;
 
 	// Check if there is a pixel post for this order yet.

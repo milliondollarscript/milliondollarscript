@@ -46,6 +46,8 @@ class Forms {
 	 * @return void
 	 */
 	public static function mds_form_submission(): void {
+		\MillionDollarScript\Classes\Functions::verify_nonce( 'mds-form' );
+
 		if ( ! isset( $_POST['mds_dest'] ) || ! is_user_logged_in() ) {
 			Utility::redirect();
 		}
@@ -88,7 +90,6 @@ class Forms {
 				require_once MDS_CORE_PATH . 'users/publish.php';
 				break;
 			case 'upload':
-				\MillionDollarScript\Classes\Functions::verify_nonce( 'mds-form' );
 
 				require_once MDS_CORE_PATH . 'users/upload.php';
 

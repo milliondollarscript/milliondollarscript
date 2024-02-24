@@ -55,7 +55,8 @@ if ( empty( $order_id ) ) {
 		if ( ! is_numeric( $_REQUEST['order_id'] ) ) {
 			// If it was not numeric redirect to the no orders page
 			\MillionDollarScript\Classes\Functions::no_orders();
-            return;
+
+			return;
 		} else {
 			// If it was numeric check
 
@@ -63,6 +64,7 @@ if ( empty( $order_id ) ) {
 			$order_id = intval( $_REQUEST['order_id'] );
 			if ( ! Orders::is_owned_by( $order_id ) ) {
 				\MillionDollarScript\Classes\Functions::no_orders();
+
 				return;
 			}
 
@@ -70,13 +72,20 @@ if ( empty( $order_id ) ) {
 			if ( ! \MillionDollarScript\Classes\Orders::is_order_in_progress( $order_id ) ) {
 				// Not in progress so redirect to the no orders page
 				\MillionDollarScript\Classes\Functions::no_orders();
+
 				return;
 			}
 		}
 
 	} else {
-		// No order_id in request, start a new order
-		$order_id = Orders::create_order();
+
+		// Check for any new orders
+		$order_row = Orders::find_new_order();
+		if ( $order_row == null ) {
+
+			// No existing new order or order_id in request, start a new order
+			$order_id = Orders::create_order();
+		}
 	}
 }
 
@@ -250,25 +259,25 @@ if ( ! empty( $tmp_image_file ) ) {
 
 	?>
     <style>
-        #block_pointer, #block_pointer img {
-            width: <?php echo $size[0]; ?>px;
-            height: <?php echo $size[1]; ?>px;
-            padding: 0;
-            margin: 0;
-            line-height: <?php echo $size[1]; ?>px;
-            font-size: <?php echo $size[1]; ?>px;
-            vertical-align: top;
-            pointer-events: none;
-        }
+		#block_pointer, #block_pointer img {
+			width: <?php echo $size[0]; ?>px;
+			height: <?php echo $size[1]; ?>px;
+			padding: 0;
+			margin: 0;
+			line-height: <?php echo $size[1]; ?>px;
+			font-size: <?php echo $size[1]; ?>px;
+			vertical-align: top;
+			pointer-events: none;
+		}
 
-        #block_pointer {
-            cursor: pointer;
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: transparent;
-            visibility: hidden;
-        }
+		#block_pointer {
+			cursor: pointer;
+			position: absolute;
+			left: 0;
+			top: 0;
+			background: transparent;
+			visibility: hidden;
+		}
     </style>
 	<?php
 }
@@ -406,10 +415,10 @@ if ( ! empty( $tmp_image_file ) ) {
     </div>
 
     <script>
-        jQuery(document).ready(function () {
-            window.pointer_width = <?php echo $reqsize[0]; ?>;
-            window.pointer_height =  <?php echo $reqsize[1]; ?>;
-        });
+		jQuery(document).ready(function () {
+			window.pointer_width = <?php echo $reqsize[0]; ?>;
+			window.pointer_height =  <?php echo $reqsize[1]; ?>;
+		});
     </script>
 
 	<?php

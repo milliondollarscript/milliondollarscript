@@ -161,7 +161,7 @@ function install_db(): void {
     `user_id` INT NOT NULL DEFAULT '0',
     `order_id` INT NOT NULL AUTO_INCREMENT,
     `blocks` TEXT NOT NULL,
-    `status` SET('denied','pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid') NOT NULL DEFAULT '',
+    `status` SET('paid','denied','pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid') NOT NULL DEFAULT '',
     `order_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `price` FLOAT NOT NULL DEFAULT '0',
     `quantity` INT NOT NULL DEFAULT '0',

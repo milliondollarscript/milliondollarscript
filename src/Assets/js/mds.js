@@ -690,13 +690,14 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	});
 
 	jQuery('.mds-upload-submit').on('click', function () {
-		jQuery(this).attr('value', MDS.UPLOADING);
+		jQuery(this).attr('value', MDS.UPLOADING).prop('disabled', true);
 		jQuery(this).closest('form').append(jQuery('<input>').attr({
 			type: 'hidden',
 			name: this.name,
 			value: this.value
 		}));
 		jQuery(this).closest('form').submit();
+		return true;
 	});
 });
 

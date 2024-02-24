@@ -143,9 +143,7 @@ if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != ''
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
-    global $wpdb;
-
-    // TODO: Add denied order status.
+	global $wpdb;
 
 	$order_id = intval( $_REQUEST['order_id'] );
 	$wpdb->update(
@@ -383,7 +381,7 @@ SELECT Distinct orders.blocks, orders.order_date, orders.order_id, blocks.approv
 //     ORDER BY " . MDS_DB_PREFIX . "orders.order_date
 // ";
 $sql = "
-SELECT " . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.user_id, " . MDS_DB_PREFIX . "orders.order_date, " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "blocks.approved, " . MDS_DB_PREFIX . "blocks.status, " . MDS_DB_PREFIX . "blocks.user_id, " . MDS_DB_PREFIX . "blocks.banner_id, " . MDS_DB_PREFIX . "blocks.ad_id
+SELECT " . MDS_DB_PREFIX . "orders.status as ostatus," . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.user_id, " . MDS_DB_PREFIX . "orders.order_date, " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "blocks.approved, " . MDS_DB_PREFIX . "blocks.status, " . MDS_DB_PREFIX . "blocks.user_id, " . MDS_DB_PREFIX . "blocks.banner_id, " . MDS_DB_PREFIX . "blocks.ad_id
     FROM " . MDS_DB_PREFIX . "blocks, " . MDS_DB_PREFIX . "orders 
     WHERE " . MDS_DB_PREFIX . "orders.approved='" . $Y_or_N . "' 
       AND " . MDS_DB_PREFIX . "orders.order_id=" . MDS_DB_PREFIX . "blocks.order_id 
@@ -467,8 +465,6 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
         </tr>
 		<?php
 
-		// TODO: use form editor field keys
-
 		$i = 0;
 		while ( ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) && ( $i < $records_per_page ) ) {
 
@@ -521,7 +517,7 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 							?>
                             <input type="button" style="background-color: #33FF66" value="Approve"
                                    onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=approve&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
- 							<?php
+							<?php
 						}
 
 						if ( $row['approved'] != 'N' ) {
@@ -531,9 +527,13 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 							<?php
 						}
 
+						if ( $row['ostatus'] != 'new' ) {
+							?>
+                            <input type="button" style="background-color: #ff3333;color:#fff;" value="Deny"
+                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=deny&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
+							<?php
+						}
 						?>
-                           <input type="button" style="background-color: #ff3333;color:#fff;" value="Deny"
-                                  onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=deny&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
 	 </span></td>
             </tr>
 			<?php

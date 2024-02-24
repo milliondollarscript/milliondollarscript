@@ -543,6 +543,10 @@ function confirm_order( $user_id, $order_id ) {
 		if ( Config::get( 'EMAIL_ADMIN_ORDER_CONFIRMED' ) == 'YES' ) {
 			Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 2 );
 		}
+	} else if ( $row['status'] == 'confirmed' ) {
+		$now = current_time( 'mysql' );
+		$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders set status='paid', date_stamp='%s' WHERE order_id=%d ", $now, intval( $order_id ) );
+		$wpdb->query( $sql );
 	}
 }
 

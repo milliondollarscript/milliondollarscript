@@ -387,7 +387,14 @@ class Orders {
 		);
 	}
 
-	public static function get_ad_id_from_order_id( $order_id ): int {
+	/**
+	 * Get ad id from order id.
+	 *
+	 * @param int $order_id
+	 *
+	 * @return int
+	 */
+	public static function get_ad_id_from_order_id( int $order_id ): int {
 		global $wpdb;
 
 		return $wpdb->get_var(
@@ -396,6 +403,26 @@ class Orders {
 				$order_id
 			)
 		);
+	}
+
+	/**
+	 * Get order id from ad id.
+	 *
+	 * @param int $ad_id
+	 *
+	 * @return int
+	 */
+	public static function get_order_id_from_ad_id( int $ad_id ): int {
+		if ( function_exists( 'carbon_get_post_meta' ) ) {
+			$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
+		} else {
+			global $wpdb;
+			$table_name = MDS_DB_PREFIX . "orders";
+			$query      = $wpdb->prepare( "SELECT order_id FROM $table_name WHERE ad_id = %d", $ad_id );
+			$order_id   = $wpdb->get_var( $query );
+		}
+
+		return $order_id;
 	}
 
 	/**
@@ -413,7 +440,9 @@ class Orders {
 			'expired',
 			'deleted',
 			'renew_wait',
-			'renew_paid'
+			'renew_paid',
+			'denied',
+			'paid',
 		];
 	}
 
@@ -424,7 +453,8 @@ class Orders {
 			'sold',
 			'free',
 			'ordered',
-			'nfs'
+			'nfs',
+			'denied',
 		];
 	}
 
@@ -515,19 +545,49 @@ class Orders {
 	}
 
 	/**
+	 * Get an orders completion status.
+	 *
 	 * @param mixed $order_id
 	 * @param int $user_id
 	 *
-	 * @return ?string
+	 * @return bool Returns true if the order is in a completed state otherwise false.
 	 */
-	public static function get_completion_status( mixed $order_id, int $user_id ): ?string {
+	public static function get_completion_status( mixed $order_id, int $user_id ): bool {
 		global $wpdb;
-		$sql = $wpdb->prepare(
-			"SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d AND status NOT IN ('new', 'pending') OR approved='Y'",
+		$table_name = MDS_DB_PREFIX . "orders";
+		$sql        = $wpdb->prepare(
+			"SELECT COUNT(1) FROM {$table_name} WHERE order_id = %d AND user_id = %d AND (status NOT IN ('new', 'pending') OR approved = 'Y')",
 			$order_id,
 			$user_id
 		);
 
-		return $wpdb->get_var( $sql );
+		$result = $wpdb->get_var( $sql );
+
+		return $result !== false && $result > 0;
+	}
+
+	/**
+	 * Find a new order for the current user.
+	 *
+	 * Retrieves the first order with status 'new' from the database
+	 * that belongs to the current user.
+	 *
+	 * @return array|null The order row as an associative array or null if no new order is found.
+	 * @global \wpdb $wpdb WordPress database abstraction object.
+	 *
+	 */
+	public static function find_new_order(): array|null {
+		global $wpdb;
+		$sql       = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='new' AND user_id=%d", get_current_user_id() );
+		$order_row = $wpdb->get_row( $sql, ARRAY_A );
+		if ( $wpdb->num_rows > 0 ) {
+
+			// Found an order so set it as the current order.
+			self::set_current_order_id( $order_row['order_id'] );
+
+			return $order_row;
+		}
+
+		return null;
 	}
 }

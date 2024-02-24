@@ -115,13 +115,16 @@ function display_edit_order_button( $order_id ) {
 	<?php
 }
 
-if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) ) {
+// Check for any new orders
+$order_row = Orders::find_new_order();
+
+if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) {
 	Language::out_replace(
 		'<h3>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a></h3>',
 		[ '%ORDER_URL%', '%BID%' ],
 		[ Utility::get_page_url( 'order' ), $BID ]
 	);
-} else if ( $not_enough_blocks ) {
+} else if ( $order_row['status'] != 'new' && $not_enough_blocks ) {
 	Functions::not_enough_blocks( Orders::get_current_order_id(), $banner_data['G_MIN_BLOCKS'] );
 } else {
 
@@ -153,7 +156,7 @@ if ( ( $order_row['order_id'] == '' ) || ( ( $order_row['quantity'] == '0' ) ) )
 		}
 		?>
         <form method='post' action='<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>'>";
-			<?php wp_nonce_field( 'mds_packages' ); ?>
+			<?php wp_nonce_field( 'mds-form' ); ?>
             <input type="hidden" name="action" value="mds_form_submission">
             <input type="hidden" name="mds_dest" value="order">
             <input type="hidden" name="selected_pixels" value="<?php echo esc_attr( $selected_pixels ); ?>">

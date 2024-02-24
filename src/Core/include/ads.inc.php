@@ -211,7 +211,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 		$user_id = get_current_user_id();
 	}
 
-	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND (`status` IN ('denied','pending','completed','expired','renew_wait','renew_paid')) ORDER BY %s %s", $BID, $user_id, $order, $ord );
+	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND (`status` IN ('paid','denied','pending','completed','expired','renew_wait','renew_paid')) ORDER BY %s %s", $BID, $user_id, $order, $ord );
 	$result = $wpdb->get_results( $sql, ARRAY_A );
 
 	$count = count( $result );
@@ -355,6 +355,9 @@ function list_ads( $offset = 0, $user_id = '' ) {
 								break;
 							case 'renew_paid':
 								Language::out( 'Renewal Paid' );
+								break;
+							case 'paid':
+								Language::out( 'Paid' );
 								break;
 							default:
 								break;
