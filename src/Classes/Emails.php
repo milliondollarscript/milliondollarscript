@@ -35,6 +35,8 @@ use Carbon_Fields\Field;
 defined( 'ABSPATH' ) or exit;
 
 class Emails {
+	private static array $tabs;
+
 	/**
 	 * Register the fields.
 	 *
@@ -42,18 +44,17 @@ class Emails {
 	 */
 	public static function register(): void {
 
-		$fields = [
-
-			Field::make( 'separator', MDS_PREFIX . 'order-confirmed-separator', Language::get( 'Order Confirmed' ) ),
-
-			Field::make( 'text', MDS_PREFIX . 'order-confirmed-subject', Language::get( 'Order Confirmed Subject' ) )
-			     ->set_default_value( Language::get( 'Order Confirmed' ) )
-			     ->set_help_text( Language::get( 'The subject line of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
-
+		self::$tabs = [
 			// Order Confirmed
-			Field::make( 'rich_text', MDS_PREFIX . 'order-confirmed-content', Language::get( 'Order Confirmed Content' ) )
-			     ->set_settings( array( 'media_buttons' => false ) )
-			     ->set_default_value( Language::get( 'Dear %FIRST_NAME% %LAST_NAME%,<br />
+			Language::get( 'Order Confirmed' )         => [
+
+				Field::make( 'text', MDS_PREFIX . 'order-confirmed-subject', Language::get( 'Order Confirmed Subject' ) )
+				     ->set_default_value( Language::get( 'Order Confirmed' ) )
+				     ->set_help_text( Language::get( 'The subject line of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+
+				Field::make( 'rich_text', MDS_PREFIX . 'order-confirmed-content', Language::get( 'Order Confirmed Content' ) )
+				     ->set_settings( array( 'media_buttons' => false ) )
+				     ->set_default_value( Language::get( 'Dear %FIRST_NAME% %LAST_NAME%,<br />
 <br />
 You have successfully placed an order at %SITE_NAME%.<br />
 <br />
@@ -81,18 +82,19 @@ Thank you!<br />
 <br />
 Note: This is an automated email.<br />
 ' ) )
-			     ->set_help_text( Language::get( 'The body of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				     ->set_help_text( Language::get( 'The body of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+			],
 
 			// Order Completed
-			Field::make( 'separator', MDS_PREFIX . 'order-completed-separator', Language::get( 'Order Completed' ) ),
+			Language::get( 'Order Completed' )         => [
 
-			Field::make( 'text', MDS_PREFIX . 'order-completed-subject', Language::get( 'Order Completed Subject' ) )
-			     ->set_default_value( Language::get( 'Order Completed' ) )
-			     ->set_help_text( Language::get( 'The subject line of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				Field::make( 'text', MDS_PREFIX . 'order-completed-subject', Language::get( 'Order Completed Subject' ) )
+				     ->set_default_value( Language::get( 'Order Completed' ) )
+				     ->set_help_text( Language::get( 'The subject line of the email sent when an order has been confirmed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
 
-			Field::make( 'rich_text', MDS_PREFIX . 'order-completed-content', Language::get( 'Order Completed' ) )
-			     ->set_settings( array( 'media_buttons' => false ) )
-			     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
+				Field::make( 'rich_text', MDS_PREFIX . 'order-completed-content', Language::get( 'Order Completed' ) )
+				     ->set_settings( array( 'media_buttons' => false ) )
+				     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
 <br />
 Dear %FIRST_NAME% %LAST_NAME%,<br />
 <br />
@@ -120,18 +122,20 @@ Thank you!<br />
 <br />
 Note: This is an automated email.<br />
 ' ) )
-			     ->set_help_text( Language::get( 'This email is sent when an order has been completed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				     ->set_help_text( Language::get( 'This email is sent when an order has been completed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+
+			],
 
 			// Order Pending
-			Field::make( 'separator', MDS_PREFIX . 'order-pending-separator', Language::get( 'Order Pending' ) ),
+			Language::get( 'Order Pending' )           => [
 
-			Field::make( 'text', MDS_PREFIX . 'order-pending-subject', Language::get( 'Order Pending Subject' ) )
-			     ->set_default_value( Language::get( 'Order Pending' ) )
-			     ->set_help_text( Language::get( 'The subject line of the email sent when an order is pending. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				Field::make( 'text', MDS_PREFIX . 'order-pending-subject', Language::get( 'Order Pending Subject' ) )
+				     ->set_default_value( Language::get( 'Order Pending' ) )
+				     ->set_help_text( Language::get( 'The subject line of the email sent when an order is pending. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
 
-			Field::make( 'rich_text', MDS_PREFIX . 'order-pending-content', Language::get( 'Order Pending Content' ) )
-			     ->set_settings( array( 'media_buttons' => false ) )
-			     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
+				Field::make( 'rich_text', MDS_PREFIX . 'order-pending-content', Language::get( 'Order Pending Content' ) )
+				     ->set_settings( array( 'media_buttons' => false ) )
+				     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
 <br />
 Dear %FNAME% %LNAME%,<br />
 <br />
@@ -160,18 +164,20 @@ Thank you!<br />
 <br />
 Note: This is an automated email.<br />
 ' ) )
-			     ->set_help_text( Language::get( 'This email is sent when an order is pending. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				     ->set_help_text( Language::get( 'This email is sent when an order is pending. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+
+			],
 
 			// Order Expired
-			Field::make( 'separator', MDS_PREFIX . 'order-expired-separator', Language::get( 'Order Expired' ) ),
+			Language::get( 'Order Expired' )           => [
 
-			Field::make( 'text', MDS_PREFIX . 'order-expired-subject', Language::get( 'Order Expired Subject' ) )
-			     ->set_default_value( Language::get( 'Order Expired' ) )
-			     ->set_help_text( Language::get( 'The subject line of the email sent when an order is expired. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				Field::make( 'text', MDS_PREFIX . 'order-expired-subject', Language::get( 'Order Expired Subject' ) )
+				     ->set_default_value( Language::get( 'Order Expired' ) )
+				     ->set_help_text( Language::get( 'The subject line of the email sent when an order is expired. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
 
-			Field::make( 'rich_text', MDS_PREFIX . 'order-expired-content', Language::get( 'Order Expired Content' ) )
-			     ->set_settings( array( 'media_buttons' => false ) )
-			     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
+				Field::make( 'rich_text', MDS_PREFIX . 'order-expired-content', Language::get( 'Order Expired Content' ) )
+				     ->set_settings( array( 'media_buttons' => false ) )
+				     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
 <br />
 Dear %FIRST_NAME% %LAST_NAME%,<br />
 <br />
@@ -208,18 +214,20 @@ Thank you!<br />
 <br />
 Note: This is an automated email.<br />
 ' ) )
-			     ->set_help_text( Language::get( 'This email is sent when an order is expired. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				     ->set_help_text( Language::get( 'This email is sent when an order is expired. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+
+			],
 
 			// Order Completed Renewal
-			Field::make( 'separator', MDS_PREFIX . 'order-completed-renewal-separator', Language::get( 'Order Completed Renewal' ) ),
+			Language::get( 'Order Completed Renewal' ) => [
 
-			Field::make( 'text', MDS_PREFIX . 'order-completed-renewal-subject', Language::get( 'Order Completed Renewal Subject' ) )
-			     ->set_default_value( Language::get( 'Order Completed Renewal' ) )
-			     ->set_help_text( Language::get( 'The subject line of the email sent when an order has completed renewal. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %ORIGINAL_ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				Field::make( 'text', MDS_PREFIX . 'order-completed-renewal-subject', Language::get( 'Order Completed Renewal Subject' ) )
+				     ->set_default_value( Language::get( 'Order Completed Renewal' ) )
+				     ->set_help_text( Language::get( 'The subject line of the email sent when an order has completed renewal. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %ORIGINAL_ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
 
-			Field::make( 'rich_text', MDS_PREFIX . 'order-completed-renewal-content', Language::get( 'Order Completed Renewal Content' ) )
-			     ->set_settings( array( 'media_buttons' => false ) )
-			     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
+				Field::make( 'rich_text', MDS_PREFIX . 'order-completed-renewal-content', Language::get( 'Order Completed Renewal Content' ) )
+				     ->set_settings( array( 'media_buttons' => false ) )
+				     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
 <br />
 Dear %FNAME% %LNAME%,<br />
 <br />
@@ -247,18 +255,20 @@ Thank you!<br />
 <br />
 Note: This is an automated email.<br />
 ' ) )
-			     ->set_help_text( Language::get( 'This email is sent when an order has completed renewal. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %ORIGINAL_ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				     ->set_help_text( Language::get( 'This email is sent when an order has completed renewal. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %ORIGINAL_ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+
+			],
 
 			// Order Published
-			Field::make( 'separator', MDS_PREFIX . 'order-published-separator', Language::get( 'Order Published' ) ),
+			Language::get( 'Order Published' )         => [
 
-			Field::make( 'text', MDS_PREFIX . 'order-published-subject', Language::get( 'Order Published Subject' ) )
-			     ->set_default_value( Language::get( 'Order Published' ) )
-				->set_help_text( Language::get_replace( 'The subject line of the email sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
+				Field::make( 'text', MDS_PREFIX . 'order-published-subject', Language::get( 'Order Published Subject' ) )
+				     ->set_default_value( Language::get( 'Order Published' ) )
+				     ->set_help_text( Language::get_replace( 'The subject line of the email sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
 
-			Field::make( 'rich_text', MDS_PREFIX . 'order-published-content', Language::get( 'Order Published Content' ) )
-			     ->set_settings( array( 'media_buttons' => false ) )
-			     ->set_default_value( Language::get( 'New pixels published on %SITE_NAME%!<br />
+				Field::make( 'rich_text', MDS_PREFIX . 'order-published-content', Language::get( 'Order Published Content' ) )
+				     ->set_settings( array( 'media_buttons' => false ) )
+				     ->set_default_value( Language::get( 'New pixels published on %SITE_NAME%!<br />
 <br />
 Grid: %GRID_NAME%<br />
 Username: %USER_LOGIN%<br />
@@ -269,18 +279,20 @@ URLS:<br />
 - To view and approve the pixels, please visit here:<br />
 <a href=\'%VIEW_URL%\'>Click Here...</a><br />
 ' ) )
-			     ->set_help_text( Language::get_replace( 'This email is sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
+				     ->set_help_text( Language::get_replace( 'This email is sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
+
+			],
 
 			// Order Denied
-			Field::make( 'separator', MDS_PREFIX . 'order-denied-separator', Language::get( 'Order denied' ) ),
+			Language::get( 'Order Denied' )            => [
 
-			Field::make( 'text', MDS_PREFIX . 'order-denied-subject', Language::get( 'Order Denied Subject' ) )
-			     ->set_default_value( Language::get( 'Order Denied' ) )
-			     ->set_help_text( Language::get( 'The subject line of the email sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				Field::make( 'text', MDS_PREFIX . 'order-denied-subject', Language::get( 'Order Denied Subject' ) )
+				     ->set_default_value( Language::get( 'Order Denied' ) )
+				     ->set_help_text( Language::get( 'The subject line of the email sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
 
-			Field::make( 'rich_text', MDS_PREFIX . 'order-denied-content', Language::get( 'Order Denied Content' ) )
-			     ->set_settings( array( 'media_buttons' => false ) )
-			     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
+				Field::make( 'rich_text', MDS_PREFIX . 'order-denied-content', Language::get( 'Order Denied Content' ) )
+				     ->set_settings( array( 'media_buttons' => false ) )
+				     ->set_default_value( Language::get( 'RE: Order Status Change Notification.<br />
 <br />
 Dear %FIRST_NAME% %LAST_NAME%,<br />
 <br />
@@ -318,16 +330,22 @@ Thank you!<br />
 <br />
 Note: This is an automated email.<br />
 ' ) )
-			     ->set_help_text( Language::get( 'This email is sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+				     ->set_help_text( Language::get( 'This email is sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%' ) ),
+
+			],
+
 		];
 
-		$fields = apply_filters( 'mds_email_fields', $fields, MDS_PREFIX );
+		self::$tabs = apply_filters( 'mds_email_fields', self::$tabs, MDS_PREFIX );
 
-		Container::make( 'theme_options', MDS_PREFIX . 'emails', Language::get( 'Million Dollar Script Emails' ) )
-		         ->set_page_parent( 'milliondollarscript' )
-		         ->set_page_file( MDS_PREFIX . 'emails' )
-		         ->set_page_menu_title( 'Emails' )
-		         ->add_fields( $fields );
+		$container = Container::make( 'theme_options', MDS_PREFIX . 'emails', Language::get( 'Million Dollar Script Emails' ) )
+		                      ->set_page_parent( 'milliondollarscript' )
+		                      ->set_page_file( MDS_PREFIX . 'emails' )
+		                      ->set_page_menu_title( 'Emails' );
+
+		foreach ( self::$tabs as $title => $fields ) {
+			$container->add_tab( Language::get( $title ), $fields );
+		}
 	}
 
 	/**
