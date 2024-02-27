@@ -723,7 +723,7 @@ class FormFields {
 			<?php
 		} else if ( $column == 'expiry' ) {
 			// Get the order id
-			$order_id = carbon_get_post_meta( $post->ID, MDS_PREFIX . 'order' );
+			$order_id = intval( carbon_get_post_meta( $post->ID, MDS_PREFIX . 'order' ) );
 
 			// Get the order expiration date
 			$expiry = Orders::get_order_expiration_date( $order_id );

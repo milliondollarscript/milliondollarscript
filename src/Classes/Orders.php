@@ -49,6 +49,10 @@ class Orders {
 			)
 		);
 
+		if( ! $order ) {
+			return '';
+		}
+
 		return $order->approved;
 	}
 
@@ -69,6 +73,10 @@ class Orders {
 			)
 		);
 
+		if( ! $order ) {
+			return '';
+		}
+
 		return $order->published;
 	}
 
@@ -88,6 +96,10 @@ class Orders {
 				$order_id
 			)
 		);
+
+		if( ! $order ) {
+			return '';
+		}
 
 		$days_expire = $wpdb->get_var(
 			$wpdb->prepare(
