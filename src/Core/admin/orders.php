@@ -565,6 +565,23 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 			foreach ( $paginated_results as $row ) {
 				$i ++;
 
+				if ( ! isset( $row['order_date'] ) || !isset( $row['quantity'] ) ) {
+					$sql       = $wpdb->prepare( "SELECT * FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d", $row['order_id'] );
+					$order_row = $wpdb->get_row( $sql, ARRAY_A );
+				} else {
+					$order_row = $row;
+				}
+
+				if ( ! isset( $row['FirstName'] ) ) {
+					$row['FirstName'] = '';
+				}
+				if ( ! isset( $row['LastName'] ) ) {
+					$row['LastName'] = '';
+				}
+				if ( ! isset( $row['Username'] ) ) {
+					$row['Username'] = '';
+				}
+
 				$post_id = intval( $row['ad_id'] );
 
 				$page_number = 1;
@@ -616,7 +633,8 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                             <input type="checkbox" name="orders[]" value="<?php echo $row['order_id']; ?>">
                         </label>
                     </td>
-                    <td><?php echo get_date_from_gmt( $row['order_date'] ); ?></td>
+                    <td><?php
+						echo get_date_from_gmt( $order_row['order_date'] ); ?></td>
                     <td><?php echo esc_html( $row['FirstName'] . " " . $row['LastName'] ); ?></td>
                     <td><?php echo esc_html( $row['Username'] ); ?> (<a href='<?php echo esc_url( admin_url( 'user-edit.php?user_id=' . $row['ID'] ) ); ?>'>#<?php echo intval( $row['ID'] ); ?></a>)
                     </td>
@@ -634,7 +652,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 						}
 
 						?></td>
-                    <td><?php echo intval( $row['quantity'] ); ?></td>
+                    <td><?php echo intval( $order_row['quantity'] ); ?></td>
                     <td><?php echo esc_html( Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] ) ); ?></td>
                     <td><?php echo esc_html( $row['status'] ); ?><br>
 						<?php
