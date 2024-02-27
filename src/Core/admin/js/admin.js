@@ -26,7 +26,7 @@
  */
 function confirmLink(theLink, theConfirmMsg) {
 	if (theConfirmMsg === '') {
-		window.location.href=theLink.href;
+		window.location.href = theLink.href;
 		return false;
 	}
 
@@ -41,7 +41,7 @@ function confirmLink(theLink, theConfirmMsg) {
 		}
 
 		link += '&is_js_confirmed=1';
-		window.location.href=link;
+		window.location.href = link;
 	}
 
 	return false;
@@ -52,7 +52,84 @@ function checkBoxes(name) {
 }
 
 jQuery(document).ready(function ($) {
+	const $mds_admin_menu = $(".mds-admin-menu");
+
+	$('a[href="#"]').on('click', function (e) {
+		e.preventDefault();
+	});
+
 	$('.mds-preview-pixels').on('click', function (e) {
 		e.preventDefault();
 	})
+
+	function showSubmenu() {
+		$(this).children('ul').slideDown(100);
+		$(this).children('a').addClass('mds-active-submenu');
+	}
+
+	function hideSubmenu() {
+		$(this).children('ul').slideUp(100);
+		$(this).children('a').removeClass('mds-active-submenu');
+	}
+
+	$(".mds-admin-menu li").hoverIntent({
+		over: showSubmenu,
+		out: hideSubmenu,
+		timeout: 400,
+	});
+
+	function toggleSubmenu($this) {
+		const $parent = $this.parent();
+		const $menu = $parent.children('ul');
+
+		if ($this.hasClass('mds-active-submenu')) {
+			if (!$menu.is(':animated')) {
+				$menu.slideUp(100);
+				$this.removeClass('mds-active-submenu');
+			}
+		} else {
+			$parent.siblings().find('ul:visible').slideUp(100);
+			$parent.siblings().find('a.mds-active-submenu').removeClass('mds-active-submenu');
+
+			if (!$menu.is(':animated')) {
+				$menu.slideDown(100);
+				$this.addClass('mds-active-submenu');
+			}
+		}
+	}
+
+	$(document).on("click", 'a', function (e) {
+		toggleSubmenu($(this));
+	});
+
+	const $mds_menu_toggle = $(".mds-menu-toggle");
+
+	updateMenuDisplay();
+
+	$(window).on('resize', updateMenuDisplay);
+
+	$mds_menu_toggle.on("click", function (e) {
+		e.preventDefault();
+		$mds_admin_menu.slideToggle();
+	});
+
+	$mds_admin_menu.find('a').keypress(function (event) {
+		if (event.which === 13) {
+			console.log("Enter key was pressed");
+			toggleSubmenu($(this));
+		}
+	});
+
+	function updateMenuDisplay() {
+		if ($(window).width() > 999) {
+			$mds_admin_menu.css('display', '').addClass('mds-desktop-menu');
+			$mds_menu_toggle.hide();
+		} else {
+			$mds_admin_menu.removeClass('mds-desktop-menu');
+			if ($mds_admin_menu.is(":visible")) {
+				$mds_admin_menu.hide();
+			}
+			$mds_menu_toggle.show();
+		}
+	}
 });

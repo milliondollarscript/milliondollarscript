@@ -40,14 +40,109 @@
 	display: flex;
 	flex-wrap: wrap;
 	padding: 8px;
+	flex-direction: column;
 }
 
-.admin-menu {
-	flex: 0 1 170px;
-	background: #efefef;
-	margin: -8px;
-	padding: 8px;
+.mds-menu-toggle {
+	background-color: #1d2327;
+	display: none;
+	padding-top: 5px;
+}
+
+.mds-admin-menu {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	justify-content: center;
+	background-color: #1d2327;
+	white-space: nowrap;
+	align-items: center;
+	position: relative;
+}
+
+.mds-admin-menu li {
+	padding-top: 5px;
+	border-bottom: 4px solid transparent;
+	transition: border-bottom 0.3s;
+	margin-bottom: 0;
 	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.3;
+	hyphens: auto;
+	word-break: break-word;
+	user-select: none;
+	-webkit-font-smoothing: subpixel-antialiased;
+	position: relative;
+}
+
+.mds-admin-menu li a {
+	display: block;
+	color: #f0f0f1;
+	text-decoration: none;
+	padding: 10px;
+}
+
+.mds-admin-menu li:hover, .mds-admin-menu li:focus {
+	background-color: #32373c;
+	box-shadow: 0 0 5px 1px #000;
+}
+
+.mds-admin-menu li:hover a, .mds-admin-menu .active a {
+	color: #fff;
+}
+
+.mds-admin-menu li:hover {
+	border-bottom: 4px solid #72aee6;
+}
+
+.mds-admin-menu ul {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	display: none;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	background-color: #32373c;
+	width: 200px;
+	z-index: 1000;
+}
+
+.mds-admin-menu ul ul {
+	left: 100%;
+	top: 0;
+}
+
+.mds-admin-menu img {
+	height: 20px;
+	width: auto;
+	vertical-align: middle;
+}
+
+.mds-admin-menu li > ul {
+	display: none;
+}
+
+@media screen and (min-width: 1000px) {
+	.mds-admin-menu {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.mds-menu-toggle {
+		display: none;
+	}
+}
+
+@media screen and (max-width: 999px) {
+	.mds-admin-menu {
+		display: none;
+	}
+
+	.mds-menu-toggle {
+		display: block;
+	}
 }
 
 .admin-content {
@@ -96,10 +191,6 @@ a {
 a:hover {
 	text-decoration: underline;
 	color: #6000cd;
-}
-
-.admin-menu hr {
-	width: 170px !important;
 }
 
 .phpinfo-container table,
@@ -257,58 +348,58 @@ a:hover {
 
 /* Basic table styles */
 .table-responsive {
-  width: 100%;
-  max-width: 100%;
-  margin: auto;
+	width: 100%;
+	max-width: 100%;
+	margin: auto;
 }
 
 .table-responsive table {
-  width: 100%;
-  max-width: 100%;
-  border-collapse: collapse;
-  display: table;
+	width: 100%;
+	max-width: 100%;
+	border-collapse: collapse;
+	display: table;
 }
 
 .table-responsive th, .table-responsive td {
-  padding: 10px;
-  text-align: left;
-  border: 1px solid #ddd;
+	padding: 10px;
+	text-align: left;
+	border: 1px solid #ddd;
 }
 
 /* Styles for screens smaller than 800px */
 @media screen and (max-width: 800px) {
-  .table-responsive table, .table-responsive thead, .table-responsive tbody, .table-responsive tr {
-    display: block;
-    border: 1px solid #ddd;
-  }
+	.table-responsive table, .table-responsive thead, .table-responsive tbody, .table-responsive tr {
+		display: block;
+		border: 1px solid #ddd;
+	}
 
-  .table-responsive thead tr {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-  }
+	.table-responsive thead tr {
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
 
-  .table-responsive tr {
-    margin-bottom: 1rem;
-    border: 2px solid #ddd;
-  }
+	.table-responsive tr {
+		margin-bottom: 1rem;
+		border: 2px solid #ddd;
+	}
 
-  .table-responsive th, .table-responsive td {
-    display: block;
-    border: none;
-    border-bottom: 1px solid #ddd;
-    position: relative;
-  }
+	.table-responsive th, .table-responsive td {
+		display: block;
+		border: none;
+		border-bottom: 1px solid #ddd;
+		position: relative;
+	}
 
-  .table-responsive td:before {
-    position: absolute;
-    top: 0;
-    left: 6px;
-    width: 25%;
-    padding-right: 10px;
-    white-space: nowrap;
-    content: attr(data-column);
-  }
+	.table-responsive td:before {
+		position: absolute;
+		top: 0;
+		left: 6px;
+		width: 25%;
+		padding-right: 10px;
+		white-space: nowrap;
+		content: attr(data-column);
+	}
 }
 
 .table-responsive .tr-normal {

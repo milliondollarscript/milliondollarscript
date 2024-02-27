@@ -80,7 +80,7 @@ jQuery(document).ready(function($){
 		if (css !== undefined && css.length > 0) {
 			$(document).find('#mds-admin-css-inline-css').html(css);
 		}
-		$(document).find('.admin-container').replaceWith(html).promise().done(function () {
+		$(document).find('.admin-content-inner').replaceWith(html).promise().done(function () {
 			$(document).find('.loading').hide(function () {
 				$(this).remove();
 				if (message) {

@@ -75,6 +75,6 @@ if ( isset( $_REQUEST['mds-config-updated'] ) && $_REQUEST['mds-config-updated']
 
 Language::out_replace( '<h3>Main Configuration</h3>
 <p>Options on this page affect the running of the pixel advertising system.</p>
-<p><b>Tip:</b> Looking for where to settings for the grid? It is set in "Pixel Inventory" -> <a href="%MANAGE_GRIDS_URL%">Manage Grids</a>. Click on Edit to edit the grid parameters.</p>', '%MANAGE_GRIDS_URL%', esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ) );
+<p><b>Tip:</b> Looking for where to settings for the grid? It is set in "Manage" -> <a href="%MANAGE_GRIDS_URL%">Grids</a>. Click on Edit to edit the grid parameters.</p>', '%MANAGE_GRIDS_URL%', esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ) );
 
 require( __DIR__ . '/config_form.php' );

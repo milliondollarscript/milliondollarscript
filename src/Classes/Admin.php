@@ -427,6 +427,7 @@ class Admin {
 	}
 
 	public static function scripts(): void {
+		wp_enqueue_script('hoverIntent');
 
 		// JS
 		wp_enqueue_script(
@@ -440,7 +441,7 @@ class Admin {
 		wp_register_script(
 			MDS_PREFIX . 'admin-core-js',
 			MDS_CORE_URL . 'admin/js/admin.min.js',
-			[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form' ],
+			[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form', 'hoverIntent' ],
 			filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
 			true
 		);

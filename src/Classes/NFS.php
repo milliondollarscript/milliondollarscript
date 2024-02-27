@@ -105,9 +105,17 @@ class NFS {
 		wp_enqueue_script( 'jquery-ui-button' );
 		wp_enqueue_script( 'jquery-ui-dialog' );
 		wp_enqueue_script( 'jquery-form' );
+		wp_enqueue_script( 'hoverIntent' );
 		wp_enqueue_script( 'viselect', MDS_CORE_URL . 'js/third-party/viselect.umd.js', [], filemtime( MDS_CORE_PATH . "/js/third-party/viselect.umd.js" ) );
 
-		wp_register_script( 'mds-nfs-js', MDS_BASE_URL . 'src/Assets/js/nfs.min.js', [ 'jquery', 'jquery-ui-core', 'jquery-ui-button', 'jquery-ui-dialog', 'jquery-form', 'viselect' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/nfs.min.js' ), true );
+		wp_register_script( 'mds-nfs-js', MDS_BASE_URL . 'src/Assets/js/nfs.min.js', [
+			'jquery',
+			'jquery-ui-core',
+			'jquery-ui-button',
+			'jquery-ui-dialog',
+			'jquery-form',
+			'viselect'
+		], filemtime( MDS_BASE_PATH . 'src/Assets/js/nfs.min.js' ), true );
 		wp_localize_script( 'mds-nfs-js', 'MDS', [
 			'ajaxurl'       => admin_url( 'admin-ajax.php' ),
 			'adminpost'     => admin_url( 'admin-post.php' ),
@@ -121,6 +129,16 @@ class NFS {
 			],
 		] );
 		wp_enqueue_script( 'mds-nfs-js' );
+
+		wp_register_script(
+			MDS_PREFIX . 'admin-core-js',
+			MDS_CORE_URL . 'admin/js/admin.min.js',
+			[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form', 'hoverIntent' ],
+			filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
+			true
+		);
+
+		wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
 	}
 
 	public static function ajax_covered(): void {
@@ -482,9 +500,13 @@ class NFS {
                     }";
 	}
 
-	public static function get_html(): string {
+	public static function get_html(): string|bool {
 		ob_start();
-		self::html();
+		?>
+        <div class="admin-content-inner">
+			<?php require_once MDS_BASE_PATH . "src/Html/NFS.php"; ?>
+        </div>
+		<?php
 		$html = ob_get_contents();
 		ob_end_clean();
 

@@ -31,63 +31,152 @@ use MillionDollarScript\Classes\Language;
 defined( 'ABSPATH' ) or exit;
 
 ?>
-<div class="admin-menu">
-    <a target="_top" href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript' ) ); ?>"><img src="<?php echo esc_url( MDS_BASE_URL ); ?>src/Assets/images/M-sm.png" alt="<?php Language::out('Million Dollar Script logo'); ?>" class="milliondollarscript-logo-sm"/></a>
-    <br>
-    <a target="_top" href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript' ) ); ?>"><?php Language::out('Main'); ?></a><br/>
-    <a href="<?php echo esc_url( get_site_url() ); ?>" target="_blank"><?php Language::out('View Site'); ?></a><br/>
-    <hr>
+<button class="mds-menu-toggle" aria-controls="main-menu" aria-expanded="false">
+    <svg width="30" height="30" viewBox="0 0 100 70" fill="#f0f0f1">
+        <rect width="100" height="10"></rect>
+        <rect y="30" width="100" height="10"></rect>
+        <rect y="60" width="100" height="10"></rect>
+    </svg>
+</button>
+<ul class="mds-admin-menu">
+    <li>
+        <a target="_top" href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript' ) ); ?>">
+            <img width="40px" src="<?php echo esc_url( MDS_BASE_URL ); ?>src/Assets/images/M-sm.png"
+                 alt="<?php Language::out( 'Million Dollar Script logo' ); ?>"
+                 class="milliondollarscript-logo-sm"/>
+        </a>
+    </li>
+    <li>
+        <a href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank"><?php Language::out( 'View Site' ); ?></a>
+    </li>
+    <li>
+        <a href="<?php echo admin_url( 'admin.php?page=mds-main-config' ); ?>"><?php Language::out( 'Configuration' ); ?></a>
+    </li>
+    <li>
+        <a href="#"><?php Language::out( 'Manage' ); ?></a>
+        <ul>
+            <li>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>"><?php Language::out( 'Grids' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-packages' ) ); ?>"><?php Language::out( 'Packages' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-price-zones' ) ); ?>"><?php Language::out( 'Price Zones' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-not-for-sale' ); ?>"><?php Language::out( 'Not For Sale' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-backgrounds' ); ?>"><?php Language::out( 'Backgrounds' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-get-shortcodes' ); ?>"><?php Language::out( 'Get Shortcodes' ); ?></a>
+            </li>
+        </ul>
+    </li>
+    <li>
+        <a href="#"><?php Language::out( 'Customer Admin' ); ?></a>
+        <ul>
+            <li>
+                <a href="<?php echo admin_url( 'users.php' ); ?>"><?php Language::out( 'List Customers' ); ?></a>
+            </li>
+        </ul>
+        <ul>
+            <li>
+                <a href="#"><?php Language::out( 'Orders' ); ?></a>
+                <ul>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-waiting' ); ?>"><?php Language::out( 'Waiting' ); ?></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-completed' ); ?>"><?php Language::out( 'Completed' ); ?></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-reserved' ); ?>"><?php Language::out( 'Reserved' ); ?></a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="#"><?php Language::out( 'Non-current orders' ); ?></a>
+                <ul>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-expired' ); ?>"><?php Language::out( 'Orders: Expired' ); ?></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-denied' ); ?>"><?php Language::out( 'Orders: Denied' ); ?></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-cancelled' ); ?>"><?php Language::out( 'Orders: Cancelled' ); ?></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-deleted' ); ?>"><?php Language::out( 'Orders: Deleted' ); ?></a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-map-of-orders' ); ?>"><?php Language::out( 'Map of Orders' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-transaction-log' ); ?>"><?php Language::out( 'Transaction Log' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-clear-orders' ); ?>"><?php Language::out( 'Clear Orders' ); ?></a>
+            </li>
+        </ul>
 
-    <b><?php Language::out('Configuration'); ?></b><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-main-config' ); ?>"><?php Language::out('Main Config'); ?></a><br/>
-    <hr>
-
-    <b><?php Language::out('Pixel Inventory'); ?></b><br/>
-    + <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>"><?php Language::out('Manage Grids'); ?></a><br/>
-    &nbsp;&nbsp;|- <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-packages' ) ); ?>"><?php Language::out('Packages'); ?></a><br/>
-    &nbsp;&nbsp;|- <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-price-zones' ) ); ?>"><?php Language::out('Price Zones'); ?></a><br/>
-    &nbsp;&nbsp;|- <a href="<?php echo admin_url( 'admin.php?page=mds-not-for-sale' ); ?>"><?php Language::out('Not For Sale'); ?></a><br/>
-    &nbsp;&nbsp;|- <a href="<?php echo admin_url( 'admin.php?page=mds-backgrounds' ); ?>"><?php Language::out('Backgrounds'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-get-shortcodes' ); ?>"><?php Language::out('Get Shortcodes'); ?></a><br/>
-    <hr>
-
-    <b><?php Language::out('Customer Admin'); ?></b><br/>
-    - <a href="<?php echo admin_url( 'users.php' ); ?>"><?php Language::out('List Customers'); ?></a><br/>
-    <span><?php Language::out('Current orders:'); ?></span><br>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-waiting' ); ?>"><?php Language::out('Orders: Waiting'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-completed' ); ?>"><?php Language::out('Orders: Completed'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-reserved' ); ?>"><?php Language::out('Orders: Reserved'); ?></a><br/>
-    <span><?php Language::out('Non-current orders:'); ?></span><br>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-expired' ); ?>"><?php Language::out('Orders: Expired'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-denied' ); ?>"><?php Language::out('Orders: Denied'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-cancelled' ); ?>"><?php Language::out('Orders: Cancelled'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-orders-deleted' ); ?>"><?php Language::out('Orders: Deleted'); ?></a><br/>
-    <span><?php Language::out('Map:'); ?></span><br>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-map-of-orders' ); ?>"><?php Language::out('Map of Orders'); ?></a><br/>
-    <span><?php Language::out('Transactions:'); ?></span><br>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-transaction-log' ); ?>"><?php Language::out('Transaction Log'); ?></a><br/>
-    <span><?php Language::out('Other:'); ?></span><br>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-clear-orders' ); ?>"><?php Language::out('Clear Orders'); ?></a><br/>
-    <hr>
-
-    <b><?php Language::out('Pixel Admin'); ?></b><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=N' ); ?>"><?php Language::out('Approve Pixels'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ); ?>"><?php Language::out('Disapprove Pixels'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-process-pixels' ); ?>"><?php Language::out('Process Pixels'); ?></a><br/>
-    <hr>
-
-    <b><?php Language::out('Reports'); ?>       </b><br/>
-    - <a href="<?php echo admin_url( 'edit.php?post_type=' . \MillionDollarScript\Classes\FormFields::$post_type ); ?>"><?php Language::out('List'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-top-customers' ); ?>"><?php Language::out('Top Customers'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-outgoing-email' ); ?>"><?php Language::out('Outgoing Email'); ?></a><br/>
-    <span><?php Language::out('Clicks:'); ?></span><br>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-top-clicks' ); ?>"><?php Language::out('Top Clicks'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-click-reports' ); ?>"><?php Language::out('Click Reports'); ?></a><br/>
-    <hr>
-
-    <b><?php Language::out('Info'); ?></b><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-system-information' ); ?>"><?php Language::out('System Information'); ?></a><br/>
-    - <a href="<?php echo admin_url( 'admin.php?page=mds-license' ); ?>"><?php Language::out('License'); ?></a><br/>
-    <br/>
-    <a href="https://milliondollarscript.com" target="_blank">MillionDollarScript.com</a><br/>
-</div>
+    </li>
+    <li>
+        <a href="#"><?php Language::out( 'Pixel Admin' ); ?></a>
+        <ul>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=N' ); ?>"><?php Language::out( 'Approve Pixels' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ); ?>"><?php Language::out( 'Disapprove Pixels' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-process-pixels' ); ?>"><?php Language::out( 'Process Pixels' ); ?></a>
+            </li>
+        </ul>
+    </li>
+    <li>
+        <a href="#"><?php Language::out( 'Reports' ); ?></a>
+        <ul>
+            <li>
+                <a href="<?php echo admin_url( 'edit.php?post_type=' . \MillionDollarScript\Classes\FormFields::$post_type ); ?>"><?php Language::out( 'List' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-top-customers' ); ?>"><?php Language::out( 'Top Customers' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-outgoing-email' ); ?>"><?php Language::out( 'Outgoing Email' ); ?></a>
+            </li>
+            <li>
+                <a href="#"><?php Language::out( 'Clicks' ); ?></a>
+                <ul>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-top-clicks' ); ?>"><?php Language::out( 'Top Clicks' ); ?></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo admin_url( 'admin.php?page=mds-click-reports' ); ?>"><?php Language::out( 'Click Reports' ); ?></a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li>
+        <a href="#"><?php Language::out( 'Info' ); ?></a>
+        <ul>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-system-information' ); ?>"><?php Language::out( 'System Information' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-license' ); ?>"><?php Language::out( 'License' ); ?></a>
+            </li>
+        </ul>
+    </li>
+    <li>
+        <a href="https://milliondollarscript.com" target="_blank">Help</a>
+    </li>
+</ul>

@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.10.48\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.10.58\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-02-23 19:03:11\n"
-"PO-Revision-Date: 2024-02-23 19:03:11\n"
-"X-Generator: Million Dollar Script Two 2.5.10.48\n"
+"POT-Creation-Date: 2024-02-27 13:35:06\n"
+"PO-Revision-Date: 2024-02-27 13:35:06\n"
+"X-Generator: Million Dollar Script Two 2.5.10.58\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -855,13 +855,10 @@ msgstr ""
 msgid "This email is sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%"
 msgstr ""
 
-msgid "Order denied"
+msgid "Order Denied"
 msgstr ""
 
 msgid "Order Denied Subject"
-msgstr ""
-
-msgid "Order Denied"
 msgstr ""
 
 msgid "The subject line of the email sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
@@ -1188,13 +1185,10 @@ msgstr ""
 msgid "Configuration"
 msgstr ""
 
-msgid "Main Config"
+msgid "Manage"
 msgstr ""
 
-msgid "Pixel Inventory"
-msgstr ""
-
-msgid "Manage Grids"
+msgid "Grids"
 msgstr ""
 
 msgid "Packages"
@@ -1218,19 +1212,13 @@ msgstr ""
 msgid "List Customers"
 msgstr ""
 
-msgid "Current orders:"
+msgid "Waiting"
 msgstr ""
 
-msgid "Orders: Waiting"
+msgid "Reserved"
 msgstr ""
 
-msgid "Orders: Completed"
-msgstr ""
-
-msgid "Orders: Reserved"
-msgstr ""
-
-msgid "Non-current orders:"
+msgid "Non-current orders"
 msgstr ""
 
 msgid "Orders: Expired"
@@ -1245,19 +1233,10 @@ msgstr ""
 msgid "Orders: Deleted"
 msgstr ""
 
-msgid "Map:"
-msgstr ""
-
 msgid "Map of Orders"
 msgstr ""
 
-msgid "Transactions:"
-msgstr ""
-
 msgid "Transaction Log"
-msgstr ""
-
-msgid "Other:"
 msgstr ""
 
 msgid "Clear Orders"
@@ -1282,9 +1261,6 @@ msgid "Top Customers"
 msgstr ""
 
 msgid "Outgoing Email"
-msgstr ""
-
-msgid "Clicks:"
 msgstr ""
 
 msgid "Top Clicks"
@@ -1359,7 +1335,7 @@ msgstr ""
 msgid "Check Completed."
 msgstr ""
 
-msgid "<h3>Main Configuration</h3>\n<p>Options on this page affect the running of the pixel advertising system.</p>\n<p><b>Tip:</b> Looking for where to settings for the grid? It is set in \"Pixel Inventory\" -> <a href=\"%MANAGE_GRIDS_URL%\">Manage Grids</a>. Click on Edit to edit the grid parameters.</p>"
+msgid "<h3>Main Configuration</h3>\n<p>Options on this page affect the running of the pixel advertising system.</p>\n<p><b>Tip:</b> Looking for where to settings for the grid? It is set in \"Manage\" -> <a href=\"%MANAGE_GRIDS_URL%\">Grids</a>. Click on Edit to edit the grid parameters.</p>"
 msgstr ""
 
 msgid "The path to your uploads directory: %UPLOAD_PATH%"
@@ -1467,9 +1443,6 @@ msgstr ""
 msgid "Cancel, are you sure?"
 msgstr ""
 
-msgid "Manage"
-msgstr ""
-
 msgid "Expires in: %TIME%"
 msgstr ""
 
@@ -1483,6 +1456,9 @@ msgid "Confirm now"
 msgstr ""
 
 msgid "\"Completed\" Orders - Orders where the transaction was successfully completed.<br />\n\"Confirmed\" Orders - Orders confirmed by you, but the transaction has not been completed.<br />\n\"Pending\" Orders - Orders confirmed by you, but the transaction has not been approved.<br />\n\"Cancelled\" Orders - Cancelled by the administrator.<br />\n\"Expired\" Orders - Pixels were expired after the specified term. You can renew this order.<br />"
+msgstr ""
+
+msgid "There was an error with the image file."
 msgstr ""
 
 msgid "<p>1. <a href=\"%ORDER_URL%?BID=%BID%\">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
