@@ -30,6 +30,6 @@ defined( 'ABSPATH' ) or exit;
 
 \MillionDollarScript\Classes\Utility::get_header();
 
-require_once MDS_CORE_PATH . 'users/publish.php';
+require_once MDS_CORE_PATH . 'users/manage.php';
 
 \MillionDollarScript\Classes\Utility::get_footer();

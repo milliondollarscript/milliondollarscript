@@ -459,12 +459,59 @@ Ads list page
 	border-width: 2px;
 }
 
+.mds-success-message {
+	background-color: #DFF2BF;
+	color: #4F8A10;
+	border: 1px solid #4F8A10;
+	padding: 10px;
+	margin-bottom: 10px;
+}
+
+.mds-success-message a {
+	color: #4F8A10;
+}
+
+.mds-caution-message {
+	background-color: #FFF3CD;
+	color: #8A6D3B;
+	border: 1px solid #8A6D3B;
+	padding: 10px;
+	margin-bottom: 10px;
+}
+
+.mds-caution-message a {
+	color: #8A6D3B;
+}
+
+.mds-error-message {
+	background-color: #FFE6E6;
+	color: #7B0000;
+	border: 1px solid #7B0000;
+	padding: 10px;
+	margin-bottom: 10px;
+}
+
+.mds-error-message a {
+	color: #7B0000;
+}
+
+.mds-info-message {
+	background-color: #d1e9ff;
+	color: #21577a;
+	border: 1px solid #21577a;
+	padding: 10px;
+	margin-bottom: 10px;
+}
+
+.mds-info-message a {
+	color: #21577a;
+}
+
 /* Ads list */
 
 .mds-container #pixels_list .today {
 	color: #ff0000;
 	font-weight: bold;
-
 }
 
 .mds-container #pixels_list .days_ago {
@@ -912,6 +959,7 @@ a.mds-button {
 }
 
 .mds-pixels-list-heading,
+.mds-manage-row,
 .mds-pixels-list-row,
 .mds-package-options-heading,
 .mds-package-options-row {
@@ -921,12 +969,30 @@ a.mds-button {
 }
 
 .mds-pixels-list-heading div,
+.mds-manage-row div,
 .mds-pixels-list-row div,
 .mds-package-options-heading div,
 .mds-package-options-row div {
 	flex: 1;
 	padding: 0 10px;
 	text-align: center;
+}
+
+
+.mds-manage-row,
+.mds-pixels-list-row {
+	background-color: #fff;
+	cursor: pointer;
+	box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+}
+
+.mds-manage-row:hover,
+.mds-pixels-list-row:hover {
+	background-color: #f9f9f9;
+}
+
+.mds-pixels-list-row-selected {
+	background-color: #f9f9f9;
 }
 
 .mds-radio-cell {
@@ -1049,4 +1115,24 @@ a.mds-button {
 		font-size: 14px;
 		padding: 5px 10px;
 	}
+}
+
+.mds-status-container {
+	position: relative;
+}
+
+.mds-status-indicator {
+	color: #000;
+	border-radius: 100%;
+	width: auto;
+	display: inline-block;
+	padding: 15px !important;
+}
+
+.mds-pixel-info {
+	background: #fff;
+	padding: 20px;
+	border-radius: 5px;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	display: none;
 }

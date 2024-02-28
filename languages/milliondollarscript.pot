@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.10.58\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.10.61\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-02-27 13:35:06\n"
-"PO-Revision-Date: 2024-02-27 13:35:06\n"
-"X-Generator: Million Dollar Script Two 2.5.10.58\n"
+"POT-Creation-Date: 2024-02-27 20:55:11\n"
+"PO-Revision-Date: 2024-02-27 20:55:11\n"
+"X-Generator: Million Dollar Script Two 2.5.10.61\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -711,7 +711,79 @@ msgstr ""
 msgid "Plugin Activation Error"
 msgstr ""
 
+msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
+msgstr ""
+
+msgid "<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>"
+msgstr ""
+
+msgid "<h3>Your order was completed.</h3>"
+msgstr ""
+
+msgid "Order Date"
+msgstr ""
+
 msgid "Order ID"
+msgstr ""
+
+msgid "In progress"
+msgstr ""
+
+msgid "Quantity"
+msgstr ""
+
+msgid "Amount"
+msgstr ""
+
+msgid "Time"
+msgstr ""
+
+msgid "Expired!"
+msgstr ""
+
+msgid "Not Yet Published"
+msgstr ""
+
+msgid "%ELAPSED% elapsed<br> %TO_GO% to go"
+msgstr ""
+
+msgid "Never"
+msgstr ""
+
+msgid "Write Ad"
+msgstr ""
+
+msgid "Confirm Now"
+msgstr ""
+
+msgid "Pay Now"
+msgstr ""
+
+msgid "Continue"
+msgstr ""
+
+msgid "Order"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cancel, are you sure?"
+msgstr ""
+
+msgid "Expires in: %TIME%"
+msgstr ""
+
+msgid "Manage"
+msgstr ""
+
+msgid "Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew"
+msgstr ""
+
+msgid "Thank you for your payment! Your order is awaiting approval."
+msgstr ""
+
+msgid "Confirm now"
 msgstr ""
 
 msgid "Grid ID"
@@ -748,9 +820,6 @@ msgid "Status"
 msgstr ""
 
 msgid "Expired"
-msgstr ""
-
-msgid "Not Yet Published"
 msgstr ""
 
 msgid "Order Confirmed"
@@ -915,6 +984,42 @@ msgstr ""
 msgid "<p>You are required to select at least %MIN_BLOCKS% blocks form the grid. Please go back to select more pixels.</p>"
 msgstr ""
 
+msgid "Unable to find pixels."
+msgstr ""
+
+msgid "No file was uploaded."
+msgstr ""
+
+msgid "Edit your Ad / Change your pixels"
+msgstr ""
+
+msgid "<p>Here you can edit your ad or change your pixels.</p>"
+msgstr ""
+
+msgid "<p><b>Your Pixels:</b></p>"
+msgstr ""
+
+msgid "Pixel Info"
+msgstr ""
+
+msgid "%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)"
+msgstr ""
+
+msgid "Change Pixels"
+msgstr ""
+
+msgid "To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\""
+msgstr ""
+
+msgid "Supported formats:"
+msgstr ""
+
+msgid "Edit Your Ad:"
+msgstr ""
+
+msgid "Ad Saved"
+msgstr ""
+
 msgid "Could not write to file: "
 msgstr ""
 
@@ -945,61 +1050,13 @@ msgstr ""
 msgid "* Required field"
 msgstr ""
 
-msgid "Expires"
-msgstr ""
-
 msgid "Edit"
 msgstr ""
 
-msgid "Expired!"
-msgstr ""
-
-msgid "%ELAPSED% elapsed<br> %TO_GO% to go"
-msgstr ""
-
-msgid "Never"
-msgstr ""
-
-msgid "Not Published"
-msgstr ""
-
-msgid "Not Approved"
-msgstr ""
-
-msgid "Pending"
-msgstr ""
-
-msgid "Completed"
-msgstr ""
-
-msgid "Cancelled"
-msgstr ""
-
-msgid "Confirmed"
-msgstr ""
-
-msgid "New"
-msgstr ""
-
-msgid "Denied"
-msgstr ""
-
-msgid "Deleted"
-msgstr ""
-
-msgid "Renew Now"
-msgstr ""
-
-msgid "Renewal Paid"
-msgstr ""
-
-msgid "Paid"
+msgid "Status: "
 msgstr ""
 
 msgid "No ads were found."
-msgstr ""
-
-msgid "No file was uploaded."
 msgstr ""
 
 msgid "File type not supported."
@@ -1021,6 +1078,9 @@ msgid "Here are the available price options for this grid:"
 msgstr ""
 
 msgid "Price"
+msgstr ""
+
+msgid "Expires"
 msgstr ""
 
 msgid "Max Orders"
@@ -1185,9 +1245,6 @@ msgstr ""
 msgid "Configuration"
 msgstr ""
 
-msgid "Manage"
-msgstr ""
-
 msgid "Grids"
 msgstr ""
 
@@ -1213,6 +1270,9 @@ msgid "List Customers"
 msgstr ""
 
 msgid "Waiting"
+msgstr ""
+
+msgid "Completed"
 msgstr ""
 
 msgid "Reserved"
@@ -1311,9 +1371,6 @@ msgstr ""
 msgid "Process Grid Images immediately after approval / disapproval"
 msgstr ""
 
-msgid "Order Date"
-msgstr ""
-
 msgid "Customer Name"
 msgstr ""
 
@@ -1357,12 +1414,6 @@ msgid "WARNING: This will completely delete all ads, blocks, and orders includin
 msgstr ""
 
 msgid "You might want to run a backup before doing this. Are you sure?"
-msgstr ""
-
-msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
-msgstr ""
-
-msgid "<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>"
 msgstr ""
 
 msgid "No Access"
@@ -1410,49 +1461,34 @@ msgstr ""
 msgid "OrderID"
 msgstr ""
 
-msgid "Quantity"
-msgstr ""
-
-msgid "Amount"
-msgstr ""
-
 msgid "No orders found."
 msgstr ""
 
-msgid "In progress"
+msgid "Pending"
 msgstr ""
 
-msgid "Write Ad"
+msgid "Cancelled"
 msgstr ""
 
-msgid "Confirm Now"
+msgid "Confirmed"
 msgstr ""
 
-msgid "Pay Now"
+msgid "New"
 msgstr ""
 
-msgid "Continue"
+msgid "Denied"
 msgstr ""
 
-msgid "Order"
+msgid "Deleted"
 msgstr ""
 
-msgid "Cancel"
+msgid "Renew Now"
 msgstr ""
 
-msgid "Cancel, are you sure?"
+msgid "Renewal Paid"
 msgstr ""
 
-msgid "Expires in: %TIME%"
-msgstr ""
-
-msgid "Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew"
-msgstr ""
-
-msgid "Thank you for your payment! Your order is awaiting approval."
-msgstr ""
-
-msgid "Confirm now"
+msgid "Paid"
 msgstr ""
 
 msgid "\"Completed\" Orders - Orders where the transaction was successfully completed.<br />\n\"Confirmed\" Orders - Orders confirmed by you, but the transaction has not been completed.<br />\n\"Pending\" Orders - Orders confirmed by you, but the transaction has not been approved.<br />\n\"Cancelled\" Orders - Cancelled by the administrator.<br />\n\"Expired\" Orders - Pixels were expired after the specified term. You can renew this order.<br />"
@@ -1536,55 +1572,13 @@ msgstr ""
 msgid "Confirm & Pay"
 msgstr ""
 
-msgid "You are not logged in. Please log in or sign up for a new account."
-msgstr ""
-
-msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
-msgstr ""
-
-msgid "<h3>Your order was completed.</h3>"
-msgstr ""
-
-msgid "You own pixels on <b>%GRID_COUNT%</b> different grids served by this website. Select the image which you would like to publish your pixels to:"
-msgstr ""
-
-msgid "Unable to find pixels."
-msgstr ""
-
-msgid "Edit your Ad / Change your pixels"
-msgstr ""
-
-msgid "<p>Here you can edit your ad or change your pixels.</p>"
-msgstr ""
-
-msgid "<p><b>Your Pixels:</b></p>"
-msgstr ""
-
-msgid "Pixel Info"
-msgstr ""
-
-msgid "%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)"
-msgstr ""
-
-msgid "Change Pixels"
-msgstr ""
-
-msgid "To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\""
-msgstr ""
-
-msgid "Supported formats:"
-msgstr ""
-
-msgid "Edit Your Ad:"
-msgstr ""
-
-msgid "Ad Saved"
-msgstr ""
-
 msgid "Manage your pixels"
 msgstr ""
 
-msgid "Your blocks are shown on the grid below.<br />\n- Click your block to edit it. Only your blocks are shown.<br />\n- <b>Red</b> blocks have no pixels yet. Click on them to upload your pixels.<br />"
+msgid "<p>Here you can manage your pixels.<p>"
+msgstr ""
+
+msgid "<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href=\"%ORDER_URL%\">Order Pixels</a></p>"
 msgstr ""
 
 msgid "Note: Your pixels are waiting for approval. They will be scheduled to go live once they are approved."
@@ -1596,7 +1590,25 @@ msgstr ""
 msgid "Your pixels are now approved! They are now waiting for the webmaster to publish them on to the public grid."
 msgstr ""
 
+msgid "\"Completed\" - Orders where the transaction was successfully completed.<br />\n\"Confirmed\" - Orders confirmed by you, but the transaction has not been completed.<br />\n\"Pending\" - Orders confirmed by you, but the transaction has not been approved.<br />\n\"Denied\" - Denied by the administrator.<br />\n\"Cancelled\" - Orders that have been cancelled.<br />\n\"Expired\" - Pixels were expired after the specified term. You can renew this order.<br />"
+msgstr ""
+
+msgid "Your blocks are shown on the grid below. Only your blocks are shown.<br />\n- Click your block to edit it.<br />\n- <b>Red</b> blocks have no pixels yet. Click on them to upload your pixels."
+msgstr ""
+
 msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
+msgstr ""
+
+msgid "You are not logged in. Please log in or sign up for a new account."
+msgstr ""
+
+msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
+msgstr ""
+
+msgid "You own pixels on <b>%GRID_COUNT%</b> different grids served by this website. Select the image which you would like to publish your pixels to:"
+msgstr ""
+
+msgid "Your blocks are shown on the grid below.<br />\n- Click your block to edit it. Only your blocks are shown.<br />\n- <b>Red</b> blocks have no pixels yet. Click on them to upload your pixels.<br />"
 msgstr ""
 
 msgid "Thank you for your order!"

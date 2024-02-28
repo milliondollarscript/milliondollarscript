@@ -49,7 +49,7 @@ class Orders {
 			)
 		);
 
-		if( ! $order ) {
+		if ( ! $order ) {
 			return '';
 		}
 
@@ -73,7 +73,7 @@ class Orders {
 			)
 		);
 
-		if( ! $order ) {
+		if ( ! $order ) {
 			return '';
 		}
 
@@ -97,7 +97,7 @@ class Orders {
 			)
 		);
 
-		if( ! $order ) {
+		if ( ! $order ) {
 			return '';
 		}
 
@@ -601,5 +601,368 @@ class Orders {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Get all orders for the current user.
+	 *
+	 * @return array
+	 * @global \wpdb $wpdb WordPress database abstraction object.
+	 *
+	 */
+	public static function get_manage_orders(): array {
+		global $wpdb;
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders AS t1, " . $wpdb->prefix . "users AS t2 WHERE t1.user_id=t2.ID AND t1.user_id=%d ORDER BY t1.order_date DESC ";
+		$sql = $wpdb->prepare( $sql, get_current_user_id() );
+
+		return $wpdb->get_results( $sql, ARRAY_A );
+	}
+
+	/**
+	 * Sort by order_date from both orders and temp_orders.
+	 *
+	 * @param $a
+	 * @param $b
+	 *
+	 * @return int
+	 */
+	public static function date_sort( $a, $b ): int {
+		$dateA = strtotime( $a['order_date'] );
+		$dateB = strtotime( $b['order_date'] );
+
+		if ( $dateA == $dateB ) {
+			return 0;
+		} elseif ( $dateA < $dateB ) {
+			return - 1;
+		} else {
+			return 1;
+		}
+	}
+
+	/**
+	 * Cancel an order.
+	 *
+	 * @param int $order_id
+	 * @param int $user_id
+	 *
+	 * @return void
+	 */
+	public static function cancel( int $order_id, int $user_id ): void {
+
+		if ( $order_id == Orders::get_current_order_id() ) {
+
+			global $wpdb;
+
+			$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND order_id=%d", $user_id, $order_id );
+			$row = $wpdb->get_row( $sql );
+
+			if ( $row ) {
+
+				// If the cancelled order is in progress then reset the progress.
+				if ( Orders::is_order_in_progress( $order_id ) ) {
+					Orders::reset_order_progress();
+				}
+
+				// delete associated ad
+				wp_delete_post( intval( $row->ad_id ) );
+
+				// delete blocks
+				$sql = $wpdb->prepare( "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d", $order_id );
+				$wpdb->query( $sql );
+
+				// delete associated order
+				$sql = $wpdb->prepare( "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id );
+				$wpdb->query( $sql );
+
+				// delete associated uploaded image
+				$imagefile = get_tmp_img_name();
+				if ( file_exists( $imagefile ) ) {
+					unlink( $imagefile );
+				}
+			}
+
+		} else {
+			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . $order_id . "'";
+			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+			if ( mysqli_num_rows( $result ) > 0 ) {
+
+				// If the cancelled order is in progress then reset the progress.
+				if ( Orders::is_order_in_progress( $order_id ) ) {
+					Orders::reset_progress();
+				}
+
+				delete_order( $order_id );
+			}
+		}
+	}
+
+	/**
+	 * @param $AUTO_PUBLISH
+	 * @param float|int|string $BID
+	 *
+	 * @return array|void
+	 */
+	public static function complete( $AUTO_PUBLISH, float|int|string $BID ) {
+		global $wpdb;
+
+		if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == Orders::get_current_order_id() ) {
+			// convert the temp order to an order.
+
+			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "' ";
+			$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+
+			if ( mysqli_num_rows( $order_result ) == 0 ) {
+				// no order id found...
+				if ( wp_doing_ajax() ) {
+					Functions::no_orders();
+					wp_die();
+				}
+
+				Utility::redirect( Utility::get_page_url( 'no-orders' ) );
+			} else if ( $order_row = mysqli_fetch_array( $order_result ) ) {
+
+				$_REQUEST['order_id'] = reserve_pixels_for_temp_order( $order_row );
+			} else {
+
+				Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
+				Language::out_replace(
+					'<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>',
+					'%ORDER_PAGE%',
+					Utility::get_page_url( 'order' )
+				);
+
+				require_once MDS_CORE_PATH . "html/footer.php";
+				die();
+			}
+		}
+
+		$sql = $wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
+			intval( $_REQUEST['order_id'] ),
+			get_current_user_id()
+		);
+
+		$row = $wpdb->get_row( $sql, ARRAY_A );
+
+		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+
+		if ( ( $row['price'] == 0 ) || ( $privileged == '1' ) ) {
+			complete_order( $row['user_id'], $row['order_id'] );
+			// no transaction for this order
+			Language::out( '<h3>Your order was completed.</h3>' );
+		}
+
+		// publish
+		if ( $AUTO_PUBLISH == 'Y' ) {
+			process_image( $BID );
+			publish_image( $BID );
+			process_map( $BID );
+		}
+	}
+
+	public static function order_details( $order ): void {
+		global $wpdb;
+
+		?>
+        <div>
+            <b><?php Language::out( "Order Date" ); ?>:</b>
+            <?php echo get_date_from_gmt( $order['order_date'] ); ?>
+        </div>
+        <div>
+            <b><?php Language::out( 'Order ID' ); ?>:</b>
+            <?php echo isset( $order['order_id'] ) ? '#' . $order['order_id'] : Language::get( 'In progress' ); ?>
+        </div>
+        <div>
+            <b><?php Language::out( "Quantity" ); ?>:</b>
+            <?php echo $order['quantity']; ?>
+        </div>
+        <div>
+            <b><?php Language::out( "Grid" ); ?>:</b>
+			<?php
+			$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $order['banner_id'] );
+			$b_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$b_row = mysqli_fetch_array( $b_result );
+
+			if ( $b_row ) {
+				echo $b_row['name'];
+			}
+
+			?>
+        </div>
+        <div>
+            <b><?php Language::out( "Amount" ); ?>:</b>
+			<?php echo Currency::convert_to_default_currency_formatted( $order['currency'], $order['price'] ); ?>
+        </div>
+        <div>
+            <b><?php Language::out( "Time" ); ?>:</b><br />
+			<?php
+
+			if ( $order['days_expire'] > 0 ) {
+
+				if ( $order['published'] != 'Y' ) {
+					$time_start = current_time( 'timestamp' );
+				} else {
+					$time_start = strtotime( $order['date_published'] );
+				}
+
+				$elapsed_time = current_time( 'timestamp' ) - $time_start;
+
+				$exp_time = ( $order['days_expire'] * 24 * 60 * 60 );
+
+				$exp_time_to_go = $exp_time - $elapsed_time;
+
+				$to_go = elapsedtime( $exp_time_to_go );
+
+				$elapsed = elapsedtime( $elapsed_time );
+
+				if ( $order['status'] == 'expired' ) {
+					$days = "<a href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $order['order_id'] ) . "&BID=" . esc_attr( $order['banner_id'] ) . "&renew=true'>" . Language::get( 'Expired!' ) . "</a>";
+				} else if ( $order['date_published'] == '' ) {
+					$days = Language::get( 'Not Yet Published' );
+				} else {
+					$days = Language::get_replace(
+						'%ELAPSED% elapsed<br> %TO_GO% to go',
+						[ '%ELAPSED%', '%TO_GO%' ],
+						[ $elapsed, $to_go ]
+					);
+				}
+			} else {
+
+				$days = Language::get( 'Never' );
+			}
+			echo $days;
+			?>
+        </div>
+        <div>
+			<?php
+			if ( isset( $order['status'] ) ) {
+				$temp_var = '';
+				if ( \MillionDollarScript\Classes\Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+					$temp_var = '&order_id=' . $order['order_id'];
+				}
+
+				$steps    = \MillionDollarScript\Classes\Steps::get_steps();
+				$USE_AJAX = Config::get( 'USE_AJAX' );
+
+				switch ( $order['status'] ) {
+					case "new":
+						$current_step = \MillionDollarScript\Classes\Steps::get_current_step( $order['order_id'] );
+						if ( $current_step != 0 ) {
+							echo Language::get( 'In progress' ) . '<br>';
+							if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_UPLOAD ) {
+								if ( $USE_AJAX == 'SIMPLE' ) {
+									$url = Utility::get_page_url( 'order' );
+								} else {
+									$url = Utility::get_page_url( 'upload' );
+								}
+								echo "<a class='mds-button mds-upload' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Upload' ) . "</a>";
+							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_WRITE_AD ) {
+								echo "<a class='mds-button mds-write' href='" . Utility::get_page_url( 'write-ad' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Write Ad' ) . "</a>";
+							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_CONFIRM_ORDER ) {
+								echo "<a class='mds-button mds-confirm' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
+							} else if ( $steps[ $current_step ] == \MillionDollarScript\Classes\Steps::STEP_PAYMENT ) {
+								echo "<a class='mds-button mds-pay' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
+							} else {
+								echo "<a class='mds-button mds-continue' href='" . Utility::get_page_url( 'order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Continue' ) . "</a>";
+							}
+						} else {
+							if ( $USE_AJAX == 'SIMPLE' ) {
+								$text = Language::get( 'Upload' );
+								$url  = Utility::get_page_url( 'upload' );
+							} else {
+								$text = Language::get( 'Order' );
+								$url  = Utility::get_page_url( 'order' );
+							}
+							echo "<a class='mds-button mds-upload' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . $text . "</a>";
+						}
+						echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
+						break;
+					case "confirmed":
+						if ( Orders::is_order_in_progress( $order['order_id'] ) || ( \MillionDollarScript\Classes\WooCommerceFunctions::is_wc_active() ) ) {
+							update_user_meta( get_current_user_id(), 'mds_confirm', true );
+							echo "<a class='mds-button mds-pay' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
+							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
+						}
+						break;
+					case "completed":
+
+						if ( $order['published'] == 'N' ) {
+							Language::out( 'Not Yet Published' );
+						} else if ( $order['days_expire'] > 0 ) {
+
+							if ( $order['date_published'] != '' ) {
+								$time_start = strtotime( $order['date_published'] );
+							} else {
+								$time_start = current_time( 'timestamp' );
+								echo $time_start;
+							}
+
+							$elapsed_time   = current_time( 'timestamp' ) - $time_start;
+							$exp_time       = $order['days_expire'] * 24 * 60 * 60;
+							$exp_time_to_go = $exp_time - $elapsed_time;
+
+							if ( $exp_time_to_go < 0 ) {
+								$to_go = "Expired";
+							} else {
+								$to_go = elapsedtime( $exp_time_to_go );
+							}
+
+							if ( $order['date_published'] != '' ) {
+								echo Language::get_replace( 'Expires in: %TIME%', '%TIME%', $to_go );
+								echo "<br />";
+							}
+
+							if ( ! \MillionDollarScript\Classes\Options::get_option( 'order-locking' ) ) {
+								echo "<a class='mds-button mds-manage' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
+							}
+						}
+
+						break;
+					case 'renew_wait':
+					case "expired":
+						$time_expired = strtotime( $order['date_stamp'] );
+
+						$time_when_cancel = $time_expired + ( \MillionDollarScript\Classes\Config::get( 'MINUTES_RENEW' ) * 60 );
+
+						$total_minutes = ( $time_when_cancel - time() ) / 60;
+
+						$days              = floor( $total_minutes / 1440 );
+						$remaining_minutes = round( $total_minutes ) % 1440;
+
+						$hours   = floor( $remaining_minutes / 60 );
+						$minutes = $remaining_minutes % 60;
+
+						// check to see if there is a renew_wait or renew_paid order
+						$sql   = $wpdb->prepare( "SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE (status = 'renew_paid' OR status = 'renew_wait') AND original_order_id=%d", intval( $order['original_order_id'] ) );
+						$res_c = $wpdb->get_results( $sql );
+
+						if ( count( $res_c ) == 0 ) {
+							$searchArray  = [ '%DAYS_TO_RENEW%', '%HOURS_TO_RENEW%', '%MINUTES_TO_RENEW%' ];
+							$replaceArray = [ $days, $hours, $minutes ];
+
+							echo "<a class='mds-button mds-order-renew' href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $order['order_id'] ) . "&BID=" . esc_attr( $order['banner_id'] ) . "&renew=true'>" . esc_html( Language::get_replace( 'Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew', $searchArray, $replaceArray ) ) . "</a>";
+						}
+						break;
+					case "pending":
+					case "cancelled":
+					case "deleted":
+						break;
+					case "denied":
+						echo "<a class='mds-button mds-manage' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
+						break;
+					case "paid":
+						Language::out( "Thank you for your payment! Your order is awaiting approval." );
+						break;
+					default:
+				}
+			} else {
+				$temp_var = '&order_id=' . $order['order_id'];
+				echo Language::get( 'In progress' ) . '<br>';
+				echo "<a href='" . Utility::get_page_url( 'order' ) . "?BID={$order['banner_id']}{$temp_var}'>" . Language::get( 'Confirm now' ) . "</a>";
+				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "}\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes{$temp_var}" ) . "\"' >";
+			}
+			?>
+        </div>
+		<?php
 	}
 }

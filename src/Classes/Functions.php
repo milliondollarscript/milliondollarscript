@@ -29,6 +29,8 @@
 
 namespace MillionDollarScript\Classes;
 
+use WP_Post;
+
 defined( 'ABSPATH' ) or exit;
 
 class Functions {
@@ -320,6 +322,7 @@ class Functions {
 	 */
 	public static function enqueue_scripts(): void {
 		wp_enqueue_script( 'jquery' );
+		wp_enqueue_script( 'jquery-ui-accordion' );
 
 		wp_enqueue_style( 'mds' );
 
@@ -465,5 +468,203 @@ class Functions {
 		}
 
 		return '<div class="mds-navigation">' . $navigation . '</div>';
+	}
+
+	/**
+	 * Manage pixel.
+	 *
+	 * @param int $ad_id
+	 * @param array|WP_Post|null $mds_pixel
+	 * @param array|null $banner_data
+	 * @param float|int|string $BID
+	 * @param string $gif_support
+	 * @param string $jpeg_support
+	 * @param string $png_support
+	 *
+	 * @return bool
+	 */
+	public static function manage_pixel( int $ad_id, array|WP_Post|null $mds_pixel, ?array $banner_data, float|int|string $BID, string $gif_support, string $jpeg_support, string $png_support ): bool {
+
+		if ( empty( $mds_pixel ) ) {
+			// Make sure the mds-pixel exists.
+			$mds_pixel = get_post( $ad_id );
+		}
+
+		if ( empty( $mds_pixel ) ) {
+			global $mds_error;
+			$mds_error = Language::get( 'Unable to find pixels.' );
+
+			return false;
+		}
+
+		global $wpdb;
+
+		$user_id      = get_current_user_id();
+		$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE ad_id=%d AND user_id=%d";
+		$prepared_sql = $wpdb->prepare( $sql, $ad_id, $user_id );
+		$result       = $wpdb->get_results( $prepared_sql, ARRAY_A );
+
+		if ( ! empty( $result ) ) {
+			$row = $result[0];
+		} else {
+			$row = array();
+			global $mds_error;
+			$mds_error = Language::get( 'Unable to find pixels.' );
+
+			return false;
+		}
+
+		$order_id = $row['order_id'];
+		if ( /*! empty( $_REQUEST['change_pixels'] ) && */
+		Options::get_option( 'order-locking', false ) ) {
+			// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
+			$completion_status = Orders::get_completion_status( $order_id, $user_id );
+			if ( ! $completion_status && $row['status'] !== 'denied' ) {
+				// User should never get here, so we will just redirect them to the manage page.
+				if ( empty( $_REQUEST['json'] ) ) {
+					echo '<script>window.location.href="' . esc_url( Utility::get_page_url( 'manage' ) ) . '";</script>';
+					wp_die();
+				} else {
+					Utility::redirect( Utility::get_page_url( 'manage' ) );
+				}
+			}
+		}
+
+		$blocks = explode( ',', $row['blocks'] );
+
+		$size          = get_pixel_image_size( $row['order_id'] );
+		$pixels        = $size['x'] * $size['y'];
+		$upload_result = upload_changed_pixels( $order_id, $row['banner_id'], $size, $banner_data );
+
+		if ( ! $upload_result ) {
+			global $mds_error;
+			$mds_error = Language::get( 'No file was uploaded.' );
+
+			return false;
+		} else if ( ! empty( $_REQUEST['change_pixels'] ) && isset( $_FILES ) ) {
+			// The image was uploaded successfully.
+			if ( $row['status'] == 'denied' ) {
+				pend_order( $order_id );
+				Orders::reset_order_progress();
+			}
+		}
+
+		// If not uploading a new image, check if the order is valid.
+		if ( empty( $_REQUEST['change_pixels'] ) ) {
+			$order_id      = Orders::get_order_id_from_ad_id( $ad_id );
+			$sql           = $wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status IN ('confirmed', 'new', 'deleted') AND order_id=%d;",
+				$order_id
+			);
+			$check_results = $wpdb->get_results( $sql, ARRAY_A );
+			if ( ! empty( $check_results ) ) {
+				// The order is not valid so don't display it.
+				Language::out( 'Sorry, you are not allowed to access this page.' );
+
+				return false;
+			}
+			unset( $sql, $check_results );
+		}
+
+		// Ad forms:
+		?>
+        <div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>
+		<?php
+		Language::out( '<p>Here you can edit your ad or change your pixels.</p>' );
+		Language::out( '<p><b>Your Pixels:</b></p>' );
+		?>
+        <table>
+            <tr>
+                <td>
+                    <b><?php Language::out( 'Pixels' ); ?></b><br/>
+                    <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&aid=<?php echo $ad_id; ?>" alt="">
+                </td>
+                <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
+					Language::out_replace(
+						'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)',
+						[ '%SIZE_X%', '%SIZE_Y%', '%PIXEL_COUNT%' ],
+						[ $size['x'], $size['y'], $pixels ]
+					);
+					?><br></td>
+                <td><b><?php Language::out( 'Change Pixels' ); ?></b><br><?php
+					Language::out_replace(
+						'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click "upload"',
+						[ '%SIZE_X%', '%SIZE_Y%' ],
+						[ $size['x'], $size['y'] ]
+					);
+					?>
+                    <form name="change" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+                          enctype="multipart/form-data" method="post">
+						<?php wp_nonce_field( 'mds-form' ); ?>
+                        <input type="hidden" name="action" value="mds_form_submission">
+                        <input type="hidden" name="mds_dest" value="manage">
+                        <input type="file" name='pixels'><br>
+                        <input type="hidden" name="aid" value="<?php echo $ad_id; ?>">
+                        <input type="submit" name="change_pixels" class="mds-upload-submit"
+                               value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>">
+                    </form>
+					<?php Language::out( 'Supported formats:' ); ?><?php echo "$gif_support $jpeg_support $png_support"; ?>
+                </td>
+            </tr>
+        </table>
+
+        <p><b><?php Language::out( 'Edit Your Ad:' ); ?></b></p>
+		<?php
+
+		global $prams;
+
+		// Get the desired MDS Pixels post owned by the current user
+		$pixels = get_posts( [
+			'post_type'   => FormFields::$post_type,
+			'post_status' => 'any',
+			'p'           => $ad_id,
+			'author'      => $user_id,
+		] );
+
+		if ( ! empty( $pixels ) ) {
+			$ad_id    = $pixels[0]->ID;
+			$order_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
+		}
+
+		if ( empty( $ad_id ) ) {
+			$ad_id = insert_ad_data( $order_id );
+		}
+
+		if ( ! empty( $_REQUEST['save'] ) ) {
+			Functions::verify_nonce( 'mds_form' );
+
+			$prams = load_ad_values( $ad_id );
+			?>
+            <div class='ok_msg_label'><?php Language::out( 'Ad Saved' ); ?></div>
+			<?php
+
+			$mode = "user";
+
+			display_ad_form( 1, $mode, $prams );
+
+			// disapprove the pixels because the ad was modified..
+
+			if ( $banner_data['AUTO_APPROVE'] != 'Y' ) { // to be approved by the admin
+				disapprove_modified_order( $prams['order_id'], $BID );
+			}
+
+			if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
+				process_image( $BID );
+				publish_image( $BID );
+				process_map( $BID );
+			}
+
+			// send pixel change notification
+			if ( Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
+				send_published_pixels_notification( $user_id, $prams['order_id'] );
+			}
+		} else {
+			$prams = load_ad_values( $ad_id );
+			display_ad_form( 1, 'user', $prams );
+		}
+
+		require_once MDS_CORE_PATH . "html/footer.php";
+
+        return true;
 	}
 }

@@ -384,6 +384,143 @@ function list_ads( $offset = 0, $user_id = '' ) {
 	return $count;
 }
 
+function manage_list_ads( $offset = 0, $user_id = '' ) {
+
+	global $BID, $wpdb, $column_list;
+
+	$records_per_page = 40;
+
+	// process search result
+	$additional_params = [];
+	if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'search' ) {
+		$additional_params['mds-action'] = 'search';
+	}
+
+	$order_by = ( isset( $_REQUEST['order_by'] ) && $_REQUEST['order_by'] ) ? $_REQUEST['order_by'] : '';
+
+	if ( isset( $_REQUEST['ord'] ) && $_REQUEST['ord'] == 'asc' ) {
+		$ord = 'ASC';
+	} else if ( isset( $_REQUEST['ord'] ) && $_REQUEST['ord'] == 'desc' ) {
+		$ord = 'DESC';
+	} else {
+		$ord = 'DESC';
+	}
+
+	if ( $order_by == null || $order_by == '' ) {
+		$order    = " `ad_date` ";
+		$order_by = 'ad_date';
+	} else {
+		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order_by ) . "` ";
+	}
+
+	if ( ! is_numeric( $user_id ) ) {
+		$user_id = get_current_user_id();
+	}
+
+	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND `status` != 'deleted' ORDER BY %s %s", $BID, $user_id, $order, $ord );
+	$result = $wpdb->get_results( $sql, ARRAY_A );
+
+	$count = count( $result );
+
+	if ( $count > $records_per_page ) {
+		$result = array_slice( $result, $offset, $records_per_page );
+	}
+
+	if ( $count > 0 ) {
+
+		if ( $count > $records_per_page ) {
+
+			$cur_page = intval( $offset ) / $records_per_page;
+			$cur_page ++;
+
+			echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, Utility::get_page_url( 'manage' ), $order_by );
+		}
+
+		$order_locking = \MillionDollarScript\Classes\Options::get_option( 'order-locking', false );
+
+		?>
+        <div class="mds-pixels-list">
+			<?php
+			$i = 0;
+			global $prams;
+			foreach ( $result as $prams ) {
+
+				if ( $i >= $records_per_page ) {
+					break;
+				}
+				$i ++;
+
+				?>
+                <div class="mds-manage-row">
+                    <div>
+						<?php
+						$order_status = Orders::get_completion_status( $prams['order_id'], $user_id );
+						if ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) {
+
+							?>
+                            <input class="mds-button" type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
+                                   onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>&amp;json=1'">
+							<?php
+						}
+						?>
+                    </div>
+					<?php
+					$column_list = [];
+					echo_ad_list_data();
+
+					?>
+                    <div>
+                        <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>" alt=""/>
+                    </div>
+					<?php
+					if ( $prams['published'] == 'Y' ) {
+						$pub = 'Published';
+					} else {
+						$pub = 'Not Published';
+					}
+					$pub_lang = Language::get( $pub );
+					if ( $prams['approved'] == 'Y' ) {
+						$app = 'Approved';
+					} else {
+						$app = 'Not Approved';
+					}
+					$app_lang     = Language::get( $app );
+
+					$status       = str_replace( '_', ' ', ucwords( $prams['status'] ) );
+					$status_lang  = Language::get( $status );
+					$status_color = Utility::get_order_color( [
+						$pub == 'Published',
+						$app == 'Approved',
+						$status == 'Completed'
+					],
+						0.9
+					);
+
+					?>
+                    <div class="mds-status-container">
+                        <div class='mds-status-indicator' title="<?php echo Language::get( "Status: " ) . esc_html( $pub_lang ) . ', ' . esc_html( $app_lang ) . ', ' . esc_html( $status_lang ); ?>"
+                             style='background-color: <?php echo $status_color; ?>'></div>
+                    </div>
+                </div>
+                <div class="mds-pixel-info">
+                    <b><?php Language::out( "Status: " ); ?></b><br/>
+					<?php echo esc_html( $pub_lang ); ?>, <?php echo esc_html( $app_lang ); ?>, <?php echo esc_html( $status_lang ); ?>
+
+                    <br/>
+					<?php Orders::order_details( $prams ); ?>
+                </div>
+				<?php
+			}
+			?>
+        </div>
+		<?php
+	} else {
+		echo '<div style="text-align: center;"><b>' . Language::get( 'No ads were found.' ) . '</b></div>';
+	}
+
+	return $count;
+}
+
 function insert_ad_data( $order_id = 0, $admin = false ) {
 	global $wpdb;
 

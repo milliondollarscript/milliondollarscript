@@ -666,10 +666,6 @@ class Utility {
 		return self::has_endpoint();
 	}
 
-	public static function is_ajax() {
-		return wp_doing_ajax();
-	}
-
 	public static function output_message( $data = [] ): void {
 		if ( wp_doing_ajax() ) {
 			if ( isset( $data['success'] ) ) {
@@ -683,5 +679,37 @@ class Utility {
 			echo $data['message'];
 		}
 
+	}
+
+	/**
+	 * Get order color based on an array of boolean values.
+	 *
+	 * @param array $values
+	 * @param float $transparency A value of 1 will be opaque, a value of 0 will be transparent.
+	 *
+	 * @return string
+	 */
+	public static function get_order_color( array $values, float $transparency = 1.0 ): string {
+		$count = count($values);
+
+		if ($count == 0) {
+			// Return an empty string if the input array is empty
+			return '';
+		}
+
+		$trueCount = array_sum($values);
+
+		if ($trueCount == $count) {
+			// All values are true, return green
+			$color = 'rgba(0, 255, 0, ' . $transparency . ')';
+		} elseif ($trueCount == 0) {
+			// All values are false, return red
+			$color = 'rgba(255, 0, 0, ' . $transparency . ')';
+		} else {
+			// Some values are true and some are false, return orange
+			$color = 'rgba(255, 130, 0, ' . $transparency . ')';
+		}
+
+		return $color;
 	}
 }

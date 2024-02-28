@@ -699,9 +699,29 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 		jQuery(this).closest('form').submit();
 		return true;
 	});
+
+	jQuery('.mds-pixels-list').accordion({
+		header: ".mds-manage-row",
+		collapsible: true,
+		active: false,
+	});
 });
 
 function mdsToggleMenu() {
 	const menu = document.getElementById("mds-users-menu");
 	menu.classList.toggle('mds-show-menu');
+}
+
+function confirmLink(theLink, theConfirmMsg) {
+
+	if (theConfirmMsg === '') {
+		return true;
+	}
+
+	const is_confirmed = confirm(theConfirmMsg + '\n');
+	if (is_confirmed) {
+		theLink.href += '&is_js_confirmed=1';
+	}
+
+	return is_confirmed;
 }

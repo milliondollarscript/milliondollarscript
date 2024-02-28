@@ -106,7 +106,7 @@ class Ajax {
 						require_once MDS_CORE_PATH . 'users/orders.php';
 						wp_die();
 					case "manage":
-						require_once MDS_CORE_PATH . 'users/publish.php';
+						require_once MDS_CORE_PATH . 'users/manage.php';
 						wp_die();
 					case "no-orders":
 						Functions::no_orders();
