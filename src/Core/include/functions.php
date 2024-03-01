@@ -668,12 +668,6 @@ function expire_order( $order_id ) {
 		//echo "$sql<br>";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (expire order)" );
 
-		// Set mds-pixel as pending
-		wp_update_post( [
-			'ID'          => $row['ad_id'],
-			'post_status' => 'private',
-		] );
-
 		if ( $row['status'] == 'new' ) {
 			// do not send email
 			return;
