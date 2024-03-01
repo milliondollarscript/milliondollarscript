@@ -355,7 +355,7 @@ if ( ! empty( $image ) ) {
 	// Check for any new orders
 	$order_row = Orders::find_new_order();
 
-	if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) {
+	if ( $order_row == null || ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) ) {
 		Language::out_replace(
 			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
 			[ '%ORDER_URL%', '%BID%' ],
