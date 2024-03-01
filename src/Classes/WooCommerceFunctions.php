@@ -701,7 +701,13 @@ class WooCommerceFunctions {
 			)
 		);
 
-		return $count > 0;
+		if ( $count == null ) {
+			return true;
+		}
+
+		$valid = intval( $count ) > 0;
+
+		return $valid;
 	}
 
 	/**

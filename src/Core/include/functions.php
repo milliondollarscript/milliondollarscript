@@ -660,7 +660,7 @@ function expire_order( $order_id ) {
 
 		$now = current_time( 'mysql' );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='expired', date_stamp='$now', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' ";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='expired', date_stamp='$now', `approved`='N', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "' ";
 		//echo "$sql<br>";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
@@ -761,7 +761,7 @@ function delete_order( $order_id ): void {
 
 		$now = current_time( 'mysql' );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='deleted', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='deleted', date_stamp='$now', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "'";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 		// DELETE BLOCKS
@@ -793,7 +793,7 @@ function cancel_order( $order_id ) {
 
 		$now = current_time( 'mysql' );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `status`='cancelled', date_stamp='$now', approved='N' WHERE order_id='" . intval( $order_id ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `status`='cancelled', date_stamp='$now', approved='N', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "'";
 		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 
 		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET `status`='cancelled', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' AND banner_id='" . intval( $row['banner_id'] ) . "'";

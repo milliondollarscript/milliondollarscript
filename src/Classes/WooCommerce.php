@@ -494,9 +494,7 @@ class WooCommerce {
 	 * @return void
 	 */
 	public static function validate_checkout( \WC_Order $order, \WP_REST_Request $request ): void {
-		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
-
-		if ( empty( $mds_order_id ) && WooCommerceFunctions::is_mds_order( $order->get_id() ) && ! WooCommerceFunctions::valid_mds_order() ) {
+		if ( WooCommerceFunctions::is_mds_order( $order->get_id() ) && ! WooCommerceFunctions::valid_mds_order() ) {
 			wc_add_notice( 'MDS_VALIDATION_ERROR', 'error' );
 		}
 	}
