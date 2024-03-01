@@ -88,8 +88,8 @@
 	box-shadow: 0 0 5px 1px #000;
 }
 
-.mds-admin-menu li:hover a, .mds-admin-menu .active a {
-	color: #fff;
+.mds-admin-menu li a:hover, .mds-admin-menu .active a {
+	color: #72aee6;
 }
 
 .mds-admin-menu li:hover {
