@@ -327,7 +327,7 @@ if ( $count > 0 ) {
 					// Prepare href
 					$href = esc_url(
 						add_query_arg(
-							[ 'BID' => $BID, 'block_id' => $row['block_id'] ],
+							[ 'mds-action' => 'manage', 'aid' => $row['ad_id'] ],
 							Utility::get_page_url( 'manage' )
 						)
 					);
