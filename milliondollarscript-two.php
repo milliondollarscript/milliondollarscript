@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.10.69
+  Version: 2.5.10.70
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -63,7 +63,7 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.10.66' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.69' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.70' );
 
 // Detect PHP version
 $minimum_version = '8.0.0';
@@ -76,13 +76,13 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 /**
  * Performs upgrade operations.
  *
- * @param bool $flush
+ * @param bool $load_post
  *
  * @return void
  *
  * @throws \Exception if there is an error during the upgrade process.
  */
-function perform_upgrade_operations( bool $flush = true ): void {
+function perform_upgrade_operations( bool $load_post = true ): void {
 	$mdsdb   = new Database();
 	$version = $mdsdb->upgrade();
 	if ( $version !== false ) {
@@ -93,11 +93,12 @@ function perform_upgrade_operations( bool $flush = true ): void {
 	\MillionDollarScript\Classes\Cron::clear_cron();
 	\MillionDollarScript\Classes\Cron::schedule_cron();
 
-	// Register mds-pixel post type.
-	\MillionDollarScript\Classes\FormFields::register_post_type();
-
 	// Flush permalinks.
-	if ( $flush ) {
+	if ( $load_post ) {
+
+		// Register mds-pixel post type.
+		\MillionDollarScript\Classes\FormFields::register_post_type();
+
 		flush_rewrite_rules();
 	}
 }

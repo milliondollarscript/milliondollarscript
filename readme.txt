@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.3
-Stable tag: 2.5.10.69
+Stable tag: 2.5.10.70
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -78,6 +78,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Remove options for DISPLAY_ORDER_HISTORY, users-history-page, users-publish-page, and users-home-page.
 * Added mds_header_container and mds_footer_container filters for header and footer html.
 * Fix clicking images in grid not editing the order.
+* Fix temporary upgrade mechanism causing an error.
 * Update vendor libraries.
 * Update language file.
 
