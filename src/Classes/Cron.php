@@ -38,22 +38,22 @@ defined( 'ABSPATH' ) or exit;
  */
 class Cron {
 	public static function add_minute( $schedules ): mixed {
-		return Cron::add_minute( $schedules );
+		return System\Cron::add_minute( $schedules );
 	}
 
 	public static function schedule_cron(): void {
-		Cron::schedule_cron();
+		System\Cron::schedule_cron();
 	}
 
 	public static function clear_cron(): void {
-		Cron::clear_cron();
+		System\Cron::clear_cron();
 	}
 
 	public static function minute(): void {
-		Cron::minute();
+		System\Cron::minute();
 	}
 
 	public static function clean_temp_files(): void {
-		Cron::clean_temp_files();
+		System\Cron::clean_temp_files();
 	}
 }
