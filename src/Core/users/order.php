@@ -175,9 +175,9 @@ if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $o
 			$row = mysqli_fetch_array( $result );
 
 			Language::out_replace(
-				'<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>',
-				[ '%MAX_ORDERS%', '%HISTORY_URL%' ],
-				[ $row['max_orders'], Utility::get_page_url( 'history' ) ]
+				'<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href="%MANAGE_URL%">Manage Pixels</a>.</p>',
+				[ '%MAX_ORDERS%', '%MANAGE_URL%' ],
+				[ $row['max_orders'], Utility::get_page_url( 'manage' ) ]
 			);
 		}
 	} else {

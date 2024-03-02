@@ -142,7 +142,7 @@ function mds_wp_login_check(): void {
 
 		// redirect to the default login and then back to the users page
 		if ( $doredirect ) {
-			wp_redirect( wp_login_url( Utility::get_page_url( 'account' ) ) );
+			wp_redirect( wp_login_url( Utility::get_page_url( 'manage' ) ) );
 			exit;
 		}
 	}

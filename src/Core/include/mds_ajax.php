@@ -161,7 +161,7 @@ class Mds_Ajax {
 										jQuery.getScript('<?php echo MDS_CORE_URL; ?>js/third-party/contact.nomodule.min.js', function () {
 											window.mds_data = {
 												ajax: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
-												publishurl: '<?php echo esc_js( Utility::get_page_url( 'manage' ) ); ?>',
+												manageurl: '<?php echo esc_js( Utility::get_page_url( 'manage' ) ); ?>',
 												paymenturl: '<?php echo esc_js( Utility::get_page_url( 'payment' ) ); ?>',
 												wp: '<?php echo esc_js( get_site_url() ); ?>',
 												winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),

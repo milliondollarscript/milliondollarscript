@@ -663,7 +663,7 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 		let $el = jQuery(this);
 		$el.prop('disabled', true);
 		$el.attr('value', MDS.COMPLETING);
-		window.location = MDS.publishurl + '?mds-action=complete&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
+		window.location = MDS.manageurl + '?mds-action=complete&order_id=' + $el.data('order-id') + '&BID=' + $el.data('grid');
 		return false;
 	});
 
@@ -687,6 +687,17 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 
 	jQuery('.mds-button').on('click', function () {
 		jQuery('.mds-button').prop('disabled', true).attr('value', MDS.WAIT);
+	});
+
+	jQuery('.mds-edit-button').on('click', function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		jQuery('.mds-edit-button').prop('disabled', true).attr('value', MDS.WAIT);
+
+		const $el = jQuery(this);
+		window.location = MDS.manageurl + '?mds-action=manage&aid=' + $el.data('pixel-id') + '&json=1';
+
+		return false;
 	});
 
 	jQuery('.mds-upload-submit').on('click', function () {

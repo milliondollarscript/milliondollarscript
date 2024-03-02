@@ -95,16 +95,13 @@ class Ajax {
 					case "list":
 						self::show_list();
 						wp_die();
-					case "users":
-					case "account":
-						self::show_users();
-						wp_die();
 					case "confirm-order":
 						require_once MDS_CORE_PATH . 'users/confirm_order.php';
 						wp_die();
+					case "users":
+					case "account":
+					case "publish":
 					case "history":
-						require_once MDS_CORE_PATH . 'users/orders.php';
-						wp_die();
 					case "manage":
 						require_once MDS_CORE_PATH . 'users/manage.php';
 						wp_die();
@@ -117,9 +114,6 @@ class Ajax {
 					case "checkout":
 					case "payment":
 						require_once MDS_CORE_PATH . 'users/payment.php';
-						wp_die();
-					case "publish":
-						require_once MDS_CORE_PATH . 'users/publish.php';
 						wp_die();
 					case "thank-you":
 						require_once MDS_CORE_PATH . 'users/thanks.php';
@@ -409,9 +403,5 @@ class Ajax {
             </div>
         </div>
 		<?php
-	}
-
-	public static function show_users(): void {
-		\MillionDollarScript\Classes\Users::my_account();
 	}
 }

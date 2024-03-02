@@ -1168,7 +1168,7 @@ function select_block( $clicked_block, $banner_data, $size, $user_id ) {
 			"error" => "true",
 			"type"  => "max_orders",
 			"data"  => [
-				"value" => Language::get_replace( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href="%HISTORY_URL%">Order History.</a></b>', '%HISTORY_URL%', esc_url( Utility::get_page_url( 'history' ) ) ),
+				"value" => Language::get_replace( '<b><span style="color:red">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your order history under <a href="%MANAGE_URL%">Manage Pixels</a>.</b>', '%MANAGE_URL%', esc_url( Utility::get_page_url( 'manage' ) ) ),
 			]
 		];
 	}

@@ -37,7 +37,7 @@ defined( 'ABSPATH' ) or exit;
  * home_url( $MDS_ENDPOINT . '/pointer' )
  *
  * Wrapper function:
- * \MillionDollarScript\Classes\Functions::get_page_url('account')
+ * \MillionDollarScript\Classes\Functions::get_page_url('manage')
  */
 class Routes {
 	public function __construct() {
@@ -51,13 +51,10 @@ class Routes {
 
 	private static function get_routes(): array {
 		return [
-			'account',
 			'order',
 			'order-pixels',
 			'confirm-order',
 			'manage',
-			'history',
-			'publish',
 			'display-map',
 			'display-stats',
 			'thank-you',
@@ -215,15 +212,12 @@ class Routes {
 					 * Templates
 					 */
 					$valid_pages = [
-						'account',
 						'confirm-order',
-						'history',
 						'list',
 						'manage',
 						'no-orders',
 						'order',
 						'payment',
-						'publish',
 						'thank-you',
 						'upload',
 						'write-ad',

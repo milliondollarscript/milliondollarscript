@@ -875,13 +875,13 @@ class Orders {
 							}
 							echo "<a class='mds-button mds-upload' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . $text . "</a>";
 						}
-						echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
+						echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 						break;
 					case "confirmed":
 						if ( Orders::is_order_in_progress( $order['order_id'] ) || ( \MillionDollarScript\Classes\WooCommerceFunctions::is_wc_active() ) ) {
 							update_user_meta( get_current_user_id(), 'mds_confirm', true );
 							echo "<a class='mds-button mds-pay' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
-							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
+							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
 						}
 						break;
 					case "completed":
@@ -959,7 +959,7 @@ class Orders {
 				$temp_var = '&order_id=' . $order['order_id'];
 				echo Language::get( 'In progress' ) . '<br>';
 				echo "<a href='" . Utility::get_page_url( 'order' ) . "?BID={$order['banner_id']}{$temp_var}'>" . Language::get( 'Confirm now' ) . "</a>";
-				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "}\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'history' ) . "?cancel=yes{$temp_var}" ) . "\"' >";
+				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "}\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes{$temp_var}" ) . "\"' >";
 			}
 			?>
         </div>

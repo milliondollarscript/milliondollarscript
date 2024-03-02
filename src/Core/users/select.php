@@ -203,9 +203,9 @@ if ( mysqli_num_rows( $res ) > 1 ) {
 
 if ( isset( $order_exists ) && $order_exists ) {
 	Language::out_replace(
-		'Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a>',
-		'%HISTORY_URL%',
-		Utility::get_page_url( 'history' )
+		'Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%MANAGE_URL%">Manage Pixels</a>',
+		'%MANAGE_URL%',
+		Utility::get_page_url( 'manage' )
 	);
 }
 

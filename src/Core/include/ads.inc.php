@@ -458,8 +458,11 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 						if ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) {
 
 							?>
-                            <input class="mds-button" type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
-                                   onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>&amp;json=1'">
+                            <input class="mds-button mds-edit-button" type="button"
+                                   value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
+                                   data-order-id="<?php echo $prams['order_id']; ?>"
+                                   data-pixel-id="<?php echo $prams['ad_id']; ?>"
+                            />
 							<?php
 						}
 						?>

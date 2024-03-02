@@ -43,6 +43,7 @@ class Functions {
 
 		return [
 			'ajaxurl'          => esc_js( admin_url( 'admin-ajax.php' ) ),
+			'manageurl'        => esc_js( Utility::get_page_url( 'manage' ) ),
 			'mds_core_nonce'   => esc_js( wp_create_nonce( 'mds_core_nonce' ) ),
 			'mds_nonce'        => esc_js( wp_create_nonce( 'mds_nonce' ) ),
 			'wp'               => esc_js( get_site_url() ),
@@ -133,7 +134,7 @@ class Functions {
 			'user_id'              => get_current_user_id(),
 			'BID'                  => intval( $BID ),
 			'time'                 => time(),
-			'advertiser_max_order' => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ),
+			'advertiser_max_order' => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your order history under Manage Pixels.' ),
 			'not_adjacent'         => Language::get( 'You must select a block adjacent to another one.' ),
 			'no_blocks_selected'   => Language::get( 'You have no blocks selected.' ),
 			'MDS_CORE_URL'         => esc_url( MDS_CORE_URL ),
@@ -665,6 +666,6 @@ class Functions {
 
 		require_once MDS_CORE_PATH . "html/footer.php";
 
-        return true;
+		return true;
 	}
 }

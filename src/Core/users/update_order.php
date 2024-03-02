@@ -86,7 +86,7 @@ if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
 		"error" => "true",
 		"type"  => "max_orders",
 		"data"  => [
-			"value" => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History.' ),
+			"value" => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your orders under Manage Pixels.' ),
 		]
 	] );
 	die();

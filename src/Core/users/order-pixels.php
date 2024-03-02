@@ -302,7 +302,7 @@ if ( count( $res ) > 1 ) {
 }
 
 if ( isset( $order_exists ) && $order_exists ) {
-	Language::out_replace( '<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%HISTORY_URL%">View Order History</a></p>', '%HISTORY_URL%', Utility::get_page_url( 'history' ) );
+	Language::out_replace( '<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%MANAGE_URL%">Manage Pixels</a></p>', '%MANAGE_URL%', Utility::get_page_url( 'manage' ) );
 }
 
 $has_packages = banner_get_packages( $BID );

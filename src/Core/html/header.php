@@ -26,7 +26,6 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
 use MillionDollarScript\Classes\Language;
 use MillionDollarScript\Classes\Utility;
 
@@ -34,81 +33,19 @@ defined( 'ABSPATH' ) or exit;
 
 // MillionDollarScript header.php
 
-$logged_in = is_user_logged_in();
+$logged_in = is_user_logged_in() ? ' logged-in' : '';
 
-// error_log( var_export( debug_backtrace(), true ) );
-?>
-<div class="mds-container<?php echo $logged_in ? ' logged-in' : ''; ?>">
+$header_container = '
+<div class="mds-container' . $logged_in . '">
     <div class="outer">
         <div class="inner">
-			<?php
-			if ( $logged_in ) {
-				?>
-                <div class="users-menu-bar">
-                    <div class="mds-menu-hamburger" onclick="mdsToggleMenu()">☰</div>
-                    <ul class="mds-users-menu" id="mds-users-menu">
-						<?php
-						// check if user has permission to access this page
-						if ( mds_check_permission( "mds_my_account" ) ) {
-							?>
-                            <li>
-                                <a href="<?php echo \esc_url( Utility::get_page_url( 'account' ) ); ?>"><?php Language::out( 'My Account' ); ?></a>
-                            </li>
-							<?php
-						}
-						?>
-						<?php
-						// check if user has permission to access this page
-						if ( mds_check_permission( "mds_order_pixels" ) ) {
-							?>
-                            <li>
-                                <a href="<?php echo \esc_url( Utility::get_page_url( 'order' ) ); ?>"><?php Language::out( 'Order Pixels' ); ?></a>
-                            </li>
-							<?php
-						}
-						?>
-						<?php
-						// check if user has permission to access this page
-						if ( mds_check_permission( "mds_manage_pixels" ) ) {
-							?>
-                            <li>
-                                <a href="<?php echo \esc_url( Utility::get_page_url( 'manage' ) ); ?>"><?php Language::out( 'Manage Pixels' ); ?></a>
-                            </li>
-							<?php
-						}
-						?>
-						<?php
-						// check if user has permission to access this page
-						if ( mds_check_permission( "mds_order_history" ) ) {
+';
 
-							// DISPLAY_ORDER_HISTORY
-							$order_history_link = "";
-							if ( Config::get( 'DISPLAY_ORDER_HISTORY' ) == "YES" ) {
-								?>
-                                <li>
-                                    <a href="<?php echo \esc_url( Utility::get_page_url( 'history' ) ); ?>"><?php Language::out( 'Order History' ); ?></a>
-                                </li>
-								<?php
-							}
-						}
-						?>
-						<?php
-						// check if user has permission to access this page
-						if ( mds_check_permission( "mds_logout" ) ) {
-							?>
-                            <li>
-                                <a target="_top" href="<?php echo \esc_url( wp_logout_url() ); ?>"><?php Language::out( 'Logout' ); ?></a>
-                            </li>
-							<?php
-						}
-						?>
-                    </ul>
-                </div>
+$header_container = apply_filters( 'mds_header_container', $header_container );
 
-				<?php
-			}
+echo wp_kses( $header_container, Language::allowed_html() );
 
-            $mds_error = Utility::get_error();
-            if ( ! empty( $mds_error ) ) {
-                 Language::out( $mds_error );
-            }
+$mds_error = Utility::get_error();
+if ( ! empty( $mds_error ) ) {
+	Language::out( $mds_error );
+}

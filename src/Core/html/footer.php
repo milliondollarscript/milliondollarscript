@@ -26,11 +26,18 @@
  *
  */
 
+use MillionDollarScript\Classes\Language;
+
 defined( 'ABSPATH' ) or exit;
 
 // MillionDollarScript footer.php
-?>
-            </div>
+
+$footer_container = '
         </div>
     </div>
 </div>
+';
+
+$footer_container = apply_filters( 'mds_footer_container', $footer_container );
+
+echo wp_kses( $footer_container, Language::allowed_html() );

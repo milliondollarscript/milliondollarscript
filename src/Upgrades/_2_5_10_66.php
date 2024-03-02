@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Million Dollar Script Two
  *
@@ -26,19 +27,31 @@
  *
  */
 
+namespace MillionDollarScript\Upgrades;
+
+use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Options;
+
 defined( 'ABSPATH' ) or exit;
 
-// Start output buffering (allows for redirects)
-ob_start();
-$ob_level = ob_get_level();
+/** @noinspection PhpUnused */
 
-\MillionDollarScript\Classes\Utility::get_header();
+class _2_5_10_66 {
 
-require_once MDS_CORE_PATH . 'users/publish.php';
+	public function upgrade( $version ): void {
+		if ( version_compare( $version, '2.5.10.66', '<' ) ) {
 
-\MillionDollarScript\Classes\Utility::get_footer();
+			// Delete DISPLAY_ORDER_HISTORY option
+			Config::delete('DISPLAY_ORDER_HISTORY');
 
-// End output buffering
-while ( ob_get_level() > $ob_level ) {
-	ob_end_flush();
+			// Delete users-history-page option
+			Options::delete('users-history-page' );
+
+			// Delete users-publish-page option
+			Options::delete('users-publish-page' );
+
+			// Delete users-home-page option
+			Options::delete('users-home-page' );
+		}
+	}
 }

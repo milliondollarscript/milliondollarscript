@@ -68,11 +68,6 @@ class Options {
 				     ->set_attribute( 'type', 'number' )
 				     ->set_help_text( Language::get( 'The grid page.' ) ),
 
-				// Users Home Page
-				Field::make( 'text', MDS_PREFIX . 'users-home-page', Language::get( 'Users Home Page' ) )
-				     ->set_attribute( 'type', 'number' )
-				     ->set_help_text( Language::get( 'The home page for the Users/Buy Page.' ) ),
-
 				// Users Order Page
 				Field::make( 'text', MDS_PREFIX . 'users-order-page', Language::get( 'Users Order Page' ) )
 				     ->set_attribute( 'type', 'number' )
@@ -97,16 +92,6 @@ class Options {
 				Field::make( 'text', MDS_PREFIX . 'users-manage-page', Language::get( 'Users Manage Page' ) )
 				     ->set_attribute( 'type', 'number' )
 				     ->set_help_text( Language::get( 'The manage page for Users.' ) ),
-
-				// Users History Page
-				Field::make( 'text', MDS_PREFIX . 'users-history-page', Language::get( 'Users History Page' ) )
-				     ->set_attribute( 'type', 'number' )
-				     ->set_help_text( Language::get( 'The history page for Users.' ) ),
-
-				// Users Publish Page
-				Field::make( 'text', MDS_PREFIX . 'users-publish-page', Language::get( 'Users Publish Page' ) )
-				     ->set_attribute( 'type', 'number' )
-				     ->set_help_text( Language::get( 'The publish page for Users.' ) ),
 
 				// Users Thank-You Page
 				Field::make( 'text', MDS_PREFIX . 'users-thank-you-page', Language::get( 'Users Thank You Page' ) )
@@ -175,7 +160,7 @@ class Options {
 				Field::make( 'text', MDS_PREFIX . 'dynamic-id', Language::get( 'Dynamic Page ID' ) )
 				     ->set_default_value( '' )
 				     ->set_attribute( 'type', 'number' )
-				     ->set_help_text( Language::get( 'The page id to use to act as your dynamic page. If entered, this page will be used to essentially trick WP into thinking the dynamically generated pages by this plugin such as /milliondollarscript/order, /milliondollarscript/manage, /milliondollarscript/history, etc. are this page. The reason you might want to do this is so that you can assign styles, headers/footers or other things to that page and they will show on these dynamic pages properly.' ) ),
+				     ->set_help_text( Language::get( 'The page id to use to act as your dynamic page. If entered, this page will be used to essentially trick WP into thinking the dynamically generated pages by this plugin such as /milliondollarscript/order, /milliondollarscript/manage, etc. are this page. The reason you might want to do this is so that you can assign styles, headers/footers or other things to that page and they will show on these dynamic pages properly.' ) ),
 
 				// Confirm Order page
 				Field::make( 'select', MDS_PREFIX . 'confirm-orders', Language::get( 'Confirm Orders Page' ) )

@@ -189,7 +189,7 @@ You may renew your order, Here is how to do it:<br />
 <br />
 1. Log in to your account<br />
 <br />
-2. Go to \'Order History\'<br />
+2. Go to \'Manage Pixels\'<br />
 <br />
 3. Click on \'Renew\' on the Order shown as \'expired\'.<br />
 <br />
@@ -305,7 +305,7 @@ Please log in and update your order:<br />
 <br />
 1. Log in to your account<br />
 <br />
-2. Go to \'Order History\'<br />
+2. Go to \'Manage Pixels\'<br />
 <br />
 3. Click on \'Manage\' on the Order shown as \'Denied\'.<br />
 <br />

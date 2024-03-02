@@ -258,10 +258,10 @@ if ( ! is_user_logged_in() ) {
 			$p_row     = mysqli_fetch_array( $p_result );
 			$p_max_ord = $p_row['max_orders'];
 
-			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>', [
+			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href="%MANAGE_URL%">Manage Pixels</a>.</p>', [
 				'%MAX_ORDERS%',
-				'%HISTORY_URL%'
-			], [ $p_row['max_orders'], Utility::get_page_url( 'history' ) ] );
+				'%MANAGE_URL%'
+			], [ $p_row['max_orders'], Utility::get_page_url( 'manage' ) ] );
 		}
 	} else {
 
@@ -282,10 +282,10 @@ if ( ! is_user_logged_in() ) {
 				$max = $p_max_ord;
 			}
 
-			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href="%HISTORY_URL%">Order History.</a></p>', [
+			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href="%MANAGE_URL%">Manage Pixels</a>.</p>', [
 				'%MAX_ORDERS%',
-				'%HISTORY_URL%'
-			], [ $max, Utility::get_page_url( 'history' ) ] );
+				'%MANAGE_URL%'
+			], [ $max, Utility::get_page_url( 'manage' ) ] );
 		} else {
 
 			if ( \MillionDollarScript\Classes\Options::get_option( 'confirm-orders' ) == 'yes' ) {

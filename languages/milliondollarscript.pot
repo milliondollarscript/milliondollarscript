@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.10.61\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.10.66\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-02-27 20:55:11\n"
-"PO-Revision-Date: 2024-02-27 20:55:11\n"
-"X-Generator: Million Dollar Script Two 2.5.10.61\n"
+"POT-Creation-Date: 2024-03-01 19:38:19\n"
+"PO-Revision-Date: 2024-03-01 19:38:19\n"
+"X-Generator: Million Dollar Script Two 2.5.10.66\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -66,12 +66,6 @@ msgstr ""
 msgid "The grid page."
 msgstr ""
 
-msgid "Users Home Page"
-msgstr ""
-
-msgid "The home page for the Users/Buy Page."
-msgstr ""
-
 msgid "Users Order Page"
 msgstr ""
 
@@ -100,18 +94,6 @@ msgid "Users Manage Page"
 msgstr ""
 
 msgid "The manage page for Users."
-msgstr ""
-
-msgid "Users History Page"
-msgstr ""
-
-msgid "The history page for Users."
-msgstr ""
-
-msgid "Users Publish Page"
-msgstr ""
-
-msgid "The publish page for Users."
 msgstr ""
 
 msgid "Users Thank You Page"
@@ -195,7 +177,7 @@ msgstr ""
 msgid "Dynamic Page ID"
 msgstr ""
 
-msgid "The page id to use to act as your dynamic page. If entered, this page will be used to essentially trick WP into thinking the dynamically generated pages by this plugin such as /milliondollarscript/order, /milliondollarscript/manage, /milliondollarscript/history, etc. are this page. The reason you might want to do this is so that you can assign styles, headers/footers or other things to that page and they will show on these dynamic pages properly."
+msgid "The page id to use to act as your dynamic page. If entered, this page will be used to essentially trick WP into thinking the dynamically generated pages by this plugin such as /milliondollarscript/order, /milliondollarscript/manage, etc. are this page. The reason you might want to do this is so that you can assign styles, headers/footers or other things to that page and they will show on these dynamic pages properly."
 msgstr ""
 
 msgid "Confirm Orders Page"
@@ -540,42 +522,6 @@ msgstr ""
 msgid "Click Count"
 msgstr ""
 
-msgid "<div class=\"fancy-heading\">Welcome to your account</div>"
-msgstr ""
-
-msgid "<p>Here you can manage your pixels. <a href=\"%MANAGE_URL%\">Manage Pixels</a><p>"
-msgstr ""
-
-msgid "<p>You own %PIXEL_COUNT% blocks.</p>"
-msgstr ""
-
-msgid "<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href=\"%ORDER_URL%\">Order Pixels</a> / <a href=\"%HISTORY_URL%\">View Order History</a></p>"
-msgstr ""
-
-msgid "<p>Your pixels were clicked %CLICK_COUNT% times.</p>"
-msgstr ""
-
-msgid "<p>Your pixels were viewed %VIEW_COUNT% times.</p>"
-msgstr ""
-
-msgid "<div class=\"fancy-heading\">Here is what you can do</div>"
-msgstr ""
-
-msgid "- <a href=\"%ORDER_URL%\">Order</a>: Choose and order new pixels.<br />"
-msgstr ""
-
-msgid "- <a href=\"%MANAGE_URL%\">Manage</a>: Manage pixels owned by you.<br />"
-msgstr ""
-
-msgid "- <a href=\"%HISTORY_URL%\">View Orders</a>: View your order history, and status of each order.<br />"
-msgstr ""
-
-msgid "- <a href=\"%ACCOUNT_URL%\">Edit Account Details</a>: Edit your personal details, change your password.<br />"
-msgstr ""
-
-msgid "<p>Questions? Contact Us: <span id=\"emailPlaceholder\"></span></p>"
-msgstr ""
-
 msgid "Error: You must be logged in to view this page"
 msgstr ""
 
@@ -660,9 +606,6 @@ msgstr ""
 msgid "Ads List"
 msgstr ""
 
-msgid "My Account"
-msgstr ""
-
 msgid "Order Pixels"
 msgstr ""
 
@@ -676,12 +619,6 @@ msgid "Payment"
 msgstr ""
 
 msgid "Manage Pixels"
-msgstr ""
-
-msgid "Order History"
-msgstr ""
-
-msgid "Publish"
 msgstr ""
 
 msgid "Thank-You!"
@@ -882,7 +819,7 @@ msgstr ""
 msgid "Order Expired Content"
 msgstr ""
 
-msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Expired' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have expired and will<br /> \nno longer be show when the grid is next updated.<br />\nYou may renew your order, Here is how to do it:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Order History'<br />\n<br />\n3. Click on 'Renew' on the Order shown as 'expired'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Expired<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Expired' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have expired and will<br /> \nno longer be show when the grid is next updated.<br />\nYou may renew your order, Here is how to do it:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Manage Pixels'<br />\n<br />\n3. Click on 'Renew' on the Order shown as 'expired'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Expired<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
 msgstr ""
 
 msgid "This email is sent when an order is expired. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
@@ -936,7 +873,7 @@ msgstr ""
 msgid "Order Denied Content"
 msgstr ""
 
-msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Denied' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have been denied and will\nnot be show on the grid.<br />\n<br />\nPlease log in and update your order:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Order History'<br />\n<br />\n3. Click on 'Manage' on the Order shown as 'Denied'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Denied<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Denied' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have been denied and will\nnot be show on the grid.<br />\n<br />\nPlease log in and update your order:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Manage Pixels'<br />\n<br />\n3. Click on 'Manage' on the Order shown as 'Denied'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Denied<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
 msgstr ""
 
 msgid "This email is sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
@@ -960,7 +897,7 @@ msgstr ""
 msgid "Confirming..."
 msgstr ""
 
-msgid "Cannot place pixels on order. You have reached the order limit for this grid. Please review your Order History."
+msgid "Cannot place pixels on order. You have reached the order limit for this grid. Please review your order history under Manage Pixels."
 msgstr ""
 
 msgid "You must select a block adjacent to another one."
@@ -1050,13 +987,52 @@ msgstr ""
 msgid "* Required field"
 msgstr ""
 
+msgid "Expires"
+msgstr ""
+
 msgid "Edit"
 msgstr ""
 
-msgid "Status: "
+msgid "Not Published"
+msgstr ""
+
+msgid "Not Approved"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Confirmed"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "Denied"
+msgstr ""
+
+msgid "Deleted"
+msgstr ""
+
+msgid "Renew Now"
+msgstr ""
+
+msgid "Renewal Paid"
+msgstr ""
+
+msgid "Paid"
 msgstr ""
 
 msgid "No ads were found."
+msgstr ""
+
+msgid "Status: "
 msgstr ""
 
 msgid "File type not supported."
@@ -1078,9 +1054,6 @@ msgid "Here are the available price options for this grid:"
 msgstr ""
 
 msgid "Price"
-msgstr ""
-
-msgid "Expires"
 msgstr ""
 
 msgid "Max Orders"
@@ -1161,7 +1134,7 @@ msgstr ""
 msgid "Select Grid"
 msgstr ""
 
-msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your <a href=\"%HISTORY_URL%\">Order History.</a></b>"
+msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</b>"
 msgstr ""
 
 msgid "Maximum blocks selected. (%MAX_BLOCKS% allowed per order)"
@@ -1201,9 +1174,6 @@ msgid "Day ago"
 msgstr ""
 
 msgid "Days ago"
-msgstr ""
-
-msgid "Logout"
 msgstr ""
 
 msgid "Error: the image must be a PNG file"
@@ -1270,9 +1240,6 @@ msgid "List Customers"
 msgstr ""
 
 msgid "Waiting"
-msgstr ""
-
-msgid "Completed"
 msgstr ""
 
 msgid "Reserved"
@@ -1428,7 +1395,7 @@ msgstr ""
 msgid "There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:"
 msgstr ""
 
-msgid "Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%HISTORY_URL%\">View Order History</a>"
+msgid "Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a>"
 msgstr ""
 
 msgid "Select Pixels"
@@ -1458,49 +1425,13 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-msgid "OrderID"
-msgstr ""
-
-msgid "No orders found."
-msgstr ""
-
-msgid "Pending"
-msgstr ""
-
-msgid "Cancelled"
-msgstr ""
-
-msgid "Confirmed"
-msgstr ""
-
-msgid "New"
-msgstr ""
-
-msgid "Denied"
-msgstr ""
-
-msgid "Deleted"
-msgstr ""
-
-msgid "Renew Now"
-msgstr ""
-
-msgid "Renewal Paid"
-msgstr ""
-
-msgid "Paid"
-msgstr ""
-
-msgid "\"Completed\" Orders - Orders where the transaction was successfully completed.<br />\n\"Confirmed\" Orders - Orders confirmed by you, but the transaction has not been completed.<br />\n\"Pending\" Orders - Orders confirmed by you, but the transaction has not been approved.<br />\n\"Cancelled\" Orders - Cancelled by the administrator.<br />\n\"Expired\" Orders - Pixels were expired after the specified term. You can renew this order.<br />"
-msgstr ""
-
 msgid "There was an error with the image file."
 msgstr ""
 
 msgid "<p>1. <a href=\"%ORDER_URL%?BID=%BID%\">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
 msgstr ""
 
-msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%HISTORY_URL%\">View Order History</a></p>"
+msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a></p>"
 msgstr ""
 
 msgid "<p>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a>.</p>"
@@ -1563,7 +1494,7 @@ msgstr ""
 msgid "Next >>"
 msgstr ""
 
-msgid "<p><span style=\"color:red\">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your <a href=\"%HISTORY_URL%\">Order History.</a></p>"
+msgid "<p><span style=\"color:red\">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</p>"
 msgstr ""
 
 msgid "Complete Order"
@@ -1578,7 +1509,16 @@ msgstr ""
 msgid "<p>Here you can manage your pixels.<p>"
 msgstr ""
 
+msgid "<p>You own %PIXEL_COUNT% blocks.</p>"
+msgstr ""
+
 msgid "<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href=\"%ORDER_URL%\">Order Pixels</a></p>"
+msgstr ""
+
+msgid "<p>Your pixels were clicked %CLICK_COUNT% times.</p>"
+msgstr ""
+
+msgid "<p>Your pixels were viewed %VIEW_COUNT% times.</p>"
 msgstr ""
 
 msgid "Note: Your pixels are waiting for approval. They will be scheduled to go live once they are approved."
@@ -1605,10 +1545,7 @@ msgstr ""
 msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
 msgstr ""
 
-msgid "You own pixels on <b>%GRID_COUNT%</b> different grids served by this website. Select the image which you would like to publish your pixels to:"
-msgstr ""
-
-msgid "Your blocks are shown on the grid below.<br />\n- Click your block to edit it. Only your blocks are shown.<br />\n- <b>Red</b> blocks have no pixels yet. Click on them to upload your pixels.<br />"
+msgid "Cannot place pixels on order. You have reached the order limit for this grid. Please review your orders under Manage Pixels."
 msgstr ""
 
 msgid "Thank you for your order!"

@@ -98,7 +98,6 @@ class Config {
 			'MDS_AGRESSIVE_CACHE'         => [ 'value' => 'NO', 'type' => 's' ],
 			'BLOCK_SELECTION_MODE'        => [ 'value' => 'YES', 'type' => 's' ],
 			'STATS_DISPLAY_MODE'          => [ 'value' => 'PIXELS', 'type' => 's' ],
-			'DISPLAY_ORDER_HISTORY'       => [ 'value' => 'YES', 'type' => 's' ],
 			'INVERT_PIXELS'               => [ 'value' => 'YES', 'type' => 's' ],
 			'LAST_EXPIRE_RUN'             => [ 'value' => 1138243912, 'type' => 'd' ],
 		];
@@ -262,5 +261,18 @@ class Config {
 		$defaults = self::defaults();
 
 		return $defaults[ $key ]['type'];
+	}
+
+	/**
+	 * Delete a record from the database table based on the provided key.
+	 *
+	 * @param string $key The key of the record to be deleted.
+	 *
+	 * @return void
+	 * @throws void
+	 */
+	public static function delete( string $key ): void {
+		global $wpdb;
+		$wpdb->delete( self::$table_name, [ 'config_key' => $key ] );
 	}
 }

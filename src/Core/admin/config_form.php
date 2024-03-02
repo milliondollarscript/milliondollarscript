@@ -450,19 +450,6 @@ defined( 'ABSPATH' ) or exit;
         </div>
 
         <div class="admin-config-left">
-            Display Order History page?
-        </div>
-        <div class="admin-config-right">
-            <label>
-			    <?php
-			    $DISPLAY_ORDER_HISTORY = Config::get( 'DISPLAY_ORDER_HISTORY' );
-			    ?>
-                <input type="radio" name="DISPLAY_ORDER_HISTORY" value="YES" <?php echo( $DISPLAY_ORDER_HISTORY == 'YES' ? 'checked' : '' ); ?> /> Yes - Display an Order History page for users.<br/>
-                <input type="radio" name="DISPLAY_ORDER_HISTORY" value="NO" <?php echo( $DISPLAY_ORDER_HISTORY == 'NO' ? 'checked' : '' ); ?> /> No - The Order History page not be available for users.
-            </label>
-        </div>
-
-        <div class="admin-config-left">
             Invert or Add when selecting pixels
         </div>
         <div class="admin-config-right">

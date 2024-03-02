@@ -510,14 +510,11 @@ class Utility {
 
 		$pagesArray = [
 			'grid-page',
-			'users-home-page',
 			'users-order-page',
 			'users-write-ad-page',
 			'users-confirm-order-page',
 			'users-payment-page',
 			'users-manage-page',
-			'users-history-page',
-			'users-publish-page',
 			'users-thank-you-page',
 			'users-list-page',
 			'users-upload-page',
@@ -547,11 +544,6 @@ class Utility {
 				'height'  => '1000px',
 				'page_id' => $page_ids['grid-page'],
 			],
-			'account'       => [
-				'option'  => 'users-home-page',
-				'title'   => Language::get( 'My Account' ),
-				'page_id' => $page_ids['users-home-page'],
-			],
 			'order'         => [
 				'option'  => 'users-order-page',
 				'title'   => Language::get( 'Order Pixels' ),
@@ -576,16 +568,6 @@ class Utility {
 				'option'  => 'users-manage-page',
 				'title'   => Language::get( 'Manage Pixels' ),
 				'page_id' => $page_ids['users-manage-page'],
-			],
-			'history'       => [
-				'option'  => 'users-history-page',
-				'title'   => Language::get( 'Order History' ),
-				'page_id' => $page_ids['users-history-page'],
-			],
-			'publish'       => [
-				'option'  => 'users-publish-page',
-				'title'   => Language::get( 'Publish' ),
-				'page_id' => $page_ids['users-publish-page'],
 			],
 			'thank-you'     => [
 				'option'  => 'users-thank-you-page',
