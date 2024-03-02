@@ -986,7 +986,7 @@ class FormFields {
 	 * @return array An array of valid MDS order statuses.
 	 */
 	public static function get_statuses(): array {
-		// Valid MDS order statuses: 'pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid'
+		// Valid MDS order statuses: 'pending','completed','cancelled','confirmed','new','expired','deleted','renew_wait','renew_paid','denied'
 		// Note: pending is a default WP status, so it isn't included here.
 		// Note: waiting is confirmed OR pending
 		return array(
@@ -1001,6 +1001,7 @@ class FormFields {
 			'reserved'   => 'Reserved',
 			'waiting'    => 'Waiting',
 			'paid'       => 'Paid',
+			'denied'     => 'Denied',
 		);
 	}
 
