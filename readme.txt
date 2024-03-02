@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.3
-Stable tag: 2.5.10.68
+Stable tag: 2.5.10.69
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -19,7 +19,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 == Changelog ==
 
-= 2.5.10 =
+= 2.5.10.x =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
 * Fix block selection issues.
 * More optimizations and fixes while ordering.
@@ -28,6 +28,58 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix hover popup interaction.
 * Use WP date and time functions.
 * Fix wrong order id being used in some cases.
+* Fix reset order progress.
+* Fix disapprove pixels not working.
+* Fix pagination.
+* Fix warning: Undefined array key "blocks".
+* Fix when auto-approve is off it isn't unpublishing the order when a user edits it.
+* Fix Upload button in order details not working correctly.
+* Fix grid currency setting.
+* Use Currency Symbol option.
+* Update Instructions in advanced mode to output a legend with the block images instead of text descriptions.
+* Make the cancel button also clear the WC cart.
+* Fix Order Published notifications were using Order Completed Renewal content.
+* Fix an incompatibility when activating the Elementor plugin.
+* Fix missing mail length processing.
+* Fix confirmation when only the first block on the grid is selected.
+* Fix cancelling an order doesn't remove its blocks.
+* Fix order not loading properly if clicking the back button in the browser or visiting a previous page in the process.
+* Improve order handling when orders time out or are removed while ordering.
+* Fix MINUTES_CONFIRMED option not working correctly.
+* Fix blocks not being disapproved automatically.
+* Fix unable to edit block 0 clicking it on the Manage Pixels screen.
+* Fix payment page message when WooCommerce integration is disabled.
+* Fix confirm order redirect when confirm page is disabled.
+* Make order pending when confirming with WooCommerce integration disabled.
+* Fix PHP Fatal error: Uncaught Error: Cannot use object of type stdClass as array in ...\src\Core\include\functions.php:226
+* Delete orders instead of expiring them for confirmed but not paid orders timeout.
+* Improve time calculation for order expiration.
+* Fix order renewal payment handling.
+* Add order validation and custom error handling in WooCommerce.
+* Fix blocks not always the right colour on the order pixels grid by stopping reserved blocks from pulling from orders table.
+* Replace MDS Admin List page with link to MDS Pixels post type.
+* Process pixels when disapproving when a user edits their order.
+* Add more columns to MDS Pixels.
+* Fix MDS Pixel URLs not registering due to post type not being registered first in upgrade operations. Also flush rewrite rules on deactivation.
+* Fix PHP Warning: Undefined array key "renew" in payment.php
+* Don't process the shortcode on admin pages.
+* Prevent double-clicking on most buttons.
+* Ensure only one order can be in progress at a time for a user.
+* Add a new option to lock editing of orders once they are approved or completed. If this option is enabled in the settings, users will be prevented from modifying their orders post approval or completion.
+* Add the ability for admins to deny orders on the Approve/Disapprove screens. Includes email notification and a new email option to configure it.
+* Add paid order status.
+* Add tabs to Email page.
+* Add horizontal admin menu that works on mobile.
+* Fix timeout when confirmed but not paid.
+* Set orders as not in progress when expiring, cancelling and deleting.
+* Fix order being marked private when expiring.
+* Replace Order History and Publish pages with new Manage screen.
+* Remove user menu.
+* Remove options for DISPLAY_ORDER_HISTORY, users-history-page, users-publish-page, and users-home-page.
+* Added mds_header_container and mds_footer_container filters for header and footer html.
+* Fix clicking images in grid not editing the order.
+* Update vendor libraries.
+* Update language file.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
