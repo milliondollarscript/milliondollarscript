@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Data\Config;
 
 defined( 'ABSPATH' ) or exit;
 

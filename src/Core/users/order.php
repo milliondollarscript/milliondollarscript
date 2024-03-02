@@ -26,11 +26,11 @@
  *
  */
 
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -49,7 +49,7 @@ $cannot_get_package = false;
 
 if ( $has_packages && $_REQUEST['pack'] != '' ) {
 
-	\MillionDollarScript\Classes\Functions::verify_nonce( 'mds_packages' );
+	\MillionDollarScript\Classes\System\Functions::verify_nonce( 'mds_packages' );
 
 	// check to make sure this advertiser can order this package
 	if ( can_user_get_package( get_current_user_id(), $_REQUEST['pack'] ) ) {
@@ -130,7 +130,7 @@ if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $o
 
 	if ( ( $has_packages ) && ( $_REQUEST['pack'] == '' ) ) {
 
-		$sanitized_input = MillionDollarScript\Classes\Functions::sanitize_array( $_REQUEST['selected_pixels'] );
+		$sanitized_input = \MillionDollarScript\Classes\System\Functions::sanitize_array( $_REQUEST['selected_pixels'] );
 
 		// Explode the input string into an array and remove empty elements
 		$numbers = array_filter( explode( ',', $sanitized_input ), function ( $value ) {
@@ -181,7 +181,7 @@ if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $o
 			);
 		}
 	} else {
-		display_order( Orders::get_current_order_id(), $BID );
+		Orders::display_order( Orders::get_current_order_id(), $BID );
 
 		display_edit_order_button( $order_row['order_id'] );
 

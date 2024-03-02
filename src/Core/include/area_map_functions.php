@@ -26,7 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -46,14 +47,14 @@ function render_map_area( $fh, $data, $b_row ) {
 		$y2 = $data['y1'];
 	}
 
-	if ( \MillionDollarScript\Classes\Config::get('ENABLE_CLOAKING') == 'YES' ) {
+	if ( Config::get('ENABLE_CLOAKING') == 'YES' ) {
 		$url = $data['url'];
 	} else {
 		$url = Utility::get_page_url( 'click' ) . '?block_id=' . intval( $data['block_id'] ) . '&BID=' . $BID;
 	}
 
 	$ALT_TEXT = "";
-	$ENABLE_MOUSEOVER = \MillionDollarScript\Classes\Config::get('ENABLE_MOUSEOVER');
+	$ENABLE_MOUSEOVER = Config::get('ENABLE_MOUSEOVER');
 	if ( $ENABLE_MOUSEOVER == 'YES' || $ENABLE_MOUSEOVER == 'POPUP' ) {
 		if ( $data['ad_id'] > 0 ) {
 			$ALT_TEXT = $data['alt_text'] . '<img src="' . MDS_CORE_URL . 'images/periods.gif" border="0">';

@@ -26,6 +26,8 @@
  *
  */
 
+use MillionDollarScript\Classes\System\Utility;
+
 defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
@@ -58,7 +60,7 @@ if ( empty( $order_id ) ) {
 	exit;
 }
 
-$size = get_pixel_image_size( $order_id );
+$size = Utility::get_pixel_image_size( $order_id );
 
 // load all the blocks wot
 $sql = "SELECT block_id,x,y,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE order_id='" . intval( $order_id ) . "' ";

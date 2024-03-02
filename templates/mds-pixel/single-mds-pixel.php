@@ -26,16 +26,14 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
-
-\MillionDollarScript\Classes\Utility::get_header();
+\MillionDollarScript\Classes\System\Utility::get_header();
 
 global $post;
 
 ?>
     <div class="mds-pixel-content">
-		<?php \MillionDollarScript\Classes\Ajax::get_ad( $post->ID ); ?>
+		<?php \MillionDollarScript\Classes\Ajax\Ajax::get_ad( $post->ID ); ?>
     </div>
 <?php
 
-\MillionDollarScript\Classes\Utility::get_footer();
+\MillionDollarScript\Classes\System\Utility::get_footer();

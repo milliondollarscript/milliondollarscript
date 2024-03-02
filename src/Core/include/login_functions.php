@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Capabilities;
+use MillionDollarScript\Classes\User\Capabilities;
 
 defined( 'ABSPATH' ) or exit;
 

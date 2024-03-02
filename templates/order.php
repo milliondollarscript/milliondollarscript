@@ -26,10 +26,12 @@
  *
  */
 
+use MillionDollarScript\Classes\Orders\Orders;
+
 defined( 'ABSPATH' ) or exit;
 
-\MillionDollarScript\Classes\Utility::get_header();
+\MillionDollarScript\Classes\System\Utility::get_header();
 
-\MillionDollarScript\Classes\Functions::order_screen();
+Orders::order_screen();
 
-\MillionDollarScript\Classes\Utility::get_footer();
+\MillionDollarScript\Classes\System\Utility::get_footer();

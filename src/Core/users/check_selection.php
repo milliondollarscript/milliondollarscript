@@ -26,11 +26,13 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-\MillionDollarScript\Classes\Functions::verify_nonce( 'mds-order' );
+\MillionDollarScript\Classes\System\Functions::verify_nonce( 'mds-order' );
 
 mds_wp_login_check();
 
@@ -56,7 +58,7 @@ function check_selection_main(): void {
 
 	global $banner_data;
 
-	$upload_image_file = get_tmp_img_name();
+	$upload_image_file = Orders::get_tmp_img_name();
 
 	if ( empty( $upload_image_file ) ) {
 		Language::out( 'The upload image file is empty.' );
@@ -84,7 +86,7 @@ function check_selection_main(): void {
 
 	$in_str = implode( ',', $cb_array );
 
-	$available = check_pixels( $in_str );
+	$available = Utility::check_pixels( $in_str );
 
 	if ( $available ) {
 		echo json_encode( [

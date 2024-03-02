@@ -26,9 +26,11 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Forms\Forms;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Blocks;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -52,7 +54,7 @@ if ( ! is_numeric( $BID ) ) {
 
 $banner_data = load_banner_constants( $BID );
 
-$USE_AJAX = \MillionDollarScript\Classes\Config::get( 'USE_AJAX' );
+$USE_AJAX = \MillionDollarScript\Classes\Data\Config::get( 'USE_AJAX' );
 
 $order_id = Orders::get_current_order_id();
 
@@ -87,7 +89,7 @@ if ( $order_row != null ) {
 	}
 }
 
-$tmp_image_file = get_tmp_img_name();
+$tmp_image_file = Orders::get_tmp_img_name();
 if ( file_exists( $tmp_image_file ) ) {
 	unlink( $tmp_image_file );
 }
@@ -102,7 +104,7 @@ if ( isset( $order_row['blocks'] ) ) {
 $block_ids    = $order_row_blocks !== '' ? array_map( 'intval', explode( ',', $order_row_blocks ) ) : [];
 $block_str    = $order_row_blocks !== '' ? implode( ',', $block_ids ) : "";
 $order_blocks = array_map( function ( $block_id ) use ( $BID ) {
-	$pos = get_block_position( $block_id, $BID );
+	$pos = Blocks::get_block_position( $block_id, $BID );
 
 	return [
 		'block_id' => $block_id,
@@ -191,7 +193,7 @@ if ( mysqli_num_rows( $res ) > 1 ) {
     </div>
 	<?php
 
-	display_banner_selecton_form( $BID, $order_row['order_id'] ?? 0, $res, 'select' );
+	Forms::display_banner_selecton_form( $BID, $order_row['order_id'] ?? 0, $res, 'select' );
 	//
 	// if ( ! isset( $_REQUEST['banner_change'] ) && ( ! isset( $_REQUEST['jEditOrder'] ) || $_REQUEST['jEditOrder'] !== 'true' ) ) {
 	// 	// If multiple banners only display the selection form first
@@ -295,7 +297,7 @@ if ( $has_packages ) {
             <div class="mds-select-wrapper">
                 <div class="mds-select-prompt">
 					<?php
-					if ( \MillionDollarScript\Classes\Config::get( 'BLOCK_SELECTION_MODE' ) == 'YES' ) {
+					if ( \MillionDollarScript\Classes\Data\Config::get( 'BLOCK_SELECTION_MODE' ) == 'YES' ) {
 					?>
                 </div>
                 <div class="mds-select-items">

@@ -26,7 +26,9 @@
  *
  */
 
-use MillionDollarScript\Classes\Currency;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\Payment\Payment;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -63,8 +65,8 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'refund' ) {
 		$r   = $wpdb->get_results( $sql, ARRAY_A );
 		if ( count( $r ) == 0 ) {
 			// do the refund
-			cancel_order( $row['order_id'] );
-			credit_transaction( $row['order_id'], $row['price'], $row['currency'], $row['txn_id'], 'Refund', 'Admin' );
+			Orders::cancel_order( $row['order_id'] );
+			Payment::credit_transaction( $row['order_id'], $row['price'], $row['currency'], $row['txn_id'], 'Refund', 'Admin' );
 		} else {
 
 			echo "<b>Error: A refund was already found on this system for this order..</b><br>";
@@ -101,7 +103,7 @@ while ( $row = mysqli_fetch_array( $result ) ) {
 $bal = $debits - $credits;
 
 $local_date = current_time( 'mysql' );
-$local_time = current_time('timestamp');
+$local_time = current_time( 'timestamp' );
 
 if ( ! isset( $_REQUEST['from_day'] ) || $_REQUEST['from_day'] == '' ) {
 	$_REQUEST['from_day'] = "1";
@@ -294,15 +296,19 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
             </td>
             <td>
                 <span style="font-family: arial,sans-serif;"><?php if ( $row['type'] == 'DEBIT' ) {
-						echo '<span style="color: green; ">';
-					} else {
-						echo '<span style="color: red; ">';
-					}
-					echo $row['type'] . '</font>'; ?></span>
+		                echo '<span style="color: green; ">';
+	                } else {
+		                echo '<span style="color: red; ">';
+	                }
+	                echo $row['type'] . '</font>'; ?></span>
             </td>
             <td>
-                <span style="font-family: arial,sans-serif;"><?php if ( $row['type'] == 'DEBIT' ) {
-		                ; ?><input type="button" value="Refund" onclick="if (!confirmLink(this, 'Refund, are you sure?')) return false;" data-link="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>transaction-log&amp;mds-action=refund&amp;transaction_id=<?php echo $row['transaction_id']; ?>"><?php } ?></span>
+                <span style="font-family: arial,sans-serif;"><?php
+	                if ( $row['type'] == 'DEBIT' ) {
+		                ?><input type="button" value="Refund" onclick="if (!confirmLink(this, 'Refund, are you sure?')) return false;"
+                                 data-link="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>transaction-log&amp;mds-action=refund&amp;transaction_id=<?php echo $row['transaction_id']; ?>">
+		                <?php
+	                } ?></span>
             </td>
         </tr>
 		<?php

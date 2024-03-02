@@ -26,11 +26,11 @@
  *
  */
 
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Options;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -193,7 +193,7 @@ if ( $count > 0 ) {
 	// Replacements for custom page links in WP
 	$order_page   = Utility::get_page_url( 'order' );
 	$manage_page  = Utility::get_page_url( 'manage' );
-	$account_page = \MillionDollarScript\Classes\Options::get_option( 'account-page' );
+	$account_page = \MillionDollarScript\Classes\Data\Options::get_option( 'account-page' );
 
 	Language::out_replace(
 		'<p>Here you can manage your pixels.<p>',

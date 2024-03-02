@@ -26,7 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -59,14 +60,14 @@ function echo_ad_list_data() {
 		}
 
 		if ( $column_info[ $template_tag ]['trunc'] > 0 ) {
-			$val = truncate_html_str( '', $column_info[ $template_tag ]['trunc'], $trunc_str_len );
+			$val = Utility::truncate_html_str( '', $column_info[ $template_tag ]['trunc'], $trunc_str_len );
 		}
 
 		// process the value depending on what kind of template tag it was given.
 		if ( $template_tag == 'DATE' ) {
 
 			// the last date modified
-			$init_date = strtotime( trim_date( $val ) );
+			$init_date = strtotime( Utility::trim_date( $val ) );
 
 			// now
 			$dst_date = current_time('timestamp');

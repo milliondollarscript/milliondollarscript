@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Data\Config;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -123,7 +123,7 @@ function process_mail_queue( $send_count = 1 ) {
 			//echo "(($now - $wait) > $time_stamp) status:".$row['status']."\n";
 			if ( ( ( ( $now - $wait ) > $time_stamp ) && ( $row['status'] == 'error' ) ) || ( $row['status'] == 'queued' ) ) {
 				$send_count --;
-				\MillionDollarScript\Classes\Mail::send( $row['to_address'], $row['subject'], $row['message'], '', $row['subject'], $row['message'] );
+				\MillionDollarScript\Classes\Email\Mail::send( $row['to_address'], $row['subject'], $row['message'], '', $row['subject'], $row['message'] );
 			}
 		}
 

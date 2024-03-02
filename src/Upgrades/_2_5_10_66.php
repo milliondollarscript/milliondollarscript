@@ -29,8 +29,8 @@
 
 namespace MillionDollarScript\Upgrades;
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Options;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 

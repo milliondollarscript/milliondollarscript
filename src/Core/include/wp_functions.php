@@ -26,8 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -46,12 +46,12 @@ function mds_wp_login_check(): void {
 	if ( ! is_user_logged_in() ) {
 
 		// Check if MDS WP plugin Options class exists
-		if ( class_exists( '\MillionDollarScript\Classes\Options' ) ) {
+		if ( class_exists( '\MillionDollarScript\Classes\Data\Options' ) ) {
 
 			// Get the login page options
-			$login_page    = \MillionDollarScript\Classes\Options::get_option( 'login-page' );
-			$login_target  = \MillionDollarScript\Classes\Options::get_option( 'login-target' );
-			$register_page = \MillionDollarScript\Classes\Options::get_option( 'register-page' );
+			$login_page    = \MillionDollarScript\Classes\Data\Options::get_option( 'login-page' );
+			$login_target  = \MillionDollarScript\Classes\Data\Options::get_option( 'login-target' );
+			$register_page = \MillionDollarScript\Classes\Data\Options::get_option( 'register-page' );
 
 			$loginpage_host = parse_url( $login_page, PHP_URL_HOST );
 			$siteurl_host   = parse_url( get_site_url(), PHP_URL_HOST );
@@ -65,8 +65,8 @@ function mds_wp_login_check(): void {
 					// escape the URL
 					$loginhref = esc_url( $login_page );
 
-					$login_redirect_url  = \MillionDollarScript\Classes\Options::get_option( 'login-redirect' );
-					$woocommerce_enabled = \MillionDollarScript\Classes\Options::get_option( 'woocommerce' );
+					$login_redirect_url  = \MillionDollarScript\Classes\Data\Options::get_option( 'login-redirect' );
+					$woocommerce_enabled = \MillionDollarScript\Classes\Data\Options::get_option( 'woocommerce' );
 
 					if ( $woocommerce_enabled ) {
 						$loginhref .= ( str_contains( $loginhref, '?' ) ? '&' : '?' ) . 'redirect_to=' . esc_url_raw( $login_redirect_url );

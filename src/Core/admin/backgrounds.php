@@ -26,7 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -71,12 +72,12 @@ if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'
 		<?php
 	} else {
 
-		move_uploaded_file( $_FILES['blend_image']['tmp_name'], \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/background$BID.png" );
+		move_uploaded_file( $_FILES['blend_image']['tmp_name'], Utility::get_upload_path() . "grids/background$BID.png" );
 	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
-	$filename = \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/background$BID.png";
+	$filename = Utility::get_upload_path() . "grids/background$BID.png";
 	if ( file_exists( $filename ) ) {
 		unlink( $filename );
 	}

@@ -26,8 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Functions;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\System\Functions;
 
 defined( 'ABSPATH' ) or exit;
 

@@ -26,11 +26,11 @@
  *
  */
 
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Steps;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Orders\Steps;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -205,7 +205,7 @@ function check_selection_main(): void {
 
 	global $banner_data;
 
-	$upload_image_file = get_tmp_img_name();
+	$upload_image_file = Orders::get_tmp_img_name();
 
 	if ( empty( $upload_image_file ) && $_POST['action'] == 'make-selection' ) {
 		wp_send_json( [
@@ -223,7 +223,7 @@ function check_selection_main(): void {
 	$image = $imagine->open( $upload_image_file );
 	$size  = $image->getSize();
 
-	$new_size = get_required_size( $size->getWidth(), $size->getHeight(), $banner_data );
+	$new_size = Utility::get_required_size( $size->getWidth(), $size->getHeight(), $banner_data );
 
 	if ( $size->getWidth() != $new_size[0] || $size->getHeight() != $new_size[1] ) {
 		$resize = new Imagine\Image\Box( $new_size[0], $new_size[1] );
@@ -271,7 +271,7 @@ function check_selection_main(): void {
 
 	$in_str = implode( ',', $cb_array );
 
-	if ( ! check_pixels( $in_str ) ) {
+	if ( ! Utility::check_pixels( $in_str ) ) {
 		return;
 	}
 
@@ -282,7 +282,7 @@ function check_selection_main(): void {
 	// Reserve pixels
 	global $wpdb;
 
-	$order_id = intval( \MillionDollarScript\Classes\Orders::get_current_order_id() );
+	$order_id = intval( \MillionDollarScript\Classes\Orders\Orders::get_current_order_id() );
 	$user_id  = get_current_user_id();
 
 	$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d", $order_id, $user_id ), ARRAY_A );
@@ -302,7 +302,7 @@ function check_selection_main(): void {
 		Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 	}
 
-	$order_id = reserve_pixels_for_temp_order( $order_row );
+	$order_id = Orders::reserve_pixels_for_temp_order( $order_row );
 
 	if ( $result && $order_id ) {
 		echo json_encode( [

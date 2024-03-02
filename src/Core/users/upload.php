@@ -26,12 +26,12 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -82,7 +82,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 		if ( $row ) {
 			if ( $row['status'] != 'completed' ) {
 				$blocks                    = explode( ',', $row['blocks'] );
-				$size                      = get_pixel_image_size( $order_id );
+				$size                      = Utility::get_pixel_image_size( $order_id );
 				$pixels                    = $size['x'] * $size['y'];
 				$_REQUEST['change_pixels'] = true;
 
@@ -92,7 +92,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 	}
 }
 
-$tmp_image_file = get_tmp_img_name();
+$tmp_image_file = Orders::get_tmp_img_name();
 
 if ( file_exists( $tmp_image_file ) ) {
 	try {

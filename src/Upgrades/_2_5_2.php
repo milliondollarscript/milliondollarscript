@@ -29,8 +29,8 @@
 
 namespace MillionDollarScript\Upgrades;
 
-use MillionDollarScript\Classes\DatabaseStatic;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\DatabaseStatic;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 

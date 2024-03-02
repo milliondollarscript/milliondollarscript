@@ -32,11 +32,11 @@ defined( 'ABSPATH' ) or exit;
 ob_start();
 $ob_level = ob_get_level();
 
-\MillionDollarScript\Classes\Utility::get_header();
+\MillionDollarScript\Classes\System\Utility::get_header();
 
 require_once MDS_CORE_PATH . 'users/write_ad.php';
 
-\MillionDollarScript\Classes\Utility::get_footer();
+\MillionDollarScript\Classes\System\Utility::get_footer();
 
 // End output buffering
 while ( ob_get_level() > $ob_level ) {

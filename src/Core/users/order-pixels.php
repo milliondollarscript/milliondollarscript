@@ -26,10 +26,11 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Forms\Forms;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -54,7 +55,7 @@ if ( empty( $order_id ) ) {
 		// If an order id was passed
 		if ( ! is_numeric( $_REQUEST['order_id'] ) ) {
 			// If it was not numeric redirect to the no orders page
-			\MillionDollarScript\Classes\Functions::no_orders();
+			Orders::no_orders();
 
 			return;
 		} else {
@@ -63,15 +64,15 @@ if ( empty( $order_id ) ) {
 			// Verify ownership
 			$order_id = intval( $_REQUEST['order_id'] );
 			if ( ! Orders::is_owned_by( $order_id ) ) {
-				\MillionDollarScript\Classes\Functions::no_orders();
+				Orders::no_orders();
 
 				return;
 			}
 
 			// Check if the order is in progress
-			if ( ! \MillionDollarScript\Classes\Orders::is_order_in_progress( $order_id ) ) {
+			if ( ! \MillionDollarScript\Classes\Orders\Orders::is_order_in_progress( $order_id ) ) {
 				// Not in progress so redirect to the no orders page
-				\MillionDollarScript\Classes\Functions::no_orders();
+				Orders::no_orders();
 
 				return;
 			}
@@ -91,7 +92,7 @@ if ( empty( $order_id ) ) {
 
 // Delete temporary order when the banner was changed.
 if ( isset( $_REQUEST['banner_change'] ) && $_REQUEST['banner_change'] != '' ) {
-	delete_temp_order( Orders::get_current_order_id() );
+	Orders::delete_temp_order( Orders::get_current_order_id() );
 
 	return;
 }
@@ -101,11 +102,11 @@ $USE_AJAX = Config::get( 'USE_AJAX' );
 $banner_data = load_banner_constants( $BID );
 
 // Update time stamp on temp order (if exists)
-update_temp_order_timestamp();
+Orders::update_temp_order_timestamp();
 
 // Handle file upload
-$uploaddir      = \MillionDollarScript\Classes\Utility::get_upload_path() . "images/";
-$tmp_image_file = get_tmp_img_name();
+$uploaddir      = \MillionDollarScript\Classes\System\Utility::get_upload_path() . "images/";
+$tmp_image_file = Orders::get_tmp_img_name();
 $size           = [];
 $reqsize        = [];
 $pixel_count    = 0;
@@ -155,7 +156,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 			//echo "File is valid, and was successfully uploaded.\n";
 			$tmp_image_file = $uploadfile;
 
-			setMemoryLimit( $uploadfile );
+			Utility::setMemoryLimit( $uploadfile );
 
 			// check the file size for min and max blocks.
 
@@ -163,7 +164,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 			$size = getimagesize( $tmp_image_file );
 
 			// maximum size snapped to block size
-			$reqsize = get_required_size( $size[0], $size[1], $banner_data );
+			$reqsize = Utility::get_required_size( $size[0], $size[1], $banner_data );
 
 			// pixel count
 			$pixel_count = $reqsize[0] * $reqsize[1];
@@ -287,7 +288,7 @@ if ( ! empty( $messages ) ) {
 	echo $messages;
 }
 
-show_nav_status( 1 );
+Utility::show_nav_status( 1 );
 
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners ORDER BY `name`";
 $res = $wpdb->get_results( $sql, ARRAY_A );
@@ -296,7 +297,7 @@ if ( count( $res ) > 1 ) {
 	?>
     <div class="fancy-heading"><?php Language::out( 'Available Grids' ); ?></div>
     <p>
-		<?php display_banner_selecton_form( $BID, Orders::get_current_order_id(), $res, 'order' ); ?>
+		<?php Forms::display_banner_selecton_form( $BID, Orders::get_current_order_id(), $res, 'order' ); ?>
     </p>
 	<?php
 }
@@ -349,7 +350,7 @@ if ( ! empty( $tmp_image_file ) ) {
 	);
 
 	if ( empty( $reqsize ) ) {
-		$reqsize = get_required_size( $size[0], $size[1], $banner_data );
+		$reqsize = Utility::get_required_size( $size[0], $size[1], $banner_data );
 	}
 
 	if ( empty( $pixel_count ) ) {

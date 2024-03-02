@@ -26,7 +26,9 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -47,7 +49,7 @@ try {
 	$imagine = new Imagine\Gd\Imagine();
 
 	$user_id  = get_current_user_id();
-	$filename = get_tmp_img_name();
+	$filename = Orders::get_tmp_img_name();
 	if ( file_exists( $filename ) ) {
 		$image = $imagine->open( $filename );
 	} else {
@@ -62,7 +64,7 @@ try {
 
 	// image size
 	$box         = $image->getSize();
-	$new_size    = get_required_size( $box->getWidth(), $box->getHeight(), $banner_data );
+	$new_size    = Utility::get_required_size( $box->getWidth(), $box->getHeight(), $banner_data );
 	$pixel_count = $new_size[0] * $new_size[1];
 	$block_size  = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 

@@ -26,6 +26,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Data\Config;
+
 defined( 'ABSPATH' ) or exit;
 
 function install_db(): void {
@@ -156,7 +158,7 @@ function install_db(): void {
 ) $charset_collate;" );
 
 	// Orders table
-	// Note: For more info on statuses see \MillionDollarScript\Classes\FormFields::get_statuses
+	// Note: For more info on statuses see \MillionDollarScript\Classes\Forms\Forms\FormFields::get_statuses
 	dbDelta( "CREATE TABLE `{$tables['orders']}` (
     `user_id` INT NOT NULL DEFAULT '0',
     `order_id` INT NOT NULL AUTO_INCREMENT,
@@ -309,10 +311,10 @@ function install_db(): void {
 	// Insert default config
 
 	// Load defaults
-	$defaults = \MillionDollarScript\Classes\Config::defaults();
+	$defaults = Config::defaults();
 
 	// Fetch current config from database
-	$config = \MillionDollarScript\Classes\Config::get_results_assoc();
+	$config = Config::get_results_assoc();
 
 	// Update database with new defaults
 	foreach ( $defaults as $key => $default ) {

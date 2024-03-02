@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Database;
+use MillionDollarScript\Classes\Data\Database;
 
 defined( 'ABSPATH' ) or exit;
 

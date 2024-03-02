@@ -26,9 +26,12 @@
  *
  */
 
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\FormFields;
-use MillionDollarScript\Classes\Functions;
+use MillionDollarScript\Classes\Forms\FormFields;
+use MillionDollarScript\Classes\Orders\Blocks;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\Payment\Payment;
+use MillionDollarScript\Classes\System\Functions;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -50,8 +53,8 @@ if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
 		$order_row = mysqli_fetch_array( $result );
 
 		if ( $order_row['status'] != 'completed' ) {
-			complete_order( $order_row['user_id'], $oid );
-			debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+			Orders::complete_order( $order_row['user_id'], $oid );
+			Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
 		}
 	}
 
@@ -66,8 +69,8 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	$order_row = mysqli_fetch_array( $result );
 
-	complete_order( $_REQUEST['user_id'], $_REQUEST['order_id'] );
-	debit_transaction( $_REQUEST['order_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+	Orders::complete_order( $_REQUEST['user_id'], $_REQUEST['order_id'] );
+	Payment::debit_transaction( $_REQUEST['order_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -75,7 +78,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' ) {
-	cancel_order( $_REQUEST['order_id'] );
+	Orders::cancel_order( $_REQUEST['order_id'] );
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -83,7 +86,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' ) {
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'unreserve' ) {
-	unreserve_block( $_REQUEST['block_id'], $_REQUEST['banner_id'] );
+	Blocks::unreserve_block( $_REQUEST['block_id'], $_REQUEST['banner_id'] );
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -94,7 +97,7 @@ if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
 	foreach ( $_REQUEST['orders'] as $oid ) {
 
 		//echo "$order_id ";
-		cancel_order( $oid );
+		Orders::cancel_order( $oid );
 	}
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
@@ -104,7 +107,7 @@ if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 
-	delete_order( $_REQUEST['order_id'] );
+	Orders::delete_order( $_REQUEST['order_id'] );
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -114,7 +117,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 if ( isset( $_REQUEST['mass_delete'] ) && $_REQUEST['mass_delete'] != '' ) {
 
 	foreach ( $_REQUEST['orders'] as $oid ) {
-		delete_order( $oid );
+		Orders::delete_order( $oid );
 	}
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
@@ -556,7 +559,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 			<?php
 			$pixel_per_page      = get_user_option( 'edit_mds-pixel_per_page' );
 			$posts_per_page      = $pixel_per_page && $pixel_per_page > 0 ? intval( $pixel_per_page ) : 20;
-			$mds_pixel_post_type = \MillionDollarScript\Classes\FormFields::$post_type;
+			$mds_pixel_post_type = FormFields::$post_type;
 			$post_statuses       = array_keys( FormFields::get_statuses() );
 
 			$i = 0;

@@ -26,8 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Payment\Currency;
 
 defined( 'ABSPATH' ) or exit;
 

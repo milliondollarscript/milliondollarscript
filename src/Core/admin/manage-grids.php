@@ -26,10 +26,10 @@
  *
  */
 
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\Options;
-use MillionDollarScript\Classes\Utility;
-use MillionDollarScript\Classes\WooCommerceFunctions;
+use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -416,10 +416,10 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 			//
 			// if ( $new ) {
 			// 	// Add attributes to product
-			// 	\MillionDollarScript\Classes\Functions::add_variation( $product, $BID );
+			// 	\MillionDollarScript\Classes\System\Functions::add_variation( $product, $BID );
 			// } else {
 			// 	// Update attributes on product
-			// 	\MillionDollarScript\Classes\Functions::update_variation( $product, $BID );
+			// 	\MillionDollarScript\Classes\System\Functions::update_variation( $product, $BID );
 			// }
 
 			$product->save();
@@ -1035,10 +1035,10 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 				?>
             </div>
             <div class="inventory2-content">
-				<?php echo get_clicks_for_today( $row['banner_id'] ); ?>
+				<?php echo Utility::get_clicks_for_today( $row['banner_id'] ); ?>
             </div>
             <div class="inventory2-content">
-				<?php echo get_clicks_for_banner( $row['banner_id'] ); ?>
+				<?php echo Utility::get_clicks_for_banner( $row['banner_id'] ); ?>
             </div>
 			<?php
 		}

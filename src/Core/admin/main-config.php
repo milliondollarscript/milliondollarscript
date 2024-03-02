@@ -26,8 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 

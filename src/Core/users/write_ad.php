@@ -26,13 +26,13 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\FormFields;
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Steps;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Forms\FormFields;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Orders\Steps;
+use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -59,7 +59,7 @@ if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 
 	if ( count( $order_result ) == 0 ) {
 		if ( wp_doing_ajax() ) {
-			Functions::no_orders();
+			Orders::no_orders();
 			wp_die();
 		}
 
@@ -69,14 +69,14 @@ if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 	$row = $order_result[0];
 
 	if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-		update_temp_order_timestamp();
+		Orders::update_temp_order_timestamp();
 	}
 
 	$has_packages = banner_get_packages( $BID );
 
 	function display_ad_intro() {
 
-		show_nav_status( 2 );
+		Utility::show_nav_status( 2 );
 
 		Language::out( '<h3>Please write your advertisement and click "Save Ad" when done.</h3>' );
 
@@ -94,7 +94,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 	Functions::verify_nonce( 'mds-form' );
 	$user_id = get_current_user_id();
 
-	if ( \MillionDollarScript\Classes\Options::get_option( 'order-locking', false ) ) {
+	if ( \MillionDollarScript\Classes\Data\Options::get_option( 'order-locking', false ) ) {
 		// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
 		$is_error = false;
 		if ( isset( $_REQUEST['manage-pixels'] ) && isset( $_REQUEST['order_id'] ) ) {
@@ -163,7 +163,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 
 		$status = $wpdb->get_var( $sql );
 		if ( $status == 'denied' ) {
-			pend_order( $order_id );
+			Orders::pend_order( $order_id );
 			Orders::reset_order_progress();
 		}
 
@@ -187,7 +187,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 	if ( ! empty( $_REQUEST['aid'] ) ) {
 		// Get the desired MDS Pixels post owned by the current user
 		$pixels = get_posts( [
-			'post_type'   => \MillionDollarScript\Classes\FormFields::$post_type,
+			'post_type'   => \MillionDollarScript\Classes\Forms\FormFields::$post_type,
 			'post_status' => 'any',
 			'p'           => intval( $_REQUEST['aid'] ),
 			'author'      => get_current_user_id(),

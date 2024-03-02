@@ -31,7 +31,7 @@ use Imagine\Gd\Imagine;
 use Imagine\Image\Box;
 use Imagine\Image\Palette\RGB;
 use Imagine\Image\Point;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -92,7 +92,7 @@ if ( $BID != '' ) {
 
 	$grid_img = Utility::get_upload_url() . 'grids/grid' . $BID;
 
-	$grid_ext = \MillionDollarScript\Classes\Utility::get_file_extension();
+	$grid_ext = \MillionDollarScript\Classes\System\Utility::get_file_extension();
 
 	$grid_img .= '.' . $grid_ext;
 

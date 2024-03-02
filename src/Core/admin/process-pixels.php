@@ -26,6 +26,8 @@
  *
  */
 
+use MillionDollarScript\Classes\System\Utility;
+
 defined( 'ABSPATH' ) or exit;
 
 ini_set( 'max_execution_time', 500 );
@@ -62,8 +64,8 @@ if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' ) {
 
 // Process images
 
-if ( ! is_writable( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/" ) ) {
-	echo "<b>Warning:</b> The script does not have permission write to " . \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/ or the directory does not exist <br>";
+if ( ! is_writable( Utility::get_upload_path() . "grids/" ) ) {
+	echo "<b>Warning:</b> The script does not have permission write to " . Utility::get_upload_path() . "grids/ or the directory does not exist <br>";
 }
 $BANNER_PATH = get_banner_dir();
 if ( ! is_writable( $BANNER_PATH ) ) {

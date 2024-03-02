@@ -26,6 +26,10 @@
  *
  */
 
+use MillionDollarScript\Classes\Orders\Blocks;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
+
 defined( 'ABSPATH' ) or exit;
 
 ini_set( 'max_execution_time', 10000 );
@@ -351,10 +355,10 @@ if ( isset( $_REQUEST['move_type'] ) && ! empty( $_REQUEST['move_type'] ) ) {
 
 	if ( $_REQUEST['move_type'] == 'B' ) {
 		// move block
-		move_block( $_REQUEST['cb_from'], $_REQUEST['cb_to'], $BID );
+		Blocks::move_block( $_REQUEST['cb_from'], $_REQUEST['cb_to'], $BID );
 	} else if ( $_REQUEST['move_type'] == 'O' ) {
 		// move order
-		move_order( $_REQUEST['cb_from'], $_REQUEST['cb_to'], $BID );
+		Orders::move_order( $_REQUEST['cb_from'], $_REQUEST['cb_to'], $BID );
 	}
 }
 
@@ -379,7 +383,7 @@ if ( isset( $_REQUEST['move_type'] ) && ! empty( $_REQUEST['move_type'] ) ) {
 	$current_time = current_time('timestamp');
 
 	foreach ( $blocks as $row ) {
-		$size = get_pixel_image_size( $row->order_id );
+		$size = Utility::get_pixel_image_size( $row->order_id );
 
 		$user_id     = intval( $row->user_id );
 		$click_count = intval( get_user_meta( $user_id, MDS_PREFIX . 'click_count', true ) );
@@ -409,9 +413,9 @@ if ( isset( $_REQUEST['move_type'] ) && ! empty( $_REQUEST['move_type'] ) ) {
 			$exp_time_to_go = $exp_time - $elapsed_time;
 			$exp_days_to_go = floor( $exp_time_to_go / 60 / 60 / 24 );
 
-			$to_go = elapsedtime( $exp_time_to_go );
+			$to_go = Utility::elapsedtime( $exp_time_to_go );
 
-			$elapsed = elapsedtime( $elapsed_time );
+			$elapsed = Utility::elapsedtime( $elapsed_time );
 
 			$days = "$elapsed passed<br> $to_go to go (" . $order_row->days_expire . ")";
 

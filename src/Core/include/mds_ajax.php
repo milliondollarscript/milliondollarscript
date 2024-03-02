@@ -26,8 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -172,7 +172,7 @@ class Mds_Ajax {
 												REDIRECT_URL: '<?php echo esc_js( REDIRECT_URL ); ?>',
 												ENABLE_MOUSEOVER: '<?php echo esc_js( ENABLE_MOUSEOVER ); ?>',
 												BID: parseInt('<?php echo $BID; ?>', 10),
-												link_target: '<?php echo esc_js( \MillionDollarScript\Classes\Options::get_option( 'link-target' ) ); ?>'
+												link_target: '<?php echo esc_js( \MillionDollarScript\Classes\Data\Options::get_option( 'link-target' ) ); ?>'
 											};
 											jQuery.getScript('<?php echo MDS_BASE_URL; ?>src/Assets/js/mds.min.js?ver=<?php echo filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ); ?>', function () {
 											});

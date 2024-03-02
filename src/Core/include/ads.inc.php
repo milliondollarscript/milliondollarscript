@@ -27,11 +27,15 @@
  */
 
 use Imagine\Filter\Basic\Autorotate;
-use MillionDollarScript\Classes\FormFields;
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Utility;
+use Imagine\Image\Metadata\ExifMetadataReader;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Email\Emails;
+use MillionDollarScript\Classes\Forms\FormFields;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -69,9 +73,9 @@ function assign_ad_template( $prams ) {
 
 	// image
 	$search[] = '%image%';
-	$filename = 'tmp_' . $prams['ad_id'] . \MillionDollarScript\Classes\Utility::get_file_extension();
-	if ( ( file_exists( \MillionDollarScript\Classes\Utility::get_upload_path() . 'images/' . $filename ) ) && ( ! empty( $prams[ $row['field_id'] ] ) ) ) {
-		$replace[] = '<img alt="" src="' . \MillionDollarScript\Classes\Utility::get_upload_url() . "images/" . $filename . '" style="max-width:100px;max-height:100px;">';
+	$filename = 'tmp_' . $prams['ad_id'] . Utility::get_file_extension();
+	if ( ( file_exists( Utility::get_upload_path() . 'images/' . $filename ) ) && ( ! empty( $prams[ $row['field_id'] ] ) ) ) {
+		$replace[] = '<img alt="" src="' . Utility::get_upload_url() . "images/" . $filename . '" style="max-width:100px;max-height:100px;">';
 	} else {
 		$replace[] = '';
 	}
@@ -97,7 +101,7 @@ function assign_ad_template( $prams ) {
 	$replace[] = $prams['text'];
 
 	return Language::get_replace(
-		\MillionDollarScript\Classes\Options::get_option( 'popup-template' ),
+		Options::get_option( 'popup-template' ),
 		$search,
 		$replace
 	);
@@ -109,7 +113,6 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 
 	if ( $prams == '' ) {
 		$prams              = array();
-		$prams['mode']      = ( isset( $_REQUEST['mode'] ) ? $_REQUEST['mode'] : "" );
 		$prams['ad_id']     = ( isset( $_REQUEST['aid'] ) ? $_REQUEST['aid'] : "" );
 		$prams['banner_id'] = $BID;
 		$prams['user_id']   = ( isset( $_REQUEST['user_id'] ) ? $_REQUEST['user_id'] : "" );
@@ -230,7 +233,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 			echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, Utility::get_page_url( 'manage' ), $order_by );
 		}
 
-		$order_locking = \MillionDollarScript\Classes\Options::get_option( 'order-locking', false );
+		$order_locking = Options::get_option( 'order-locking', false );
 
 		?>
         <div class="mds-pixels-list">
@@ -289,9 +292,9 @@ function list_ads( $offset = 0, $user_id = '' ) {
 
 							$exp_time_to_go = $exp_time - $elapsed_time;
 
-							$to_go = elapsedtime( $exp_time_to_go );
+							$to_go = Utility::elapsedtime( $exp_time_to_go );
 
-							$elapsed = elapsedtime( $elapsed_time );
+							$elapsed = Utility::elapsedtime( $elapsed_time );
 
 							if ( $prams['status'] == 'expired' ) {
 								$days = "<a href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $prams['order_id'] ) . "&BID=" . esc_attr( $prams['banner_id'] ) . "&renew=true'>" . Language::get( 'Expired!' ) . "</a>";
@@ -436,7 +439,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 			echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, Utility::get_page_url( 'manage' ), $order_by );
 		}
 
-		$order_locking = \MillionDollarScript\Classes\Options::get_option( 'order-locking', false );
+		$order_locking = Options::get_option( 'order-locking', false );
 
 		?>
         <div class="mds-pixels-list">
@@ -623,8 +626,8 @@ function disapprove_modified_order( $order_id, $BID ) {
 	);
 
 	// send pixel change notification
-	if ( \MillionDollarScript\Classes\Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
-		send_published_pixels_notification( $order->user_id, $order_id );
+	if ( Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
+		Emails::send_published_pixels_notification( $order->user_id, $order_id );
 	}
 }
 
@@ -646,7 +649,7 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 	if ( ( ! empty( $_REQUEST['change_pixels'] ) ) && isset( $_FILES ) ) {
 		// a new image was uploaded...
 
-		$uploaddir = \MillionDollarScript\Classes\Utility::get_upload_path() . "images/";
+		$uploaddir = Utility::get_upload_path() . "images/";
 		$files     = $_FILES['pixels'] ?? ( $_FILES['graphic'] ?? '' );
 
 		if ( empty( $files['tmp_name'] ) ) {
@@ -690,11 +693,11 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 				// File is valid, and was successfully uploaded.
 				$tmp_image_file = $newname;
 
-				setMemoryLimit( $uploadfile );
+				Utility::setMemoryLimit( $uploadfile );
 
 				// check image size
 				$img_size   = $image->getSize();
-				$MDS_RESIZE = \MillionDollarScript\Classes\Config::get( 'MDS_RESIZE' );
+				$MDS_RESIZE = Config::get( 'MDS_RESIZE' );
 
 				// check the size
 				if ( ( $MDS_RESIZE != 'YES' ) && ( ( $img_size->getWidth() > $size['x'] ) || ( $img_size->getHeight() > $size['y'] ) ) ) {
@@ -754,7 +757,7 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 					$_REQUEST['map_y'] = $high_y;
 
 					// autorotate
-					$imagine->setMetadataReader( new \Imagine\Image\Metadata\ExifMetadataReader() );
+					$imagine->setMetadataReader( new ExifMetadataReader() );
 					$filter = new Imagine\Filter\Transformation();
 					$filter->add( new AutoRotate() );
 					$filter->apply( $image );

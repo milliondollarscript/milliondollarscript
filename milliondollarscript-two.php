@@ -41,10 +41,10 @@
 
 namespace MillionDollarScript;
 
-use MillionDollarScript\Classes\Bootstrap;
-use MillionDollarScript\Classes\Database;
-use MillionDollarScript\Classes\Options;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Database;
+use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\System\Bootstrap;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -90,14 +90,14 @@ function perform_upgrade_operations( bool $load_post = true ): void {
 	}
 
 	// Reset cron.
-	\MillionDollarScript\Classes\Cron::clear_cron();
-	\MillionDollarScript\Classes\Cron::schedule_cron();
+	Classes\System\Cron::clear_cron();
+	Classes\System\Cron::schedule_cron();
 
 	// Flush permalinks.
 	if ( $load_post ) {
 
 		// Register mds-pixel post type.
-		\MillionDollarScript\Classes\FormFields::register_post_type();
+		Classes\Forms\FormFields::register_post_type();
 
 		flush_rewrite_rules();
 	}
@@ -188,7 +188,7 @@ function milliondollarscript_two_uninstall(): void {
 	if ( Options::get_option( 'delete-data' ) ) {
 		global $wpdb;
 
-		\MillionDollarScript\Classes\Utility::clear_orders();
+		Classes\System\Utility::clear_orders();
 
 		$tables = Database::get_mds_tables();
 
@@ -226,7 +226,7 @@ if ( $mds_bootstrap == null ) {
 }
 
 // Registering scheduled events...
-register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\Cron', 'schedule_cron' ] );
-register_deactivation_hook( __FILE__, [ '\MillionDollarScript\Classes\Cron', 'clear_cron' ] );
+register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'schedule_cron' ] );
+register_deactivation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'clear_cron' ] );
 
 // Done!

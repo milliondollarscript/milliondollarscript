@@ -26,7 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Forms\FormFields;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -144,7 +145,7 @@ defined( 'ABSPATH' ) or exit;
         <a href="#"><?php Language::out( 'Reports' ); ?></a>
         <ul>
             <li>
-                <a href="<?php echo admin_url( 'edit.php?post_type=' . \MillionDollarScript\Classes\FormFields::$post_type ); ?>"><?php Language::out( 'List' ); ?></a>
+                <a href="<?php echo admin_url( 'edit.php?post_type=' . FormFields::$post_type ); ?>"><?php Language::out( 'List' ); ?></a>
             </li>
             <li>
                 <a href="<?php echo admin_url( 'admin.php?page=mds-top-customers' ); ?>"><?php Language::out( 'Top Customers' ); ?></a>

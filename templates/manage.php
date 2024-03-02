@@ -28,8 +28,8 @@
 
 defined( 'ABSPATH' ) or exit;
 
-\MillionDollarScript\Classes\Utility::get_header();
+\MillionDollarScript\Classes\System\Utility::get_header();
 
 require_once MDS_CORE_PATH . 'users/manage.php';
 
-\MillionDollarScript\Classes\Utility::get_footer();
+\MillionDollarScript\Classes\System\Utility::get_footer();

@@ -26,12 +26,11 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Steps;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Orders\Steps;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -57,7 +56,7 @@ $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_err
 // Handle when no order id is found.
 if ( mysqli_num_rows( $order_result ) == 0 ) {
 	if ( wp_doing_ajax() ) {
-		Functions::no_orders();
+		Orders::no_orders();
 		wp_die();
 	}
 
@@ -72,7 +71,7 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 	$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
 
 	if ( ! $advanced_order ) {
-		$order_id = reserve_pixels_for_temp_order( $order_row );
+		$order_id = Orders::reserve_pixels_for_temp_order( $order_row );
 	}
 
 	if ( ! empty( $order_id ) ) {
@@ -81,9 +80,9 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
 
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
-			complete_order( get_current_user_id(), $order_id );
+			Orders::complete_order( get_current_user_id(), $order_id );
 		} else {
-			confirm_order( get_current_user_id(), $order_id );
+			Orders::confirm_order( get_current_user_id(), $order_id );
 		}
 
 	} else {
@@ -104,13 +103,13 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {
 	Steps::update_step( 'payment' );
 	$_REQUEST['order_id'] = $order_id;
-	\MillionDollarScript\Classes\Payment::handle_checkout( $order_id );
+	\MillionDollarScript\Classes\Payment\Payment::handle_checkout( $order_id );
 } else {
 	if ( isset( $_REQUEST['renew'] ) && $_REQUEST['renew'] === 'true' ) {
 		$order = Orders::get_order( $order_id );
 		if ( in_array( $order->status, [ 'expired', 'renew_wait' ] ) ) {
 			$_REQUEST['order_id'] = $order_id;
-			\MillionDollarScript\Classes\Payment::handle_checkout( $order_id );
+			\MillionDollarScript\Classes\Payment\Payment::handle_checkout( $order_id );
 		}
 	}
 }

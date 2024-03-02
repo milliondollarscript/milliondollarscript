@@ -26,12 +26,13 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
 if ( isset( $_REQUEST['clear_orders'] ) && $_REQUEST['clear_orders'] == 'true' ) {
-    \MillionDollarScript\Classes\Utility::clear_orders();
+    Utility::clear_orders();
 	$done = Language::get( "Done!" );
 }
 

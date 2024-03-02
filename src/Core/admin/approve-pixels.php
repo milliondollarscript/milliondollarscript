@@ -26,12 +26,15 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\Emails;
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Mail;
+use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Email\Emails;
+use MillionDollarScript\Classes\Email\Mail;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Blocks;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -474,7 +477,7 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 			$blocks = explode( ',', $row['blocks'] );
 			$coords = "";
 			foreach ( $blocks as $index => $block ) {
-				$pos    = get_block_position( $block, $row['banner_id'] );
+				$pos    = Blocks::get_block_position( $block, $row['banner_id'] );
 				$coords .= ( $pos['x'] / $banner_data['block_width'] ) . ',' . ( $pos['y'] / $banner_data['block_height'] );
 				if ( $index !== count( $blocks ) - 1 ) {
 					$coords .= ' | ';
@@ -499,7 +502,7 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 						$t_row    = mysqli_fetch_array( $t_result );
 						echo $t_row['name']; ?></span></td>
                 <td><span style="font-family: Arial,serif; "><img
-                                src="<?php echo esc_url( \MillionDollarScript\Classes\Utility::get_page_url( 'get-order-image' ) . '?BID=' . $row['banner_id'] . '&aid=' . $row['ad_id'] ); ?>" alt=""/></span>
+                                src="<?php echo esc_url( Utility::get_page_url( 'get-order-image' ) . '?BID=' . $row['banner_id'] . '&aid=' . $row['ad_id'] ); ?>" alt=""/></span>
                 </td>
                 <td><span style="font-family: Arial,serif; "><?php
 						$text = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );

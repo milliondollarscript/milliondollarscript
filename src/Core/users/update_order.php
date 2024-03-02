@@ -26,8 +26,9 @@
  *
  */
 
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Orders;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Blocks;
+use MillionDollarScript\Classes\Orders\Orders;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -80,7 +81,7 @@ if ( is_user_logged_in() ) {
 	die();
 }
 
-if ( ! can_user_order( $banner_data, get_current_user_id() ) ) {
+if ( ! Orders::can_user_order( $banner_data, get_current_user_id() ) ) {
 	$max_orders = true;
 	echo json_encode( [
 		"error" => "true",
@@ -163,7 +164,7 @@ if ( ! empty( $_REQUEST['selection_size'] ) ) {
 	$size = intval( $_REQUEST['selection_size'] );
 }
 
-$output_result = select_block( $block_id, $banner_data, $size, $user_id );
+$output_result = Blocks::select_block( $block_id, $banner_data, $size, $user_id );
 
 if ( $output_result['error'] == 'false' ) {
 	// Update the last modification time

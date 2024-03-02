@@ -31,6 +31,6 @@ defined( 'ABSPATH' ) or exit;
 if ( is_user_logged_in() ) {
 	wp_logout();
 	session_unset();
-	wp_redirect( \MillionDollarScript\Classes\Options::get_option( 'logout-redirect' ) );
+	wp_redirect( \MillionDollarScript\Classes\Data\Options::get_option( 'logout-redirect' ) );
 	exit;
 }

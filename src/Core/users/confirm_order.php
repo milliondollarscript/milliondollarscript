@@ -26,13 +26,13 @@
  *
  */
 
-use MillionDollarScript\Classes\Currency;
-use MillionDollarScript\Classes\Functions;
-use MillionDollarScript\Classes\Language;
-use MillionDollarScript\Classes\Options;
-use MillionDollarScript\Classes\Orders;
-use MillionDollarScript\Classes\Steps;
-use MillionDollarScript\Classes\Utility;
+use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Orders\Steps;
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -52,13 +52,13 @@ function display_edit_order_button( $order_id ): void {
 	<?php
 }
 
-update_temp_order_timestamp();
+Orders::update_temp_order_timestamp();
 
 $order_id = Orders::get_current_order_id();
 
 if ( empty( $order_id ) ) {
 	if ( wp_doing_ajax() ) {
-		Functions::no_orders();
+		Orders::no_orders();
 		wp_die();
 	}
 
@@ -71,7 +71,7 @@ $order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_erro
 // check if we have pixels...
 if ( mysqli_num_rows( $order_result ) == 0 ) {
 	if ( wp_doing_ajax() ) {
-		Functions::no_orders();
+		Orders::no_orders();
 		wp_die();
 	}
 
@@ -105,19 +105,19 @@ if ( ! is_user_logged_in() ) {
 	// The user is logged in
 
 	// Get the MDS Pixels post id by the order id
-	$post         = \MillionDollarScript\Classes\FormFields::get_pixel_from_order_id( $order_id );
+	$post         = \MillionDollarScript\Classes\Forms\FormFields::get_pixel_from_order_id( $order_id );
 	$mds_pixel_id = $post?->ID;
 
 	// Check if there is a pixel post for this order yet.
 	if ( empty( $mds_pixel_id ) ) {
-		Functions::no_orders();
+		Orders::no_orders();
 
 		return;
 	}
 
 	// Check if the required fields were filled
 	$errors = [];
-	$fields = \MillionDollarScript\Classes\FormFields::get_fields();
+	$fields = \MillionDollarScript\Classes\Forms\FormFields::get_fields();
 	foreach ( $fields as $field ) {
 		$field_name  = $field->get_base_name();
 		$field_label = $field->get_label();
@@ -213,7 +213,7 @@ if ( ! is_user_logged_in() ) {
 
 	$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
 
-	if ( \MillionDollarScript\Classes\Options::get_option( 'confirm-orders' ) != 'yes' ) {
+	if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) != 'yes' ) {
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 			Steps::update_step( 'complete' );
 
@@ -230,7 +230,7 @@ if ( ! is_user_logged_in() ) {
 
 	require_once MDS_CORE_PATH . "html/header.php";
 
-	show_nav_status( 3 );
+	Utility::show_nav_status( 3 );
 
 	$p_max_ord = 0;
 	if ( ( $has_packages ) && ( isset( $_REQUEST['pack'] ) && $_REQUEST['pack'] == '' ) ) {
@@ -265,7 +265,7 @@ if ( ! is_user_logged_in() ) {
 		}
 	} else {
 
-		display_order( Orders::get_current_order_id(), $BID );
+		Orders::display_order( Orders::get_current_order_id(), $BID );
 
 		?>
         <div class="mds-button-container">
@@ -273,7 +273,7 @@ if ( ! is_user_logged_in() ) {
 
 		display_edit_order_button( Orders::get_current_order_id() );
 
-		if ( ! can_user_order( $banner_data, get_current_user_id(), ( $_REQUEST['pack'] ?? 0 ) ) ) {
+		if ( ! Orders::can_user_order( $banner_data, get_current_user_id(), ( $_REQUEST['pack'] ?? 0 ) ) ) {
 			// one more check before continue
 
 			if ( ! $p_max_ord ) {
@@ -288,7 +288,7 @@ if ( ! is_user_logged_in() ) {
 			], [ $max, Utility::get_page_url( 'manage' ) ] );
 		} else {
 
-			if ( \MillionDollarScript\Classes\Options::get_option( 'confirm-orders' ) == 'yes' ) {
+			if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) == 'yes' ) {
 				// Confirm order page buttons
 				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 					// go straight to publish...

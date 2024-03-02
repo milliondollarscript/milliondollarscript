@@ -27,7 +27,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Data\Config;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -69,16 +69,16 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	if ( $cached ) {
 
 		// Banner paths
-		$BANNER_PATH = \MillionDollarScript\Classes\Utility::get_upload_path() . 'grids/';
+		$BANNER_PATH = \MillionDollarScript\Classes\System\Utility::get_upload_path() . 'grids/';
 
 		// Get the file extension if the file doesn't already have one
 		$ext = pathinfo( $file, PATHINFO_EXTENSION );
 		if ( empty( $ext ) ) {
-			$ext = \MillionDollarScript\Classes\Utility::get_file_extension();
+			$ext = \MillionDollarScript\Classes\System\Utility::get_file_extension();
 		}
 
 		// Get the last modification time of the orders
-		$last_modification_time = \MillionDollarScript\Classes\Orders::get_last_order_modification_time();
+		$last_modification_time = \MillionDollarScript\Classes\Orders\Orders::get_last_order_modification_time();
 
 		// Get the hash value of the types of blocks to show in the grid
 		$typehash = md5( serialize( $types ) );
@@ -155,8 +155,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	foreach ( $types as $type ) {
 		switch ( $type ) {
 			case 'background':
-				if ( file_exists( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/background$BID.png" ) ) {
-					$background = $imagine->open( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/background$BID.png" );
+				if ( file_exists( \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/background$BID.png" ) ) {
+					$background = $imagine->open( \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/background$BID.png" );
 				}
 				break;
 			case 'orders':

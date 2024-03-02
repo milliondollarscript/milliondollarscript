@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Config;
+use MillionDollarScript\Classes\Data\Config;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -222,5 +222,5 @@ class functions2 {
 }
 
 function get_banner_dir() {
-	return wp_normalize_path( \MillionDollarScript\Classes\Utility::get_upload_path() . "grids/" );
+	return wp_normalize_path( \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/" );
 }
