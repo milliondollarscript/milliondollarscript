@@ -39,10 +39,10 @@ defined( 'ABSPATH' ) or exit;
  */
 class DatabaseStatic {
 	public static function convert_version( string $version ): string {
-		return \MillionDollarScript\Classes\Data\DatabaseStatic::convert_version( $version );
+		return Data\DatabaseStatic::convert_version( $version );
 	}
 
 	public static function table_exists( $table_name ): bool {
-		return \MillionDollarScript\Classes\Data\DatabaseStatic::table_exists( $table_name );
+		return Data\DatabaseStatic::table_exists( $table_name );
 	}
 }
