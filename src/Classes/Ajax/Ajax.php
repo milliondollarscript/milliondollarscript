@@ -37,8 +37,6 @@ use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Utility;
-use const MillionDollarScript\Classes\ADVANCED_VIEW_COUNT;
-use const MillionDollarScript\Classes\STATS_DISPLAY_MODE;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -209,7 +207,9 @@ class Ajax {
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 		$row = mysqli_fetch_array( $result );
 
-		if ( defined( 'STATS_DISPLAY_MODE' ) && STATS_DISPLAY_MODE == 'BLOCKS' ) {
+		$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+
+		if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 			$sold = $row['COUNT'];
 		} else {
 			$sold = $row['COUNT'] * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
@@ -219,7 +219,9 @@ class Ajax {
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 		$row = mysqli_fetch_array( $result );
 
-		if ( defined( 'STATS_DISPLAY_MODE' ) && STATS_DISPLAY_MODE == 'BLOCKS' ) {
+		$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+
+		if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 			$nfs       = $row['COUNT'];
 			$available = ( ( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] ) - $nfs ) - $sold;
 		} else {

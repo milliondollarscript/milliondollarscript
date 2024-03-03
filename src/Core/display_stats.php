@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Data\Config;use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -39,7 +39,9 @@ $sql = "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $row = mysqli_fetch_array( $result );
 
-if ( defined( 'STATS_DISPLAY_MODE' ) && STATS_DISPLAY_MODE == 'BLOCKS' ) {
+$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+
+if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 	$sold = $row['COUNT'];
 } else {
 	$sold = $row['COUNT'] * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
@@ -49,7 +51,9 @@ $sql = "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='
 $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 $row = mysqli_fetch_array( $result );
 
-if ( defined( 'STATS_DISPLAY_MODE' ) && STATS_DISPLAY_MODE == 'BLOCKS' ) {
+$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+
+if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 	$nfs       = $row['COUNT'];
 	$available = ( ( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] ) - $nfs ) - $sold;
 } else {
