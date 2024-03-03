@@ -678,19 +678,19 @@ class Utility {
 	 * @return string
 	 */
 	public static function get_order_color( array $values, float $transparency = 1.0 ): string {
-		$count = count($values);
+		$count = count( $values );
 
-		if ($count == 0) {
+		if ( $count == 0 ) {
 			// Return an empty string if the input array is empty
 			return '';
 		}
 
-		$trueCount = array_sum($values);
+		$trueCount = array_sum( $values );
 
-		if ($trueCount == $count) {
+		if ( $trueCount == $count ) {
 			// All values are true, return green
 			$color = 'rgba(0, 255, 0, ' . $transparency . ')';
-		} elseif ($trueCount == 0) {
+		} elseif ( $trueCount == 0 ) {
 			// All values are false, return red
 			$color = 'rgba(255, 0, 0, ' . $transparency . ')';
 		} else {
@@ -891,9 +891,9 @@ class Utility {
 
 	public static function powered_by_mds() {
 		?>
-		<div class="powered-by-mds">
-			Powered By <a target="_blank" href="https://milliondollarscript.com/">Million Dollar Script</a>
-		</div>
+        <div class="powered-by-mds">
+            Powered By <a target="_blank" href="https://milliondollarscript.com/">Million Dollar Script</a>
+        </div>
 		<?php
 	}
 
@@ -1050,5 +1050,24 @@ class Utility {
 		}
 
 		return $available;
+	}
+
+	/**
+	 * Check if MDS should run. This checks if it is an admin request. It also checks REST requests too, such as when updating a page.
+	 *
+	 * @return bool
+	 */
+	public static function should_stop(): bool {
+
+		if ( is_admin() ) {
+			return true;
+		}
+
+		// Detect REST requests for WP
+		if ( defined( 'REST_REQUEST' ) && str_contains( $_SERVER['REQUEST_URI'], '/wp-json/wp' ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }

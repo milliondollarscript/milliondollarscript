@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\Web;
 
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
@@ -65,7 +66,7 @@ class Shortcode {
 	 * @return string
 	 */
 	public static function shortcode( $atts ): string {
-		if ( is_admin() ) {
+		if ( Utility::should_stop() ) {
 			return '';
 		}
 
