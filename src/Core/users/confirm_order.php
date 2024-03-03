@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
@@ -105,7 +106,7 @@ if ( ! is_user_logged_in() ) {
 	// The user is logged in
 
 	// Get the MDS Pixels post id by the order id
-	$post         = \MillionDollarScript\Classes\Forms\FormFields::get_pixel_from_order_id( $order_id );
+	$post         = FormFields::get_pixel_from_order_id( $order_id );
 	$mds_pixel_id = $post?->ID;
 
 	// Check if there is a pixel post for this order yet.
@@ -117,7 +118,7 @@ if ( ! is_user_logged_in() ) {
 
 	// Check if the required fields were filled
 	$errors = [];
-	$fields = \MillionDollarScript\Classes\Forms\FormFields::get_fields();
+	$fields = FormFields::get_fields();
 	foreach ( $fields as $field ) {
 		$field_name  = $field->get_base_name();
 		$field_label = $field->get_label();
