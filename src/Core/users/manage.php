@@ -287,7 +287,7 @@ if ( $count > 0 ) {
 		?>
     </div>
 
-    <div class="mds-info-message">
+    <div class="mds-caution-message">
 		<?php
 		Language::out( 'Your blocks are shown on the grid below. Only your blocks are shown.<br />
 - Click your block to edit it.<br />

@@ -207,7 +207,7 @@ function check_selection_main(): void {
 
 	$upload_image_file = Orders::get_tmp_img_name();
 
-	if ( empty( $upload_image_file ) && $_POST['action'] == 'make-selection' ) {
+	if ( empty( $upload_image_file ) && $_POST['type'] == 'make-selection' ) {
 		wp_send_json( [
 			"error"    => "true",
 			"type"     => "no_orders",
@@ -282,7 +282,7 @@ function check_selection_main(): void {
 	// Reserve pixels
 	global $wpdb;
 
-	$order_id = intval( \MillionDollarScript\Classes\Orders\Orders::get_current_order_id() );
+	$order_id = intval( Orders::get_current_order_id() );
 	$user_id  = get_current_user_id();
 
 	$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d", $order_id, $user_id ), ARRAY_A );

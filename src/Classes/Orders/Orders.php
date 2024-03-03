@@ -766,15 +766,15 @@ class Orders {
 		?>
         <div>
             <b><?php Language::out( "Order Date" ); ?>:</b>
-            <?php echo get_date_from_gmt( $order['order_date'] ); ?>
+			<?php echo get_date_from_gmt( $order['order_date'] ); ?>
         </div>
         <div>
             <b><?php Language::out( 'Order ID' ); ?>:</b>
-            <?php echo isset( $order['order_id'] ) ? '#' . $order['order_id'] : Language::get( 'In progress' ); ?>
+			<?php echo isset( $order['order_id'] ) ? '#' . $order['order_id'] : Language::get( 'In progress' ); ?>
         </div>
         <div>
             <b><?php Language::out( "Quantity" ); ?>:</b>
-            <?php echo $order['quantity']; ?>
+			<?php echo $order['quantity']; ?>
         </div>
         <div>
             <b><?php Language::out( "Grid" ); ?>:</b>
@@ -794,7 +794,7 @@ class Orders {
 			<?php echo Currency::convert_to_default_currency_formatted( $order['currency'], $order['price'] ); ?>
         </div>
         <div>
-            <b><?php Language::out( "Time" ); ?>:</b><br />
+            <b><?php Language::out( "Time" ); ?>:</b><br/>
 			<?php
 
 			if ( $order['days_expire'] > 0 ) {
@@ -1074,7 +1074,9 @@ class Orders {
 		}
 
 		return [
-			'NONCE'           => wp_create_nonce( 'mds-order' ),
+			'ajaxurl'         => admin_url( 'admin-ajax.php' ),
+			'mds_nonce'       => esc_js( wp_create_nonce( 'mds_nonce' ) ),
+			'NONCE'           => esc_js( wp_create_nonce( 'mds-order' ) ),
 			'UPDATE_ORDER'    => esc_url( Utility::get_page_url( 'update-order' ) ),
 			'CHECK_SELECTION' => esc_url( Utility::get_page_url( 'check-selection' ) ),
 			'MAKE_SELECTION'  => esc_url( Utility::get_page_url( 'make-selection' ) ),
@@ -1992,23 +1994,23 @@ class Orders {
 
 		// check if the user can get the order
 		if ( ! self::can_user_order( $banner_data, get_current_user_id(), intval( $temp_order_row['package_id'] ) ) ) {
-			$error_message = Language::get( 'You do not have permission to reserve pixels for this order.' );
+			$error_message = Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your orders under Manage Pixels.' );
 
 			if ( wp_doing_ajax() ) {
 				echo json_encode( [
 					"error" => "true",
-					"type"  => "no_permission",
+					"type"  => "max_orders",
 					"data"  => [
 						"value" => $error_message,
 					]
 				] );
 
-				return false;
+				die();
 			}
 
 			echo $error_message;
 
-			return false;
+			die();
 		}
 
 		require_once MDS_CORE_PATH . 'include/ads.inc.php';
@@ -2183,15 +2185,15 @@ class Orders {
 	}
 
 	/**
-     * First check to see if the banner has packages. If it does
-     * then check how many orders the user had.
-     *
-     * @param $banner_data
-     * @param $user_id
-     * @param int $package_id
-     *
-     * @return bool|void|null
-     */
+	 * First check to see if the banner has packages. If it does
+	 * then check how many orders the user had.
+	 *
+	 * @param $banner_data
+	 * @param $user_id
+	 * @param int $package_id
+	 *
+	 * @return bool|void|null
+	 */
 	public static function can_user_order( $banner_data, $user_id, int $package_id = 0 ) {
 		// check rank
 		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );

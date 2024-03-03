@@ -97,8 +97,9 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 		submit2.style.cursor = 'wait';
 
 		let ajax_data = {
-			_wpnonce: MDS_OBJECT.NONCE,
-			action: 'make-selection',
+			mds_nonce: MDS_OBJECT.mds_nonce,
+			action: 'mds_ajax',
+			type: 'make-selection',
 			user_id: user_id,
 			map_x: window.$block_pointer.data('map_x'),
 			map_y: window.$block_pointer.data('map_y'),
@@ -109,11 +110,11 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 
 		jQuery.ajax({
 			method: 'POST',
-			url: MDS_OBJECT.MAKE_SELECTION,
+			url: MDS_OBJECT.ajaxurl,
 			data: ajax_data,
 			dataType: 'json',
 		}).done(function (response) {
-			if (response && response.type === 'unavailable') {
+			if (response && (response.type === 'unavailable' || response.type === 'max_orders') ) {
 				alert(response.data.value);
 				window.$block_pointer.css('cursor', 'pointer');
 				window.$pixelimg.css('cursor', 'pointer');
@@ -133,7 +134,7 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 			}
 
 		}).fail(function (jqXHR, textStatus, errorThrown) {
-		}).always(function () {
+		}).always(function ( response ) {
 		});
 	}
 

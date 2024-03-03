@@ -131,6 +131,9 @@ class Ajax {
 					case "write-ad":
 						require_once MDS_CORE_PATH . 'users/write_ad.php';
 						wp_die();
+					case "make-selection":
+						require_once MDS_CORE_PATH . 'users/make_selection.php';
+						wp_die();
 					default:
 						break;
 				}
@@ -282,7 +285,7 @@ class Ajax {
 	}
 
 	public static function store_view( $data ): void {
-        $ADVANCED_VIEW_COUNT = Config::get( 'ADVANCED_VIEW_COUNT' );
+		$ADVANCED_VIEW_COUNT = Config::get( 'ADVANCED_VIEW_COUNT' );
 		if ( $ADVANCED_VIEW_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
