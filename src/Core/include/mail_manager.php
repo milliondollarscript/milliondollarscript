@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Email\Mail;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -118,26 +119,28 @@ function process_mail_queue( $send_count = 1 ) {
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		while ( ( $row = mysqli_fetch_array( $result ) ) && ( $send_count > 0 ) ) {
 			$time_stamp = strtotime( $row['date_stamp'] );
-			$now        = current_time('timestamp');
+			$now        = current_time( 'timestamp' );
 			$wait       = $EMAILS_ERROR_WAIT * 60;
 			//echo "(($now - $wait) > $time_stamp) status:".$row['status']."\n";
 			if ( ( ( ( $now - $wait ) > $time_stamp ) && ( $row['status'] == 'error' ) ) || ( $row['status'] == 'queued' ) ) {
 				$send_count --;
-				\MillionDollarScript\Classes\Email\Mail::send( $row['to_address'], $row['subject'], $row['message'], '', $row['subject'], $row['message'] );
+				Mail::send( $row['to_address'], $row['subject'], $row['message'], '', $row['subject'], $row['message'] );
 			}
 		}
 
 		// delete old stuff
 
-		if ( ( Config::get( 'EMAILS_DAYS_KEEP' ) == 'EMAILS_DAYS_KEEP' ) ) {
-			define( Config::get( 'EMAILS_DAYS_KEEP' ), '0' );
+		$EMAILS_DAYS_KEEP = Config::get( 'EMAILS_DAYS_KEEP' );
+
+		if ( $EMAILS_DAYS_KEEP == 'EMAILS_DAYS_KEEP' ) {
+			Config::set( '0', 'EMAILS_DAYS_KEEP' );
 		}
 
-		if ( Config::get( 'EMAILS_DAYS_KEEP' ) > 0 ) {
+		if ( $EMAILS_DAYS_KEEP > 0 ) {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "SELECT mail_id, att1_name, att2_name, att3_name from " . MDS_DB_PREFIX . "mail_queue where status='sent' AND DATE_SUB('$now',INTERVAL " . intval( EMAILS_DAYS_KEEP ) . " DAY) >= date_stamp  ";
+			$sql = "SELECT mail_id, att1_name, att2_name, att3_name from " . MDS_DB_PREFIX . "mail_queue where status='sent' AND DATE_SUB('$now',INTERVAL " . intval( $EMAILS_DAYS_KEEP ) . " DAY) >= date_stamp  ";
 
 			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 

@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -143,14 +144,17 @@ class Mds_Ajax {
 
 			?>
             <script>
-	            jQuery(document).ready(function(){
+				jQuery(document).ready(function () {
 					if (window.mds_js_loaded !== true) {
 						window.mds_js_loaded = true;
 
 						<?php if($tooltips == 'POPUP') { ?>
 						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo MDS_CORE_URL; ?>css/tippy/light.css'}).appendTo('head');
 						<?php } ?>
-						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo MDS_BASE_URL; ?>src/Assets/css/mds.css?ver=<?php echo filemtime( MDS_BASE_PATH . "src/Assets/css/mds.css" ); ?>'}).appendTo('head');
+						jQuery('<link/>', {
+							rel: 'stylesheet',
+							href: '<?php echo MDS_BASE_URL; ?>src/Assets/css/mds.css?ver=<?php echo filemtime( MDS_BASE_PATH . "src/Assets/css/mds.css" ); ?>'
+						}).appendTo('head');
 
 						<?php if($tooltips == 'POPUP') { ?>
 						jQuery.getScript('<?php echo MDS_CORE_URL; ?>js/third-party/popper.min.js', function () {
@@ -168,11 +172,11 @@ class Mds_Ajax {
 												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 												time: '<?php echo esc_js( time() ); ?>',
 												MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL );?>',
-												REDIRECT_SWITCH: '<?php echo esc_js( REDIRECT_SWITCH ); ?>',
-												REDIRECT_URL: '<?php echo esc_js( REDIRECT_URL ); ?>',
-												ENABLE_MOUSEOVER: '<?php echo esc_js( ENABLE_MOUSEOVER ); ?>',
+												REDIRECT_SWITCH: '<?php echo esc_js( Config::get( 'REDIRECT_SWITCH' ) ); ?>',
+												REDIRECT_URL: '<?php echo esc_js( Config::get( 'REDIRECT_URL' ) ); ?>',
+												ENABLE_MOUSEOVER: '<?php echo esc_js( Config::get( 'ENABLE_MOUSEOVER' ) ); ?>',
 												BID: parseInt('<?php echo $BID; ?>', 10),
-												link_target: '<?php echo esc_js( \MillionDollarScript\Classes\Data\Options::get_option( 'link-target' ) ); ?>'
+												link_target: '<?php echo esc_js( Options::get_option( 'link-target' ) ); ?>'
 											};
 											jQuery.getScript('<?php echo MDS_BASE_URL; ?>src/Assets/js/mds.min.js?ver=<?php echo filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ); ?>', function () {
 											});

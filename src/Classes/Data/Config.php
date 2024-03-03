@@ -139,6 +139,33 @@ class Config {
 	}
 
 	/**
+	 * Sets a config value.
+	 *
+	 * @param int|string $value
+	 * @param int|string $key
+	 * @param string $type
+	 *
+	 * @return void
+	 */
+	public static function set( int|string $value, int|string $key, string $type = 's' ): void {
+		global $wpdb;
+
+		$wpdb->update(
+			MDS_DB_PREFIX . "config",
+			[
+				'val' => $value,
+			],
+			[
+				'config_key' => $key,
+			],
+			[
+				'%' . $type,
+			],
+			[ '%s' ]
+		);
+	}
+
+	/**
 	 * @param $value
 	 *
 	 * @return string

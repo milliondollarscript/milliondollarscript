@@ -282,7 +282,8 @@ class Ajax {
 	}
 
 	public static function store_view( $data ): void {
-		if ( ADVANCED_VIEW_COUNT == 'YES' ) {
+        $ADVANCED_VIEW_COUNT = Config::get( 'ADVANCED_VIEW_COUNT' );
+		if ( $ADVANCED_VIEW_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
 			$date = current_time( 'Y-m-d' );

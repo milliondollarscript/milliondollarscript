@@ -51,19 +51,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != '' ) {
 			}
 		}
 
-		$wpdb->update(
-			MDS_DB_PREFIX . "config",
-			[
-				'val' => $value,
-			],
-			[
-				'config_key' => $key,
-			],
-			[
-				'%' . $data['type'],
-			],
-			[ '%s' ]
-		);
+		Config::set( $value, $key, $data['type'] );
 	}
 
 	return;

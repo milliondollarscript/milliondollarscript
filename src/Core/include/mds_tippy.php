@@ -26,6 +26,8 @@
  *
  */
 
+use MillionDollarScript\Classes\Data\Config;
+
 defined( 'ABSPATH' ) or exit;
 
 if ( ENABLE_MOUSEOVER === 'NO' ) {
@@ -44,9 +46,9 @@ $banner_data = load_banner_constants( $BID );
 		winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
 		winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 		time: '<?php echo time(); ?>',
-		MDS_CORE_URL: '<?php echo MDS_CORE_URL;?>',
-		REDIRECT_SWITCH: '<?php echo REDIRECT_SWITCH; ?>',
-		REDIRECT_URL: '<?php echo REDIRECT_URL; ?>',
+		MDS_CORE_URL: '<?php echo Config::get( 'MDS_CORE_URL' );?>',
+		REDIRECT_SWITCH: '<?php echo Config::get( 'REDIRECT_SWITCH' ); ?>',
+		REDIRECT_URL: '<?php echo Config::get( 'REDIRECT_URL' ); ?>',
 		BID: parseInt('<?php echo $BID; ?>', 10)
 	}
 	jQuery(document).on('click', 'a.list-link', function (e) {
