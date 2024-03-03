@@ -26,7 +26,19 @@
  *
  */
 
+use MillionDollarScript\Classes\Language\Language;
+
 defined( 'ABSPATH' ) or exit;
 
-?>
-<embed style="width:100%;height:100dvh;" src="<?php echo esc_url( MDS_BASE_URL . 'license.txt' ); ?>"/>
+$license_txt = MDS_BASE_PATH . 'license.txt';
+if ( file_exists( $license_txt ) ) {
+	$file_content = file_get_contents( $license_txt );
+	echo nl2br( esc_html( $file_content ) );
+} else {
+	$plugin_data = get_file_data( MDS_BASE_FILE, [ 'License' => 'License' ] );
+	if ( ! empty( $plugin_data['License'] ) ) {
+		echo esc_html( $plugin_data['License'] );
+	} else {
+		Language::out( 'License not found' );
+	}
+}
