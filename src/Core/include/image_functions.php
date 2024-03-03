@@ -26,7 +26,9 @@
  *
  */
 
+use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -44,11 +46,11 @@ function publish_image( $BID ) {
 	}
 
 	$dest = get_banner_dir();
-	$ext  = \MillionDollarScript\Classes\System\Utility::get_file_extension();
-	copy( \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/grid$BID.$ext", $dest . "grid$BID.$ext" );
+	$ext  = Utility::get_file_extension();
+	copy( Utility::get_upload_path() . "grids/grid$BID.$ext", $dest . "grid$BID.$ext" );
 
 	// output the tile image
-	if ( \MillionDollarScript\Classes\Data\Config::get( 'DISPLAY_PIXEL_BACKGROUND' ) == "YES" ) {
+	if ( Config::get( 'DISPLAY_PIXEL_BACKGROUND' ) == "YES" ) {
 		$b_row = load_banner_row( $BID );
 
 		if ( $b_row['tile'] == '' ) {
@@ -99,7 +101,7 @@ function process_image( $BID ) {
 
 	require_once( "output_grid.php" );
 
-	return output_grid( false, \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/grid$BID", $BID, array(
+	return output_grid( false, Utility::get_upload_path() . "grids/grid$BID", $BID, array(
 		'background',
 		'orders',
 		'nfs_front',
