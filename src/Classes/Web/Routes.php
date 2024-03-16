@@ -45,7 +45,7 @@ defined( 'ABSPATH' ) or exit;
 class Routes {
 	public function __construct() {
 		add_action( 'wp_loaded', [ __CLASS__, 'add_rewrite_rules' ] );
-		add_filter( 'template_include', [ __CLASS__, 'template_include' ], 99 );
+		add_filter( 'template_include', [ __CLASS__, 'template_include' ], 999999 );
 		add_action( 'parse_query', [ __CLASS__, 'parse_query' ], 10, 1 );
 
 		register_activation_hook( MDS_BASE_FILE, [ __CLASS__, 'activate' ] );
