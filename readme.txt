@@ -81,6 +81,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix temporary upgrade mechanism causing an error.
 * Update vendor libraries.
 * Update language file.
+* Fix error with the get_order_id_from_ad_id function.
+* Don't send the Order Confirmed email when the order is completed, only send the Order Completed email.
+* When Create Pages button is clicked it will now automatically set the Page Layout to No Sidebar if using Divi theme.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
