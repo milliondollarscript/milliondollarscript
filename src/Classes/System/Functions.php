@@ -446,6 +446,10 @@ class Functions {
 			unset( $sql, $check_results );
 		}
 
+		if ( isset( $_POST['mds_dest'] ) ) {
+			return true;
+		}
+
 		// Ad forms:
 		?>
         <div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>

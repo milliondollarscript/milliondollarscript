@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.3
-Stable tag: 2.5.10.88
+Stable tag: 2.5.10.89
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -84,6 +84,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix error with the get_order_id_from_ad_id function.
 * Don't send the Order Confirmed email when the order is completed, only send the Order Completed email.
 * When Create Pages button is clicked it will now automatically set the Page Layout to No Sidebar if using Divi theme.
+* The Change Pixels upload will not return to the Manage Pixels page anymore.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

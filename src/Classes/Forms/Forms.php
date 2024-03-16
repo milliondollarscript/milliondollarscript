@@ -92,6 +92,7 @@ class Forms {
 			case 'manage':
 				$mds_dest = 'manage';
 				require_once MDS_CORE_PATH . 'users/manage.php';
+				$params = '?mds-action=manage&aid=' . intval( $_REQUEST['aid'] );
 				break;
 			case 'upload':
 
