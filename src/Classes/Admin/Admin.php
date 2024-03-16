@@ -90,8 +90,8 @@ class Admin {
 					$height = $data['height'];
 				}
 
-                // TODO: Add an option to use blocks for new pages instead of shortcodes:
-                // <!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_preview":"\u003cdiv class=\u0022cf-preview\u0022\u003e\u003cimg src='https://mds.ddev.site/app/plugins/milliondollarscript-two/src/Core/images/bg-main.gif' /\u003e\u003c/div\u003e\u003c!\u002d\u002d /.cf-preview \u002d\u002d\u003e","milliondollarscript_id":"1","milliondollarscript_align":"center","milliondollarscript_width":"100%","milliondollarscript_height":"auto","milliondollarscript_type":"users"}} /-->
+				// TODO: Add an option to use blocks for new pages instead of shortcodes:
+				// <!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_preview":"\u003cdiv class=\u0022cf-preview\u0022\u003e\u003cimg src='https://mds.ddev.site/app/plugins/milliondollarscript-two/src/Core/images/bg-main.gif' /\u003e\u003c/div\u003e\u003c!\u002d\u002d /.cf-preview \u002d\u002d\u003e","milliondollarscript_id":"1","milliondollarscript_align":"center","milliondollarscript_width":"100%","milliondollarscript_height":"auto","milliondollarscript_type":"users"}} /-->
 
 				$shortcode = '[milliondollarscript id="%d" align="%s" width="%s" height="%s" type="%s"]';
 				$content   = wp_sprintf( $shortcode, $id, $align, $width, $height, $page );
@@ -104,7 +104,13 @@ class Admin {
 				] );
 
 				if ( is_wp_error( $page_id ) ) {
-					wp_die( $page_id->get_error_message() );
+					wp_send_json_error( array( 'message' => $page_id->get_error_message() ), 500 );
+				} else {
+					// Add or update the meta value if the current theme or its parent is 'Divi'
+					$current_theme = wp_get_theme();
+					if ( 'Divi' === $current_theme->get( 'Name' ) || ( $current_theme->parent() && 'Divi' === $current_theme->parent()->get( 'Name' ) ) ) {
+						update_post_meta( $page_id, '_et_pb_page_layout', 'et_no_sidebar' );
+					}
 				}
 
 				// Update the option for this page.
@@ -432,7 +438,7 @@ class Admin {
 	}
 
 	public static function scripts(): void {
-		wp_enqueue_script('hoverIntent');
+		wp_enqueue_script( 'hoverIntent' );
 
 		// JS
 		wp_enqueue_script(
