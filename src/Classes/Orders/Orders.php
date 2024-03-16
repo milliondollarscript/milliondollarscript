@@ -1308,7 +1308,16 @@ class Orders {
 		}
 	}
 
-	public static function complete_order( $user_id, $order_id ) {
+	/**
+	 * Completes an order.
+	 *
+	 * @param int $user_id The ID of the user.
+	 * @param int $order_id The ID of the order.
+	 * @param bool $send_email Whether to send an email or not. Default is true.
+	 *
+	 * @return void
+	 */
+	public static function complete_order( int $user_id, int $order_id, bool $send_email = true ): void {
 		self::confirm_order( $user_id, $order_id, false );
 
 		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
@@ -1379,53 +1388,56 @@ class Orders {
 
 			$price = Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
-			$search = [
-				'%SITE_NAME%',
-				'%FIRST_NAME%',
-				'%LAST_NAME%',
-				'%USER_LOGIN%',
-				'%ORDER_ID%',
-				'%PIXEL_COUNT%',
-				'%BLOCK_COUNT%',
-				'%PIXEL_DAYS%',
-				'%PRICE%',
-				'%SITE_CONTACT_EMAIL%',
-				'%SITE_URL%',
-			];
+			if ( $send_email ) {
 
-			$replace = [
-				get_bloginfo( 'name' ),
-				$user_info->first_name,
-				$user_info->last_name,
-				$user_info->user_login,
-				$order_row['order_id'],
-				$order_row['quantity'],
-				$block_count,
-				$order_row['days_expire'],
-				$price,
-				get_bloginfo( 'admin_email' ),
-				get_site_url(),
-			];
+				$search = [
+					'%SITE_NAME%',
+					'%FIRST_NAME%',
+					'%LAST_NAME%',
+					'%USER_LOGIN%',
+					'%ORDER_ID%',
+					'%PIXEL_COUNT%',
+					'%BLOCK_COUNT%',
+					'%PIXEL_DAYS%',
+					'%PRICE%',
+					'%SITE_CONTACT_EMAIL%',
+					'%SITE_URL%',
+				];
 
-			$subject = Emails::get_email_replace(
-				$search,
-				$replace,
-				'order-completed-subject'
-			);
+				$replace = [
+					get_bloginfo( 'name' ),
+					$user_info->first_name,
+					$user_info->last_name,
+					$user_info->user_login,
+					$order_row['order_id'],
+					$order_row['quantity'],
+					$block_count,
+					$order_row['days_expire'],
+					$price,
+					get_bloginfo( 'admin_email' ),
+					get_site_url(),
+				];
 
-			$message = Emails::get_email_replace(
-				$search,
-				$replace,
-				'order-completed-content'
-			);
+				$subject = Emails::get_email_replace(
+					$search,
+					$replace,
+					'order-completed-subject'
+				);
 
-			if ( Config::get( 'EMAIL_USER_ORDER_COMPLETED' ) == 'YES' ) {
-				Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
-			}
+				$message = Emails::get_email_replace(
+					$search,
+					$replace,
+					'order-completed-content'
+				);
 
-			// send a copy to admin
-			if ( Config::get( 'EMAIL_ADMIN_ORDER_COMPLETED' ) == 'YES' ) {
-				Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
+				if ( Config::get( 'EMAIL_USER_ORDER_COMPLETED' ) == 'YES' ) {
+					Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
+				}
+
+				// send a copy to admin
+				if ( Config::get( 'EMAIL_ADMIN_ORDER_COMPLETED' ) == 'YES' ) {
+					Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
+				}
 			}
 
 			// process the grid, if auto_publish is on
