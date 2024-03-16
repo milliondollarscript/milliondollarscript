@@ -53,7 +53,7 @@ if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
 		$order_row = mysqli_fetch_array( $result );
 
 		if ( $order_row['status'] != 'completed' ) {
-			Orders::complete_order( $order_row['user_id'], $oid );
+			Orders::complete_order( $order_row['user_id'], $oid, false );
 			Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
 		}
 	}

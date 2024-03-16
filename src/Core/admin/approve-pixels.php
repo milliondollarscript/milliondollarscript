@@ -74,18 +74,17 @@ echo '<script>';
 require MDS_CORE_PATH . 'include/mouseover_js.inc.php';
 echo '</script>';
 
-global $f2;
+global $f2, $wpdb;
 
-if ( isset( $_REQUEST['BID'] ) ) {
-	$BID = $f2->bid();
-} else {
-	$BID = 'all';
-}
+$BID = isset( $_REQUEST['BID'] ) ? $f2->bid() : 'all';
 
-$bid_sql = " AND banner_id=$BID ";
-if ( ( $BID == 'all' ) || empty( $BID ) ) {
+$bid_sql = ( $BID !== 'all' && ! empty( $BID ) )
+	? $wpdb->prepare( ' AND banner_id=%d ', intval( $BID ) )
+	: '';
+
+if ( $BID === 'all' || empty( $BID ) ) {
 	$BID     = '';
-	$bid_sql = "  ";
+	$bid_sql = '';
 }
 
 // whitelist $_REQUEST['app'] value
@@ -97,10 +96,35 @@ if ( isset( $_REQUEST['app'] ) && $_REQUEST['app'] == 'Y' ) {
 $offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'approve' ) {
-	$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set approved='Y', published='N' WHERE order_id=" . intval( $_REQUEST['order_id'] ) . " {$bid_sql}";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	$sql = "UPDATE " . MDS_DB_PREFIX . "orders set approved='Y', published='N' WHERE order_id=" . intval( $_REQUEST['order_id'] ) . " {$bid_sql}";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+	$order_id = intval( $_REQUEST['order_id'] );
+	if ( ! $order_id ) {
+		die( 'Invalid order_id' );
+	}
+
+	$wpdb->query( $wpdb->prepare(
+		"UPDATE " . MDS_DB_PREFIX . "blocks 
+    SET approved=%s, published=%s 
+    WHERE order_id=%d {$bid_sql}",
+		'Y', 'N', $order_id
+	) );
+
+	$wpdb->query( $wpdb->prepare(
+		"UPDATE " . MDS_DB_PREFIX . "orders 
+    SET approved=%s, published=%s 
+    WHERE order_id=%d {$bid_sql}",
+		'Y', 'N', $order_id
+	) );
+
+	// Get user_id from the order
+	$user_id = $wpdb->get_var( $wpdb->prepare( "SELECT user_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id ) );
+
+	// Complete the order
+	Orders::complete_order( $user_id, $order_id );
+
+	if ( $wpdb->last_error ) {
+		die( $wpdb->last_error );
+	}
+
 	echo "Order Approved.<br>";
 }
 
@@ -108,10 +132,19 @@ if ( isset( $_REQUEST['mass_approve'] ) && $_REQUEST['mass_approve'] != '' ) {
 	if ( isset( $_REQUEST['orders'] ) && sizeof( $_REQUEST['orders'] ) > 0 ) {
 
 		foreach ( $_REQUEST['orders'] as $order_id ) {
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set approved='Y', published='N' WHERE order_id='" . intval( $order_id ) . "' {$bid_sql}";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set approved='Y', published='N' WHERE order_id='" . intval( $order_id ) . "' {$bid_sql}";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE " . MDS_DB_PREFIX . "blocks 
+                SET approved=%s, published=%s 
+                WHERE order_id=%d {$bid_sql}",
+				'Y', 'N', $order_id
+			) );
+
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE " . MDS_DB_PREFIX . "orders 
+                SET approved=%s, published=%s 
+                WHERE order_id=%d {$bid_sql}",
+				'Y', 'N', $order_id
+			) );
 		}
 
 		Language::out( 'Orders Approved' );
