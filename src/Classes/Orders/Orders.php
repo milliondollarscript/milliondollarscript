@@ -446,7 +446,11 @@ class Orders {
 			$order_id   = $wpdb->get_var( $query );
 		}
 
-		return $order_id;
+		if ( ! $order_id ) {
+			return 0;
+		}
+
+		return (int) $order_id;
 	}
 
 	/**
