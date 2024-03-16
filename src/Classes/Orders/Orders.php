@@ -1309,7 +1309,7 @@ class Orders {
 	}
 
 	public static function complete_order( $user_id, $order_id ) {
-		self::confirm_order( $user_id, $order_id );
+		self::confirm_order( $user_id, $order_id, false );
 
 		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
@@ -1440,7 +1440,16 @@ class Orders {
 		}
 	}
 
-	public static function confirm_order( $user_id, $order_id ) {
+	/**
+	 * Generate a confirmation for the order.
+	 *
+	 * @param int $user_id User ID
+	 * @param int $order_id Order ID
+	 * @param bool $send_email Whether to send the email or not
+	 *
+	 * @throws void
+	 */
+	public static function confirm_order( int $user_id, int $order_id, bool $send_email = true ): void {
 		global $wpdb;
 
 		$sql = "SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id='" . intval( $order_id ) . "' ";
@@ -1473,55 +1482,57 @@ class Orders {
 
 			$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
-			$search = [
-				'%SITE_NAME%',
-				'%FIRST_NAME%',
-				'%LAST_NAME%',
-				'%USER_LOGIN%',
-				'%ORDER_ID%',
-				'%PIXEL_COUNT%',
-				'%BLOCK_COUNT%',
-				'%PIXEL_DAYS%',
-				'%DEADLINE%',
-				'%PRICE%',
-				'%SITE_CONTACT_EMAIL%',
-				'%SITE_URL%',
-			];
+			if ( $send_email ) {
+				$search = [
+					'%SITE_NAME%',
+					'%FIRST_NAME%',
+					'%LAST_NAME%',
+					'%USER_LOGIN%',
+					'%ORDER_ID%',
+					'%PIXEL_COUNT%',
+					'%BLOCK_COUNT%',
+					'%PIXEL_DAYS%',
+					'%DEADLINE%',
+					'%PRICE%',
+					'%SITE_CONTACT_EMAIL%',
+					'%SITE_URL%',
+				];
 
-			$replace = [
-				get_bloginfo( 'name' ),
-				$user_info->first_name,
-				$user_info->last_name,
-				$user_info->user_login,
-				$row['order_id'],
-				$row['quantity'],
-				$block_count,
-				$row['days_expire'],
-				Config::get( 'MINUTES_CONFIRMED' ),
-				$price,
-				get_bloginfo( 'admin_email' ),
-				get_site_url(),
-			];
+				$replace = [
+					get_bloginfo( 'name' ),
+					$user_info->first_name,
+					$user_info->last_name,
+					$user_info->user_login,
+					$row['order_id'],
+					$row['quantity'],
+					$block_count,
+					$row['days_expire'],
+					Config::get( 'MINUTES_CONFIRMED' ),
+					$price,
+					get_bloginfo( 'admin_email' ),
+					get_site_url(),
+				];
 
-			$subject = Emails::get_email_replace(
-				$search,
-				$replace,
-				'order-confirmed-subject'
-			);
+				$subject = Emails::get_email_replace(
+					$search,
+					$replace,
+					'order-confirmed-subject'
+				);
 
-			$message = Emails::get_email_replace(
-				$search,
-				$replace,
-				'order-confirmed-content'
-			);
+				$message = Emails::get_email_replace(
+					$search,
+					$replace,
+					'order-confirmed-content'
+				);
 
-			if ( Config::get( 'EMAIL_USER_ORDER_CONFIRMED' ) == 'YES' ) {
-				Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 2 );
-			}
+				if ( Config::get( 'EMAIL_USER_ORDER_CONFIRMED' ) == 'YES' ) {
+					Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 2 );
+				}
 
-			// send a copy to admin
-			if ( Config::get( 'EMAIL_ADMIN_ORDER_CONFIRMED' ) == 'YES' ) {
-				Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 2 );
+				// send a copy to admin
+				if ( Config::get( 'EMAIL_ADMIN_ORDER_CONFIRMED' ) == 'YES' ) {
+					Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 2 );
+				}
 			}
 		} else if ( $row['status'] == 'confirmed' ) {
 			$now = current_time( 'mysql' );
