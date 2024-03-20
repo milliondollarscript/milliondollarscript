@@ -211,7 +211,6 @@ controls the look and feel of the 'pixels-sold/available' box:
 Grid iframe
 */
 .mds-container .grid-container .grid-inner {
-	overflow: hidden;
 	border: none;
 	padding: 0;
 	margin: 0 auto;

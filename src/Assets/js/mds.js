@@ -134,6 +134,13 @@ function mds_users(container, bid, width, height) {
 	});
 }
 
+function updateTippyPosition() {
+	if (window.tippy_instance && window.tippy_instance.popperInstance) {
+		window.tippy_instance.popperInstance.update().then(() => {
+		});
+	}
+}
+
 function add_tippy() {
 	const defaultContent = "<div class='ajax-loader'></div>";
 	const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
@@ -143,7 +150,7 @@ function add_tippy() {
 		delay = 400;
 	}
 
-	window.tippy_instance = tippy('.mds-container area,.list-link', {
+	tippy('.mds-container area,.list-link', {
 		theme: 'light',
 		content: defaultContent,
 		duration: 50,
@@ -157,9 +164,16 @@ function add_tippy() {
 		placement: 'auto',
 		touch: true,
 		appendTo: 'parent',
+		zIndex: 99999,
 		popperOptions: {
-			strategy: 'fixed',
+			strategy: 'absolute',
 			modifiers: [
+				{
+					name: 'offset',
+					options: {
+						offset: [0, 10],
+					},
+				},
 				{
 					name: 'flip',
 					options: {
@@ -171,7 +185,7 @@ function add_tippy() {
 					options: {
 						altAxis: true,
 						tether: false,
-						padding: 40,
+						boundary: document,
 					},
 				},
 			],
@@ -230,14 +244,18 @@ function add_tippy() {
 
 	window.is_touch = false;
 
-	jQuery(document).on('touchstart', function () {
+	document.addEventListener('touchstart', function () {
 		window.is_touch = true;
 	});
 
-	jQuery(document).on('scroll', function () {
+	document.addEventListener('scroll', function () {
 		if (!window.is_touch && window.tippy_instance != null && typeof window.tippy_instance.hide === 'function') {
 			window.tippy_instance.hide();
 		}
+	});
+
+	window.addEventListener('resize', function () {
+		updateTippyPosition();
 	});
 }
 
@@ -256,8 +274,10 @@ function rescale($el) {
 		scale: "best-fit",
 		align: "top",
 		rescaleOnResize: true,
+		hideParentOverflow: false,
 		didScale: function (firstTime, options) {
 			rescaling = false;
+			updateTippyPosition();
 		}
 	});
 }
@@ -374,6 +394,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 			scale: "best-fit",
 			align: "top",
 			rescaleOnResize: true,
+			hideParentOverflow: false,
 			didScale: function (firstTime, options) {
 				if (MDS.wp !== "") {
 					if ($elParent.parent().parent().parent().parent().height() < origHeight) {
@@ -398,6 +419,7 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 				$elParent.parent().width($el.width());
 				$elParent.parent().height($el.height());
 
+				updateTippyPosition();
 				rescaling = false;
 			}
 		});
@@ -424,7 +446,6 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 			if (scalemap) {
 				rescale($el);
 			}
-			let tooltips = mds_load_tippy(tippy, $el, scalemap, type, isgrid);
 
 			if (MDS.TOOLTIP_TRIGGER === 'mouseenter') {
 				jQuery('area').off('mouseenter').on('mouseenter', function (e) {
@@ -454,6 +475,8 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 					return false;
 				}
 			});
+
+			let tooltips = mds_load_tippy(tippy, $el, scalemap, type, isgrid);
 
 			if (!tooltips) {
 				mds_loaded_event($el, scalemap, tippy, type, isgrid);
