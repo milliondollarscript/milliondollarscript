@@ -58,7 +58,6 @@ class Routes {
 			'order-pixels',
 			'confirm-order',
 			'manage',
-			'display-map',
 			'display-stats',
 			'thank-you',
 			'list',
@@ -164,10 +163,7 @@ class Routes {
 				/**
 				 * requires
 				 */
-				if ( $page === 'display-map' ) {
-					require_once MDS_CORE_PATH . 'display_map.php';
-					exit;
-				} else if ( $page === 'display-stats' ) {
+				if ( $page === 'display-stats' ) {
 					require_once MDS_CORE_PATH . 'display_stats.php';
 					exit;
 				} else if ( $page === 'ga' ) {

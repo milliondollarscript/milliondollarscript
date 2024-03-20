@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.3
-Stable tag: 2.5.10.91
+Stable tag: 2.5.10.93
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -87,6 +87,8 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * The Change Pixels upload will not return to the Manage Pixels page anymore.
 * Approving a denied/pending order will notify the user.
 * Make mass operations not send emails to prevent spam issues.
+* Fix tooltip display on mobile when zoomed in.
+* Remove some old unused code.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

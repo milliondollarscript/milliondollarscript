@@ -27,17 +27,3 @@
  */
 
 defined( 'ABSPATH' ) or exit;
-
-global $f2;
-$BID = $f2->bid();
-
-// include the header
-require_once( __DIR__ . "/html/header.php" );
-
-// Displays the grid image map. Use Process Pixels in the admin to update the image map.
-require_once( __DIR__ . "/include/mds_ajax.php" );
-$mds_ajax = new Mds_Ajax();
-$mds_ajax->show( 'grid', $BID, 'grid' );
-
-// include footer
-require_once( __DIR__ . "/html/footer.php" );
