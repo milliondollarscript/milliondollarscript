@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.3
-Stable tag: 2.5.10.93
+Stable tag: 2.5.10.94
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -89,6 +89,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Make mass operations not send emails to prevent spam issues.
 * Fix tooltip display on mobile when zoomed in.
 * Remove some old unused code.
+* Add paid orders to Orders Waiting page.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

@@ -149,7 +149,7 @@ if ( $show == 'reserved' ) {
 	$sql       = "SELECT * FROM " . MDS_DB_PREFIX . "blocks as t1, " . $wpdb->users . " as t2 where t1.user_id=t2.ID AND status='reserved' ORDER BY t1.block_id DESC";
 	$date_link = "&show=reserved";
 } else if ( $show == 'waiting' ) {
-	$where_sql = " AND (status ='confirmed' OR status='pending') ";
+	$where_sql = " AND (status ='confirmed' OR status='pending' OR status='paid') ";
 	$date_link = "&show=waiting";
 } else if ( $show == 'cancelled' ) {
 	$where_sql = " AND (status ='cancelled') ";
