@@ -66,13 +66,9 @@ class Shortcode {
 	 * @return string
 	 */
 	public static function shortcode( $atts ): string {
-		if ( Utility::should_stop() ) {
+		if ( Utility::should_stop() && ! wp_doing_ajax() ) {
 			return '';
 		}
-
-		global $mds_shortcodes;
-
-		$mds_shortcodes ++;
 
 		$atts = shortcode_atts(
 			self::defaults(),
@@ -80,7 +76,7 @@ class Shortcode {
 			'milliondollarscript'
 		);
 
-		$container_id = sanitize_title( $atts['type'] ) . $mds_shortcodes;
+		$container_id = uniqid( sanitize_title( $atts['type'] ) . '-' );
 
 		// compile variables to pass to javascript
 		$mds_params = array(
@@ -117,23 +113,21 @@ class Shortcode {
 			}
 		}
 
-		// escape javascript variables
-		if ( array_walk( $mds_params, 'esc_js' ) ) {
-			// ajax display method
-			$js = "
-				jQuery(function () {
-					new window.mds_ajax('{$mds_params['mds_type']}', '{$mds_params['mds_container_id']}', '{$atts['align']}', '{$mds_params['mds_width']}', '{$mds_params['mds_height']}', {$atts['id']});
-				});
-				";
+		// load scripts
+		Functions::register_scripts();
+		Functions::enqueue_scripts();
 
-			// load scripts
-			Functions::register_scripts();
-			Functions::enqueue_scripts();
+		// Add inline function call to each MDS iframe in the AJAX response
+		$mds_data = array(
+			'type'         => $mds_params['mds_type'],
+			'container_id' => $mds_params['mds_container_id'],
+			'align'        => $atts['align'],
+			'width'        => $mds_params['mds_width'],
+			'height'       => $mds_params['mds_height'],
+			'id'           => $atts['id']
+		);
 
-			// add inline function call to each MDS iframe
-			wp_add_inline_script( 'mds', $js );
-		}
-
-		return '<div id="' . esc_attr( $container_id ) . '"></div>';
+		// Return the container div and the data as a data attribute
+		return '<div class="mds-shortcode-container" id="' . esc_attr( $container_id ) . '" data-mds-params="' . esc_attr( json_encode( $mds_data ) ) . '"></div>';
 	}
 }

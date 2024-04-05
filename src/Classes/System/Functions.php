@@ -551,4 +551,10 @@ class Functions {
 
 		return true;
 	}
+
+	function mds_allowed_mds_params( $allowed_tags ) {
+		$allowed_tags['div']['data-mds-params'] = true;
+
+		return $allowed_tags;
+	}
 }

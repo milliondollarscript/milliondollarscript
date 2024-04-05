@@ -134,6 +134,31 @@ function mds_users(container, bid, width, height) {
 	});
 }
 
+function mds_load_ajax() {
+	window.mds_shortcode_containers = jQuery('body').find('.mds-shortcode-container');
+
+	if (window.mds_shortcode_containers.length === 0) {
+		return;
+	}
+
+	for (let i = 0; i < window.mds_shortcode_containers.length; i++) {
+		const $mds_shortcode_container = jQuery(window.mds_shortcode_containers[i]);
+		const mds_data_attr = $mds_shortcode_container.attr('data-mds-params');
+		if (mds_data_attr !== undefined) {
+			const mds_data = JSON.parse(mds_data_attr);
+			if (mds_data) {
+				if (window.mds_shortcodes === undefined) {
+					window.mds_shortcodes = [];
+				}
+				if (window.mds_shortcodes[mds_data.container_id] === undefined) {
+					window.mds_shortcodes[mds_data.container_id] = true;
+					new window.mds_ajax(mds_data.type, mds_data.container_id, mds_data.align, mds_data.width, mds_data.height, mds_data.id);
+				}
+			}
+		}
+	}
+}
+
 function updateTippyPosition() {
 	if (window.tippy_instance && window.tippy_instance.popperInstance) {
 		window.tippy_instance.popperInstance.update().then(() => {
@@ -232,6 +257,7 @@ function add_tippy() {
 				instance.setContent(`Request failed. ${errorThrown}`);
 			}).always(function () {
 				instance._isFetching = false;
+				mds_load_ajax();
 			});
 
 		},
@@ -567,11 +593,15 @@ jQuery(document).ready(function () {
 
 					if (mds_type === 'grid') {
 						mds_init('#theimage', true, MDS.ENABLE_MOUSEOVER !== 'NO', false, true);
+						let $el = jQuery('#theimage');
+						$el.trigger('load');
 					} else if (mds_type === 'list') {
 						mds_init('#' + mds_container_id, false, true, 'list', false);
+						let $el = jQuery('#' + mds_container_id);
+						$el.trigger('load');
 					} else if (mds_type === 'payment' || mds_type === 'confirm-order') {
 						try {
-							let parsed = jQuery.parseJSON(data);
+							let parsed = JSON.parse(data);
 							if (parsed.success === true) {
 								if (parsed.data) {
 									if (parsed.data.redirect) {
@@ -597,7 +627,7 @@ jQuery(document).ready(function () {
 						}
 					} else {
 						try {
-							let parsed = jQuery.parseJSON(data);
+							let parsed = JSON.parse(data);
 							if (parsed.success === true) {
 								if (parsed.data) {
 									if (parsed.data.redirect) {
@@ -630,6 +660,8 @@ jQuery(document).ready(function () {
 		}
 	}
 
+	mds_load_ajax();
+
 	// login page functionality
 	let $login_page = jQuery("body.login");
 	if ($login_page.length > 0) {
@@ -658,6 +690,8 @@ jQuery(document).ready(function () {
 });
 
 jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
+	mds_load_ajax();
+
 	jQuery('.mds_upload_image').on('click', function (e) {
 		e.preventDefault();
 		e.stopPropagation();

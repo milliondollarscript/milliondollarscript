@@ -1958,25 +1958,25 @@ class Orders {
 
 		?>
         <div class="mds-order-details">
-            <div>
+            <div class="mds-order-details-section">
                 <b><?php Language::out( 'Preview:' ); ?></b>
 				<?php Ajax::get_ad( $order_row['ad_id'] ); ?>
             </div>
 			<?php if ( isset( $order_row['order_id'] ) && $order_row['order_id'] != '' ) { ?>
-                <div>
+                <div class="mds-order-details-section">
                     <b><?php Language::out( 'Order ID:' ); ?></b>
 					<?php echo intval( $order_row['order_id'] ); ?>
                 </div>
 			<?php } ?>
-            <div>
+            <div class="mds-order-details-section">
                 <b><?php Language::out( 'Date:' ); ?></b>
 				<?php echo esc_html( $order_row['order_date'] ); ?>
             </div>
-            <div>
+            <div class="mds-order-details-section">
                 <b><?php Language::out( 'Grid Name:' ); ?></b>
 				<?php echo esc_html( $b_row['name'] ); ?>
             </div>
-            <div>
+            <div class="mds-order-details-section">
                 <b><?php Language::out( 'Quantity:' ); ?></b>
 				<?php
 				$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
@@ -1989,7 +1989,7 @@ class Orders {
 				}
 				?>
             </div>
-            <div>
+            <div class="mds-order-details-section">
                 <b><?php Language::out( 'Expires:' ); ?></b>
 				<?php
 				if ( $order_row['days_expire'] == 0 ) {
@@ -1999,12 +1999,12 @@ class Orders {
 				}
 				?>
             </div>
-            <div>
+            <div class="mds-order-details-section">
                 <b><?php Language::out( 'Price:' ); ?></b>
 				<?php echo esc_html( Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] ) ); ?>
             </div>
 			<?php if ( isset( $order_row['order_id'] ) && $order_row['order_id'] != '' ) { ?>
-                <div>
+                <div class="mds-order-details-section">
                     <b><?php Language::out( 'Status:' ); ?></b>
 					<?php echo esc_html( ucfirst( $order_row['status'] ) ); ?>
                 </div>

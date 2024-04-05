@@ -251,7 +251,11 @@ class Ajax {
 			$post_id = intval( $_POST['aid'] );
 		}
 		$fields = FormFields::get_fields();
+
+		add_filter( 'wp_kses_allowed_html', [ '\MillionDollarScript\Classes\System\Functions', 'mds_allowed_mds_params' ] );
 		$output = apply_filters( 'the_content', Options::get_option( 'popup-template' ) );
+		remove_filter( 'wp_kses_allowed_html', [ '\MillionDollarScript\Classes\System\Functions', 'mds_allowed_mds_params' ] );
+
 		foreach ( $fields as $field ) {
 			$field_name = str_replace( MDS_PREFIX, '', $field->get_base_name() );
 			$value      = carbon_get_post_meta( $post_id, $field->get_base_name() );
@@ -270,7 +274,9 @@ class Ajax {
 
 			$output = str_replace( '%' . $field_name . '%', $value, $output );
 
-			$output = wp_kses( $output, Language::allowed_html(), Language::allowed_protocols() );
+            $allowed_tags = Language::allowed_html();
+            $allowed_tags['div']['data-mds-params'] = true;
+			$output = wp_kses( $output, $allowed_tags, Language::allowed_protocols() );
 
 			apply_filters( 'mds_field_output_after', $field );
 		}

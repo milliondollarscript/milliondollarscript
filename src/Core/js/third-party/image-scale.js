@@ -217,9 +217,9 @@
 		}
 
 		if (options.rescaleOnResize) {
-			$(window).resize(function (e) {
+			$(window).on('resize', (function (e) {
 				that.scheduleScale();
-			});
+			}));
 		}
 	}
 
