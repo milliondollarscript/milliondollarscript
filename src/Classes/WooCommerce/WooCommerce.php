@@ -458,6 +458,9 @@ class WooCommerce {
 				$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 			}
 
+			// Action hook for MDS status edit
+			do_action( 'mds-status-edited', $id, $mds_order_id, $to, $order );
+
 			WooCommerceFunctions::complete_mds_order( $id );
 		}
 	}

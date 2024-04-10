@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.3
-Stable tag: 2.5.10.95
+Stable tag: 2.5.10.96
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -91,6 +91,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Remove some old unused code.
 * Add paid orders to Orders Waiting page.
 * Add support for shortcodes in the Popup Template option.
+* Add mds-status-edited action that runs when a WooCommerce order status is manually edited if it contains the MDS product.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
