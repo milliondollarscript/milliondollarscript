@@ -431,7 +431,7 @@ class WooCommerce {
 		}
 
 		// Action hook for MDS status change
-		do_action( 'mds-status-changed', $id, $mds_order_id, $from, $to, $order );
+		do_action( 'mds-status-changed', $id, (int) $mds_order_id, $from, $to, $order );
 
 		// Complete MDS payment if order goes to 'completed'
 		if ( $to === "completed" ) {
@@ -459,7 +459,7 @@ class WooCommerce {
 			}
 
 			// Action hook for MDS status edit
-			do_action( 'mds-status-edited', $id, $mds_order_id, $to, $order );
+			do_action( 'mds-status-edited', $id, (int) $mds_order_id, $to, $order );
 
 			WooCommerceFunctions::complete_mds_order( $id );
 		}
