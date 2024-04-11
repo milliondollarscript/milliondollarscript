@@ -120,6 +120,10 @@ class Orders {
 			)
 		);
 
+		if ( $days_expire == 0 ) {
+			return $days_expire;
+		}
+
 		try {
 			$timezone = get_option( 'timezone_string' ) ?: 'UTC';
 
@@ -451,6 +455,38 @@ class Orders {
 		}
 
 		return (int) $order_id;
+	}
+
+	/**
+	 * Get WC order ID from MDS order ID
+	 *
+	 * @param int $mds_order_id
+	 *
+	 * @return int|null
+	 */
+	public static function get_wc_order_id_from_mds_order_id( int $mds_order_id ): ?int {
+		$args = array(
+			'limit'      => 1,
+			'meta_query' => array(
+				array(
+					'key'     => 'mds_order_id',
+					'value'   => $mds_order_id,
+					'compare' => '=',
+				),
+			),
+			'status'     => 'any',
+		);
+
+		// Get order IDs
+		$orders = wc_get_orders( $args );
+
+		// Check if any order ID is found
+		if ( ! empty( $orders ) ) {
+			return $orders[0]->get_id();
+		}
+
+		// Return null if no order is found
+		return null;
 	}
 
 	/**
