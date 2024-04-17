@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.3
 Tested up to: 6.4.3
-Stable tag: 2.5.10.98
+Stable tag: 2.5.10.99
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -95,6 +95,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add mds_order_expiry filter for altering the expiration date shown in the MDS Pixels page.
 * Fix expiration date displayed on MDS Pixels page to show Never if Days to Expire is set to 0 on the grid.
 * Add a function to get the WC order id from the MDS order id to the Orders class.
+* Add mds_woocommerce_product_price filter to adjust the price.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

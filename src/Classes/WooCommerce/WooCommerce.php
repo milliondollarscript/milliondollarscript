@@ -208,9 +208,14 @@ class WooCommerce {
 					if ( $price ) {
 						// Check if the price is already the desired value before setting it
 						$current_price = $cart_item['data']->get_price();
-						$new_price     = $price / $quantity;
-						if ( $current_price != $new_price ) {
-							$cart_item['data']->set_price( $new_price );
+						$price     = $price / $quantity;
+
+						// Apply a filter to allow modification of the price
+						$price = apply_filters( 'mds_woocommerce_product_price', $price, $mds_order_id, $quantity );
+
+						// Check if the price is different before setting it
+						if ( $current_price != $price ) {
+							$cart_item['data']->set_price( $price );
 						}
 					}
 
