@@ -54,10 +54,8 @@ class Capabilities {
 	 */
 	public static function get(): array {
 		return [
-			'mds_my_account'    => 'mds_my_account',
 			'mds_order_pixels'  => 'mds_order_pixels',
 			'mds_manage_pixels' => 'mds_manage_pixels',
-			'mds_logout'        => 'mds_logout',
 		];
 	}
 
