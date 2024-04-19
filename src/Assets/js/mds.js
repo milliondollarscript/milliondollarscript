@@ -771,7 +771,7 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	jQuery('.mds-pixels-list').accordion({
 		header: ".mds-manage-row",
 		collapsible: true,
-		active: false,
+		active: 0,
 	});
 });
 
