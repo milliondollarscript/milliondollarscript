@@ -90,6 +90,34 @@ class Shortcode {
 			update_user_meta( get_current_user_id(), 'mds_confirm', true );
 		}
 
+		// Add inline function call to each MDS iframe in the AJAX response
+		$mds_data = array(
+			'type'         => $mds_params['mds_type'],
+			'container_id' => $mds_params['mds_container_id'],
+			'align'        => $atts['align'],
+			'width'        => $mds_params['mds_width'],
+			'height'       => $mds_params['mds_height'],
+			'id'           => $atts['id']
+		);
+
+		// mds_shortcode action
+		do_action( 'mds_shortcode', $atts, $mds_params, $mds_data );
+
+		// Return the container div and the data as a data attribute
+		return '<div class="mds-shortcode-container" id="' . esc_attr( $container_id ) . '" data-mds-params="' . esc_attr( json_encode( $mds_data ) ) . '"></div>';
+	}
+
+	/**
+	 * Shortcode extension
+	 *
+	 * @param $atts
+	 * @param $mds_params
+	 * @param $mds_data
+	 *
+	 * @return void
+	 */
+	public static function extension( $atts, $mds_params, $mds_data ): void {
+
 		// Handle payment shortcode here so that it can immediately redirect to the checkout page.
 		if ( $atts['type'] == 'payment' ) {
 			require_once MDS_CORE_PATH . 'users/payment.php';
@@ -116,18 +144,5 @@ class Shortcode {
 		// load scripts
 		Functions::register_scripts();
 		Functions::enqueue_scripts();
-
-		// Add inline function call to each MDS iframe in the AJAX response
-		$mds_data = array(
-			'type'         => $mds_params['mds_type'],
-			'container_id' => $mds_params['mds_container_id'],
-			'align'        => $atts['align'],
-			'width'        => $mds_params['mds_width'],
-			'height'       => $mds_params['mds_height'],
-			'id'           => $atts['id']
-		);
-
-		// Return the container div and the data as a data attribute
-		return '<div class="mds-shortcode-container" id="' . esc_attr( $container_id ) . '" data-mds-params="' . esc_attr( json_encode( $mds_data ) ) . '"></div>';
 	}
 }

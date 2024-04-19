@@ -194,6 +194,7 @@ class Bootstrap {
 
 		// shortcode
 		add_shortcode( 'milliondollarscript', [ '\MillionDollarScript\Classes\Web\Shortcode', 'shortcode' ] );
+		add_action( 'mds_shortcode', [ '\MillionDollarScript\Classes\Web\Shortcode', 'extension' ], 10, 3 );
 
 		// load WooCommerce integration
 		if ( WooCommerceFunctions::is_wc_active() ) {

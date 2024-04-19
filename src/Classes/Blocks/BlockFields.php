@@ -41,6 +41,29 @@ class BlockFields {
 
 	// private static int $counter = 0;
 
+	/**
+	 * Get block types.
+	 *
+	 * @return array
+	 */
+	public static function get_types(): array {
+		$types = array(
+			'grid'          => Language::get( 'Grid' ),
+			'stats'         => Language::get( 'Stats box' ),
+			'list'          => Language::get( 'Ads List' ),
+			'order'         => Language::get( 'Order Pixels' ),
+			'write-ad'      => Language::get( 'Write Your Ad' ),
+			'confirm-order' => Language::get( 'Confirm Order' ),
+			'payment'       => Language::get( 'Payment' ),
+			'manage'        => Language::get( 'Manage Pixels' ),
+			'thank-you'     => Language::get( 'Thank-You!' ),
+			'upload'        => Language::get( 'Upload' ),
+			'no-orders'     => Language::get( 'No Orders' ),
+		);
+
+		return apply_filters( 'mds_block_types', $types );
+	}
+
 	public static function get_fields(): array {
 		$fields = [
 
@@ -77,19 +100,7 @@ class BlockFields {
 			// Type
 			Field::make( 'select', MDS_PREFIX . 'type', Language::get( 'Type' ) )
 			     ->set_default_value( 'grid' )
-			     ->set_options( array(
-				     'grid'          => Language::get( 'Grid' ),
-				     'stats'         => Language::get( 'Stats box' ),
-				     'list'          => Language::get( 'Ads List' ),
-				     'order'         => Language::get( 'Order Pixels' ),
-				     'write-ad'      => Language::get( 'Write Your Ad' ),
-				     'confirm-order' => Language::get( 'Confirm Order' ),
-				     'payment'       => Language::get( 'Payment' ),
-				     'manage'        => Language::get( 'Manage Pixels' ),
-				     'thank-you'     => Language::get( 'Thank-You!' ),
-				     'upload'        => Language::get( 'Upload' ),
-				     'no-orders'     => Language::get( 'No Orders' ),
-			     ) )
+			     ->set_options( self::get_types() )
 			     ->set_help_text( Language::get( 'Type of MDS component to load.' ) ),
 		];
 
@@ -233,5 +244,4 @@ class BlockFields {
 
 
 	return $output;*/
-
 }

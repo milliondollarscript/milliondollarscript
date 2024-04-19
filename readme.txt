@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.100
+Stable tag: 2.5.10.101
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -97,6 +97,8 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add a function to get the WC order id from the MDS order id to the Orders class.
 * Add mds_woocommerce_product_price filter to adjust the price.
 * Remove mds_my_account and mds_logout capabilities since they are no longer used.
+* Add mds_shortcode action useful for adding custom MDS shortcode extensions.
+* Add mds_block_types filter useful for modifying types on the MDS block.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
