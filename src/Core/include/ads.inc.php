@@ -514,6 +514,10 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 
                     <br/>
 					<?php Orders::order_details( $prams ); ?>
+                    <?php
+                    // Action for adding custom order details
+                    do_action( 'mds_order_details', $prams );
+                    ?>
                 </div>
 				<?php
 			}

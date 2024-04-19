@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.102
+Stable tag: 2.5.10.103
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -100,6 +100,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add mds_shortcode action useful for adding custom MDS shortcode extensions.
 * Add mds_block_types filter useful for modifying types on the MDS block.
 * Open accordion on first item by default on the Manage Pixels page.
+* Add mds_order_details action for adding custom order details inside the accordions on the Manage Pixels page.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
