@@ -83,7 +83,7 @@ function display_package_options_table( $banner_id, string $selected = '', bool 
 			?>
             <div class="mds-package-options-row">
 				<?php
-				if ( $selected != '' ) {
+				if ( ! empty( $selected ) ) {
 					if ( $row['package_id'] == $selected ) {
 						$sel = " checked ";
 					} else {
@@ -161,6 +161,10 @@ function get_package( $package_id ) {
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
 	$row = mysqli_fetch_array( $result );
 
+    if ( empty( $row ) ) {
+        return;
+    }
+
 	$pack['max_orders']  = $row['max_orders'];
 	$pack['price']       = $row['price'];
 	$pack['currency']    = $row['currency'];
@@ -232,4 +236,15 @@ function get_default_package( $banner_id ) {
 	$result     = $wpdb->get_results( $sql );
 
 	return ! empty( $result ) ? $result[0]->package_id : false;
+}
+
+function get_order_package( $order_id ) {
+    global $f2, $wpdb;
+    $order_id = $f2->bid( $order_id );
+
+    $table_name = MDS_DB_PREFIX . "orders";
+    $sql        = $wpdb->prepare( "SELECT package_id FROM $table_name WHERE order_id = %d", $order_id );
+    $result     = $wpdb->get_results( $sql );
+
+    return ! empty( $result ) ? $result[0]->package_id : false;
 }

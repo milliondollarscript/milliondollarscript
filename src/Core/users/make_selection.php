@@ -105,7 +105,6 @@ function place_temp_order( $in_str ) {
 	$steps        = Steps::get_steps( false );
 	$current_step = $steps['write-ad'];
 
-	// TODO: add any extra columns necessary such as package_id
 	$data = array(
 		'user_id'           => get_current_user_id(),
 		'order_id'          => $order_id,
@@ -123,7 +122,8 @@ function place_temp_order( $in_str ) {
 		'block_info'        => $block_info,
 		'original_order_id' => $order_id,
 		'order_in_progress' => 'Y',
-		'current_step'      => $current_step
+		'current_step'      => $current_step,
+		'package_id'        => intval( $_REQUEST['package'] ?? 0 ),
 	);
 
 	$format = array(
@@ -144,6 +144,7 @@ function place_temp_order( $in_str ) {
 		'%s', // original_order_id
 		'%s', // order_in_progress
 		'%d', // current_step
+		'%d', // package_id
 	);
 
 	$result = $wpdb->replace( $table_name, $data, $format );
@@ -167,10 +168,20 @@ function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 		return false;
 	}
 
+	$has_packages = banner_get_packages( $BID );
+	$package_id   = intval( $_REQUEST['package'] ?? 0 );
+	if ( empty( $package_id ) ) {
+		$package_id = get_default_package( $BID );
+	}
+	$package = get_package( $package_id );
+	$price   = $package['price'];
+
 	$total = 0;
 	foreach ( $block_info as $key => $block ) {
 
-		$price = get_zone_price( $BID, $block['map_y'], $block['map_x'] );
+		if ( ! $has_packages ) {
+			$price = get_zone_price( $BID, $block['map_y'], $block['map_x'] );
+		}
 
 		$currency = Currency::get_default_currency();
 
@@ -183,9 +194,10 @@ function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 	}
 
 	$sql = $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "orders SET price=%f, block_info=%s WHERE order_id=%d",
+		"UPDATE " . MDS_DB_PREFIX . "orders SET price=%f, block_info=%s, package_id=%d WHERE order_id=%d",
 		floatval( $total ),
 		serialize( $block_info ),
+		$package_id,
 		Orders::get_current_order_id()
 	);
 	$wpdb->query( $sql ) or mds_sql_log_die( $sql );

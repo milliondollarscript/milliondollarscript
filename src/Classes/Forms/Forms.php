@@ -69,6 +69,8 @@ class Forms {
 			case 'order':
 			case 'select':
 				$mds_dest = 'order';
+				$package  = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+				$params   .= '&package=' . $package;
 				Orders::order_screen();
 				break;
 			case 'banner_select':
@@ -124,6 +126,10 @@ class Forms {
 				break;
 			case 'write-ad':
 				require_once MDS_CORE_PATH . 'users/write_ad.php';
+
+				$package = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+				$params  .= '&package=' . $package;
+
 				break;
 			case 'confirm_order':
 				require_once MDS_CORE_PATH . 'users/confirm_order.php';

@@ -105,7 +105,8 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 			map_y: window.$block_pointer.data('map_y'),
 			block_id: get_clicked_block(),
 			BID: BID,
-			t: MDS_OBJECT.time
+			t: MDS_OBJECT.time,
+			package: get_selected_package()
 		};
 
 		jQuery.ajax({
@@ -114,7 +115,7 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 			data: ajax_data,
 			dataType: 'json',
 		}).done(function (response) {
-			if (response && (response.type === 'unavailable' || response.type === 'max_orders') ) {
+			if (response && (response.type === 'unavailable' || response.type === 'max_orders')) {
 				alert(response.data.value);
 				window.$block_pointer.css('cursor', 'pointer');
 				window.$pixelimg.css('cursor', 'pointer');
@@ -130,11 +131,12 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 			} else if (response && response.redirect) {
 				window.location.href = response.redirect;
 			} else {
+				mds_update_package(jQuery(document.form1));
 				document.form1.submit();
 			}
 
 		}).fail(function (jqXHR, textStatus, errorThrown) {
-		}).always(function ( response ) {
+		}).always(function (response) {
 		});
 	}
 

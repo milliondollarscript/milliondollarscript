@@ -689,6 +689,23 @@ jQuery(document).ready(function () {
 	}
 });
 
+function get_selected_package() {
+	let $package_options = jQuery('.mds-package-options');
+	let pack = 0;
+	if ($package_options.length > 0) {
+		pack = $package_options.find('input[name="pack"]:checked').val();
+	}
+	return pack;
+}
+
+function mds_update_package($form) {
+	let $pack = get_selected_package();
+	let $package_input = $form.find('input[name="package"]');
+	if ($pack !== 0 && $package_input.length > 0) {
+		$package_input.val($pack);
+	}
+}
+
 jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	mds_load_ajax();
 
@@ -698,7 +715,9 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 		let $el = jQuery(this);
 		$el.prop('disabled', true);
 		$el.attr('value', MDS.UPLOADING);
-		$el.parent('form').submit();
+		let $form = $el.parent('form');
+		mds_update_package($form);
+		$form.submit();
 		return false;
 	});
 
@@ -737,7 +756,9 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	jQuery('.mds-write.big_button').on('click', function (e) {
 		e.preventDefault();
 		e.stopPropagation();
-		jQuery(this).closest('form').submit();
+		let $form = jQuery(this).closest('form');
+		mds_update_package($form);
+		$form.submit();
 		jQuery(this).prop('disabled', true).attr('value', MDS.WAIT);
 		return false;
 	});

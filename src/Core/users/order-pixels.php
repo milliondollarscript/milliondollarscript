@@ -306,9 +306,14 @@ if ( isset( $order_exists ) && $order_exists ) {
 	Language::out_replace( '<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%MANAGE_URL%">Manage Pixels</a></p>', '%MANAGE_URL%', Utility::get_page_url( 'manage' ) );
 }
 
+$package_id = intval( $_REQUEST['package'] ?? 0 );
+if ( $package_id == 0 ) {
+	$package_id = get_order_package( $order_id );
+}
+
 $has_packages = banner_get_packages( $BID );
 if ( $has_packages ) {
-	display_package_options_table( $BID, '', true );
+	display_package_options_table( $BID, $package_id, true );
 } else {
 	display_price_table( $BID );
 }
@@ -330,6 +335,7 @@ Language::out( '- Upload a GIF, JPEG or PNG graphics file<br />
 		<?php Language::out( '<p><strong>Upload your pixels:</strong></p>' ); ?>
         <input type='file' accept="image/*" name='graphic' style='font-size:14px;width:200px;'/><br/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
+        <input type='hidden' name='package' value='<?php echo $package_id; ?>'/>
         <input class="mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
                style=' font-size:18px;'/>
     </form>

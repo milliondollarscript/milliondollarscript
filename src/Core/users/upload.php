@@ -109,12 +109,18 @@ if ( file_exists( $tmp_image_file ) ) {
 
 $cannot_get_package = false;
 
-if ( $has_packages && ! empty( $_REQUEST['pack'] ) ) {
+$order_id        = Orders::get_current_order_id();
+$package_id = intval( $_REQUEST['package'] ?? 0 );
+if ( $package_id == 0 ) {
+	$package_id = get_order_package( $order_id );
+}
+
+if ( $has_packages && ! empty( $package_id ) ) {
 
 	// check to make sure this advertiser can order this package
-	if ( can_user_get_package( get_current_user_id(), $_REQUEST['pack'] ) ) {
+	if ( can_user_get_package( get_current_user_id(), $package_id ) ) {
 
-		$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $_REQUEST['order_id'] ) . "'";
+		$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . $order_id . "'";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 		$row      = mysqli_fetch_array( $result );
 		$quantity = $row['quantity'];
@@ -122,18 +128,18 @@ if ( $has_packages && ! empty( $_REQUEST['pack'] ) ) {
 		$block_count = $quantity / ( $banner_data['block_width'] * $banner_data['block_height'] );
 
 		// Now update the order (overwrite the total & days_expire with the package)
-		$pack  = get_package( $_REQUEST['pack'] );
+		$pack  = get_package( $package_id );
 		$total = $pack['price'] * $block_count;
 
 		// convert & round off
 		$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( Orders::get_current_order_id() ) . "'";
+		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . $package_id . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( $order_id ) . "'";
 
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	} else {
-		$selected_pack      = $_REQUEST['pack'];
-		$_REQUEST['pack']   = '';
+		$selected_pack      = $package_id;
+		$_REQUEST['package']   = '';
 		$cannot_get_package = true;
 	}
 }
@@ -147,7 +153,6 @@ require_once MDS_CORE_PATH . "html/header.php";
 global $wpdb;
 
 // check to make sure MIN_BLOCKS were selected.
-$order_id        = Orders::get_current_order_id();
 $current_user_id = get_current_user_id();
 $order_id        = intval( $order_id );
 $BID             = intval( $BID );
@@ -247,6 +252,7 @@ Language::out_replace(
 		<?php Language::out( '<p><strong>Upload your pixels:</strong></p>' ); ?>
         <input type='file' accept="image/*" name='graphic' style=' font-size:14px;width:200px;'/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
+        <input type='hidden' name='package' value='<?php echo $package_id; ?>'/>
         <input class="mds-button mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
                style=' font-size:18px;'/>
     </form>
@@ -371,7 +377,7 @@ if ( ! empty( $image ) ) {
 				<?php wp_nonce_field( 'mds-form' ); ?>
                 <input type="hidden" name="action" value="mds_form_submission">
                 <input type="hidden" name="mds_dest" value="write-ad">
-                <input type="hidden" name="package" value="">
+                <input type="hidden" name="package" value="<?php echo $package_id; ?>">
                 <input type="hidden" name="selected_pixels" value=''>
                 <input type="hidden" name="order_id" value="<?php echo $mds_order_id; ?>">
                 <input type="hidden" value="<?php echo $BID; ?>" name="BID">

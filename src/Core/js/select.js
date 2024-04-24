@@ -462,6 +462,7 @@ function formSubmit(event) {
 				if (ajax_queue.length === 0) {
 					clearInterval(waitInterval);
 					if (pixel_form !== null) {
+						mds_update_package(jQuery(pixel_form));
 						pixel_form.submit();
 					}
 

@@ -72,8 +72,6 @@ if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 		Orders::update_temp_order_timestamp();
 	}
 
-	$has_packages = banner_get_packages( $BID );
-
 	function display_ad_intro() {
 
 		Utility::show_nav_status( 2 );

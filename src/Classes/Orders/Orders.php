@@ -830,7 +830,7 @@ class Orders {
 			?>
         </div>
         <div>
-            <b><?php Language::out( "Amount" ); ?>:</b>
+            <b><?php Language::out( "Price" ); ?>:</b>
 			<?php echo Currency::convert_to_default_currency_formatted( $order['currency'], $order['price'] ); ?>
         </div>
         <div>
