@@ -32,8 +32,10 @@ namespace MillionDollarScript\Classes\Data;
 use Carbon_Fields\Container;
 use Carbon_Fields\Field;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Debug;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\User\Capabilities;
+use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -48,6 +50,18 @@ class Options {
 	public static function register(): void {
 
 		$capabilities = Capabilities::get();
+
+		$woocommerce_logic = [];
+		if ( WooCommerceFunctions::is_wc_active() ) {
+			$woocommerce_logic = array(
+				'relation' => 'AND',
+				array(
+					'field'   => MDS_PREFIX . 'woocommerce',
+					'compare' => '=',
+					'value'   => false,
+				),
+			);
+		}
 
 		self::$tabs = [
 			Language::get( 'Pages' ) => [
@@ -273,27 +287,13 @@ class Options {
 
 				// Currency
 				Field::make( 'text', MDS_PREFIX . 'currency', Language::get( 'Currency' ) )
-				     ->set_conditional_logic( array(
-					     'relation' => 'AND',
-					     array(
-						     'field'   => MDS_PREFIX . 'woocommerce',
-						     'compare' => '=',
-						     'value'   => false,
-					     )
-				     ) )
+				     ->set_conditional_logic( $woocommerce_logic )
 				     ->set_default_value( 'USD' )
 				     ->set_help_text( Language::get( 'The currency to use for orders and payments when WooCommerce isn\'t enabled. If WooCommerce is enabled then it will use the setting from it\'s settings. If WooCommerce Payments plugin is enabled then it will use those settings.' ) ),
 
 				// Currency Symbol
 				Field::make( 'text', MDS_PREFIX . 'currency-symbol', Language::get( 'Currency Symbol' ) )
-				     ->set_conditional_logic( array(
-					     'relation' => 'AND',
-					     array(
-						     'field'   => MDS_PREFIX . 'woocommerce',
-						     'compare' => '=',
-						     'value'   => false,
-					     )
-				     ) )
+				     ->set_conditional_logic( $woocommerce_logic )
 				     ->set_default_value( '$' )
 				     ->set_help_text( Language::get( 'The currency symbol to use for orders and payments when WooCommerce isn\'t enabled. If WooCommerce is enabled then it will use the setting from it\'s settings. If WooCommerce Payments plugin is enabled then it will use those settings.' ) ),
 
