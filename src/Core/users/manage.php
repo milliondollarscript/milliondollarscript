@@ -210,6 +210,16 @@ if ( $count > 0 ) {
 	);
 
 	Language::out_replace(
+		'<p><a class="mds-order-pixels mds-button" href="%ORDER_URL%">Order Pixels</a></p>',
+		[
+			'%ORDER_URL%',
+		],
+		[
+			$order_page,
+		]
+	);
+
+	Language::out_replace(
 		'<p>You own %PIXEL_COUNT% blocks.</p>',
 		[
 			'%PIXEL_COUNT%',
@@ -224,7 +234,7 @@ if ( $count > 0 ) {
 	);
 
 	Language::out_replace(
-		'<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks). <a href="%ORDER_URL%">Order Pixels</a></p>',
+		'<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks).</p>',
 		[
 			'%PIXEL_ORD_COUNT%',
 			'%BLOCK_ORD_COUNT%',
