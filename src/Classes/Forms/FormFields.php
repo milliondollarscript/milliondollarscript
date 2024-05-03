@@ -223,6 +223,8 @@ class FormFields {
 				$required = true;
 			}
 
+			$required = apply_filters( 'mds_form_field_required', $required, $field, $post_id );
+
 			if ( $required ) {
 				$show_required = true;
 				echo '*';
@@ -260,6 +262,8 @@ class FormFields {
 
 				echo '<input type="file" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '">';
 			}
+
+			do_action( 'mds_form_field_display', $field, $value, $post_id );
 
 			if ( ! empty( $error_message[ $field_name ] ) ) {
 				echo '<div class="mds-error">' . $error_message[ $field_name ] . '</div>';
@@ -640,7 +644,7 @@ class FormFields {
 					break;
 			}
 
-			apply_filters( 'mds_form_save', $field, $name );
+			do_action( 'mds_form_save', $field, $name, $post_id );
 		}
 
 		return $post_id;
@@ -1040,7 +1044,7 @@ class FormFields {
 				$query_post_types = get_post_types( [ 'exclude_from_search' => false ] );
 			}
 
-			apply_filters( 'mds_modify_search_query', $query_post_types, $post_types_to_exclude );
+			do_action( 'mds_modify_search_query', $query_post_types, $post_types_to_exclude );
 
 			if ( sizeof( array_intersect( $query_post_types, $post_types_to_exclude ) ) ) {
 				$query->set( 'post_type', array_diff( $query_post_types, $post_types_to_exclude ) );
@@ -1091,7 +1095,7 @@ class FormFields {
                 )
             )";
 
-			apply_filters( 'mds_posts_search', $search, $s, $query );
+			$search = apply_filters( 'mds_posts_search', $search, $s, $query );
 		}
 
 		// Exclude the specific MDS pages from search results

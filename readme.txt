@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.106
+Stable tag: 2.5.10.107
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -104,6 +104,14 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix packages.
 * Fix Currency and Currency Symbol options not loading when WooCommerce isn't active.
 * Add Order Pixels button to the Manage Pixels page.
+* Change mds_modify_search_query filter to an action.
+* Change mds_form_save filter to an action.
+* Fix mds_field_output_before filter.
+* Fix mds_field_output_after filter.
+* Add mds_form_field_required filter.
+* Add mds_form_field_display action.
+* Fix mds_posts_search filter.
+* Call FormFields::save function when fields are saved.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

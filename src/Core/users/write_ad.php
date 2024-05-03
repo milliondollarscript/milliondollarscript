@@ -165,6 +165,8 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 			Orders::reset_order_progress();
 		}
 
+		FormFields::save( $ad_id );
+
 		if ( isset( $_REQUEST['manage-pixels'] ) ) {
 			Utility::redirect( Utility::get_page_url( 'manage' ) );
 		}

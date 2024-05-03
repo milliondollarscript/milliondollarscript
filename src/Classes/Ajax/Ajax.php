@@ -260,7 +260,7 @@ class Ajax {
 			$field_name = str_replace( MDS_PREFIX, '', $field->get_base_name() );
 			$value      = carbon_get_post_meta( $post_id, $field->get_base_name() );
 
-			apply_filters( 'mds_field_output_before', $field );
+			$value = apply_filters( 'mds_field_output_before', $value, $field, $post_id );
 
 			if ( $field_name === 'text' ) {
 				$value = '<span class="mds-popup-text">' . esc_html( $value ) . '</span>';
@@ -278,7 +278,7 @@ class Ajax {
             $allowed_tags['div']['data-mds-params'] = true;
 			$output = wp_kses( $output, $allowed_tags, Language::allowed_protocols() );
 
-			apply_filters( 'mds_field_output_after', $field );
+			$output = apply_filters( 'mds_field_output_after', $output, $field, $post_id );
 		}
 
 		if ( $return ) {
