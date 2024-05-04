@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.10.108
+  Version: 2.5.10.109
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -63,7 +63,7 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.10.66' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.108' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.109' );
 
 // Detect PHP version
 $minimum_version = '8.0.0';
@@ -199,7 +199,10 @@ function milliondollarscript_two_uninstall(): void {
 		}
 
 		$wpdb->query(
-			"DELETE FROM " . $wpdb->prefix . "options WHERE `option_name` LIKE '%" . MDS_PREFIX . "%'",
+			"DELETE FROM " . $wpdb->prefix . "options WHERE `option_name` LIKE '%" . MDS_PREFIX . "%' 
+			OR `option_name` = 'mds_last_order_modification_time' 
+			OR `option_name` = 'mds_migrate_product_executed'
+			",
 		);
 
 		// TODO: delete privileged user meta, any other user meta
