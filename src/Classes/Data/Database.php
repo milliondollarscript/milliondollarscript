@@ -87,8 +87,6 @@ class Database {
 	 * @throws \Exception
 	 */
 	public function upgrade(): bool|string {
-		global $wpdb;
-
 		require_once MDS_CORE_PATH . 'include/version.php';
 
 		$db_version = $this->get_dbver();
@@ -97,19 +95,7 @@ class Database {
 
 		// Change config key column to config_key here since we're going to use it.
 		if ( version_compare( MDS_DB_VERSION, $current_version, '>' ) ) {
-			$table_name = MDS_DB_PREFIX . "config";
-			if ( DatabaseStatic::table_exists( $table_name ) ) {
-				$result = $wpdb->get_results(
-					"SELECT COLUMN_NAME 
-					FROM INFORMATION_SCHEMA.COLUMNS 
-					WHERE table_name = '{$table_name}'
-			  		AND column_name = 'key'"
-				);
-				if ( ! empty( $result ) ) {
-					$wpdb->query( "ALTER TABLE `{$table_name}` CHANGE `key` `config_key` VARCHAR(100) NOT NULL DEFAULT ''" );
-					$wpdb->flush();
-				}
-			}
+			$this->alter_config_key();
 		}
 
 		// Check for an older version and don't upgrade from them.
@@ -182,6 +168,8 @@ class Database {
 				return MDS_DB_VERSION;
 			}
 		}
+
+		$this->alter_config_key();
 
 		global $wpdb;
 
@@ -280,5 +268,30 @@ class Database {
 		$sql = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key`='dbver';";
 
 		return $wpdb->get_var( $sql );
+	}
+
+	/**
+	 * Alter the config key from 'key' to 'config_key'.
+	 *
+	 * @return void
+	 */
+	public function alter_config_key(): void {
+		global $wpdb;
+		$table_name = MDS_DB_PREFIX . "config";
+
+		if ( DatabaseStatic::table_exists( $table_name ) ) {
+			// Check if 'key' column exists
+			$key_column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `{$table_name}` LIKE 'key'" );
+
+			if ( $key_column_exists ) {
+				// Check if 'key' has already been altered to 'config_key'
+				$config_key_column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `{$table_name}` LIKE 'config_key'" );
+
+				if ( ! $config_key_column_exists ) {
+					$wpdb->query( "ALTER TABLE `{$table_name}` CHANGE `key` `config_key` VARCHAR(100) NOT NULL DEFAULT ''" );
+					$wpdb->flush();
+				}
+			}
+		}
 	}
 }

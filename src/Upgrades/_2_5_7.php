@@ -30,6 +30,7 @@
 namespace MillionDollarScript\Upgrades;
 
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -39,6 +40,9 @@ class _2_5_7 {
 
 	public function upgrade( $version ): void {
 		if ( version_compare( $version, '2.5.7', '<' ) ) {
+
+			// Make sure the product is migrated first.
+			WooCommerceFunctions::migrate_product();
 
 			global $wpdb;
 
