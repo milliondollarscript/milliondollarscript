@@ -784,7 +784,7 @@ class Orders {
 
 		$row = $wpdb->get_row( $sql, ARRAY_A );
 
-		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+		$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 		if ( ( $row['price'] == 0 ) || ( $privileged == '1' ) ) {
 			self::complete_order( $row['user_id'], $row['order_id'] );
@@ -2259,7 +2259,7 @@ class Orders {
 	 */
 	public static function can_user_order( $banner_data, $user_id, int $package_id = 0 ) {
 		// check rank
-		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+		$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 		if ( $privileged == '1' ) {
 			return true;
 		}

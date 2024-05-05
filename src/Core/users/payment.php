@@ -77,10 +77,11 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 	if ( ! empty( $order_id ) ) {
 
 		// check the user's rank
-		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+		$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 			Orders::complete_order( get_current_user_id(), $order_id );
+			Utility::redirect( Utility::get_page_url( 'thank-you' ) );
 		} else {
 			Orders::confirm_order( get_current_user_id(), $order_id );
 		}
@@ -98,6 +99,18 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 	}
 
 	$_REQUEST['order_id'] = $order_id;
+
+} else if ( ! empty( $order_id ) ) {
+	// Handle Pay Now button on Manage Pixels page
+
+	// check the user's rank
+	$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
+
+	// Complete order if price is 0 or user is privileged
+	if ( ( $order_row['price'] == '0' ) || ( $privileged == 1 ) ) {
+		Orders::complete_order( get_current_user_id(), $order_id );
+		Utility::redirect( Utility::get_page_url( 'thank-you' ) );
+	}
 }
 
 if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {

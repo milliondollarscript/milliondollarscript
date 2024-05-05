@@ -212,7 +212,7 @@ if ( ! is_user_logged_in() ) {
 		}
 	}
 
-	$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+	$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 	if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) != 'yes' ) {
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {

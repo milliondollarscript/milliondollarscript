@@ -185,7 +185,7 @@ if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $o
 
 		display_edit_order_button( $order_row['order_id'] );
 
-		$privileged = carbon_get_user_meta( get_current_user_id(), 'privileged' );
+		$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 			?>
