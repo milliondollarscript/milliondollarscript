@@ -81,6 +81,7 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 			Orders::complete_order( get_current_user_id(), $order_id );
+			Orders::reset_order_progress();
 			Utility::redirect( Utility::get_page_url( 'thank-you' ) );
 		} else {
 			Orders::confirm_order( get_current_user_id(), $order_id );
@@ -109,6 +110,7 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 	// Complete order if price is 0 or user is privileged
 	if ( ( $order_row['price'] == '0' ) || ( $privileged == 1 ) ) {
 		Orders::complete_order( get_current_user_id(), $order_id );
+		Orders::reset_order_progress();
 		Utility::redirect( Utility::get_page_url( 'thank-you' ) );
 	}
 }
