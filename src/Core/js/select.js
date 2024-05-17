@@ -897,6 +897,8 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 		});
 
 		let previousTotalBlocks = parseInt($mds_total_blocks_value.val());
+		let updateTimer;
+
 		$mds_total_blocks_value.on('input', function () {
 			let totalBlocks = parseInt(jQuery(this).val());
 			const isIncreasing = totalBlocks > previousTotalBlocks;
@@ -911,19 +913,24 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 			}
 
 			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
-			totalBlocks = Math.pow(adjustedBlockSize, 2);
 
 			// Update the slider and selection size input
 			$mds_selection_size_slider.val(adjustedBlockSize);
 			$mds_selection_size_value.val(adjustedBlockSize);
 
-			// Set the total blocks value to the adjusted value
-			$mds_total_blocks_value.val(totalBlocks);
+			clearTimeout(updateTimer);
 
-			// Update previous total blocks for next change
-			previousTotalBlocks = totalBlocks;
+			updateTimer = setTimeout(() => {
+				totalBlocks = Math.pow(adjustedBlockSize, 2);
 
-			update_pointer_size();
+				// Set the total blocks value to the adjusted value
+				$mds_total_blocks_value.val(totalBlocks);
+
+				// Update previous total blocks for next change
+				previousTotalBlocks = totalBlocks;
+
+				update_pointer_size();
+			}, 1000);
 		});
 	}
 

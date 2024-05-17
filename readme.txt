@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.113
+Stable tag: 2.5.10.114
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -116,6 +116,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add some missing options to 'Delete data on uninstall' deletion.
 * Fix migration from 2.3.5.
 * Fix privileged users.
+* Add a 1-second delay to the Blocks input box on the Select Pixels screen before automatically snapping it to a squareable value.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
