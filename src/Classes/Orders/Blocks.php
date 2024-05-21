@@ -91,33 +91,32 @@ class Blocks {
 
 			$is_adjacent = false;
 
-			if ( isset( $_REQUEST['erase'] ) && $_REQUEST['erase'] == "true" ) {
-				if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-					// deselect
-					unset( $blocks2[ $block ] );
-					$removed_blocks[] = $clicked_block;
-					$is_adjacent      = true;
-				}
-			} else if ( ! empty( $size ) ) {
-				// take multi-selection blocks and deselecting blocks into account
-				$invert = Config::get( 'INVERT_PIXELS' ) === 'YES';
+			$pos            = self::get_block_position( $clicked_block, $BID );
+			$blocks_per_row = $banner_data['G_WIDTH'];
+			$blocks_per_col = $banner_data['G_HEIGHT'];
+			$max_x_px       = $blocks_per_row * $banner_data['BLK_WIDTH'];
+			$max_y_px       = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+			$max_blocks     = $banner_data['G_MAX_BLOCKS'] == 0 ? $blocks_per_row * $blocks_per_col : $banner_data['G_MAX_BLOCKS'];
+			$max_size       = min( floor( sqrt( ( $max_blocks ) ) ), $size );
 
-				$pos            = self::get_block_position( $clicked_block, $BID );
-				$blocks_per_row = $banner_data['G_WIDTH'];
-				$blocks_per_col = $banner_data['G_HEIGHT'];
-				$max_x_px       = $blocks_per_row * $banner_data['BLK_WIDTH'];
-				$max_y_px       = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
-				$max_blocks     = $banner_data['G_MAX_BLOCKS'] == 0 ? $blocks_per_row * $blocks_per_col : $banner_data['G_MAX_BLOCKS'];
-				$max_size       = min( floor( sqrt( ( $max_blocks ) ) ), $size );
+			for ( $y = 0; $y < $max_size; $y ++ ) {
+				$y_pos = $pos['y'] + ( $y % $blocks_per_col ) * $banner_data['BLK_HEIGHT'];
+				for ( $x = 0; $x < $max_size; $x ++ ) {
+					$x_pos = $pos['x'] + ( $x % $blocks_per_row ) * $banner_data['BLK_WIDTH'];
 
-				for ( $y = 0; $y < $max_size; $y ++ ) {
-					$y_pos = $pos['y'] + ( $y % $blocks_per_col ) * $banner_data['BLK_HEIGHT'];
-					for ( $x = 0; $x < $max_size; $x ++ ) {
-						$x_pos = $pos['x'] + ( $x % $blocks_per_row ) * $banner_data['BLK_WIDTH'];
+					if ( $x_pos <= $max_x_px && $y_pos <= $max_y_px ) {
+						$clicked_block = self::get_block_id_from_position( $x_pos, $y_pos, $BID );
 
-						if ( $x_pos <= $max_x_px && $y_pos <= $max_y_px ) {
-							$clicked_block = self::get_block_id_from_position( $x_pos, $y_pos, $BID );
-
+						if ( isset( $_REQUEST['erase'] ) && $_REQUEST['erase'] == "true" ) {
+							// Erase logic
+							if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
+								unset( $blocks2[ $block ] );
+								$removed_blocks[] = $clicked_block;
+								$is_adjacent      = true;
+							}
+						} elseif ( ! empty( $size ) ) {
+							// Select logic
+							$invert = Config::get( 'INVERT_PIXELS' ) === 'YES';
 							if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 								// deselect
 								unset( $blocks2[ $block ] );
