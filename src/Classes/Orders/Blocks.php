@@ -74,7 +74,7 @@ class Blocks {
 		if ( ( $blocksrow == null || $blocksrow['status'] == '' ) || ( ( $blocksrow['status'] == 'reserved' || $blocksrow['order_id'] == $orderid ) && ( $blocksrow['user_id'] == get_current_user_id() ) ) ) {
 
 			if ( $orderid == null ) {
-				$orderid = Orders::create_order();
+				$orderid = Orders::create_order( $user_id, $BID );
 			}
 
 			// put block on order

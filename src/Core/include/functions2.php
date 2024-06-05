@@ -63,7 +63,13 @@ class functions2 {
 		$ret = $this->get_default_grid();
 
 		if ( $var == 0 ) {
-			global $wpdb;
+
+			if ( isset( $_REQUEST['get_params'] ) ) {
+				$json = json_decode( stripslashes( $_POST['get_params'] ), true );
+				if ( $json && isset( $json['BID'] ) ) {
+					return intval( $json['BID'] );
+				}
+			}
 
 			if ( isset( $_REQUEST['BID'] ) && ! empty( $_REQUEST['BID'] ) ) {
 				// $_REQUEST['BID']
@@ -72,15 +78,17 @@ class functions2 {
 				// $_REQUEST['aid']
 				$mds_pixel_post = get_post( $_REQUEST['aid'] );
 				if ( ! empty( $mds_pixel_post ) ) {
-					$ret = intval( carbon_get_post_meta( intval( $_REQUEST['aid'] ), MDS_PREFIX . 'grid' ) );
+					return intval( carbon_get_post_meta( intval( $_REQUEST['aid'] ), MDS_PREFIX . 'grid' ) );
 				}
 			} else if ( get_current_user_id() > 0 ) {
+				global $wpdb;
+
 				// User is logged in
-				$sql = "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND (status='completed' OR status='expired') ORDER BY banner_id";
+				$sql          = "SELECT banner_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND (status='completed' OR status='expired') ORDER BY banner_id";
 				$prepared_sql = $wpdb->prepare( $sql, get_current_user_id() );
-				$result          = $wpdb->get_var( $prepared_sql );
+				$result       = $wpdb->get_var( $prepared_sql );
 				if ( $result !== null ) {
-					$ret = $result;
+					return $result;
 				}
 			}
 		} else {

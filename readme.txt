@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.115
+Stable tag: 2.5.10.116
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -118,6 +118,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix privileged users.
 * Add a 1-second delay to the Blocks input box on the Select Pixels screen before automatically snapping it to a squareable value.
 * Fix erasing blocks only erasing the first block when size is larger than 1.
+* Fix multiple grids not working properly in advanced pixel selection method.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

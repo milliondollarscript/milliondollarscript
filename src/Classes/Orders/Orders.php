@@ -368,11 +368,12 @@ class Orders {
 	/**
 	 * Create a new order. If $user_id is omitted it will use the current user id.
 	 *
-	 * @param $user_id
+	 * @param null $user_id
+	 * @param null $banner_id
 	 *
 	 * @return int
 	 */
-	public static function create_order( $user_id = null ): int {
+	public static function create_order( $user_id = null, $banner_id = null ): int {
 		global $wpdb;
 
 		if ( is_null( $user_id ) ) {
@@ -392,6 +393,7 @@ class Orders {
 			'order_date'        => $now,
 			'date_published'    => $now,
 			'date_stamp'        => $now,
+			'banner_id'         => $banner_id,
 		] );
 
 		return $wpdb->insert_id;
