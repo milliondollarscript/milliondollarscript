@@ -111,16 +111,6 @@ defined( 'ABSPATH' ) or exit;
             </label>
         </div>
 
-        <div class="admin-config-left">
-            Output processed images to:
-        </div>
-        <div class="admin-config-right">
-            <label>
-                <input type="text" name="BANNER_DIR" size="55" value="<?php echo Config::get( 'BANNER_DIR', true ); ?>"/>
-                <br/>(Be aware that some AdBlocker software blindly blocks anything coming from banners/ directory. Please make sure that this directory exists in the main directory of the script and has write permissions, chmod 777)
-            </label>
-        </div>
-
         <div class="admin-config-footer">
             <p>NOTES<br/>
                 If you have just installed your script or changed the above output directory, you

@@ -63,7 +63,6 @@ class Config {
 			'OUTPUT_JPEG'                 => [ 'value' => 'N', 'type' => 's' ],
 			'JPEG_QUALITY'                => [ 'value' => '75', 'type' => 's' ],
 			'INTERLACE_SWITCH'            => [ 'value' => 'YES', 'type' => 's' ],
-			'BANNER_DIR'                  => [ 'value' => 'pixels/', 'type' => 's' ],
 			'DISPLAY_PIXEL_BACKGROUND'    => [ 'value' => 'NO', 'type' => 's' ],
 			'EMAIL_USER_ORDER_CONFIRMED'  => [ 'value' => 'YES', 'type' => 's' ],
 			'EMAIL_ADMIN_ORDER_CONFIRMED' => [ 'value' => 'YES', 'type' => 's' ],
