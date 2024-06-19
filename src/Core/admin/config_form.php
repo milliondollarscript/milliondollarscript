@@ -110,14 +110,6 @@ defined( 'ABSPATH' ) or exit;
                 <input type="radio" name="MDS_RESIZE" value="NO" <?php echo( $MDS_RESIZE == 'NO' ? 'checked' : '' ); ?> /> No
             </label>
         </div>
-
-        <div class="admin-config-footer">
-            <p>NOTES<br/>
-                If you have just installed your script or changed the above output directory, you
-                will need to process your grids(s) from the Pixel Admin section or else your images will
-                not appear.
-            </p>
-        </div>
     </div>
 
     <div class="admin-config">
