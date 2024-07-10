@@ -380,6 +380,11 @@ class Orders {
 			$user_id = get_current_user_id();
 		}
 
+		if ( is_null( $banner_id ) ) {
+			global $f2;
+			$banner_id = $f2->bid();
+		}
+
 		$now = current_time( 'mysql' );
 
 		// TODO: Change default date_published to NULL in the database and set it to null below.
