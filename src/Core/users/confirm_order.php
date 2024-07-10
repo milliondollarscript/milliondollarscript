@@ -90,7 +90,7 @@ $banner_data = load_banner_constants( $BID );
 // Check for any new orders
 $order_row = Orders::find_new_order();
 
-if ( $order_row['status'] != 'new' && empty( $order_row['blocks'] ) && $order_row['blocks'] != '0' ) {
+if ( is_null( $order_row ) || $order_row['status'] != 'new' && empty( $order_row['blocks'] ) && $order_row['blocks'] != '0' ) {
 
 	require_once MDS_CORE_PATH . "html/header.php";
 	Functions::not_enough_blocks( $order_row['order_id'], $banner_data['G_MIN_BLOCKS'] );
