@@ -161,7 +161,7 @@ $price_table = '';
 
 function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 
-	global $BID, $f2, $wpdb;
+	global $BID, $wpdb;
 
 	// cannot reserve pixels if there is no session
 	if ( ! is_user_logged_in() ) {
@@ -174,7 +174,11 @@ function reserve_temp_order_pixels( $block_info, $in_str ): bool {
 		$package_id = get_default_package( $BID );
 	}
 	$package = get_package( $package_id );
-	$price   = $package['price'];
+	if ( ! is_null( $package ) ) {
+		$price = $package['price'];
+	} else {
+		$price = 0;
+	}
 
 	$total = 0;
 	foreach ( $block_info as $key => $block ) {
