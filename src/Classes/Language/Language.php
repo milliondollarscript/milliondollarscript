@@ -130,7 +130,8 @@ class Language {
 					'href'   => [],
 					'id'     => [],
 					'style'  => [],
-					'target' => []
+					'target' => [],
+					'title' => []
 				],
 				'b'      => [
 					'class' => [],
@@ -220,7 +221,8 @@ class Language {
 					'style'  => [],
 					'usemap' => [],
 					'vspace' => [],
-					'width'  => []
+					'width'  => [],
+					'alt' => []
 				],
 				'label'  => [
 					'class' => [],
