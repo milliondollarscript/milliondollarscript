@@ -280,7 +280,10 @@ if ( $has_packages ) {
     <form method="post" id="pixel_form" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name='pixel_form'>
 		<?php wp_nonce_field( 'mds-form' ); ?>
         <input type="hidden" name="action" value="mds_form_submission">
-        <input type="hidden" name="mds_dest" value="upload">
+	    <?php
+	    $mds_dest = apply_filters( 'mds_dest_select', 'upload' );
+	    ?>
+        <input type="hidden" name="mds_dest" value="<?php echo esc_attr( $mds_dest ); ?>">
 
         <input type="hidden" value="1" name="select">
         <input type="hidden" name="package" value="">

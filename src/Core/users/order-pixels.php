@@ -330,7 +330,10 @@ Language::out( '- Upload a GIF, JPEG or PNG graphics file<br />
     <form method='post' action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
 		<?php wp_nonce_field( 'mds-form' ); ?>
         <input type="hidden" name="action" value="mds_form_submission">
-        <input type="hidden" name="mds_dest" value="order">
+        <?php
+        $mds_dest = apply_filters( 'mds_dest_order_pixels', 'order' );
+        ?>
+        <input type="hidden" name="mds_dest" value="<?php echo esc_attr( $mds_dest ); ?>">
 
 		<?php Language::out( '<p><strong>Upload your pixels:</strong></p>' ); ?>
         <input type='file' accept="image/*" name='graphic' style='font-size:14px;width:200px;'/><br/>

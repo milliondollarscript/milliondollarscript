@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.123
+Stable tag: 2.5.10.124
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -124,6 +124,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add null check for $order_row in confirm_order.php.
 * Add null check for $package in make_selection.php and set price to 0 if it is null.
 * Add null check to $banner_id in Orders.php and try to get it if it is null.
+* Add filters mds_dest_select and mds_dest_order_pixels for customizing the first order process steps (will add more in the future).
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
