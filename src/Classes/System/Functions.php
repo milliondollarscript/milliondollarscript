@@ -178,7 +178,8 @@ class Functions {
 			'jquery',
 			'contact',
 			'image-scale',
-			'image-map'
+			'image-map',
+            'wp-hooks'
 		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
 		wp_add_inline_script( 'mds', 'const MDS = ' . json_encode( self::get_script_data() ), 'before' );
 
@@ -230,6 +231,7 @@ class Functions {
 	 * Enqueue scripts and styles
 	 */
 	public static function enqueue_scripts(): void {
+		wp_enqueue_script('wp-hooks');
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'jquery-ui-accordion' );
 

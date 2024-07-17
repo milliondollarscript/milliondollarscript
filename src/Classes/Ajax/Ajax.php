@@ -274,9 +274,9 @@ class Ajax {
 
 			$output = str_replace( '%' . $field_name . '%', $value, $output );
 
-            $allowed_tags = Language::allowed_html();
-            $allowed_tags['div']['data-mds-params'] = true;
-			$output = wp_kses( $output, $allowed_tags, Language::allowed_protocols() );
+			$allowed_tags                           = Language::allowed_html();
+			$allowed_tags['div']['data-mds-params'] = true;
+			$output                                 = wp_kses( $output, $allowed_tags, Language::allowed_protocols() );
 
 			$output = apply_filters( 'mds_field_output_after', $output, $field, $post_id );
 		}
@@ -351,8 +351,7 @@ class Ajax {
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	}
 
-	public
-	static function show_list(): void {
+	public static function show_list(): void {
 		require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
 		?>

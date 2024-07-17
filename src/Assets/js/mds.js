@@ -652,6 +652,8 @@ jQuery(document).ready(function () {
 							jQuery(container).html(data);
 						}
 					}
+
+					wp.hooks.doAction('mds_ajax_complete');
 				},
 				error: function (jqXHR, textStatus, errorThrown) {
 					remove_ajax_loader();
