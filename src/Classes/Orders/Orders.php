@@ -1431,6 +1431,8 @@ class Orders {
 
 			$price = Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
+			do_action( 'mds_order_completed', $order_id );
+
 			if ( $send_email ) {
 
 				$search = [

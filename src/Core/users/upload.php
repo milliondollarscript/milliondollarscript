@@ -109,7 +109,7 @@ if ( file_exists( $tmp_image_file ) ) {
 
 $cannot_get_package = false;
 
-$order_id        = Orders::get_current_order_id();
+$order_id   = Orders::get_current_order_id();
 $package_id = intval( $_REQUEST['package'] ?? 0 );
 if ( $package_id == 0 ) {
 	$package_id = get_order_package( $order_id );
@@ -138,9 +138,9 @@ if ( $has_packages && ! empty( $package_id ) ) {
 
 		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 	} else {
-		$selected_pack      = $package_id;
-		$_REQUEST['package']   = '';
-		$cannot_get_package = true;
+		$selected_pack       = $package_id;
+		$_REQUEST['package'] = '';
+		$cannot_get_package  = true;
 	}
 }
 
