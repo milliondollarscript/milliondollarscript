@@ -490,7 +490,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 					} else {
 						$app = 'Not Approved';
 					}
-					$app_lang     = Language::get( $app );
+					$app_lang = Language::get( $app );
 
 					$status       = str_replace( '_', ' ', ucwords( $prams['status'] ) );
 					$status_lang  = Language::get( $status );
@@ -514,10 +514,10 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 
                     <br/>
 					<?php Orders::order_details( $prams ); ?>
-                    <?php
-                    // Action for adding custom order details
-                    do_action( 'mds_order_details', $prams );
-                    ?>
+					<?php
+					// Action for adding custom order details
+					do_action( 'mds_order_details', $prams );
+					?>
                 </div>
 				<?php
 			}
@@ -534,13 +534,12 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 function insert_ad_data( $order_id = 0, $admin = false ) {
 	global $wpdb;
 
-	$current_user = wp_get_current_user();
-
-	$sql          = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE user_id=%d AND order_id=%d";
-	$prepared_sql = $wpdb->prepare( $sql, $current_user->ID, intval( $order_id ) );
+	$sql          = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE order_id=%d";
+	$prepared_sql = $wpdb->prepare( $sql, intval( $order_id ) );
 	$ad_id        = $wpdb->get_var( $prepared_sql );
 
 	if ( empty( $ad_id ) && empty( $_REQUEST['aid'] ) ) {
+		$current_user = wp_get_current_user();
 
 		// Insert a new mds-pixel post
 		$ad_id = wp_insert_post( [
