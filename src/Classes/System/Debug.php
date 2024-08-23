@@ -74,4 +74,8 @@ class Debug {
 			error_log( $output );
 		}
 	}
+
+	public static function log( string $string ): void {
+		self::output( $string );
+	}
 }

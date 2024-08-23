@@ -32,11 +32,14 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-function publish_image( $BID ) {
+function publish_image( $BID ): void {
+	global $wpdb;
 
 	if ( ! is_numeric( $BID ) ) {
 		return;
 	}
+
+	$BID = intval( $BID );
 
 	$imagine = "";
 	if ( class_exists( 'Imagick' ) ) {
@@ -45,11 +48,17 @@ function publish_image( $BID ) {
 		$imagine = new Imagine\Gd\Imagine();
 	}
 
-	$dest = get_banner_dir();
-	$ext  = Utility::get_file_extension();
-	copy( Utility::get_upload_path() . "grids/grid$BID.$ext", $dest . "grid$BID.$ext" );
+	$dest        = get_banner_dir();
+	$ext         = Utility::get_file_extension();
+	$source_path = Utility::get_upload_path() . "grids/grid$BID.$ext";
+	$dest_path   = $dest . "grid$BID.$ext";
 
-	// output the tile image
+	// TODO: Use Filesystem class to copy.
+	if ( $source_path != $dest_path && ! copy( $source_path, $dest_path ) ) {
+		return;
+	}
+
+	// Output the tile image
 	if ( Config::get( 'DISPLAY_PIXEL_BACKGROUND' ) == "YES" ) {
 		$b_row = load_banner_row( $BID );
 
@@ -60,38 +69,88 @@ function publish_image( $BID ) {
 		$tile->save( $dest . "bg-main$BID.gif" );
 	}
 
-	// update the records
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE approved='Y' AND status='sold' AND image_data <> '' AND banner_id='" . intval( $BID ) . "' ";
-	$r = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	// Update the records
+	$blocks_table  = MDS_DB_PREFIX . 'blocks';
+	$orders_table  = MDS_DB_PREFIX . 'orders';
+	$banners_table = MDS_DB_PREFIX . 'banners';
 
-	while ( $row = mysqli_fetch_array( $r ) ) {
-		// set the 'date_published' only if it was not set before, date_published can only be set once.
+	// Handle approved blocks
+	$sql             = $wpdb->prepare(
+		"SELECT * FROM $blocks_table WHERE approved = 'Y' AND status IN ('sold','ordered') AND image_data <> '' AND banner_id = %d",
+		$BID
+	);
+	$results         = $wpdb->get_results( $sql, ARRAY_A );
+	$orders_approved = [];
+
+	foreach ( $results as $row ) {
+		$wpdb->update(
+			$blocks_table,
+			[ 'published' => 'Y' ],
+			[ 'block_id' => intval( $row['block_id'] ), 'banner_id' => $BID ],
+			[ '%s' ],
+			[ '%d', '%d' ]
+		);
+
+		$orders_approved[] = intval( $row['order_id'] );
+	}
+
+	foreach ( $orders_approved as $order_id ) {
 		$now = current_time( 'mysql' );
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set `date_published`='$now' where order_id='" . intval( $row['order_id'] ) . "' AND date_published IS NULL ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE $orders_table SET date_published = %s WHERE order_id = %d AND date_published IS NULL",
+				$now,
+				$order_id
+			)
+		);
 
-		// update the published status, always updated to Y
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `published`='Y' WHERE order_id='" . intval( $row['order_id'] ) . "'  ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-
-		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set `published`='Y' where block_id='" . intval( $row['block_id'] ) . "' AND banner_id='" . intval( $BID ) . "'";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		$wpdb->update(
+			$orders_table,
+			[ 'published' => 'Y' ],
+			[ 'order_id' => $order_id ],
+			[ '%s' ],
+			[ '%d' ]
+		);
 	}
 
-	//Make sure to un-publish any blocks that are not approved...
-	$sql = "SELECT block_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE approved='N' AND status='sold' AND banner_id='" . intval( $BID ) . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-	while ( $row = mysqli_fetch_array( $result ) ) {
-		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set `published`='N' where block_id='" . intval( $row['block_id'] ) . "'  AND banner_id='" . intval( $BID ) . "'  ";
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	// Handle disapproved blocks
+	$sql                = $wpdb->prepare(
+		"SELECT block_id, order_id FROM $blocks_table WHERE approved = 'N' AND status = 'sold' AND banner_id = %d",
+		$BID
+	);
+	$results            = $wpdb->get_results( $sql, ARRAY_A );
+	$orders_disapproved = [];
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders set `published`='N' where order_id='" . intval( $row['order_id'] ) . "'  AND banner_id='" . intval( $BID ) . "'  ";
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	foreach ( $results as $row ) {
+		$wpdb->update(
+			$blocks_table,
+			[ 'published' => 'N' ],
+			[ 'block_id' => intval( $row['block_id'] ), 'banner_id' => $BID ],
+			[ '%s' ],
+			[ '%d', '%d' ]
+		);
+
+		$orders_disapproved[] = intval( $row['order_id'] );
 	}
 
-	// update the time-stamp on the banner
-	$sql = "UPDATE " . MDS_DB_PREFIX . "banners SET time_stamp='" . time() . "' WHERE banner_id='" . intval( $BID ) . "' ";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	foreach ( $orders_disapproved as $order_id ) {
+		$wpdb->update(
+			$orders_table,
+			[ 'published' => 'N' ],
+			[ 'order_id' => $order_id, 'banner_id' => $BID ],
+			[ '%s' ],
+			[ '%d', '%d' ]
+		);
+	}
+
+	// Update the time-stamp on the banner
+	$wpdb->update(
+		$banners_table,
+		[ 'time_stamp' => time() ],
+		[ 'banner_id' => $BID ],
+		[ '%d' ],
+		[ '%d' ]
+	);
 
 	// Update the last modification time
 	Orders::set_last_order_modification_time();

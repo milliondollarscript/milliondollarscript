@@ -38,9 +38,6 @@ global $f2;
 $BID         = $f2->bid();
 $banner_data = load_banner_constants( $BID );
 ?>
-<div class="tooltip-source">
-    <img src="<?php echo MDS_CORE_URL; ?>images/periods.gif" alt=""/>
-</div>
 <script>
 	const mouseover_box = {
 		winWidth: parseInt('<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>', 10),
@@ -60,7 +57,7 @@ $banner_data = load_banner_constants( $BID );
 	jQuery(function () {
 		defer('Popper', () => {
 			defer('tippy', () => {
-				const defaultContent = jQuery('.tooltip-source').html();
+				const defaultContent = '';
 				const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
 
 				let delay = 50;

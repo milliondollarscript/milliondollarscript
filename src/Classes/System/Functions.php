@@ -231,7 +231,7 @@ class Functions {
 	 * Enqueue scripts and styles
 	 */
 	public static function enqueue_scripts(): void {
-		wp_enqueue_script('wp-hooks');
+		wp_enqueue_script( 'wp-hooks' );
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'jquery-ui-accordion' );
 

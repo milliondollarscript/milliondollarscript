@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.128
+Stable tag: 2.5.10.129
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -128,6 +128,11 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Remove user_id check on insert_ad_data function.
 * Execute the mds_ajax_complete WP hook in JavaScript whenever an MDS AJAX request completes successfully.
 * Do the mds_order_completed action when an order is completed.
+* Fix Forms URL redirects when they already have parameters.
+* Rewrite adjacent block selection in advanced pixel selection method.
+* Fix NFS not working properly when "Show the NFS image on every NFS block" is selected.
+* Fix MDS Pixel posts not being set as completed or published causing the order to not be shown automatically on the grid.
+* Fix errors not outputting correctly at times.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

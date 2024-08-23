@@ -137,6 +137,7 @@ class Forms {
 		}
 
 		if ( ! empty( $mds_error ) ) {
+			//$params .= '&mds_error=' . urlencode( $mds_error );
 			$params .= ( ! str_contains( $params, '?' ) ? '?' : '&' ) . 'mds_error=' . urlencode( $mds_error );
 		}
 
@@ -144,9 +145,9 @@ class Forms {
 		Steps::update_step( $mds_dest );
 
 		if ( isset( $_REQUEST['BID'] ) ) {
-			Utility::redirect( Utility::get_page_url( $mds_dest ) . '?BID=' . intval( $_REQUEST['BID'] ) . $params );
+			Utility::redirect( Utility::get_page_url( $mds_dest ) . ( ! str_contains( $params, '?' ) ? '?' : '&' ) . 'BID=' . intval( $_REQUEST['BID'] ) . $params );
 		} else {
-			Utility::redirect( Utility::get_page_url( $mds_dest ) . $params );
+			Utility::redirect( Utility::get_page_url( $mds_dest ) . ( ! str_contains( $params, '?' ) ? '?' : '&' ) . $params );
 		}
 	}
 

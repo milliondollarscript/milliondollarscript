@@ -65,8 +65,10 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 		// If you want to allow certain files
 		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
 		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-			$error = "<b>" . Language::get( 'File type not supported.' ) . "</b><br>";
-			echo $error;
+			global $mds_error;
+			$mds_error = Language::get( 'File type not supported.' );
+
+			return;
 		} else {
 			$uploadok = true;
 		}
@@ -94,7 +96,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 
 $tmp_image_file = Orders::get_tmp_img_name();
 
-if ( file_exists( $tmp_image_file ) ) {
+if ( $tmp_image_file && file_exists( $tmp_image_file ) ) {
 	try {
 		$image = $imagine->open( $tmp_image_file );
 	} catch ( Exception $e ) {
@@ -109,7 +111,13 @@ if ( file_exists( $tmp_image_file ) ) {
 
 $cannot_get_package = false;
 
-$order_id   = Orders::get_current_order_id();
+$order_id = Orders::get_current_order_id();
+
+if ( $order_id == null ) {
+	Orders::no_orders();
+	wp_die();
+}
+
 $package_id = intval( $_REQUEST['package'] ?? 0 );
 if ( $package_id == 0 ) {
 	$package_id = get_order_package( $order_id );

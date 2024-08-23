@@ -597,7 +597,6 @@ class WooCommerceFunctions {
 
 		$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
 
-		// If there is no mds_order_id meta yet then the order hasn't completed yet so there's no point in trying to make it complete in MDS yet.
 		if ( $mds_order_id == null ) {
 			return false;
 		}
@@ -611,7 +610,6 @@ class WooCommerceFunctions {
 		global $wpdb;
 		$mds_quantity = $wpdb->get_var( $wpdb->prepare( "SELECT `quantity` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d", intval( $mds_order_id ) ) );
 
-//		$mds_quantity = absint( $external_payment->get_quantity( $mds_order_id ) );
 		$good = true;
 
 		global $f2;

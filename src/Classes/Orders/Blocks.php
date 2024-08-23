@@ -89,13 +89,11 @@ class Blocks {
 			// $blocks2 will be modified based on deselections
 			$blocks2 = $blocks;
 
-			$is_adjacent = false;
-
 			$pos            = self::get_block_position( $clicked_block, $BID );
 			$blocks_per_row = $banner_data['G_WIDTH'];
 			$blocks_per_col = $banner_data['G_HEIGHT'];
 			$max_x_px       = $blocks_per_row * $banner_data['BLK_WIDTH'];
-			$max_y_px       = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+			$max_y_px       = $blocks_per_col * $banner_data['BLK_HEIGHT'];
 			$max_blocks     = $banner_data['G_MAX_BLOCKS'] == 0 ? $blocks_per_row * $blocks_per_col : $banner_data['G_MAX_BLOCKS'];
 			$max_size       = min( floor( sqrt( ( $max_blocks ) ) ), $size );
 
@@ -112,7 +110,6 @@ class Blocks {
 							if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 								unset( $blocks2[ $block ] );
 								$removed_blocks[] = $clicked_block;
-								$is_adjacent      = true;
 							}
 						} elseif ( ! empty( $size ) ) {
 							// Select logic
@@ -130,48 +127,8 @@ class Blocks {
 				}
 			}
 
-			// max x and y values
-			$max_x = $banner_data['G_WIDTH'];
-			$max_y = $banner_data['G_HEIGHT'];
-
-			// check for adjacent blocks if more than one block exists
-			if ( sizeof( $blocks ) > 0 && sizeof( $clicked_blocks ) > 0 ) {
-				$id = 0;
-
-				for ( $y = 0; $y < $max_y; $y ++ ) {
-					for ( $x = 0; $x < $max_x; $x ++ ) {
-						if ( in_array( $id, $blocks ) ) {
-							// check all clicked blocks at once for adjacency
-							foreach ( $clicked_blocks as $clicked_block2 ) {
-								// top
-								if ( $id - $max_x == $clicked_block2 && $y >= 0 ) {
-									$is_adjacent = true;
-								}
-
-								// bottom
-								if ( $id + $max_x == $clicked_block2 && $y <= $max_y ) {
-									$is_adjacent = true;
-								}
-
-								// left
-								if ( $id - 1 == $clicked_block2 && $x >= 0 ) {
-									$is_adjacent = true;
-								}
-
-								// right
-								if ( $id + 1 == $clicked_block2 && $x <= $max_x ) {
-									$is_adjacent = true;
-								}
-							}
-						}
-
-						$id ++;
-					}
-				}
-			} else {
-				// only one block so pretend it's adjacent
-				$is_adjacent = true;
-			}
+			// Check for adjacency
+			$is_adjacent = self::check_adjacency( $blocks2, $clicked_blocks, $blocks_per_row, $blocks_per_col );
 
 			// remove $clicked_blocks if not found adjacent to another block
 			if ( ! $is_adjacent ) {
@@ -264,9 +221,6 @@ class Blocks {
 
 				$current_order_id = Orders::get_current_order_in_progress( $user_id );
 				if ( $current_order_id != null ) {
-//				error_log( "Current order id: " . $current_order_id );
-//				\MillionDollarScript\Classes\System\Debug::log_trace();
-
 					// Set all orders as not in progress for the current user.
 					$sql = $wpdb->prepare(
 						"UPDATE " . MDS_DB_PREFIX . "orders SET order_in_progress='N' WHERE user_id=%d",
@@ -365,6 +319,37 @@ class Blocks {
 		}
 
 		return $return_val;
+	}
+
+	/**
+	 * Check adjacency of blocks using Breadth-First Search.
+	 */
+	public static function check_adjacency( $blocks, $clicked_blocks, $blocks_per_row, $blocks_per_col ): bool {
+		$all_blocks = array_merge( $blocks, $clicked_blocks );
+		if ( empty( $all_blocks ) ) {
+			return true;
+		}
+
+		$visited    = [];
+		$queue      = [ reset( $all_blocks ) ];
+		$directions = [ - 1, 1, - $blocks_per_row, $blocks_per_row ];
+
+		while ( ! empty( $queue ) ) {
+			$current = array_shift( $queue );
+			if ( in_array( $current, $visited ) ) {
+				continue;
+			}
+			$visited[] = $current;
+
+			foreach ( $directions as $direction ) {
+				$neighbor = $current + $direction;
+				if ( in_array( $neighbor, $all_blocks ) && ! in_array( $neighbor, $visited ) ) {
+					$queue[] = $neighbor;
+				}
+			}
+		}
+
+		return count( $visited ) === count( $all_blocks );
 	}
 
 	public static function valid_block_statuses(): array {

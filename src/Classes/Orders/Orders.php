@@ -427,9 +427,9 @@ class Orders {
 	 *
 	 * @param int $order_id
 	 *
-	 * @return int
+	 * @return int|null
 	 */
-	public static function get_ad_id_from_order_id( int $order_id ): int {
+	public static function get_ad_id_from_order_id( int $order_id ): int|null {
 		global $wpdb;
 
 		return $wpdb->get_var(

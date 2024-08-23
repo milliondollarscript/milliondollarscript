@@ -2,17 +2,17 @@
     "packages": [
         {
             "name": "htmlburger/carbon-fields",
-            "version": "v3.6.3",
-            "version_normalized": "3.6.3.0",
+            "version": "v3.6.5",
+            "version_normalized": "3.6.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/htmlburger/carbon-fields.git",
-                "reference": "d913a5148cb9dc61ed239719c747f4ebb513003f"
+                "reference": "b18f8e2a2cc4cc976306eb867ad1d740a8e7c1d9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/htmlburger/carbon-fields/zipball/d913a5148cb9dc61ed239719c747f4ebb513003f",
-                "reference": "d913a5148cb9dc61ed239719c747f4ebb513003f",
+                "url": "https://api.github.com/repos/htmlburger/carbon-fields/zipball/b18f8e2a2cc4cc976306eb867ad1d740a8e7c1d9",
+                "reference": "b18f8e2a2cc4cc976306eb867ad1d740a8e7c1d9",
                 "shasum": ""
             },
             "require": {
@@ -23,7 +23,7 @@
                 "phpunit/phpunit": "7.5.20|9.6.3",
                 "yoast/phpunit-polyfills": "^1.0"
             },
-            "time": "2023-11-28T15:52:46+00:00",
+            "time": "2024-07-31T08:17:38+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -210,17 +210,17 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v5.0.2",
-            "version_normalized": "5.0.2.0",
+            "version": "v5.1.0",
+            "version_normalized": "5.1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "139676794dc1e9231bf7bcd123cfc0c99182cb13"
+                "reference": "683130c2ff8c2739f4822ff7ac5c873ec529abd1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/139676794dc1e9231bf7bcd123cfc0c99182cb13",
-                "reference": "139676794dc1e9231bf7bcd123cfc0c99182cb13",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/683130c2ff8c2739f4822ff7ac5c873ec529abd1",
+                "reference": "683130c2ff8c2739f4822ff7ac5c873ec529abd1",
                 "shasum": ""
             },
             "require": {
@@ -231,9 +231,9 @@
             },
             "require-dev": {
                 "ircmaxell/php-yacc": "^0.0.7",
-                "phpunit/phpunit": "^7.0 || ^8.0 || ^9.0"
+                "phpunit/phpunit": "^9.0"
             },
-            "time": "2024-03-05T20:51:40+00:00",
+            "time": "2024-07-01T20:03:41+00:00",
             "bin": [
                 "bin/php-parse"
             ],
@@ -265,7 +265,7 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v5.0.2"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.1.0"
             },
             "install-path": "../nikic/php-parser"
         },

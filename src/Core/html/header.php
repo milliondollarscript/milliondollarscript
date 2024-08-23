@@ -47,5 +47,5 @@ echo wp_kses( $header_container, Language::allowed_html() );
 
 $mds_error = Utility::get_error();
 if ( ! empty( $mds_error ) ) {
-	Language::out( $mds_error );
+	echo '<div class="mds-error">' . Language::get( $mds_error ) . '</div>';
 }

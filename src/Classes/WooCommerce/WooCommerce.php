@@ -61,6 +61,25 @@ class WooCommerce {
 		add_action( 'woocommerce_after_cart_item_quantity_update', [ __CLASS__, 'adjust_cart_item_quantity_after_update' ], 20, 4 );
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', [ __CLASS__, 'validate_checkout' ], 10, 2 );
 		add_filter( 'woocommerce_add_error', [ __CLASS__, 'custom_wc_error_msg' ] );
+		add_action( 'woocommerce_new_order', [ __CLASS__, 'new_order' ], 10, 1 );
+
+	}
+
+	public static function new_order( $order_id ) {
+		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
+		if ( empty( $mds_order_id ) ) {
+			return;
+		}
+
+		$order = wc_get_order( $order_id );
+
+		// If the order doesn't have mds_order_id yet then add it and a note.
+		$post_meta_mds_order_id = get_post_meta( $order_id, 'mds_order_id', true );
+		if ( empty( $post_meta_mds_order_id ) ) {
+			update_post_meta( $order_id, "mds_order_id", $mds_order_id );
+			$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
+			$order->save();
+		}
 	}
 
 	public static function adjust_cart_item_quantity_after_update( $cart_item_key, $quantity, $old_quantity, $cart ): void {
@@ -208,7 +227,7 @@ class WooCommerce {
 					if ( $price ) {
 						// Check if the price is already the desired value before setting it
 						$current_price = $cart_item['data']->get_price();
-						$price     = $price / $quantity;
+						$price         = $price / $quantity;
 
 						// Apply a filter to allow modification of the price
 						$price = apply_filters( 'mds_woocommerce_product_price', $price, $mds_order_id, $quantity );
@@ -428,6 +447,9 @@ class WooCommerce {
 			$order->add_order_note( "Coinbase Charge ID: " . $coinbase_id );
 		}
 
+		// Set the order status to 'completed' if the Auto-complete Orders option is checked.
+		// Note: The order isn't necessarily set to completed yet until WooCommerceFunctions::complete_mds_order runs below
+		// which does some additional checks before running the Orders::complete_order function..
 		$auto_complete = Options::get_option( 'wc-auto-complete', true );
 		if ( $auto_complete ) {
 			$to = 'completed';

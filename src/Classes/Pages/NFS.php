@@ -212,7 +212,7 @@ class NFS {
 			$default_nfs_block = $blank_block->copy();
 			$usr_nfs_block->resize( $block_size );
 			$default_nfs_block->paste( $usr_nfs_block, $zero_point );
-			$data = base64_encode( $default_nfs_block->get( "png", array( 'png_compression_level' => 9 ) ) );
+			$data = $default_nfs_block->get( "png", array( 'png_compression_level' => 9 ) );
 		}
 
 		//$sql = "delete from blocks where status='nfs' AND banner_id=$BID ";
