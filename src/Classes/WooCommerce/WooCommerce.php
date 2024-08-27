@@ -63,6 +63,21 @@ class WooCommerce {
 		add_filter( 'woocommerce_add_error', [ __CLASS__, 'custom_wc_error_msg' ] );
 		add_action( 'woocommerce_new_order', [ __CLASS__, 'new_order' ], 10, 1 );
 
+		// Remove order again button
+		add_action( 'woocommerce_order_details_before_order_table', [ __CLASS__, 'maybe_remove_order_again_button' ] );
+	}
+
+	/**
+	 * Remove the 'woocommerce_order_again_button' action
+	 *
+	 * @param $order
+	 *
+	 * @return void
+	 */
+	public static function maybe_remove_order_again_button( $order ): void {
+		if ( WooCommerceFunctions::is_mds_order( $order->get_id() ) ) {
+			remove_action( 'woocommerce_order_details_after_order_table', 'woocommerce_order_again_button' );
+		}
 	}
 
 	public static function new_order( $order_id ) {

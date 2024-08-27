@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.129
+Stable tag: 2.5.10.131
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -133,6 +133,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix NFS not working properly when "Show the NFS image on every NFS block" is selected.
 * Fix MDS Pixel posts not being set as completed or published causing the order to not be shown automatically on the grid.
 * Fix errors not outputting correctly at times.
+* Remove Order again button.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
