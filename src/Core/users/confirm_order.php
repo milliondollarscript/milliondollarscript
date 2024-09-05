@@ -215,17 +215,25 @@ if ( ! is_user_logged_in() ) {
 	$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 	if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) != 'yes' ) {
+		$params             = [];
+		$params['BID']      = $BID;
+		$params['order_id'] = $order_row['order_id'];
+
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 			Steps::update_step( 'complete' );
+			$params['mds-action'] = 'complete';
 
 			// go straight to publish...
-			Utility::redirect( Utility::get_page_url( 'manage' ) . '?mds-action=complete&BID=' . $BID . '&order_id=' . $order_row['order_id'] );
+			$page_url = Utility::get_page_url( 'manage' );
 		} else {
 			Steps::update_step( 'payment' );
+			$params['mds-action'] = 'confirm';
 
 			// go to payment
-			Utility::redirect( Utility::get_page_url( 'payment' ) . '?mds-action=confirm&order_id=' . $order_row['order_id'] . '&BID=' . $BID );
+			$page_url = Utility::get_page_url( 'payment' );
 		}
+
+		Utility::redirect( $page_url, $params );
 		exit;
 	}
 

@@ -416,7 +416,7 @@ class Utility {
 	 */
 	public static function redirect( string $dest = '', array $args = [] ): void {
 		if ( ! empty( $args ) ) {
-			$dest .= ( ! str_contains( $dest, '?' ) ? '?' : '&' ) . http_build_query( $args );
+			$dest = add_query_arg( $args, $dest );
 		}
 
 		if ( ! empty( $dest ) ) {
