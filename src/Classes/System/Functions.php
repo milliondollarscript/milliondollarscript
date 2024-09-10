@@ -179,7 +179,7 @@ class Functions {
 			'contact',
 			'image-scale',
 			'image-map',
-            'wp-hooks'
+			'wp-hooks'
 		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
 		wp_add_inline_script( 'mds', 'const MDS = ' . json_encode( self::get_script_data() ), 'before' );
 
@@ -552,6 +552,40 @@ class Functions {
 		require_once MDS_CORE_PATH . "html/footer.php";
 
 		return true;
+	}
+
+	/**
+	 * If width or height weren't set on the shortcode then get them from the database.
+	 *
+	 * @param array $atts
+	 *
+	 * @return array|void
+	 */
+	public static function maybe_set_dimensions( array $atts ) {
+		if ( $atts['width'] == 0 || $atts['height'] == 0 ) {
+			global $wpdb;
+			$table_name = MDS_DB_PREFIX . 'banners';
+			$sql        = $wpdb->prepare( "SELECT grid_width, block_width, grid_height, block_height FROM `$table_name` WHERE `banner_id` = %d", intval( $atts['id'] ) );
+			$row        = $wpdb->get_row( $sql, ARRAY_A );
+			if ( empty( $row ) ) {
+				die( 'Error retrieving data from the database.' );
+			}
+
+			if ( $atts['width'] == 0 ) {
+				$grid_width    = $row['grid_width'];
+				$block_width   = $row['block_width'];
+				$pixel_width   = ( $grid_width * $block_width ) . 'px';
+				$atts['width'] = $pixel_width;
+			}
+			if ( $atts['height'] == 0 ) {
+				$grid_height    = $row['grid_height'];
+				$block_height   = $row['block_height'];
+				$pixel_height   = ( $grid_height * $block_height ) . 'px';
+				$atts['height'] = $pixel_height;
+			}
+		}
+
+		return $atts;
 	}
 
 	function mds_allowed_mds_params( $allowed_tags ) {

@@ -38,17 +38,14 @@ defined( 'ABSPATH' ) or exit;
 
 class Shortcode {
 	public static function defaults(): array {
+
 		return array(
 			'id'     => 1,
-			//'display_method' => 'ajax',
 			'align'  => 'center',
-			'width'  => '1000px',
-			'height' => 'auto',
-			// 'mds'     => Config::get( 'MDS_CORE_URL' ),
+			'width'  => 0,
+			'height' => 0,
 			'lang'   => 'EN',
 			'type'   => 'grid',
-			// 'gateway' => '',
-			// 'display'        => ''
 		);
 	}
 
@@ -75,6 +72,8 @@ class Shortcode {
 			$atts,
 			'milliondollarscript'
 		);
+
+		$atts = Functions::maybe_set_dimensions( $atts );
 
 		$container_id = uniqid( sanitize_title( $atts['type'] ) . '-' );
 

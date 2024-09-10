@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\Blocks;
 
 use Carbon_Fields\Field;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\Web\Shortcode;
 
 defined( 'ABSPATH' ) or exit;
@@ -121,7 +122,8 @@ class BlockFields {
 			}
 		}
 
-		// echo do_shortcode( sprintf( '[milliondollarscript id="%d" display_method="%s" align="%s" width="%s" height="%s" mds="%s" lang="%s" type="%s" gateway="%s" display="%s"/]',
+		$values = Functions::maybe_set_dimensions( $values );
+
 		echo do_shortcode( sprintf( '[milliondollarscript id="%d" align="%s" width="%s" height="%s" type="%s"/]',
 			$values['id'],
 			$values['align'],
