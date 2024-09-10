@@ -506,7 +506,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
                         <label>
                             <input id="inventory-grid-name" autofocus tabindex="0" size="30" type="text" name="name"
-                                   value="<?php echo( isset( $_REQUEST['name'] ) ? htmlspecialchars( $_REQUEST['name'] ) : "" ); ?>"/>
+                                   value="<?php echo( isset( $_REQUEST['name'] ) ? esc_attr( $_REQUEST['name'] ) : "" ); ?>"/>
                             <script>
                                 jQuery(function () {
                                     let grid_name = jQuery("#inventory-grid-name");
@@ -561,10 +561,10 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 							?>
                             <label>
                                 <input <?php echo $disabled; ?> size="2" type="text" name="grid_width"
-                                                                value="<?php echo htmlspecialchars( $_REQUEST['grid_width'] ); ?>"/>
+                                                                value="<?php echo intval( $_REQUEST['grid_width'] ); ?>"/>
                             </label> Measured in blocks (default block size is 10x10 pixels)
 						<?php } else { ?>
-                            <b><?php echo htmlspecialchars( $_REQUEST['grid_width'] ); ?>
+                            <b><?php echo intval( $_REQUEST['grid_width'] ); ?>
                                 <input type='hidden'
                                        value='<?php echo( isset( $row ) ? ( $row['grid_width'] ?? '' ) : '' ); ?>'
                                        name='grid_width'>
@@ -583,10 +583,10 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 							?>
                             <label>
                                 <input <?php echo $disabled; ?> size="2" type="text" name="grid_height"
-                                                                value="<?php echo htmlspecialchars( $_REQUEST['grid_height'] ); ?>"/>
+                                                                value="<?php echo intval( $_REQUEST['grid_height'] ); ?>"/>
                             </label> Measured in blocks (default block size is 10x10 pixels)
 						<?php } else { ?>
-                            <b><?php echo htmlspecialchars( $_REQUEST['grid_height'] ); ?>
+                            <b><?php echo intval( $_REQUEST['grid_height'] ); ?>
                                 <input type='hidden'
                                        value='<?php echo( isset( $row ) ? ( $row['grid_height'] ?? '' ) : '' ); ?>'
                                        name='grid_height'>
@@ -601,7 +601,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
                         <label>
                             <input size="1" type="text" name="price_per_block"
-                                   value="<?php echo htmlspecialchars( $_REQUEST['price_per_block'] ); ?>"/>
+                                   value="<?php echo intval( $_REQUEST['price_per_block'] ); ?>"/>
                         </label>(How much for 1 block of pixels?)
                     </div>
                     <div class="inventory-title">Currency</div>
@@ -621,7 +621,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
                         <label>
                             <input <?php echo $disabled; ?> size="1" type="text" name="days_expire"
-                                                            value="<?php echo htmlspecialchars( $_REQUEST['days_expire'] ); ?>"/>
+                                                            value="<?php echo intval( $_REQUEST['days_expire'] ); ?>"/>
                         </label>(How many days until pixels expire? Enter 0 for unlimited.)
                     </div>
                 </div>
@@ -630,7 +630,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
                         <label>
                             <input <?php echo $disabled; ?> size="1" type="text" name="max_orders"
-                                                            value="<?php echo htmlspecialchars( $_REQUEST['max_orders'] ); ?>"/>
+                                                            value="<?php echo intval( $_REQUEST['max_orders'] ); ?>"/>
                         </label>(How many orders per 1 customer? Enter 0 for unlimited.)<br>
                     </div>
                 </div>
@@ -639,7 +639,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
                         <label>
                             <input size="1" type="text" name="max_blocks"
-                                   value="<?php echo htmlspecialchars( $_REQUEST['max_blocks'] ); ?>"/>
+                                   value="<?php echo intval( $_REQUEST['max_blocks'] ); ?>"/>
                         </label>(Maximum amount of blocks the customer is allowerd to purchase? Enter 0 for
                         unlimited.)<br>
                     </div>
@@ -649,7 +649,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
                         <label>
                             <input size="1" type="text" name="min_blocks"
-                                   value="<?php echo htmlspecialchars( $_REQUEST['min_blocks'] ); ?>"/>
+                                   value="<?php echo intval( $_REQUEST['min_blocks'] ); ?>"/>
                         </label>(Minumum amount of blocks the customer has to purchase per order? Enter 1 or 0 for no
                         limit.)<br>
                     </div>
