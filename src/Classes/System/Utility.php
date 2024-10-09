@@ -344,6 +344,20 @@ class Utility {
 			return;
 		}
 
+		$clear_woocommerce_orders = $_REQUEST['clear_woocommerce_orders'] ?? false;
+		if ( $clear_woocommerce_orders !== false ) {
+			if ( \MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions::is_wc_active() ) {
+				$order_ids = $wpdb->get_col( "SELECT order_id FROM " . MDS_DB_PREFIX . "orders" );
+				foreach ( $order_ids as $order_id ) {
+					$wc_order_id = Orders::get_wc_order_id_from_mds_order_id( $order_id );
+					$order       = wc_get_order( $wc_order_id );
+					if ( $order ) {
+						$order->delete( true );
+					}
+				}
+			}
+		}
+
 		// Delete all blocks and orders.
 		$wpdb->query( "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE `status` != 'nfs'" );
 		/** @noinspection SqlWithoutWhere */

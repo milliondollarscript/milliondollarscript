@@ -28,11 +28,12 @@
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
 if ( isset( $_REQUEST['clear_orders'] ) && $_REQUEST['clear_orders'] == 'true' ) {
-    Utility::clear_orders();
+	Utility::clear_orders();
 	$done = Language::get( "Done!" );
 }
 
@@ -52,6 +53,20 @@ if ( isset( $done ) ) {
 	<?php
 	$warning = Language::get( '<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!' );
 	echo $warning;
-	Language::out( 'You might want to run a backup before doing this. Click the Delete button below if you wish to proceed.</p>' ); ?>
-    <input type="submit" name="submit" value="Delete" onclick="if (!confirmLink(this, '<?php Language::out( 'WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!' ); ?> <?php Language::out( 'You might want to run a backup before doing this. Are you sure?' ); ?>')) return false"/>
+	Language::out( 'You might want to run a backup before doing this. Click the Delete button below if you wish to proceed.</p>' );
+
+	if ( WooCommerceFunctions::is_wc_active() ) {
+		?>
+        <p>
+            <label>
+                <input type="checkbox" name="clear_woocommerce_orders" value="true"/>
+				<?php Language::out( "Clear associated WooCommerce orders too?" ); ?>
+            </label>
+        </p>
+		<?php
+	}
+	?>
+
+    <input type="submit" name="submit" value="Delete"
+           onclick="if (!confirmLink(this, '<?php Language::out( 'WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!' ); ?> <?php Language::out( 'You might want to run a backup before doing this. Are you sure?' ); ?>')) return false"/>
 </form>

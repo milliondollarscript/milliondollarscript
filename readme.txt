@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.134
+Stable tag: 2.5.10.135
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -136,6 +136,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Remove Order again button.
 * Use add_query_arg for URL redirect parameters.
 * Set default dimensions on shortcode from the database if they weren't entered.
+* Add a checkbox to the Clear Orders screen to clear associated WooCommerce orders too.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
