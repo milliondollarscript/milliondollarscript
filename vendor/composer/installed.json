@@ -145,17 +145,17 @@
         },
         {
             "name": "imagine/imagine",
-            "version": "1.3.5",
-            "version_normalized": "1.3.5.0",
+            "version": "1.4.0",
+            "version_normalized": "1.4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-imagine/Imagine.git",
-                "reference": "7151d553edec4dc2bbac60419f7a74ff34700e7f"
+                "reference": "2c8887dc7e84e97283037f02dd9c957d4b3a0b82"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-imagine/Imagine/zipball/7151d553edec4dc2bbac60419f7a74ff34700e7f",
-                "reference": "7151d553edec4dc2bbac60419f7a74ff34700e7f",
+                "url": "https://api.github.com/repos/php-imagine/Imagine/zipball/2c8887dc7e84e97283037f02dd9c957d4b3a0b82",
+                "reference": "2c8887dc7e84e97283037f02dd9c957d4b3a0b82",
                 "shasum": ""
             },
             "require": {
@@ -170,7 +170,7 @@
                 "ext-gmagick": "to use the Gmagick implementation",
                 "ext-imagick": "to use the Imagick implementation"
             },
-            "time": "2023-06-07T14:49:52+00:00",
+            "time": "2024-11-18T07:44:52+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -204,7 +204,7 @@
             ],
             "support": {
                 "issues": "https://github.com/php-imagine/Imagine/issues",
-                "source": "https://github.com/php-imagine/Imagine/tree/1.3.5"
+                "source": "https://github.com/php-imagine/Imagine/tree/1.4.0"
             },
             "install-path": "../imagine/imagine"
         },
