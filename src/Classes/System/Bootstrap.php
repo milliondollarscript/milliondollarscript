@@ -104,6 +104,9 @@ class Bootstrap {
 			return $html;
 		}, 10, 2 );
 
+		// Add Changelog page
+		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Pages\Changelog', 'register' ] );
+
 		// Add mds-pixel post type fields
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Forms\FormFields', 'register' ] );
 		add_action( 'carbon_fields_post_meta_container_saved', [ '\MillionDollarScript\Classes\Forms\FormFields', 'save' ] );

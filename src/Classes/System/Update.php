@@ -36,6 +36,7 @@ defined( 'ABSPATH' ) or exit;
 
 class Update {
 	public static function checker(): void {
+		global $MDSUpdateChecker;
 		$updates = Options::get_option( 'updates' );
 		if ( $updates == 'yes' ) {
 			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
