@@ -53,6 +53,10 @@ class Changelog {
 	private static function getChangelogContent(): string {
 		global $MDSUpdateChecker;
 
+		if ( ! $MDSUpdateChecker ) {
+			return '';
+		}
+
 		$currentVersion   = $MDSUpdateChecker->getInstalledVersion();
 		$update           = $MDSUpdateChecker->getUpdate();
 		$changelogContent = '<h2>Current Version: ' . esc_html( $currentVersion ) . '</h2>';
