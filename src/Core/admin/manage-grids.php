@@ -333,6 +333,11 @@ function validate_block_size( $image_name, $BID ): bool {
 		return true;
 	}
 
+	// If NFS block and nfs_covered is N don't check block size
+	if ( $image_name == 'nfs_block' && Options::get_option( 'nfs_covered' ) == 'N' ) {
+		return true;
+	}
+
 	$block_w = $_REQUEST['block_width'];
 	$block_h = $_REQUEST['block_height'];
 
@@ -381,7 +386,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 	} else {
 		$image_sql_fields = ', grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block ';
 		$image_sql_values = get_banner_image_sql_values( $BID );
-		$now = current_time( 'mysql' );
+		$now              = current_time( 'mysql' );
 
 		$new = false;
 		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'new' ) {
@@ -508,12 +513,12 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                             <input id="inventory-grid-name" autofocus tabindex="0" size="30" type="text" name="name"
                                    value="<?php echo( isset( $_REQUEST['name'] ) ? esc_attr( $_REQUEST['name'] ) : "" ); ?>"/>
                             <script>
-                                jQuery(function () {
-                                    let grid_name = jQuery("#inventory-grid-name");
-                                    if (grid_name.val().length === 0) {
-                                        grid_name.focus();
-                                    }
-                                });
+								jQuery(function () {
+									let grid_name = jQuery("#inventory-grid-name");
+									if (grid_name.val().length === 0) {
+										grid_name.focus();
+									}
+								});
                             </script>
                         </label> eg. My Million Pixel Grid
                     </div>
