@@ -145,21 +145,21 @@
         },
         {
             "name": "imagine/imagine",
-            "version": "1.4.0",
-            "version_normalized": "1.4.0.0",
+            "version": "1.5.0",
+            "version_normalized": "1.5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-imagine/Imagine.git",
-                "reference": "2c8887dc7e84e97283037f02dd9c957d4b3a0b82"
+                "reference": "80ab21434890dee9ba54969d31c51ac8d4d551e0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-imagine/Imagine/zipball/2c8887dc7e84e97283037f02dd9c957d4b3a0b82",
-                "reference": "2c8887dc7e84e97283037f02dd9c957d4b3a0b82",
+                "url": "https://api.github.com/repos/php-imagine/Imagine/zipball/80ab21434890dee9ba54969d31c51ac8d4d551e0",
+                "reference": "80ab21434890dee9ba54969d31c51ac8d4d551e0",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.5"
+                "php": ">=7.1"
             },
             "require-dev": {
                 "phpunit/phpunit": "^4.8 || ^5.7 || ^6.5 || ^7.5 || ^8.4 || ^9.3"
@@ -170,7 +170,7 @@
                 "ext-gmagick": "to use the Gmagick implementation",
                 "ext-imagick": "to use the Imagick implementation"
             },
-            "time": "2024-11-18T07:44:52+00:00",
+            "time": "2024-12-03T14:37:55+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -194,7 +194,7 @@
                     "homepage": "http://avalanche123.com"
                 }
             ],
-            "description": "Image processing for PHP 5.3",
+            "description": "Image processing for PHP",
             "homepage": "http://imagine.readthedocs.org/",
             "keywords": [
                 "drawing",
@@ -204,23 +204,23 @@
             ],
             "support": {
                 "issues": "https://github.com/php-imagine/Imagine/issues",
-                "source": "https://github.com/php-imagine/Imagine/tree/1.4.0"
+                "source": "https://github.com/php-imagine/Imagine/tree/1.5.0"
             },
             "install-path": "../imagine/imagine"
         },
         {
             "name": "nikic/php-parser",
-            "version": "v5.3.1",
-            "version_normalized": "5.3.1.0",
+            "version": "v5.4.0",
+            "version_normalized": "5.4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "8eea230464783aa9671db8eea6f8c6ac5285794b"
+                "reference": "447a020a1f875a434d62f2a401f53b82a396e494"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/8eea230464783aa9671db8eea6f8c6ac5285794b",
-                "reference": "8eea230464783aa9671db8eea6f8c6ac5285794b",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/447a020a1f875a434d62f2a401f53b82a396e494",
+                "reference": "447a020a1f875a434d62f2a401f53b82a396e494",
                 "shasum": ""
             },
             "require": {
@@ -233,7 +233,7 @@
                 "ircmaxell/php-yacc": "^0.0.7",
                 "phpunit/phpunit": "^9.0"
             },
-            "time": "2024-10-08T18:51:32+00:00",
+            "time": "2024-12-30T11:07:19+00:00",
             "bin": [
                 "bin/php-parse"
             ],
@@ -265,7 +265,7 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v5.3.1"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.4.0"
             },
             "install-path": "../nikic/php-parser"
         },
