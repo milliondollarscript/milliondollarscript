@@ -34,15 +34,24 @@ function load_banner_row( $BID ) {
 		return false;
 	}
 
-	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`='" . intval( $BID ) . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-	$row = mysqli_fetch_array( $result );
+	global $wpdb;
+	$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'banners';
+	
+	// Use $wpdb->prepare to safely handle the query with proper escaping
+	$row = $wpdb->get_row(
+		$wpdb->prepare(
+			"SELECT * FROM {$table_name} WHERE banner_id = %d",
+			intval( $BID )
+		),
+		ARRAY_A
+	);
 
 	if ( ! $row ) {
 		// No grid found with the given id so just select the first row.
-		$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` LIMIT 1";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
+		$row = $wpdb->get_row(
+			"SELECT * FROM {$table_name} LIMIT 1",
+			ARRAY_A
+		);
 	}
 
 	return $row;

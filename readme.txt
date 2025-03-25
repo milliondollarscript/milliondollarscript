@@ -139,6 +139,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add a checkbox to the Clear Orders screen to clear associated WooCommerce orders too.
 * Add Changelog page.
 * Don't check NFS block size when set to Show the NFS image on every NFS block.
+* Convert more database calls to use $wpdb.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
