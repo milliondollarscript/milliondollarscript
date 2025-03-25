@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.10.145
+  Version: 2.5.10.146
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -16,7 +16,7 @@
  * Million Dollar Script Two
  *
  * @author      Ryan Rhode
- * @copyright   (C) 2024, Ryan Rhode
+ * @copyright   (C) 2025, Ryan Rhode
  * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
  *
  * This program is free software: you can redistribute it and/or modify
@@ -63,7 +63,7 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.10.129' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.145' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.10.146' );
 
 // Detect PHP version
 $minimum_version = '8.0.0';

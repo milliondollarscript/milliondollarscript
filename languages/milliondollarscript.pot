@@ -1,5 +1,5 @@
 # Million Dollar Script.
-# Copyright (C) 2024 Ryan Rhode
+# Copyright (C) 2025 Ryan Rhode
 # This file is distributed under the GNU/GPL v3.
 #
 #, fuzzy
