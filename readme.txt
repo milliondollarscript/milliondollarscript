@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.144
+Stable tag: 2.5.10.145
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
