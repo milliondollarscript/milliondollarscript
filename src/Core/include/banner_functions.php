@@ -35,7 +35,7 @@ function load_banner_row( $BID ) {
 	}
 
 	global $wpdb;
-	$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'banners';
+	$table_name = MDS_DB_PREFIX . 'banners';
 	
 	// Use $wpdb->prepare to safely handle the query with proper escaping
 	$row = $wpdb->get_row(
