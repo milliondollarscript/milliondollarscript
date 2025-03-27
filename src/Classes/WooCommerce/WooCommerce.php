@@ -437,6 +437,16 @@ class WooCommerce {
 	 * @param $order \WC_order
 	 */
 	public static function status_changed( int $id, string $from, string $to, \WC_order $order ): void {
+
+		// Define draft order statuses
+		$draft_statuses = ['auto-draft', 'draft', 'checkout-draft'];
+		
+		// Do not process draft orders
+		if (in_array($from, $draft_statuses) || in_array($to, $draft_statuses)) {
+			return;
+		}
+
+		// Check if the order is a Million Dollar Script order
 		if ( ! WooCommerceFunctions::is_mds_order( $id ) ) {
 			// Not a Million Dollar Script order
 			return;
@@ -462,21 +472,36 @@ class WooCommerce {
 			$order->add_order_note( "Coinbase Charge ID: " . $coinbase_id );
 		}
 
-		// Set the order status to 'completed' if the Auto-complete Orders option is checked.
-		// Note: The order isn't necessarily set to completed yet until WooCommerceFunctions::complete_mds_order runs below
-		// which does some additional checks before running the Orders::complete_order function..
+		// Get current order status
 		$auto_complete = Options::get_option( 'wc-auto-complete', true );
-		if ( $auto_complete ) {
-			$to = 'completed';
-		} else {
-			$to = 'processing';
+		$auto_approve = Options::get_option( 'auto-approve', false );
+		
+		// Determine if we should complete the MDS order
+		$should_complete = false;
+		
+		// If the order is explicitly marked as completed, always complete it regardless of auto_approve
+		// This handles manual completions by admin
+		if ($to === 'completed') {
+			$should_complete = true;
+		} elseif ($auto_complete && $auto_approve) {
+			// For automatic processing, both auto_complete and auto_approve must be enabled
+			// We should only auto-complete orders when they're in a state that indicates payment is confirmed
+			// For manual payment methods, they typically go to 'on-hold' until manually verified
+			if ($to === 'processing') {
+				// For processing status, only complete if it wasn't previously on-hold
+				// This prevents completing orders that are transitioning from on-hold to processing
+				// which typically happens with manual payment methods
+				if ($from !== 'on-hold') {
+					$should_complete = true;
+				}
+			}
 		}
 
 		// Action hook for MDS status change
-		do_action( 'mds-status-changed', $id, (int) $mds_order_id, $from, $to, $order );
+		do_action( 'mds-status-changed', $id, (int) $mds_order_id, $from, $to, $order, $should_complete );
 
-		// Complete MDS payment if order goes to 'completed'
-		if ( $to === "completed" ) {
+		// Complete MDS payment if conditions are met
+		if ($should_complete) {
 			WooCommerceFunctions::complete_mds_order( $id );
 		}
 	}
