@@ -558,7 +558,7 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 
 						if ( $row['approved'] != 'N' ) {
 							?>
-                            <input type="button" style="" value="Disapprove"
+                            <input type="button" value="Disapprove"
                                    onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>disapprove-pixels&mds-action=disapprove&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo $row['order_id']; ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
 							<?php
 						}
