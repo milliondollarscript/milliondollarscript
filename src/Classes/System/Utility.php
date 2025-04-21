@@ -429,6 +429,11 @@ class Utility {
 	 * @return void
 	 */
 	public static function redirect( string $dest = '', array $args = [] ): void {
+		// clear any prior output to avoid "Headers already sent" warnings
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+
 		if ( ! empty( $args ) ) {
 			$dest = add_query_arg( $args, $dest );
 		}
