@@ -106,28 +106,14 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	$progress = 'Please wait.. Processing the Grid image with GD';
 
-	// Was getting weird errors so removed Imagick
-// 	[04-Jan-2023 17:13:32 UTC] PHP Fatal error:  Uncaught ImagickException: No IDATs written into file `/home/user/public_html/wp-content/uploads/milliondollarscript/grids/grid158.png' @ error/png.c/MagickPNGErrorHandler/1642 in /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php:343
-// Stack trace:
-// #0 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php(343): Imagick->writeImages()
-// #1 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/output_grid.php(539): Imagine\Imagick\Image->save()
-// #2 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/image_functions.php(107): output_grid()
-// #3 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/admin/process.php(47): process_image()
-// #4 {main}
-//
-// Next Imagine\Exception\RuntimeException: Save operation failed in /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php:345
-// Stack trace:
-// #0 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/output_grid.php(539): Imagine\Imagick\Image->save()
-// #1 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/include/image_functions.php(107): output_grid()
-// #2 /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/admin/process.php(47): process_image()
-// #3 {main}
-//   thrown in /home/user/public_html/wp-content/plugins/milliondollarscript-two-main/src/Core/vendor/imagine/imagine/src/Imagick/Image.php on line 345
-
-	// if ( class_exists( 'Imagick' ) ) {
-	// 	$imagine = new Imagine\Imagick\Imagine();
-	// } else if ( function_exists( 'gd_info' ) ) {
-	$imagine = new Imagine\Gd\Imagine();
-	// }
+	// Dynamically select image driver: Imagick if available, otherwise GD
+	if ( extension_loaded('imagick') && class_exists('Imagick') ) {
+		$imagine = new Imagine\Imagick\Imagine();
+	} elseif ( function_exists('gd_info') ) {
+		$imagine = new Imagine\Gd\Imagine();
+	} else {
+		wp_die('No supported image driver available.');
+	}
 
 	$banner_data = load_banner_constants( $BID );
 
