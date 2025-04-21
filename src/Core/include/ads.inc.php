@@ -66,15 +66,13 @@ function load_ad_values( $ad_id ) {
 
 function assign_ad_template( $prams ) {
 
-	global $prams;
-
 	$search  = [];
 	$replace = [];
 
 	// image
 	$search[] = '%image%';
 	$filename = 'tmp_' . $prams['ad_id'] . Utility::get_file_extension();
-	if ( ( file_exists( Utility::get_upload_path() . 'images/' . $filename ) ) && ( ! empty( $prams[ $row['field_id'] ] ) ) ) {
+	if ( file_exists( Utility::get_upload_path() . 'images/' . $filename ) && ! empty( $prams['image'] ) ) {
 		$replace[] = '<img alt="" src="' . Utility::get_upload_url() . "images/" . $filename . '" style="max-width:100px;max-height:100px;">';
 	} else {
 		$replace[] = '';
@@ -698,118 +696,114 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 
 				Utility::setMemoryLimit( $uploadfile );
 
-				// check image size
-				$img_size   = $image->getSize();
-				$MDS_RESIZE = Config::get( 'MDS_RESIZE' );
+				// autorotate
+				$imagine->setMetadataReader( new ExifMetadataReader() );
+				$filter = new Imagine\Filter\Transformation();
+				$filter->add( new AutoRotate() );
+				$filter->apply( $image );
 
-				// check the size
-				if ( ( $MDS_RESIZE != 'YES' ) && ( ( $img_size->getWidth() > $size['x'] ) || ( $img_size->getHeight() > $size['y'] ) ) ) {
-					$error = Language::get_replace(
+				// determine whether to resize and validate dimensions when disabled
+				$MDS_RESIZE = Config::get( 'MDS_RESIZE' );
+				if ( $MDS_RESIZE !== 'YES' ) {
+					$img_size = $image->getSize();
+					if ( $img_size->getWidth() > $size['x'] || $img_size->getHeight() > $size['y'] ) {
+						echo Language::get_replace(
 							'The size of the uploaded image is incorrect. It needs to be %SIZE_X% wide and %SIZE_Y% high (or less)',
 							[ '%SIZE_X%', '%SIZE_Y%' ],
 							[ $size['x'], $size['y'] ]
 						) . "<br>";
+						return false;
+					}
+				}
+				if ( $MDS_RESIZE === 'YES' ) {
+					$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
+					$image->resize( $resize );
 				}
 
-				if ( ! empty( $error ) ) {
-					echo $error;
+				// Precompute block dimensions and color for performance
+				$block_size = new Imagine\Image\Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
+				$palette    = new Imagine\Image\Palette\RGB();
+				$color      = $palette->color( '#000', 0 );
 
-					return false;
-
-				} else {
-					// size is ok. change the blocks.
-
-					// Imagine some things
-					$block_size = new Imagine\Image\Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
-					$palette    = new Imagine\Image\Palette\RGB();
-					$color      = $palette->color( '#000', 0 );
-
-					// Update blocks
-					$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks WHERE order_id=" . intval( $order_id );
-					$blocks_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-					while ( $block_row = mysqli_fetch_array( $blocks_result ) ) {
-
-						$high_x = ! isset( $high_x ) ? $block_row['x'] : $high_x;
-						$high_y = ! isset( $high_y ) ? $block_row['y'] : $high_y;
-						$low_x  = ! isset( $low_x ) ? $block_row['x'] : $low_x;
-						$low_y  = ! isset( $low_y ) ? $block_row['y'] : $low_y;
-
+				// Compute block offsets from database
+				global $wpdb;
+				$blocks = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT x, y FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d AND banner_id=%d",
+						$order_id,
+						$BID
+					),
+					ARRAY_A
+				);
+				if ( ! empty( $blocks ) ) {
+					$low_x = $high_x = $blocks[0]['x'];
+					$low_y = $high_y = $blocks[0]['y'];
+					foreach ( $blocks as $block_row ) {
 						if ( $block_row['x'] > $high_x ) {
 							$high_x = $block_row['x'];
 						}
-
-						if ( ! isset( $high_y ) || $block_row['y'] > $high_y ) {
-							$high_y = $block_row['y'];
-						}
-
-						if ( ! isset( $low_y ) || $block_row['y'] < $low_y ) {
-							$low_y = $block_row['y'];
-						}
-
-						if ( ! isset( $low_x ) || $block_row['x'] < $low_x ) {
+						if ( $block_row['x'] < $low_x ) {
 							$low_x = $block_row['x'];
 						}
-					}
-
-					$high_x = ! isset( $high_x ) ? 0 : $high_x;
-					$high_y = ! isset( $high_y ) ? 0 : $high_y;
-					$low_x  = ! isset( $low_x ) ? 0 : $low_x;
-					$low_y  = ! isset( $low_y ) ? 0 : $low_y;
-
-					$_REQUEST['map_x'] = $high_x;
-					$_REQUEST['map_y'] = $high_y;
-
-					// autorotate
-					$imagine->setMetadataReader( new ExifMetadataReader() );
-					$filter = new Imagine\Filter\Transformation();
-					$filter->add( new AutoRotate() );
-					$filter->apply( $image );
-
-					// resize uploaded image
-					if ( $MDS_RESIZE == 'YES' ) {
-						$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
-						$image->resize( $resize );
-					}
-
-					// Paste image into selected blocks (AJAX mode allows individual block selection)
-					for ( $y = 0; $y < $size['y']; $y += $banner_data['BLK_HEIGHT'] ) {
-						for ( $x = 0; $x < $size['x']; $x += $banner_data['BLK_WIDTH'] ) {
-
-							// create new destination image
-							$dest = $imagine->create( $block_size, $color );
-
-							// crop a part from the tiled image
-							$block = $image->copy();
-							$block->crop( new Imagine\Image\Point( $x, $y ), $block_size );
-
-							// paste the block into the destination image
-							$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
-
-							// save the image as a base64 encoded string
-							$image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
-
-							// some variables
-							$map_x     = $x + $low_x;
-							$map_y     = $y + $low_y;
-							$GRD_WIDTH = $banner_data['BLK_WIDTH'] * $banner_data['G_WIDTH'];
-							$cb        = ( ( $map_x ) / $banner_data['BLK_WIDTH'] ) + ( ( $map_y / $banner_data['BLK_HEIGHT'] ) * ( $GRD_WIDTH / $banner_data['BLK_WIDTH'] ) );
-
-							// save to db
-							global $wpdb;
-
-							// prepare SQL query and sanitize variables
-							$sql = $wpdb->prepare(
-								"UPDATE " . MDS_DB_PREFIX . "blocks SET image_data=%s WHERE block_id=%d AND banner_id=%d AND order_id=%d",
-								$image_data,
-								intval( $cb ),
-								intval( $BID ),
-								intval( $order_id )
-							);
-
-							// execute SQL query
-							$wpdb->query( $sql );
+						if ( $block_row['y'] > $high_y ) {
+							$high_y = $block_row['y'];
+						}
+						if ( $block_row['y'] < $low_y ) {
+							$low_y = $block_row['y'];
 						}
 					}
+					$_REQUEST['map_x'] = $high_x;
+					$_REQUEST['map_y'] = $high_y;
+				} else {
+					$low_x = $low_y = 0;
+				}
+
+				// Prepare for batch updates
+				$updates = [];
+
+				// Paste image into selected blocks (AJAX mode allows individual block selection)
+				$blkW = $banner_data['BLK_WIDTH'];
+				$blkH = $banner_data['BLK_HEIGHT'];
+				$blocksPerRow = $banner_data['G_WIDTH'];
+				$sizeX = $size['x'];
+				$sizeY = $size['y'];
+				for ( $y = 0; $y < $sizeY; $y += $blkH ) {
+					for ( $x = 0; $x < $sizeX; $x += $blkW ) {
+
+						// create new destination image
+						$dest = $imagine->create( $block_size, $color );
+
+						// paste image offset to extract block without cropping
+						$dest->paste( $image, new Imagine\Image\Point( -$x, -$y ) );
+
+						// save the image as a base64 encoded string
+						$image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
+
+						// some variables
+						$map_x     = $x + $low_x;
+						$map_y     = $y + $low_y;
+						$cb        = ( $map_x / $blkW ) + ( ( $map_y / $blkH ) * $blocksPerRow );
+
+						// queue for batch update
+						$updates[] = [ 'block_id' => intval( $cb ), 'image_data' => $image_data ];
+					}
+				}
+
+				// Batch update image_data in one query
+				if ( ! empty( $updates ) ) {
+					$cases = '';
+					$ids   = [];
+					foreach ( $updates as $u ) {
+						$cases .= $wpdb->prepare( "WHEN block_id=%d THEN %s ", $u['block_id'], $u['image_data'] );
+						$ids[] = $u['block_id'];
+					}
+					$ids_list = implode( ',', $ids );
+					$sql = "UPDATE " . MDS_DB_PREFIX . "blocks
+							SET image_data = CASE {$cases} END
+							WHERE order_id=%d
+							  AND banner_id=%d
+							  AND block_id IN ({$ids_list})";
+					$wpdb->query( $wpdb->prepare( $sql, $order_id, $BID ) );
 				}
 
 				unset( $tmp_image_file );
@@ -824,12 +818,11 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 					publish_image( $BID );
 					process_map( $BID );
 				}
-			} else {
-				// Possible file upload attack!
-				Language::out( 'Upload failed. Please try again, or try a different file.' );
 			}
+
+			// Possible file upload attack!
+			Language::out( 'Upload failed. Please try again, or try a different file.' );
 		}
 	}
-
 	return true;
 }
