@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.156
+Stable tag: 2.5.10.157
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -20,7 +20,6 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 == Changelog ==
 
 = 2.5.10.x =
-* Annotate GD resource variables and add explicit GdImage type hints in output_grid to resolve IDE lint errors.
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
 * Fix block selection issues.
 * More optimizations and fixes while ordering.
@@ -142,6 +141,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Don't check NFS block size when set to Show the NFS image on every NFS block.
 * Convert more database calls to use $wpdb.
 * Fix order completion logic to properly handle manual completions and respect auto-approve settings.
++* Fix headers sent warnings by clearing output buffers before redirects.
++* Optimize upload_changed_pixels handling: use negative-offset pastes and batched database updates.
++* Optimize output grid rendering: precompute block dimensions, dynamic driver selection, and direct GD imagecopy.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
