@@ -133,6 +133,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	$blank_block = $imagine->create( $block_size, $color );
 
 	// default grid block
+	/** @var \Imagine\Gd\Image $default_block */
 	$default_block = $blank_block->copy();
 
 	if ( ! $ordering ) {
@@ -388,9 +389,11 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// create empty grid
 	$map = $imagine->create( $size );
+	/** @var \Imagine\Gd\Image $map */
 	// detect GD driver for direct imagecopy
 	$useGd = $map instanceof Imagine\Gd\Image;
 	if ( $useGd ) {
+		/** @var \GdImage $dstRes */
 		$dstRes = $map->getGdResource();
 	}
 
@@ -430,6 +433,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// preload full grid
 	$grid_back = $grid_front = $grid_price_zone = array();
+	/** @var \Imagine\Gd\Image[][] $grid_back */
+	/** @var \Imagine\Gd\Image[][] $grid_front */
+	/** @var \Imagine\Gd\Image[][] $grid_price_zone */
 	$cell      = 0;
 	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
 		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
@@ -475,7 +481,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 				if ( isset( $grid_back[ $x ] ) && isset( $grid_back[ $x ][ $y ] ) ) {
 					if ( $useGd ) {
-						$src = $grid_back[ $x ][ $y ]->getGdResource();
+						/** @var \Imagine\Gd\Image $img */
+						$img = $grid_back[ $x ][ $y ];
+						/** @var \GdImage $src */
+						$src = $img->getGdResource();
 						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
 					} else {
 						$map->paste( $grid_back[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
@@ -483,7 +492,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 				} else {
 					// add grid behind if nothing's there in case images are transparent
 					if ( $useGd ) {
-						$src = $default_block->getGdResource();
+						/** @var \Imagine\Gd\Image $img */
+						$img = $default_block;
+						/** @var \GdImage $src */
+						$src = $img->getGdResource();
 						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
 					} else {
 						$map->paste( $default_block, new Imagine\Image\Point( $x, $y ) );
@@ -495,7 +507,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// blend in the background
 	if ( isset( $background ) ) {
-
+		/** @var \Imagine\Gd\Image $img */
+		$img = $background;
+		/** @var \GdImage $src */
+		$src = $img->getGdResource();
 		// Background image size
 		$bgsize = $background->getSize();
 
@@ -522,7 +537,6 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 		// paste background image into grid
 		if ( $useGd ) {
-			$src = $background->getGdResource();
 			imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
 		} else {
 			$map->paste( $background, new Imagine\Image\Point( $bgx, $bgy ) );
@@ -534,7 +548,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 			if ( isset( $grid_front[ $x ] ) && isset( $grid_front[ $x ][ $y ] ) ) {
 				if ( $useGd ) {
-					$src = $grid_front[ $x ][ $y ]->getGdResource();
+					/** @var \Imagine\Gd\Image $img */
+					$img = $grid_front[ $x ][ $y ];
+					/** @var \GdImage $src */
+					$src = $img->getGdResource();
 					imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
 				} else {
 					$map->paste( $grid_front[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
@@ -548,7 +565,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 			if ( isset( $grid_price_zone[ $x ] ) && isset( $grid_price_zone[ $x ][ $y ] ) ) {
 				if ( $useGd ) {
-					$src = $grid_price_zone[ $x ][ $y ]->getGdResource();
+					/** @var \Imagine\Gd\Image $img */
+					$img = $grid_price_zone[ $x ][ $y ];
+					/** @var \GdImage $src */
+					$src = $img->getGdResource();
 					imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
 				} else {
 					$map->paste( $grid_price_zone[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
@@ -559,9 +579,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// output price zone text
 	if ( isset( $show_price_zones_text ) ) {
+		/** @var \Imagine\Gd\Image $zmap */
 		// skip PNG roundtrip when using GD driver
 		if ( $map instanceof Imagine\Gd\Image ) {
-			/** @var \Imagine\Gd\Image $zmap */
 			$zmap = $map;
 		} else {
 			$gdImagine = new Imagine\Gd\Imagine();
@@ -570,25 +590,27 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			$zmap      = $gdImagine->load($binary);
 			unset( $map );
 		}
+		/** @var \GdImage $gdRes */
+		$gdRes = $zmap->getGdResource();
 
 		$row_c       = 0;
 		$col_c       = 0;
-		$textcolor   = imagecolorallocate( $zmap->getGdResource(), 0, 0, 0 );
-		$textcolor_w = imagecolorallocate( $zmap->getGdResource(), 255, 255, 255 );
+		$textcolor   = imagecolorallocate( $gdRes, 0, 0, 0 );
+		$textcolor_w = imagecolorallocate( $gdRes, 255, 255, 255 );
 
 		for ( $y = 0; $y < $gridH; $y += $blkH ) {
 			for ( $x = 0; $x < $gridW; $x += $blkW ) {
 
 				if ( $y == 0 ) {
 					$spaces = str_repeat( ' ', 3 - strlen( $col_c ) );
-					imagestringup( $zmap->getGdResource(), 1, $x, 15, $spaces . "$col_c", $textcolor_w );
-					imagestringup( $zmap->getGdResource(), 1, $x + 1, 15 + 1, $spaces . "$col_c", $textcolor );
+					imagestringup( $gdRes, 1, $x, 15, $spaces . "$col_c", $textcolor_w );
+					imagestringup( $gdRes, 1, $x + 1, 15 + 1, $spaces . "$col_c", $textcolor );
 					$col_c ++;
 				}
 			}
 
-			imagestring( $zmap->getGdResource(), 1, 1, $y, "$row_c", $textcolor_w );
-			imagestring( $zmap->getGdResource(), 1, 2, $y + 1, "$row_c", $textcolor );
+			imagestring( $gdRes, 1, 1, $y, "$row_c", $textcolor_w );
+			imagestring( $gdRes, 1, 2, $y + 1, "$row_c", $textcolor );
 			$row_c ++;
 		}
 
