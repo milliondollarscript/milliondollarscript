@@ -117,8 +117,16 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	$banner_data = load_banner_constants( $BID );
 
+	// Precompute grid dimensions
+	$blkW = (int)$banner_data['BLK_WIDTH'];
+	$blkH = (int)$banner_data['BLK_HEIGHT'];
+	$cols = (int)$banner_data['G_WIDTH'];
+	$rows = (int)$banner_data['G_HEIGHT'];
+	$gridW = $cols * $blkW;
+	$gridH = $rows * $blkH;
+
 	// load blocks
-	$block_size  = new Imagine\Image\Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
+	$block_size  = new Imagine\Image\Box( $blkW, $blkH );
 	$palette     = new Imagine\Image\Palette\RGB();
 	$color       = $palette->color( '#000', 0 );
 	$zero_point  = new Imagine\Image\Point( 0, 0 );
@@ -376,17 +384,22 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	}
 
 	// grid size
-	$size = new Imagine\Image\Box( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] );
+	$size = new Imagine\Image\Box( $gridW, $gridH );
 
 	// create empty grid
 	$map = $imagine->create( $size );
+	// detect GD driver for direct imagecopy
+	$useGd = $map instanceof Imagine\Gd\Image;
+	if ( $useGd ) {
+		$dstRes = $map->getGdResource();
+	}
 
 	// preload price zones
 	if ( isset( $show_price_zones ) ) {
 		$price_zone_blocks = array();
 		$cell              = 0;
-		for ( $y = 0; $y < ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); $y += $banner_data['BLK_HEIGHT'] ) {
-			for ( $x = 0; $x < ( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); $x += $banner_data['BLK_WIDTH'] ) {
+		for ( $y = 0; $y < $gridH; $y += $blkH ) {
+			for ( $x = 0; $x < $gridW; $x += $blkW ) {
 
 				$price_zone_color = get_zone_color( $BID, $y, $x );
 				switch ( $price_zone_color ) {
@@ -418,8 +431,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	// preload full grid
 	$grid_back = $grid_front = $grid_price_zone = array();
 	$cell      = 0;
-	for ( $y = 0; $y < ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); $y += $banner_data['BLK_HEIGHT'] ) {
-		for ( $x = 0; $x < ( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); $x += $banner_data['BLK_WIDTH'] ) {
+	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
+		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 
 			if ( isset( $blocks[ $cell ] ) && $blocks[ $cell ] != '' ) {
 				if ( isset( $show_orders ) && $blocks[ $cell ] == "order" ) {
@@ -458,13 +471,23 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// grid and nfs blocks go behind the background
 	if ( isset( $show_grid ) || isset( $default_nfs_block ) ) {
-		for ( $y = 0; $y < ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); $y += $banner_data['BLK_HEIGHT'] ) {
-			for ( $x = 0; $x < ( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); $x += $banner_data['BLK_WIDTH'] ) {
+		for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
+			for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 				if ( isset( $grid_back[ $x ] ) && isset( $grid_back[ $x ][ $y ] ) ) {
-					$map->paste( $grid_back[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
+					if ( $useGd ) {
+						$src = $grid_back[ $x ][ $y ]->getGdResource();
+						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+					} else {
+						$map->paste( $grid_back[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
+					}
 				} else {
 					// add grid behind if nothing's there in case images are transparent
-					$map->paste( $default_block, new Imagine\Image\Point( $x, $y ) );
+					if ( $useGd ) {
+						$src = $default_block->getGdResource();
+						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+					} else {
+						$map->paste( $default_block, new Imagine\Image\Point( $x, $y ) );
+					}
 				}
 			}
 		}
@@ -477,7 +500,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		$bgsize = $background->getSize();
 
 		// Rescale image to fit within the size of the grid
-		$new_dimensions = resize_dimensions( $size->getWidth(), $size->getHeight(), $bgsize->getWidth(), $bgsize->getHeight() );
+		$new_dimensions = resize_dimensions( $gridW, $gridH, $bgsize->getWidth(), $bgsize->getHeight() );
 
 		// Resize to max size
 		$background->resize( new Imagine\Image\Box( $new_dimensions['width'], $new_dimensions['height'] ) );
@@ -486,8 +509,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		$bgsize = $background->getSize();
 
 		// calculate coords to paste at
-		$bgx = ( $size->getWidth() / 2 ) - ( $bgsize->getWidth() / 2 );
-		$bgy = ( $size->getHeight() / 2 ) - ( $bgsize->getHeight() / 2 );
+		$bgx = ( $gridW / 2 ) - ( $bgsize->getWidth() / 2 );
+		$bgy = ( $gridH / 2 ) - ( $bgsize->getHeight() / 2 );
 
 		// make sure coords aren't outside the box
 		if ( $bgx < 0 ) {
@@ -498,42 +521,63 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		}
 
 		// paste background image into grid
-		$map->paste( $background, new Imagine\Image\Point( $bgx, $bgy ) );
+		if ( $useGd ) {
+			$src = $background->getGdResource();
+			imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
+		} else {
+			$map->paste( $background, new Imagine\Image\Point( $bgx, $bgy ) );
+		}
 	}
 
 	// paste the blocks
-	for ( $y = 0; $y < ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); $y += $banner_data['BLK_HEIGHT'] ) {
-		for ( $x = 0; $x < ( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); $x += $banner_data['BLK_WIDTH'] ) {
+	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
+		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 			if ( isset( $grid_front[ $x ] ) && isset( $grid_front[ $x ][ $y ] ) ) {
-				$map->paste( $grid_front[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
+				if ( $useGd ) {
+					$src = $grid_front[ $x ][ $y ]->getGdResource();
+					imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+				} else {
+					$map->paste( $grid_front[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
+				}
 			}
 		}
 	}
 
 	// paste price zone layer
-	for ( $y = 0; $y < ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); $y += $banner_data['BLK_HEIGHT'] ) {
-		for ( $x = 0; $x < ( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); $x += $banner_data['BLK_WIDTH'] ) {
+	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
+		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 			if ( isset( $grid_price_zone[ $x ] ) && isset( $grid_price_zone[ $x ][ $y ] ) ) {
-				$map->paste( $grid_price_zone[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
+				if ( $useGd ) {
+					$src = $grid_price_zone[ $x ][ $y ]->getGdResource();
+					imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+				} else {
+					$map->paste( $grid_price_zone[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
+				}
 			}
 		}
 	}
 
 	// output price zone text
 	if ( isset( $show_price_zones_text ) ) {
-		$imagine = new Imagine\Gd\Imagine();
-
-		$zmap = $imagine->load( $map );
-
-		unset( $map );
+		// skip PNG roundtrip when using GD driver
+		if ( $map instanceof Imagine\Gd\Image ) {
+			/** @var \Imagine\Gd\Image $zmap */
+			$zmap = $map;
+		} else {
+			$gdImagine = new Imagine\Gd\Imagine();
+			$binary   = $map->get('png', ['png_compression_level' => 9]);
+			/** @var \Imagine\Gd\Image $zmap */
+			$zmap      = $gdImagine->load($binary);
+			unset( $map );
+		}
 
 		$row_c       = 0;
 		$col_c       = 0;
 		$textcolor   = imagecolorallocate( $zmap->getGdResource(), 0, 0, 0 );
 		$textcolor_w = imagecolorallocate( $zmap->getGdResource(), 255, 255, 255 );
 
-		for ( $y = 0; $y < ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); $y += $banner_data['BLK_HEIGHT'] ) {
-			for ( $x = 0; $x < ( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); $x += $banner_data['BLK_WIDTH'] ) {
+		for ( $y = 0; $y < $gridH; $y += $blkH ) {
+			for ( $x = 0; $x < $gridW; $x += $blkW ) {
 
 				if ( $y == 0 ) {
 					$spaces = str_repeat( ' ', 3 - strlen( $col_c ) );
