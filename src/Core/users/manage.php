@@ -320,6 +320,9 @@ if ( $count > 0 ) {
         <div class="publish-grid">
             <map name="main" id="main">
 				<?php
+				// Check if order locking is enabled
+				$order_locking_enabled = \MillionDollarScript\Classes\Data\Options::get_option( 'order-locking', false );
+
 				foreach ( $results as $row ) {
 
 					// Sanitize alt_text
@@ -334,13 +337,16 @@ if ( $count > 0 ) {
 						$row['y'] + $banner_data['BLK_HEIGHT']
 					);
 
-					// Prepare href
-					$href = esc_url(
-						add_query_arg(
-							[ 'mds-action' => 'manage', 'aid' => $row['ad_id'] ],
-							Utility::get_page_url( 'manage' )
-						)
-					);
+					// Prepare href - disable if order locking is on
+					$href = '#'; // Default to disabled
+					if ( ! $order_locking_enabled ) {
+						$href = esc_url(
+							add_query_arg(
+								[ 'mds-action' => 'manage', 'aid' => $row['ad_id'] ],
+								Utility::get_page_url( 'manage' )
+							)
+						);
+					}
 
 					// Output area
 					printf(
