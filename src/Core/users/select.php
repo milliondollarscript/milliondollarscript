@@ -434,7 +434,7 @@ if ( $has_packages ) {
             <div id="blocks"></div>
             <span id='block_pointer'></span>
             <div class="mds-pixel-wrapper">
-                <img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection' ) ); ?>?BID=<?php echo $BID; ?>&amp;gud=<?php echo time(); ?>"
+                <img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
                      alt=""/>
             </div>
         </div>

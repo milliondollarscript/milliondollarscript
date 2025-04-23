@@ -863,7 +863,7 @@ class Orders {
 				$elapsed = Utility::elapsedtime( $elapsed_time );
 
 				if ( $order['status'] == 'expired' ) {
-					$days = "<a href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $order['order_id'] ) . "&BID=" . esc_attr( $order['banner_id'] ) . "&renew=true'>" . Language::get( 'Expired!' ) . "</a>";
+					$days = "<a href='" . esc_url( Utility::get_page_url( 'payment', [ 'order_id' => $order['order_id'], 'BID' => $order['banner_id'], 'renew' => 'true' ] ) ) . "'>" . Language::get( 'Expired!' ) . "</a>";
 				} else if ( $order['date_published'] == '' ) {
 					$days = Language::get( 'Not Yet Published' );
 				} else {
@@ -897,38 +897,67 @@ class Orders {
 						if ( $current_step != 0 ) {
 							echo Language::get( 'In progress' ) . '<br>';
 							if ( $steps[ $current_step ] == Steps::STEP_UPLOAD ) {
+								$args = [ 'BID' => $order['banner_id'] ];
+								// Default page name
+								$page_name = 'upload';
 								if ( $USE_AJAX == 'SIMPLE' ) {
-									$url = Utility::get_page_url( 'order' );
-								} else {
-									$url = Utility::get_page_url( 'upload' );
+									$page_name = 'order';
+									$args['order_id'] = $order['order_id'];
 								}
-								echo "<a class='mds-button mds-upload' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Upload' ) . "</a>";
+								echo "<a class='mds-button mds-upload' href='" . esc_url( Utility::get_page_url( $page_name, $args ) ) . "'>" . Language::get( 'Upload' ) . "</a>";
 							} else if ( $steps[ $current_step ] == Steps::STEP_WRITE_AD ) {
-								echo "<a class='mds-button mds-write' href='" . Utility::get_page_url( 'write-ad' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Write Ad' ) . "</a>";
+								$args = [ 'BID' => $order['banner_id'] ];
+								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+									$args['order_id'] = $order['order_id'];
+								}
+								echo "<a class='mds-button mds-write' href='" . esc_url( Utility::get_page_url( 'write-ad', $args ) ) . "'>" . Language::get( 'Write Ad' ) . "</a>";
 							} else if ( $steps[ $current_step ] == Steps::STEP_CONFIRM_ORDER ) {
-								echo "<a class='mds-button mds-confirm' href='" . Utility::get_page_url( 'confirm-order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Confirm Now' ) . "</a>";
+								$args = [ 'BID' => $order['banner_id'] ];
+								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+									$args['order_id'] = $order['order_id'];
+								}
+								echo "<a class='mds-button mds-confirm' href='" . esc_url( Utility::get_page_url( 'confirm-order', $args ) ) . "'>" . Language::get( 'Confirm Now' ) . "</a>";
 							} else if ( $steps[ $current_step ] == Steps::STEP_PAYMENT ) {
-								echo "<a class='mds-button mds-pay' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
+								$args = [
+									'order_id' => $order['order_id'],
+									'BID'      => $order['banner_id'],
+								];
+								echo "<a class='mds-button mds-pay' href='" . esc_url( Utility::get_page_url( 'payment', $args ) ) . "'>" . Language::get( 'Pay Now' ) . "</a>";
 							} else {
-								echo "<a class='mds-button mds-continue' href='" . Utility::get_page_url( 'order' ) . "?BID=" . $order['banner_id'] . "$temp_var'>" . Language::get( 'Continue' ) . "</a>";
+								$args = [ 'BID' => $order['banner_id'] ];
+								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+									$args['order_id'] = $order['order_id'];
+								}
+								echo "<a class='mds-button mds-continue' href='" . esc_url( Utility::get_page_url( 'order', $args ) ) . "'>" . Language::get( 'Continue' ) . "</a>";
 							}
 						} else {
+							$args = [ 'BID' => $order['banner_id'] ];
 							if ( $USE_AJAX == 'SIMPLE' ) {
 								$text = Language::get( 'Upload' );
-								$url  = Utility::get_page_url( 'upload' );
+								$page_name = 'upload';
+								// Add order_id only if USE_AJAX is SIMPLE, based on original $temp_var logic
+								$args['order_id'] = $order['order_id'];
 							} else {
 								$text = Language::get( 'Order' );
-								$url  = Utility::get_page_url( 'order' );
+								$page_name = 'order';
 							}
-							echo "<a class='mds-button mds-upload' href='" . $url . "?BID=" . $order['banner_id'] . "$temp_var'>" . $text . "</a>";
+							echo "<a class='mds-button mds-upload' href='" . esc_url( Utility::get_page_url( $page_name, $args ) ) . "'>" . $text . "</a>";
 						}
-						echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
+						$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
+						$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
+						echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . $cancel_url . "\"' >";
 						break;
 					case "confirmed":
 						if ( self::is_order_in_progress( $order['order_id'] ) || ( WooCommerceFunctions::is_wc_active() ) ) {
 							update_user_meta( get_current_user_id(), 'mds_confirm', true );
-							echo "<a class='mds-button mds-pay' href='" . Utility::get_page_url( 'payment' ) . "?order_id=" . $order['order_id'] . "&BID=" . $order['banner_id'] . "'>" . Language::get( 'Pay Now' ) . "</a>";
-							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes&order_id=" . $order['order_id'] ) . "\"' >";
+							// Pay Now button
+							$pay_args = [ 'order_id' => $order['order_id'], 'BID' => $order['banner_id'] ];
+							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
+							echo "<a class='mds-button mds-pay' href='" . $pay_url . "'>" . Language::get( 'Pay Now' ) . "</a>";
+							// Cancel button
+							$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
+							$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
+							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . $cancel_url . "\"' >";
 						}
 						break;
 					case "completed":

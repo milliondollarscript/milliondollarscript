@@ -303,7 +303,7 @@ if ( count( $res ) > 1 ) {
 }
 
 if ( isset( $order_exists ) && $order_exists ) {
-	Language::out_replace( '<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%MANAGE_URL%">Manage Pixels</a></p>', '%MANAGE_URL%', Utility::get_page_url( 'manage' ) );
+	Language::out_replace( '<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href="%MANAGE_URL%">Manage Pixels</a></p>', '%MANAGE_URL%', esc_url( Utility::get_page_url( 'manage' ) ) );
 }
 
 $package_id = intval( $_REQUEST['package'] ?? 0 );
@@ -350,7 +350,7 @@ if ( ! empty( $tmp_image_file ) ) {
     <div class="fancy-heading"><?php Language::out( 'Your uploaded pixels:' ); ?></div>
 	<?php
 
-	echo "<img class='mds_pointer_graphic' style=\"border:0px;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic' ) ) . "?BID=" . $BID . "' alt=\"\" /><br />";
+	echo "<img class='mds_pointer_graphic' style=\"border:0px;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ) . "' alt=\"\" /><br />";
 
 	Language::out_replace(
 		'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />',
@@ -399,10 +399,10 @@ if ( ! empty( $tmp_image_file ) ) {
                  type="image" name="map" value='Select Pixels.'
                  width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
                  height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
-                 src="<?php echo Utility::get_page_url( 'show-selection' ); ?>?BID=<?php echo $BID; ?>&amp;gud=<?php echo time(); ?>"
+                 src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
                  alt=""/>
             <span id="block_pointer"><img
-                        src="<?php echo Utility::get_page_url( 'get-pointer-graphic' ); ?>?BID=<?php echo $BID; ?>"
+                        src="<?php echo esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ); ?>"
                         alt=""/></span>
         </div>
         <input type="hidden" name="form_action" value="select">

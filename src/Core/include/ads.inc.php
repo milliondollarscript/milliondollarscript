@@ -163,7 +163,7 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 				<?php if ( $mode == 'edit' || $mode == 'user' ) { ?>
                     <input<?php echo( $mode == 'edit' ? ' disabled' : '' ); ?>
                             class="mds-button mds_save_ad_button form_submit_button big_button" type="submit" name="savebutton"
-                            value="<?php esc_attr_e( Language::get( 'Save Ad' ) ); ?>" onClick="save101.value='1';">
+                            value="<?php esc_attr_e( Language::get( 'Save Ad' ) ); ?>" onclick="save101.value='1';">
 				<?php } ?>
             </div>
 
@@ -261,7 +261,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 
 							?>
                             <input class="mds-button" type="button" value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
-                                   onClick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage' ) ); ?>?mds-action=manage&amp;aid=<?php echo $prams['ad_id']; ?>&amp;json=1'">
+                                   onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage', [ 'mds-action' => 'manage', 'aid' => $prams['ad_id'], 'json' => 1 ] ) ); ?>'">
 							<?php
 						}
 						?>
@@ -272,7 +272,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 
 					?>
                     <div>
-                        <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>"
+                        <img src="<?php echo esc_url( Utility::get_page_url( 'get-order-image', [ 'BID' => $BID, 'aid' => $prams['ad_id'] ] ) ); ?>"
                              alt=""></div>
                     <div>
 						<?php
@@ -295,7 +295,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 							$elapsed = Utility::elapsedtime( $elapsed_time );
 
 							if ( $prams['status'] == 'expired' ) {
-								$days = "<a href='" . esc_url( Utility::get_page_url( 'payment' ) ) . "?order_id=" . esc_attr( $prams['order_id'] ) . "&BID=" . esc_attr( $prams['banner_id'] ) . "&renew=true'>" . Language::get( 'Expired!' ) . "</a>";
+								$days = "<a href='" . esc_url( Utility::get_page_url( 'payment', [ 'order_id' => $prams['order_id'], 'BID' => $prams['banner_id'], 'renew' => 'true' ] ) ) . "'>" . Language::get( 'Expired!' ) . "</a>";
 							} else if ( $prams['date_published'] == '' ) {
 								$days = Language::get( 'Not Yet Published' );
 							} else {
@@ -462,8 +462,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
                             <input class="mds-button mds-edit-button" type="button"
                                    value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
                                    data-order-id="<?php echo $prams['order_id']; ?>"
-                                   data-pixel-id="<?php echo $prams['ad_id']; ?>"
-                            />
+                                   data-pixel-id="<?php echo $prams['ad_id']; ?>">
 							<?php
 						}
 						?>
@@ -474,7 +473,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 
 					?>
                     <div>
-                        <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&amp;aid=<?php echo $prams['ad_id']; ?>" alt=""/>
+                        <img src="<?php echo esc_url( Utility::get_page_url( 'get-order-image', [ 'BID' => $BID, 'aid' => $prams['ad_id'] ] ) ); ?>" alt=""/>
                     </div>
 					<?php
 					if ( $prams['published'] == 'Y' ) {

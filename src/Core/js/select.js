@@ -491,8 +491,7 @@ function reset_pixels() {
 			_wpnonce: MDS_OBJECT.NONCE
 		},
 		success: function (data) {
-			let parsed = JSON.parse(data);
-			if (parsed.type === "removed") {
+			if (data.success === true && data.data && data.data.type === "removed") {
 				$myblocks.children().each(function () {
 					remove_block(jQuery(this).data('blockid'));
 				});
@@ -663,7 +662,19 @@ function change_block_state(OffsetX, OffsetY) {
 		'clicked_block': clicked_block,
 		'OffsetX': OffsetX,
 		'OffsetY': OffsetY,
-		'url': MDS_OBJECT.UPDATE_ORDER + "?selection_size=" + selection_size + "&user_id=" + MDS_OBJECT.user_id + "&block_id=" + clicked_block.toString() + "&BID=" + MDS_OBJECT.BID + "&t=" + MDS_OBJECT.time + "&erase=" + erasing,
+		// Use URL object to correctly append params
+		'url': (() => {
+			const url = new URL(MDS_OBJECT.UPDATE_ORDER, window.location.origin);
+			url.searchParams.set('selection_size', selection_size);
+			url.searchParams.set('user_id', MDS_OBJECT.user_id);
+			url.searchParams.set('block_id', clicked_block.toString());
+			url.searchParams.set('BID', MDS_OBJECT.BID);
+			url.searchParams.set('t', MDS_OBJECT.time);
+			url.searchParams.set('erase', erasing);
+			// Also add the nonce here for the AJAX request
+			url.searchParams.set('_wpnonce', MDS_OBJECT.NONCE); 
+			return url.toString();
+		})(),
 	};
 
 	if (is_block_selected(clicked_block)) {
@@ -776,8 +787,7 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 				erasing: data.erasing,
 			},
 			success: function (response) {
-				let parsed = JSON.parse(response);
-				if (parsed.error === 'true') {
+				if (response.success !== true || (response.data && response.data.error === 'true')) {
 					switch (data.action) {
 						case 'invert':
 							do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, 'invert');
@@ -792,13 +802,14 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 							break;
 					}
 
-					messageout(parsed.data.value);
+					// Use the correctly nested path for the error message
+					messageout(response.data.data.value);
 				}
 
-				if (parsed.type === 'order_id') {
+				if (response.data && response.data.type === 'order_id') {
 					// save order id
 					if (pixel_form !== null) {
-						pixel_form.order_id.value = parseInt(parsed.data.value, 10);
+						pixel_form.order_id.value = parseInt(response.data.data.value, 10);
 					}
 				}
 			},

@@ -50,7 +50,11 @@ function render_map_area( $fh, $data, $b_row ) {
 	if ( Config::get('ENABLE_CLOAKING') == 'YES' ) {
 		$url = $data['url'];
 	} else {
-		$url = Utility::get_page_url( 'click' ) . '?block_id=' . intval( $data['block_id'] ) . '&BID=' . $BID;
+		// build click URL with query args
+		$url = Utility::get_page_url(
+			'click',
+			[ 'block_id' => intval( $data['block_id'] ), 'BID' => $BID ]
+		);
 	}
 
 	$ALT_TEXT = "";

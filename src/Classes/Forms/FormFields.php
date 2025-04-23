@@ -345,7 +345,7 @@ class FormFields {
 	 *
 	 * @return int|\WP_Error
 	 */
-	public static function add(): int|array {
+	public static function add(): int|array|\WP_Error {
 		$errors = '';
 		if ( $_SERVER['REQUEST_METHOD'] == 'POST' ) {
 
@@ -728,7 +728,7 @@ class FormFields {
 			// Get the blocks for this order to display
 			$grid_id = carbon_get_post_meta( $post->ID, MDS_PREFIX . 'grid' );
 			?>
-            <img style="max-width:50px;height:auto;" src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo intval( $grid_id ); ?>&aid=<?php echo $post->ID; ?>" alt=""/>
+            <img style="max-width:50px;height:auto;" src="<?php echo esc_url( Utility::get_page_url( 'get-order-image', [ 'BID' => intval( $grid_id ), 'aid' => $post->ID ] ) ); ?>" alt=""/>
 			<?php
 		} else if ( $column == 'expiry' ) {
 			// Get the order id

@@ -775,7 +775,8 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 		jQuery('.mds-edit-button').prop('disabled', true).attr('value', MDS.WAIT);
 
 		const $el = jQuery(this);
-		window.location = MDS.manageurl + '?mds-action=manage&aid=' + $el.data('pixel-id') + '&json=1';
+		const sep = MDS.manageurl.indexOf('?') !== -1 ? '&' : '?';
+		window.location = MDS.manageurl + sep + 'mds-action=manage&aid=' + $el.data('pixel-id') + '&json=1';
 
 		return false;
 	});

@@ -481,23 +481,31 @@ class Utility {
 	}
 
 	/**
-	 * Get an MDS page URL.
+	 * Get an MDS page URL or API endpoint URL, with optional query args.
 	 *
-	 * @param $page_name
-	 *
+	 * @param string $page_name
+	 * @param array  $args Optional query args to append
 	 * @return string|null
 	 */
-	public static function get_page_url( $page_name ): ?string {
+	public static function get_page_url( string $page_name, array $args = [] ): ?string {
 		$pages = self::get_pages();
-
-		if ( ! isset( $pages[ $page_name ] ) ) {
-			// Non-pages like AJAX or API requests, etc.
-			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
-
-			return trailingslashit( home_url( "/" . $MDS_ENDPOINT . "/{$page_name}" ) );
+		if ( isset( $pages[ $page_name ] ) ) {
+			// return actual page permalink
+			$url = get_permalink( $pages[ $page_name ]['page_id'] );
+		} else {
+			// build endpoint URL
+			$endpoint = Options::get_option( 'endpoint', 'milliondollarscript' );
+			if ( get_option( 'permalink_structure' ) ) {
+				$url = trailingslashit( home_url( "/{$endpoint}/{$page_name}" ) );
+			} else {
+				$url = add_query_arg( $endpoint, $page_name, home_url( '/' ) );
+			}
 		}
-
-		return get_permalink( $pages[ $page_name ]['page_id'] );
+		// append additional args if provided
+		if ( $args ) {
+			$url = add_query_arg( $args, $url );
+		}
+		return $url;
 	}
 
 	/**

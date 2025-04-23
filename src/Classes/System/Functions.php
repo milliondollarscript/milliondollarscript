@@ -463,7 +463,7 @@ class Functions {
             <tr>
                 <td>
                     <b><?php Language::out( 'Pixels' ); ?></b><br/>
-                    <img src="<?php echo Utility::get_page_url( 'get-order-image' ); ?>?BID=<?php echo $BID; ?>&aid=<?php echo $ad_id; ?>" alt="">
+                    <img src="<?php echo esc_url( Utility::get_page_url( 'get-order-image', [ 'BID' => $BID, 'aid' => $ad_id ] ) ); ?>" alt="">
                 </td>
                 <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
 					Language::out_replace(

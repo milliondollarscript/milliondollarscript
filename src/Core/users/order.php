@@ -111,7 +111,7 @@ $order_row = mysqli_fetch_array( $result );
 function display_edit_order_button( $order_id ) {
 	global $BID;
 	?>
-    <input type='button' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" Onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'order' ) ); ?>?&jEditOrder=true&BID=<?php echo $BID; ?>&order_id=<?php echo $order_id; ?>'">
+    <input type='button' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>" onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'order', [ 'jEditOrder' => 'true', 'BID' => $BID, 'order_id' => $order_id ] ) ); ?>'">
 	<?php
 }
 
@@ -163,7 +163,7 @@ if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $o
             <input type="hidden" name="order_id" value="<?php echo absint( $_REQUEST['order_id'] ); ?>">
             <input type="hidden" name="BID" value="<?php echo $BID; ?>">
 			<?php display_package_options_table( $BID, $_REQUEST['pack'], true ); ?>
-            <input type='button' value='<?php echo esc_attr( Language::get( '<< Previous' ) ); ?>' onclick='window.location="<?php echo Utility::get_page_url( 'order' ); ?>?&jEditOrder=true&BID=<?php echo $BID; ?>&order_id=<?php echo $order_row['order_id']; ?>"'>
+            <input type='button' value='<?php echo esc_attr( Language::get( '<< Previous' ) ); ?>' onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'order', [ 'jEditOrder' => 'true', 'BID' => $BID, 'order_id' => $order_row['order_id'] ] ) ); ?>'">
             <input type='submit' value='<?php echo esc_attr( Language::get( 'Next >>' ) ); ?>'>
         </form>
 

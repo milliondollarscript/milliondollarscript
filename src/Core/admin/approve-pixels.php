@@ -535,7 +535,10 @@ if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
 						$t_row    = mysqli_fetch_array( $t_result );
 						echo $t_row['name']; ?></span></td>
                 <td><span style="font-family: Arial,serif; "><img
-                                src="<?php echo esc_url( Utility::get_page_url( 'get-order-image' ) . '?BID=' . $row['banner_id'] . '&aid=' . $row['ad_id'] ); ?>" alt=""/></span>
+                                src="<?php echo esc_url( Utility::get_page_url(
+                                    'get-order-image',
+                                    [ 'BID' => intval( $row['banner_id'] ), 'aid' => intval( $row['ad_id'] ) ]
+                                ) ); ?>" alt=""/></span>
                 </td>
                 <td><span style="font-family: Arial,serif; "><?php
 						$text = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
@@ -584,4 +587,3 @@ if ( $count > $records_per_page ) {
 	echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, admin_url( 'admin.php?page=mds-approve-pixels' ) );
 }
 ?>
-

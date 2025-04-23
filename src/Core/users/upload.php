@@ -203,7 +203,7 @@ if ( mysqli_num_rows( $res ) > 1 ) {
 	//
 	// 	return;
 	// }
-}*/
+*/
 
 if ( isset( $order_exists ) && $order_exists ) {
 	Language::out_replace(
@@ -274,7 +274,7 @@ if ( ! empty( $image ) ) {
     <div class="fancy-heading"><?php Language::out( 'Your Uploaded Pixels' ); ?></div>
     <p>
 		<?php
-		echo "<img class='mds_pointer_graphic' style=\"border:0;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic' ) ) . "?BID=" . $BID . "' alt=\"\" /><br />";
+		echo "<img class='mds_pointer_graphic' style=\"border:0;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ) . "' alt=\"\" /><br />";
 
 		if ( empty( $size ) ) {
 			$tmp_size = getimagesize( $tmp_image_file );
@@ -360,7 +360,7 @@ if ( ! empty( $image ) ) {
 		global $BID;
 		?>
         <input type='button' value="<?php echo esc_attr( Language::get( 'Edit Order' ) ); ?>"
-               onclick="window.location='<?php echo Utility::get_page_url( 'order' ); ?>'">
+               onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'order', [ 'BID' => $BID, 'order_id' => $order_id ] ) ); ?>'">
 		<?php
 	}
 
@@ -393,7 +393,7 @@ if ( ! empty( $image ) ) {
                        value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ); ?>'>
             </form>
             <!--suppress HtmlRequiredAltAttribute, HtmlUnknownAnchorTarget -->
-            <img src="<?php echo esc_url( Utility::get_page_url( 'show-map' ) ); ?>?BID=<?php echo $BID; ?>&time=<?php echo( time() ); ?>"
+            <img src="<?php echo esc_url( Utility::get_page_url( 'show-map', [ 'BID' => $BID, 'time' => time() ] ) ); ?>"
                  width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>"
                  height="<?php echo( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ); ?>" usemap="#main"/>
 			<?php

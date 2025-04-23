@@ -34,9 +34,6 @@ defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-header( "Cache-Control: no-cache, must-revalidate" );
-header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );
-
 check_ajax_referer( 'mds-select' );
 
 if ( isset( $_REQUEST['block_id'] ) ) {
@@ -52,14 +49,13 @@ $BID           = $f2->bid();
 $output_result = "";
 
 if ( ! is_user_logged_in() ) {
-	echo json_encode( [
+	wp_send_json_error( [
 		"error" => "true",
 		"type"  => "error",
 		"data"  => [
 			"value" => Language::get( 'You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in.' ),
 		]
 	] );
-	die();
 }
 
 $banner_data = load_banner_constants( $BID );
@@ -71,26 +67,24 @@ if ( ! is_numeric( $BID ) ) {
 if ( is_user_logged_in() ) {
 	$user_id = get_current_user_id();
 } else {
-	echo json_encode( [
+	wp_send_json_error( [
 		"error" => "true",
 		"type"  => "error",
 		"data"  => [
 			"value" => Language::get( 'You are not logged in. Please log in or sign up for a new account.' ),
 		]
 	] );
-	die();
 }
 
 if ( ! Orders::can_user_order( $banner_data, get_current_user_id() ) ) {
 	$max_orders = true;
-	echo json_encode( [
+	wp_send_json_error( [
 		"error" => "true",
 		"type"  => "max_orders",
 		"data"  => [
 			"value" => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your orders under Manage Pixels.' ),
 		]
 	] );
-	die();
 }
 
 // reset blocks
@@ -149,14 +143,13 @@ if ( isset( $_REQUEST['reset'] ) && $_REQUEST['reset'] == "true" ) {
 		Orders::set_last_order_modification_time();
 	}
 
-	echo json_encode( [
+	wp_send_json_success( [
 		"error" => "false",
 		"type"  => "removed",
 		"data"  => [
 			"value" => "removed",
 		]
 	] );
-	die();
 }
 
 $size = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
@@ -169,6 +162,7 @@ $output_result = Blocks::select_block( $block_id, $banner_data, $size, $user_id 
 if ( $output_result['error'] == 'false' ) {
 	// Update the last modification time
 	Orders::set_last_order_modification_time();
+	wp_send_json_success( $output_result );
+} else {
+	wp_send_json_error( $output_result );
 }
-
-echo json_encode( $output_result );

@@ -129,9 +129,10 @@ if (!xmlhttp && typeof XMLHttpRequest!='undefined') {
 xmlhttp = new XMLHttpRequest();
 }
 
-xmlhttp.open("GET", "<?php echo Utility::get_page_url( 'ga' ); ?>?AID="+aid+"<?php
-
-echo "&t=" . time(); ?>", true);
+// build GA endpoint URL with dynamic separator for permalinks fallback
+var baseGaUrl = "<?php echo esc_url( Utility::get_page_url( 'ga' ) ); ?>";
+var sep = baseGaUrl.indexOf('?') !== -1 ? '&' : '?';
+xmlhttp.open("GET", baseGaUrl + sep + "AID=" + aid + "&t=<?php echo time(); ?>", true);
 
 //alert("before trup_count:"+trip_count);
 
@@ -192,4 +193,3 @@ return false
 return true;
 
 }
-
