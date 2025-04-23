@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.168
+Stable tag: 2.5.10.169
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -142,7 +142,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Convert more database calls to use $wpdb.
 * Fix order completion logic to properly handle manual completions and respect auto-approve settings.
 * Fix headers sent warnings by clearing output buffers before redirects.
-* Optimize upload_changed_pixels handling: use negative-offset pastes and batched database updates.
+* Optimize upload_changed_pixels handling: use batched database updates.
 * Optimize output grid rendering: precompute block dimensions, dynamic driver selection, and direct GD imagecopy.
 * Fix issues selecting pixel blocks, particularly when WordPress permalinks are set to 'Plain'.
 * Improved error messages shown when trying to select a block that is already reserved or sold.

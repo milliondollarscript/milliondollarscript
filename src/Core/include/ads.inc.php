@@ -768,12 +768,15 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 				$sizeY = $size['y'];
 				for ( $y = 0; $y < $sizeY; $y += $blkH ) {
 					for ( $x = 0; $x < $sizeX; $x += $blkW ) {
-
 						// create new destination image
 						$dest = $imagine->create( $block_size, $color );
 
-						// paste image offset to extract block without cropping
-						$dest->paste( $image, new Imagine\Image\Point( -$x, -$y ) );
+						// crop a part from the tiled image
+						$block = $image->copy();
+						$block->crop( new Imagine\Image\Point( $x, $y ), $block_size );
+
+						// paste the block into the destination image
+						$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
 
 						// save the image as a base64 encoded string
 						$image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
