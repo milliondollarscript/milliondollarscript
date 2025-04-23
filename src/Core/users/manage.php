@@ -338,7 +338,8 @@ if ( $count > 0 ) {
 					);
 
 					// Prepare href - disable if order locking is on
-					$href = '#'; // Default to disabled
+					// Default to disabled
+					$href = '#';
 					if ( ! $order_locking_enabled ) {
 						$href = esc_url(
 							add_query_arg(

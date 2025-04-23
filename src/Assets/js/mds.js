@@ -175,114 +175,124 @@ function add_tippy() {
 		delay = 400;
 	}
 
-	tippy('.mds-container area,.list-link', {
-		theme: 'light',
-		content: defaultContent,
-		duration: 50,
-		delay: delay,
-		trigger: MDS.TOOLTIP_TRIGGER,
-		allowHTML: true,
-		followCursor: 'initial',
-		hideOnClick: true,
-		interactive: true,
-		maxWidth: parseInt(MDS.MAX_POPUP_SIZE, 10),
-		placement: 'auto',
-		touch: true,
-		appendTo: 'parent',
-		zIndex: 99999,
-		popperOptions: {
-			strategy: 'absolute',
-			modifiers: [
-				{
-					name: 'offset',
-					options: {
-						offset: [0, 10],
+	// Conditionally select areas based on page context
+	let tooltipSelector = '.mds-container area,.list-link';
+	if (jQuery('body').hasClass('mds-page-manage')) {
+		// On the manage page, don't attach tooltips to areas
+		tooltipSelector = '.list-link';
+	}
+
+	// Only initialize tippy if the selector is not empty
+	if (tooltipSelector) {
+		tippy(tooltipSelector, {
+			theme: 'light',
+			content: defaultContent,
+			duration: 50,
+			delay: delay,
+			trigger: MDS.TOOLTIP_TRIGGER,
+			allowHTML: true,
+			followCursor: 'initial',
+			hideOnClick: true,
+			interactive: true,
+			maxWidth: parseInt(MDS.MAX_POPUP_SIZE, 10),
+			placement: 'auto',
+			touch: true,
+			appendTo: 'parent',
+			zIndex: 99999,
+			popperOptions: {
+				strategy: 'absolute',
+				modifiers: [
+					{
+						name: 'offset',
+						options: {
+							offset: [0, 10],
+						},
 					},
-				},
-				{
-					name: 'flip',
-					options: {
-						fallbackPlacements: ['bottom', 'right'],
+					{
+						name: 'flip',
+						options: {
+							fallbackPlacements: ['bottom', 'right'],
+						},
 					},
-				},
-				{
-					name: 'preventOverflow',
-					options: {
-						altAxis: true,
-						tether: false,
-						boundary: document,
+					{
+						name: 'preventOverflow',
+						options: {
+							altAxis: true,
+							tether: false,
+							boundary: document,
+						},
 					},
-				},
-			],
-		},
-		onCreate(instance) {
-			instance._isFetching = false;
-			instance._content = null;
-			instance._error = null;
-			window.tippy_instance = instance;
-		},
-		onShow(instance) {
-			if (instance._isFetching || instance._content || instance._error) {
-				return;
-			}
-
-			if (isIOS) {
-				jQuery(instance.reference).trigger('click');
-			}
-
-			instance._isFetching = true;
-
-			const data = jQuery(instance.reference).data('data');
-
-			const ajax_data = {
-				action: 'mds_ajax',
-				type: 'ga',
-				mds_nonce: MDS.mds_nonce,
-				aid: data.aid,
-				bid: data.banner_id,
-				block_id: data.block_id,
-			};
-
-			jQuery.ajax({
-				method: 'POST',
-				url: MDS.ajaxurl,
-				data: ajax_data,
-				dataType: 'html',
-				crossDomain: true,
-			}).done(function (data) {
-				instance.setContent(data);
-				instance._content = true;
-			}).fail(function (jqXHR, textStatus, errorThrown) {
-				instance._error = errorThrown;
-				instance.setContent(`Request failed. ${errorThrown}`);
-			}).always(function () {
+				],
+			},
+			onCreate(instance) {
 				instance._isFetching = false;
-				mds_load_ajax();
-			});
+				instance._content = null;
+				instance._error = null;
+				window.tippy_instance = instance;
+			},
+			onShow(instance) {
+				if (instance._isFetching || instance._content || instance._error) {
+					return;
+				}
 
-		},
-		onHidden(instance) {
-			instance.setContent(defaultContent);
-			instance._content = null;
-			instance._error = null;
-		}
-	});
+				if (isIOS) {
+					jQuery(instance.reference).trigger('click');
+				}
 
-	window.is_touch = false;
+				instance._isFetching = true;
 
-	document.addEventListener('touchstart', function () {
-		window.is_touch = true;
-	});
+				const data = jQuery(instance.reference).data('data');
 
-	document.addEventListener('scroll', function () {
-		if (!window.is_touch && window.tippy_instance != null && typeof window.tippy_instance.hide === 'function') {
-			window.tippy_instance.hide();
-		}
-	});
+				const ajax_data = {
+					action: 'mds_ajax',
+					type: 'ga',
+					mds_nonce: MDS.mds_nonce,
+					aid: data.aid,
+					bid: data.banner_id,
+					block_id: data.block_id,
+				};
 
-	window.addEventListener('resize', function () {
-		updateTippyPosition();
-	});
+				jQuery.ajax({
+					method: 'POST',
+					url: MDS.ajaxurl,
+					data: ajax_data,
+					dataType: 'html',
+					crossDomain: true,
+				}).done(function (data) {
+					instance.setContent(data);
+					instance._content = true;
+				}).fail(function (jqXHR, textStatus, errorThrown) {
+					instance._error = errorThrown;
+					instance.setContent(`Request failed. ${errorThrown}`);
+				}).always(function () {
+					instance._isFetching = false;
+					mds_load_ajax();
+				});
+
+			},
+			onHidden(instance) {
+				instance.setContent(defaultContent);
+				instance._content = null;
+				instance._error = null;
+			}
+		});
+
+		window.is_touch = false;
+
+		document.addEventListener('touchstart', function () {
+			window.is_touch = true;
+		});
+
+		document.addEventListener('scroll', function () {
+			if (!window.is_touch && window.tippy_instance != null && typeof window.tippy_instance.hide === 'function') {
+				window.tippy_instance.hide();
+			}
+		});
+
+		window.addEventListener('resize', function () {
+			updateTippyPosition();
+		});
+	}
 }
 
 let rescaling = false;
@@ -308,7 +318,7 @@ function rescale($el) {
 	});
 }
 
-function mds_loaded_event(el, scalemap, tippy, mdstype, isgrid) {
+function mds_loaded_event(el, scalemap, tippy, type, isgrid) {
 	if (window.mds_loaded === true) {
 		return;
 	}
@@ -319,7 +329,7 @@ function mds_loaded_event(el, scalemap, tippy, mdstype, isgrid) {
 		el: el,
 		scalemap: scalemap,
 		tippy: tippy,
-		mdstype: mdstype,
+		mdstype: type,
 		isgrid: isgrid
 	});
 }
@@ -482,6 +492,11 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 			}
 
 			jQuery('area').off('click').on('click', function (e) {
+				// On manage page, allow default link navigation
+				if (jQuery('body').hasClass('mds-page-manage')) {
+					return true;
+				}
+				// On other pages/grids, prevent default and handle click
 				e.preventDefault();
 				e.stopPropagation();
 				mds_handle_click.call(this);
