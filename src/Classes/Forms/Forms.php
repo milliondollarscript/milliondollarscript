@@ -188,7 +188,38 @@ class Forms {
 		} else if ( $mds_dest == 'edit-template' ) {
 			require_once MDS_CORE_PATH . 'admin/edit-template.php';
 		} else if ( $mds_dest == 'backgrounds' ) {
-			require_once MDS_CORE_PATH . 'admin/backgrounds.php';
+			// Handle background image upload
+			if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'] ) && $_FILES['blend_image']['tmp_name'] != '' ) {
+				$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0; // Get BID from POST
+				$temp = explode( ".", $_FILES['blend_image']['name'] );
+				if ( strtolower(array_pop( $temp )) != 'png' ) {
+					// Add error message? For now, just redirect.
+					$params['upload_error'] = 'not_png';
+				} else {
+					if ( move_uploaded_file( $_FILES['blend_image']['tmp_name'], Utility::get_upload_path() . "grids/background{$BID}.png" ) ) {
+						$params['upload_success'] = 'true';
+					} else {
+						$params['upload_error'] = 'failed_move';
+					}
+				}
+			} 
+			// Handle background image deletion
+			else if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
+				$BID = isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0; // Get BID from REQUEST
+				$filename = Utility::get_upload_path() . "grids/background{$BID}.png";
+				if ( file_exists( $filename ) ) {
+					if ( unlink( $filename ) ) {
+						$params['delete_success'] = 'true';
+					} else {
+						$params['delete_error'] = 'failed_unlink';
+					}
+				} else {
+					$params['delete_error'] = 'not_found';
+				}
+			}
+
+			// We don't need to require the file here anymore, just redirect back.
+			// require_once MDS_CORE_PATH . 'admin/backgrounds.php';
 		} else if ( $mds_dest == 'clear-orders' ) {
 			require_once MDS_CORE_PATH . 'admin/clear-orders.php';
 			$params['clear_orders'] = 'true';
@@ -303,7 +334,17 @@ class Forms {
 		}
 		$params['page'] = 'mds-' . $mds_dest;
 
-		Utility::redirect( admin_url( 'admin.php' ), $params );
+		// Construct the redirect URL
+		$redirect_url = admin_url( 'admin.php?page=mds-' . $mds_dest );
+
+		// Add any parameters to the redirect URL
+		if ( ! empty( $params ) ) {
+			$redirect_url = add_query_arg( $params, $redirect_url );
+		}
+
+		// Redirect the user
+		wp_safe_redirect( $redirect_url );
+		exit;
 	}
 
 	public static function display_banner_selecton_form( $BID, $order_id, $res, $mds_dest ): void {

@@ -36,6 +36,32 @@ ini_set( 'max_execution_time', 6000 );
 global $f2;
 $BID = $f2->bid();
 
+// Display feedback messages based on redirect parameters
+if ( isset( $_GET['upload_success'] ) ) {
+	echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( Language::get('Background image uploaded successfully.') ) . '</p></div>';
+}
+if ( isset( $_GET['upload_error'] ) ) {
+	$error_message = Language::get('Error uploading background image.');
+	if ( $_GET['upload_error'] === 'not_png' ) {
+		$error_message = Language::get('Error: the image must be a PNG file.');
+	} elseif ( $_GET['upload_error'] === 'failed_move' ) {
+		$error_message = Language::get('Error: Could not save the uploaded file.');
+	}
+	echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $error_message ) . '</p></div>';
+}
+if ( isset( $_GET['delete_success'] ) ) {
+	echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( Language::get('Background image deleted successfully.') ) . '</p></div>';
+}
+if ( isset( $_GET['delete_error'] ) ) {
+	$error_message = Language::get('Error deleting background image.');
+	if ( $_GET['delete_error'] === 'failed_unlink' ) {
+		$error_message = Language::get('Error: Could not delete the file.');
+	} elseif ( $_GET['delete_error'] === 'not_found' ) {
+		$error_message = Language::get('Error: File not found.');
+	}
+	echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $error_message ) . '</p></div>';
+}
+
 function nice_format( $val ) {
 	$val  = trim( $val );
 	$last = strtolower( $val[ strlen( $val ) - 1 ] );
@@ -61,30 +87,6 @@ function nice_format( $val ) {
 	}
 
 	return $val;
-}
-
-if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'] ) && $_FILES['blend_image']['tmp_name'] != '' ) {
-
-	$temp = explode( ".", $_FILES['blend_image']['name'] );
-	if ( array_pop( $temp ) != 'png' ) {
-		?>
-        <p><span style="color: red; "><b><?php Language::out( 'Error: the image must be a PNG file' ); ?></b></span></p>
-		<?php
-	} else {
-
-		move_uploaded_file( $_FILES['blend_image']['tmp_name'], Utility::get_upload_path() . "grids/background$BID.png" );
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
-	$filename = Utility::get_upload_path() . "grids/background$BID.png";
-	if ( file_exists( $filename ) ) {
-		unlink( $filename );
-	}
-}
-
-if ( isset( $_POST['mds_dest'] ) ) {
-	return;
 }
 
 Language::out_replace( 'Image Blending - Allows you to specify an image to blend in with your grid in the background.<br />

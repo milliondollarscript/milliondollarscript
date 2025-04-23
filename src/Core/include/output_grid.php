@@ -509,8 +509,6 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	if ( isset( $background ) ) {
 		/** @var \Imagine\Gd\Image $img */
 		$img = $background;
-		/** @var \GdImage $src */
-		$src = $img->getGdResource();
 		// Background image size
 		$bgsize = $background->getSize();
 
@@ -537,6 +535,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 		// paste background image into grid
 		if ( $useGd ) {
+			/** @var \GdImage $src */
+			$src = $img->getGdResource();
 			imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
 		} else {
 			$map->paste( $background, new Imagine\Image\Point( $bgx, $bgy ) );
