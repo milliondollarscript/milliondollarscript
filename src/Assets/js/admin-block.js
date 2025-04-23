@@ -1,5 +1,63 @@
+// Add spinner animation and tooltip CSS if not present
+if (!document.getElementById('mds-spinner-style')) {
+	document.head.insertAdjacentHTML('beforeend', `
+		<style id="mds-spinner-style">
+		.mds-error {
+			border-color: #e00 !important;
+			box-shadow: 0 0 0 2px #fbb !important;
+		}
+		.mds-tooltip {
+			position: absolute !important;
+			background: #e00 !important;
+			color: #fff !important;
+			padding: 2px 8px !important;
+			border-radius: 3px !important;
+			font-size: 12px !important;
+			z-index: 9999 !important;
+			margin-top: 2px !important;
+			white-space: nowrap !important;
+		}
+		.mds-spinner-wrapper {
+			position: relative !important;
+			display: inline-block !important;
+			vertical-align: middle !important;
+		}
+		.mds-loading {
+			padding-right: 26px !important;
+		}
+		.mds-spinner {
+			position: absolute !important;
+			top: 50% !important;
+			right: 8px !important;
+			width: 18px !important;
+			height: 18px !important;
+			transform: translateY(-50%) !important;
+			z-index: 999 !important;
+			pointer-events: none !important;
+			display: block !important;
+		}
+		.mds-spinner svg {
+			animation: mds-spin 0.8s linear infinite;
+			display: block !important;
+			width: 100% !important;
+			height: 100% !important;
+		}
+		.mds-spinner svg path {
+			stroke: #888 !important;
+		}
+		@keyframes mds-spin {
+			100% { transform: rotate(360deg); }
+		}
+		</style>
+	`);
+}
+
+
 jQuery(document).ready(function ($) {
 	let $changed = null;
+
+	// Track the current AJAX request so we can abort it if a new one is made
+	let currentAjax = null;
 
 	// Add a new field to lock the width/height. Should it be one field for both width/height or one lock each?
 	function update_fields() {
@@ -18,7 +76,35 @@ jQuery(document).ready(function ($) {
 
 		const block = wp.data.select('core/block-editor').getSelectedBlock();
 
-		jQuery.ajax({
+		// Abort any previous AJAX request
+		if (currentAjax && currentAjax.readyState !== 4) {
+			currentAjax.abort();
+		}
+
+		// Show loading indicators
+		// Wrap the input in a spinner wrapper if not already
+		$width.each(function() {
+			var $w = $(this);
+			if (!$w.parent().hasClass('mds-spinner-wrapper')) {
+				$w.wrap('<span class="mds-spinner-wrapper"></span>');
+			}
+			$w.addClass('mds-loading').data('oldval', $w.val());
+			if ($w.siblings('.mds-spinner').length === 0) {
+				$w.after('<span class="mds-spinner"><svg viewBox="0 0 38 38"><defs><linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a"><stop stop-color="#fff" stop-opacity="0" offset="0%"/><stop stop-color="#fff" stop-opacity=".631" offset="63.146%"/><stop stop-color="#fff" offset="100%"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke="#ccc" stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" stroke="#888" stroke-opacity="1"></path></g></g></svg></span>');
+			}
+		});
+		$height.each(function() {
+			var $h = $(this);
+			if (!$h.parent().hasClass('mds-spinner-wrapper')) {
+				$h.wrap('<span class="mds-spinner-wrapper"></span>');
+			}
+			$h.addClass('mds-loading').data('oldval', $h.val());
+			if ($h.siblings('.mds-spinner').length === 0) {
+				$h.after('<span class="mds-spinner"><svg viewBox="0 0 38 38"><defs><linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a"><stop stop-color="#fff" stop-opacity="0" offset="0%"/><stop stop-color="#fff" stop-opacity=".631" offset="63.146%"/><stop stop-color="#fff" offset="100%"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke="#ccc" stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" stroke="#888" stroke-opacity="1"></path></g></g></svg></span>');
+			}
+		});
+
+		currentAjax = jQuery.ajax({
 			url: MDS.ajaxurl,
 			data: {
 				action: "mds_admin_ajax",
@@ -28,29 +114,73 @@ jQuery(document).ready(function ($) {
 			type: "POST",
 			dataType: "json",
 			success: function (response) {
+				// Remove any previous error/tooltip
+				$('.mds-tooltip').remove();
+				$id.removeClass('mds-error');
+
 				if (response.success) {
 					const width_key = MDS.MDS_PREFIX + 'width';
 					const height_key = MDS.MDS_PREFIX + 'height';
 
+					// Update block attributes
 					block.attributes.data[width_key] = response.data.width;
 					block.attributes.data[height_key] = response.data.height;
 
 					wp.data.dispatch('core/block-editor').updateBlock(block.clientId, {attributes: block.attributes});
+
+					// Update the input fields in the UI
+					$width.val(response.data.width);
+					$height.val(response.data.height);
+				} else if (response.data === 'Grid not found.') {
+					// Show error style and tooltip on grid id input
+					$id.addClass('mds-error');
+					const offset = $id.offset();
+					const tooltip = $('<div class="mds-tooltip">Grid not found.</div>');
+					$('body').append(tooltip);
+					const inputHeight = $id.outerHeight();
+					tooltip.css({
+						left: offset.left,
+						top: offset.top + inputHeight + 2
+					});
+					setTimeout(function() {
+						tooltip.fadeOut(200, function() { $(this).remove(); });
+						$id.removeClass('mds-error');
+					}, 2500);
+				}
+			},
+			complete: function() {
+				$width.removeClass('mds-loading').siblings('.mds-spinner').remove();
+				$height.removeClass('mds-loading').siblings('.mds-spinner').remove();
+			},
+			error: function(xhr, status) {
+				if (status === 'abort') {
+					// Restore old values if aborted
+					$width.val($width.data('oldval')).removeClass('mds-loading').siblings('.mds-spinner').remove();
+					$height.val($height.data('oldval')).removeClass('mds-loading').siblings('.mds-spinner').remove();
 				}
 			}
 		});
 	}
 
-	// When the type select box is changed, update the fields.
+	// When the type select box is changed, update the block's type attribute before updating fields.
 	$(document).on('change', 'select[name="milliondollarscript_type"]', function () {
 		$changed = jQuery(this);
+		const block = wp.data.select('core/block-editor').getSelectedBlock();
+		if (block && block.attributes && block.attributes.data) {
+			const type_key = MDS.MDS_PREFIX + 'type';
+			block.attributes.data[type_key] = $changed.val();
+			wp.data.dispatch('core/block-editor').updateBlock(block.clientId, {attributes: block.attributes});
+		}
 		update_fields();
 	});
 
 	// When the grid id is changed, wait a second, then update the fields.
 	let timer = null;
-	$(document).on('change', 'input[name="milliondollarscript_id"]', function () {
+	$(document).on('change input', 'input[name="milliondollarscript_id"]', function () {
 		$changed = jQuery(this);
+		// Remove error and tooltip on input/change
+		$(this).removeClass('mds-error');
+		$('.mds-tooltip').remove();
 		clearTimeout(timer);
 		timer = setTimeout(function () {
 			update_fields();
