@@ -30,13 +30,15 @@
 namespace MillionDollarScript\Classes\Forms;
 
 use Carbon_Fields\Container\Container;
-use Carbon_Fields\Field;
+use Carbon_Fields\Field\Field;
 use Imagine\Image\Box;
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use WP_Error;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -354,7 +356,16 @@ class FormFields {
 			$current_user = wp_get_current_user();
 
 			// Use the text field as the post title or username as backup
-			$post_title = sanitize_title( $_POST[ MDS_PREFIX . 'text' ] ) ?? $current_user->user_login;
+			$raw_title = $_POST[ MDS_PREFIX . 'text' ] ?? $current_user->user_login;
+			$post_title = sanitize_text_field( $raw_title ); // Keep original for title
+			
+			// Generate slug: Use transliterated title if setting is enabled
+			$transliterate_slugs = Options::get_option( 'transliterate-slugs' );
+			$post_name = '';
+			if ( $transliterate_slugs === 'on' ) {
+				$slug_base = Functions::transliterate_cyrillic_to_latin( $raw_title );
+				$post_name = sanitize_title( $slug_base );
+			} // Otherwise, let WordPress generate the slug from $post_title
 
 			if ( isset( $_REQUEST['manage-pixels'] ) ) {
 				$post_id = intval( $_REQUEST['manage-pixels'] );
@@ -375,11 +386,15 @@ class FormFields {
 					$post_id = $user_posts[0]->ID;
 				} else {
 					// Insert a new mds-pixel post
-					$post_id = wp_insert_post( [
+					$post_data = [
 						'post_title'  => $post_title,
 						'post_status' => 'new',
 						'post_type'   => self::$post_type
-					] );
+					];
+					if ( !empty($post_name) ) {
+						$post_data['post_name'] = $post_name;
+					}
+					$post_id = wp_insert_post( $post_data );
 				}
 			}
 
@@ -453,7 +468,7 @@ class FormFields {
 								] );
 							} else if ( $field_name == MDS_PREFIX . 'url' ) {
 								$wpdb->update( MDS_DB_PREFIX . 'blocks', [
-									'url' => $value,
+									'url' => esc_url_raw( $value ), // Ensure URL is properly sanitized
 								], [
 									'ad_id' => $post_id
 								] );
