@@ -351,11 +351,6 @@ class Options {
 
 			Language::get( 'System' ) => [
 
-				// Update Language
-				Field::make( 'html', MDS_PREFIX . 'update-language', Language::get( 'Update Language' ) )
-				     ->set_html( '<div class="button button-primary" id="mds_update_language" style="margin-top: 10px;">' . Language::get( 'Update Language' ) . '</div/>' )
-				     ->set_help_text( Language::get( 'This will automatically add any missing entries to the plugin language file.' ) ),
-
 				// Delete data on uninstall?
 				Field::make( 'checkbox', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
 				     ->set_default_value( '' )
@@ -374,18 +369,17 @@ class Options {
 				     ->set_help_text( Language::get( '<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the "main" branch. Code from the other branches will eventually make it\'s way here when it\'s deemed to be stable enough.<br /><br /><strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the "snapshot" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the "dev" branch while working towards the next release when it\'s thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the "dev" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you\'re doing. You should never use this branch on a live site.<br /><br /><span style="color: red">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>' ) ),
 			],
 
-			Language::get( 'Advanced' ) => [
+			Language::get( 'Language' ) => [
+
+				// Update Language
+				Field::make( 'html', MDS_PREFIX . 'update-language', Language::get( 'Update Language' ) )
+				     ->set_html( '<div class="button button-primary" id="mds_update_language" style="margin-top: 10px;">' . Language::get( 'Update Language' ) . '</div/>' )
+				     ->set_help_text( Language::get( 'This will automatically add any missing entries to the plugin language file.' ) ),
 
 				// Transliterate Slugs
 				Field::make( 'checkbox', MDS_PREFIX . 'transliterate-slugs', Language::get( 'Transliterate Cyrillic Slugs' ) )
 				     ->set_option_value( 'on' )
 				     ->set_help_text( Language::get( 'If enabled, attempts to convert Cyrillic characters in ad titles to Latin equivalents for cleaner URL slugs (post names). If disabled, WordPress default slug generation is used.' ) ),
-
-				// Delete data on uninstall?
-				Field::make( 'checkbox', MDS_PREFIX . 'delete-data-on-uninstall', Language::get( 'Delete data on uninstall?' ) )
-				     ->set_default_value( '' )
-				     ->set_option_value( 'yes' )
-				     ->set_help_text( Language::get( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.' ) ),
 			],
 		];
 

@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.165
+Stable tag: 2.5.10.166
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -148,6 +148,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Improved error messages shown when trying to select a block that is already reserved or sold.
 * Fix clicking pixel blocks on the Manage Pixels page.
 * Add option to transliterate Cyrillic titles to Latin for cleaner URL slugs.
+* Reorganize plugin settings: add new 'Language' tab for related options.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
