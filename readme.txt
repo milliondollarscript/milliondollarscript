@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.167
+Stable tag: 2.5.10.168
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -151,6 +151,10 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Reorganize plugin settings: add new 'Language' tab for related options.
 * Fix fatal error in grid output when using Imagick caused by incorrect call to GD-specific function.
 * Fix background image uploads/deletions in admin by handling them via the standard WordPress admin_post action hook.
+* Improve compatibility with different server image processing setups.
+* Improve reliability of background image uploads and deletions.
+* Add opacity slider for grid background images.
+* Allow JPG and GIF images (in addition to PNG) for grid backgrounds.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

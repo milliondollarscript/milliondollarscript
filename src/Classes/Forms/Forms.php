@@ -189,14 +189,34 @@ class Forms {
 			require_once MDS_CORE_PATH . 'admin/edit-template.php';
 		} else if ( $mds_dest == 'backgrounds' ) {
 			// Handle background image upload
-			if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'] ) && $_FILES['blend_image']['tmp_name'] != '' ) {
+			if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'] ) && $_FILES['blend_image']['tmp_name'] != '' && $_FILES['blend_image']['error'] === UPLOAD_ERR_OK ) {
 				$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0; // Get BID from POST
-				$temp = explode( ".", $_FILES['blend_image']['name'] );
-				if ( strtolower(array_pop( $temp )) != 'png' ) {
+
+				// Check MIME type
+				$finfo = finfo_open( FILEINFO_MIME_TYPE );
+				$mime_type = finfo_file( $finfo, $_FILES['blend_image']['tmp_name'] );
+				finfo_close( $finfo );
+
+				$allowed_mime_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
+
+				if ( ! in_array( $mime_type, $allowed_mime_types ) ) {
 					// Add error message? For now, just redirect.
-					$params['upload_error'] = 'not_png';
+					$params['upload_error'] = 'invalid_type'; // Changed error code
 				} else {
-					if ( move_uploaded_file( $_FILES['blend_image']['tmp_name'], Utility::get_upload_path() . "grids/background{$BID}.png" ) ) {
+					// Generate a safe filename using the BID and the original extension
+					$extension = pathinfo($_FILES['blend_image']['name'], PATHINFO_EXTENSION);
+					$new_filename = "background{$BID}." . strtolower($extension);
+					$upload_path = Utility::get_upload_path() . "grids/";
+
+					// Remove any existing background file for this grid (regardless of extension)
+					$existing_files = glob($upload_path . "background{$BID}.*");
+					if ($existing_files) {
+						foreach ($existing_files as $existing_file) {
+							unlink($existing_file);
+						}
+					}
+
+					if ( move_uploaded_file( $_FILES['blend_image']['tmp_name'], $upload_path . $new_filename ) ) {
 						$params['upload_success'] = 'true';
 					} else {
 						$params['upload_error'] = 'failed_move';
@@ -206,15 +226,42 @@ class Forms {
 			// Handle background image deletion
 			else if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 				$BID = isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0; // Get BID from REQUEST
-				$filename = Utility::get_upload_path() . "grids/background{$BID}.png";
-				if ( file_exists( $filename ) ) {
-					if ( unlink( $filename ) ) {
-						$params['delete_success'] = 'true';
-					} else {
-						$params['delete_error'] = 'failed_unlink';
+				$upload_path = Utility::get_upload_path() . "grids/";
+				$files_to_delete = glob($upload_path . "background{$BID}.*");
+				$deleted = false;
+				$found = false;
+
+				if ($files_to_delete) {
+					$found = true;
+					foreach ($files_to_delete as $file_to_delete) {
+						if ( unlink( $file_to_delete ) ) {
+							$deleted = true; // Mark as deleted if at least one succeeds
+						} else {
+							$params['delete_error'] = 'failed_unlink'; 
+							break; // Stop if one fails
+						}
 					}
-				} else {
+				}
+
+				if ($found && $deleted && !isset($params['delete_error'])) {
+					$params['delete_success'] = 'true';
+					// Also delete the opacity option when image is deleted
+					delete_option( 'mds_background_opacity_' . $BID );
+				} else if (!$found) {
 					$params['delete_error'] = 'not_found';
+				}
+			}
+
+			// Save opacity setting if submitted (regardless of upload/delete)
+			if ( isset( $_POST['background_opacity'] ) ) {
+				$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
+				$opacity = intval( $_POST['background_opacity'] );
+				// Clamp value between 0 and 100
+				$opacity = max( 0, min( 100, $opacity ) ); 
+				if ( update_option( 'mds_background_opacity_' . $BID, $opacity ) ) {
+					$params['opacity_saved'] = 'true'; // Add feedback param
+				} else {
+					// Optional: Add error if update_option failed, though it usually returns false only if value is unchanged.
 				}
 			}
 

@@ -115,6 +115,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		wp_die('No supported image driver available.');
 	}
 
+	// Determine if using GD driver
+	$useGd = ($imagine instanceof \Imagine\Gd\Imagine);
+
 	$banner_data = load_banner_constants( $BID );
 
 	// Precompute grid dimensions
@@ -150,8 +153,11 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	foreach ( $types as $type ) {
 		switch ( $type ) {
 			case 'background':
-				if ( file_exists( \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/background$BID.png" ) ) {
-					$background = $imagine->open( \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/background$BID.png" );
+				// Use glob to find any background image for this grid
+				$background_files = glob( \MillionDollarScript\Classes\System\Utility::get_upload_path() . "grids/background{$BID}.*" );
+				if ( ! empty($background_files) ) {
+					// Open the first found background file
+					$background = $imagine->open( $background_files[0] );
 				}
 				break;
 			case 'orders':
@@ -266,7 +272,6 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		}
 	}
 
-	// TODO: It should probably reload this from the grid settings when a new image is uploaded.
 	// preload nfs_front blocks (nfs blocks appearing in front of the background)
 	if ( isset( $default_nfs_front_block ) ) {
 		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND banner_id='" . intval( $BID ) . "' " . $and_user;
@@ -509,6 +514,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	if ( isset( $background ) ) {
 		/** @var \Imagine\Gd\Image $img */
 		$img = $background;
+		// Don't get GD resource if not using GD
+		// /** @var \GdImage $src */
+		// $src = $img->getGdResource();
 		// Background image size
 		$bgsize = $background->getSize();
 
@@ -533,12 +541,26 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			$bgy = 0;
 		}
 
+		// Get opacity setting (0-100, default 100)
+		$opacity = get_option( 'mds_background_opacity_' . $BID, 100 );
+
 		// paste background image into grid
 		if ( $useGd ) {
 			/** @var \GdImage $src */
-			$src = $img->getGdResource();
-			imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
+			$src = $img->getGdResource(); // Moved this line here
+			// Use imagecopymerge for opacity with GD
+			imagecopymerge( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight(), $opacity );
+			// imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() ); // Old method without opacity
 		} else {
+			// Apply opacity with Imagick using the core Imagick::setImageOpacity method (expects float 0.0-1.0)
+			/** @var \Imagine\Imagick\Image $background */
+			$imagick = $background->getImagick(); // Get the underlying Imagick object
+			$imagick->setImageOpacity( $opacity / 100.0 );
+
+			// /** @var \Imagine\Imagick\Effects $effects */ // Incorrect attempt
+			// $effects = $background->effects();
+			// $effects->opacity( $opacity / 100.0 );
+
 			$map->paste( $background, new Imagine\Image\Point( $bgx, $bgy ) );
 		}
 	}

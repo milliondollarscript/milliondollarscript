@@ -42,8 +42,10 @@ if ( isset( $_GET['upload_success'] ) ) {
 }
 if ( isset( $_GET['upload_error'] ) ) {
 	$error_message = Language::get('Error uploading background image.');
-	if ( $_GET['upload_error'] === 'not_png' ) {
+	if ( $_GET['upload_error'] === 'not_png' ) { 
 		$error_message = Language::get('Error: the image must be a PNG file.');
+	} elseif ( $_GET['upload_error'] === 'invalid_type' ) { 
+		$error_message = Language::get('Error: Invalid file type. Please upload a PNG, JPG, or GIF image.');
 	} elseif ( $_GET['upload_error'] === 'failed_move' ) {
 		$error_message = Language::get('Error: Could not save the uploaded file.');
 	}
@@ -60,6 +62,10 @@ if ( isset( $_GET['delete_error'] ) ) {
 		$error_message = Language::get('Error: File not found.');
 	}
 	echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $error_message ) . '</p></div>';
+}
+// Add message for opacity save
+if ( isset( $_GET['opacity_saved'] ) ) {
+	echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( Language::get('Background opacity saved successfully.') ) . '</p></div>';
 }
 
 function nice_format( $val ) {
@@ -89,14 +95,10 @@ function nice_format( $val ) {
 	return $val;
 }
 
-Language::out_replace( 'Image Blending - Allows you to specify an image to blend in with your grid in the background.<br />
-(This functionality requires GD 2.0.1 or later)<br />
-- Upload PNG true color image<br />
-- The image must have an alpha channel (Eg. PNG image created with Photoshop with blending options set).<br />
-- See <a href="%BACKGROUND_URL%" target="_blank">background.png</a> as an example of an image with an alpha channel set to 50%.<br />
-- <a href="https://milliondollarscript.com/documentation/alpha-blending-tutorial/" target="_blank">See the tutorial</a> to get an idea how to create background images using Photoshop.
-', '%BACKGROUND_URL%',
-	MDS_BASE_URL . 'src/Assets/images/background.png' );
+Language::out( 'Image Blending - Allows you to specify an image to blend in with your grid in the background.<br />
+- Upload a PNG, JPG, or GIF image.<br />
+- Use the slider below to control the opacity (transparency) of the background image.<br />
+' );
 ?>
 <hr/>
 <?php
@@ -124,17 +126,41 @@ $res = mysqli_query( $GLOBALS['connection'], $sql );
     </select>
 </form>
 <hr>
-<?php Language::out( 'Upload <b>True-color PNG Image</b> to blend:' ); ?>
+<?php Language::out( 'Upload <b>Image (PNG, JPG, GIF)</b> to blend:' ); ?>
 <br>
 <form enctype="multipart/form-data" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 	<?php wp_nonce_field( 'mds-admin' ); ?>
     <input type="hidden" name="action" value="mds_admin_form_submission">
     <input type="hidden" name="mds_dest" value="backgrounds">
 
-    <input type="file" name="blend_image">
-    <input type="submit" value="Upload"> <?php Language::out( '(Maximum upload size possible:' ); ?> <?php echo nice_format( ini_get( 'upload_max_filesize' ) ); ?>)<br>
-    <input type="hidden" name="BID" value="<?php echo $BID; ?>">
+	<input type="file" name="blend_image">
+	<input type="submit" value="Upload"> <?php Language::out( '(Maximum upload size possible:' ); ?> <?php echo nice_format( ini_get( 'upload_max_filesize' ) ); ?>)<br>
+	<input type="hidden" name="BID" value="<?php echo $BID; ?>">
+
+	<hr>
+	<?php
+	// Get current opacity value, default to 100 if not set
+	$current_opacity = get_option( 'mds_background_opacity_' . $BID, 100 );
+	?>
+	<label for="background_opacity"><?php Language::out( 'Background Opacity:' ); ?></label>
+	<input type="range" id="background_opacity" name="background_opacity" min="0" max="100" value="<?php echo esc_attr( $current_opacity ); ?>" style="vertical-align: middle;">
+	<span id="background_opacity_value" style="display: inline-block; min-width: 3em; text-align: right; vertical-align: middle;"><?php echo esc_html( $current_opacity ); ?>%</span>
+	<p><input type="submit" value="<?php Language::out( 'Save Opacity' ); ?>"></p> 
+
 </form>
+
+<script type="text/javascript">
+	document.addEventListener('DOMContentLoaded', function() {
+		const slider = document.getElementById('background_opacity');
+		const display = document.getElementById('background_opacity_value');
+		if (slider && display) {
+			slider.addEventListener('input', function() {
+				display.textContent = slider.value + '%';
+			});
+		}
+	});
+</script>
+
 <input type="button" value="Delete - Disable Blending" onclick="if (!confirmLink(this, 'Delete background image, are you sure')) return false;" data-link="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>backgrounds&amp;mds-action=delete&amp;BID=<?php echo $BID; ?>">
 <p>
 	<?php
