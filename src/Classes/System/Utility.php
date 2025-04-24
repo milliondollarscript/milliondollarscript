@@ -1185,7 +1185,7 @@ class Utility {
 	 */
 	public static function grid_dropdown( int $current_bid = 0 ): void {
 		global $wpdb;
-		$grids = $wpdb->get_results( "SELECT BID, name FROM " . MDS_DB_PREFIX . "banners ORDER BY name ASC" );
+		$grids = $wpdb->get_results( "SELECT banner_id, name FROM " . MDS_DB_PREFIX . "banners ORDER BY name ASC" );
 
 		echo '<select name="BID" id="mds-grid-dropdown">';
 		if ( empty( $grids ) ) {
@@ -1194,8 +1194,8 @@ class Utility {
 			// Add an option for 'All Grids' or similar if needed, depending on context
 			// echo '<option value="0">' . esc_html__('All Grids', 'milliondollarscript') . '</option>';
 			foreach ( $grids as $grid ) {
-				$selected = selected( $current_bid, $grid->BID, false );
-				echo '<option value="' . esc_attr( $grid->BID ) . '"' . $selected . '>' . esc_html( $grid->name ) . ' (ID: ' . esc_html( $grid->BID ) . ')</option>';
+				$selected = selected( $current_bid, $grid->banner_id, false );
+				echo '<option value="' . esc_attr( $grid->banner_id ) . '"' . $selected . '>' . esc_html( $grid->name ) . ' (ID: ' . esc_html( $grid->banner_id ) . ')</option>';
 			}
 		}
 		echo '</select>';
@@ -1215,7 +1215,8 @@ class Utility {
 	 */
 	public static function display_pagination( int $total_items, int $per_page, int $offset, string $base_url ): void {
 		if ( $total_items <= $per_page ) {
-			return; // No pagination needed
+			// No pagination needed
+			return;
 		}
 
 		$total_pages = ceil( $total_items / $per_page );
@@ -1272,7 +1273,8 @@ class Utility {
 			$next_offset = $current_page * $per_page;
 			echo ' <a class="next-page button" href="' . esc_url( $base_url . 'offset=' . $next_offset ) . '"><span aria-hidden="true">›</span></a>'; // Next
 		} else {
-			echo ' <span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>'; // Next
+			// Next
+			echo ' <span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>';
 		}
 
 		// Last page link
@@ -1280,10 +1282,12 @@ class Utility {
 			$last_offset = ( $total_pages - 1 ) * $per_page;
 			echo ' <a class="last-page button" href="' . esc_url( $base_url . 'offset=' . $last_offset ) . '"><span aria-hidden="true">»</span></a>'; // Last
 		} else {
-			echo ' <span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span>'; // Last
+			// Last
+			echo ' <span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span>';
 		}
 
-		echo '</span>'; // .pagination-links
+		// .pagination-links
+		echo '</span>';
 	}
 
-} // End class Utility
+}
