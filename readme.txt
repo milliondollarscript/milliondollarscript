@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.184
+Stable tag: 2.5.10.193
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -55,6 +55,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Delete orders instead of expiring them for confirmed but not paid orders timeout.
 * Improve time calculation for order expiration.
 * Fix order renewal payment handling.
+* Improve Approve Pixels admin page UI: Added Actions column, linked Order/Ad IDs, linked Username column (replaced Name/Email), adjusted styling for inputs, buttons, images, and block coordinates.
 * Add order validation and custom error handling in WooCommerce.
 * Fix blocks not always the right colour on the order pixels grid by stopping reserved blocks from pulling from orders table.
 * Replace MDS Admin List page with link to MDS Pixels post type.

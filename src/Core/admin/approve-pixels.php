@@ -38,6 +38,48 @@ use MillionDollarScript\Classes\Language\Language;
 // Max orders to display per page
 define( 'MAX', 30 );
 
+// Add CSS Styles
+?>
+<style>
+    /* Style for block coordinates cell */
+    .column-block_coords {
+        box-sizing: border-box; /* Include padding in width */
+        padding-right: 15px; /* Add spacing */
+    }
+
+    /* Style for the content wrapper inside the block coordinates cell */
+    .block-coords-wrapper {
+        max-width: 150px;
+        overflow-x: auto;
+        white-space: nowrap;
+        word-wrap: break-word; /* Fallback */
+    }
+
+    /* Style for URL and Title columns */
+    .column-url input[type="text"],
+    .column-title input[type="text"] {
+         width: 95%; /* Make inputs take most of cell width */
+         box-sizing: border-box; /* Include padding/border in width */
+    }
+    .column-url, .column-title {
+        min-width: 150px; /* Give columns minimum width */
+    }
+
+    /* Add some margin to action buttons */
+    .column-actions form {
+        margin: 0 5px 5px 0; /* Adjust margins slightly */
+        display: inline-block; /* Keep buttons side-by-side */
+    }
+    td.column-image img {
+        max-width: 50px;
+        max-height: 50px;
+        width: auto;
+        height: auto;
+        display: block; /* Prevents extra space below image */
+    }
+</style>
+<?php
+
 global $f2, $wpdb;
 
 // Get grid ID from POST or GET, default to 1
@@ -47,7 +89,8 @@ if ( ! is_numeric( $BID ) ) {
 	$BID = 1;
 }
 
-$bid_sql = ( $BID > 0 ) ? " AND banner_id = " . intval( $BID ) : '';
+$bid_sql = ( $BID > 0 ) ? " AND T1.banner_id = " . intval( $BID ) : '';
+$bid_update_sql = ( $BID > 0 ) ? " AND banner_id = " . intval( $BID ) : '';
 // Handle actions only if an order_id is provided
 if ( isset( $_REQUEST['order_id'] ) ) {
 	$order_id = intval( $_REQUEST['order_id'] );
@@ -82,13 +125,13 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'approve' ) 
 	$wpdb->query( $wpdb->prepare(
 		"UPDATE " . MDS_DB_PREFIX . "blocks
 		SET approved = 'Y'
-		WHERE order_id = %d {$bid_sql}",
+		WHERE order_id = %d {$bid_update_sql}",
 		$order_id
 	) );
 	$wpdb->query( $wpdb->prepare(
 		"UPDATE " . MDS_DB_PREFIX . "orders
 		SET approved = 'Y'
-		WHERE order_id = %d {$bid_sql}",
+		WHERE order_id = %d {$bid_update_sql}",
 		$order_id
 	) );
 
@@ -111,13 +154,13 @@ if ( isset( $_REQUEST['mass_approve'] ) && $_REQUEST['mass_approve'] != '' ) {
 			$wpdb->query( $wpdb->prepare(
 				"UPDATE " . MDS_DB_PREFIX . "blocks
 				SET approved = 'Y'
-				WHERE order_id = %d {$bid_sql}",
+				WHERE order_id = %d {$bid_update_sql}",
 				$order_id
 			) );
 			$wpdb->query( $wpdb->prepare(
 				"UPDATE " . MDS_DB_PREFIX . "orders
 				SET approved = 'Y'
-				WHERE order_id = %d {$bid_sql}",
+				WHERE order_id = %d {$bid_update_sql}",
 				$order_id
 			) );
 		}
@@ -142,13 +185,13 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disapprove'
 	$wpdb->query( $wpdb->prepare(
 		"UPDATE " . MDS_DB_PREFIX . "blocks
 		SET approved = 'N'
-		WHERE order_id = %d {$bid_sql}",
+		WHERE order_id = %d {$bid_update_sql}",
 		$order_id
 	) );
 	$wpdb->query( $wpdb->prepare(
 		"UPDATE " . MDS_DB_PREFIX . "orders
 		SET approved = 'N'
-		WHERE order_id = %d {$bid_sql}",
+		WHERE order_id = %d {$bid_update_sql}",
 		$order_id
 	) );
 
@@ -171,13 +214,13 @@ if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != ''
 			$wpdb->query( $wpdb->prepare(
 				"UPDATE " . MDS_DB_PREFIX . "blocks
 				SET approved = 'N'
-				WHERE order_id = %d {$bid_sql}",
+				WHERE order_id = %d {$bid_update_sql}",
 				$order_id
 			) );
 			$wpdb->query( $wpdb->prepare(
 				"UPDATE " . MDS_DB_PREFIX . "orders
 				SET approved = 'N'
-				WHERE order_id = %d {$bid_sql}",
+				WHERE order_id = %d {$bid_update_sql}",
 				$order_id
 			) );
 		}
@@ -232,7 +275,7 @@ if ( ! is_numeric( $offset ) ) {
 
 // Build WHERE clause for approval status
 $where_approved = ( $Y_or_N == 'Y' ) ? 'Y' : 'N';
-$sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.status != 'denied' {$bid_sql}", $where_approved );
+$sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.status != 'denied' AND T1.banner_id = %d", $where_approved, $BID );
 
 // Count total orders for pagination, ensuring it's an integer
 $total_orders = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
@@ -241,11 +284,31 @@ error_log('[MDS Debug] Approve Pixels - Total Orders Count: ' . $total_orders);
 
 // Fetch orders for the current page
 $sql = $wpdb->prepare(
-	"SELECT T1.*, T2.block_count
+	"SELECT T1.*, T2.block_count,
+			U.user_login,
+			T1.user_id, -- Ensure user_id is explicitly selected if needed later
+			T1.ad_id,
+			FB.url,
+			FB.alt_text AS title,
+			TR.type AS pstatus,
+			BC.block_coords,
+			T1.ad_id
      FROM " . MDS_DB_PREFIX . "orders T1
      LEFT JOIN (SELECT order_id, COUNT(*) as block_count FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) T2
      ON T1.order_id = T2.order_id
+     JOIN {$wpdb->users} U ON T1.user_id = U.ID
+     LEFT JOIN (
+		SELECT order_id, url, alt_text
+		FROM (
+			SELECT order_id, url, alt_text, ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY block_id ASC) as rn
+			FROM " . MDS_DB_PREFIX . "blocks
+		) AS RankedBlocks
+		WHERE rn = 1
+	 ) FB ON T1.order_id = FB.order_id
+     LEFT JOIN " . MDS_DB_PREFIX . "transactions TR ON T1.order_id = TR.order_id
+     LEFT JOIN (SELECT order_id, GROUP_CONCAT(CONCAT(x, ',', y) SEPARATOR ' | ') AS block_coords FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) BC ON T1.order_id = BC.order_id
      {$sql_where}
+     GROUP BY T1.order_id
      ORDER BY T1.order_date DESC
      LIMIT %d, %d",
 	$offset,
@@ -345,7 +408,13 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 				<!-- Will be set by JS if disapprove selected -->
 				<input type="hidden" name="mass_disapprove" value="">
             </div>
-
+            <div class="alignleft actions">
+				<input type="submit" class="button" name="save_links" value="<?php echo Language::get( 'Save Changes' ); ?>"/>
+				&nbsp; <!-- Add some space -->
+				<label for="do_it_now_top">
+					<input type="checkbox" name="do_it_now" id="do_it_now_top" value="true"/> <?php echo Language::get( 'Update Grid Image After Saving' ); ?>
+				</label>
+			</div>
             <div class="tablenav-pages">
                 <span class="displaying-num"><?php printf( Language::get( '%s items' ), $total_orders ); ?></span>
 				<?php Utility::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
@@ -356,22 +425,37 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
         <table class="wp-list-table widefat fixed striped table-view-list posts">
             <thead>
             <tr>
-                <td id="cb" class="manage-column column-cb check-column">
-                    <label class="screen-reader-text" for="cb-select-all-1"><?php echo Language::get( 'Select All' ); ?></label>
-                    <input id="cb-select-all-1" type="checkbox">
-                </td>
+                <th scope="col" id="cb" class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-1"><?php Language::out( 'Select All' ); ?></label><input id="cb-select-all-1" type="checkbox"></th>
+                <th scope="col" id="actions" class="manage-column column-actions"><?php echo Language::get( 'Actions' ); ?></th>
                 <th scope="col" id="order_id" class="manage-column column-order_id"><?php echo Language::get( 'Order ID' ); ?></th>
-                <th scope="col" id="date" class="manage-column column-date"><?php echo Language::get( 'Date' ); ?></th>
-                <th scope="col" id="name" class="manage-column column-name"><?php echo Language::get( 'Name' ); ?></th>
-                <th scope="col" id="email" class="manage-column column-email"><?php echo Language::get( 'Email' ); ?></th>
-                <th scope="col" id="pixels" class="manage-column column-pixels"><?php echo Language::get( 'Pixels' ); ?></th>
+                <th scope="col" id="ad_id" class="manage-column column-ad_id"><?php echo Language::get( 'Ad ID' ); ?></th>
+                <th scope="col" id="order_date" class="manage-column column-order_date"><?php echo Language::get( 'Order Date' ); ?></th>
+                <th scope="col" id="username" class="manage-column column-username"><?php echo Language::get( 'Username' ); ?></th>
+                <th scope="col" id="block_count" class="manage-column column-block_count"><?php echo Language::get( 'Block Count' ); ?></th>
                 <th scope="col" id="url" class="manage-column column-url"><?php echo Language::get( 'URL' ); ?></th>
                 <th scope="col" id="title" class="manage-column column-title"><?php echo Language::get( 'Title' ); ?></th>
+                <th scope="col" id="block_coords" class="manage-column"><?php echo Language::get( 'Block Coordinates' ); ?></th>
                 <th scope="col" id="image" class="manage-column column-image"><?php echo Language::get( 'Image' ); ?></th>
                 <th scope="col" id="status" class="manage-column column-status"><?php echo Language::get( 'Payment Status' ); ?></th>
-                <th scope="col" id="action" class="manage-column column-action"><?php echo Language::get( 'Action' ); ?></th>
             </tr>
             </thead>
+
+            <tfoot>
+             <tr>
+                <th scope="col" class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-2"><?php Language::out( 'Select All' ); ?></label><input id="cb-select-all-2" type="checkbox"></th>
+                <th scope="col" class="manage-column column-actions"><?php echo Language::get( 'Actions' ); ?></th>
+                <th scope="col" class="manage-column column-order_id"><?php echo Language::get( 'Order ID' ); ?></th>
+                <th scope="col" class="manage-column column-ad_id"><?php echo Language::get( 'Ad ID' ); ?></th>
+                <th scope="col" class="manage-column column-order_date"><?php echo Language::get( 'Order Date' ); ?></th>
+                <th scope="col" class="manage-column column-username"><?php echo Language::get( 'Username' ); ?></th>
+                <th scope="col" class="manage-column column-block_count"><?php echo Language::get( 'Block Count' ); ?></th>
+                <th scope="col" class="manage-column column-url"><?php echo Language::get( 'URL' ); ?></th>
+                <th scope="col" class="manage-column column-title"><?php echo Language::get( 'Title' ); ?></th>
+                <th scope="col" class="manage-column"><?php echo Language::get( 'Block Coordinates' ); ?></th>
+                <th scope="col" class="manage-column column-image"><?php echo Language::get( 'Image' ); ?></th>
+                <th scope="col" class="manage-column column-status"><?php echo Language::get( 'Payment Status' ); ?></th>
+            </tr>
+            </tfoot>
 
             <tbody id="the-list">
 			<?php
@@ -383,112 +467,85 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
                     <tr id="post-<?php echo $order_id; ?>" class="iedit author-self level-0 post-<?php echo $order_id; ?> type-post status-publish format-standard hentry category-uncategorized">
                         <th scope="row" class="check-column">
                             <label class="screen-reader-text" for="cb-select-<?php echo $order_id; ?>">
-								<?php printf( Language::get( 'Select %s' ), $row['title'] ); ?>
+								<?php printf( Language::get( 'Select %s' ), $row['title'] ?? '' ); ?>
                             </label>
                             <input id="cb-select-<?php echo $order_id; ?>" type="checkbox" name="orders[]" value="<?php echo $order_id; ?>">
                         </th>
-                        <td><?php echo $order_id; ?></td>
-                        <td><?php echo esc_html( $row['date'] ); ?></td>
-                        <td><?php echo esc_html( $row['fname'] . ' ' . $row['lname'] ); ?></td>
-                        <td><a href="mailto:<?php echo esc_attr( $row['email'] ); ?>"><?php echo esc_html( $row['email'] ); ?></a></td>
-                        <td><?php echo intval( $row['block_count'] ); ?></td>
-                        <td><input type="text" name="urls[<?php echo $order_id; ?>]" value="<?php echo esc_url( $row['url'] ); ?>" size="20"/></td>
-                        <td><input type="text" name="titles[<?php echo $order_id; ?>]" value="<?php echo esc_attr( $row['title'] ); ?>" size="20"/></td>
-                        <td>
-							<?php
-							if ( ! empty( $row['img_loc'] ) ) {
-								$image_url = esc_url( content_url( 'uploads/mds-images/' . $row['img_loc'] ) );
-								?>
-                                <a href="<?php echo $image_url; ?>" target="_blank">
-                                    <img src="<?php echo $image_url; ?>" width="50" height="50" alt="<?php echo esc_attr( $row['title'] ); ?>"/>
-                                </a>
-								<?php
-							} else {
-								echo Language::get( 'No Image' );
-							}
-							?>
-                        </td>
-                        <td><?php echo esc_html( $row['pstatus'] ); ?></td>
-                        <td><span style="font-family: Arial,serif; ">
+                        <td class="column-actions">
                             <?php if ( $row['approved'] == 'N' ) { ?>
-                                <!-- Approve Button Form -->
-                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>" style="display:inline;" onsubmit="this.do_it_now.value = document.form1.do_it_now.checked ? 'true' : '';">
+                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
                                     <?php wp_nonce_field( 'mds-approve-order_' . $order_id ); ?>
                                     <input type="hidden" name="mds-action" value="approve">
                                     <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
-                                    <input type="hidden" name="user_id" value="<?php echo $user_info->ID; ?>">
+                                    <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
                                     <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
                                     <input type="hidden" name="offset" value="<?php echo $offset; ?>">
                                     <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
                                     <input type="hidden" name="do_it_now" value="">
-                                    <input type="submit" style="background-color: #33FF66" value="Approve">
+                                    <input type="submit" class="button button-small" style="background-color: #388E3C; color: #fff;" value="Approve">
                                 </form>
                             <?php } ?>
-
-                            <?php // Show Disapprove if already approved ?>
-							<?php if ( $row['approved'] != 'N' ) { ?>
-                                <!-- Disapprove Button Form -->
-                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>" style="display:inline;" onsubmit="this.do_it_now.value = document.form1.do_it_now.checked ? 'true' : '';">
+                            <?php if ( $row['approved'] == 'Y' ) { ?>
+                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
                                     <?php wp_nonce_field( 'mds-disapprove-order_' . $order_id ); ?>
                                     <input type="hidden" name="mds-action" value="disapprove">
                                     <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
-                                    <input type="hidden" name="user_id" value="<?php echo $user_info->ID; ?>">
+                                    <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
                                     <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
                                     <input type="hidden" name="offset" value="<?php echo $offset; ?>">
                                     <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
                                     <input type="hidden" name="do_it_now" value="">
-                                    <input type="submit" style="background-color: #FF6600" value="Disapprove">
+                                    <input type="submit" class="button button-small" style="background-color: #E65100; color: #fff;" value="Disapprove">
                                 </form>
                             <?php } ?>
-
-                            <?php // Always show Deny button (unless perhaps status is already denied - added check)
-                            if ($row['status'] !== 'denied') { ?>
-                                <!-- Deny Button Form -->
-                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>" style="display:inline;" onsubmit="if (!confirm('<?php echo esc_js( Language::get( 'Deny this order permanently? This cannot be undone.' ) ); ?>')) return false; this.do_it_now.value = document.form1.do_it_now.checked ? 'true' : '';">
-                                    <?php wp_nonce_field( 'mds-deny-order_' . $order_id ); ?>
-                                    <input type="hidden" name="mds-action" value="deny">
-                                    <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
-                                    <input type="hidden" name="user_id" value="<?php echo $user_info->ID; ?>">
-                                    <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
-                                    <input type="hidden" name="offset" value="<?php echo $offset; ?>">
-                                    <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
-                                    <!-- Passes checkbox state for potential image processing after deny action completes -->
-									<input type="hidden" name="do_it_now" value="">
-                                    <input type="submit" style="background-color: #FF0000; color: white;" value="Deny">
-                                </form>
-                            <?php } ?>
-                        </span></td>
+                            <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
+                                <?php wp_nonce_field( 'mds-deny-order_' . $order_id ); ?>
+                                <input type="hidden" name="mds-action" value="deny">
+                                <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
+                                <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
+                                <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
+                                <input type="hidden" name="offset" value="<?php echo $offset; ?>">
+                                <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
+                                <input type="hidden" name="do_it_now" value="">
+                                <input type="submit" class="button button-small" style="background-color: #D32F2F; color:#fff;" value="Deny">
+                            </form>
+                        </td>
+                        <td><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $order_id ) ); ?>"><?php echo $order_id; ?></a></td>
+                        <td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . intval($row['ad_id']) . '&action=edit' ) ); ?>"><?php echo esc_html( $row['ad_id'] ?? '' ); ?></a></td>
+                        <td><?php echo esc_html( $row['order_date'] ); ?></td>
+                        <td><a href="<?php echo esc_url( admin_url( 'user-edit.php?user_id=' . $row['user_id'] ) ); ?>"><?php echo esc_html( $row['user_login'] ); ?></a></td>
+                        <td><?php echo intval( $row['block_count'] ); ?></td>
+                        <td class="column-url"><input type="text" name="urls[<?php echo $order_id; ?>]" value="<?php echo esc_url( $row['url'] ?? '' ); ?>"/></td>
+                        <td class="column-title"><input type="text" name="titles[<?php echo $order_id; ?>]" value="<?php echo esc_attr( $row['title'] ?? '' ); ?>"/></td>
+                        <td class="column-block_coords"><div class="block-coords-wrapper"><?php echo esc_html( $row['block_coords'] ?? '' ); ?></div></td>
+                        <td class="column-image">
+                            <?php
+                            // Use the old method to get the image URL via ad_id
+                            if ( ! empty( $row['ad_id'] ) && ! empty( $row['banner_id'] ) ) {
+                                $image_url = esc_url( Utility::get_page_url( 'get-order-image' ) . '?BID=' . $row['banner_id'] . '&aid=' . $row['ad_id'] );
+                                ?>
+                                <img src="<?php echo $image_url; ?>" width="50" height="50" alt="<?php echo esc_attr( $row['title'] ?? '' ); ?>"/>
+                                <?php
+                            } else {
+                                // Display 'No Image' if ad_id or banner_id is missing
+                                echo Language::get( 'No Image' );
+                            }
+                            ?>
+                        </td>
+                        <td><?php echo esc_html( $row['pstatus'] ); ?></td>
                     </tr>
 					<?php
 				}
 			} else {
 				?>
                 <tr>
-                    <td colspan="11"><?php echo Language::get( 'No orders found matching your criteria.' ); ?></td>
+                    <td colspan="12"><?php echo Language::get( 'No orders found matching your criteria.' ); ?></td>
                 </tr>
 				<?php
 			}
 			?>
             </tbody>
 
-            <tfoot>
-            <tr>
-                <td class="manage-column column-cb check-column">
-                    <label class="screen-reader-text" for="cb-select-all-2"><?php echo Language::get( 'Select All' ); ?></label>
-                    <input id="cb-select-all-2" type="checkbox">
-                </td>
-                <th scope="col" class="manage-column column-order_id"><?php echo Language::get( 'Order ID' ); ?></th>
-                <th scope="col" class="manage-column column-date"><?php echo Language::get( 'Date' ); ?></th>
-                <th scope="col" class="manage-column column-name"><?php echo Language::get( 'Name' ); ?></th>
-                <th scope="col" class="manage-column column-email"><?php echo Language::get( 'Email' ); ?></th>
-                <th scope="col" class="manage-column column-pixels"><?php echo Language::get( 'Pixels' ); ?></th>
-                <th scope="col" class="manage-column column-url"><?php echo Language::get( 'URL' ); ?></th>
-                <th scope="col" class="manage-column column-title"><?php echo Language::get( 'Title' ); ?></th>
-                <th scope="col" class="manage-column column-image"><?php echo Language::get( 'Image' ); ?></th>
-                <th scope="col" class="manage-column column-status"><?php echo Language::get( 'Payment Status' ); ?></th>
-                <th scope="col" class="manage-column column-action"><?php echo Language::get( 'Action' ); ?></th>
-            </tr>
-            </tfoot>
         </table>
 
         <div class="tablenav bottom">
@@ -508,10 +565,6 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
             <br class="clear"/>
         </div>
 
-        <p>
-            <input type="checkbox" name="do_it_now" value="true"/> <?php echo Language::get( 'Process Grid Images immediately' ); ?>?
-            <input type="submit" class="button-primary" name="save_links" value="<?php echo Language::get( 'Save URL/Titles & Process Grid' ); ?>"/>
-        </p>
     </form>
 
 </div>
