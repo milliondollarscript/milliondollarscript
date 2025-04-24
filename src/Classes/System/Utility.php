@@ -1172,4 +1172,118 @@ class Utility {
 		exit;
 	}
 
+	/**
+	 * Outputs an HTML dropdown (<select>) of available grids.
+	 *
+	 * Queries the database for all banners/grids and generates <option> tags.
+	 * Marks the grid matching the current BID as selected.
+	 *
+	 * @since 2.5.11
+	 * @global \wpdb $wpdb WordPress database abstraction object.
+	 * @param int $current_bid The ID of the currently selected grid (optional).
+	 * @return void Outputs HTML directly.
+	 */
+	public static function grid_dropdown( int $current_bid = 0 ): void {
+		global $wpdb;
+		$grids = $wpdb->get_results( "SELECT BID, name FROM " . MDS_DB_PREFIX . "banners ORDER BY name ASC" );
+
+		echo '<select name="BID" id="mds-grid-dropdown">';
+		if ( empty( $grids ) ) {
+			echo '<option value="0">' . esc_html__( 'No grids found', 'milliondollarscript' ) . '</option>';
+		} else {
+			// Add an option for 'All Grids' or similar if needed, depending on context
+			// echo '<option value="0">' . esc_html__('All Grids', 'milliondollarscript') . '</option>';
+			foreach ( $grids as $grid ) {
+				$selected = selected( $current_bid, $grid->BID, false );
+				echo '<option value="' . esc_attr( $grid->BID ) . '"' . $selected . '>' . esc_html( $grid->name ) . ' (ID: ' . esc_html( $grid->BID ) . ')</option>';
+			}
+		}
+		echo '</select>';
+	}
+
+	/**
+	 * Displays pagination links for admin tables or lists.
+	 *
+	 * Based on the WordPress core pagination display, adapted for MDS usage.
+	 *
+	 * @since 2.5.11
+	 * @param int    $total_items Total number of items to paginate.
+	 * @param int    $per_page    Number of items to display per page.
+	 * @param int    $offset      The current offset (number of items skipped).
+	 * @param string $base_url    The base URL for pagination links. Should include necessary query parameters except for 'offset'.
+	 * @return void Outputs HTML directly.
+	 */
+	public static function display_pagination( int $total_items, int $per_page, int $offset, string $base_url ): void {
+		if ( $total_items <= $per_page ) {
+			return; // No pagination needed
+		}
+
+		$total_pages = ceil( $total_items / $per_page );
+		$current_page = floor( $offset / $per_page ) + 1;
+
+		// Ensure base_url has a query string separator if needed
+		$base_url = strpos($base_url, '?') === false ? $base_url . '?' : $base_url;
+		// Ensure base_url ends with '&' if it already has query params
+        if (strpos($base_url, '?') !== false && substr($base_url, -1) !== '&' && substr($base_url, -1) !== '?') {
+            $base_url .= '&';
+        }
+
+		$page_links = paginate_links( [
+			'base'      => $base_url . 'offset=%#%', // Use offset directly
+			'format'    => '', // Use 'offset' in base, so format is empty
+			'total'     => $total_pages,
+			'current'   => $current_page,
+			'add_args'  => false, // Already included in base_url
+			'prev_text' => '&laquo;',
+			'next_text' => '&raquo;',
+			'type'      => 'plain', // Output plain links
+			// We need to calculate offset based on page number for paginate_links
+			// This requires overriding how paginate_links generates the URLs.
+			// Let's generate links manually for offset-based pagination.
+		] );
+
+		// Manual link generation for offset
+		echo '<span class="pagination-links">';
+
+		// First page link
+		if ( $current_page > 1 ) {
+			echo '<a class="first-page button" href="' . esc_url( $base_url . 'offset=0' ) . '"><span aria-hidden="true">«</span></a> '; // First
+		} else {
+			echo '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">«</span> '; // First
+		}
+
+		// Previous page link
+		if ( $current_page > 1 ) {
+			$prev_offset = ( $current_page - 2 ) * $per_page;
+			echo '<a class="prev-page button" href="' . esc_url( $base_url . 'offset=' . $prev_offset ) . '"><span aria-hidden="true">‹</span></a> '; // Previous
+		} else {
+			echo '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">‹</span> '; // Previous
+		}
+
+		// Page number input
+		echo '<span class="paging-input">';
+		echo '<label for="current-page-selector" class="screen-reader-text">' . esc_html__( 'Current Page', 'milliondollarscript' ) . '</label>';
+		echo '<input class="current-page" id="current-page-selector" type="text" name="paged" value="' . esc_attr( $current_page ) . '" size="' . strlen( (string) $total_pages ) . '" aria-describedby="table-paging" />';
+		echo '<span class="tablenav-paging-text"> ' . sprintf( esc_html__( 'of %s', 'milliondollarscript' ), '<span class="total-pages">' . esc_html( $total_pages ) . '</span>' ) . '</span>';
+		echo '</span>';
+
+		// Next page link
+		if ( $current_page < $total_pages ) {
+			$next_offset = $current_page * $per_page;
+			echo ' <a class="next-page button" href="' . esc_url( $base_url . 'offset=' . $next_offset ) . '"><span aria-hidden="true">›</span></a>'; // Next
+		} else {
+			echo ' <span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>'; // Next
+		}
+
+		// Last page link
+		if ( $current_page < $total_pages ) {
+			$last_offset = ( $total_pages - 1 ) * $per_page;
+			echo ' <a class="last-page button" href="' . esc_url( $base_url . 'offset=' . $last_offset ) . '"><span aria-hidden="true">»</span></a>'; // Last
+		} else {
+			echo ' <span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span>'; // Last
+		}
+
+		echo '</span>'; // .pagination-links
+	}
+
 } // End class Utility
