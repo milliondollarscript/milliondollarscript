@@ -234,8 +234,8 @@ if ( ! is_numeric( $offset ) ) {
 $where_approved = ( $Y_or_N == 'Y' ) ? 'Y' : 'N';
 $sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.order_status != 'denied' {$bid_sql}", $where_approved );
 
-// Count total orders for pagination
-$total_orders = $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
+// Count total orders for pagination, ensuring it's an integer
+$total_orders = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
 
 // Fetch orders for the current page
 $sql = $wpdb->prepare(
