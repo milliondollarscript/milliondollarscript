@@ -91,7 +91,7 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
     <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 	    <?php wp_nonce_field( 'mds-admin' ); ?>
         <input type="hidden" name="action" value="mds_admin_form_submission">
-        <input type="hidden" name="mds_dest" value="clicks">
+        <input type="hidden" name="mds_dest" value="click-reports">
 
         From y/m/d:
         <select name="from_year">
@@ -181,7 +181,7 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
 
         <input type="hidden" name="BID" value="<?php echo $BID ?>">
         <input type="submit" name="select_date" value="Go">
-        <input type="button" name="select_date" value="Reset" onclick='window.location.href="<?php echo esc_url( admin_url( 'admin.php?page=mds-clicks' ) ); ?>"'>
+        <input type="button" name="select_date" value="Reset" onclick='window.location.href="<?php echo esc_url( admin_url( 'admin.php?page=mds-click-reports' ) ); ?>"'>
     </form><p>
 
 	<?php
