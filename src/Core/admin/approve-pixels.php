@@ -26,34 +26,50 @@
  *
  */
 
+use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Email\Emails;
 use MillionDollarScript\Classes\Email\Mail;
-use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\Orders\Orders;
-use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\System\Functions;
-use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-$script_vars = array(
-	'ajax_url' => admin_url( 'admin-ajax.php' ),
-	'nonce'    => wp_create_nonce( 'mds-ajax-nonce' )
-);
+global $f2, $wpdb;
+
+$mds_nonce = wp_create_nonce( 'mds_approve_pixels_nonce' );
+
+// Get grid ID from POST or GET, default to 1
+$BID = $_POST['BID'] ?? $_GET['BID'] ?? 1;
+if ( ! is_numeric( $BID ) ) {
+	$BID = 1;
+}
 
 ?>
-<div onmouseout="hideBubble()" id="bubble">
-<span id="content">
-</span>
-</div>
-<style>
-<?php require MDS_CORE_PATH . 'include/mouseover_js.inc.php'; ?>
-</style>
+
+<h2><?php 
+    if ( isset( $_REQUEST['app'] ) && $_REQUEST['app'] === 'Y' ) {
+        Language::out( 'Review Approved Pixels' );
+    } else {
+        Language::out( 'Approve Pending Pixels' );
+    }
+?></h2>
 
 <?php
-global $f2, $wpdb;
+
+// Display status messages if any
+if ( isset( $_GET['status'] ) && $_GET['status'] == 'approved' ) {
+	echo "<div id='message' class='updated fade'><p>" . Language::get( 'Pixels approved.' ) . "</p></div>";
+}
+if ( isset( $_GET['status'] ) && $_GET['status'] == 'deleted' ) {
+	echo "<div id='message' class='updated fade'><p>" . Language::get( 'Pixels deleted.' ) . "</p></div>";
+}
+if ( isset( $_GET['status'] ) && $_GET['status'] == 'error' ) {
+	echo "<div id='message' class='error fade'><p>" . Language::get( 'An error occurred.' ) . "</p></div>";
+}
 
 $BID = isset( $_REQUEST['BID'] ) ? $f2->bid() : 'all';
 
@@ -188,11 +204,11 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
 
 	$user_info = get_userdata( $row['UID'] );
 	wp_update_post( [
-		'ID'          => $row['ad_id'],
+		'ID'          => $row['AID'],
 		'post_status' => 'private',
 	] );
 
-	$banner_data = load_banner_constants( $row['banner_id'] );
+	$banner_data = load_banner_constants( $row['BID'] );
 	$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
 	$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
