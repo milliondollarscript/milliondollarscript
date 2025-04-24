@@ -1,13 +1,24 @@
 <?php
-/**
- * Million Dollar Script Two - Approve Pixels Admin Page
+/*
+ * Million Dollar Script Two
  *
- * @package MillionDollarScript
- * @subpackage Core
- * @version 2.0.0
- * @since 2.0.0
- * @copyright Copyright (c) 2024, Robert R. Russell
- * @license GPL-2.0+
+ * @author      Ryan Rhode
+ * @copyright   (C) 2025, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *    Million Dollar Script
  *    Pixels to Profit: Ignite Your Revolution
@@ -20,8 +31,8 @@ namespace MillionDollarScript\Core\admin;
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
 
-use MillionDollarScript\Classes\Utils;
-use MillionDollarScript\Classes\Language;
+use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\Language\Language;
 
 // Constants
 // Max orders to display per page
@@ -83,10 +94,10 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'approve' ) 
 
 	// Optional: Process grid images immediately if checked
 	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
-		Utils::process_grid_image( $BID );
+		Utility::process_grid_image( $BID );
 	}
 
-	Utils::redirect_to_previous_approve_page();
+	Utility::redirect_to_previous_approve_page();
 }
 
 // Process 'mass_approve' action
@@ -112,10 +123,10 @@ if ( isset( $_REQUEST['mass_approve'] ) && $_REQUEST['mass_approve'] != '' ) {
 		}
 		// Optional: Process grid images immediately if checked
 		if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
-			Utils::process_grid_image( $BID );
+			Utility::process_grid_image( $BID );
 		}
 	}
-	Utils::redirect_to_previous_approve_page();
+	Utility::redirect_to_previous_approve_page();
 }
 
 // Process 'disapprove' action
@@ -143,10 +154,10 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disapprove'
 
 	// Optional: Process grid images immediately if checked
 	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
-		Utils::process_grid_image( $BID );
+		Utility::process_grid_image( $BID );
 	}
 
-	Utils::redirect_to_previous_approve_page();
+	Utility::redirect_to_previous_approve_page();
 }
 
 // Process 'mass_disapprove' action
@@ -172,10 +183,10 @@ if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != ''
 		}
 		// Optional: Process grid images immediately if checked
 		if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
-			Utils::process_grid_image( $BID );
+			Utility::process_grid_image( $BID );
 		}
 	}
-	Utils::redirect_to_previous_approve_page();
+	Utility::redirect_to_previous_approve_page();
 }
 
 
@@ -207,10 +218,10 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
 
 	// Optional: Process grid images immediately if checked
 	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
-		Utils::process_grid_image( $BID );
+		Utility::process_grid_image( $BID );
 	}
 
-	Utils::redirect_to_previous_approve_page();
+	Utility::redirect_to_previous_approve_page();
 }
 
 // Pagination Setup
@@ -267,9 +278,9 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 	}
 	// Optional: Process grid images immediately if checked
 	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
-		Utils::process_grid_image( $BID );
+		Utility::process_grid_image( $BID );
 	}
-	Utils::redirect_to_previous_approve_page();
+	Utility::redirect_to_previous_approve_page();
 }
 ?>
 <style type="text/css">
@@ -312,7 +323,7 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=Y&BID=' . $BID ) ); ?>"
                class="black"><?php echo Language::get( 'Approved' ); ?></a>
         </p>
-        <p><?php echo Language::get( 'Grid' ); ?>: <?php Utils::grid_dropdown( $BID ); ?>
+        <p><?php echo Language::get( 'Grid' ); ?>: <?php Utility::grid_dropdown( $BID ); ?>
             <input type="submit" class="button" value="<?php echo Language::get( 'Change Grid' ); ?>"/>
         </p>
 
@@ -333,7 +344,7 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 
             <div class="tablenav-pages">
                 <span class="displaying-num"><?php printf( Language::get( '%s items' ), $total_orders ); ?></span>
-				<?php Utils::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
+				<?php Utility::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
             </div>
             <br class="clear"/>
         </div>
@@ -488,7 +499,7 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 
             <div class="tablenav-pages">
                 <span class="displaying-num"><?php printf( Language::get( '%s items' ), $total_orders ); ?></span>
-				<?php Utils::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
+				<?php Utility::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
             </div>
             <br class="clear"/>
         </div>

@@ -1097,4 +1097,79 @@ class Utility {
 
 		return false;
 	}
-}
+
+	/**
+	 * Process the grid image, map, and publish the changes.
+	 *
+	 * This function acts as a wrapper for processing and publishing grid updates.
+	 * It calls process_image, publish_image, and process_map sequentially.
+	 * Assumes the necessary include files (image_functions.php, map_functions.php) are loaded.
+	 *
+	 * @since 2.5.11
+	 * @param int $banner_id The ID of the banner/grid to process.
+	 * @return void
+	 */
+	public static function process_grid_image( int $banner_id ): void {
+		// Ensure functions are available (might require includes elsewhere)
+		if ( function_exists( 'process_image' ) && function_exists( 'publish_image' ) && function_exists( 'process_map' ) ) {
+			// Process the image file for the grid
+			process_image( $banner_id );
+			// Publish the updated grid image
+			publish_image( $banner_id );
+			// Process the image map for the grid
+			process_map( $banner_id );
+		} else {
+			// Log an error or handle the case where functions are missing
+			// error_log('MDS Error: Required image processing functions not found in Utility::process_grid_image.');
+			// Optionally, trigger a user notice
+			if ( current_user_can( 'manage_options' ) ) {
+				add_action( 'admin_notices', function() {
+					echo '<div class="notice notice-error is-dismissible"><p>';
+					echo esc_html__( 'Million Dollar Script Error: Could not process grid image. Required functions are missing.', 'milliondollarscript' );
+					echo '</p></div>';
+				});
+			}
+		}
+	}
+
+	/**
+	 * Redirects the user back to the previous page within the Approve Pixels admin screen.
+	 *
+	 * Attempts to use the HTTP referer to determine the exact previous URL,
+	 * including query parameters like grid ID (BID), approval status (app), and pagination offset.
+	 * Falls back to the main Approve Pixels page if the referer is not available or invalid.
+	 *
+	 * @since 2.5.11
+	 * @return void Terminates script execution after redirect.
+	 */
+	public static function redirect_to_previous_approve_page(): void {
+		$referer = wp_get_referer();
+		// Default fallback URL to the main approve pixels page
+		$redirect_url = admin_url( 'admin.php?page=mds-approve-pixels' );
+
+		// Try to use the referer if it looks like the approve pixels page
+		if ( $referer && strpos( $referer, 'page=mds-approve-pixels' ) !== false ) {
+			$redirect_url = $referer;
+		} else {
+			// If referer is not helpful, build a basic URL (might lose pagination state)
+			// Attempt to get BID and app status from the current request
+			$bid = isset( $_REQUEST['BID'] ) ? (int) $_REQUEST['BID'] : 0;
+			$app = isset( $_REQUEST['app'] ) ? sanitize_key( $_REQUEST['app'] ) : ''; // Default to showing both or based on context
+
+			$args = ['page' => 'mds-approve-pixels'];
+			if ( $bid > 0 ) {
+				$args['BID'] = $bid;
+			}
+			if ( ! empty( $app ) ) {
+				$args['app'] = $app;
+			}
+			$redirect_url = add_query_arg( $args, admin_url( 'admin.php' ) );
+		}
+
+		// Perform the redirect using WordPress standard function
+		wp_safe_redirect( $redirect_url );
+		// Ensure script stops execution immediately after setting the redirect header
+		exit;
+	}
+
+} // End class Utility
