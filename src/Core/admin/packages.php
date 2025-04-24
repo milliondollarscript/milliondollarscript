@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Payment\Currency;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -34,19 +35,19 @@ global $f2;
 $BID = $f2->bid();
 ?>
 
-    <p>
-        Packages: Here you can add different price / expiry / max orders combinations to your grids called 'Packages'. Packages added to a grid will overwrite the grid's default price, expiry & max orders settings. After selecting pixels from a grid, the user will choose which package they want. Once the package is selected, the script will calculate the final price for the order.
-        <i>Careful: Packages disregard Price Zones, i.e. if a grid has packages, then the Price Zones will be ignored for that grid.</i></p>
-    <hr>
+<h2><?php echo Language::get( 'Packages' ); ?></h2>
+
+<p><?php echo Language::get( 'Packages allow you to group pixels together.' ); ?></p>
+
 <?php
 $sql = "Select * from " . MDS_DB_PREFIX . "banners ";
 $res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 ?>
 
-    <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-	    <?php wp_nonce_field( 'mds-admin' ); ?>
+<form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
         <input type="hidden" name="action" value="mds_admin_form_submission" />
         <input type="hidden" name="mds_dest" value="packages" />
+		<?php wp_nonce_field( 'mds-admin' ); ?>
 
         Select grid: <select name="BID" onchange="this.form.submit()">
             <option></option>
@@ -179,8 +180,6 @@ if ( $BID != '' ) {
 
 			mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
 			$id = mysqli_insert_id( $GLOBALS['connection'] );
-
-			//print_r ($_REQUEST);
 
 			// if no default package exists, set the last inserted banner to default
 

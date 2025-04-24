@@ -184,7 +184,7 @@ class Forms {
 		if ( $mds_dest == 'manage-grids' ) {
 			require_once MDS_CORE_PATH . 'admin/manage-grids.php';
 		} else if ( $mds_dest == 'approve-pixels' ) {
-			require_once MDS_CORE_PATH . 'admin/approve-pixels.php';
+			// require_once MDS_CORE_PATH . 'admin/approve-pixels.php'; // Removed to prevent output during POST handling
 		} else if ( $mds_dest == 'edit-template' ) {
 			require_once MDS_CORE_PATH . 'admin/edit-template.php';
 		} else if ( $mds_dest == 'backgrounds' ) {
@@ -223,36 +223,7 @@ class Forms {
 					}
 				}
 			} 
-			// Handle background image deletion
-			else if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
-				$BID = isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0; // Get BID from REQUEST
-				$upload_path = Utility::get_upload_path() . "grids/";
-				$files_to_delete = glob($upload_path . "background{$BID}.*");
-				$deleted = false;
-				$found = false;
-
-				if ($files_to_delete) {
-					$found = true;
-					foreach ($files_to_delete as $file_to_delete) {
-						if ( unlink( $file_to_delete ) ) {
-							$deleted = true; // Mark as deleted if at least one succeeds
-						} else {
-							$params['delete_error'] = 'failed_unlink'; 
-							break; // Stop if one fails
-						}
-					}
-				}
-
-				if ($found && $deleted && !isset($params['delete_error'])) {
-					$params['delete_success'] = 'true';
-					// Also delete the opacity option when image is deleted
-					delete_option( 'mds_background_opacity_' . $BID );
-				} else if (!$found) {
-					$params['delete_error'] = 'not_found';
-				}
-			}
-
-			// Save opacity setting if submitted (regardless of upload/delete)
+			// Save opacity setting if submitted (regardless of upload)
 			if ( isset( $_POST['background_opacity'] ) ) {
 				$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
 				$opacity = intval( $_POST['background_opacity'] );
@@ -310,7 +281,7 @@ class Forms {
 		} else if ( $mds_dest == 'orders-waiting' ) {
 			require_once MDS_CORE_PATH . 'admin/orders-waiting.php';
 		} else if ( $mds_dest == 'packages' ) {
-			require_once MDS_CORE_PATH . 'admin/packages.php';
+			// require_once MDS_CORE_PATH . 'admin/packages.php'; // Removed to prevent output during POST handling
 		} else if ( $mds_dest == 'price-zones' ) {
 			require_once MDS_CORE_PATH . 'admin/price-zones.php';
 		} else if ( $mds_dest == 'process-pixels' ) {

@@ -34,6 +34,77 @@ use Imagine\Image\Point;
 defined( 'ABSPATH' ) or exit;
 
 /**
+ * Applies opacity to a GD image resource by modifying its alpha channel.
+ *
+ * @param \GdImage $image The image resource to modify.
+ * @param int $opacity Opacity percentage (0-100).
+ * @return bool True on success, false on failure.
+ */
+function mds_apply_opacity_gd(\GdImage &$image, int $opacity): bool {
+
+    // Check for invalid opacity values
+    if ($opacity < 0 || $opacity > 100) {
+        return false; 
+    }
+
+    // No change needed if opacity is 100%
+    if ($opacity == 100) {
+        return true; 
+    }
+
+    // Convert indexed to true color if necessary
+    if (!imageistruecolor($image)) {
+        imagetruecolortopalette($image, false, 256); 
+    }
+
+    $width = imagesx($image);
+    $height = imagesy($image);
+
+    // Disable alpha blending during pixel manipulation
+    imagealphablending($image, false); 
+
+    // Ensure alpha channel is saved when the image is output
+    imagesavealpha($image, true);
+
+    $opacityFactor = $opacity / 100.0;
+
+    for ($x = 0; $x < $width; $x++) {
+        for ($y = 0; $y < $height; $y++) {
+            $rgba = imagecolorat($image, $x, $y);
+
+            // Extract existing alpha (0=opaque, 127=transparent)
+            $alpha = ($rgba & 0x7F000000) >> 24; 
+
+            // Calculate new alpha based on opacity factor
+            // Formula: New = 127 - ( (127 - Old) * Factor )
+            $newAlpha = 127 - (int)(((127 - $alpha) * $opacityFactor)); 
+
+            // Clamp newAlpha to GD's valid range (0-127)
+            $newAlpha = max(0, min(127, $newAlpha));
+
+            // Allocate the new color with the calculated alpha
+            $color = imagecolorallocatealpha($image, 
+                ($rgba & 0xFF0000) >> 16,
+                ($rgba & 0x00FF00) >> 8,
+                $rgba & 0x0000FF,
+                $newAlpha
+            );
+
+            // Check for color allocation failure
+            if ($color === false) return false; 
+
+            // Set the pixel to the new color
+            imagesetpixel($image, $x, $y, $color);
+        }
+    }
+
+    // Re-enable alpha blending if it might be needed later
+    imagealphablending($image, true);
+
+    return true;
+}
+
+/**
  * Output grid map
  *
  * @param bool $show Show the grid if true, save to file if false.
@@ -547,22 +618,34 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			$img = $background;
 			/** @var \GdImage $src */
 			$src = $img->getGdResource();
-			// Use imagecopymerge for opacity with GD
-			imagecopymerge( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight(), $opacity );
+
+			// Apply opacity to the source background image using our helper function
+			if (mds_apply_opacity_gd($src, $opacity)) {
+				// Enable alpha blending on the destination before copying
+				imagealphablending($dstRes, true);
+				imagesavealpha($dstRes, true); // Ensure destination saves alpha too
+
+				// Use imagecopy (respects alpha) instead of imagecopymerge
+				imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
+			} else {
+				// Handle error if opacity application failed (optional)
+				error_log("MDS Error: Failed to apply opacity to GD background image for BID: $BID");
+				// As a fallback, maybe copy without opacity?
+				// imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
+			}
+
 		} else {
 			// Apply opacity with Imagick (compatible with Imagick 3.x)
 			// Opacity isn't standardized in Imagine core effects, so driver-specific logic is needed.
 			/** @var \Imagine\Imagick\Image $background */
-			if (class_exists('Imagick')) {
-				// Get the underlying Imagick object
-				/** @var \Imagick $imagick */
-				$imagick = $background->getImagick(); 
-				// Ensure alpha channel is usable
-				$imagick->setImageAlphaChannel(\Imagick::ALPHACHANNEL_ACTIVATE); 
-				// Multiply alpha channel by opacity factor
-				$imagick->evaluateImage(\Imagick::EVALUATE_MULTIPLY, $opacity / 100.0, \Imagick::CHANNEL_ALPHA);
-			}
 
+			// Get the underlying Imagick object
+			/** @var \Imagick $imagick */
+			$imagick = $background->getImagick(); 
+			// Ensure alpha channel is usable
+			$imagick->setImageAlphaChannel(\Imagick::ALPHACHANNEL_ACTIVATE); 
+			// Multiply alpha channel by opacity factor
+			$imagick->evaluateImage(\Imagick::EVALUATE_MULTIPLY, $opacity / 100.0, \Imagick::CHANNEL_ALPHA);
 			$map->paste( $background, new Imagine\Image\Point( $bgx, $bgy ) );
 		}
 	}

@@ -31,6 +31,58 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
+// --- BEGIN NEW DELETE HANDLING ---
+if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] === 'delete' && isset( $_GET['BID'] ) ) {
+	$BID = intval( $_GET['BID'] );
+	// Verify nonce 
+	if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'mds_delete_background_' . $BID ) ) {
+		wp_die( Language::get( 'Security check failed.' ) );
+	}
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( Language::get( 'Sorry, you are not allowed to perform this action.' ) );
+	}
+
+	$params = ['page' => 'mds-backgrounds', 'BID' => $BID]; // Params for redirect
+
+	if ($BID > 0) {
+		$upload_path = Utility::get_upload_path() . "grids/";
+		$files_to_delete = glob($upload_path . "background{$BID}.*");
+		$deleted = false;
+		$found = false;
+
+		if ($files_to_delete) {
+			$found = true;
+			foreach ($files_to_delete as $file_to_delete) {
+				if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
+					$deleted = true; // Mark as deleted if at least one succeeds
+				} else {
+					$params['delete_error'] = 'failed_unlink';
+					// Log the error for debugging
+					error_log("MDS Error: Failed to unlink background file: " . $file_to_delete);
+					break; // Stop if one fails
+				}
+			}
+		}
+
+		if ($found && $deleted && !isset($params['delete_error'])) {
+			$params['delete_success'] = 'true';
+			// Also delete the opacity option when image is deleted
+			delete_option( 'mds_background_opacity_' . $BID );
+		} else if (!$found) {
+			$params['delete_error'] = 'not_found';
+		}
+		// If delete failed but file was found, 'failed_unlink' is already set
+	} else {
+		$params['delete_error'] = 'invalid_bid';
+	}
+
+	// Redirect back to the same page without the action param, but with feedback
+	wp_safe_redirect( add_query_arg( $params, admin_url( 'admin.php' ) ) );
+	exit;
+}
+// --- END NEW DELETE HANDLING ---
+
 ini_set( 'max_execution_time', 6000 );
 
 global $f2;
@@ -60,6 +112,8 @@ if ( isset( $_GET['delete_error'] ) ) {
 		$error_message = Language::get('Error: Could not delete the file.');
 	} elseif ( $_GET['delete_error'] === 'not_found' ) {
 		$error_message = Language::get('Error: File not found.');
+	} elseif ( $_GET['delete_error'] === 'invalid_bid' ) {
+		$error_message = Language::get('Error: Invalid grid ID.');
 	}
 	echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $error_message ) . '</p></div>';
 }
@@ -95,11 +149,16 @@ function nice_format( $val ) {
 	return $val;
 }
 
-Language::out( 'Image Blending - Allows you to specify an image to blend in with your grid in the background.<br />
-- Upload a PNG, JPG, or GIF image.<br />
-- Use the slider below to control the opacity (transparency) of the background image.<br />
-' );
 ?>
+<h2><?php Language::out( 'Image Blending' ); ?></h2>
+<?php 
+Language::out( 'Allows you to specify an image to blend in with your grid in the background.<br />
+<ul>
+<li>Upload a PNG, JPG, or GIF image.</li>
+<li>Use the slider below to control the opacity (transparency) of the background image.</li>
+</ul>' );
+?>
+<h3><?php Language::out_replace( 'Remember to process your Grid Image(s) <a href="%PROCESS_PIXELS_URL%">here</a>', '%PROCESS_PIXELS_URL%', esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ) ); ?></h3>
 <hr/>
 <?php
 $sql = "Select * from " . MDS_DB_PREFIX . "banners ";
@@ -161,7 +220,16 @@ $res = mysqli_query( $GLOBALS['connection'], $sql );
 	});
 </script>
 
-<input type="button" value="Delete - Disable Blending" onclick="if (!confirmLink(this, 'Delete background image, are you sure')) return false;" data-link="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>backgrounds&amp;mds-action=delete&amp;BID=<?php echo $BID; ?>">
+<?php
+$delete_nonce = wp_create_nonce( 'mds_delete_background_' . $BID );
+$delete_url = add_query_arg( [
+    'page' => 'mds-backgrounds',
+    'mds-action' => 'delete',
+    'BID' => $BID,
+    '_wpnonce' => $delete_nonce
+], admin_url( 'admin.php' ) );
+?>
+<input type="button" value="Delete - Disable Blending" onclick="if (!confirm('Delete background image, are you sure?')) return false; window.location.href='<?php echo esc_url( $delete_url ); ?>';" >
 <p>
 	<?php
 	$mds_admin_ajax_nonce = wp_create_nonce( 'mds_admin_ajax_nonce' );

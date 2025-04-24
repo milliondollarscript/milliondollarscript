@@ -38,42 +38,21 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-echo '<style>
-    #bubble {
-        position: absolute;
-        left: 0;
-        top: 0;
-        visibility: hidden;
-        background-color: #FFFFFF;
-        border-color: #33CCFF;
-        border-style: solid;
-        border-width: 1px;
-        padding: 5px;
-        margin: 0;
-        width: 200px;
-        filter: revealtrans();
-        font-family: Arial, sans-serif;
-        font-size: 11px;
-    }
+$script_vars = array(
+	'ajax_url' => admin_url( 'admin-ajax.php' ),
+	'nonce'    => wp_create_nonce( 'mds-ajax-nonce' )
+);
 
-    #content {
-        padding: 0;
-        margin: 0
-    }
-       
-    .mds-preview-pixels {
-        cursor: pointer;
-    }
-</style>
+?>
 <div onmouseout="hideBubble()" id="bubble">
 <span id="content">
 </span>
 </div>
-';
-echo '<script>';
-require MDS_CORE_PATH . 'include/mouseover_js.inc.php';
-echo '</script>';
+<style>
+<?php require MDS_CORE_PATH . 'include/mouseover_js.inc.php'; ?>
+</style>
 
+<?php
 global $f2, $wpdb;
 
 $BID = isset( $_REQUEST['BID'] ) ? $f2->bid() : 'all';
