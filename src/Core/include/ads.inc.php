@@ -765,53 +765,76 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 				// Prepare for batch updates
 				$updates = [];
 
-				// Paste image into selected blocks (AJAX mode allows individual block selection)
+				// Create a fully transparent block placeholder
+				$transparent_color = $palette->color('#FFF', 100); // Use any color, alpha 100 = fully transparent
+				$transparent_block_image = $imagine->create($block_size, $transparent_color);
+				$transparent_image_data = base64_encode($transparent_block_image->get("png", ['png_compression_level' => 9]));
+
+				// Iterate over the entire selection area, not just the uploaded image area
 				$blkW = $banner_data['BLK_WIDTH'];
 				$blkH = $banner_data['BLK_HEIGHT'];
 				$blocksPerRow = $banner_data['G_WIDTH'];
-				$sizeX = $size['x'];
+				$sizeX = $size['x']; // Keep original size for reference if needed, e.g., for block index calculation
 				$sizeY = $size['y'];
-				for ( $y = 0; $y < $actualHeight; $y += $blkH ) {
-					for ( $x = 0; $x < $actualWidth; $x += $blkW ) {
 
-						// Calculate the size for this specific crop, ensuring it stays within bounds
-						$cropWidth = min( $blkW, $actualWidth - $x );
-						$cropHeight = min( $blkH, $actualHeight - $y );
+				// Use actual image dimensions for loop limits
+				$loopLimitX = $actualWidth;
+				$loopLimitY = $actualHeight;
 
-						// Ensure dimensions are positive before attempting crop
-						if ($cropWidth <= 0 || $cropHeight <= 0) {
-							continue; // Skip this iteration if dimensions are invalid
+				// Calculate the total width and height of the block selection area
+				$selectionWidth = ($high_x - $low_x) + $banner_data['BLK_WIDTH'];
+				$selectionHeight = ($high_y - $low_y) + $banner_data['BLK_HEIGHT'];
+
+				for ( $y_offset = 0; $y_offset < $selectionHeight; $y_offset += $blkH ) {
+					for ( $x_offset = 0; $x_offset < $selectionWidth; $x_offset += $blkW ) {
+						// Calculate absolute map coordinates for this block in the grid
+						$map_x = $low_x + $x_offset;
+						$map_y = $low_y + $y_offset;
+
+						// Calculate the expected block ID based on grid position
+						$cb = ($map_x / $blkW) + (($map_y / $blkH) * $blocksPerRow);
+
+						// Determine the relative coordinates within the uploaded image frame
+						$img_x = $x_offset;
+						$img_y = $y_offset;
+
+						// Check if this block position is covered by the actual uploaded image
+						if ( $img_x < $actualWidth && $img_y < $actualHeight ) {
+							// --- This block IS covered by the uploaded image --- 
+
+							// Calculate the size for this specific crop from the uploaded image
+							$cropWidth = min( $blkW, $actualWidth - $img_x );
+							$cropHeight = min( $blkH, $actualHeight - $img_y );
+
+							// Ensure dimensions are positive before attempting crop
+							if ($cropWidth > 0 && $cropHeight > 0) {
+								$current_block_size = new Imagine\Image\Box($cropWidth, $cropHeight);
+								$start_point = new Imagine\Image\Point($img_x, $img_y); // Use relative coords for crop
+
+								// Create new destination image (always use standard block size)
+								$dest = $imagine->create( $block_size, $color );
+
+								// Crop the calculated part from the source image copy
+								$block = $image->copy();
+								$block->crop($start_point, $current_block_size);
+
+								// Paste the (potentially smaller) cropped block into the top-left of the full-size destination image
+								$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
+
+								// Get the image data
+								$current_image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
+							} else {
+								// This case might occur if crop dimensions are zero (edge case), use transparent
+								$current_image_data = $transparent_image_data;
+							}
+						} else {
+							// --- This block IS NOT covered by the uploaded image, make it transparent ---
+							$current_image_data = $transparent_image_data;
 						}
+						
+						// Queue update for this block ID
+						$updates[] = [ 'block_id' => intval($cb), 'image_data' => $current_image_data ];
 
-						$current_block_size = new Imagine\Image\Box($cropWidth, $cropHeight);
-						$start_point = new Imagine\Image\Point($x, $y);
-
-						// Create new destination image (always use standard block size)
-						$dest = $imagine->create( $block_size, $color );
-
-						// Crop the calculated part from the source image copy
-						$block = $image->copy();
-						$block->crop($start_point, $current_block_size);
-
-						// Paste the (potentially smaller) cropped block into the top-left of the full-size destination image
-						$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
-
-						// Save the image as a base64 encoded string
-						$image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
-
-						// Calculate block coordinates based on loop variables and database offset
-						$map_x     = $x + $low_x;
-						$map_y     = $y + $low_y;
-						$cb        = ( $map_x / $blkW ) + ( ( $map_y / $blkH ) * $blocksPerRow );
-
-						// Queue for batch update (ensure block_id calculation is robust if needed)
-						// Note: The calculation of $cb assumes a full grid based on $blocksPerRow.
-						// If the uploaded image is smaller than the selected area ($sizeX, $sizeY), this might
-						// assign data to incorrect block IDs if not all blocks are covered by the loop.
-						// However, the original code also used $x and $y based on $sizeX/$sizeY for this,
-						// so the behavior is preserved, but might need review depending on desired handling
-						// of partially covered selections.
-						$updates[] = [ 'block_id' => intval($cb), 'image_data' => $image_data ];
 					}
 				}
 

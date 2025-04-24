@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.205
+Stable tag: 2.5.10.206
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -162,9 +162,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Corrected an issue where background image transparency (opacity) might not apply correctly.
 * Fix: Resolved problem with the background image delete button not functioning.
 * Fix: Addressed errors that could occur on some admin pages after submitting forms.
-* Cleanup and fix Approve Pixels page.
 * Cleanup and fix Click Reports page.
 * Fixed error during image upload on manage pixels page if auto-resize is off and image dimensions were not exact multiples of block size.
+* Make blocks transparent if uploading a smaller image than the selected area during pixel management.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
