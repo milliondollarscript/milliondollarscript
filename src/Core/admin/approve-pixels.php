@@ -236,6 +236,8 @@ $sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.order_status !=
 
 // Count total orders for pagination, ensuring it's an integer
 $total_orders = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
+error_log('[MDS Debug] Approve Pixels - Total Orders Query: ' . $wpdb->last_query);
+error_log('[MDS Debug] Approve Pixels - Total Orders Count: ' . $total_orders);
 
 // Fetch orders for the current page
 $sql = $wpdb->prepare(
@@ -250,7 +252,9 @@ $sql = $wpdb->prepare(
 	MAX
 );
 
+error_log('[MDS Debug] Approve Pixels - Fetch Orders SQL: ' . $sql);
 $results = $wpdb->get_results( $sql, ARRAY_A );
+error_log('[MDS Debug] Approve Pixels - Fetch Results: ' . print_r($results, true));
 
 // Process 'save_links' action
 if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
