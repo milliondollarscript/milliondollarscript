@@ -131,10 +131,10 @@ defined( 'ABSPATH' ) or exit;
         <a href="#"><?php Language::out( 'Pixel Admin' ); ?></a>
         <ul>
             <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=N' ); ?>"><?php Language::out( 'Approve Pixels' ); ?></a>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=N' ); ?>"><?php Language::out( 'Pixels Awaiting Approval' ); ?></a>
             </li>
             <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ); ?>"><?php Language::out( 'Disapprove Pixels' ); ?></a>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ); ?>"><?php Language::out( 'Approved Pixels' ); ?></a>
             </li>
             <li>
                 <a href="<?php echo admin_url( 'admin.php?page=mds-process-pixels' ); ?>"><?php Language::out( 'Process Pixels' ); ?></a>

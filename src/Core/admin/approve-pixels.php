@@ -133,7 +133,7 @@ if ( $Y_or_N !== 'Y' ) {
 }
 
 // Set title based on filter
-$title = ( $Y_or_N == 'N' ) ? Language::get( 'Pixels Awaiting Approval' ) : Language::get( 'Previously Approved Pixels' );
+$title = ( $Y_or_N == 'N' ) ? Language::get( 'Pixels Awaiting Approval' ) : Language::get( 'Approved Pixels' );
 
 // Process 'approve' action
 if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] == 'approve' ) {
@@ -376,7 +376,7 @@ $results = $wpdb->get_results( $sql, ARRAY_A );
                class="black"><?php echo Language::get( 'Pixels Awaiting Approval' ); ?></a>
             |
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=Y&BID=' . $BID ) ); ?>"
-               class="black"><?php echo Language::get( 'Approved' ); ?></a>
+               class="black"><?php echo Language::get( 'Approved Pixels' ); ?></a>
         </p>
         <p><?php echo Language::get( 'Grid' ); ?>: <?php Utility::grid_dropdown( $BID ); ?>
             <input type="submit" class="button" value="<?php echo Language::get( 'Change Grid' ); ?>"/>
