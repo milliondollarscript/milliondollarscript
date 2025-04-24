@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.181
+Stable tag: 2.5.10.182
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -20,6 +20,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 == Changelog ==
 
 = 2.5.10.x =
+* Fix code formatting and standards in the Approve Pixels admin page.
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
 * Fix block selection issues.
 * More optimizations and fixes while ordering.

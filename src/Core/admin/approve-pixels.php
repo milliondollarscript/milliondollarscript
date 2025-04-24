@@ -1,24 +1,13 @@
 <?php
-/*
- * Million Dollar Script Two
+/**
+ * Million Dollar Script Two - Approve Pixels Admin Page
  *
- * @author      Ryan Rhode
- * @copyright   (C) 2025, Ryan Rhode
- * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * @package MillionDollarScript
+ * @subpackage Core
+ * @version 2.0.0
+ * @since 2.0.0
+ * @copyright Copyright (c) 2024, Robert R. Russell
+ * @license GPL-2.0+
  *
  *    Million Dollar Script
  *    Pixels to Profit: Ignite Your Revolution
@@ -26,559 +15,523 @@
  *
  */
 
-use MillionDollarScript\Classes\Payment\Currency;
-use MillionDollarScript\Classes\System\Utility;
-use MillionDollarScript\Classes\Language\Language;
-use MillionDollarScript\Classes\Data\Config;
-use MillionDollarScript\Classes\Email\Emails;
-use MillionDollarScript\Classes\Email\Mail;
-use MillionDollarScript\Classes\Orders\Blocks;
-use MillionDollarScript\Classes\Orders\Orders;
-use MillionDollarScript\Classes\System\Functions;
+namespace MillionDollarScript\Core\admin;
 
-defined( 'ABSPATH' ) or exit;
+// Exit if accessed directly.
+defined( 'ABSPATH' ) || exit;
+
+use MillionDollarScript\Classes\Utils;
+use MillionDollarScript\Classes\Language;
+
+// Constants
+// Max orders to display per page
+define( 'MAX', 30 );
 
 global $f2, $wpdb;
-
-$mds_nonce = wp_create_nonce( 'mds_approve_pixels_nonce' );
 
 // Get grid ID from POST or GET, default to 1
 $BID = $_POST['BID'] ?? $_GET['BID'] ?? 1;
 if ( ! is_numeric( $BID ) ) {
+	// Default to grid 1 if BID is invalid
 	$BID = 1;
 }
 
-?>
-
-<h2><?php 
-    if ( isset( $_REQUEST['app'] ) && $_REQUEST['app'] === 'Y' ) {
-        Language::out( 'Review Approved Pixels' );
-    } else {
-        Language::out( 'Approve Pending Pixels' );
-    }
-?></h2>
-
-<?php
-
-// Display status messages if any
-if ( isset( $_GET['status'] ) && $_GET['status'] == 'approved' ) {
-	echo "<div id='message' class='updated fade'><p>" . Language::get( 'Pixels approved.' ) . "</p></div>";
-}
-if ( isset( $_GET['status'] ) && $_GET['status'] == 'deleted' ) {
-	echo "<div id='message' class='updated fade'><p>" . Language::get( 'Pixels deleted.' ) . "</p></div>";
-}
-if ( isset( $_GET['status'] ) && $_GET['status'] == 'error' ) {
-	echo "<div id='message' class='error fade'><p>" . Language::get( 'An error occurred.' ) . "</p></div>";
+$bid_sql = " AND banner_id = " . intval( $BID );
+// Handle actions only if an order_id is provided
+if ( isset( $_REQUEST['order_id'] ) ) {
+	$order_id = intval( $_REQUEST['order_id'] );
+} else {
+	// Ensure order_id is initialized
+	$order_id = 0;
 }
 
-$BID = isset( $_REQUEST['BID'] ) ? $f2->bid() : 'all';
 
-$bid_sql = ( $BID !== 'all' && ! empty( $BID ) )
-	? $wpdb->prepare( ' AND banner_id=%d ', intval( $BID ) )
-	: '';
+// Get the current user's info
+$user_info = wp_get_current_user();
 
-if ( $BID === 'all' || empty( $BID ) ) {
-	$BID     = '';
-	$bid_sql = '';
+// Display dynamic title based on the action
+// Default to 'N' if not set
+$Y_or_N = $_GET['app'] ?? 'N';
+if ( $Y_or_N == 'Y' ) {
+	$title = Language::get( 'Previously Approved Pixels' );
+} else {
+	$title = Language::get( 'Pixels Awaiting Approval' );
 }
 
-// whitelist $_REQUEST['app'] value
-$Y_or_N = 'N';
-if ( isset( $_REQUEST['app'] ) && $_REQUEST['app'] == 'Y' ) {
-	$Y_or_N = 'Y';
-}
-
-$offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
-
+// Process 'approve' action
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'approve' ) {
+
 	$order_id = intval( $_REQUEST['order_id'] );
 	if ( ! $order_id ) {
 		die( 'Invalid order_id' );
 	}
+	// Nonce verification added
+	check_admin_referer( 'mds-approve-order_' . $order_id );
 
 	$wpdb->query( $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "blocks 
-    SET approved=%s, published=%s 
-    WHERE order_id=%d {$bid_sql}",
-		'Y', 'N', $order_id
+		"UPDATE " . MDS_DB_PREFIX . "blocks
+		SET approved = 'Y'
+		WHERE order_id = %d {$bid_sql}",
+		$order_id
 	) );
-
 	$wpdb->query( $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "orders 
-    SET approved=%s, published=%s 
-    WHERE order_id=%d {$bid_sql}",
-		'Y', 'N', $order_id
+		"UPDATE " . MDS_DB_PREFIX . "orders
+		SET approved = 'Y'
+		WHERE order_id = %d {$bid_sql}",
+		$order_id
 	) );
 
-	// Get user_id from the order
-	$user_id = $wpdb->get_var( $wpdb->prepare( "SELECT user_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id ) );
-
-	// Complete the order
-	Orders::complete_order( $user_id, $order_id );
-
-	if ( $wpdb->last_error ) {
-		die( $wpdb->last_error );
+	// Optional: Process grid images immediately if checked
+	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+		Utils::process_grid_image( $BID );
 	}
 
-	echo "Order Approved.<br>";
+	Utils::redirect_to_previous_approve_page();
 }
 
+// Process 'mass_approve' action
 if ( isset( $_REQUEST['mass_approve'] ) && $_REQUEST['mass_approve'] != '' ) {
+	// Nonce verification added
+	check_admin_referer( 'mds-admin' );
 	if ( isset( $_REQUEST['orders'] ) && sizeof( $_REQUEST['orders'] ) > 0 ) {
 
 		foreach ( $_REQUEST['orders'] as $order_id ) {
+			$order_id = intval( $order_id );
 			$wpdb->query( $wpdb->prepare(
-				"UPDATE " . MDS_DB_PREFIX . "blocks 
-                SET approved=%s, published=%s 
-                WHERE order_id=%d {$bid_sql}",
-				'Y', 'N', $order_id
+				"UPDATE " . MDS_DB_PREFIX . "blocks
+				SET approved = 'Y'
+				WHERE order_id = %d {$bid_sql}",
+				$order_id
 			) );
-
 			$wpdb->query( $wpdb->prepare(
-				"UPDATE " . MDS_DB_PREFIX . "orders 
-                SET approved=%s, published=%s 
-                WHERE order_id=%d {$bid_sql}",
-				'Y', 'N', $order_id
+				"UPDATE " . MDS_DB_PREFIX . "orders
+				SET approved = 'Y'
+				WHERE order_id = %d {$bid_sql}",
+				$order_id
 			) );
 		}
-
-		Language::out( 'Orders Approved' );
-		echo "<br/>";
+		// Optional: Process grid images immediately if checked
+		if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+			Utils::process_grid_image( $BID );
+		}
 	}
+	Utils::redirect_to_previous_approve_page();
 }
 
+// Process 'disapprove' action
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disapprove' ) {
 
-	$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set approved='N' WHERE order_id='" . intval( $_REQUEST['order_id'] ) . "' {$bid_sql}";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	$sql = "UPDATE " . MDS_DB_PREFIX . "orders set approved='N' WHERE order_id='" . intval( $_REQUEST['order_id'] ) . "' {$bid_sql}";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+	$order_id = intval( $_REQUEST['order_id'] );
+	if ( ! $order_id ) {
+		die( 'Invalid order_id' );
+	}
+	// Nonce verification added
+	check_admin_referer( 'mds-disapprove-order_' . $order_id );
 
-	Language::out( 'Order Disapproved' );
-	echo "<br/>";
+	$wpdb->query( $wpdb->prepare(
+		"UPDATE " . MDS_DB_PREFIX . "blocks
+		SET approved = 'N'
+		WHERE order_id = %d {$bid_sql}",
+		$order_id
+	) );
+	$wpdb->query( $wpdb->prepare(
+		"UPDATE " . MDS_DB_PREFIX . "orders
+		SET approved = 'N'
+		WHERE order_id = %d {$bid_sql}",
+		$order_id
+	) );
+
+	// Optional: Process grid images immediately if checked
+	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+		Utils::process_grid_image( $BID );
+	}
+
+	Utils::redirect_to_previous_approve_page();
 }
 
+// Process 'mass_disapprove' action
 if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != '' ) {
+	// Nonce verification added
+	check_admin_referer( 'mds-admin' );
 	if ( isset( $_REQUEST['orders'] ) && sizeof( $_REQUEST['orders'] ) > 0 ) {
 
 		foreach ( $_REQUEST['orders'] as $order_id ) {
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set approved='N' WHERE order_id=" . intval( $order_id ) . " {$bid_sql}";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set approved='N' WHERE order_id=" . intval( $order_id ) . " {$bid_sql}";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$order_id = intval( $order_id );
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE " . MDS_DB_PREFIX . "blocks
+				SET approved = 'N'
+				WHERE order_id = %d {$bid_sql}",
+				$order_id
+			) );
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE " . MDS_DB_PREFIX . "orders
+				SET approved = 'N'
+				WHERE order_id = %d {$bid_sql}",
+				$order_id
+			) );
 		}
-
-		Language::out( 'Orders Disapproved' );
-		echo "<br/>";
+		// Optional: Process grid images immediately if checked
+		if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+			Utils::process_grid_image( $BID );
+		}
 	}
+	Utils::redirect_to_previous_approve_page();
 }
 
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
-	global $wpdb;
 
+// Process 'deny' action (set order status to denied)
+if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
 	$order_id = intval( $_REQUEST['order_id'] );
+	if ( ! $order_id ) {
+		die( 'Invalid order_id' );
+	}
+	// Nonce verification added
+	check_admin_referer( 'mds-deny-order_' . $order_id );
+
+	// Set blocks to N
 	$wpdb->update(
 		MDS_DB_PREFIX . "blocks",
-		[
-			'approved' => 'N',
-			'status'   => 'denied',
-		],
-		[ 'order_id' => $order_id ]
+		[ 'approved' => 'N' ],
+		[ 'order_id' => $order_id ],
+		[ '%s' ], // approved format
+		[ '%d' ]  // order_id format
 	);
+	// Set order status to 'denied'
 	$wpdb->update(
 		MDS_DB_PREFIX . "orders",
-		[
-			'approved' => 'N',
-			'status'   => 'denied'
-		],
-		[ 'order_id' => $order_id ]
+		[ 'ostatus' => 'denied', 'approved' => 'N' ],
+		[ 'order_id' => $order_id ],
+		[ '%s', '%s' ], // ostatus, approved format
+		[ '%d' ]   // order_id format
 	);
 
-	// Send email
-	global $wpdb;
-	$sql = $wpdb->prepare(
-		"SELECT *, t1.banner_id as BID, t1.user_id as UID, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id=%s",
-		$order_id
-	);
-	$row = $wpdb->get_row( $sql, ARRAY_A );
-
-	$user_info = get_userdata( $row['UID'] );
-	wp_update_post( [
-		'ID'          => $row['AID'],
-		'post_status' => 'private',
-	] );
-
-	$banner_data = load_banner_constants( $row['BID'] );
-	$block_count = $row['quantity'] / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
-
-	$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
-
-	$search = [
-		'%SITE_NAME%',
-		'%FIRST_NAME%',
-		'%LAST_NAME%',
-		'%USER_LOGIN%',
-		'%ORDER_ID%',
-		'%PIXEL_COUNT%',
-		'%BLOCK_COUNT%',
-		'%PIXEL_DAYS%',
-		'%PRICE%',
-		'%SITE_CONTACT_EMAIL%',
-		'%SITE_URL%',
-	];
-
-	$replace = [
-		get_bloginfo( 'name' ),
-		$user_info->first_name,
-		$user_info->last_name,
-		$user_info->user_login,
-		$row['order_id'],
-		$row['quantity'],
-		$block_count,
-		$row['days_expire'],
-		$price,
-		get_bloginfo( 'admin_email' ),
-		get_site_url(),
-	];
-
-	$subject = Emails::get_email_replace(
-		$search,
-		$replace,
-		'order-denied-subject'
-	);
-
-	$message = Emails::get_email_replace(
-		$search,
-		$replace,
-		'order-denied-content'
-	);
-
-	$EMAIL_USER_ORDER_DENIED = Config::get( 'EMAIL_USER_ORDER_DENIED' );
-	if ( $EMAIL_USER_ORDER_DENIED == 'YES' ) {
-		Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 4 );
+	// Optional: Process grid images immediately if checked
+	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+		Utils::process_grid_image( $BID );
 	}
 
-	// send a copy to admin
-	$EMAIL_ADMIN_ORDER_DENIED = Config::get( 'EMAIL_ADMIN_ORDER_DENIED' );
-	if ( $EMAIL_ADMIN_ORDER_DENIED == 'YES' ) {
-		Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 4 );
-	}
-
-	Language::out( 'Order Denied' );
-	echo "<br/>";
+	Utils::redirect_to_previous_approve_page();
 }
 
-if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) {
-
-	// process all grids
-	$sql = "select * from " . MDS_DB_PREFIX . "banners ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	while ( $row = mysqli_fetch_array( $result ) ) {
-		echo process_image( $row['banner_id'] );
-		publish_image( $row['banner_id'] );
-		process_map( $row['banner_id'] );
-	}
-	unset( $result, $row );
+// Pagination Setup
+$offset = $_GET['offset'] ?? 0;
+if ( ! is_numeric( $offset ) ) {
+	$offset = 0;
 }
 
+// Build WHERE clause for approval status
+$where_approved = ( $Y_or_N == 'Y' ) ? 'Y' : 'N';
+$sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.ostatus != 'denied' {$bid_sql}", $where_approved );
+
+// Count total orders for pagination
+$total_orders = $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
+
+// Fetch orders for the current page
+$sql = $wpdb->prepare(
+	"SELECT T1.*, T2.block_count
+     FROM " . MDS_DB_PREFIX . "orders T1
+     LEFT JOIN (SELECT order_id, COUNT(*) as block_count FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) T2
+     ON T1.order_id = T2.order_id
+     {$sql_where}
+     ORDER BY T1.date DESC
+     LIMIT %d, %d",
+	$offset,
+	MAX
+);
+
+$results = $wpdb->get_results( $sql, ARRAY_A );
+
+// Process 'save_links' action
 if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
+	// Nonce verification added
+	check_admin_referer( 'mds-admin' );
 	if ( sizeof( $_REQUEST['urls'] ) > 0 ) {
 		$i = 0;
 
-		foreach ( $_REQUEST['urls'] as $url ) {
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET url='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['new_urls'][ $i ] ) . "', alt_text='" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['new_alts'][ $i ] ) . "' WHERE user_id='" . intval( $_REQUEST['user_id'] ) . "' and url='" . mysqli_real_escape_string( $GLOBALS['connection'], $url ) . "' and banner_id='" . $BID . "'  ";
-			//echo $sql."<br>";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+		foreach ( $_REQUEST['urls'] as $key => $value ) {
+			$order_id = intval( $key );
+			$url      = esc_url_raw( $value );
+			$title    = sanitize_text_field( $_REQUEST['titles'][ $key ] );
+
+			if ( $order_id > 0 ) {
+				$wpdb->update(
+					MDS_DB_PREFIX . "orders",
+					[ 'url' => $url, 'title' => $title ],
+					[ 'order_id' => $order_id ],
+					[ '%s', '%s' ],
+					[ '%d' ]
+				);
+			}
 			$i ++;
 		}
 	}
+	// Optional: Process grid images immediately if checked
+	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+		Utils::process_grid_image( $BID );
+	}
+	Utils::redirect_to_previous_approve_page();
 }
-
-if ( isset( $_POST['mds_dest'] ) ) {
-	return;
-}
-
 ?>
+<style type="text/css">
+    a.black:link {
+        font-size: 10pt;
+        color: black;
+    }
 
-<h3><?php Language::out_replace( 'Remember to process your Grid Image(s) <a href="%PROCESS_PIXELS_URL%">here</a>', '%PROCESS_PIXELS_URL%', esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ) ); ?></h3>
+    a.black:visited {
+        font-size: 10pt;
+        color: black;
+    }
 
-<form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-	<?php wp_nonce_field( 'mds-admin' ); ?>
-    <input type="hidden" name="action" value="mds_admin_form_submission">
-    <input type="hidden" name="mds_dest" value="approve-pixels">
-    <input type="hidden" name="old_order_id" value="<?php //echo $order_id; ?>">
-    <input type="hidden" value="<?php echo $Y_or_N; ?>" name="app">
-    <label>
-		<?php Language::out( 'Select Grid:' ); ?>
-        <select name="BID" onchange="this.form.submit()">
-            <option value='all'
-				<?php if ( $BID == 'all' ) {
-					echo 'selected';
-				} ?>><?php Language::out( 'Show All' ); ?>
-            </option>
-			<?php
+    a.black:hover {
+        font-size: 10pt;
+        color: gray;
+    }
 
-			$sql = "Select * from " . MDS_DB_PREFIX . "banners ";
-			$res = mysqli_query( $GLOBALS['connection'], $sql );
+    a.black:active {
+        font-size: 10pt;
+        color: black;
+    }
+</style>
 
-			while ( $row = mysqli_fetch_array( $res ) ) {
+<div class="wrap">
+    <h1><?php echo esc_html( $title ); ?></h1>
 
-				if ( ( $row['banner_id'] == $BID ) && ( isset( $_REQUEST['BID'] ) && $BID != 'all' ) ) {
-					$sel = 'selected';
-				} else {
-					$sel = '';
-				}
-
-				echo '
-                    <option
-                    ' . $sel . ' value=' . $row['banner_id'] . '>' . $row['name'] . '</option>';
-			}
-			?>
-        </select>
-    </label>
-</form>
-
-<?php
-
-if ( isset( $_REQUEST['edit_links'] ) && $_REQUEST['edit_links'] != '' ) {
-
-	?>
-    <h3><?php Language::out( 'Edit Links:' ); ?></h3>
-    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+    <form name="form1" method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
+		<?php // Nonce for mass actions ?>
 		<?php wp_nonce_field( 'mds-admin' ); ?>
-        <input type="hidden" name="action" value="mds_admin_form_submission">
-        <input type="hidden" name="mds_dest" value="approve-pixels">
-        <input type="hidden" name="offset" value="<?php echo $offset; ?>">
-        <input type="hidden" name="BID" value="<?php echo $BID; ?>">
-        <input type="hidden" name="user_id" value="<?php echo intval( $_REQUEST['user_id'] ); ?>">
-        <input type="hidden" value="<?php echo $Y_or_N; ?>" name="app">
-        <table>
+        <input type="hidden" name="page" value="mds-approve-pixels"/>
+        <input type="hidden" name="offset" value="<?php echo $offset; ?>"/>
+        <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>"/>
+        <input type="hidden" name="BID" value="<?php echo $BID; ?>"/>
+
+        <p>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N&BID=' . $BID ) ); ?>"
+               class="black"><?php echo Language::get( 'Awaiting Approval' ); ?></a>
+            |
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=Y&BID=' . $BID ) ); ?>"
+               class="black"><?php echo Language::get( 'Approved' ); ?></a>
+        </p>
+        <p><?php echo Language::get( 'Grid' ); ?>: <?php Utils::grid_dropdown( $BID ); ?>
+            <input type="submit" class="button" value="<?php echo Language::get( 'Change Grid' ); ?>"/>
+        </p>
+
+        <div class="tablenav top">
+            <div class="alignleft actions bulkactions">
+                <label for="bulk-action-selector-top" class="screen-reader-text"><?php echo Language::get( 'Select bulk action' ); ?></label>
+                <select name="action" id="bulk-action-selector-top">
+                    <option value="-1"><?php echo Language::get( 'Bulk Actions' ); ?></option>
+                    <option value="approve"><?php echo Language::get( 'Approve' ); ?></option>
+                    <option value="disapprove"><?php echo Language::get( 'Disapprove' ); ?></option>
+                </select>
+                <input type="submit" id="doaction" class="button action" value="<?php echo Language::get( 'Apply' ); ?>">
+                <!-- Will be set by JS if approve selected -->
+				<input type="hidden" name="mass_approve" value="">
+				<!-- Will be set by JS if disapprove selected -->
+				<input type="hidden" name="mass_disapprove" value="">
+            </div>
+
+            <div class="tablenav-pages">
+                <span class="displaying-num"><?php printf( Language::get( '%s items' ), $total_orders ); ?></span>
+				<?php Utils::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
+            </div>
+            <br class="clear"/>
+        </div>
+
+        <table class="wp-list-table widefat fixed striped table-view-list posts">
+            <thead>
             <tr>
-                <td><b><?php Language::out( 'URL' ); ?></b></td>
-                <td><b><?php Language::out( 'Alt Text' ); ?></b></td>
+                <td id="cb" class="manage-column column-cb check-column">
+                    <label class="screen-reader-text" for="cb-select-all-1"><?php echo Language::get( 'Select All' ); ?></label>
+                    <input id="cb-select-all-1" type="checkbox">
+                </td>
+                <th scope="col" id="order_id" class="manage-column column-order_id"><?php echo Language::get( 'Order ID' ); ?></th>
+                <th scope="col" id="date" class="manage-column column-date"><?php echo Language::get( 'Date' ); ?></th>
+                <th scope="col" id="name" class="manage-column column-name"><?php echo Language::get( 'Name' ); ?></th>
+                <th scope="col" id="email" class="manage-column column-email"><?php echo Language::get( 'Email' ); ?></th>
+                <th scope="col" id="pixels" class="manage-column column-pixels"><?php echo Language::get( 'Pixels' ); ?></th>
+                <th scope="col" id="url" class="manage-column column-url"><?php echo Language::get( 'URL' ); ?></th>
+                <th scope="col" id="title" class="manage-column column-title"><?php echo Language::get( 'Title' ); ?></th>
+                <th scope="col" id="image" class="manage-column column-image"><?php echo Language::get( 'Image' ); ?></th>
+                <th scope="col" id="status" class="manage-column column-status"><?php echo Language::get( 'Payment Status' ); ?></th>
+                <th scope="col" id="action" class="manage-column column-action"><?php echo Language::get( 'Action' ); ?></th>
             </tr>
+            </thead>
 
+            <tbody id="the-list">
 			<?php
+			if ( $results ) {
+				foreach ( $results as $row ) {
+					// Ensure integer
+					$order_id = intval( $row['order_id'] );
+					?>
+                    <tr id="post-<?php echo $order_id; ?>" class="iedit author-self level-0 post-<?php echo $order_id; ?> type-post status-publish format-standard hentry category-uncategorized">
+                        <th scope="row" class="check-column">
+                            <label class="screen-reader-text" for="cb-select-<?php echo $order_id; ?>">
+								<?php printf( Language::get( 'Select %s' ), $row['title'] ); ?>
+                            </label>
+                            <input id="cb-select-<?php echo $order_id; ?>" type="checkbox" name="orders[]" value="<?php echo $order_id; ?>">
+                        </th>
+                        <td><?php echo $order_id; ?></td>
+                        <td><?php echo esc_html( $row['date'] ); ?></td>
+                        <td><?php echo esc_html( $row['fname'] . ' ' . $row['lname'] ); ?></td>
+                        <td><a href="mailto:<?php echo esc_attr( $row['email'] ); ?>"><?php echo esc_html( $row['email'] ); ?></a></td>
+                        <td><?php echo intval( $row['block_count'] ); ?></td>
+                        <td><input type="text" name="urls[<?php echo $order_id; ?>]" value="<?php echo esc_url( $row['url'] ); ?>" size="20"/></td>
+                        <td><input type="text" name="titles[<?php echo $order_id; ?>]" value="<?php echo esc_attr( $row['title'] ); ?>" size="20"/></td>
+                        <td>
+							<?php
+							if ( ! empty( $row['img_loc'] ) ) {
+								$image_url = esc_url( content_url( 'uploads/mds-images/' . $row['img_loc'] ) );
+								?>
+                                <a href="<?php echo $image_url; ?>" target="_blank">
+                                    <img src="<?php echo $image_url; ?>" width="50" height="50" alt="<?php echo esc_attr( $row['title'] ); ?>"/>
+                                </a>
+								<?php
+							} else {
+								echo Language::get( 'No Image' );
+							}
+							?>
+                        </td>
+                        <td><?php echo esc_html( $row['pstatus'] ); ?></td>
+                        <td><span style="font-family: Arial,serif; ">
+                            <?php if ( $row['approved'] == 'N' ) { ?>
+                                <!-- Approve Button Form -->
+                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>" style="display:inline;" onsubmit="this.do_it_now.value = document.form1.do_it_now.checked ? 'true' : '';">
+                                    <?php wp_nonce_field( 'mds-approve-order_' . $order_id ); ?>
+                                    <input type="hidden" name="mds-action" value="approve">
+                                    <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
+                                    <input type="hidden" name="user_id" value="<?php echo $user_info->ID; ?>">
+                                    <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
+                                    <input type="hidden" name="offset" value="<?php echo $offset; ?>">
+                                    <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
+                                    <input type="hidden" name="do_it_now" value="">
+                                    <input type="submit" style="background-color: #33FF66" value="Approve">
+                                </form>
+                            <?php } ?>
 
-			$sql      = "SELECT alt_text, url, count(alt_text) AS COUNT, banner_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . intval( $_REQUEST['user_id'] ) . "  $bid_sql group by url ";
-			$m_result = mysqli_query( $GLOBALS['connection'], $sql );
+                            <?php // Show Disapprove if already approved ?>
+							<?php if ( $row['approved'] != 'N' ) { ?>
+                                <!-- Disapprove Button Form -->
+                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>" style="display:inline;" onsubmit="this.do_it_now.value = document.form1.do_it_now.checked ? 'true' : '';">
+                                    <?php wp_nonce_field( 'mds-disapprove-order_' . $order_id ); ?>
+                                    <input type="hidden" name="mds-action" value="disapprove">
+                                    <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
+                                    <input type="hidden" name="user_id" value="<?php echo $user_info->ID; ?>">
+                                    <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
+                                    <input type="hidden" name="offset" value="<?php echo $offset; ?>">
+                                    <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
+                                    <input type="hidden" name="do_it_now" value="">
+                                    <input type="submit" style="background-color: #FF6600" value="Disapprove">
+                                </form>
+                            <?php } ?>
 
-			$i = 0;
-			while ( $m_row = mysqli_fetch_array( $m_result ) ) {
-				$i ++;
-				if ( $m_row['url'] != '' ) {
-					echo "<tr><td>
-				<input type='hidden' name='urls[]' value='" . esc_url( $m_row['url'] ) . "'>
-				<input type='text' name='new_urls[]' size='40' value=\"" . esc_attr( $m_row['url'] ) . "\"></td>
-						<td><input name='new_alts[]' type='text' size='80' value=\"" . esc_attr( $m_row['alt_text'] ) . "\"></td></tr>";
+                            <?php // Always show Deny button (unless perhaps status is already denied - added check)
+                            if ($row['ostatus'] !== 'denied') { ?>
+                                <!-- Deny Button Form -->
+                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>" style="display:inline;" onsubmit="if (!confirm('<?php echo esc_js( Language::get( 'Deny this order permanently? This cannot be undone.' ) ); ?>')) return false; this.do_it_now.value = document.form1.do_it_now.checked ? 'true' : '';">
+                                    <?php wp_nonce_field( 'mds-deny-order_' . $order_id ); ?>
+                                    <input type="hidden" name="mds-action" value="deny">
+                                    <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
+                                    <input type="hidden" name="user_id" value="<?php echo $user_info->ID; ?>">
+                                    <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
+                                    <input type="hidden" name="offset" value="<?php echo $offset; ?>">
+                                    <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
+                                    <!-- Passes checkbox state for potential image processing after deny action completes -->
+									<input type="hidden" name="do_it_now" value="">
+                                    <input type="submit" style="background-color: #FF0000; color: white;" value="Deny">
+                                </form>
+                            <?php } ?>
+                        </span></td>
+                    </tr>
+					<?php
 				}
+			} else {
+				?>
+                <tr>
+                    <td colspan="11"><?php echo Language::get( 'No orders found matching your criteria.' ); ?></td>
+                </tr>
+				<?php
 			}
-
 			?>
+            </tbody>
 
+            <tfoot>
+            <tr>
+                <td class="manage-column column-cb check-column">
+                    <label class="screen-reader-text" for="cb-select-all-2"><?php echo Language::get( 'Select All' ); ?></label>
+                    <input id="cb-select-all-2" type="checkbox">
+                </td>
+                <th scope="col" class="manage-column column-order_id"><?php echo Language::get( 'Order ID' ); ?></th>
+                <th scope="col" class="manage-column column-date"><?php echo Language::get( 'Date' ); ?></th>
+                <th scope="col" class="manage-column column-name"><?php echo Language::get( 'Name' ); ?></th>
+                <th scope="col" class="manage-column column-email"><?php echo Language::get( 'Email' ); ?></th>
+                <th scope="col" class="manage-column column-pixels"><?php echo Language::get( 'Pixels' ); ?></th>
+                <th scope="col" class="manage-column column-url"><?php echo Language::get( 'URL' ); ?></th>
+                <th scope="col" class="manage-column column-title"><?php echo Language::get( 'Title' ); ?></th>
+                <th scope="col" class="manage-column column-image"><?php echo Language::get( 'Image' ); ?></th>
+                <th scope="col" class="manage-column column-status"><?php echo Language::get( 'Payment Status' ); ?></th>
+                <th scope="col" class="manage-column column-action"><?php echo Language::get( 'Action' ); ?></th>
+            </tr>
+            </tfoot>
         </table>
-        <input type="submit" value="<?php Language::out( 'Save Changes' ); ?>" name="save_links">
 
+        <div class="tablenav bottom">
+            <div class="alignleft actions bulkactions">
+                <select name="action2" id="bulk-action-selector-bottom">
+                    <option value="-1"><?php echo Language::get( 'Bulk Actions' ); ?></option>
+                    <option value="approve"><?php echo Language::get( 'Approve' ); ?></option>
+                    <option value="disapprove"><?php echo Language::get( 'Disapprove' ); ?></option>
+                </select>
+                <input type="submit" id="doaction2" class="button action" value="<?php echo Language::get( 'Apply' ); ?>">
+            </div>
+
+            <div class="tablenav-pages">
+                <span class="displaying-num"><?php printf( Language::get( '%s items' ), $total_orders ); ?></span>
+				<?php Utils::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
+            </div>
+            <br class="clear"/>
+        </div>
+
+        <p>
+            <input type="checkbox" name="do_it_now" value="true"/> <?php echo Language::get( 'Process Grid Images immediately' ); ?>?
+            <input type="submit" class="button-primary" name="save_links" value="<?php echo Language::get( 'Save URL/Titles & Process Grid' ); ?>"/>
+        </p>
     </form>
 
-	<?php
-}
+</div>
 
-$bid_sql2 = " AND " . MDS_DB_PREFIX . "blocks.banner_id=$BID ";
-if ( ( $BID == 'all' ) || ( empty( $BID ) ) ) {
-	$BID      = '';
-	$bid_sql2 = "";
-}
+<script type="text/javascript">
+    // Javascript to handle bulk actions selection
+    jQuery(document).ready(function ($) {
+        $('#doaction, #doaction2').click(function (e) {
+            var selector = $(this).is('#doaction') ? '#bulk-action-selector-top' : '#bulk-action-selector-bottom';
+            var action = $(selector).val();
+            if (action === 'approve') {
+                $('input[name="mass_approve"]').val('Approve Orders');
+                $('input[name="mass_disapprove"]').val(''); // Clear other action
+            } else if (action === 'disapprove') {
+                $('input[name="mass_disapprove"]').val('Disapprove Orders');
+                $('input[name="mass_approve"]').val(''); // Clear other action
+            } else {
+                // If no valid bulk action selected, prevent form submission maybe?
+                // Or let WordPress handle the "-1" value. Currently, just clearing.
+                $('input[name="mass_approve"]').val('');
+                $('input[name="mass_disapprove"]').val('');
+            }
+            // Add hidden input for do_it_now state for bulk actions
+             if ($('input[name="do_it_now"]').is(':checked')) {
+                if (!$('input[name="do_it_now_bulk"]').length) {
+                     $('<input>').attr({
+                        type: 'hidden',
+                        name: 'do_it_now',
+                        value: 'true'
+                    }).appendTo('form[name="form1"]');
+                 }
+            } else {
+                 $('input[name="do_it_now_bulk"]').remove(); // Remove if unchecked
+             }
 
-/*$sql = "
-SELECT Distinct orders.blocks, orders.order_date, orders.order_id, blocks.approved, blocks.status, blocks.user_id, blocks.banner_id, blocks.ad_id, ads.1, users.FirstName, users.LastName, users.Username, users.Email
-    FROM ads, blocks, orders, users
-    WHERE orders.approved='" . $Y_or_N . "'
-      AND orders.user_id=users.ID
-      AND orders.order_id=blocks.order_id
-      AND blocks.order_id=ads.order_id
-      {$bid_sql2}
-
-    ORDER BY orders.order_date
-";*/
-// $sql = "
-// SELECT " . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.user_id, " . MDS_DB_PREFIX . "orders.order_date, " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "blocks.approved, " . MDS_DB_PREFIX . "blocks.status, " . MDS_DB_PREFIX . "blocks.user_id, " . MDS_DB_PREFIX . "blocks.banner_id, " . MDS_DB_PREFIX . "blocks.ad_id, " . MDS_DB_PREFIX . "ads.1, " . MDS_DB_PREFIX . "ads.2
-//     FROM " . MDS_DB_PREFIX . "ads, " . MDS_DB_PREFIX . "blocks, " . MDS_DB_PREFIX . "orders
-//     WHERE " . MDS_DB_PREFIX . "orders.approved='" . $Y_or_N . "'
-//       AND " . MDS_DB_PREFIX . "orders.order_id=" . MDS_DB_PREFIX . "blocks.order_id
-//       AND " . MDS_DB_PREFIX . "blocks.order_id=" . MDS_DB_PREFIX . "ads.order_id
-//       {$bid_sql2}
-//     GROUP BY " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.order_date, " . MDS_DB_PREFIX . "blocks.approved, " . MDS_DB_PREFIX . "blocks.status, " . MDS_DB_PREFIX . "blocks.user_id, " . MDS_DB_PREFIX . "blocks.banner_id, " . MDS_DB_PREFIX . "blocks.ad_id, " . MDS_DB_PREFIX . "ads.1, " . MDS_DB_PREFIX . "ads.2
-//     ORDER BY " . MDS_DB_PREFIX . "orders.order_date
-// ";
-$sql = "
-SELECT " . MDS_DB_PREFIX . "orders.status as ostatus," . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.user_id, " . MDS_DB_PREFIX . "orders.order_date, " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "blocks.approved, " . MDS_DB_PREFIX . "blocks.status, " . MDS_DB_PREFIX . "blocks.user_id, " . MDS_DB_PREFIX . "blocks.banner_id, " . MDS_DB_PREFIX . "blocks.ad_id
-    FROM " . MDS_DB_PREFIX . "blocks, " . MDS_DB_PREFIX . "orders 
-    WHERE " . MDS_DB_PREFIX . "orders.approved='" . $Y_or_N . "' 
-      AND " . MDS_DB_PREFIX . "orders.order_id=" . MDS_DB_PREFIX . "blocks.order_id 
-      AND " . MDS_DB_PREFIX . "orders.status!='denied' 
-      {$bid_sql2}
-    GROUP BY " . MDS_DB_PREFIX . "orders.order_id, " . MDS_DB_PREFIX . "orders.blocks, " . MDS_DB_PREFIX . "orders.order_date, " . MDS_DB_PREFIX . "blocks.approved, " . MDS_DB_PREFIX . "blocks.status, " . MDS_DB_PREFIX . "blocks.user_id, " . MDS_DB_PREFIX . "blocks.banner_id, " . MDS_DB_PREFIX . "blocks.ad_id
-    ORDER BY " . MDS_DB_PREFIX . "orders.order_date
-";
-
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-$count = mysqli_num_rows( $result );
-
-$records_per_page = 20;
-if ( $count > $records_per_page ) {
-	mysqli_data_seek( $result, $offset );
-}
-
-$pages    = ceil( $count / $records_per_page );
-$cur_page = $offset / $records_per_page;
-$cur_page ++;
-
-if ( $count > $records_per_page ) {
-	// calculate number of pages & current page
-
-	$additional_params = [ 'app' => $Y_or_N ];
-	echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, admin_url( 'admin.php?page=mds-approve-pixels' ) );
-}
-
-// Determine if auto publish should be checked
-
-// If all grids are selected (default) then not checked
-$do_it_now_checked = false;
-if ( ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] == 'true' ) ) {
-	// If do_it_now was just checked then check it
-	$do_it_now_checked = true;
-} else if ( ! empty( $BID ) ) {
-	// If a specific grid is selected check if auto publish is enabled for that grid
-	$banner_data = load_banner_constants( $BID );
-	if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
-		$do_it_now_checked = true;
-	}
-}
-?>
-<form name="form1" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-	<?php wp_nonce_field( 'mds-admin' ); ?>
-    <input type="hidden" name="action" value="mds_admin_form_submission">
-    <input type="hidden" name="mds_dest" value="approve-pixels">
-    <input type="hidden" name="offset" value="<?php echo $offset; ?>">
-    <input type="hidden" name="BID" value="<?php echo intval( $BID ); ?>">
-    <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
-    <input type="hidden" name="all_go" value="">
-    <table style="background:#ffffff;">
-        <tr style="background:#ffffff;">
-            <td colspan="12">
-                With selected: <input type="submit" value='Approve' style="font-size: 9px; background-color: #33FF66 "
-                                      onclick="if (!confirmLink(this, '<?php Language::out( 'Approve for all selected, are you sure?' ); ?>')) return false" name='mass_approve'>
-                <input type="submit" value='Disapprove' style="font-size: 9px; background-color: #FF6600"
-                       onclick="if (!confirmLink(this, '<?php Language::out( 'Disapprove all selected, are you sure?' ); ?>')) return false" name='mass_disapprove'>
-                <label>
-                    <input type="checkbox" name="do_it_now" <?php if ( $do_it_now_checked ) {
-						echo ' checked ';
-					} ?> value="true">
-                </label> <?php Language::out( 'Process Grid Images immediately after approval / disapproval' ); ?> <br>
-            </td>
-        </tr>
-        <tr>
-        <tr style="background:#eeeeee;">
-            <td><label>
-                    <input type="checkbox" onClick="checkBoxes('orders');"/>
-                </label></td>
-            <td><b><?php Language::out( 'Order ID' ); ?></b></td>
-            <td><b><?php Language::out( 'Order Date' ); ?></b></td>
-            <td><b><?php Language::out( 'Customer Name' ); ?></b></td>
-            <td><b><?php Language::out( 'Username & ID' ); ?></b></td>
-            <td><b><?php Language::out( 'Email' ); ?></b></td>
-            <td><b><?php Language::out( 'X,Y' ); ?></b></td>
-            <td><b><?php Language::out( 'Grid' ); ?></b></td>
-            <td><b><?php Language::out( 'Image' ); ?></b></td>
-            <td><b><?php Language::out( 'Link Text(s) & Link URL(s)' ); ?></b></td>
-            <td><b><?php Language::out( 'Action' ); ?></b></td>
-        </tr>
-		<?php
-
-		$i = 0;
-		while ( ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) && ( $i < $records_per_page ) ) {
-
-			$banner_data = load_banner_constants( $row['banner_id'] );
-			$user_info   = get_userdata( $row['user_id'] );
-
-			$blocks = explode( ',', $row['blocks'] );
-			$coords = "";
-			foreach ( $blocks as $index => $block ) {
-				$pos    = Blocks::get_block_position( $block, $row['banner_id'] );
-				$coords .= ( $pos['x'] / $banner_data['block_width'] ) . ',' . ( $pos['y'] / $banner_data['block_height'] );
-				if ( $index !== count( $blocks ) - 1 ) {
-					$coords .= ' | ';
-				}
-			}
-
-			$i ++;
-			?>
-            <tr onmouseover="window.old_bg=jQuery(this).css('background-color');jQuery(this).css('background-color', '#FBFDDB');" onmouseout="jQuery(this).css('background-color', window.old_bg);">
-                <td><label>
-                        <input type="checkbox" name="orders[]" value="<?php echo intval( $row['order_id'] ); ?>">
-                    </label></td>
-                <td><span style="font-family: Arial,serif; "><?php echo intval( $row['order_id'] ); ?></span></td>
-                <td><span style="font-family: Arial,serif; "><?php echo esc_html( $row['order_date'] ); ?></span></td>
-                <td><span style="font-family: Arial,serif; "><?php echo esc_html( $user_info->first_name . " " . $user_info->last_name ); ?></span></td>
-                <td><span style="font-family: Arial,serif; "><?php echo esc_html( $user_info->user_login ); ?> (#<?php echo $user_info->ID; ?>)</span></td>
-                <td><span style="font-family: Arial,serif; "><?php echo esc_html( $user_info->user_email ); ?></span></td>
-                <td style="max-width:200px;max-height:200px;overflow:auto;display:inline-block;"><span style="font-family: Arial,serif;"><?php echo $coords; ?></span></td>
-                <td><span style="font-family: Arial,serif; "><?php
-						$sql      = "SELECT name from " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $row['banner_id'] );
-						$t_result = mysqli_query( $GLOBALS['connection'], $sql );
-						$t_row    = mysqli_fetch_array( $t_result );
-						echo $t_row['name']; ?></span></td>
-                <td><span style="font-family: Arial,serif; "><img
-                                src="<?php echo esc_url( Utility::get_page_url(
-                                    'get-order-image',
-                                    [ 'BID' => intval( $row['banner_id'] ), 'aid' => intval( $row['ad_id'] ) ]
-                                ) ); ?>" alt=""/></span>
-                </td>
-                <td><span style="font-family: Arial,serif; "><?php
-						$text = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
-						$url  = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'url' );
-						if ( $text != '' ) {
-							echo "<span>" . esc_html( $text ) . " - <a href='" . esc_url( $url ) . "' target='_blank' >" . esc_html( $text ) . "</a></span><br>";
-						}
-						?>
-						<a href='<?php echo esc_url( admin_url( 'post.php?action=edit&post=' . intval( $row['ad_id'] ) ) ); ?>'>[<?php Language::out( 'Edit' ); ?>]</a>
-                        <!--						<a class="mds-preview-pixels">[--><?php //Language::out( 'View' ); ?><!--]</a>-->
-						</span>
-                </td>
-                <td><span style="font-family: Arial,serif; "><?php
-						if ( $row['approved'] == 'N' ) {
-							?>
-                            <input type="button" style="background-color: #33FF66" value="Approve"
-                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=approve&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
-							<?php
-						}
-
-						if ( $row['approved'] != 'N' ) {
-							?>
-                            <input type="button" value="Disapprove"
-                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>disapprove-pixels&mds-action=disapprove&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo $row['order_id']; ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
-							<?php
-						}
-
-						if ( $row['ostatus'] != 'new' ) {
-							?>
-                            <input type="button" style="background-color: #ff3333;color:#fff;" value="Deny"
-                                   onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>approve-pixels&mds-action=deny&amp;BID=<?php echo intval( $row['banner_id'] ); ?>&amp;user_id=<?php echo $user_info->ID; ?>&amp;order_id=<?php echo intval( $row['order_id'] ); ?>&amp;offset=<?php echo $offset; ?>&amp;app=<?php echo $Y_or_N; ?>&amp;do_it_now='+document.form1.do_it_now.checked">
-							<?php
-						}
-						?>
-	 </span></td>
-            </tr>
-			<?php
-		}
-		?>
-    </table>
-</form>
-<?php
-if ( $count > $records_per_page ) {
-	// calculate number of pages & current page
-	$additional_params = [ 'app' => $Y_or_N ];
-	echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, admin_url( 'admin.php?page=mds-approve-pixels' ) );
-}
-?>
+        });
+    });
+</script>
