@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.199
+Stable tag: 2.5.10.202
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -18,7 +18,6 @@ Million Dollar Script enables you to sell pixel-based advertising space on your 
 Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.com/million-dollar-script-wordpress-plugin/) page on the website for additional documentation.
 
 == Changelog ==
-
 = 2.5.10.x =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
 * Fix block selection issues.
@@ -164,6 +163,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Resolved problem with the background image delete button not functioning.
 * Fix: Addressed errors that could occur on some admin pages after submitting forms.
 * Cleanup and fix Approve Pixels page.
+* Cleanup and fix Click Reports page.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.

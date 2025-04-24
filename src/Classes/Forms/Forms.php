@@ -336,7 +336,7 @@ class Forms {
 			$params['to_month']   = $to_month;
 			$params['to_day']     = $to_day;
 		} else if ( $mds_dest == 'clicks' ) {
-			// Click reports
+			// Click reports (legacy or other usage)
 			$from_year            = isset( $_REQUEST['from_year'] ) ? intval( $_REQUEST['from_year'] ) : date( "Y" );
 			$from_month           = isset( $_REQUEST['from_month'] ) ? intval( $_REQUEST['from_month'] ) : date( "n" );
 			$from_day             = isset( $_REQUEST['from_day'] ) ? intval( $_REQUEST['from_day'] ) : date( "j" );
@@ -349,6 +349,23 @@ class Forms {
 			$params['to_year']    = $to_year;
 			$params['to_month']   = $to_month;
 			$params['to_day']     = $to_day;
+		} else if ( $mds_dest == 'click-reports' ) {
+			// Click Reports form submission
+			$from_year            = isset( $_REQUEST['from_year'] ) ? intval( $_REQUEST['from_year'] ) : date( "Y" );
+			$from_month           = isset( $_REQUEST['from_month'] ) ? intval( $_REQUEST['from_month'] ) : date( "n" );
+			$from_day             = isset( $_REQUEST['from_day'] ) ? intval( $_REQUEST['from_day'] ) : date( "j" );
+			$to_year              = isset( $_REQUEST['to_year'] ) ? intval( $_REQUEST['to_year'] ) : date( "Y" );
+			$to_month             = isset( $_REQUEST['to_month'] ) ? intval( $_REQUEST['to_month'] ) : date( "n" );
+			$to_day               = isset( $_REQUEST['to_day'] ) ? intval( $_REQUEST['to_day'] ) : date( "j" );
+			$params['from_year']  = $from_year;
+			$params['from_month'] = $from_month;
+			$params['from_day']   = $from_day;
+			$params['to_year']    = $to_year;
+			$params['to_month']   = $to_month;
+			$params['to_day']     = $to_day;
+			if ( isset( $_REQUEST['BID'] ) ) {
+				$params['BID'] = intval( $_REQUEST['BID'] );
+			}
 		}
 		$params['page'] = 'mds-' . $mds_dest;
 

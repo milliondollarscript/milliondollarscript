@@ -258,6 +258,41 @@ class Admin {
 		wp_die();
 	}
 
+	public static function load_click_report_view_type(): void {
+		// No nonce check needed for loading data generally, but ensure user is logged in.
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( 'Not logged in' );
+		}
+		$user_id = get_current_user_id();
+		$view_type = get_user_meta( $user_id, 'mds_click_report_view_type', true );
+
+		// Default to 'order' if not set or invalid
+		if ( empty( $view_type ) || ! in_array( $view_type, [ 'order', 'block', 'date' ] ) ) {
+			$view_type = 'order';
+		}
+
+		wp_send_json_success( [ 'view_type' => $view_type ] );
+	}
+
+	public static function save_click_report_view_type(): void {
+		// Check nonce first for security
+		check_ajax_referer( 'mds_save_view_type_nonce', 'nonce' );
+
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( 'Not logged in' );
+		}
+		$user_id = get_current_user_id();
+		$view_type = isset( $_POST['view_type'] ) ? sanitize_text_field( $_POST['view_type'] ) : '';
+
+		// Validate view_type
+		if ( ! in_array( $view_type, [ 'order', 'block', 'date' ] ) ) {
+			wp_send_json_error( 'Invalid view type' );
+		}
+
+		update_user_meta( $user_id, 'mds_click_report_view_type', $view_type );
+		wp_send_json_success();
+	}
+
 	public static function menu(): void {
 		global $mds_menus;
 

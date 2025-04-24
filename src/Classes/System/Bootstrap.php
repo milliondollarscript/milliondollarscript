@@ -165,6 +165,10 @@ class Bootstrap {
 		add_action( 'wp_ajax_mds_create_pages', [ '\MillionDollarScript\Classes\Admin\Admin', 'create_pages' ] );
 		add_action( 'wp_ajax_mds_delete_pages', [ '\MillionDollarScript\Classes\Admin\Admin', 'delete_pages' ] );
 
+		// AJAX handlers for Click Reports View Type preference
+		add_action( 'wp_ajax_mds_load_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'load_click_report_view_type' ] );
+		add_action( 'wp_ajax_mds_save_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'save_click_report_view_type' ] );
+
 		// Load Block Editor JS
 		add_action( 'enqueue_block_editor_assets', [ '\MillionDollarScript\Classes\Admin\Admin', 'block_editor_scripts' ] );
 
