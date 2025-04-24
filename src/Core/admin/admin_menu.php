@@ -40,6 +40,7 @@ defined( 'ABSPATH' ) or exit;
     </svg>
 </button>
 <ul class="mds-admin-menu">
+    <!-- Dashboard / Logo -->
     <li>
         <a target="_top" href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript' ) ); ?>">
             <img width="40px" src="<?php echo esc_url( MDS_BASE_URL ); ?>src/Assets/images/M-sm.png"
@@ -47,14 +48,17 @@ defined( 'ABSPATH' ) or exit;
                  class="milliondollarscript-logo-sm"/>
         </a>
     </li>
+    <!-- View Site -->
     <li>
         <a href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank"><?php Language::out( 'View Site' ); ?></a>
     </li>
+    <!-- Settings -->
     <li>
-        <a href="<?php echo admin_url( 'admin.php?page=mds-main-config' ); ?>"><?php Language::out( 'Configuration' ); ?></a>
+        <a href="<?php echo admin_url( 'admin.php?page=mds-main-config' ); ?>"><?php Language::out( 'Settings' ); ?></a>
     </li>
+    <!-- Pixel Management -->
     <li>
-        <a href="#"><?php Language::out( 'Manage' ); ?></a>
+        <a href="#"><?php Language::out( 'Pixel Management' ); ?></a>
         <ul>
             <li>
                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>"><?php Language::out( 'Grids' ); ?></a>
@@ -72,80 +76,65 @@ defined( 'ABSPATH' ) or exit;
                 <a href="<?php echo admin_url( 'admin.php?page=mds-backgrounds' ); ?>"><?php Language::out( 'Backgrounds' ); ?></a>
             </li>
             <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-get-shortcodes' ); ?>"><?php Language::out( 'Get Shortcodes' ); ?></a>
-            </li>
-        </ul>
-    </li>
-    <li>
-        <a href="#"><?php Language::out( 'Customer Admin' ); ?></a>
-        <ul>
-            <li>
-                <a href="<?php echo admin_url( 'users.php' ); ?>"><?php Language::out( 'List Customers' ); ?></a>
-            </li>
-        </ul>
-        <ul>
-            <li>
-                <a href="#"><?php Language::out( 'Orders' ); ?></a>
-                <ul>
-                    <li>
-                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-waiting' ); ?>"><?php Language::out( 'Waiting' ); ?></a>
-                    </li>
-                    <li>
-                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-completed' ); ?>"><?php Language::out( 'Completed' ); ?></a>
-                    </li>
-                    <li>
-                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-reserved' ); ?>"><?php Language::out( 'Reserved' ); ?></a>
-                    </li>
-                </ul>
-            </li>
-            <li>
-                <a href="#"><?php Language::out( 'Non-current orders' ); ?></a>
-                <ul>
-                    <li>
-                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-expired' ); ?>"><?php Language::out( 'Orders: Expired' ); ?></a>
-                    </li>
-                    <li>
-                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-denied' ); ?>"><?php Language::out( 'Orders: Denied' ); ?></a>
-                    </li>
-                    <li>
-                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-cancelled' ); ?>"><?php Language::out( 'Orders: Cancelled' ); ?></a>
-                    </li>
-                    <li>
-                        <a href="<?php echo admin_url( 'admin.php?page=mds-orders-deleted' ); ?>"><?php Language::out( 'Orders: Deleted' ); ?></a>
-                    </li>
-                </ul>
-            </li>
-            <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-map-of-orders' ); ?>"><?php Language::out( 'Map of Orders' ); ?></a>
-            </li>
-            <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-transaction-log' ); ?>"><?php Language::out( 'Transaction Log' ); ?></a>
-            </li>
-            <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-clear-orders' ); ?>"><?php Language::out( 'Clear Orders' ); ?></a>
-            </li>
-        </ul>
-
-    </li>
-    <li>
-        <a href="#"><?php Language::out( 'Pixel Admin' ); ?></a>
-        <ul>
-            <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=N' ); ?>"><?php Language::out( 'Pixels Awaiting Approval' ); ?></a>
-            </li>
-            <li>
-                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ); ?>"><?php Language::out( 'Approved Pixels' ); ?></a>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-get-shortcodes' ); ?>"><?php Language::out( 'Shortcodes' ); ?></a>
             </li>
             <li>
                 <a href="<?php echo admin_url( 'admin.php?page=mds-process-pixels' ); ?>"><?php Language::out( 'Process Pixels' ); ?></a>
             </li>
         </ul>
     </li>
+    <!-- Orders -->
+    <li>
+        <a href="#"><?php Language::out( 'Orders' ); ?></a>
+        <ul>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-orders-waiting' ); ?>"><?php Language::out( 'Waiting' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-orders-completed' ); ?>"><?php Language::out( 'Completed' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-orders-reserved' ); ?>"><?php Language::out( 'Reserved' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-orders-expired' ); ?>"><?php Language::out( 'Expired' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-orders-denied' ); ?>"><?php Language::out( 'Denied' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-orders-cancelled' ); ?>"><?php Language::out( 'Cancelled' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-orders-deleted' ); ?>"><?php Language::out( 'Deleted' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-map-of-orders' ); ?>"><?php Language::out( 'Map' ); ?></a>
+            </li>
+
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-clear-orders' ); ?>"><?php Language::out( 'Clear Orders' ); ?></a>
+            </li>
+        </ul>
+    </li>
+    <!-- Pixel Approval -->
+    <li>
+        <a href="#"><?php Language::out( 'Pixel Approval' ); ?></a>
+        <ul>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=N' ); ?>"><?php Language::out( 'Awaiting Approval' ); ?></a>
+            </li>
+            <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ); ?>"><?php Language::out( 'Approved' ); ?></a>
+            </li>
+        </ul>
+    </li>
+    <!-- Reports -->
     <li>
         <a href="#"><?php Language::out( 'Reports' ); ?></a>
         <ul>
             <li>
-                <a href="<?php echo admin_url( 'edit.php?post_type=' . FormFields::$post_type ); ?>"><?php Language::out( 'List' ); ?></a>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-transaction-log' ); ?>"><?php Language::out( 'Transaction Log' ); ?></a>
             </li>
             <li>
                 <a href="<?php echo admin_url( 'admin.php?page=mds-top-customers' ); ?>"><?php Language::out( 'Top Customers' ); ?></a>
@@ -166,8 +155,9 @@ defined( 'ABSPATH' ) or exit;
             </li>
         </ul>
     </li>
+    <!-- System -->
     <li>
-        <a href="#"><?php Language::out( 'Info' ); ?></a>
+        <a href="#"><?php Language::out( 'System' ); ?></a>
         <ul>
             <li>
                 <a href="<?php echo admin_url( 'admin.php?page=mds-system-information' ); ?>"><?php Language::out( 'System Information' ); ?></a>
@@ -177,7 +167,8 @@ defined( 'ABSPATH' ) or exit;
             </li>
         </ul>
     </li>
+    <!-- Help -->
     <li>
-        <a href="https://milliondollarscript.com" target="_blank">Help</a>
+        <a href="https://milliondollarscript.com" target="_blank"><?php Language::out( 'Help' ); ?></a>
     </li>
 </ul>

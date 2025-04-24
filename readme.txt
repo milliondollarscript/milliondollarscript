@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.198
+Stable tag: 2.5.10.199
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -33,6 +33,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix pagination.
 * Fix warning: Undefined array key "blocks".
 * Fix when auto-approve is off it isn't unpublishing the order when a user edits it.
+* Reorganized and simplified the admin menu: clearer section names, removed redundant links, grouped pixel actions together, and made navigation more intuitive.
 * Fix Upload button in order details not working correctly.
 * Fix grid currency setting.
 * Use Currency Symbol option.
