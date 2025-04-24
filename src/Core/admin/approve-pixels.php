@@ -246,7 +246,7 @@ $sql = $wpdb->prepare(
      LEFT JOIN (SELECT order_id, COUNT(*) as block_count FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) T2
      ON T1.order_id = T2.order_id
      {$sql_where}
-     ORDER BY T1.date DESC
+     ORDER BY T1.order_date DESC
      LIMIT %d, %d",
 	$offset,
 	MAX
