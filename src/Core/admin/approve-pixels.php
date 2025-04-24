@@ -47,7 +47,7 @@ if ( ! is_numeric( $BID ) ) {
 	$BID = 1;
 }
 
-$bid_sql = " AND banner_id = " . intval( $BID );
+$bid_sql = ( $BID > 0 ) ? " AND banner_id = " . intval( $BID ) : '';
 // Handle actions only if an order_id is provided
 if ( isset( $_REQUEST['order_id'] ) ) {
 	$order_id = intval( $_REQUEST['order_id'] );
