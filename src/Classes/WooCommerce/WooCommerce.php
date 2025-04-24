@@ -94,6 +94,20 @@ class WooCommerce {
 			update_post_meta( $order_id, "mds_order_id", $mds_order_id );
 			$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 			$order->save();
+
+			// Also save the WC Order ID to the associated MDS Pixel Post Meta
+			global $wpdb;
+			$mds_order_table = MDS_DB_PREFIX . 'orders';
+			$mds_order_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT ad_id FROM $mds_order_table WHERE order_id = %d",
+					$mds_order_id
+				)
+			);
+
+			if ( $mds_order_row && ! empty( $mds_order_row->ad_id ) ) {
+				update_post_meta( $mds_order_row->ad_id, '_wc_order_id', $order_id );
+			}
 		}
 	}
 

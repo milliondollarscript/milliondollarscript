@@ -1423,7 +1423,29 @@ class Orders {
 				'order_id' => intval( $order_id )
 			);
 			$where_format = array( '%d' );
-			$wpdb->update( $table_name, $data, $where, $data_format, $where_format );
+			$updated = $wpdb->update( $table_name, $data, $where, $data_format, $where_format );
+
+			// Fetch WC Order ID from the associated Ad post meta
+			$wc_order_id = null;
+			if ( ! empty( $order_row['ad_id'] ) ) {
+				$wc_order_id = get_post_meta( $order_row['ad_id'], '_wc_order_id', true );
+			}
+
+			// Update WooCommerce order status if applicable and MDS update was successful
+			// Use the $wc_order_id fetched from post meta
+			if ( $updated !== false && class_exists( 'WooCommerce' ) && ! empty( $wc_order_id ) ) {
+				$wc_order_id_int = intval( $wc_order_id ); // Ensure it's an integer
+				$wc_order    = wc_get_order( $wc_order_id_int );
+				if ( $wc_order ) {
+					if ( $wc_order->get_status() !== 'completed' ) {
+						$wc_order->update_status( 'completed', __( 'MDS order marked as completed.', 'milliondollarscript-two' ) );
+					} else {
+						error_log( '[MDS] WC order ' . $wc_order_id_int . ' already completed.' );
+					}
+				} else {
+					error_log( '[MDS] Could not load WC order with ID ' . $wc_order_id_int );
+				}
+			}
 
 			// Update mds-pixel post status
 			wp_update_post( [

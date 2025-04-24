@@ -1,5 +1,9 @@
 <?php
 
+use MillionDollarScript\Classes\Data\Config;
+use Imagine\Image\Box;
+use Imagine\Image\Point;
+
 /*
  * Million Dollar Script Two
  *
@@ -26,8 +30,6 @@
  *    https://milliondollarscript.com/
  *
  */
-
-use MillionDollarScript\Classes\Data\Config;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -512,11 +514,6 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// blend in the background
 	if ( isset( $background ) ) {
-		/** @var \Imagine\Gd\Image $img */
-		$img = $background;
-		// Don't get GD resource if not using GD
-		// /** @var \GdImage $src */
-		// $src = $img->getGdResource();
 		// Background image size
 		$bgsize = $background->getSize();
 
@@ -546,20 +543,25 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 		// paste background image into grid
 		if ( $useGd ) {
+			/** @var \Imagine\Gd\Image $img */
+			$img = $background;
 			/** @var \GdImage $src */
-			$src = $img->getGdResource(); // Moved this line here
+			$src = $img->getGdResource();
 			// Use imagecopymerge for opacity with GD
 			imagecopymerge( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight(), $opacity );
-			// imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() ); // Old method without opacity
 		} else {
-			// Apply opacity with Imagick using the core Imagick::setImageOpacity method (expects float 0.0-1.0)
+			// Apply opacity with Imagick (compatible with Imagick 3.x)
+			// Opacity isn't standardized in Imagine core effects, so driver-specific logic is needed.
 			/** @var \Imagine\Imagick\Image $background */
-			$imagick = $background->getImagick(); // Get the underlying Imagick object
-			$imagick->setImageOpacity( $opacity / 100.0 );
-
-			// /** @var \Imagine\Imagick\Effects $effects */ // Incorrect attempt
-			// $effects = $background->effects();
-			// $effects->opacity( $opacity / 100.0 );
+			if (class_exists('Imagick')) {
+				// Get the underlying Imagick object
+				/** @var \Imagick $imagick */
+				$imagick = $background->getImagick(); 
+				// Ensure alpha channel is usable
+				$imagick->setImageAlphaChannel(\Imagick::ALPHACHANNEL_ACTIVATE); 
+				// Multiply alpha channel by opacity factor
+				$imagick->evaluateImage(\Imagick::EVALUATE_MULTIPLY, $opacity / 100.0, \Imagick::CHANNEL_ALPHA);
+			}
 
 			$map->paste( $background, new Imagine\Image\Point( $bgx, $bgy ) );
 		}
