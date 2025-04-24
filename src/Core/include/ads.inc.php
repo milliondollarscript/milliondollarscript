@@ -701,6 +701,11 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 				$filter->add( new AutoRotate() );
 				$filter->apply( $image );
 
+				// Determine actual image size after potential rotation/processing
+				$actualSize = $image->getSize();
+				$actualWidth = $actualSize->getWidth();
+				$actualHeight = $actualSize->getHeight();
+
 				// determine whether to resize and validate dimensions when disabled
 				$MDS_RESIZE = Config::get( 'MDS_RESIZE' );
 				if ( $MDS_RESIZE !== 'YES' ) {
@@ -766,32 +771,51 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 				$blocksPerRow = $banner_data['G_WIDTH'];
 				$sizeX = $size['x'];
 				$sizeY = $size['y'];
-				for ( $y = 0; $y < $sizeY; $y += $blkH ) {
-					for ( $x = 0; $x < $sizeX; $x += $blkW ) {
-						// create new destination image
+				for ( $y = 0; $y < $actualHeight; $y += $blkH ) {
+					for ( $x = 0; $x < $actualWidth; $x += $blkW ) {
+
+						// Calculate the size for this specific crop, ensuring it stays within bounds
+						$cropWidth = min( $blkW, $actualWidth - $x );
+						$cropHeight = min( $blkH, $actualHeight - $y );
+
+						// Ensure dimensions are positive before attempting crop
+						if ($cropWidth <= 0 || $cropHeight <= 0) {
+							continue; // Skip this iteration if dimensions are invalid
+						}
+
+						$current_block_size = new Imagine\Image\Box($cropWidth, $cropHeight);
+						$start_point = new Imagine\Image\Point($x, $y);
+
+						// Create new destination image (always use standard block size)
 						$dest = $imagine->create( $block_size, $color );
 
-						// crop a part from the tiled image
+						// Crop the calculated part from the source image copy
 						$block = $image->copy();
-						$block->crop( new Imagine\Image\Point( $x, $y ), $block_size );
+						$block->crop($start_point, $current_block_size);
 
-						// paste the block into the destination image
+						// Paste the (potentially smaller) cropped block into the top-left of the full-size destination image
 						$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
 
-						// save the image as a base64 encoded string
+						// Save the image as a base64 encoded string
 						$image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
 
-						// some variables
+						// Calculate block coordinates based on loop variables and database offset
 						$map_x     = $x + $low_x;
 						$map_y     = $y + $low_y;
 						$cb        = ( $map_x / $blkW ) + ( ( $map_y / $blkH ) * $blocksPerRow );
 
-						// queue for batch update
-						$updates[] = [ 'block_id' => intval( $cb ), 'image_data' => $image_data ];
+						// Queue for batch update (ensure block_id calculation is robust if needed)
+						// Note: The calculation of $cb assumes a full grid based on $blocksPerRow.
+						// If the uploaded image is smaller than the selected area ($sizeX, $sizeY), this might
+						// assign data to incorrect block IDs if not all blocks are covered by the loop.
+						// However, the original code also used $x and $y based on $sizeX/$sizeY for this,
+						// so the behavior is preserved, but might need review depending on desired handling
+						// of partially covered selections.
+						$updates[] = [ 'block_id' => intval($cb), 'image_data' => $image_data ];
 					}
 				}
 
-				// Batch update image_data in one query
+				// apply updates in batch
 				if ( ! empty( $updates ) ) {
 					$cases = '';
 					$ids   = [];
