@@ -210,9 +210,9 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
 	// Set order status to 'denied'
 	$wpdb->update(
 		MDS_DB_PREFIX . "orders",
-		[ 'ostatus' => 'denied', 'approved' => 'N' ],
+		[ 'status' => 'denied', 'approved' => 'N' ],
 		[ 'order_id' => $order_id ],
-		[ '%s', '%s' ], // ostatus, approved format
+		[ '%s', '%s' ], // status, approved format
 		[ '%d' ]   // order_id format
 	);
 
@@ -232,7 +232,7 @@ if ( ! is_numeric( $offset ) ) {
 
 // Build WHERE clause for approval status
 $where_approved = ( $Y_or_N == 'Y' ) ? 'Y' : 'N';
-$sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.ostatus != 'denied' {$bid_sql}", $where_approved );
+$sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.status != 'denied' {$bid_sql}", $where_approved );
 
 // Count total orders for pagination, ensuring it's an integer
 $total_orders = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
@@ -442,7 +442,7 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
                             <?php } ?>
 
                             <?php // Always show Deny button (unless perhaps status is already denied - added check)
-                            if ($row['ostatus'] !== 'denied') { ?>
+                            if ($row['status'] !== 'denied') { ?>
                                 <!-- Deny Button Form -->
                                 <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>" style="display:inline;" onsubmit="if (!confirm('<?php echo esc_js( Language::get( 'Deny this order permanently? This cannot be undone.' ) ); ?>')) return false; this.do_it_now.value = document.form1.do_it_now.checked ? 'true' : '';">
                                     <?php wp_nonce_field( 'mds-deny-order_' . $order_id ); ?>
