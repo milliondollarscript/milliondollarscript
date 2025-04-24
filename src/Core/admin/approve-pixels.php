@@ -45,6 +45,7 @@ define( 'MAX', 30 );
     .column-block_coords {
         box-sizing: border-box; /* Include padding in width */
         padding-right: 15px; /* Add spacing */
+        word-wrap: break-word; /* Legacy */
     }
 
     /* Style for the content wrapper inside the block coordinates cell */
@@ -77,6 +78,27 @@ define( 'MAX', 30 );
         height: auto;
         display: block; /* Prevents extra space below image */
     }
+
+    /* Make table full width and handle layout */
+    table.wp-list-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    /* Allow long text to wrap in specific columns */
+    table.wp-list-table .column-url,
+    table.wp-list-table .column-title,
+    table.wp-list-table .column-block_coords td /* Target the cell directly for block coords */
+    {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        /* Consider adding max-width if needed */
+    }
+
+    /* Override external max-width for the main content wrapper on this page */
+    .admin-content {
+        max-width: none !important; /* Use !important to ensure override */
+    }
 </style>
 <?php
 
@@ -92,8 +114,8 @@ if ( ! is_numeric( $BID ) ) {
 $bid_sql = ( $BID > 0 ) ? " AND T1.banner_id = " . intval( $BID ) : '';
 $bid_update_sql = ( $BID > 0 ) ? " AND banner_id = " . intval( $BID ) : '';
 // Handle actions only if an order_id is provided
-if ( isset( $_REQUEST['order_id'] ) ) {
-	$order_id = intval( $_REQUEST['order_id'] );
+if ( isset( $_POST['order_id'] ) ) {
+	$order_id = intval( $_POST['order_id'] );
 } else {
 	// Ensure order_id is initialized
 	$order_id = 0;
@@ -105,21 +127,20 @@ $user_info = wp_get_current_user();
 
 // Display dynamic title based on the action
 // Default to 'N' if not set
-$Y_or_N = $_GET['app'] ?? 'N';
-if ( $Y_or_N == 'Y' ) {
-	$title = Language::get( 'Previously Approved Pixels' );
-} else {
-	$title = Language::get( 'Pixels Awaiting Approval' );
+$Y_or_N = sanitize_text_field( $_GET['app'] ?? 'N' );
+if ( $Y_or_N !== 'Y' ) {
+	$Y_or_N = 'N';
 }
 
-// Process 'approve' action
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'approve' ) {
+// Set title based on filter
+$title = ( $Y_or_N == 'N' ) ? Language::get( 'Pixels Awaiting Approval' ) : Language::get( 'Previously Approved Pixels' );
 
-	$order_id = intval( $_REQUEST['order_id'] );
+// Process 'approve' action
+if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] == 'approve' ) {
+	$order_id = intval( $_GET['order_id'] );
 	if ( ! $order_id ) {
 		die( 'Invalid order_id' );
 	}
-	// Nonce verification added
 	check_admin_referer( 'mds-approve-order_' . $order_id );
 
 	$wpdb->query( $wpdb->prepare(
@@ -136,7 +157,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'approve' ) 
 	) );
 
 	// Optional: Process grid images immediately if checked
-	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+	if ( isset( $_GET['do_it_now'] ) && $_GET['do_it_now'] === 'true' ) {
 		Utility::process_grid_image( $BID );
 	}
 
@@ -144,12 +165,12 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'approve' ) 
 }
 
 // Process 'mass_approve' action
-if ( isset( $_REQUEST['mass_approve'] ) && $_REQUEST['mass_approve'] != '' ) {
-	// Nonce verification added
+// Check if bulk action was set to 'approve' (POST) AND the corresponding hidden input is set
+if ( ( ( isset( $_POST['action'] ) && $_POST['action'] == 'approve' ) || ( isset( $_POST['action2'] ) && $_POST['action2'] == 'approve' ) ) && isset( $_POST['mass_approve'] ) && $_POST['mass_approve'] != '' ) {
 	check_admin_referer( 'mds-admin' );
-	if ( isset( $_REQUEST['orders'] ) && sizeof( $_REQUEST['orders'] ) > 0 ) {
+	if ( isset( $_POST['orders'] ) && is_array($_POST['orders']) && count( $_POST['orders'] ) > 0 ) {
 
-		foreach ( $_REQUEST['orders'] as $order_id ) {
+		foreach ( $_POST['orders'] as $order_id ) {
 			$order_id = intval( $order_id );
 			$wpdb->query( $wpdb->prepare(
 				"UPDATE " . MDS_DB_PREFIX . "blocks
@@ -165,7 +186,7 @@ if ( isset( $_REQUEST['mass_approve'] ) && $_REQUEST['mass_approve'] != '' ) {
 			) );
 		}
 		// Optional: Process grid images immediately if checked
-		if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+		if ( isset( $_POST['do_it_now'] ) && $_POST['do_it_now'] === 'true' ) {
 			Utility::process_grid_image( $BID );
 		}
 	}
@@ -173,13 +194,11 @@ if ( isset( $_REQUEST['mass_approve'] ) && $_REQUEST['mass_approve'] != '' ) {
 }
 
 // Process 'disapprove' action
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disapprove' ) {
-
-	$order_id = intval( $_REQUEST['order_id'] );
+if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] == 'disapprove' ) {
+	$order_id = intval( $_GET['order_id'] );
 	if ( ! $order_id ) {
 		die( 'Invalid order_id' );
 	}
-	// Nonce verification added
 	check_admin_referer( 'mds-disapprove-order_' . $order_id );
 
 	$wpdb->query( $wpdb->prepare(
@@ -196,7 +215,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disapprove'
 	) );
 
 	// Optional: Process grid images immediately if checked
-	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+	if ( isset( $_GET['do_it_now'] ) && $_GET['do_it_now'] === 'true' ) {
 		Utility::process_grid_image( $BID );
 	}
 
@@ -204,12 +223,12 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disapprove'
 }
 
 // Process 'mass_disapprove' action
-if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != '' ) {
-	// Nonce verification added
+// Check if bulk action was set to 'disapprove' (POST) AND the corresponding hidden input is set
+if ( ( ( isset( $_POST['action'] ) && $_POST['action'] == 'disapprove' ) || ( isset( $_POST['action2'] ) && $_POST['action2'] == 'disapprove' ) ) && isset( $_POST['mass_disapprove'] ) && $_POST['mass_disapprove'] != '' ) {
 	check_admin_referer( 'mds-admin' );
-	if ( isset( $_REQUEST['orders'] ) && sizeof( $_REQUEST['orders'] ) > 0 ) {
+	if ( isset( $_POST['orders'] ) && is_array($_POST['orders']) && count( $_POST['orders'] ) > 0 ) {
 
-		foreach ( $_REQUEST['orders'] as $order_id ) {
+		foreach ( $_POST['orders'] as $order_id ) {
 			$order_id = intval( $order_id );
 			$wpdb->query( $wpdb->prepare(
 				"UPDATE " . MDS_DB_PREFIX . "blocks
@@ -225,7 +244,7 @@ if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != ''
 			) );
 		}
 		// Optional: Process grid images immediately if checked
-		if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+		if ( isset( $_POST['do_it_now'] ) && $_POST['do_it_now'] === 'true' ) {
 			Utility::process_grid_image( $BID );
 		}
 	}
@@ -234,12 +253,11 @@ if ( isset( $_REQUEST['mass_disapprove'] ) && $_REQUEST['mass_disapprove'] != ''
 
 
 // Process 'deny' action (set order status to denied)
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
-	$order_id = intval( $_REQUEST['order_id'] );
+if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] == 'deny' ) {
+	$order_id = intval( $_GET['order_id'] );
 	if ( ! $order_id ) {
 		die( 'Invalid order_id' );
 	}
-	// Nonce verification added
 	check_admin_referer( 'mds-deny-order_' . $order_id );
 
 	// Set blocks to N
@@ -260,7 +278,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'deny' ) {
 	);
 
 	// Optional: Process grid images immediately if checked
-	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
+	if ( isset( $_GET['do_it_now'] ) && $_GET['do_it_now'] === 'true' ) {
 		Utility::process_grid_image( $BID );
 	}
 
@@ -279,8 +297,6 @@ $sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.status != 'deni
 
 // Count total orders for pagination, ensuring it's an integer
 $total_orders = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
-error_log('[MDS Debug] Approve Pixels - Total Orders Query: ' . $wpdb->last_query);
-error_log('[MDS Debug] Approve Pixels - Total Orders Count: ' . $total_orders);
 
 // Fetch orders for the current page
 $sql = $wpdb->prepare(
@@ -293,11 +309,11 @@ $sql = $wpdb->prepare(
 			TR.type AS pstatus,
 			BC.block_coords,
 			T1.ad_id
-     FROM " . MDS_DB_PREFIX . "orders T1
-     LEFT JOIN (SELECT order_id, COUNT(*) as block_count FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) T2
-     ON T1.order_id = T2.order_id
-     JOIN {$wpdb->users} U ON T1.user_id = U.ID
-     LEFT JOIN (
+	 FROM " . MDS_DB_PREFIX . "orders T1
+	 LEFT JOIN (SELECT order_id, COUNT(*) as block_count FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) T2
+	 ON T1.order_id = T2.order_id
+	 JOIN {$wpdb->users} U ON T1.user_id = U.ID
+	 LEFT JOIN (
 		SELECT order_id, url, alt_text
 		FROM (
 			SELECT order_id, url, alt_text, ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY block_id ASC) as rn
@@ -305,50 +321,18 @@ $sql = $wpdb->prepare(
 		) AS RankedBlocks
 		WHERE rn = 1
 	 ) FB ON T1.order_id = FB.order_id
-     LEFT JOIN " . MDS_DB_PREFIX . "transactions TR ON T1.order_id = TR.order_id
-     LEFT JOIN (SELECT order_id, GROUP_CONCAT(CONCAT(x, ',', y) SEPARATOR ' | ') AS block_coords FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) BC ON T1.order_id = BC.order_id
-     {$sql_where}
-     GROUP BY T1.order_id
-     ORDER BY T1.order_date DESC
-     LIMIT %d, %d",
+	 LEFT JOIN " . MDS_DB_PREFIX . "transactions TR ON T1.order_id = TR.order_id
+	 LEFT JOIN (SELECT order_id, GROUP_CONCAT(CONCAT(x, ',', y) SEPARATOR ' | ') AS block_coords FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) BC ON T1.order_id = BC.order_id
+	 {$sql_where}
+	 GROUP BY T1.order_id
+	 ORDER BY T1.order_date DESC
+	 LIMIT %d, %d",
 	$offset,
 	MAX
 );
 
-error_log('[MDS Debug] Approve Pixels - Fetch Orders SQL: ' . $sql);
 $results = $wpdb->get_results( $sql, ARRAY_A );
-error_log('[MDS Debug] Approve Pixels - Fetch Results: ' . print_r($results, true));
 
-// Process 'save_links' action
-if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
-	// Nonce verification added
-	check_admin_referer( 'mds-admin' );
-	if ( sizeof( $_REQUEST['urls'] ) > 0 ) {
-		$i = 0;
-
-		foreach ( $_REQUEST['urls'] as $key => $value ) {
-			$order_id = intval( $key );
-			$url      = esc_url_raw( $value );
-			$title    = sanitize_text_field( $_REQUEST['titles'][ $key ] );
-
-			if ( $order_id > 0 ) {
-				$wpdb->update(
-					MDS_DB_PREFIX . "orders",
-					[ 'url' => $url, 'title' => $title ],
-					[ 'order_id' => $order_id ],
-					[ '%s', '%s' ],
-					[ '%d' ]
-				);
-			}
-			$i ++;
-		}
-	}
-	// Optional: Process grid images immediately if checked
-	if ( isset( $_REQUEST['do_it_now'] ) && $_REQUEST['do_it_now'] === 'true' ) {
-		Utility::process_grid_image( $BID );
-	}
-	Utility::redirect_to_previous_approve_page();
-}
 ?>
 <style type="text/css">
     a.black:link {
@@ -375,9 +359,13 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 <div class="wrap">
     <h1><?php echo esc_html( $title ); ?></h1>
 
-    <form name="form1" method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
-		<?php // Nonce for mass actions ?>
-		<?php wp_nonce_field( 'mds-admin' ); ?>
+    <?php
+    // Ensure the form action preserves the current filter state (Approved/Disapproved)
+    $form_action_url = add_query_arg( 'app', $Y_or_N, admin_url( 'admin.php?page=mds-approve-pixels' ) );
+    ?>
+    <form name="form1" method="post" action="<?php echo esc_url( $form_action_url ); ?>">
+        <?php // Nonce for mass actions ?>
+        <?php wp_nonce_field( 'mds-admin' ); ?>
         <input type="hidden" name="page" value="mds-approve-pixels"/>
         <input type="hidden" name="offset" value="<?php echo $offset; ?>"/>
         <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>"/>
@@ -385,7 +373,7 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 
         <p>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N&BID=' . $BID ) ); ?>"
-               class="black"><?php echo Language::get( 'Awaiting Approval' ); ?></a>
+               class="black"><?php echo Language::get( 'Pixels Awaiting Approval' ); ?></a>
             |
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=Y&BID=' . $BID ) ); ?>"
                class="black"><?php echo Language::get( 'Approved' ); ?></a>
@@ -408,13 +396,6 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 				<!-- Will be set by JS if disapprove selected -->
 				<input type="hidden" name="mass_disapprove" value="">
             </div>
-            <div class="alignleft actions">
-				<input type="submit" class="button" name="save_links" value="<?php echo Language::get( 'Save Changes' ); ?>"/>
-				&nbsp; <!-- Add some space -->
-				<label for="do_it_now_top">
-					<input type="checkbox" name="do_it_now" id="do_it_now_top" value="true"/> <?php echo Language::get( 'Update Grid Image After Saving' ); ?>
-				</label>
-			</div>
             <div class="tablenav-pages">
                 <span class="displaying-num"><?php printf( Language::get( '%s items' ), $total_orders ); ?></span>
 				<?php Utility::display_pagination( $total_orders, MAX, $offset, "admin.php?page=mds-approve-pixels&app=$Y_or_N&BID=$BID" ); ?>
@@ -473,50 +454,67 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
                         </th>
                         <td class="column-actions">
                             <?php if ( $row['approved'] == 'N' ) { ?>
-                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
-                                    <?php wp_nonce_field( 'mds-approve-order_' . $order_id ); ?>
-                                    <input type="hidden" name="mds-action" value="approve">
-                                    <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
-                                    <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
-                                    <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
-                                    <input type="hidden" name="offset" value="<?php echo $offset; ?>">
-                                    <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
-                                    <input type="hidden" name="do_it_now" value="">
-                                    <input type="submit" class="button button-small" style="background-color: #388E3C; color: #fff;" value="Approve">
-                                </form>
-                            <?php } ?>
-                            <?php if ( $row['approved'] == 'Y' ) { ?>
-                                <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
-                                    <?php wp_nonce_field( 'mds-disapprove-order_' . $order_id ); ?>
-                                    <input type="hidden" name="mds-action" value="disapprove">
-                                    <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
-                                    <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
-                                    <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
-                                    <input type="hidden" name="offset" value="<?php echo $offset; ?>">
-                                    <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
-                                    <input type="hidden" name="do_it_now" value="">
-                                    <input type="submit" class="button button-small" style="background-color: #E65100; color: #fff;" value="Disapprove">
-                                </form>
-                            <?php } ?>
-                            <form method="POST" action="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ); ?>">
-                                <?php wp_nonce_field( 'mds-deny-order_' . $order_id ); ?>
-                                <input type="hidden" name="mds-action" value="deny">
-                                <input type="hidden" name="BID" value="<?php echo intval( $row['banner_id'] ); ?>">
-                                <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
-                                <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
-                                <input type="hidden" name="offset" value="<?php echo $offset; ?>">
-                                <input type="hidden" name="app" value="<?php echo $Y_or_N; ?>">
-                                <input type="hidden" name="do_it_now" value="">
-                                <input type="submit" class="button button-small" style="background-color: #D32F2F; color:#fff;" value="Deny">
-                            </form>
+                                <?php
+								// Construct Approve link URL
+								$approve_nonce = wp_create_nonce( 'mds-approve-order_' . $order_id );
+								$approve_url = add_query_arg( [
+									'page'       => 'mds-approve-pixels',
+									'mds-action' => 'approve',
+									'order_id'   => $order_id,
+									'BID'        => $row['banner_id'], // Pass BID if needed
+									'app'        => $Y_or_N, // Keep current filter
+									'offset'     => $offset, // Keep current pagination
+									'_wpnonce'   => $approve_nonce
+								], admin_url( 'admin.php' ) );
+								?>
+								<a href="<?php echo esc_url( $approve_url ); ?>" class="button button-small" style="background-color: #388E3C; color: #fff;">Approve</a>
+                             <?php } ?>
+                             <?php if ( $row['approved'] == 'Y' ) { ?>
+                                <?php
+								// Construct Disapprove link URL
+								$disapprove_nonce = wp_create_nonce( 'mds-disapprove-order_' . $order_id );
+								$disapprove_url = add_query_arg( [
+									'page'       => 'mds-approve-pixels',
+									'mds-action' => 'disapprove',
+									'order_id'   => $order_id,
+									'BID'        => $row['banner_id'],
+									'app'        => $Y_or_N,
+									'offset'     => $offset,
+									'_wpnonce'   => $disapprove_nonce
+								], admin_url( 'admin.php' ) );
+								?>
+								<a href="<?php echo esc_url( $disapprove_url ); ?>" class="button button-small" style="background-color: #E65100; color: #fff;">Disapprove</a>
+                             <?php } ?>
+                            <?php
+							// Construct Deny link URL
+							$deny_nonce = wp_create_nonce( 'mds-deny-order_' . $order_id );
+							$deny_url = add_query_arg( [
+								'page'       => 'mds-approve-pixels',
+								'mds-action' => 'deny',
+								'order_id'   => $order_id,
+								'BID'        => $row['banner_id'],
+								'app'        => $Y_or_N,
+								'offset'     => $offset,
+								'_wpnonce'   => $deny_nonce
+							], admin_url( 'admin.php' ) );
+							?>
+							<a href="<?php echo esc_url( $deny_url ); ?>" class="button button-small" style="background-color: #D32F2F; color:#fff;">Deny</a>
                         </td>
                         <td><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $order_id ) ); ?>"><?php echo $order_id; ?></a></td>
                         <td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . intval($row['ad_id']) . '&action=edit' ) ); ?>"><?php echo esc_html( $row['ad_id'] ?? '' ); ?></a></td>
                         <td><?php echo esc_html( $row['order_date'] ); ?></td>
                         <td><a href="<?php echo esc_url( admin_url( 'user-edit.php?user_id=' . $row['user_id'] ) ); ?>"><?php echo esc_html( $row['user_login'] ); ?></a></td>
                         <td><?php echo intval( $row['block_count'] ); ?></td>
-                        <td class="column-url"><input type="text" name="urls[<?php echo $order_id; ?>]" value="<?php echo esc_url( $row['url'] ?? '' ); ?>"/></td>
-                        <td class="column-title"><input type="text" name="titles[<?php echo $order_id; ?>]" value="<?php echo esc_attr( $row['title'] ?? '' ); ?>"/></td>
+                        <td class="column-url">
+							<?php 
+							if ( ! empty( $row['url'] ) ) {
+								$url = esc_url( $row['url'] );
+								echo '<a href="' . $url . '" target="_blank">' . esc_html( $row['url'] ) . '</a>'; // Display URL as link
+							}
+							// If URL is empty, output nothing
+							?>
+                        </td>
+                        <td class="column-title"><?php echo esc_html( $row['title'] ?? '' ); ?></td>
                         <td class="column-block_coords"><div class="block-coords-wrapper"><?php echo esc_html( $row['block_coords'] ?? '' ); ?></div></td>
                         <td class="column-image">
                             <?php
@@ -550,6 +548,7 @@ if ( isset( $_REQUEST['save_links'] ) && $_REQUEST['save_links'] != '' ) {
 
         <div class="tablenav bottom">
             <div class="alignleft actions bulkactions">
+                <label for="bulk-action-selector-bottom" class="screen-reader-text"><?php echo Language::get( 'Select bulk action' ); ?></label>
                 <select name="action2" id="bulk-action-selector-bottom">
                     <option value="-1"><?php echo Language::get( 'Bulk Actions' ); ?></option>
                     <option value="approve"><?php echo Language::get( 'Approve' ); ?></option>
