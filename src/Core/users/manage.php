@@ -71,10 +71,13 @@ if ( ! empty( $gd_info['PNG Support'] ) ) {
 
 global $BID, $f2, $wpdb;
 
+// Get the setting for showing the grid dropdown *before* determining BID
+$show_grid_dropdown_option = \MillionDollarScript\Classes\Data\Options::get_option( MDS_PREFIX . 'manage-pixels-grid-dropdown', 'yes' ) === 'yes';
+
 // --- Refactored BID Determination --- START
 
-// Check if grid selection form was submitted with a valid nonce
-if ( isset( $_GET['mds-nonce'] ) && isset( $_GET['BID'] ) && is_numeric( $_GET['BID'] ) ) {
+// Check if grid selection form was submitted with a valid nonce *and* if the dropdown option is enabled
+if ( $show_grid_dropdown_option && isset( $_GET['mds-nonce'] ) && isset( $_GET['BID'] ) && is_numeric( $_GET['BID'] ) ) {
 	if ( wp_verify_nonce( sanitize_key( $_GET['mds-nonce'] ), 'mds_manage_grid_select' ) ) {
 		// Nonce is valid, use BID from the GET request
 		$BID = intval( $_GET['BID'] );
@@ -176,7 +179,6 @@ if ( ( ( isset( $_REQUEST['mds_dest'] ) && $_REQUEST['mds_dest'] == 'manage' ) |
 
 // Show Grid Selection Dropdown if enabled
 $grid_selector_form_html = ''; // Initialize variable
-$show_grid_dropdown_option = \MillionDollarScript\Classes\Data\Options::get_option( MDS_PREFIX . 'manage-pixels-grid-dropdown', 'yes' ) === 'yes';
 
 if ( $show_grid_dropdown_option ) {
 	global $wpdb;
