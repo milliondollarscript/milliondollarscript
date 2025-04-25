@@ -72,33 +72,39 @@ if ( ! empty( $gd_info['PNG Support'] ) ) {
 global $BID, $f2, $wpdb;
 
 // Get the setting for showing the grid dropdown *before* determining BID
-$show_grid_dropdown_option = \MillionDollarScript\Classes\Data\Options::get_option( MDS_PREFIX . 'manage-pixels-grid-dropdown', 'yes' ) === 'yes';
+$show_grid_dropdown_option = Options::get_option( 'manage-pixels-grid-dropdown' ) === 'yes';
 
 // --- Refactored BID Determination --- START
 
-// Check if grid selection form was submitted with a valid nonce *and* if the dropdown option is enabled
-if ( $show_grid_dropdown_option && isset( $_GET['mds-nonce'] ) && isset( $_GET['BID'] ) && is_numeric( $_GET['BID'] ) ) {
-	if ( wp_verify_nonce( sanitize_key( $_GET['mds-nonce'] ), 'mds_manage_grid_select' ) ) {
-		// Nonce is valid, use BID from the GET request
-		$BID = intval( $_GET['BID'] );
+if ( $show_grid_dropdown_option ) {
+	// --- Option ENABLED --- 
+	// Check if grid selection form was submitted with a valid nonce
+	if ( isset( $_GET['mds-nonce'] ) && isset( $_GET['BID'] ) && is_numeric( $_GET['BID'] ) ) {
+		if ( wp_verify_nonce( sanitize_key( $_GET['mds-nonce'] ), 'mds_manage_grid_select' ) ) {
+			// Nonce is valid, use BID from the GET request
+			$BID = intval( $_GET['BID'] );
+		} else {
+			// Nonce is invalid, display error and exit
+			if ( $wrap ) {
+				require_once MDS_CORE_PATH . "html/header.php";
+			}
+			wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			if ( $wrap ) {
+				require_once MDS_CORE_PATH . "html/footer.php";
+			}
+			exit;
+		}
+	} elseif ( isset( $_REQUEST['BID'] ) && is_numeric( $_REQUEST['BID'] ) ) {
+		// Option enabled, form NOT submitted, but BID is in the general request (e.g., manual URL)
+		$BID = intval( $_REQUEST['BID'] );
 	} else {
-		// Nonce is invalid, display error and exit
-		if ( $wrap ) {
-			require_once MDS_CORE_PATH . "html/header.php";
-		}
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-		if ( $wrap ) {
-			require_once MDS_CORE_PATH . "html/footer.php";
-		}
-		exit;
+		// Option enabled, no form submission, no BID in request - default to the shortcode's BID
+		$BID = $f2->bid();
 	}
-} elseif ( isset( $_REQUEST['BID'] ) && is_numeric( $_REQUEST['BID'] ) ) {
-	// Nonce not present or invalid, but BID is in the general request (e.g., manual URL, maybe shortcode param?)
-	// Use BID from the general request.
-	$BID = intval( $_REQUEST['BID'] );
 } else {
-	// No BID in request, default to the shortcode's BID
-	$BID = $f2->bid();
+	// --- Option DISABLED --- 
+	// Always use the shortcode's BID and ignore any BID in the request
+	$BID = $f2->bid(); 
 }
 
 // --- Refactored BID Determination --- END
