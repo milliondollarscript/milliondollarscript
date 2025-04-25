@@ -334,7 +334,7 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
 					<?php
 					if ( $show_refund_link && $refund_link_url ) {
 						printf(
-							'<a href="%s" target="_blank">%s</a>',
+							'<a href="%s">%s</a>',
 							esc_url( $refund_link_url ),
 							Language::get( 'Manage Refund (WooCommerce)' )
 						);
