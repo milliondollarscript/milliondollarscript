@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.10.220
+Stable tag: 2.5.10.221
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -340,3 +340,5 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix block loading.
 * Fix Attempt to read property "ID" on null in src\Classes\FormFields.php on line 149
 * Fix being able to overlap existing orders in advanced pixel selection mode.
+
+## Upgrade Notice ##

@@ -42,6 +42,8 @@ if ( ( $BID == 'all' ) || ( $BID == '' ) ) {
 	$bid_sql = "  ";
 }
 
+/*
+// Old refund logic - Replaced by WooCommerce integration
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'refund' ) {
 
 	$t_id = $_REQUEST['transaction_id'];
@@ -77,6 +79,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'refund' ) {
 	// can only refund completed orders..
 
 }
+*/
 
 ?>
 <p>
@@ -303,12 +306,7 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
 	                echo $row['type'] . '</font>'; ?></span>
             </td>
             <td>
-                <span style="font-family: arial,sans-serif;"><?php
-	                if ( $row['type'] == 'DEBIT' ) {
-		                ?><input type="button" value="Refund" onclick="if (!confirmLink(this, 'Refund, are you sure?')) return false;"
-                                 data-link="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>transaction-log&amp;mds-action=refund&amp;transaction_id=<?php echo $row['transaction_id']; ?>">
-		                <?php
-	                } ?></span>
+                <span style="font-family: arial,sans-serif;"><?php ?></span>
             </td>
         </tr>
 		<?php

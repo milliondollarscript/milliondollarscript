@@ -659,15 +659,30 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                     <td><?php echo esc_html( Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] ) ); ?></td>
                     <td><?php echo esc_html( $row['status'] ); ?><br>
 						<?php
-						$refunded = false;
-						if ( $row['status'] == 'cancelled' ) {
-							$sql = "select * from " . MDS_DB_PREFIX . "transactions where type='CREDIT' and order_id=" . intval( $row['order_id'] );
-							$r1 = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-							if ( mysqli_num_rows( $r1 ) > 0 ) {
-								$refunded = true;
-								echo "(Refunded)";
+						// Check WooCommerce order status for refund
+						global $wpdb;
+						$is_wc_refunded = false;
+						$mds_order_id_for_wc_lookup = absint( $row['order_id'] );
+
+						// Find the WC order ID by querying postmeta based on the mds_order_id value
+						$wc_order_id = $wpdb->get_var( $wpdb->prepare(
+							"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s",
+							'mds_order_id',
+							$mds_order_id_for_wc_lookup
+						) );
+
+						// If we found a WC order ID and WooCommerce is active and function exists
+						if ( $wc_order_id && function_exists( 'wc_get_order' ) ) {
+							$wc_order = wc_get_order( $wc_order_id );
+							if ( $wc_order && $wc_order->get_status() === 'refunded' ) {
+								$is_wc_refunded = true;
 							}
 						}
+
+						if ( $is_wc_refunded ) {
+							echo "(Refunded)";
+						}
+
 						if ( $show == 'RE' ) {
 							?>
                             <input type="button"
@@ -680,7 +695,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 								       )
 							       ); ?>">
 						<?php } else {
-							if ( ( $row['status'] != 'completed' ) && ( $row['status'] != 'deleted' ) && ! $refunded ) {
+							if ( ( $row['status'] != 'completed' ) && ( $row['status'] != 'deleted' ) && ! $is_wc_refunded ) {
 								?>
                                 <input type="button"
                                        style="font-size: 9px;"

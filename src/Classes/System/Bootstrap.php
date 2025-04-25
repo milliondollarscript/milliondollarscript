@@ -36,6 +36,7 @@ use MillionDollarScript\Classes\Web\Routes;
 use MillionDollarScript\Classes\WooCommerce\WooCommerce;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceOptions;
+use MillionDollarScript\Classes\WooCommerce\Refunds;
 use MillionDollarScript\Classes\Admin\Notices;
 
 defined( 'ABSPATH' ) or exit;
@@ -159,8 +160,11 @@ class Bootstrap {
 		// Add Admin page
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Admin\Admin', 'menu' ], 10 );
 
+		// Initialize WooCommerce integrations
+		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\WooCommerce\Refunds', 'init' ] );
+
 		// Load Admin AJAX
-		add_action( 'wp_ajax_mds_admin_ajax', [ '\MillionDollarScript\Classes\Admin\Admin', 'ajax' ] );
+		add_action( 'wp_ajax_mds_admin_ajax', [ '\MillionDollarScript\Classes\Ajax\AdminAjax', 'route' ] );
 
 		add_action( 'wp_ajax_mds_update_language', [ '\MillionDollarScript\Classes\Admin\Admin', 'update_language' ] );
 		add_action( 'wp_ajax_mds_create_pages', [ '\MillionDollarScript\Classes\Admin\Admin', 'create_pages' ] );
