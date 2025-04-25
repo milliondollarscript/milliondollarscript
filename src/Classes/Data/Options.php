@@ -207,15 +207,6 @@ class Options {
 				Field::make( 'text', MDS_PREFIX . 'endpoint', Language::get( 'Endpoint' ) )
 				     ->set_default_value( 'milliondollarscript' )
 				     ->set_help_text( Language::get( 'The endpoint to use for dynamic pages. Example: /<span style="color: red;">endpoint</span>/order. If left empty will use the default: milliondollarscript' ) ),
-
-				// Manage Pixels Grid Dropdown
-				Field::make( 'select', MDS_PREFIX . 'manage-pixels-grid-dropdown', Language::get( 'Show Grid Dropdown on Manage Pixels Page?' ) )
-				     ->set_default_value( 'yes' )
-				     ->set_options( [
-					     'yes' => Language::get( 'Yes' ),
-					     'no'  => Language::get( 'No' ),
-				     ] )
-				     ->set_help_text( Language::get( 'If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL.' ) ),
 			],
 
 			Language::get( 'Login' ) => [
@@ -359,6 +350,15 @@ class Options {
 			],
 
 			Language::get( 'System' ) => [
+
+				// Manage Pixels Grid Dropdown
+				Field::make( 'select', MDS_PREFIX . 'manage-pixels-grid-dropdown', Language::get( 'Show Grid Dropdown on Manage Pixels Page?' ) )
+				     ->set_default_value( 'yes' )
+				     ->set_options( [
+					     'yes' => Language::get( 'Yes' ),
+					     'no'  => Language::get( 'No' ),
+				     ] )
+				     ->set_help_text( Language::get( 'If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL.' ) ),
 
 				// Delete data on uninstall?
 				Field::make( 'checkbox', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )

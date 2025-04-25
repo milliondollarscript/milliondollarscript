@@ -58,7 +58,7 @@ if ( $wrap ) {
 $gd_info      = gd_info();
 $gif_support  = '';
 $jpeg_support = '';
-$png_support  = '';
+$png_support  = MillionDollarScript\Classes\Data\Options::get_option( 'allow-png' );
 if ( ! empty( $gd_info['GIF Read Support'] ) ) {
 	$gif_support = "GIF";
 }
@@ -71,14 +71,38 @@ if ( ! empty( $gd_info['PNG Support'] ) ) {
 
 global $BID, $f2, $wpdb;
 
-// Determine the current Banner ID (BID)
-// Prioritize BID from request (if user selected from dropdown)
-if ( isset( $_REQUEST['BID'] ) ) {
+// --- Refactored BID Determination --- START
+
+// Check if grid selection form was submitted with a valid nonce
+if ( isset( $_GET['mds-nonce'] ) && isset( $_GET['BID'] ) && is_numeric( $_GET['BID'] ) ) {
+	if ( wp_verify_nonce( sanitize_key( $_GET['mds-nonce'] ), 'mds_manage_grid_select' ) ) {
+		// Nonce is valid, use BID from the GET request
+		$BID = intval( $_GET['BID'] );
+	} else {
+		// Nonce is invalid, display error and exit
+		if ( $wrap ) {
+			require_once MDS_CORE_PATH . "html/header.php";
+		}
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+		if ( $wrap ) {
+			require_once MDS_CORE_PATH . "html/footer.php";
+		}
+		exit;
+	}
+} elseif ( isset( $_REQUEST['BID'] ) && is_numeric( $_REQUEST['BID'] ) ) {
+	// Nonce not present or invalid, but BID is in the general request (e.g., manual URL, maybe shortcode param?)
+	// Use BID from the general request.
 	$BID = intval( $_REQUEST['BID'] );
 } else {
-	// Otherwise, use the default/shortcode BID
-	$BID = $f2->bid(); 
+	// No BID in request, default to the shortcode's BID
+	$BID = $f2->bid();
 }
+
+// --- Refactored BID Determination --- END
+
+// Load banner data based on the determined BID (This should now use the correct BID)
+$banner_data = load_banner_constants( $BID );
+$user_id     = get_current_user_id();
 
 // Verify nonce if the grid selection form was submitted via GET
 if ( isset( $_GET['mds-nonce'] ) ) {
@@ -94,45 +118,6 @@ if ( isset( $_GET['mds-nonce'] ) ) {
 		exit;
 	}
 	// Nonce is valid, proceed to load banner data with the selected BID
-}
-
-// Load banner data based on the determined BID
-$banner_data = load_banner_constants( $BID );
-$user_id     = get_current_user_id();
-
-// Get the setting for showing the grid dropdown
-$show_grid_dropdown_option = \MillionDollarScript\Classes\Data\Options::get_option( MDS_PREFIX . 'manage-pixels-grid-dropdown', 'yes' ) === 'yes';
-
-if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
-	$order_id = intval( $_REQUEST['order_id'] );
-	Orders::cancel( $order_id, $user_id );
-}
-
-// Entry point for completion of orders
-if ( isset( $_REQUEST['mds-action'] ) ) {
-	if ( $_REQUEST['mds-action'] == 'complete' ) {
-		Orders::complete( $banner_data['AUTO_PUBLISH'], $BID );
-
-	} else if ( isset( $_REQUEST['aid'] ) ) {
-
-		$order_id = Orders::get_order_id_from_ad_id( intval( $_REQUEST['aid'] ) );
-		if ( Options::get_option( 'order-locking', false ) ) {
-			// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
-
-			$sql = $wpdb->prepare(
-				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
-				$order_id,
-				get_current_user_id()
-			);
-
-			$row               = $wpdb->get_row( $sql, ARRAY_A );
-			$completion_status = Orders::get_completion_status( $order_id, $user_id );
-			if ( $completion_status && $row['status'] !== 'denied' ) {
-				// User should never get here, so we will just redirect them to the manage page.
-				Utility::redirect( Utility::get_page_url( 'manage' ) );
-			}
-		}
-	}
 }
 
 // A block was clicked. Fetch the ad_id and initialize $_REQUEST['ad_id']
@@ -186,15 +171,19 @@ if ( ( ( isset( $_REQUEST['mds_dest'] ) && $_REQUEST['mds_dest'] == 'manage' ) |
 	$ad_id = intval( $_REQUEST['aid'] );
 	Functions::manage_pixel( $ad_id, $mds_pixel, $banner_data, $BID, $gif_support, $jpeg_support, $png_support );
 
-	return;
+	return; 
 }
 
 // Show Grid Selection Dropdown if enabled
+$grid_selector_form_html = ''; // Initialize variable
+$show_grid_dropdown_option = \MillionDollarScript\Classes\Data\Options::get_option( MDS_PREFIX . 'manage-pixels-grid-dropdown', 'yes' ) === 'yes';
+
 if ( $show_grid_dropdown_option ) {
 	global $wpdb;
 	$banners = $wpdb->get_results( "SELECT banner_id, name FROM " . MDS_DB_PREFIX . "banners ORDER BY name ASC", ARRAY_A );
 
 	if ( $banners && count( $banners ) > 1 ) { // Only show if more than one grid exists
+		ob_start(); // Start output buffering
 		?>
 		<div class="mds-grid-selector-form mds-box">
 			<form method="get" action="<?php echo esc_url( MillionDollarScript\Classes\System\Utility::get_page_url( 'manage' ) ); ?>">
@@ -215,16 +204,19 @@ if ( $show_grid_dropdown_option ) {
 						</option>
 					<?php endforeach; ?>
 				</select>
-				<button type="submit" class="button mds-button"><?php MillionDollarScript\Classes\Language\Language::out( 'View Grid' ); ?></button>
+				<?php $button_text = MillionDollarScript\Classes\Language\Language::get( 'Select Grid' ); ?>
+				<input type="submit" class="button" value="<?php echo esc_attr( $button_text ); ?>" />
 			</form>
 		</div>
 		<?php
+		$grid_selector_form_html = ob_get_clean(); // Get buffered content and clean buffer
 	}
 }
 
 $offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
 
 # List Ads
+// echo "<!-- DEBUG: Calling manage_list_ads with BID = " . esc_html($BID) . " -->"; // Remove debug output
 ob_start();
 $count    = manage_list_ads( $offset );
 $contents = ob_get_contents();
@@ -242,7 +234,11 @@ if ( $count > 0 ) {
 
 	$user_id = get_current_user_id();
 
-	$sql    = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE (user_id = %d) AND (status = 'sold')", $user_id );
+	$sql = $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE (user_id = %d) AND (status = 'sold') AND banner_id=%d",
+		$user_id,
+		intval( $BID )
+	);
 	$result = $wpdb->get_results( $sql );
 	$pixels = count( $result ) * ( $b_row['block_width'] * $b_row['block_height'] );
 
@@ -309,6 +305,8 @@ if ( $count > 0 ) {
 
 	Language::out_replace( '<p>Your pixels were clicked %CLICK_COUNT% times.</p>', '%CLICK_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'click_count', true ) ) ) );
 	Language::out_replace( '<p>Your pixels were viewed %VIEW_COUNT% times.</p>', '%VIEW_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'view_count', true ) ) ) );
+
+	echo $grid_selector_form_html;
 
 	echo $contents;
 

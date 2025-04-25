@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.212
+Stable tag: 2.5.10.214
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -169,6 +169,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Corrected admin grid selection redirect and security check issue on Packages page.
 * Fix: Resolved issue where admin grid selection could fail security check and redirect incorrectly.
 * Feat: Added an option to show a grid selection dropdown on the user-facing Manage Pixels page.
+* Feat: Added grid selection dropdown to the Manage Pixels page (configurable in MDS Options).
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
