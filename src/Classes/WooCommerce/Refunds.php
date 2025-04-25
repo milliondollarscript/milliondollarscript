@@ -47,109 +47,8 @@ class Refunds {
 			return;
 		}
 
-		// Add filter for order list actions
-		add_filter( 'woocommerce_admin_order_actions', [ __CLASS__, 'add_refund_order_action' ], 10, 2 );
-
-		// Add AJAX handler for the refund action
-		add_action( 'wp_ajax_mds_wc_refund_order', [ __CLASS__, 'handle_ajax_refund' ] );
-
 		// Add action hook for post-refund sync
 		add_action( 'woocommerce_order_refunded', [ __CLASS__, 'sync_mds_on_refund' ], 10, 2 );
-	}
-
-	/**
-	 * Add custom refund action to the WooCommerce order list.
-	 *
-	 * @param array    $actions Existing actions.
-	 * @param \WC_Order $order   The order object.
-	 * @return array Modified actions.
-	 */
-	public static function add_refund_order_action( $actions, $order ) {
-		// Check if it's an MDS order by looking for the meta key
-		$mds_order_id = get_post_meta( $order->get_id(), 'mds_order_id', true );
-
-		// Check if paid and if there is an amount that can be refunded
-		if ( ! empty( $mds_order_id ) && $order->is_paid() && $order->get_remaining_refund_amount() > 0 ) {
-			// Generate the URL for the refund action (we'll use AJAX)
-			$refund_url = wp_nonce_url(
-				add_query_arg(
-					[
-						'action'   => 'mds_wc_refund_order',
-						'order_id' => $order->get_id(),
-					],
-					admin_url( 'admin-ajax.php' )
-				),
-				'mds_wc_refund_order_nonce',
-				'_mds_wc_refund_nonce'
-			);
-
-			// Add the action
-			$actions['mds_refund'] = [
-				'url'    => $refund_url,
-				'name'   => Language::get( 'MDS Refund' ),
-				'action' => 'mds-refund', // class name for the button
-			];
-		}
-
-		return $actions;
-	}
-
-	/**
-	 * Handle the AJAX request to refund an MDS order via WooCommerce.
-	 */
-	public static function handle_ajax_refund() {
-		// Verify nonce
-		if ( ! isset( $_REQUEST['_mds_wc_refund_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['_mds_wc_refund_nonce'] ), 'mds_wc_refund_order_nonce' ) ) {
-			wp_send_json_error( [ 'message' => Language::get( 'Nonce verification failed.' ) ], 403 );
-		}
-
-		// Check user capabilities
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_send_json_error( [ 'message' => Language::get( 'You do not have permission to issue refunds.' ) ], 403 );
-		}
-
-		// Get Order ID
-		$order_id = isset( $_REQUEST['order_id'] ) ? absint( $_REQUEST['order_id'] ) : 0;
-		if ( ! $order_id ) {
-			wp_send_json_error( [ 'message' => Language::get( 'Invalid Order ID.' ) ], 400 );
-		}
-
-		$order = wc_get_order( $order_id );
-		if ( ! $order ) {
-			wp_send_json_error( [ 'message' => Language::get( 'Could not retrieve order.' ) ], 404 );
-		}
-
-		// Double check if it's an MDS order and eligible
-		$mds_order_id = get_post_meta( $order->get_id(), 'mds_order_id', true );
-		if ( empty( $mds_order_id ) || ! $order->is_paid() || $order->get_remaining_refund_amount() <= 0 ) {
-			wp_send_json_error( [ 'message' => Language::get( 'Order is not eligible for MDS refund via WooCommerce.' ) ], 400 );
-		}
-
-		// Process the refund (full refund for now)
-		try {
-			$refund_amount = $order->get_total(); // Full refund
-			$refund_reason = Language::get( 'MDS Refund initiated from order list.' );
-
-			$result = wc_create_refund( [
-				'amount'   => $refund_amount,
-				'reason'   => $refund_reason,
-				'order_id' => $order_id,
-				'refund_payment' => true, // Attempt to process refund through gateway
-				'restock_items'  => true, // Let the sync handler manage pixel restocking
-			] );
-
-			if ( is_wp_error( $result ) ) {
-				wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
-			} else {
-				// Refund successful (Note: The 'woocommerce_order_refunded' action will handle MDS data sync)
-				wp_send_json_success( [ 'message' => Language::get( 'Refund processed successfully via WooCommerce.' ) ] );
-			}
-		} catch ( \Exception $e ) {
-			wp_send_json_error( [ 'message' => $e->getMessage() ], 500 );
-		}
-
-		// Should not reach here, but just in case
-		wp_die();
 	}
 
 	/**
@@ -176,7 +75,7 @@ class Refunds {
 		// We only cancel MDS pixels on a full refund for simplicity
 		if ( $order->get_remaining_refund_amount() > 0 ) {
 			// Optional: Add note for partial refund?
-			//$order->add_order_note( Language::get_replace( 'MDS: Order partially refunded (%s). Pixels not automatically cancelled.', wc_price( $order->get_total_refunded() ) ) );
+			//$order->add_order_note( Language::get_replace( 'MDS: Order partially refunded (%TOTAL_REFUNDED%). Pixels not automatically cancelled.', '%TOTAL_REFUNDED%', wc_price( $order->get_total_refunded() ) ) );
 			return; // Not fully refunded
 		}
 

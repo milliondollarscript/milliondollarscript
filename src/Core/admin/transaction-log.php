@@ -29,6 +29,7 @@
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\Payment\Payment;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -276,10 +277,33 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
 
 	$where_date = " (`date` >= STR_TO_DATE('$from_date', '%Y-%m-%d') AND `date` <= STR_TO_DATE('$to_date', '%Y-%m-%d') ) ";
 
-	$sql = "SELECT * from " . MDS_DB_PREFIX . "transactions, " . MDS_DB_PREFIX . "orders, " . $wpdb->prefix . "users where $where_date AND " . MDS_DB_PREFIX . "transactions.order_id=" . MDS_DB_PREFIX . "orders.order_id AND " . MDS_DB_PREFIX . "orders.user_id=" . $wpdb->prefix . "users.ID order by " . MDS_DB_PREFIX . "transactions.date desc ";
+	$sql = "SELECT t.*, o.*, u.*, pm.post_id as wc_order_id 
+	        FROM " . MDS_DB_PREFIX . "transactions t 
+	        JOIN " . MDS_DB_PREFIX . "orders o ON t.order_id = o.order_id 
+	        JOIN " . $wpdb->prefix . "users u ON o.user_id = u.ID 
+	        LEFT JOIN " . $wpdb->prefix . "postmeta pm ON t.order_id = pm.meta_value AND pm.meta_key = 'mds_order_id' 
+	        WHERE $where_date 
+	        ORDER BY t.date DESC";
 	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 	while ( $row = mysqli_fetch_array( $result ) ) {
-		$user_info = get_userdata( $row['ID'] );
+		$user_info      = get_userdata( $row['ID'] );
+		$wc_order_id    = $row['wc_order_id'] ?? null;
+		$show_refund_link = false;
+
+		// Check if associated WC order exists and is potentially refundable
+		if ( $wc_order_id && class_exists('WooCommerce') ) {
+			$order = wc_get_order( $wc_order_id );
+			if ( $order && $order->is_paid() && $order->get_remaining_refund_amount() > 0 ) {
+				// Check gateway support
+				$payment_gateways = WC()->payment_gateways->payment_gateways();
+				$gateway_id = $order->get_payment_method();
+				$gateway = $payment_gateways[ $gateway_id ] ?? null;
+				if ( $gateway && is_array( $gateway->supports ) && in_array( 'refunds', $gateway->supports, true ) ) {
+					$show_refund_link = true;
+					$refund_link_url = get_edit_post_link( $wc_order_id );
+				}
+			}
+		}
 		?>
         <tr bgcolor="#ffffff">
             <td>
@@ -306,10 +330,23 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
 	                echo $row['type'] . '</font>'; ?></span>
             </td>
             <td>
-                <span style="font-family: arial,sans-serif;"><?php ?></span>
+                <span style="font-family: arial,sans-serif;">
+					<?php
+					if ( $show_refund_link && $refund_link_url ) {
+						printf(
+							'<a href="%s" target="_blank">%s</a>',
+							esc_url( $refund_link_url ),
+							Language::get( 'Manage Refund (WooCommerce)' )
+						);
+					} else {
+						echo '&mdash;'; // No action available
+					}
+					?>
+				</span>
             </td>
         </tr>
 		<?php
+
 	}
 
 	?>

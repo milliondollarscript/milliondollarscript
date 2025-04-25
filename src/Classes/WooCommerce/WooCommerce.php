@@ -34,6 +34,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Payment;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\WooCommerce\Refunds;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -65,6 +66,9 @@ class WooCommerce {
 
 		// Remove order again button
 		add_action( 'woocommerce_order_details_before_order_table', [ __CLASS__, 'maybe_remove_order_again_button' ] );
+
+		// Initialize Refund specific hooks
+		Refunds::init();
 	}
 
 	/**

@@ -4,8 +4,8 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.10.221
-Requires PHP: 8.0
+Stable tag: 2.5.11.0
+Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -18,6 +18,13 @@ Million Dollar Script enables you to sell pixel-based advertising space on your 
 Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.com/million-dollar-script-wordpress-plugin/) page on the website for additional documentation.
 
 == Changelog ==
+
+= 2.5.11.0 =
+* Add WooCommerce refund integration.
+* Fix: Background image opacity setting now applies correctly.
+* Fix: Ensure 'Approve Pixels' page title is dynamic based on banner context.
+* Refactor: Image processing logic moved to a dedicated Utility class.
+* Feat: Added integration with WooCommerce for handling refunds directly via the WC order screen. A link is provided in the MDS Transaction Log for eligible orders.
 
 = 2.5.10.x =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
