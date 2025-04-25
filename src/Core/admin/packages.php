@@ -52,9 +52,6 @@ if (!function_exists('mds_package_has_orders')) {
 	}
 }
 
-?>
-<p>Packages define the pricing and duration options available for purchasing pixels on a specific grid.</p>
-<?php
 global $wpdb;
 $banners_table = MDS_DB_PREFIX . 'banners';
 
@@ -64,7 +61,7 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 ?>
 <div class="wrap">
 	<h1 class="wp-heading-inline"><?php echo Language::get('Packages'); ?></h1>
-	<p class="description"><?php echo Language::get('Packages allow you to group pixels together.'); ?></p>
+	<p class="description"><?php Language::out('Packages allow you to group pixels together and define the pricing and duration options available for purchasing pixels on a specific grid.'); ?></p>
 
 	<?php
 	global $wpdb;
@@ -77,10 +74,10 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 	<form name="bidselect" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
 		<input type="hidden" name="action" value="mds_admin_form_submission" />
 		<input type="hidden" name="mds_dest" value="packages" />
-		<?php wp_nonce_field('mds-admin'); ?>
+		<?php wp_nonce_field('mds-admin-bid-select', '_wpnonce_grid_select'); ?>
 
 		Select grid: <select name="BID" onchange="this.form.submit()">
-			<option value="0">-- Select Grid --</option>
+			<option value=""><?php echo Language::get('Select Grid'); ?></option>
 			<?php
 			if ($banners) {
 				foreach ($banners as $row) {

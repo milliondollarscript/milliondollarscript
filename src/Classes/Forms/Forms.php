@@ -165,8 +165,23 @@ class Forms {
 	 * @return void
 	 */
 	public static function mds_admin_form_submission(): void {
-		// Use the plugin's nonce verification method
-		Functions::verify_nonce( 'mds-admin' );
+		// Determine the correct nonce action and name based on the submitted form
+		$nonce_action = 'mds-admin'; // Default action for package management forms
+		$nonce_name   = '_wpnonce';  // Default nonce field name
+
+		// Check if it's the grid selection form (specific nonce name is present)
+		if ( isset( $_POST['_wpnonce_grid_select'] ) ) {
+			$nonce_action = 'mds-admin-bid-select';
+			$nonce_name   = '_wpnonce_grid_select';
+		} elseif ( isset( $_POST['mds_dest'] ) && $_POST['mds_dest'] === 'upload' ) {
+			// Example: Add specific checks for other forms if they use different nonces
+			// $nonce_action = 'mds-admin-upload';
+			// $nonce_name = '_wpnonce_upload';
+		}
+		// Add more elseif branches here if other forms use different nonce actions/names
+
+		// Verify the nonce using the determined action and name. This will wp_die on failure.
+		check_admin_referer( $nonce_action, $nonce_name );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( Language::get( 'Sorry, you are not allowed to access this page.' ) );
@@ -184,222 +199,157 @@ class Forms {
 
 		$mds_dest = $_POST['mds_dest'];
 
-		if ( $mds_dest == 'manage-grids' ) {
-			require_once MDS_CORE_PATH . 'admin/manage-grids.php';
-		} else if ( $mds_dest == 'approve-pixels' ) {
-			// require_once MDS_CORE_PATH . 'admin/approve-pixels.php'; // Removed to prevent output during POST handling
-		} else if ( $mds_dest == 'edit-template' ) {
-			require_once MDS_CORE_PATH . 'admin/edit-template.php';
-		} else if ( $mds_dest == 'backgrounds' ) {
-			// Handle background image upload
-			if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'] ) && $_FILES['blend_image']['tmp_name'] != '' && $_FILES['blend_image']['error'] === UPLOAD_ERR_OK ) {
-				$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0; // Get BID from POST
+		switch ( $mds_dest ) {
+			case 'manage-grids':
+				require_once MDS_CORE_PATH . 'admin/manage-grids.php';
+				break;
+			case 'approve-pixels':
+				// require_once MDS_CORE_PATH . 'admin/approve-pixels.php'; // Removed to prevent output during POST handling
+				break;
+			case 'edit-template':
+				require_once MDS_CORE_PATH . 'admin/edit-template.php';
+				break;
+			case 'backgrounds':
+				// Handle background image upload
+				if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'] ) && $_FILES['blend_image']['tmp_name'] != '' && $_FILES['blend_image']['error'] === UPLOAD_ERR_OK ) {
+					$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0; // Get BID from POST
 
-				// Check MIME type
-				$finfo = finfo_open( FILEINFO_MIME_TYPE );
-				$mime_type = finfo_file( $finfo, $_FILES['blend_image']['tmp_name'] );
-				finfo_close( $finfo );
+					// Check MIME type
+					$finfo = finfo_open( FILEINFO_MIME_TYPE );
+					$mime_type = finfo_file( $finfo, $_FILES['blend_image']['tmp_name'] );
+					finfo_close( $finfo );
 
-				$allowed_mime_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
+					$allowed_mime_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
 
-				if ( ! in_array( $mime_type, $allowed_mime_types ) ) {
-					// Add error message? For now, just redirect.
-					$params['upload_error'] = 'invalid_type'; // Changed error code
-				} else {
-					// Generate a safe filename using the BID and the original extension
-					$extension = pathinfo($_FILES['blend_image']['name'], PATHINFO_EXTENSION);
-					$new_filename = "background{$BID}." . strtolower($extension);
-					$upload_path = Utility::get_upload_path() . "grids/";
+					if ( ! in_array( $mime_type, $allowed_mime_types ) ) {
+						// Add error message? For now, just redirect.
+						$params['upload_error'] = 'invalid_type'; // Changed error code
+					} else {
+						// Generate a safe filename using the BID and the original extension
+						$extension = pathinfo($_FILES['blend_image']['name'], PATHINFO_EXTENSION);
+						$new_filename = "background{$BID}." . strtolower($extension);
+						$upload_path = Utility::get_upload_path() . "grids/";
 
-					// Remove any existing background file for this grid (regardless of extension)
-					$existing_files = glob($upload_path . "background{$BID}.*");
-					if ($existing_files) {
-						foreach ($existing_files as $existing_file) {
-							unlink($existing_file);
+						// Remove any existing background file for this grid (regardless of extension)
+						$existing_files = glob($upload_path . "background{$BID}.*");
+						if ($existing_files) {
+							foreach ($existing_files as $existing_file) {
+								unlink($existing_file);
+							}
+						}
+
+						if ( move_uploaded_file( $_FILES['blend_image']['tmp_name'], $upload_path . $new_filename ) ) {
+							$params['upload_success'] = 'true';
+						} else {
+							$params['upload_error'] = 'failed_move';
 						}
 					}
-
-					if ( move_uploaded_file( $_FILES['blend_image']['tmp_name'], $upload_path . $new_filename ) ) {
-						$params['upload_success'] = 'true';
+				} 
+				// Save opacity setting if submitted (regardless of upload)
+				if ( isset( $_POST['background_opacity'] ) ) {
+					$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
+					$opacity = intval( $_POST['background_opacity'] );
+					// Clamp value between 0 and 100
+					$opacity = max( 0, min( 100, $opacity ) ); 
+					if ( update_option( 'mds_background_opacity_' . $BID, $opacity ) ) {
+						$params['opacity_saved'] = 'true'; // Add feedback param
 					} else {
-						$params['upload_error'] = 'failed_move';
+						// Optional: Add error if update_option failed, though it usually returns false only if value is unchanged.
 					}
 				}
-			} 
-			// Save opacity setting if submitted (regardless of upload)
-			if ( isset( $_POST['background_opacity'] ) ) {
-				$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
-				$opacity = intval( $_POST['background_opacity'] );
-				// Clamp value between 0 and 100
-				$opacity = max( 0, min( 100, $opacity ) ); 
-				if ( update_option( 'mds_background_opacity_' . $BID, $opacity ) ) {
-					$params['opacity_saved'] = 'true'; // Add feedback param
-				} else {
-					// Optional: Add error if update_option failed, though it usually returns false only if value is unchanged.
-				}
-			}
 
-			// We don't need to require the file here anymore, just redirect back.
-			// require_once MDS_CORE_PATH . 'admin/backgrounds.php';
-		} else if ( $mds_dest == 'clear-orders' ) {
-			require_once MDS_CORE_PATH . 'admin/clear-orders.php';
-			$params['clear_orders'] = 'true';
-			// } else if ( $mds_dest == 'clicks' ) {
-			// 	require_once MDS_CORE_PATH . 'admin/clicks.php';
-		} else if ( $mds_dest == 'main-config' ) {
-			$params['mds-config-updated'] = 'true';
-			require_once MDS_CORE_PATH . 'admin/main-config.php';
-		} else if ( $mds_dest == 'map-of-orders' ) {
-			require_once MDS_CORE_PATH . 'admin/map-of-orders.php';
-		} else if ( $mds_dest == 'map-iframe' ) {
-			require_once MDS_CORE_PATH . 'admin/map-iframe.php';
-		} else if ( $mds_dest == 'outgoing-email' ) {
-			require_once MDS_CORE_PATH . 'admin/outgoing-email.php';
-			$q_to_add            = isset( $_REQUEST['q_to_add'] ) ? sanitize_text_field( $_REQUEST['q_to_add'] ) : '';
-			$q_to_name           = isset( $_REQUEST['q_to_name'] ) ? sanitize_text_field( $_REQUEST['q_to_name'] ) : '';
-			$q_subj              = isset( $_REQUEST['q_subj'] ) ? sanitize_text_field( $_REQUEST['q_subj'] ) : '';
-			$q_msg               = isset( $_REQUEST['q_msg'] ) ? sanitize_text_field( $_REQUEST['q_msg'] ) : '';
-			$q_status            = isset( $_REQUEST['q_status'] ) ? sanitize_text_field( $_REQUEST['q_status'] ) : '';
-			$q_type              = isset( $_REQUEST['q_type'] ) ? sanitize_text_field( $_REQUEST['q_type'] ) : '';
-			$params['q_to_add']  = $q_to_add;
-			$params['q_to_name'] = $q_to_name;
-			$params['q_subj']    = $q_subj;
-			$params['q_msg']     = $q_msg;
-			$params['q_status']  = $q_status;
-			$params['q_type']    = $q_type;
-		} else if ( $mds_dest == 'orders' ) {
-			require_once MDS_CORE_PATH . 'admin/orders.php';
-		} else if ( $mds_dest == 'orders-cancelled' ) {
-			require_once MDS_CORE_PATH . 'admin/orders-cancelled.php';
-		} else if ( $mds_dest == 'orders-completed' ) {
-			require_once MDS_CORE_PATH . 'admin/orders-completed.php';
-		} else if ( $mds_dest == 'orders-deleted' ) {
-			require_once MDS_CORE_PATH . 'admin/orders-deleted.php';
-		} else if ( $mds_dest == 'orders-expired' ) {
-			require_once MDS_CORE_PATH . 'admin/orders-expired.php';
-		} else if ( $mds_dest == 'orders-denied' ) {
-			require_once MDS_CORE_PATH . 'admin/orders-denied.php';
-		} else if ( $mds_dest == 'orders-reserved' ) {
-			require_once MDS_CORE_PATH . 'admin/orders-reserved.php';
-		} else if ( $mds_dest == 'orders-waiting' ) {
-			require_once MDS_CORE_PATH . 'admin/orders-waiting.php';
-		} else if ( $mds_dest == 'packages' ) {
-			// --- Handle Package Add/Edit --- 
-			global $wpdb;
-			$packages_table = MDS_DB_PREFIX . 'packages';
+				// We don't need to require the file here anymore, just redirect back.
+				// require_once MDS_CORE_PATH . 'admin/backgrounds.php';
+				break;
+			case 'clear-orders':
+				require_once MDS_CORE_PATH . 'admin/clear-orders.php';
+				$params['clear_orders'] = 'true';
+				break;
+			case 'main-config':
+				$params['mds-config-updated'] = 'true';
+				require_once MDS_CORE_PATH . 'admin/main-config.php';
+				break;
+			case 'map-of-orders':
+				require_once MDS_CORE_PATH . 'admin/map-of-orders.php';
+				break;
+			case 'map-iframe':
+				require_once MDS_CORE_PATH . 'admin/map-iframe.php';
+				break;
+			case 'outgoing-email':
+				require_once MDS_CORE_PATH . 'admin/outgoing-email.php';
+				$q_to_add            = isset( $_REQUEST['q_to_add'] ) ? sanitize_text_field( $_REQUEST['q_to_add'] ) : '';
+				$q_to_name           = isset( $_REQUEST['q_to_name'] ) ? sanitize_text_field( $_REQUEST['q_to_name'] ) : '';
+				$q_subj              = isset( $_REQUEST['q_subj'] ) ? sanitize_text_field( $_REQUEST['q_subj'] ) : '';
+				$q_msg               = isset( $_REQUEST['q_msg'] ) ? sanitize_text_field( $_REQUEST['q_msg'] ) : '';
+				$q_status            = isset( $_REQUEST['q_status'] ) ? sanitize_text_field( $_REQUEST['q_status'] ) : '';
+				$q_type              = isset( $_REQUEST['q_type'] ) ? sanitize_text_field( $_REQUEST['q_type'] ) : '';
+				$params['q_to_add']  = $q_to_add;
+				$params['q_to_name'] = $q_to_name;
+				$params['q_subj']    = $q_subj;
+				$params['q_msg']     = $q_msg;
+				$params['q_status']  = $q_status;
+				$params['q_type']    = $q_type;
+				break;
+			case 'orders':
+				require_once MDS_CORE_PATH . 'admin/orders.php';
+				break;
+			case 'orders-cancelled':
+				require_once MDS_CORE_PATH . 'admin/orders-cancelled.php';
+				break;
+			case 'orders-completed':
+				require_once MDS_CORE_PATH . 'admin/orders-completed.php';
+				break;
+			case 'orders-deleted':
+				require_once MDS_CORE_PATH . 'admin/orders-deleted.php';
+				break;
+			case 'orders-expired':
+				require_once MDS_CORE_PATH . 'admin/orders-expired.php';
+				break;
+			case 'orders-denied':
+				require_once MDS_CORE_PATH . 'admin/orders-denied.php';
+				break;
+			case 'orders-reserved':
+				require_once MDS_CORE_PATH . 'admin/orders-reserved.php';
+				break;
+			case 'orders-waiting':
+				require_once MDS_CORE_PATH . 'admin/orders-waiting.php';
+				break;
+			case 'packages':
+				// --- Handle Package Add/Edit --- 
+				global $wpdb;
+				$packages_table = MDS_DB_PREFIX . 'packages';
 
-			// Verify nonce
-			$nonce = $_POST['mds_package_nonce'] ?? '';
-			$BID   = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
-			// --- DEBUGGING NONCE --- 
-			$expected_action = 'mds-package-edit-' . $BID;
-			// --- END DEBUGGING --- 
-			if ( ! wp_verify_nonce( $nonce, 'mds-package-edit-' . $BID ) ) {
-				Notices::add_notice( Language::get( 'Security check failed.' ), 'error' );
-				Utility::redirect_admin( admin_url( 'admin.php?page=mds-packages' ) );
-				// No exit needed here as redirect_admin includes it.
-			}
+				// Verify nonce
+				$nonce = $_POST['mds_package_nonce'] ?? '';
+				$BID   = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
 
-			// Sanitize and validate input
-			$errors = [];
-			$package_id = isset( $_POST['package_id'] ) ? intval( $_POST['package_id'] ) : 0;
-			$description = isset( $_POST['description'] ) ? sanitize_textarea_field( $_POST['description'] ) : '';
-			$price = isset( $_POST['price'] ) ? filter_var( $_POST['price'], FILTER_VALIDATE_FLOAT ) : false;
-			$currency = isset( $_POST['currency'] ) ? sanitize_text_field( $_POST['currency'] ) : '';
-			$days_expire = isset( $_POST['days_expire'] ) ? intval( $_POST['days_expire'] ) : 0;
-			$max_orders = isset( $_POST['max_orders'] ) ? intval( $_POST['max_orders'] ) : 0;
-			$is_default = isset( $_POST['is_default'] ) && $_POST['is_default'] === '1' ? '1' : '0';
-
-			if ( empty( $description ) ) {
-				$errors[] = Language::get( 'Package description cannot be empty.' );
-			}
-			if ( $price === false || $price < 0 ) {
-				$errors[] = Language::get( 'Invalid price entered. Please enter a non-negative number.' );
-			}
-			if ( empty( $currency ) || strlen( $currency ) !== 3 ) {
-				$errors[] = Language::get( 'Invalid currency code. Please enter a 3-letter code (e.g., USD).' );
-			}
-			if ( $days_expire < 0 ) {
-				$errors[] = Language::get( 'Days to expire cannot be negative.' );
-			}
-			if ( $max_orders < 0 ) {
-				$errors[] = Language::get( 'Maximum orders cannot be negative.' );
-			}
-
-			// If no errors, proceed with database operation
-			if ( empty( $errors ) ) {
-				$data = [
-					'banner_id'   => $BID,
-					'days_expire' => $days_expire,
-					'price'       => $price,
-					'currency'    => $currency,
-					'package_id'  => $package_id,
-					'is_default'  => $is_default,
-					'max_orders'  => $max_orders,
-					'description' => $description,
-				];
-				$format = [
-					'%d', // banner_id
-					'%d', // days_expire
-					'%f', // price
-					'%s', // currency
-					'%d', // package_id
-					'%s', // is_default
-					'%d', // max_orders
-					'%s', // description
-				];
-
-				// Handle 'is_default' logic: If this package is set to default, unset others for the same banner.
-				if ( $is_default === '1' ) {
-					$wpdb->update(
-						$packages_table,
-						[ 'is_default' => '0' ], // Data to set
-						[ 'banner_id' => $BID ],   // Where clause
-						[ '%s' ],                 // Format for data
-						[ '%d' ]                  // Format for where
-					);
+				// Check for BID parameter specifically for grid selection redirection
+				if ( isset( $_POST['BID'] ) ) {
+					$params['BID'] = intval( $_POST['BID'] );
+					// Construct the correct admin URL instead of using get_page_url which might point to frontend
+					// Add the BID parameter directly to the URL string
+					$admin_page_url_with_bid = add_query_arg( 'BID', $params['BID'], admin_url( 'admin.php?page=mds-packages' ) );
+					// Use Utility::redirect_admin which handles wp_safe_redirect (assuming it takes only the URL)
+					Utility::redirect_admin( $admin_page_url_with_bid );
+					// exit; // redirect_admin includes exit
 				}
 
-				if ( $package_id > 0 ) { // Update existing package
-					$where = [ 'package_id' => $package_id ];
-					$where_format = [ '%d' ];
-					$result = $wpdb->update( $packages_table, $data, $where, $format, $where_format );
-					$notice_type = $result !== false ? 'success' : 'error';
-					$notice_message = $result !== false ? Language::get('Package updated successfully.') : Language::get('Error updating package.');
-				} else { // Insert new package
-					$result = $wpdb->insert( $packages_table, $data, $format );
-					$notice_type = $result !== false ? 'success' : 'error';
-					$notice_message = $result !== false ? Language::get('Package added successfully.') : Language::get('Error adding package.');
-					$package_id = $wpdb->insert_id; // Get the new ID if needed for redirect
+				// If not a grid selection (no BID), handle other package actions by including the main file
+				require_once MDS_CORE_PATH . 'admin/packages.php';
+				break;
+			case 'price-zones':
+				require_once MDS_CORE_PATH . 'admin/price-zones.php';
+				break;
+			case 'process-pixels':
+				$process               = isset( $_REQUEST['process'] ) ? intval( $_REQUEST['process'] ) : 0;
+				$banner_list           = isset( $_REQUEST['banner_list'] ) && is_array( $_REQUEST['banner_list'] ) ? $_REQUEST['banner_list'] : [];
+				$params['process']     = '1';
+				$params['banner_list'] = [];
+				foreach ( $_REQUEST['banner_list'] as $key => $banner_id ) {
+					$params['banner_list'][ intval( $key ) ] = ( $banner_id == 'all' ? 'all' : intval( $banner_id ) );
 				}
-
-				// Add admin notice
-				Notices::add_notice($notice_message, $notice_type);
-
-			} else { // Errors found
-				Notices::add_notice(implode('<br>', $errors), 'error');
-				// Store errors and submitted data in session/transient for repopulation?
-				// For now, we'll just show the error and redirect back.
-			}
-
-			// --- Redirect back to the packages page --- 
-			$redirect_url = admin_url( 'admin.php?page=mds-packages&BID=' . $BID ); 
-			if (!empty($errors)) {
-				// Optionally add error details to the URL or use transients
-			}
-			Utility::redirect_admin( $redirect_url ); // Use utility for redirection
-			// No exit needed here as redirect_admin includes it.
-		} else if ( $mds_dest == 'price-zones' ) {
-			require_once MDS_CORE_PATH . 'admin/price-zones.php';
-		} else if ( $mds_dest == 'process-pixels' ) {
-			$process               = isset( $_REQUEST['process'] ) ? intval( $_REQUEST['process'] ) : 0;
-			$banner_list           = isset( $_REQUEST['banner_list'] ) && is_array( $_REQUEST['banner_list'] ) ? $_REQUEST['banner_list'] : [];
-			$params['process']     = '1';
-			$params['banner_list'] = [];
-			foreach ( $_REQUEST['banner_list'] as $key => $banner_id ) {
-				$params['banner_list'][ intval( $key ) ] = ( $banner_id == 'all' ? 'all' : intval( $banner_id ) );
-			}
-			require_once MDS_CORE_PATH . 'admin/process-pixels.php';
+				require_once MDS_CORE_PATH . 'admin/process-pixels.php';
+				break;
 		}
 
 		if ( in_array( $mds_dest, [
