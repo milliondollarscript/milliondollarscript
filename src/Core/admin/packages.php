@@ -251,12 +251,6 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 			}
 		}
 
-		// Show success message if just set default
-		if (isset($_GET['default_set']) && $_GET['default_set'] == '1') {
-			echo '<div class="notice notice-success is-dismissible"><p>Default package updated.</p></div>';
-		}
-
-
 		// Check if the form was submitted for saving/updating a package
 		if (isset($_REQUEST['submit']) && $_REQUEST['submit'] != '') {
 
