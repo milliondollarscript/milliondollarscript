@@ -71,10 +71,37 @@ if ( ! empty( $gd_info['PNG Support'] ) ) {
 
 global $BID, $f2, $wpdb;
 
-$BID = $f2->bid();
+// Determine the current Banner ID (BID)
+// Prioritize BID from request (if user selected from dropdown)
+if ( isset( $_REQUEST['BID'] ) ) {
+	$BID = intval( $_REQUEST['BID'] );
+} else {
+	// Otherwise, use the default/shortcode BID
+	$BID = $f2->bid(); 
+}
 
+// Verify nonce if the grid selection form was submitted via GET
+if ( isset( $_GET['mds-nonce'] ) ) {
+	if ( ! isset( $_GET['BID'] ) || ! wp_verify_nonce( sanitize_key( $_GET['mds-nonce'] ), 'mds_manage_grid_select' ) ) {
+		// Nonce is invalid, display error and exit
+		if ( $wrap ) {
+			require_once MDS_CORE_PATH . "html/header.php";
+		}
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+		if ( $wrap ) {
+			require_once MDS_CORE_PATH . "html/footer.php";
+		}
+		exit;
+	}
+	// Nonce is valid, proceed to load banner data with the selected BID
+}
+
+// Load banner data based on the determined BID
 $banner_data = load_banner_constants( $BID );
 $user_id     = get_current_user_id();
+
+// Get the setting for showing the grid dropdown
+$show_grid_dropdown_option = \MillionDollarScript\Classes\Data\Options::get_option( MDS_PREFIX . 'manage-pixels-grid-dropdown', 'yes' ) === 'yes';
 
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] == 'yes' && isset( $_REQUEST['order_id'] ) ) {
 	$order_id = intval( $_REQUEST['order_id'] );
@@ -160,6 +187,39 @@ if ( ( ( isset( $_REQUEST['mds_dest'] ) && $_REQUEST['mds_dest'] == 'manage' ) |
 	Functions::manage_pixel( $ad_id, $mds_pixel, $banner_data, $BID, $gif_support, $jpeg_support, $png_support );
 
 	return;
+}
+
+// Show Grid Selection Dropdown if enabled
+if ( $show_grid_dropdown_option ) {
+	global $wpdb;
+	$banners = $wpdb->get_results( "SELECT banner_id, name FROM " . MDS_DB_PREFIX . "banners ORDER BY name ASC", ARRAY_A );
+
+	if ( $banners && count( $banners ) > 1 ) { // Only show if more than one grid exists
+		?>
+		<div class="mds-grid-selector-form mds-box">
+			<form method="get" action="<?php echo esc_url( MillionDollarScript\Classes\System\Utility::get_page_url( 'manage' ) ); ?>">
+				<?php
+				// Add hidden fields from current query string to persist them, except for BID itself
+				foreach ( $_GET as $key => $value ) {
+					if ( $key !== 'BID' && $key !== 'mds-nonce' ) { // Avoid duplicating BID and nonce
+						echo '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '" />';
+					}
+				}
+				wp_nonce_field( 'mds_manage_grid_select', 'mds-nonce' );
+				?>
+				<label for="mds-grid-select"><?php MillionDollarScript\Classes\Language\Language::out( 'Select Grid:' ); ?></label>
+				<select name="BID" id="mds-grid-select">
+					<?php foreach ( $banners as $banner ) : ?>
+						<option value="<?php echo esc_attr( $banner['banner_id'] ); ?>" <?php selected( $banner['banner_id'], $BID ); ?>>
+							<?php echo esc_html( $banner['name'] ); ?> (<?php echo esc_html( $banner['banner_id'] ); ?>)
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<button type="submit" class="button mds-button"><?php MillionDollarScript\Classes\Language\Language::out( 'View Grid' ); ?></button>
+			</form>
+		</div>
+		<?php
+	}
 }
 
 $offset = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
