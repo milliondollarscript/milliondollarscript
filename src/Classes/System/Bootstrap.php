@@ -36,6 +36,7 @@ use MillionDollarScript\Classes\Web\Routes;
 use MillionDollarScript\Classes\WooCommerce\WooCommerce;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceOptions;
+use MillionDollarScript\Classes\Admin\Notices;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -247,6 +248,8 @@ class Bootstrap {
 
 		// Hook for when loaded
 		do_action( 'mds-loaded', $this );
+
+		add_action( 'admin_notices', [ Notices::class, 'display_notices' ] );
 
 		return $this;
 	}

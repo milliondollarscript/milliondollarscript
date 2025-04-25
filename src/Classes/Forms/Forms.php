@@ -28,11 +28,12 @@
 
 namespace MillionDollarScript\Classes\Forms;
 
-use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\Admin\Notices;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -164,11 +165,13 @@ class Forms {
 	 * @return void
 	 */
 	public static function mds_admin_form_submission(): void {
+		// Use the plugin's nonce verification method
 		Functions::verify_nonce( 'mds-admin' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( Language::get( 'Sorry, you are not allowed to access this page.' ) );
 		}
+
 		if ( ! isset( $_POST['mds_dest'] ) ) {
 			Utility::redirect();
 		}
@@ -281,7 +284,111 @@ class Forms {
 		} else if ( $mds_dest == 'orders-waiting' ) {
 			require_once MDS_CORE_PATH . 'admin/orders-waiting.php';
 		} else if ( $mds_dest == 'packages' ) {
-			// require_once MDS_CORE_PATH . 'admin/packages.php'; // Removed to prevent output during POST handling
+			// --- Handle Package Add/Edit --- 
+			global $wpdb;
+			$packages_table = MDS_DB_PREFIX . 'packages';
+
+			// Verify nonce
+			$nonce = $_POST['mds_package_nonce'] ?? '';
+			$BID   = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
+			// --- DEBUGGING NONCE --- 
+			$expected_action = 'mds-package-edit-' . $BID;
+			// --- END DEBUGGING --- 
+			if ( ! wp_verify_nonce( $nonce, 'mds-package-edit-' . $BID ) ) {
+				Notices::add_notice( Language::get( 'Security check failed.' ), 'error' );
+				Utility::redirect_admin( admin_url( 'admin.php?page=mds-packages' ) );
+				// No exit needed here as redirect_admin includes it.
+			}
+
+			// Sanitize and validate input
+			$errors = [];
+			$package_id = isset( $_POST['package_id'] ) ? intval( $_POST['package_id'] ) : 0;
+			$description = isset( $_POST['description'] ) ? sanitize_textarea_field( $_POST['description'] ) : '';
+			$price = isset( $_POST['price'] ) ? filter_var( $_POST['price'], FILTER_VALIDATE_FLOAT ) : false;
+			$currency = isset( $_POST['currency'] ) ? sanitize_text_field( $_POST['currency'] ) : '';
+			$days_expire = isset( $_POST['days_expire'] ) ? intval( $_POST['days_expire'] ) : 0;
+			$max_orders = isset( $_POST['max_orders'] ) ? intval( $_POST['max_orders'] ) : 0;
+			$is_default = isset( $_POST['is_default'] ) && $_POST['is_default'] === '1' ? '1' : '0';
+
+			if ( empty( $description ) ) {
+				$errors[] = Language::get( 'Package description cannot be empty.' );
+			}
+			if ( $price === false || $price < 0 ) {
+				$errors[] = Language::get( 'Invalid price entered. Please enter a non-negative number.' );
+			}
+			if ( empty( $currency ) || strlen( $currency ) !== 3 ) {
+				$errors[] = Language::get( 'Invalid currency code. Please enter a 3-letter code (e.g., USD).' );
+			}
+			if ( $days_expire < 0 ) {
+				$errors[] = Language::get( 'Days to expire cannot be negative.' );
+			}
+			if ( $max_orders < 0 ) {
+				$errors[] = Language::get( 'Maximum orders cannot be negative.' );
+			}
+
+			// If no errors, proceed with database operation
+			if ( empty( $errors ) ) {
+				$data = [
+					'banner_id'   => $BID,
+					'days_expire' => $days_expire,
+					'price'       => $price,
+					'currency'    => $currency,
+					'package_id'  => $package_id,
+					'is_default'  => $is_default,
+					'max_orders'  => $max_orders,
+					'description' => $description,
+				];
+				$format = [
+					'%d', // banner_id
+					'%d', // days_expire
+					'%f', // price
+					'%s', // currency
+					'%d', // package_id
+					'%s', // is_default
+					'%d', // max_orders
+					'%s', // description
+				];
+
+				// Handle 'is_default' logic: If this package is set to default, unset others for the same banner.
+				if ( $is_default === '1' ) {
+					$wpdb->update(
+						$packages_table,
+						[ 'is_default' => '0' ], // Data to set
+						[ 'banner_id' => $BID ],   // Where clause
+						[ '%s' ],                 // Format for data
+						[ '%d' ]                  // Format for where
+					);
+				}
+
+				if ( $package_id > 0 ) { // Update existing package
+					$where = [ 'package_id' => $package_id ];
+					$where_format = [ '%d' ];
+					$result = $wpdb->update( $packages_table, $data, $where, $format, $where_format );
+					$notice_type = $result !== false ? 'success' : 'error';
+					$notice_message = $result !== false ? Language::get('Package updated successfully.') : Language::get('Error updating package.');
+				} else { // Insert new package
+					$result = $wpdb->insert( $packages_table, $data, $format );
+					$notice_type = $result !== false ? 'success' : 'error';
+					$notice_message = $result !== false ? Language::get('Package added successfully.') : Language::get('Error adding package.');
+					$package_id = $wpdb->insert_id; // Get the new ID if needed for redirect
+				}
+
+				// Add admin notice
+				Notices::add_notice($notice_message, $notice_type);
+
+			} else { // Errors found
+				Notices::add_notice(implode('<br>', $errors), 'error');
+				// Store errors and submitted data in session/transient for repopulation?
+				// For now, we'll just show the error and redirect back.
+			}
+
+			// --- Redirect back to the packages page --- 
+			$redirect_url = admin_url( 'admin.php?page=mds-packages&BID=' . $BID ); 
+			if (!empty($errors)) {
+				// Optionally add error details to the URL or use transients
+			}
+			Utility::redirect_admin( $redirect_url ); // Use utility for redirection
+			// No exit needed here as redirect_admin includes it.
 		} else if ( $mds_dest == 'price-zones' ) {
 			require_once MDS_CORE_PATH . 'admin/price-zones.php';
 		} else if ( $mds_dest == 'process-pixels' ) {
@@ -380,6 +487,7 @@ class Forms {
 		// Redirect the user
 		wp_safe_redirect( $redirect_url );
 		exit;
+
 	}
 
 	public static function display_banner_selecton_form( $BID, $order_id, $res, $mds_dest ): void {

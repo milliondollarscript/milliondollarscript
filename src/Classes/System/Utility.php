@@ -481,6 +481,18 @@ class Utility {
 	}
 
 	/**
+	 * Safely redirects to a specified admin URL and terminates script execution.
+	 *
+	 * @param string $location The path or URL to redirect to.
+	 * @param int    $status   The HTTP status code to use for the redirect. Default 302.
+	 * @return void
+	 */
+	public static function redirect_admin( string $location, int $status = 302 ): void {
+		wp_safe_redirect( $location, $status );
+		exit;
+	}
+
+	/**
 	 * Get an MDS page URL or API endpoint URL, with optional query args.
 	 *
 	 * @param string $page_name

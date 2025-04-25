@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.4
 Tested up to: 6.5.2
-Stable tag: 2.5.10.206
+Stable tag: 2.5.10.207
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -165,6 +165,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Cleanup and fix Click Reports page.
 * Fixed error during image upload on manage pixels page if auto-resize is off and image dimensions were not exact multiples of block size.
 * Make blocks transparent if uploading a smaller image than the selected area during pixel management.
+* Improved Packages admin page: Packages are now saved correctly and the page uses the standard WordPress admin table layout for easier management.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
