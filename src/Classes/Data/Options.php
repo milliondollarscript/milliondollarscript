@@ -32,7 +32,6 @@ namespace MillionDollarScript\Classes\Data;
 use Carbon_Fields\Container;
 use Carbon_Fields\Field;
 use MillionDollarScript\Classes\Language\Language;
-use MillionDollarScript\Classes\System\Debug;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\User\Capabilities;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
