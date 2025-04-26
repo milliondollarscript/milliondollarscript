@@ -169,17 +169,6 @@ class Forms {
 		$nonce_action = 'mds-admin'; // Default action for package management forms
 		$nonce_name   = '_wpnonce';  // Default nonce field name
 
-		// Check if it's the grid selection form (specific nonce name is present)
-		if ( isset( $_POST['_wpnonce_grid_select'] ) ) {
-			$nonce_action = 'mds-admin-bid-select';
-			$nonce_name   = '_wpnonce_grid_select';
-		} elseif ( isset( $_POST['mds_dest'] ) && $_POST['mds_dest'] === 'upload' ) {
-			// Example: Add specific checks for other forms if they use different nonces
-			// $nonce_action = 'mds-admin-upload';
-			// $nonce_name = '_wpnonce_upload';
-		}
-		// Add more elseif branches here if other forms use different nonce actions/names
-
 		// Verify the nonce using the determined action and name. This will wp_die on failure.
 		check_admin_referer( $nonce_action, $nonce_name );
 

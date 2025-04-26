@@ -31,10 +31,25 @@ use MillionDollarScript\Classes\Language\Language;
 
 defined('ABSPATH') or exit;
 
+// --- Handle Grid Selection Form Submission ---
+$selected_bid_from_post = null; // Initialize
+if (isset($_POST['_wpnonce_grid_select'])) {
+	// Verify the nonce submitted by the grid selection form
+	check_admin_referer('mds-admin-packages-grid-select', '_wpnonce_grid_select');
+
+	// If nonce is valid, get the selected BID from POST
+	if (isset($_POST['BID'])) {
+		$selected_bid_from_post = intval($_POST['BID']);
+		// No redirect needed here, just let the page reload with the new BID
+	}
+}
+// --- End Grid Selection Handling ---
+
 global $f2;
 
 // Get the selected Banner ID (Grid ID)
-$BID = $f2->bid();
+// Priority: POSTed value (if nonce was valid) > GET parameter > Default (handled by $f2->bid())
+$BID = $selected_bid_from_post ?? $f2->bid();
 
 // Helper function to check if a package has associated orders
 if (!function_exists('mds_package_has_orders')) {
@@ -71,10 +86,8 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 	$banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDER BY name", ARRAY_A);
 
 	?>
-	<form name="bidselect" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-		<input type="hidden" name="action" value="mds_admin_form_submission" />
-		<input type="hidden" name="mds_dest" value="packages" />
-		<?php wp_nonce_field('mds-admin-bid-select', '_wpnonce_grid_select'); ?>
+	<form name="bidselect" method="post" action="<?php echo esc_url(admin_url('admin.php?page=mds-packages')); ?>">
+		<?php wp_nonce_field('mds-admin-packages-grid-select', '_wpnonce_grid_select'); ?>
 
 		Select grid: <select name="BID" onchange="this.form.submit()">
 			<option value=""><?php echo Language::get('Select Grid'); ?></option>
@@ -445,12 +458,9 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 
 		?>
 			<!-- Modernized add/edit form for packages -->
-			<form action='<?php echo esc_url(admin_url('admin-post.php')); ?>' method="post" class="add-new-form" style="margin-top:24px;">
+			<form action='<?php echo esc_url(admin_url('admin.php?page=mds-packages')); ?>' method="post" class="add-new-form" style="margin-top:24px;">
 				<?php wp_nonce_field('mds-admin'); ?>
 				<?php wp_nonce_field('mds-package-edit-' . $BID, 'mds_package_nonce'); ?>
-				<input type="hidden" name="action" value="mds_admin_form_submission"> <!-- Target the admin-post hook -->
-				<input type="hidden" name="page" value="mds-packages">
-				<input type="hidden" name="mds_dest" value="packages">
 				<input type="hidden" value="<?php echo isset($_REQUEST['package_id']) ? intval($_REQUEST['package_id']) : 0; ?>" name="package_id">
 				<input type="hidden" value="<?php echo isset($_REQUEST['new']) ? intval($_REQUEST['new']) : ''; ?>" name="new">
 				<input type="hidden" name="mds-action" value="mds-save-package">
