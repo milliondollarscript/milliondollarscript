@@ -174,14 +174,14 @@ class Functions {
 		wp_register_script( 'image-map', MDS_CORE_URL . 'js/third-party/image-map.min.js', [ 'image-scale' ], filemtime( MDS_CORE_PATH . 'js/third-party/image-map.min.js' ), true );
 		wp_register_script( 'contact', MDS_CORE_URL . 'js/third-party/contact.nomodule.min.js', [ 'image-map' ], filemtime( MDS_CORE_PATH . 'js/third-party/contact.nomodule.min.js' ), true );
 
-		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.min.js', [
+		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.js', [
 			'jquery',
 			'contact',
 			'image-scale',
 			'image-map',
 			'wp-hooks'
-		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
-		wp_add_inline_script( 'mds', 'const MDS = ' . json_encode( self::get_script_data() ), 'before' );
+		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
+		wp_localize_script( 'mds', 'MDS', self::get_script_data() );
 
 		$order_script  = "";
 		$data_function = "";
@@ -222,7 +222,7 @@ class Functions {
 					'mds',
 					'contact'
 				], filemtime( MDS_CORE_PATH . 'js/' . $order_script . '.min.js' ), true );
-				wp_add_inline_script( 'mds-' . $order_script, 'const MDS_OBJECT = ' . json_encode( $data_function ), 'before' );
+				wp_localize_script( 'mds-' . $order_script, 'MDS_OBJECT', $data_function );
 			}
 		}
 	}
@@ -231,6 +231,8 @@ class Functions {
 	 * Enqueue scripts and styles
 	 */
 	public static function enqueue_scripts(): void {
+		// Ensure scripts are registered (for admin pages)
+		self::register_scripts();
 		wp_enqueue_script( 'wp-hooks' );
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'jquery-ui-accordion' );

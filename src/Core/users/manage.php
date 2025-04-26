@@ -38,6 +38,12 @@ mds_wp_login_check();
 
 require_once MDS_CORE_PATH . "include/ads.inc.php";
 
+// Add a specific body class for the manage page to help with JavaScript targeting
+add_filter('body_class', function($classes) {
+	$classes[] = 'mds-page-manage';
+	return $classes;
+});
+
 // check if user has permission to access this page
 if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 	require_once MDS_CORE_PATH . "html/header.php";
@@ -445,14 +451,85 @@ if ( $count > 0 ) {
 			$width  = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
 			$height = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
 
-			// Output img
+			// Output img with specific class and data attributes for JS targeting
 			printf(
-				'<img id="publish-grid" src="%s" width="%d" height="%d" usemap="#main" alt=""/>',
+				'<img id="publish-grid" class="mds-manage-grid" src="%s" width="%d" height="%d" usemap="#main" alt="" data-original-width="%d" data-original-height="%d"/>',
 				$src,
+				$width,
+				$height,
 				$width,
 				$height
 			);
 			?>
+
+			<!-- Inline script for image map scaling to ensure alignment of clickable areas with the grid image -->
+			<script>
+			(function() {
+				// Function to scale image map coordinates based on image dimensions
+				function scaleImageMap() {
+					// Get image and map elements
+					var img = document.getElementById('publish-grid');
+					var map = document.querySelector('map[name="main"]');
+					
+					// Exit if either element is missing
+					if (!img || !map) return;
+					
+					// Get the area elements in the map
+					var areas = map.querySelectorAll('area');
+					if (!areas.length) return;
+					
+					// Get original and current dimensions
+					var origWidth = <?php echo $width; ?>;
+					var origHeight = <?php echo $height; ?>;
+					var currentWidth = img.clientWidth || img.offsetWidth;
+					var currentHeight = img.clientHeight || img.offsetHeight;
+					
+					// Calculate scale factors
+					var scaleX = currentWidth / origWidth;
+					var scaleY = currentHeight / origHeight;
+					
+					// Store original coordinates if not done yet and scale them
+					Array.prototype.forEach.call(areas, function(area) {
+						// Store original coords if not already stored
+						if (!area.hasAttribute('data-original-coords')) {
+							area.setAttribute('data-original-coords', area.getAttribute('coords'));
+						}
+						
+						// Get original coordinates and prepare for scaling
+						var originalCoords = area.getAttribute('data-original-coords');
+						var coordsArray = originalCoords.split(',');
+						var scaledCoords = [];
+						
+						// Scale each coordinate
+						for (var i = 0; i < coordsArray.length; i++) {
+							// Even indices (0, 2, 4...) are X coordinates, odd are Y
+							var scaled = i % 2 === 0 ?
+								Math.round(parseInt(coordsArray[i], 10) * scaleX) :
+								Math.round(parseInt(coordsArray[i], 10) * scaleY);
+							scaledCoords.push(scaled);
+						}
+						
+						// Set the new coordinates
+						area.setAttribute('coords', scaledCoords.join(','));
+					});
+				}
+				
+				// Call immediately
+				scaleImageMap();
+				
+				// Also call on window resize
+				window.addEventListener('resize', function() {
+					// Use debounce to avoid excessive scaling
+					if (window.mapResizeTimer) {
+						clearTimeout(window.mapResizeTimer);
+					}
+					window.mapResizeTimer = setTimeout(scaleImageMap, 150);
+				});
+				
+				// Also call when image loads
+				document.getElementById('publish-grid').addEventListener('load', scaleImageMap);
+			})();
+			</script>
         </div>
 	<?php }
 } else {

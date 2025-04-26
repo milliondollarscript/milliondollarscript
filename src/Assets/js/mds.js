@@ -25,6 +25,8 @@
  *
  */
 
+// Million Dollar Script Two JavaScript
+
 function add_ajax_loader(container) {
 	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
 	jQuery(container).append($ajax_loader)
@@ -109,7 +111,7 @@ function mds_list(container, bid, width, height) {
 	};
 
 	jQuery(list).load(MDS.ajaxurl, data, function () {
-		mds_init('#' + container, false, true, false, false);
+		mds_init('#' + container, false, true, 'list', false);
 	});
 }
 
@@ -334,24 +336,28 @@ function mds_loaded_event(el, scalemap, tippy, type, isgrid) {
 	});
 }
 
-jQuery(document).on('mds-loaded', function (el, scalemap, tippy, mdstype, isgrid) {
+// Handle mds-loaded event
+jQuery(document).on('mds-loaded', function (event) {
+	// Add a delay before triggering resize, helps ensure rendering is complete
 	setTimeout(function () {
 		window.dispatchEvent(new Event('resize'));
-	}, 100);
+	}, 150);
 });
 
 function mds_load_tippy(tippy, $el, scalemap, type, isgrid) {
-	let tooltips = false;
+	let tooltips_deferred = false; // Renamed to avoid confusion
 	if (tippy && window.tippy_instance == undefined && MDS.ENABLE_MOUSEOVER !== 'NO') {
-		tooltips = true;
+		console.log('[MDS DEBUG] Loading Tippy for element:', $el);
+		tooltips_deferred = true;
 		defer('Popper', () => {
 			defer('tippy', () => {
+				console.log('[MDS DEBUG] Tippy deferred, adding now.');
 				add_tippy();
-				mds_loaded_event($el, scalemap, tippy, type, isgrid);
+				// Don't call mds_loaded_event here, let mds_init handle it
 			});
 		});
 	}
-	return tooltips;
+	return tooltips_deferred;
 }
 
 function mds_handle_mouseenter() {
@@ -408,320 +414,240 @@ function mds_handle_url_click() {
 }
 
 function mds_init(el, scalemap, tippy, type, isgrid) {
-	let $el = jQuery(el);
-	window.mds_loaded = false;
+	console.log('[MDS DEBUG] mds_init called with:', {el, scalemap, tippy, type, isgrid});
 
-	if (isgrid && scalemap) {
+	// Prevent re-initialization on the same element if needed
+	const $el = jQuery(el);
+	if ($el.data('mds-initialized')) {
+		console.log('[MDS DEBUG] Element already initialized:', el);
+		return;
+	}
+	$el.data('mds-initialized', true);
 
-		let origWidth;
-		let origHeight;
-
-		if ($el.length > 0) {
-			origWidth = $el.width();
-			origHeight = $el.height();
-
-			$el.data('scalemap', scalemap).data('origWidth', origWidth).data('origHeight', origHeight);
-		}
-
-		let $elParent = $el;
-
-		// https://github.com/GestiXi/image-scale
-		$el.imageScale({
-			scale: "best-fit",
-			align: "top",
-			rescaleOnResize: true,
-			hideParentOverflow: false,
-			didScale: function (firstTime, options) {
-				if (MDS.wp !== "") {
-					if ($elParent.parent().parent().parent().parent().height() < origHeight) {
-						$elParent.parent().parent().parent().parent().width(origWidth);
-						$elParent.parent().parent().parent().parent().height(origHeight);
-					}
-				}
-
-				if ($elParent.parent().height() < origHeight) {
-					$elParent.width(origWidth);
-					$elParent.height(origHeight);
-					$elParent.parent().width(origWidth);
-					$elParent.parent().height(origHeight);
-					rescale($el);
-				}
-
-				if (MDS.wp !== "") {
-					$elParent.parent().parent().parent().parent().width($el.width());
-					$elParent.parent().parent().parent().parent().height($el.height());
-				}
-
-				$elParent.parent().width($el.width());
-				$elParent.parent().height($el.height());
-
-				updateTippyPosition();
-				rescaling = false;
-			}
-		});
-
-		rescale($el);
-
-		// https://github.com/clarketm/image-map
-		ImageMap('img[usemap]');
-		//$el.imageMap();
-
-		jQuery(window).on('resize', function () {
-			rescale($el);
-		});
+	if (!el || $el.length === 0) {
+		console.error('[MDS ERROR] mds_init called with invalid element:', el);
+		return;
 	}
 
-	$el.on('load', function () {
-		if (isgrid) {
-			if (MDS.wp !== "") {
-				$el.parent().parent().parent().parent().css('border-bottom', '1px solid #D4D6D4').css('border-right', '1px solid #D4D6D4');
-			} else {
-				$el.parent().css('border-bottom', '1px solid #D4D6D4').css('border-right', '1px solid #D4D6D4');
-			}
+	// Add body class if it's the manage page - This seems redundant if done in PHP?
+	// Check if this logic is still necessary here.
+	/*
+	if (type === 'manage') {
+		jQuery('body').addClass('mds-page-manage');
+		console.log('[MDS DEBUG] Added mds-page-manage body class.');
+	}
+	*/
 
-			if (scalemap) {
-				rescale($el);
-			}
-
-			if (MDS.TOOLTIP_TRIGGER === 'mouseenter') {
-				jQuery('area').off('mouseenter').on('mouseenter', function (e) {
-					e.preventDefault();
-					e.stopPropagation();
-					mds_handle_mouseenter.call(this);
-				});
-			}
-
-			jQuery('area').off('click').on('click', function (e) {
-				// On manage page, allow default link navigation
-				if (jQuery('body').hasClass('mds-page-manage')) {
-					return true;
-				}
-				// On other pages/grids, prevent default and handle click
-				e.preventDefault();
-				e.stopPropagation();
-				mds_handle_click.call(this);
-			});
-
-			jQuery(document).off('click', '.mds-popup-url').on('click', '.mds-popup-url', function (e) {
-				e.preventDefault();
-				e.stopPropagation();
-				mds_handle_url_click.call(this);
-			});
-
-			jQuery(document).off('click', '#theimage').on('click', '#theimage', function (e) {
-				e.preventDefault();
-				e.stopPropagation();
-				if (MDS.REDIRECT_SWITCH === 'YES') {
-					window.open(MDS.REDIRECT_URL, MDS.link_target);
-					return false;
-				}
-			});
-
-			let tooltips = mds_load_tippy(tippy, $el, scalemap, type, isgrid);
-
-			if (!tooltips) {
-				mds_loaded_event($el, scalemap, tippy, type, isgrid);
-			}
-
-		} else {
-			mds_loaded_event($el, scalemap, tippy, type, isgrid);
-		}
-
-		remove_ajax_loader();
-	});
-
-	if (type === 'list') {
-		let tooltips = mds_load_tippy(tippy, $el, scalemap, type, isgrid);
-
-		jQuery('.list-link').off('click').on('click', function (e) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			mds_handle_click.call(this);
-		});
-
-		jQuery(document).off('click', '.mds-popup-url').on('click', '.mds-popup-url', function (e) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			mds_handle_url_click.call(this);
-		});
-
-		if (!tooltips) {
-			mds_loaded_event($el, scalemap, tippy, type, isgrid);
-		}
+	// Check if the element is visible
+	if (!$el.is(':visible')) {
+		console.warn('[MDS WARN] Element is not visible, delaying initialization:', el);
+		// Optionally, use an Intersection Observer to initialize when visible
+		// For now, just return or attempt delayed init
+		// return;
 	}
 
-	initialized = true;
+	try {
+		console.log('[MDS DEBUG] Initializing ImageMap for element:', el);
+		// Ensure ImageMap is available
+		if (typeof ImageMap !== 'function') {
+			console.error('[MDS ERROR] ImageMap function is not defined!');
+			return;
+		}
+		ImageMap(el, scalemap); // Pass scalemap parameter
+		console.log('[MDS DEBUG] ImageMap initialized for element:', el);
+
+		mds_loaded_event($el, scalemap, tippy, type, isgrid);
+
+		// Handle Tippy loading
+		const tooltips_deferred = mds_load_tippy(tippy, $el, scalemap, type, isgrid);
+
+	} catch (error) {
+		console.error('[MDS ERROR] Error during mds_init:', error, 'for element:', el);
+	}
 }
 
-jQuery(document).ready(function () {
-	// MDS ajax display method
-	window.mds_ajax = function (mds_type, mds_container_id, mds_align, mds_width, mds_height, grid_id) {
-		var container = jQuery("#" + mds_container_id);
 
-		container.width(mds_width).height(mds_height).css('max-width', '100%');
-		switch (mds_align) {
-			case "left":
-				container.css('float', 'left');
-				break;
-			case "center":
-				container.css('display', 'block').css('margin', '0 auto');
-				break;
-			case "right":
-				container.css('float', 'right');
-				break;
-			default:
-				break;
+
+// MDS ajax display method
+window.mds_ajax = function (mds_type, mds_container_id, mds_align, mds_width, mds_height, grid_id) {
+	var container = jQuery("#" + mds_container_id);
+
+	container.width(mds_width).height(mds_height).css('max-width', '100%');
+	switch (mds_align) {
+		case "left":
+			container.css('float', 'left');
+			break;
+		case "center":
+			container.css('display', 'block').css('margin', '0 auto');
+			break;
+		case "right":
+			container.css('float', 'right');
+			break;
+		default:
+			break;
+	}
+
+	if (container.length > 0) {
+		add_ajax_loader(container);
+
+		// strip "json" parameter from URL
+		const url = new URL(window.location);
+		const params = new URLSearchParams(url.search);
+		const jsonParam = params.get('json');
+		if (jsonParam === '1') {
+			params.delete('json');
+			url.search = params.toString();
+			window.history.replaceState({}, '', url.toString());
 		}
 
-		if (container.length > 0) {
-			add_ajax_loader(container);
+		window.mds_ajax_request = jQuery.ajax({
+			url: MDS.ajaxurl,
+			data: {
+				BID: grid_id,
+				action: "mds_ajax",
+				type: mds_type,
+				mds_nonce: MDS.mds_nonce,
+				get_params: JSON.stringify(Object.fromEntries(new URLSearchParams(window.location.search)))
+			},
+			type: "POST",
+			dataType: "html",
+			success: function (data) {
+				remove_ajax_loader();
 
-			// strip "json" parameter from URL
-			const url = new URL(window.location);
-			const params = new URLSearchParams(url.search);
-			const jsonParam = params.get('json');
-			if (jsonParam === '1') {
-				params.delete('json');
-				url.search = params.toString();
-				window.history.replaceState({}, '', url.toString());
-			}
+				if (mds_type !== 'payment') {
+					jQuery(container).html(data);
+				}
 
-			window.mds_ajax_request = jQuery.ajax({
-				url: MDS.ajaxurl,
-				data: {
-					BID: grid_id,
-					action: "mds_ajax",
-					type: mds_type,
-					mds_nonce: MDS.mds_nonce,
-					get_params: JSON.stringify(Object.fromEntries(new URLSearchParams(window.location.search)))
-				},
-				type: "POST",
-				dataType: "html",
-				success: function (data) {
-					remove_ajax_loader();
-
-					if (mds_type !== 'payment') {
+				if (mds_type === 'grid') {
+					mds_init('#theimage', true, MDS.ENABLE_MOUSEOVER !== 'NO', false, true);
+					let $el = jQuery('#theimage');
+					$el.trigger('load');
+				} else if (mds_type === 'list') {
+					mds_init('#' + mds_container_id, false, true, 'list', false);
+					let $el = jQuery('#' + mds_container_id);
+					$el.trigger('load');
+				} else if (mds_type === 'payment' || mds_type === 'confirm-order') {
+					try {
+						let parsed = JSON.parse(data);
+						if (parsed.success === true) {
+							if (parsed.data) {
+								if (parsed.data.redirect) {
+									jQuery(container).html(parsed.data.message);
+									window.location = parsed.data.redirect;
+								} else {
+									jQuery(container).html(parsed.data);
+								}
+							}
+						} else if (parsed.success === false) {
+							if (parsed.data) {
+								if (parsed.data.message) {
+									jQuery(container).html(parsed.data.message);
+								} else {
+									jQuery(container).html(parsed.data);
+								}
+							}
+						} else {
+							console.log("Unknown data: ", parsed);
+						}
+					} catch (e) {
 						jQuery(container).html(data);
 					}
-
-					if (mds_type === 'grid') {
-						mds_init('#theimage', true, MDS.ENABLE_MOUSEOVER !== 'NO', false, true);
-						let $el = jQuery('#theimage');
-						$el.trigger('load');
-					} else if (mds_type === 'list') {
-						mds_init('#' + mds_container_id, false, true, 'list', false);
-						let $el = jQuery('#' + mds_container_id);
-						$el.trigger('load');
-					} else if (mds_type === 'payment' || mds_type === 'confirm-order') {
-						try {
-							let parsed = JSON.parse(data);
-							if (parsed.success === true) {
-								if (parsed.data) {
-									if (parsed.data.redirect) {
-										jQuery(container).html(parsed.data.message);
-										window.location = parsed.data.redirect;
-									} else {
-										jQuery(container).html(parsed.data);
-									}
+				} else {
+					try {
+						let parsed = JSON.parse(data);
+						if (parsed.success === true) {
+							if (parsed.data) {
+								if (parsed.data.redirect) {
+									jQuery(container).html(parsed.data.message);
+									window.location = parsed.data.redirect;
+								} else {
+									jQuery(container).html(parsed.data);
 								}
-							} else if (parsed.success === false) {
-								if (parsed.data) {
-									if (parsed.data.message) {
-										jQuery(container).html(parsed.data.message);
-									} else {
-										jQuery(container).html(parsed.data);
-									}
-								}
-							} else {
-								console.log("Unknown data: ", parsed);
 							}
-						} catch (e) {
-							jQuery(container).html(data);
-						}
-					} else {
-						try {
-							let parsed = JSON.parse(data);
-							if (parsed.success === true) {
-								if (parsed.data) {
-									if (parsed.data.redirect) {
-										jQuery(container).html(parsed.data.message);
-										window.location = parsed.data.redirect;
-									} else {
-										jQuery(container).html(parsed.data);
-									}
+						} else if (parsed.success === false) {
+							if (parsed.data) {
+								if (parsed.data.message) {
+									jQuery(container).html(parsed.data.message);
+								} else {
+									jQuery(container).html(parsed.data);
 								}
-							} else if (parsed.success === false) {
-								if (parsed.data) {
-									if (parsed.data.message) {
-										jQuery(container).html(parsed.data.message);
-									} else {
-										jQuery(container).html(parsed.data);
-									}
-								}
-							} else {
-								console.log("Unknown data: ", parsed);
 							}
-						} catch (e) {
-							jQuery(container).html(data);
+						} else {
+							console.log("Unknown data: ", parsed);
 						}
+					} catch (e) {
+						jQuery(container).html(data);
 					}
-
-					wp.hooks.doAction('mds_ajax_complete');
-				},
-				error: function (jqXHR, textStatus, errorThrown) {
-					remove_ajax_loader();
 				}
-			});
-		}
+
+				wp.hooks.doAction('mds_ajax_complete');
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				remove_ajax_loader();
+			}
+		});
 	}
+}
 
-	mds_load_ajax();
-
-	// Initialize the manage page grid if it exists
+jQuery(window).on('load', function () {
+	// Initialize the manage page grid if it exists (after other content is loaded)
 	let $publishGrid = jQuery('#publish-grid');
 	if ($publishGrid.length > 0) {
-		// Initialize with scaling (true), no tippy (false), not list type (false), is grid (true)
+		// Initialize directly on window.load
+		// Scaling (scalemap=true) is handled inside mds_init conditionally now
 		mds_init('#publish-grid', true, false, false, true);
-		// Trigger load event manually since it's not loaded via AJAX
-		$publishGrid.trigger('load');
 	}
 
-	// login page functionality
-	let $login_page = jQuery("body.login");
-	if ($login_page.length > 0) {
-		jQuery(document).on('click', 'a', function (event) {
-			let target = jQuery(this).attr('target');
+	// init the front-end AJAX grids
+	mds_load_ajax();
+});
 
-			if ('_blank' === target) {
-				return true;
-			}
-
-			event.preventDefault();
-			event.stopPropagation();
-
-			let url = jQuery(this).attr('href');
-
-			if (url !== '#' || url.indexOf('wp_login.php') === -1) {
-				parent.location = url;
-				return false;
-			}
-
-			window.location = url;
-
-			return false;
-		});
+// Fallback if script loads after window.load: ensure publish-grid is initialized
+jQuery(document).on('load', function () {
+	let $publishGrid = jQuery('#publish-grid');
+	if ($publishGrid.length > 0) {
+		console.log('[MDS DEBUG] document.ready init publish-grid');
+		mds_init('#publish-grid', true, false, false, true);
 	}
 });
 
-function get_selected_package() {
-	let $package_options = jQuery('.mds-package-options');
-	let pack = 0;
-	if ($package_options.length > 0) {
-		pack = $package_options.find('input[name="pack"]:checked').val();
+// Login page functionality needs to run on document.ready, not window.load
+// Keep it separate.
+jQuery(document).on('load', function () {
+	// login page functionality
+	let $login_page = jQuery("body.login");
+	if ($login_page.length > 0) {
+		let $user_login = jQuery("#user_login");
+		if ($user_login.length > 0) {
+			$user_login.attr("placeholder", "Username or Email Address");
+		}
 	}
-	return pack;
+});
+
+// Ajax loader
+function mds_load_ajax() {
+	window.mds_shortcode_containers = jQuery('body').find('.mds-shortcode-container');
+
+	if (window.mds_shortcode_containers.length === 0) {
+		return;
+	}
+
+	for (let i = 0; i < window.mds_shortcode_containers.length; i++) {
+		const $mds_shortcode_container = jQuery(window.mds_shortcode_containers[i]);
+		const mds_data_attr = $mds_shortcode_container.attr('data-mds-params');
+		if (mds_data_attr !== undefined) {
+			const mds_data = JSON.parse(mds_data_attr);
+			if (mds_data) {
+				if (window.mds_shortcodes === undefined) {
+					window.mds_shortcodes = [];
+				}
+				if (window.mds_shortcodes[mds_data.container_id] === undefined) {
+					window.mds_shortcodes[mds_data.container_id] = true;
+					new window.mds_ajax(mds_data.type, mds_data.container_id, mds_data.align, mds_data.width, mds_data.height, mds_data.id);
+				}
+			}
+		}
+	}
 }
 
 function mds_update_package($form) {
