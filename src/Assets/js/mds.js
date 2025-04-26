@@ -679,6 +679,15 @@ jQuery(document).ready(function () {
 
 	mds_load_ajax();
 
+	// Initialize the manage page grid if it exists
+	let $publishGrid = jQuery('#publish-grid');
+	if ($publishGrid.length > 0) {
+		// Initialize with scaling (true), no tippy (false), not list type (false), is grid (true)
+		mds_init('#publish-grid', true, false, false, true);
+		// Trigger load event manually since it's not loaded via AJAX
+		$publishGrid.trigger('load');
+	}
+
 	// login page functionality
 	let $login_page = jQuery("body.login");
 	if ($login_page.length > 0) {
