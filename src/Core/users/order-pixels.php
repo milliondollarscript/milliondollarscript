@@ -123,7 +123,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 	$mime_type          = mime_content_type( $_FILES['graphic']['tmp_name'] );
 	$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
 	if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-		$error = "<b>" . Language::get( 'File type not supported.' ) . "</b><br>";
+		$error = "<b>" . Language::get_replace( 'Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF.', '%MIME_TYPE%', $mime_type ) . "</b><br>";
 	}
 
 	$messages = "";
@@ -162,6 +162,19 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 
 			// uploaded image size
 			$size = getimagesize( $tmp_image_file );
+
+			// Check dimensions ONLY if auto-resize is OFF
+			if ( Config::get( 'MDS_RESIZE' ) !== 'YES' ) {
+
+				// If any error occurred during dimension calculation/validation
+				/* if ( $error_occurred ) { // This check is now part of the removed logic
+					// Clean up the invalid uploaded file FIRST
+					if (isset($uploadfile) && file_exists($uploadfile)) { 
+						unlink($uploadfile);
+				} */
+
+				// Removed logic
+			}
 
 			// maximum size snapped to block size
 			$reqsize = Utility::get_required_size( $size[0], $size[1], $banner_data );
@@ -224,8 +237,10 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 						[ '%MAX_PIXELS%', '%COUNT%' ],
 						[ $limit, $pixel_count ]
 					);
-					unlink( $tmp_image_file );
-					unset( $tmp_image_file );
+					if ( ! empty($tmp_image_file) && file_exists($tmp_image_file) ) { 
+						unlink( $tmp_image_file );
+						unset( $tmp_image_file );  
+					}
 				} else if ( ( $block_size < $banner_data['G_MIN_BLOCKS'] ) && ( $banner_data['G_MIN_BLOCKS'] > 0 ) ) {
 
 					$limit = $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
@@ -235,13 +250,15 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 						[ '%MIN_PIXELS%', '%COUNT%' ],
 						[ $limit, $pixel_count ]
 					);
-					unlink( $tmp_image_file );
-					unset( $tmp_image_file );
+					if ( ! empty($tmp_image_file) && file_exists($tmp_image_file) ) { 
+						unlink( $tmp_image_file );
+						unset( $tmp_image_file );  
+					}
 				}
 			}
 		} else {
 			//echo "Possible file upload attack!\n";
-			$messages .= Language::get( 'Upload failed. Please try again, or try a different file.' );
+			$messages .= "<b>" . Language::get( 'Upload failed: Could not process the uploaded file. Please try again.' ) . "</b><br>";
 		}
 	}
 }
@@ -339,6 +356,7 @@ Language::out( '- Upload a GIF, JPEG or PNG graphics file<br />
         <input type='file' accept="image/*" name='graphic' style='font-size:14px;width:200px;'/><br/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
         <input type='hidden' name='package' value='<?php echo $package_id; ?>'/>
+        <input type="hidden" name="order_id" value="<?php echo esc_attr( Orders::get_current_order_id() ); ?>">
         <input class="mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
                style=' font-size:18px;'/>
     </form>

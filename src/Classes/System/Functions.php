@@ -375,7 +375,6 @@ class Functions {
 		if ( empty( $mds_pixel ) ) {
 			global $mds_error;
 			$mds_error = Language::get( 'Unable to find pixels.' );
-
 			return false;
 		}
 
@@ -389,10 +388,8 @@ class Functions {
 		if ( ! empty( $result ) ) {
 			$row = $result[0];
 		} else {
-			$row = array();
 			global $mds_error;
 			$mds_error = Language::get( 'Unable to find pixels.' );
-
 			return false;
 		}
 
@@ -416,20 +413,27 @@ class Functions {
 
 		$size          = Utility::get_pixel_image_size( $row['order_id'] );
 		$pixels        = $size['x'] * $size['y'];
-		$upload_result = upload_changed_pixels( $order_id, $row['banner_id'], $size, $banner_data );
 
-		if ( ! $upload_result ) {
-			global $mds_error;
-			$mds_error = Language::get( 'No file was uploaded.' );
+		// --- Only process upload if the form was submitted with a file ---
+		if ( ! empty( $_REQUEST['change_pixels'] ) && ! empty( $_FILES['pixels']['tmp_name'] ) ) {
+			$upload_result = upload_changed_pixels( $order_id, $row['banner_id'], $size, $banner_data );
 
-			return false;
-		} else if ( ! empty( $_REQUEST['change_pixels'] ) && isset( $_FILES ) ) {
-			// The image was uploaded successfully.
-			if ( $row['status'] == 'denied' ) {
-				Orders::pend_order( $order_id );
-				Orders::reset_order_progress();
+			// Check if upload succeeded (true) or returned an error string
+			if ( $upload_result !== true ) {
+				global $mds_error;
+				// Assign the returned error string to the global variable for display
+				$mds_error = $upload_result;
+				return false;
 			}
-		}
+			// If upload was successful (and form submitted)
+			else {
+				// The image was uploaded successfully.
+				if ( $row['status'] == 'denied' ) {
+					Orders::pend_order( $order_id );
+					Orders::reset_order_progress();
+				}
+			}
+		} // --- End upload processing ---
 
 		// If not uploading a new image, check if the order is valid.
 		if ( empty( $_REQUEST['change_pixels'] ) ) {
@@ -456,6 +460,12 @@ class Functions {
 		?>
         <div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>
 		<?php
+		// Display the global error message if it's set
+		global $mds_error;
+		if ( ! empty( $mds_error ) ) {
+			// Use WordPress admin notice styling
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $mds_error ) . '</p></div>';
+		}
 		Language::out( '<p>Here you can edit your ad or change your pixels.</p>' );
 		Language::out( '<p><b>Your Pixels:</b></p>' );
 		?>

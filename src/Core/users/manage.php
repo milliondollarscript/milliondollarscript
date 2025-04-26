@@ -178,8 +178,13 @@ if ( ! empty( $_REQUEST['block_id'] ) || ( isset( $_REQUEST['block_id'] ) && $_R
 // Display ad editing forms if the ad was clicked, or 'Edit' button was pressed.
 if ( ( ( isset( $_REQUEST['mds_dest'] ) && $_REQUEST['mds_dest'] == 'manage' ) || isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'manage' ) && ! empty( $_REQUEST['aid'] ) ) {
 	$ad_id = intval( $_REQUEST['aid'] );
-	Functions::manage_pixel( $ad_id, $mds_pixel, $banner_data, $BID, $gif_support, $jpeg_support, $png_support );
 
+	// Call manage_pixel to handle potential uploads and display the form
+	// Capture the return value
+	$manage_result = Functions::manage_pixel( $ad_id, $mds_pixel, $banner_data, $BID, $gif_support, $jpeg_support, $png_support );
+
+	// If manage_pixel was called (regardless of success/failure, as it handles its own output/errors),
+	// stop further execution on *this* page (manage.php).
 	return; 
 }
 

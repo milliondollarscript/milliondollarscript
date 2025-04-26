@@ -88,7 +88,15 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 				$pixels                    = $size['x'] * $size['y'];
 				$_REQUEST['change_pixels'] = true;
 
-				upload_changed_pixels( $order_id, $BID, $size, $banner_data );
+				// Capture the return value from upload_changed_pixels
+				$upload_result = upload_changed_pixels( $order_id, $BID, $size, $banner_data, 'graphic' );
+
+				// Check if the upload was successful (returned true)
+				if ( $upload_result !== true ) {
+					// If not successful, set the global error message
+					global $mds_error;
+					$mds_error = $upload_result;
+				}
 			}
 		}
 	}
@@ -261,6 +269,8 @@ Language::out_replace(
         <input type='file' accept="image/*" name='graphic' style=' font-size:14px;width:200px;'/>
         <input type='hidden' name='BID' value='<?php echo $BID; ?>'/>
         <input type='hidden' name='package' value='<?php echo $package_id; ?>'/>
+        <input type="hidden" name="selected_pixels" value=''>
+        <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
         <input class="mds-button mds_upload_image" type='submit' value='<?php echo esc_attr( Language::get( 'Upload' ) ); ?>'
                style=' font-size:18px;'/>
     </form>
@@ -387,7 +397,7 @@ if ( ! empty( $image ) ) {
                 <input type="hidden" name="mds_dest" value="write-ad">
                 <input type="hidden" name="package" value="<?php echo $package_id; ?>">
                 <input type="hidden" name="selected_pixels" value=''>
-                <input type="hidden" name="order_id" value="<?php echo $mds_order_id; ?>">
+                <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
                 <input type="hidden" value="<?php echo $BID; ?>" name="BID">
                 <input type="submit" class='mds-write big_button' name='submit_button2' id='submit_button2'
                        value='<?php echo esc_attr( Language::get( 'Write Your Ad' ) ); ?>'>

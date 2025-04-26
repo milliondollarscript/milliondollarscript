@@ -638,26 +638,40 @@ function disapprove_modified_order( $order_id, $BID ) {
  * @param $BID int
  * @param $size array
  * @param $banner_data array
+ * @param $file_key string The key in the $_FILES array for the uploaded file (defaults to 'pixels').
  *
- * @return bool
+ * @return string|bool Returns true on success, or an error message string on failure.
  */
-function upload_changed_pixels( int $order_id, int $BID, array $size, array $banner_data ): bool {
+function upload_changed_pixels(
+	int    $order_id,
+	string $BID,
+	array  $size,
+	array  $banner_data,
+	string $file_key = 'pixels'
+): string|bool {
 	global $f2;
 
-	$imagine = new Imagine\Gd\Imagine();
+	// Basic validation: Check if the file key exists in $_FILES
+	if ( ! isset( $_FILES[ $file_key ] ) ) {
+		return Language::get_replace( 'Invalid file key specified: %KEY%', '%KEY%', $file_key );
+	}
+	$files = $_FILES[ $file_key ];
 
-	if ( ( ! empty( $_REQUEST['change_pixels'] ) ) && isset( $_FILES ) ) {
-		// a new image was uploaded...
-
-		$uploaddir = Utility::get_upload_path() . "images/";
-		$files     = $_FILES['pixels'] ?? ( $_FILES['graphic'] ?? '' );
-
-		if ( empty( $files['tmp_name'] ) ) {
-			echo "<b>" . Language::get( 'No file was uploaded.' ) . "</b><br />";
-
-			return false;
+	// Check for PHP upload errors first
+	$upload_error = $files['error'];
+	if ( $upload_error !== UPLOAD_ERR_OK ) {
+		// is_uploaded_file failed OR there was an upload error
+		// Provide more specific feedback
+		$error_message = Language::get('Invalid upload method or upload error.');
+		if ($upload_error !== UPLOAD_ERR_OK) {
+			$error_message .= ' ' . Language::get_replace('PHP Upload Error Code: %CODE%', '%CODE%', $upload_error);
 		}
+		throw new \Exception($error_message); // Throw exception instead of returning early
+	}
 
+	$imagine = new Imagine\Gd\Imagine();
+	try {
+		$uploaddir = Utility::get_upload_path() . "images/";
 		$filename   = sanitize_file_name( $files['name'] );
 		$file_parts = pathinfo( $filename );
 
@@ -671,207 +685,233 @@ function upload_changed_pixels( int $order_id, int $BID, array $size, array $ban
 		$mime_type          = mime_content_type( $files['tmp_name'] );
 		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
 		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-			$error = "<b>" . Language::get( 'File type not supported.' ) . "</b><br />";
+			throw new \Exception("<b>" . Language::get( 'File type not supported.' ) . "</b><br />");
 		}
 
-		if ( ! empty( $error ) ) {
-			echo $error;
+		$uploadfile = $uploaddir . "tmp_" . $order_id . ".$ext";
 
-			return false;
-		} else {
+		// move the file
+		if ( ! move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
+			throw new \Exception(Language::get( 'Possible file upload attack or server error during file move.' ));
+		}
 
-			$uploadfile = $uploaddir . "tmp_" . $order_id . ".$ext";
+		// convert to png
+		$image    = $imagine->open( $uploadfile );
+		$fileinfo = pathinfo( $uploadfile );
+		$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
+		$image->save( $newname );
 
-			// move the file
-			if ( move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
-				// convert to png
-				$image    = $imagine->open( $uploadfile );
-				$fileinfo = pathinfo( $uploadfile );
-				$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
-				$image->save( $newname );
+		// File is valid, and was successfully uploaded.
+		$tmp_image_file = $newname;
 
-				// File is valid, and was successfully uploaded.
-				$tmp_image_file = $newname;
+		Utility::setMemoryLimit( $uploadfile );
 
-				Utility::setMemoryLimit( $uploadfile );
+		// autorotate
+		$imagine->setMetadataReader( new ExifMetadataReader() );
+		$filter = new Imagine\Filter\Transformation();
+		$filter->add( new AutoRotate() );
+		$filter->apply( $image );
 
-				// autorotate
-				$imagine->setMetadataReader( new ExifMetadataReader() );
-				$filter = new Imagine\Filter\Transformation();
-				$filter->add( new AutoRotate() );
-				$filter->apply( $image );
+		// Determine actual image size from the *converted* PNG file
+		$actual_size = getimagesize($newname);
+		if ($actual_size === false) {
+			// If getimagesize fails on the converted file, something is wrong with it
+			throw new \Exception(Language::get( 'Could not read image dimensions after conversion. File might be corrupted.' ));
+		}
 
-				// Determine actual image size after potential rotation/processing
-				$actualSize = $image->getSize();
-				$actualWidth = $actualSize->getWidth();
-				$actualHeight = $actualSize->getHeight();
+		// Now proceed with dimension and type checks
+		$actualWidth  = $actual_size[0];
+		$actualHeight = $actual_size[1];
 
-				// determine whether to resize and validate dimensions when disabled
-				$MDS_RESIZE = Config::get( 'MDS_RESIZE' );
-				if ( $MDS_RESIZE !== 'YES' ) {
-					$img_size = $image->getSize();
-					if ( $img_size->getWidth() > $size['x'] || $img_size->getHeight() > $size['y'] ) {
-						echo Language::get_replace(
-							'The size of the uploaded image is incorrect. It needs to be %SIZE_X% wide and %SIZE_Y% high (or less)',
-							[ '%SIZE_X%', '%SIZE_Y%' ],
-							[ $size['x'], $size['y'] ]
-						) . "<br>";
-						return false;
-					}
-				}
-				if ( $MDS_RESIZE === 'YES' ) {
-					$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
-					$image->resize( $resize );
-				}
-
-				// Precompute block dimensions and color for performance
-				$block_size = new Imagine\Image\Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
-				$palette    = new Imagine\Image\Palette\RGB();
-				$color      = $palette->color( '#000', 0 );
-
-				// Compute block offsets from database
-				global $wpdb;
-				$blocks = $wpdb->get_results(
-					$wpdb->prepare(
-						"SELECT x, y FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d AND banner_id=%d",
-						$order_id,
-						$BID
-					),
-					ARRAY_A
+		// determine whether to resize and validate dimensions when disabled
+		$MDS_RESIZE = Config::get( 'MDS_RESIZE' );
+		if ( $MDS_RESIZE !== 'YES' ) {
+			// Check if dimensions are larger than required size
+			if ( $actualWidth > $size['x'] || $actualHeight > $size['y'] ) {
+				// Construct user-friendly error message
+				$error_message = Language::get_replace(
+					'Image too large. You uploaded an image that is %UPLOAD_W%x%UPLOAD_H% pixels. The image cannot be larger than %SIZE_X% pixels wide and %SIZE_Y% pixels high.',
+					[ '%UPLOAD_W%', '%UPLOAD_H%', '%SIZE_X%', '%SIZE_Y%' ],
+					[ $actualWidth, $actualHeight, $size['x'], $size['y'] ]
 				);
-				if ( ! empty( $blocks ) ) {
-					$low_x = $high_x = $blocks[0]['x'];
-					$low_y = $high_y = $blocks[0]['y'];
-					foreach ( $blocks as $block_row ) {
-						if ( $block_row['x'] > $high_x ) {
-							$high_x = $block_row['x'];
-						}
-						if ( $block_row['x'] < $low_x ) {
-							$low_x = $block_row['x'];
-						}
-						if ( $block_row['y'] > $high_y ) {
-							$high_y = $block_row['y'];
-						}
-						if ( $block_row['y'] < $low_y ) {
-							$low_y = $block_row['y'];
-						}
-					}
-					$_REQUEST['map_x'] = $high_x;
-					$_REQUEST['map_y'] = $high_y;
-				} else {
-					$low_x = $low_y = 0;
+				throw new \Exception($error_message);
+			}
+		}
+		if ( $MDS_RESIZE === 'YES' ) {
+			$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
+			$image->resize( $resize );
+		}
+
+		// Precompute block dimensions and color for performance
+		$block_size = new Imagine\Image\Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
+		$palette    = new Imagine\Image\Palette\RGB();
+		$color      = $palette->color( '#000', 0 );
+
+		// Compute block offsets from database
+		global $wpdb;
+		$blocks = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT x, y FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d AND banner_id=%d",
+				$order_id,
+				$BID
+			),
+			ARRAY_A
+		);
+		if ( ! empty( $blocks ) ) {
+			$low_x = $high_x = $blocks[0]['x'];
+			$low_y = $high_y = $blocks[0]['y'];
+			foreach ( $blocks as $block_row ) {
+				if ( $block_row['x'] > $high_x ) {
+					$high_x = $block_row['x'];
 				}
-
-				// Prepare for batch updates
-				$updates = [];
-
-				// Create a fully transparent block placeholder
-				$transparent_color = $palette->color('#FFF', 100); // Use any color, alpha 100 = fully transparent
-				$transparent_block_image = $imagine->create($block_size, $transparent_color);
-				$transparent_image_data = base64_encode($transparent_block_image->get("png", ['png_compression_level' => 9]));
-
-				// Iterate over the entire selection area, not just the uploaded image area
-				$blkW = $banner_data['BLK_WIDTH'];
-				$blkH = $banner_data['BLK_HEIGHT'];
-				$blocksPerRow = $banner_data['G_WIDTH'];
-				$sizeX = $size['x']; // Keep original size for reference if needed, e.g., for block index calculation
-				$sizeY = $size['y'];
-
-				// Use actual image dimensions for loop limits
-				$loopLimitX = $actualWidth;
-				$loopLimitY = $actualHeight;
-
-				// Calculate the total width and height of the block selection area
-				$selectionWidth = ($high_x - $low_x) + $banner_data['BLK_WIDTH'];
-				$selectionHeight = ($high_y - $low_y) + $banner_data['BLK_HEIGHT'];
-
-				for ( $y_offset = 0; $y_offset < $selectionHeight; $y_offset += $blkH ) {
-					for ( $x_offset = 0; $x_offset < $selectionWidth; $x_offset += $blkW ) {
-						// Calculate absolute map coordinates for this block in the grid
-						$map_x = $low_x + $x_offset;
-						$map_y = $low_y + $y_offset;
-
-						// Calculate the expected block ID based on grid position
-						$cb = ($map_x / $blkW) + (($map_y / $blkH) * $blocksPerRow);
-
-						// Determine the relative coordinates within the uploaded image frame
-						$img_x = $x_offset;
-						$img_y = $y_offset;
-
-						// Check if this block position is covered by the actual uploaded image
-						if ( $img_x < $actualWidth && $img_y < $actualHeight ) {
-							// --- This block IS covered by the uploaded image --- 
-
-							// Calculate the size for this specific crop from the uploaded image
-							$cropWidth = min( $blkW, $actualWidth - $img_x );
-							$cropHeight = min( $blkH, $actualHeight - $img_y );
-
-							// Ensure dimensions are positive before attempting crop
-							if ($cropWidth > 0 && $cropHeight > 0) {
-								$current_block_size = new Imagine\Image\Box($cropWidth, $cropHeight);
-								$start_point = new Imagine\Image\Point($img_x, $img_y); // Use relative coords for crop
-
-								// Create new destination image (always use standard block size)
-								$dest = $imagine->create( $block_size, $color );
-
-								// Crop the calculated part from the source image copy
-								$block = $image->copy();
-								$block->crop($start_point, $current_block_size);
-
-								// Paste the (potentially smaller) cropped block into the top-left of the full-size destination image
-								$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
-
-								// Get the image data
-								$current_image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
-							} else {
-								// This case might occur if crop dimensions are zero (edge case), use transparent
-								$current_image_data = $transparent_image_data;
-							}
-						} else {
-							// --- This block IS NOT covered by the uploaded image, make it transparent ---
-							$current_image_data = $transparent_image_data;
-						}
-						
-						// Queue update for this block ID
-						$updates[] = [ 'block_id' => intval($cb), 'image_data' => $current_image_data ];
-
-					}
+				if ( $block_row['x'] < $low_x ) {
+					$low_x = $block_row['x'];
 				}
-
-				// apply updates in batch
-				if ( ! empty( $updates ) ) {
-					$cases = '';
-					$ids   = [];
-					foreach ( $updates as $u ) {
-						$cases .= $wpdb->prepare( "WHEN block_id=%d THEN %s ", $u['block_id'], $u['image_data'] );
-						$ids[] = $u['block_id'];
-					}
-					$ids_list = implode( ',', $ids );
-					$sql = "UPDATE " . MDS_DB_PREFIX . "blocks
-							SET image_data = CASE {$cases} END
-							WHERE order_id=%d
-							  AND banner_id=%d
-							  AND block_id IN ({$ids_list})";
-					$wpdb->query( $wpdb->prepare( $sql, $order_id, $BID ) );
+				if ( $block_row['y'] > $high_y ) {
+					$high_y = $block_row['y'];
 				}
-
-				unset( $tmp_image_file );
-
-				if ( $banner_data['AUTO_APPROVE'] != 'Y' ) {
-					// to be approved by the admin
-					disapprove_modified_order( $order_id, $BID );
-				}
-
-				if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
-					process_image( $BID );
-					publish_image( $BID );
-					process_map( $BID );
+				if ( $block_row['y'] < $low_y ) {
+					$low_y = $block_row['y'];
 				}
 			}
-
-			// Possible file upload attack!
-			Language::out( 'Upload failed. Please try again, or try a different file.' );
+			$_REQUEST['map_x'] = $high_x;
+			$_REQUEST['map_y'] = $high_y;
+		} else {
+			$low_x = $low_y = 0;
 		}
+
+		// Prepare for batch updates
+		$updates = [];
+
+		// Create a fully transparent block placeholder
+		$transparent_color = $palette->color('#FFF', 100); // Use any color, alpha 100 = fully transparent
+		$transparent_block_image = $imagine->create($block_size, $transparent_color);
+		$transparent_image_data = base64_encode($transparent_block_image->get("png", ['png_compression_level' => 9]));
+
+		// Iterate over the entire selection area, not just the uploaded image area
+		$blkW = $banner_data['BLK_WIDTH'];
+		$blkH = $banner_data['BLK_HEIGHT'];
+		$blocksPerRow = $banner_data['G_WIDTH'];
+		$sizeX = $size['x']; // Keep original size for reference if needed, e.g., for block index calculation
+		$sizeY = $size['y'];
+
+		// Use actual image dimensions for loop limits
+		$loopLimitX = $actualWidth;
+		$loopLimitY = $actualHeight;
+
+		// Calculate the total width and height of the block selection area
+		$selectionWidth = ($high_x - $low_x) + $banner_data['BLK_WIDTH'];
+		$selectionHeight = ($high_y - $low_y) + $banner_data['BLK_HEIGHT'];
+
+		for ( $y_offset = 0; $y_offset < $selectionHeight; $y_offset += $blkH ) {
+			for ( $x_offset = 0; $x_offset < $selectionWidth; $x_offset += $blkW ) {
+				// Calculate absolute map coordinates for this block in the grid
+				$map_x = $low_x + $x_offset;
+				$map_y = $low_y + $y_offset;
+
+				// Calculate the expected block ID based on grid position
+				$cb = ($map_x / $blkW) + (($map_y / $blkH) * $blocksPerRow);
+
+				// Determine the relative coordinates within the uploaded image frame
+				$img_x = $x_offset;
+				$img_y = $y_offset;
+
+				// Check if this block position is covered by the actual uploaded image
+				if ( $img_x < $actualWidth && $img_y < $actualHeight ) {
+					// --- This block IS covered by the uploaded image --- 
+
+					// Calculate the size for this specific crop from the uploaded image
+					$cropWidth = min( $blkW, $actualWidth - $img_x );
+					$cropHeight = min( $blkH, $actualHeight - $img_y );
+
+					// Ensure dimensions are positive before attempting crop
+					if ($cropWidth > 0 && $cropHeight > 0) {
+						$current_block_size = new Imagine\Image\Box($cropWidth, $cropHeight);
+						$start_point = new Imagine\Image\Point($img_x, $img_y); // Use relative coords for crop
+
+						// Create new destination image (always use standard block size)
+						$dest = $imagine->create( $block_size, $color );
+
+						// Crop the calculated part from the source image copy
+						$block = $image->copy();
+						$block->crop($start_point, $current_block_size);
+
+						// Paste the (potentially smaller) cropped block into the top-left of the full-size destination image
+						$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
+
+						// Get the image data
+						$current_image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
+					} else {
+						// This case might occur if crop dimensions are zero (edge case), use transparent
+						$current_image_data = $transparent_image_data;
+					}
+				} else {
+					// --- This block IS NOT covered by the uploaded image, make it transparent ---
+					$current_image_data = $transparent_image_data;
+				}
+				
+				// Queue update for this block ID
+				$updates[] = [ 'block_id' => intval($cb), 'image_data' => $current_image_data ];
+
+			}
+		}
+
+		// apply updates in batch
+		if ( ! empty( $updates ) ) {
+			$cases = '';
+			$ids   = [];
+			foreach ( $updates as $u ) {
+				$cases .= $wpdb->prepare( "WHEN block_id=%d THEN %s ", $u['block_id'], $u['image_data'] );
+				$ids[] = $u['block_id'];
+			}
+			$ids_list = implode( ',', $ids );
+			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks
+					SET image_data = CASE {$cases} END
+					WHERE order_id=%d
+					  AND banner_id=%d
+					  AND block_id IN ({$ids_list})";
+			$wpdb->query( $wpdb->prepare( $sql, $order_id, $BID ) );
+		}
+
+		unset( $tmp_image_file );
+
+		if ( $banner_data['AUTO_APPROVE'] != 'Y' ) {
+			// to be approved by the admin
+			disapprove_modified_order( $order_id, $BID );
+		}
+
+		if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
+			process_image( $BID );
+			publish_image( $BID );
+			process_map( $BID );
+		}
+
+		return true;
+
+	} catch ( \Exception $e ) {
+		// Handle any exception that occurred during the file processing/Imagine operations
+		// Clean up temporary files if they exist
+		if (isset($tmp_image_file) && file_exists($tmp_image_file)) {
+			 @unlink($tmp_image_file);
+		}
+		if (isset($uploadfile) && file_exists($uploadfile)) {
+			@unlink($uploadfile);
+		}
+		// Return an error message string
+		return Language::get_replace( 'Image processing failed: %ERROR%', '%ERROR%', $e->getMessage() );
 	}
-	return true;
+}
+
+/**
+ * @param int $length
+ *
+ * @return string
+ */
+function generate_unique_code( int $length ): string {
+	$characterSet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	$randomString = '';
+	for ( $i = 0; $i < $length; $i++ ) {
+		$randomString .= $characterSet[ random_int( 0, strlen( $characterSet ) - 1 ) ];
+	}
+	return $randomString;
 }
