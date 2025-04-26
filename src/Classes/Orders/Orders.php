@@ -2318,6 +2318,7 @@ class Orders {
 	 * @return bool|void|null
 	 */
 	public static function can_user_order( $banner_data, $user_id, int $package_id = 0 ) {
+
 		// check rank
 		$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 		if ( $privileged == '1' ) {
@@ -2326,23 +2327,28 @@ class Orders {
 
 		$BID = $banner_data['BANNER_ID'];
 
-		if ( banner_get_packages( $BID ) ) { // if user has package, check if the user can order this package
+		$has_packages = banner_get_packages( $BID );
+
+
+		if ( $has_packages ) { // if user has package, check if the user can order this package
 			if ( $package_id == 0 ) { // don't know the package id, assume true.
 
 				return true;
 			} else {
 
-				return can_user_get_package( $user_id, $package_id );
+				$can_get_package = can_user_get_package( $user_id, $package_id );
+				return $can_get_package;
 			}
 		} else {
 
 			// check against the banner. (Banner has no packages)
 			if ( ( $banner_data['G_MAX_ORDERS'] > 0 ) ) {
 
-				$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders where `banner_id`='" . intval( $BID ) . "' and `status` <> 'deleted' and `status` <> 'new' AND user_id='" . intval( $user_id ) . "'";
+				$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders where `banner_id`='" . intval( $BID ) . "' and status <> 'deleted' and status <> 'new' AND user_id='" . intval( $user_id ) . "'";
 
-				$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
-				$count = mysqli_num_rows( $result );
+				$result = mysqli_query( $GLOBALS['connection'], $sql ) or error_log("MDS Debug: DB Error: " . mysqli_error( $GLOBALS['connection'] ) . " SQL: " . $sql); // Log DB errors
+				$count = $result ? mysqli_num_rows( $result ) : 0; // Handle potential query failure
+
 				if ( $count >= $banner_data['G_MAX_ORDERS'] ) {
 					return false;
 				} else {

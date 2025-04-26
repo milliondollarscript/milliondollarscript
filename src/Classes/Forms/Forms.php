@@ -315,27 +315,66 @@ class Forms {
 				require_once MDS_CORE_PATH . 'admin/orders-waiting.php';
 				break;
 			case 'packages':
-				// --- Handle Package Add/Edit --- 
-				global $wpdb;
-				$packages_table = MDS_DB_PREFIX . 'packages';
+				// Ensure the specific package action nonce is valid
+				$bid_for_nonce = isset($_POST['BID']) ? intval($_POST['BID']) : 0;
+				check_admin_referer('mds-package-edit-' . $bid_for_nonce, 'mds_package_nonce');
 
-				// Verify nonce
-				$nonce = $_POST['mds_package_nonce'] ?? '';
-				$BID   = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0;
+				// Check if the required action is set
+				if (isset($_POST['mds-action']) && $_POST['mds-action'] === 'mds-save-package') {
+					global $wpdb;
+					$table_name = MDS_DB_PREFIX . 'packages';
 
-				// Check for BID parameter specifically for grid selection redirection
-				if ( isset( $_POST['BID'] ) ) {
-					$params['BID'] = intval( $_POST['BID'] );
-					// Construct the correct admin URL instead of using get_page_url which might point to frontend
-					// Add the BID parameter directly to the URL string
-					$admin_page_url_with_bid = add_query_arg( 'BID', $params['BID'], admin_url( 'admin.php?page=mds-packages' ) );
-					// Use Utility::redirect_admin which handles wp_safe_redirect (assuming it takes only the URL)
-					Utility::redirect_admin( $admin_page_url_with_bid );
-					// exit; // redirect_admin includes exit
+					// Sanitize and prepare data
+					$package_id = isset($_POST['package_id']) ? intval($_POST['package_id']) : 0;
+					$banner_id = isset($_POST['BID']) ? intval($_POST['BID']) : 0;
+					$description = isset($_POST['description']) ? sanitize_text_field($_POST['description']) : '';
+					$price = isset($_POST['price']) ? sanitize_text_field($_POST['price']) : '0'; // Keep as string for number_format later if needed
+					$currency = isset($_POST['currency']) ? sanitize_text_field($_POST['currency']) : 'USD';
+					$days_expire = isset($_POST['days_expire']) ? intval($_POST['days_expire']) : 0;
+					$max_orders = isset($_POST['max_orders']) ? intval($_POST['max_orders']) : 0;
+
+					// Basic validation (add more as needed)
+					if (empty($description) || $banner_id <= 0 || !is_numeric($price) || $days_expire < 0 || $max_orders < 0) {
+						$params['package_save_error'] = 'invalid_data';
+						wp_die(Language::get('Invalid package data submitted. Please check the fields and try again.')); // Or redirect with error
+					} else {
+						$data = [
+							'banner_id' => $banner_id,
+							'description' => $description,
+							'price' => $price, // Store raw numeric string
+							'currency' => $currency,
+							'days_expire' => $days_expire,
+							'max_orders' => $max_orders,
+						];
+						$format = ['%d', '%s', '%s', '%s', '%d', '%d']; // Format for $wpdb->prepare
+
+						if ($package_id > 0) {
+							// Update existing package
+							$where = ['package_id' => $package_id];
+							$where_format = ['%d'];
+							$result = $wpdb->update($table_name, $data, $where, $format, $where_format);
+						} else {
+							// Insert new package
+							$result = $wpdb->insert($table_name, $data, $format);
+						}
+
+						if ($result === false) {
+							// Database error
+							$params['package_save_error'] = 'db_error';
+                            error_log('MDS Package Save Error: ' . $wpdb->last_error);
+						} elseif ($result > 0) {
+							// Success (rows affected > 0)
+							$params['package_save_success'] = 'true';
+						} else {
+							// No rows affected (update with same data)
+							$params['package_save_notice'] = 'no_change';
+						}
+					}
+				} else {
+					// Handle other package actions if needed (e.g., delete)
+                    $params['package_action_error'] = 'unknown_action';
 				}
-
-				// If not a grid selection (no BID), handle other package actions by including the main file
-				require_once MDS_CORE_PATH . 'admin/packages.php';
+				// No need to require a file, the redirect below handles it.
 				break;
 			case 'price-zones':
 				require_once MDS_CORE_PATH . 'admin/price-zones.php';

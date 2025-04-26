@@ -49,8 +49,35 @@ header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
 header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" );   // Date in the past
 
 global $BID, $f2, $banner_data;
-$BID         = $f2->bid();
+
+// Get BID directly from POST data for AJAX requests, ensuring it's a valid integer.
+// Fallback to $f2->bid() for non-AJAX contexts, though this specific file is only included via AJAX.
+if ( isset( $_POST['BID'] ) && is_numeric( $_POST['BID'] ) ) {
+	$BID = intval( $_POST['BID'] );
+} else {
+	// Original method as fallback, though less likely to be correct in this context.
+	// Consider adding more robust error handling if BID is missing/invalid.
+	$BID = $f2->bid();
+}
+
 $banner_data = load_banner_constants( $BID );
+
+// Ensure banner data was loaded successfully
+if ( is_null( $banner_data ) ) {
+	if ( wp_doing_ajax() ) {
+		wp_send_json_error( [
+			"error" => "true",
+			"type"  => "invalid_grid",
+			"data"  => [
+				"value" => Language::get( 'Error: Could not load grid data for the specified ID.' ),
+			]
+		] );
+	} else {
+		// Handle non-AJAX error appropriately
+		// Maybe redirect or show an error message
+		wp_die( Language::get( 'Error: Could not load grid data.' ) );
+	}
+}
 
 // normalize...
 //$_REQUEST['map_x']    = floor( $_REQUEST['map_x'] / $banner_data['BLK_WIDTH'] ) * $banner_data['BLK_WIDTH'];
