@@ -411,17 +411,23 @@ if ( ! empty( $tmp_image_file ) ) {
         <input type="hidden" value="1" name="select">
         <input type="hidden" value="<?php echo $BID; ?>" name="BID">
 
-        <div id="pixels-container">
-            <img style="cursor: pointer;max-width: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>px;"
+        <div id="pixels-container" style="max-width: 100%;">
+            <img style="cursor: pointer; max-width: 100%; width: auto; height: auto;"
                  id="pixelimg" <?php if ( ( $USE_AJAX == 'YES' ) || ( $USE_AJAX == 'SIMPLE' ) ) { ?><?php } ?>
                  type="image" name="map" value='Select Pixels.'
                  width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
                  height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
                  src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
+                 data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                 data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
                  alt=""/>
-            <span id="block_pointer"><img
-                        src="<?php echo esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ); ?>"
-                        alt=""/></span>
+            <span id="block_pointer" style="position: absolute; display: block;" 
+                  data-original-width="<?php echo $reqsize[0]; ?>" 
+                  data-original-height="<?php echo $reqsize[1]; ?>">
+                <img src="<?php echo esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ); ?>"
+                     alt=""
+                     style="width: 100%; height: 100%;"/>
+            </span>
         </div>
         <input type="hidden" name="form_action" value="select">
     </form>
@@ -442,11 +448,27 @@ if ( ! empty( $tmp_image_file ) ) {
         </form>
     </div>
 
+    
     <script>
-		jQuery(document).ready(function () {
-			window.pointer_width = <?php echo $reqsize[0]; ?>;
-			window.pointer_height =  <?php echo $reqsize[1]; ?>;
-		});
+        // Pass critical grid and pointer data to JavaScript
+        var MDS_GRID_DATA = {
+            grid_width_blocks: <?php echo $banner_data['G_WIDTH']; ?>,
+            grid_height_blocks: <?php echo $banner_data['G_HEIGHT']; ?>,
+            pointer_width: <?php echo $reqsize[0]; ?>,
+            pointer_height: <?php echo $reqsize[1]; ?>,
+            block_width: <?php echo $banner_data['BLK_WIDTH']; ?>,
+            block_height: <?php echo $banner_data['BLK_HEIGHT']; ?>,
+            orig_width_px: <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>,
+            orig_height_px: <?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>,
+            debug_mode: <?php echo defined('WP_DEBUG') && WP_DEBUG ? 'true' : 'false'; ?>
+        };
+        
+        // Make all grid data available to the global MDS_OBJECT
+        if (window.MDS_OBJECT) {
+            window.MDS_OBJECT.grid_data = MDS_GRID_DATA;
+            window.MDS_OBJECT.grid_width = MDS_GRID_DATA.grid_width_blocks;
+            window.MDS_OBJECT.grid_height = MDS_GRID_DATA.grid_height_blocks;
+        }
     </script>
 
 	<?php

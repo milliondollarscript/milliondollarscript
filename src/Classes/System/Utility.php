@@ -1046,16 +1046,30 @@ class Utility {
 		$BID      = $f2->bid();
 		$order_id = Orders::get_current_order_id();
 
-		// check if it is free
-		$available = true;
-
+		// Make sure input is properly formatted
 		$selected = explode( ",", $in_str );
 		$in_array = array_map( 'intval', $selected );
 		$in_str   = implode( ',', $in_array );
+        
+        // Only proceed if we have blocks to check
+        if (empty($in_str)) {
+            echo json_encode( [
+                "error" => "true",
+                "type"  => "unavailable",
+                "data"  => [
+                    "value" => Language::get( 'No blocks selected for checking.' ) . " (E431)",
+                ]
+            ] );
+            return false;
+        }
+
+		// First check: direct blocks table query
 		$sql      = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id=%d AND block_id IN($in_str) AND order_id != %d", $BID, $order_id );
-		$wpdb->get_results( $sql );
+		$results = $wpdb->get_results( $sql );
 
 		if ( $wpdb->num_rows > 0 ) {
+
+            
 			echo json_encode( [
 				"error" => "true",
 				"type"  => "unavailable",
@@ -1064,31 +1078,37 @@ class Utility {
 				]
 			] );
 
-			$available = false;
+			return false;
 		}
 
-		// TODO: optimize or remove this but make sure blocks are added so they get checked above.
-		if ( $available ) {
-			$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %d AND status != 'deleted'", $BID, $order_id );
-			$result = $wpdb->get_results( $sql );
+		// Second check: orders table for overlapping blocks
+		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %d AND status != 'deleted'", $BID, $order_id );
+		$result = $wpdb->get_results( $sql );
+        
 
-			foreach ( $result as $row ) {
-				$entries = explode( ",", $row->blocks );
-				if ( ! empty( array_intersect( $entries, $selected ) ) ) {
-					echo json_encode( [
-						"error" => "true",
-						"type"  => "unavailable",
-						"data"  => [
-							"value" => Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E433)",
-						]
-					] );
-					$available = false;
-					break;
-				}
+
+		foreach ( $result as $row ) {
+			if (empty($row->blocks)) continue;
+            
+			$entries = explode( ",", $row->blocks );
+			$entries = array_map('intval', $entries); // Ensure we're comparing integers
+			
+			$intersection = array_intersect($entries, $in_array);
+			if (!empty($intersection)) {
+
+                
+				echo json_encode( [
+					"error" => "true",
+					"type"  => "unavailable",
+					"data"  => [
+						"value" => Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E433)",
+					]
+				] );
+				return false;
 			}
 		}
 
-		return $available;
+		return true;
 	}
 
 	/**

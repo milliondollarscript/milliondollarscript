@@ -71,23 +71,55 @@ function check_selection_main(): void {
 	$image     = $imagine->open( $upload_image_file );
 	$size      = $image->getSize();
 
+	// Get client coordinates and pointer dimensions from request
+	$client_x = intval($_REQUEST['map_x']);
+	$client_y = intval($_REQUEST['map_y']);
+	
+	// Get grid dimensions from banner data
+	$grid_width_px = $banner_data['BLK_WIDTH'] * $banner_data['G_WIDTH'];
+	$grid_height_px = $banner_data['BLK_HEIGHT'] * $banner_data['G_HEIGHT'];
+	
+	// Calculate blocks covered by the pointer
 	$cb_array = array();
-	for ( $y = 0; $y < ( $size->getHeight() ); $y += $banner_data['BLK_HEIGHT'] ) {
-		for ( $x = 0; $x < ( $size->getWidth() ); $x += $banner_data['BLK_WIDTH'] ) {
+	
+	// Get pointer dimensions from uploaded image size
+	$pointer_width_px = $size->getWidth();
+	$pointer_height_px = $size->getHeight();
+	
+	// Calculate how many blocks the pointer spans horizontally and vertically
+	$pointer_width_blocks = ceil($pointer_width_px / $banner_data['BLK_WIDTH']);
+	$pointer_height_blocks = ceil($pointer_height_px / $banner_data['BLK_HEIGHT']);
+	
+	// Calculate block positions from pixel coordinates
+	$start_block_x = floor($client_x / $banner_data['BLK_WIDTH']);
+	$start_block_y = floor($client_y / $banner_data['BLK_HEIGHT']);
+	
 
-			$map_x = $x + intval( $_REQUEST['map_x'] );
-			$map_y = $y + intval( $_REQUEST['map_y'] );
-
-			$GRD_WIDTH  = $banner_data['BLK_WIDTH'] * $banner_data['G_WIDTH'];
-			$cb         = ( ( $map_x ) / $banner_data['BLK_WIDTH'] ) + ( ( $map_y / $banner_data['BLK_HEIGHT'] ) * ( $GRD_WIDTH / $banner_data['BLK_WIDTH'] ) );
-			$cb_array[] = $cb;
+	// Loop through all blocks covered by the pointer
+	for ($y = 0; $y < $pointer_height_blocks; $y++) {
+		for ($x = 0; $x < $pointer_width_blocks; $x++) {
+			// Calculate the block coordinates
+			$block_x = $start_block_x + $x;
+			$block_y = $start_block_y + $y;
+			
+			// Skip if the block is outside the grid
+			if ($block_x >= $banner_data['G_WIDTH'] || $block_y >= $banner_data['G_HEIGHT']) {
+				continue;
+			}
+			
+			// Calculate the block ID using the grid formula
+			$block_id = $block_x + ($block_y * $banner_data['G_WIDTH']);
+			$cb_array[] = $block_id;
 		}
 	}
+	
+
 
 	$in_str = implode( ',', $cb_array );
 
 	$available = Utility::check_pixels( $in_str );
 
+	// If pixels are available, send success response
 	if ( $available ) {
 		echo json_encode( [
 			"error" => "false",
@@ -95,4 +127,5 @@ function check_selection_main(): void {
 			"data"  => []
 		] );
 	}
+	// Function check_pixels() already outputs the JSON error if not available
 }
