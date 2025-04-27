@@ -532,6 +532,11 @@ function rescale_grid() {
 	// Calculate scaling factors based on actual rendered dimensions compared to original dimensions
 	scaled_width = grid_width / origWidth;
 	scaled_height = grid_height / origHeight;
+	
+	// Also call scaleImageMap to ensure grid blocks are positioned properly
+	if (typeof scaleImageMap === 'function') {
+		scaleImageMap();
+	}
 
 	// Update block dimensions based on scaling factors
 	BLK_WIDTH = orig.BLK_WIDTH * scaled_width;
@@ -1134,3 +1139,58 @@ function resetZoom() {
 	// Ensure coordinates are updated
 	rescale_grid();
 }
+
+// Function for scaling image map coordinates based on current image dimensions
+function scaleImageMap() {
+	// Get the image element
+	var img = document.getElementById('pixelimg');
+	if (!img) return;
+	
+	// Get original dimensions from data attributes or MDS_OBJECT
+	var origWidth = parseInt(img.getAttribute('data-original-width'), 10) || 
+		(MDS_OBJECT.grid_data && MDS_OBJECT.grid_data.orig_width_px) || 
+		(MDS_OBJECT.grid_width * MDS_OBJECT.BLK_WIDTH);
+	
+	var origHeight = parseInt(img.getAttribute('data-original-height'), 10) || 
+		(MDS_OBJECT.grid_data && MDS_OBJECT.grid_data.orig_height_px) || 
+		(MDS_OBJECT.grid_height * MDS_OBJECT.BLK_HEIGHT);
+	
+	// Get current dimensions
+	var currentWidth = img.clientWidth || img.offsetWidth;
+	var currentHeight = img.clientHeight || img.offsetHeight;
+	
+	// Calculate scaling factors
+	var scaleX = currentWidth / origWidth;
+	var scaleY = currentHeight / origHeight;
+	
+	// Scale the grid blocks positioning if necessary
+	var blocks = document.querySelectorAll('.gridblock');
+	if (blocks && blocks.length > 0) {
+		for (var i = 0; i < blocks.length; i++) {
+			var block = blocks[i];
+			var x = parseInt(block.getAttribute('data-x'), 10) || 0;
+			var y = parseInt(block.getAttribute('data-y'), 10) || 0;
+			
+			if (x && y) {
+				var scaledX = Math.round(x * scaleX);
+				var scaledY = Math.round(y * scaleY);
+				block.style.left = scaledX + 'px';
+				block.style.top = scaledY + 'px';
+			}
+		}
+	}
+	
+	// Scale the pointer position if needed
+	if (window.mds_pointer_x !== undefined && window.mds_pointer_y !== undefined) {
+		var scaledX = Math.round(window.mds_pointer_x * scaleX);
+		var scaledY = Math.round(window.mds_pointer_y * scaleY);
+		var pointer = document.getElementById('block_pointer');
+		if (pointer) {
+			pointer.style.left = scaledX + 'px';
+			pointer.style.top = scaledY + 'px';
+		}
+	}
+}
+
+// Make the function globally available for other functions
+window.scaleImageMap = scaleImageMap;

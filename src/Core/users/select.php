@@ -443,72 +443,17 @@ if ( $has_packages ) {
 
     </form>
 
-    <script>
-        // Function for scaling image map coordinates based on current image dimensions
-        function scaleImageMap() {
-            // Get the image element
-            var img = document.getElementById('pixelimg');
-            if (!img) return;
-            
-            // Get original dimensions from data attributes
-            var origWidth = parseInt(img.getAttribute('data-original-width'), 10) || <?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>;
-            var origHeight = parseInt(img.getAttribute('data-original-height'), 10) || <?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>;
-            
-            // Get current dimensions
-            var currentWidth = img.clientWidth || img.offsetWidth;
-            var currentHeight = img.clientHeight || img.offsetHeight;
-            
-            // Calculate scaling factors
-            var scaleX = currentWidth / origWidth;
-            var scaleY = currentHeight / origHeight;
-            
-            // Scale the grid blocks positioning if necessary
-            var blocks = document.querySelectorAll('.gridblock');
-            if (blocks && blocks.length > 0) {
-                for (var i = 0; i < blocks.length; i++) {
-                    var block = blocks[i];
-                    var x = parseInt(block.getAttribute('data-x'), 10) || 0;
-                    var y = parseInt(block.getAttribute('data-y'), 10) || 0;
-                    
-                    if (x && y) {
-                        var scaledX = Math.round(x * scaleX);
-                        var scaledY = Math.round(y * scaleY);
-                        block.style.left = scaledX + 'px';
-                        block.style.top = scaledY + 'px';
-                    }
-                }
-            }
-            
-            // Scale the pointer position if needed
-            if (window.mds_pointer_x !== undefined && window.mds_pointer_y !== undefined) {
-                var scaledX = Math.round(window.mds_pointer_x * scaleX);
-                var scaledY = Math.round(window.mds_pointer_y * scaleY);
-                var pointer = document.getElementById('block_pointer');
-                if (pointer) {
-                    pointer.style.left = scaledX + 'px';
-                    pointer.style.top = scaledY + 'px';
-                }
-            }
+    <?php 
+    // Add data attributes for original dimensions to be used by scaleImageMap function in select.js
+    $orig_width = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
+    $orig_height = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+    ?>
+    <script type="text/javascript">
+        // Pass grid dimensions to JavaScript
+        if (typeof MDS_OBJECT !== 'undefined' && MDS_OBJECT.grid_data) {
+            MDS_OBJECT.grid_data.orig_width_px = <?php echo $orig_width; ?>;
+            MDS_OBJECT.grid_data.orig_height_px = <?php echo $orig_height; ?>;
         }
-        
-        // Make the function globally available for the rescale_grid function
-        window.scaleImageMap = scaleImageMap;
-        
-        // Call on page load
-        jQuery(document).ready(function() {
-            scaleImageMap();
-            
-            // Call when window is resized
-            window.addEventListener('resize', function() {
-                if (window.selectResizeTimer) {
-                    clearTimeout(window.selectResizeTimer);
-                }
-                window.selectResizeTimer = setTimeout(scaleImageMap, 150);
-            });
-            
-            // Call when image loads
-            document.getElementById('pixelimg').addEventListener('load', scaleImageMap);
-        });
     </script>
 
 <?php require_once MDS_CORE_PATH . "html/footer.php"; ?>
