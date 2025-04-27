@@ -106,11 +106,18 @@ jQuery.fn.repositionStyles = function () {
 	}
 
 	let id = parseInt(jQuery(this).data('blockid'), 10);
+	
+	// Use the same get_block_position function we use in add_block
+	// This ensures consistent positioning logic throughout the app
 	let pos = get_block_position(id);
-
+	
+	// Apply current scaling and offsets
 	this.css({
-		'top': ((pos.y * scaled_height) + gridOffsetTop) + 'px',
-		'left': ((pos.x * scaled_width) + gridOffsetLeft) + 'px'
+		// Convert block coordinates to pixels using current scaling
+		'top': ((pos.y * BLK_HEIGHT) + gridOffsetTop) + 'px',
+		'left': ((pos.x * BLK_WIDTH) + gridOffsetLeft) + 'px',
+		'width': BLK_WIDTH + 'px',
+		'height': BLK_HEIGHT + 'px'
 	});
 
 	return this;
@@ -154,8 +161,13 @@ function unreserve_block(block_id) {
 }
 
 function add_block(block_id, block_x, block_y) {
-	let block_left = block_x + gridOffsetLeft;
-	let block_top = block_y + gridOffsetTop;
+	// Calculate position based on block_id grid coordinates
+	// The get_block_position function returns block coordinates (not pixels)
+	let pos = get_block_position(block_id);
+	
+	// Apply current scaling and grid offset to convert to pixels
+	let block_left = (pos.x * BLK_WIDTH) + gridOffsetLeft;
+	let block_top = (pos.y * BLK_HEIGHT) + gridOffsetTop;
 
 	// Create a document fragment
 	let fragment = document.createDocumentFragment();
@@ -504,28 +516,52 @@ function reset_pixels() {
 }
 
 function rescale_grid() {
-
 	if (grid == null) {
 		// grid may not be loaded yet
 		return;
 	}
 
+	// Get original dimensions from data attributes
+	let origWidth = parseInt(jQuery(grid).attr('data-original-width'), 10) || orig.GRD_WIDTH;
+	let origHeight = parseInt(jQuery(grid).attr('data-original-height'), 10) || orig.GRD_HEIGHT;
+
+	// Get current dimensions
 	grid_width = jQuery(grid).width();
 	grid_height = jQuery(grid).height();
 
-	scaled_width = grid_width / orig.GRD_WIDTH;
-	scaled_height = grid_height / orig.GRD_HEIGHT;
+	// Calculate scaling factors based on actual rendered dimensions compared to original dimensions
+	scaled_width = grid_width / origWidth;
+	scaled_height = grid_height / origHeight;
 
+	// Update block dimensions based on scaling factors
 	BLK_WIDTH = orig.BLK_WIDTH * scaled_width;
 	BLK_HEIGHT = orig.BLK_HEIGHT * scaled_height;
-
+	
+	// Update grid offsets
 	gridOffsetLeft = grid.offsetLeft;
 	gridOffsetTop = grid.offsetTop;
 
+	// Update the pointer element
 	jQuery(pointer).rescaleStyles();
-	$myblocks.find('*').each(function () {
-		jQuery(this).rescaleStyles().repositionStyles();
-	});
+
+	// Store current selected blocks before clearing
+	let currentBlocks = selectedBlocks.slice(); // Use selectedBlocks instead of undefined blocks
+	
+	// Always clear and rebuild all blocks for consistent positioning
+	$myblocks.empty();
+	
+	// Rebuild all blocks from scratch
+	if (currentBlocks.length > 0) {
+		currentBlocks.forEach(function(blockId) {
+			// Directly add blocks using their ID (coordinates will be recalculated)
+			add_block(blockId);
+		});
+	}
+
+	// Call scaleImageMap if it exists (will be defined in the global scope if needed)
+	if (window.scaleImageMap && typeof window.scaleImageMap === 'function') {
+		window.scaleImageMap();
+	}
 }
 
 function center_block(coords) {
@@ -589,10 +625,21 @@ function handle_click_events() {
 }
 
 function handle_touch_events() {
+	// Current zoom level and last-known pan position
+	if (window.mds_zoom === undefined) {
+		window.mds_zoom = 1;
+		window.mds_pan_x = 0;
+		window.mds_pan_y = 0;
+	}
+
+	// Add Pinch gesture for zooming
 	let options = {
-		"supportedGestures": [Tap]
+		"supportedGestures": [Tap, Pinch, Pan]
 	};
+	
 	let pointerListener = new PointerListener(pixel_container, options);
+	
+	// Handle tap gestures for selecting pixels
 	pixel_container.addEventListener("tap", function (event) {
 		let offset = getOffset(event.detail.live.center.x, event.detail.live.center.y, true);
 		if (offset == null) {
@@ -601,6 +648,32 @@ function handle_touch_events() {
 
 		show_pointer(offset);
 		select_pixels(offset);
+	});
+	
+	// Handle pinch gestures for zooming
+	pixel_container.addEventListener("pinch", function (event) {
+		// Prevent default browser actions like page zooming
+		event.preventDefault && event.preventDefault();
+		
+		// Get the scale value from the pinch event
+		const newScale = event.detail.live.scale;
+		if (!newScale || newScale <= 0) return;
+		
+		// Apply scaling to the grid container
+		applyZoom(newScale, event.detail.live.center.x, event.detail.live.center.y);
+	});
+	
+	// Handle pan gestures for moving around when zoomed in
+	pixel_container.addEventListener("pan", function (event) {
+		// Only allow panning when zoomed in
+		if (window.mds_zoom <= 1) return;
+		
+		// Update pan position
+		window.mds_pan_x += event.detail.live.deltaX;
+		window.mds_pan_y += event.detail.live.deltaY;
+		
+		// Apply the transformation
+		applyTransform();
 	});
 }
 
@@ -623,22 +696,18 @@ function IsNumeric(str) {
 }
 
 function get_block_position(block_id) {
-
-	let cell = 0;
-	let ret = {};
-	ret.x = 0;
-	ret.y = 0;
-
-	for (let i = 0; i < orig.GRD_HEIGHT; i += orig.BLK_HEIGHT) {
-		for (let j = 0; j < orig.GRD_WIDTH; j += orig.BLK_WIDTH) {
-			if (block_id === cell) {
-				return {x: j, y: i};
-			}
-			cell++;
-		}
-	}
-
-	return ret;
+	// Convert block_id to grid coordinates
+	const grid_width_in_blocks = Math.floor(orig.GRD_WIDTH / orig.BLK_WIDTH);
+	
+	// Calculate x,y coordinates (in number of blocks, not pixels)
+	const x_blocks = block_id % grid_width_in_blocks;
+	const y_blocks = Math.floor(block_id / grid_width_in_blocks);
+	
+	// Return position in terms of block units
+	return {
+		x: x_blocks,
+		y: y_blocks
+	};
 }
 
 function get_clicked_block(OffsetX, OffsetY) {
@@ -725,7 +794,17 @@ function implode(myArray) {
 	return str;
 }
 
-window.onresize = rescale_grid;
+// Use a debounced resize handler to prevent too many rescale operations
+let resizeTimer;
+window.addEventListener('resize', function() {
+	// Clear the timeout if it exists
+	clearTimeout(resizeTimer);
+	// Set a new timeout
+	resizeTimer = setTimeout(function() {
+		// Call the rescale function which handles rebuilding blocks
+		rescale_grid();
+	}, 100);
+});
 
 jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	const params = new URLSearchParams(settings.data);
@@ -958,4 +1037,100 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 		reset_pixels();
 		return false;
 	});
+
+	// Add reset zoom button if it doesn't exist yet
+	if (jQuery('#reset_zoom_button').length === 0) {
+		const resetZoomButton = jQuery('<button>', {
+			'id': 'reset_zoom_button',
+			'class': 'mds-reset-zoom',
+			'text': 'Reset Zoom',
+			'css': {
+				'position': 'absolute',
+				'right': '10px',
+				'top': '10px',
+				'z-index': '1000',
+				'padding': '5px 10px',
+				'background': 'rgba(0,0,0,0.5)',
+				'color': 'white',
+				'border': 'none',
+				'border-radius': '4px',
+				'display': 'none',
+				'cursor': 'pointer'
+			}
+		});
+		jQuery('.mds-pixel-wrapper').append(resetZoomButton);
+		
+		resetZoomButton.on('click', function() {
+			resetZoom();
+		});
+	}
 });
+
+// Function to apply zoom to the grid container
+function applyZoom(scaleChange, centerX, centerY) {
+	// We limit the max zoom to 3x for usability
+	const maxZoom = 3;
+	
+	// Calculate new zoom level
+	const oldZoom = window.mds_zoom || 1;
+	const newZoom = Math.min(maxZoom, oldZoom * scaleChange);
+	
+	// Don't allow zooming out below 1x (original size)
+	if (newZoom < 1) {
+		resetZoom();
+		return;
+	}
+	
+	// Store the new zoom level
+	window.mds_zoom = newZoom;
+	
+	// Show the reset zoom button when zoomed in
+	if (newZoom > 1) {
+		jQuery('#reset_zoom_button').show();
+	} else {
+		jQuery('#reset_zoom_button').hide();
+	}
+	
+	// Apply the transformation
+	applyTransform();
+}
+
+// Function to apply the current transform (zoom and pan)
+function applyTransform() {
+	const wrapper = jQuery('.mds-pixel-wrapper');
+	if (!wrapper.length) return;
+	
+	// Apply transform with current zoom and pan values
+	const transform = `scale(${window.mds_zoom}) translate(${window.mds_pan_x/window.mds_zoom}px, ${window.mds_pan_y/window.mds_zoom}px)`;
+	
+	// Apply transformation to wrapper
+	wrapper.css({
+		'transform': transform,
+		'transform-origin': 'center center',
+		'transition': 'transform 0.1s'
+	});
+	
+	// Also rescale grid to ensure coordinates are updated
+	rescale_grid();
+}
+
+// Function to reset zoom to original size
+function resetZoom() {
+	// Reset zoom and pan values
+	window.mds_zoom = 1;
+	window.mds_pan_x = 0;
+	window.mds_pan_y = 0;
+	
+	// Reset transformation
+	const wrapper = jQuery('.mds-pixel-wrapper');
+	wrapper.css({
+		'transform': 'none',
+		'transition': 'transform 0.3s'
+	});
+	
+	// Hide reset zoom button
+	jQuery('#reset_zoom_button').hide();
+	
+	// Ensure coordinates are updated
+	rescale_grid();
+}

@@ -650,6 +650,15 @@ function mds_load_ajax() {
 	}
 }
 
+function get_selected_package() {
+	// Check if jQuery is available and the package dropdown exists
+	if (typeof jQuery !== 'undefined' && jQuery('#pack-grid').length > 0) {
+		return jQuery('#pack-grid').val();
+	}
+	// Default return for simple mode or when no package dropdown exists
+	return 0;
+}
+
 function mds_update_package($form) {
 	let $pack = get_selected_package();
 	let $package_input = $form.find('input[name="package"]');

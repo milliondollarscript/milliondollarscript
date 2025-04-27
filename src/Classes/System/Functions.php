@@ -174,13 +174,13 @@ class Functions {
 		wp_register_script( 'image-map', MDS_CORE_URL . 'js/third-party/image-map.min.js', [ 'image-scale' ], filemtime( MDS_CORE_PATH . 'js/third-party/image-map.min.js' ), true );
 		wp_register_script( 'contact', MDS_CORE_URL . 'js/third-party/contact.nomodule.min.js', [ 'image-map' ], filemtime( MDS_CORE_PATH . 'js/third-party/contact.nomodule.min.js' ), true );
 
-		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.js', [
+		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.min.js', [
 			'jquery',
 			'contact',
 			'image-scale',
 			'image-map',
 			'wp-hooks'
-		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.js' ), true );
+		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
 		wp_localize_script( 'mds', 'MDS', self::get_script_data() );
 
 		$order_script  = "";

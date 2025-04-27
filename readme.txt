@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.11.11
+Stable tag: 2.5.11.20
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -23,7 +23,10 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Add WooCommerce refund integration.
 * Fix: Corrected PHP fatal error during AJAX block type updates in the editor.
 * Fix: Improved image upload handling, error messages, and resolved dimension validation issues during pixel ordering and management.
-* Fix: Improve responsiveness of the pixel grid on the Manage Pixels page for better interaction on smaller screens.
+* Fix: Improved responsiveness of the pixel grid on the Manage Pixels page for better interaction on smaller screens.
+* Fix: Improved pixel selection accuracy, ensuring that the selection tool properly aligns with grid boundaries at all screen sizes.
+* Fix: Enhanced mobile compatibility for block selection, ensuring proper functionality on touch devices and when zooming.
+* Fix: Fixed issues with multi-block selections where some blocks were not being properly identified.
 
 = 2.5.10 =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
