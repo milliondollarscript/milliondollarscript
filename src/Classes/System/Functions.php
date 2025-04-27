@@ -471,40 +471,43 @@ class Functions {
 		Language::out( '<p>Here you can edit your ad or change your pixels.</p>' );
 		Language::out( '<p><b>Your Pixels:</b></p>' );
 		?>
-        <table>
-            <tr>
-                <td>
-                    <b><?php Language::out( 'Pixels' ); ?></b><br/>
-                    <img src="<?php echo esc_url( Utility::get_page_url( 'get-order-image', [ 'BID' => $BID, 'aid' => $ad_id ] ) ); ?>" alt="">
-                </td>
-                <td><b><?php Language::out( 'Pixel Info' ); ?></b><br><?php
-					Language::out_replace(
-						'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)',
-						[ '%SIZE_X%', '%SIZE_Y%', '%PIXEL_COUNT%' ],
-						[ $size['x'], $size['y'], $pixels ]
-					);
-					?><br></td>
-                <td><b><?php Language::out( 'Change Pixels' ); ?></b><br><?php
-					Language::out_replace(
-						'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click "upload"',
-						[ '%SIZE_X%', '%SIZE_Y%' ],
-						[ $size['x'], $size['y'] ]
-					);
-					?>
-                    <form name="change" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-                          enctype="multipart/form-data" method="post">
-						<?php wp_nonce_field( 'mds-form' ); ?>
-                        <input type="hidden" name="action" value="mds_form_submission">
-                        <input type="hidden" name="mds_dest" value="manage">
-                        <input type="file" name='pixels'><br>
-                        <input type="hidden" name="aid" value="<?php echo $ad_id; ?>">
-                        <input type="submit" name="change_pixels" class="mds-upload-submit"
-                               value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>">
-                    </form>
-					<?php Language::out( 'Supported formats:' ); ?><?php echo "$gif_support $jpeg_support $png_support"; ?>
-                </td>
-            </tr>
-        </table>
+        <div class="mds-pixel-info-container">
+			<div class="mds-pixel-info-block mds-pixel-info-image">
+				<b><?php Language::out( 'Pixels' ); ?></b><br/>
+				<img src="<?php echo esc_url( Utility::get_page_url( 'get-order-image', [ 'BID' => $BID, 'aid' => $ad_id ] ) ); ?>" alt="">
+			</div>
+			<div class="mds-pixel-info-block mds-pixel-info-details">
+				<b><?php Language::out( 'Pixel Info' ); ?></b><br>
+				<?php
+				Language::out_replace(
+					'%PIXEL_COUNT% pixels<br>(%SIZE_X% wide,  %SIZE_Y% high)',
+					[ '%SIZE_X%', '%SIZE_Y%', '%PIXEL_COUNT%' ],
+					[ $size['x'], $size['y'], $pixels ]
+				);
+				?><br>
+			</div>
+			<div class="mds-pixel-info-block mds-pixel-info-upload">
+				<b><?php Language::out( 'Change Pixels' ); ?></b><br>
+				<?php
+				Language::out_replace(
+					'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click "upload"',
+					[ '%SIZE_X%', '%SIZE_Y%' ],
+					[ $size['x'], $size['y'] ]
+				);
+				?>
+				<form name="change" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+					enctype="multipart/form-data" method="post">
+					<?php wp_nonce_field( 'mds-form' ); ?>
+					<input type="hidden" name="action" value="mds_form_submission">
+					<input type="hidden" name="mds_dest" value="manage">
+					<input type="file" name='pixels'><br>
+					<input type="hidden" name="aid" value="<?php echo $ad_id; ?>">
+					<input type="submit" name="change_pixels" class="mds-upload-submit"
+						value="<?php echo esc_attr( Language::get( 'Upload' ) ); ?>">
+				</form>
+				<?php Language::out( 'Supported formats:' ); ?><?php echo "$gif_support $jpeg_support $png_support"; ?>
+			</div>
+		</div>
 
         <p><b><?php Language::out( 'Edit Your Ad:' ); ?></b></p>
 		<?php
