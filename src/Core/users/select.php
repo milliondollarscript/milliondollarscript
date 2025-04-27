@@ -278,16 +278,13 @@ if ( $has_packages ) {
 		?>
     </div>
     <form method="post" id="pixel_form" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name='pixel_form'>
-		<?php wp_nonce_field( 'mds-form' ); ?>
+        <?php wp_nonce_field( 'mds-form' ); ?>
         <input type="hidden" name="action" value="mds_form_submission">
-	    <?php
-	    $mds_dest = apply_filters( 'mds_dest_select', 'upload' );
-	    ?>
+        <?php $mds_dest = apply_filters( 'mds_dest_select', 'upload' ); ?>
         <input type="hidden" name="mds_dest" value="<?php echo esc_attr( $mds_dest ); ?>">
-
-        <input type="hidden" value="1" name="select">
-        <input type="hidden" name="package" value="">
-        <input type="hidden" name="selected_pixels" value='<?php echo $block_str; ?>'>
+        <input type="hidden" name="select" value="1">
+        <input type="hidden" name="package" value="<?php echo esc_attr( isset( $_REQUEST['package'] ) ? $_REQUEST['package'] : '' ); ?>">
+        <input type="hidden" name="selected_pixels" id="selected_pixels" value="<?php echo esc_attr( $block_str ); ?>">
         <input type="hidden" name="order_id" value="<?php echo( isset( $order_row['order_id'] ) ? intval( $order_row['order_id'] ) : '' ); ?>">
         <input type="hidden" name="BID" value="<?php echo intval( $BID ); ?>">
 
@@ -425,21 +422,21 @@ if ( $has_packages ) {
 			<?php
 		}
 		?>
-        <div id="submit-buttons">
-            <input type="button" name='submit_button1' id='submit_button1' value='<?php echo esc_attr( Language::get( 'Buy Pixels Now' ) ); ?>'>
-            <input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>'>
-        </div>
+		<div id="submit-buttons">
+			<input type="button" name='submit_button1' id='submit_button1' value='<?php echo esc_attr( Language::get( 'Buy Pixels Now' ) ); ?>'>
+			<input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>'>
+		</div>
 
-        <div id="pixel_container">
-            <div id="blocks"></div>
-            <span id='block_pointer'></span>
-            <div class="mds-pixel-wrapper">
-                <img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
-                     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
-                     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
-                     alt=""/>
-            </div>
-        </div>
+		<div id="pixel_container">
+			<div id="blocks"></div>
+			<span id='block_pointer'></span>
+			<div class="mds-pixel-wrapper">
+				<img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
+					data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+					data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+					alt=""/>
+			</div>
+		</div>
 
     </form>
 

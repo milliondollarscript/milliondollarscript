@@ -459,33 +459,32 @@ function formSubmit(event) {
 	if ($myblocks.html().trim() === '') {
 		messageout(MDS_OBJECT.no_blocks_selected);
 		return false;
-	} else {
+	}
 
-		if (submitting === false) {
+	if (submitting === false) {
+		submitting = true;
+		submit_button1.disabled = true;
+		let submit1_lang = submit_button1.value;
+		submit_button1.value = MDS_OBJECT.WAIT;
 
-			submit_button1.disabled = true;
-
-			let submit1_lang = submit_button1.value;
-
-			submit_button1.value = MDS_OBJECT.WAIT;
-
-			// Wait for ajax queue to finish
-			let waitInterval = setInterval(function () {
-				if (ajax_queue.length === 0) {
-					clearInterval(waitInterval);
-					if (pixel_form !== null) {
-						mds_update_package(jQuery(pixel_form));
-						pixel_form.submit();
+		// Wait for ajax queue to finish
+		let waitInterval = setInterval(function () {
+			if (ajax_queue.length === 0) {
+				clearInterval(waitInterval);
+				if (pixel_form !== null) {
+					// Set selected_pixels hidden input before submit
+					let selectedPixelsInput = document.getElementById('selected_pixels');
+					if (selectedPixelsInput) {
+						selectedPixelsInput.value = selectedBlocks.join(',');
 					}
-
-					submit_button1.disabled = false;
-					submit_button1.value = submit1_lang;
-
-					submitting = false;
+					mds_update_package(jQuery(pixel_form));
+					pixel_form.submit();
 				}
-			}, 1000);
-
-		}
+				submit_button1.disabled = false;
+				submit_button1.value = submit1_lang;
+				submitting = false;
+			}
+		}, 1000);
 	}
 }
 

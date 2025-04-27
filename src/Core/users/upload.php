@@ -396,7 +396,7 @@ if ( ! empty( $image ) ) {
                 <input type="hidden" name="action" value="mds_form_submission">
                 <input type="hidden" name="mds_dest" value="write-ad">
                 <input type="hidden" name="package" value="<?php echo $package_id; ?>">
-                <input type="hidden" name="selected_pixels" value=''>
+                <input type="hidden" name="selected_pixels" value='<?php echo isset($_POST['selected_pixels']) ? esc_attr($_POST['selected_pixels']) : ''; ?>'>
                 <input type="hidden" name="order_id" value="<?php echo $order_id; ?>">
                 <input type="hidden" value="<?php echo $BID; ?>" name="BID">
                 <input type="submit" class='mds-write big_button' name='submit_button2' id='submit_button2'

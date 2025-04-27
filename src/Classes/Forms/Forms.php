@@ -110,23 +110,12 @@ class Forms {
 				$min_size = $banner_data['G_MIN_BLOCKS'] ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
 				$max_size = $banner_data['G_MAX_BLOCKS'] ? intval( $banner_data['G_MAX_BLOCKS'] ) : intval( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] );
 
-				$selected_pixels = null;
-				if ( isset( $_REQUEST['selected_pixels'] ) ) {
-					$selected_pixels = explode( ',', $_REQUEST['selected_pixels'] );
-					$selected_array  = [];
-					foreach ( $selected_pixels as $selected_pixel ) {
-						$selected_array[] = intval( $selected_pixel );
-					}
-					$selected_pixels = implode( ',', $selected_array );
-				}
-
 				$select                    = isset( $_REQUEST['select'] ) ? intval( $_REQUEST['select'] ) : 0;
 				$package                   = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
 				$order_id                  = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
 				$selection_size            = isset( $_REQUEST['selection_size'] ) && $_REQUEST['selection_size'] >= $min_size && $_REQUEST['selection_size'] <= $max_size ? intval( $_REQUEST['selection_size'] ) : $min_size;
 				$params['select']          = $select;
 				$params['package']         = $package;
-				$params['selected_pixels'] = $selected_pixels;
 				$params['order_id']        = $order_id;
 				$params['selection_size']  = $selection_size;
 
