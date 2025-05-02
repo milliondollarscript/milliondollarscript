@@ -180,15 +180,36 @@ function add_tippy() {
 	// Selector for tippy tooltips
 	let tooltipSelector = '.mds-container area,.list-link';
 	
-	// Reset any previous click handlers before adding new ones
+	// Reset any previous click handlers on areas before adding new ones
 	jQuery('area').off('click.mds-tippy');
 	
-	// Prevent grid areas from immediately redirecting on first click
-	jQuery('.mds-container area').on('click.mds-tippy', function(e) {
-		// If already showing tippy content, allow the click through
-		// Otherwise prevent default to allow tippy to show
+	// Use a delegated event handler that's more reliable with dynamically loaded content
+	jQuery(document).off('click.mds-tippy', 'area').on('click.mds-tippy', 'area', function(e) {
+		// If no tippy instance or content isn't loaded yet, prevent the default navigation
 		if (!this._tippy || !this._tippy._content) {
 			e.preventDefault();
+			e.stopPropagation();
+			
+			// If tippy isn't initialized yet on this element, initialize it
+			if (!this._tippy && typeof tippy === 'function') {
+				tippy(this, {
+					theme: 'light',
+					content: "<div class='ajax-loader'></div>",
+					duration: 50,
+					delay: MDS.TOOLTIP_TRIGGER === 'mouseenter' ? 400 : 50,
+					trigger: MDS.TOOLTIP_TRIGGER,
+					allowHTML: true,
+					followCursor: 'initial',
+					hideOnClick: true,
+					interactive: true,
+					maxWidth: parseInt(MDS.MAX_POPUP_SIZE, 10),
+					placement: 'auto',
+					touch: true,
+					appendTo: 'parent',
+					zIndex: 99999
+				});
+				this._tippy.show();
+			}
 			return false;
 		}
 	});

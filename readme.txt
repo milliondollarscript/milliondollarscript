@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.11.29
+Stable tag: 2.5.11.30
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -32,6 +32,8 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Auto-approved images not being published automatically when grid has auto-approve and auto-publish enabled.
 * Fix: Clicking blocks on grid doesn't popup tippy tooltip - blocks were redirecting immediately instead of showing tooltip first.
 * Fix: When multiple grids are displayed on the same page, clicks on the second grid would trigger actions on the first grid.
+* Fix: Removed visual artifact (black bar) that sometimes appeared when showing tooltips.
+* Fix: Improved tooltip handling for multiple grids to ensure tooltips work consistently on all grids.
 
 = 2.5.10 =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
