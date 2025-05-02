@@ -26,18 +26,33 @@
  *
  */
 
+use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
+
+// Handle admin-post.php form submissions separately to prevent header issues
+if (isset($_GET['processed']) && $_GET['processed'] == '1') {
+    // This is a return visit after processing
+    add_action('admin_notices', function() {
+        echo '<div class="notice notice-success"><p>Grid processing completed successfully.</p></div>';
+    });
+}
 
 ini_set( 'max_execution_time', 500 );
 
 global $f2;
 
-if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' ) {
+// Handle form submission for processing pixels
+// This runs during page load, not after a form submission through admin-post.php
+if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' && !isset($_REQUEST['action']) ) {
 
+	// Buffer output to prevent "headers already sent" errors
+	ob_start();
+
+	// Process all selected banners
 	if ( ( $_REQUEST['banner_list'][0] ) == 'all' ) {
-		// process all
+		// Process all banners
 		$sql = "select * from " . MDS_DB_PREFIX . "banners ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
 		while ( $row = mysqli_fetch_array( $result ) ) {
@@ -47,7 +62,7 @@ if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' ) {
 			process_map( $row['banner_id'] );
 		}
 	} else {
-		// process selected
+		// Process selected banners
 
 		foreach ( $_REQUEST['banner_list'] as $key => $banner_id ) {
 			# Banner ID.
@@ -60,7 +75,37 @@ if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' ) {
 	}
 
 	echo "<br>Finished.<hr>";
+	ob_end_flush();
 }
+
+// This function is called by admin-post.php to handle form submissions
+function mds_process_pixels_admin_handler() {
+	// Verify nonce for security
+	if ( !isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'mds-admin') ) {
+		wp_die('Security check failed');
+	}
+
+	// Process the form submission
+	if ( isset($_POST['process']) && $_POST['process'] == '1' ) {
+		// Redirect back to the admin page after processing
+		$redirect_url = admin_url('admin.php?page=mds-process-pixels&processed=1');
+
+		// If there are banner_list parameters, add them to the redirect URL
+		if ( isset($_POST['banner_list']) && is_array($_POST['banner_list']) ) {
+			$redirect_url .= '&process=1';
+			foreach ( $_POST['banner_list'] as $banner_id ) {
+				$redirect_url .= '&banner_list[]=' . urlencode($banner_id);
+			}
+		}
+
+		// Perform the redirect
+		wp_redirect($redirect_url);
+		exit;
+	}
+}
+
+// Register the admin post handler
+add_action('admin_post_mds_admin_form_submission', 'mds_process_pixels_admin_handler');
 
 // Process images
 

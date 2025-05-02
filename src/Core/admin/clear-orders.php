@@ -32,10 +32,44 @@ use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( isset( $_REQUEST['clear_orders'] ) && $_REQUEST['clear_orders'] == 'true' ) {
-	Utility::clear_orders();
-	$done = Language::get( "Done!" );
+// Show success message if returning from a successful clear operation
+if (isset($_GET['cleared']) && $_GET['cleared'] == '1') {
+    // Display success message using admin_notices
+    add_action('admin_notices', function() {
+        echo '<div class="notice notice-success"><p>' . Language::get("Orders cleared successfully!") . '</p></div>';
+    });
 }
+
+// Handle direct requests (not through admin-post.php)
+// This needs to check for direct submission vs admin-post.php submission
+if (isset($_REQUEST['clear_orders']) && $_REQUEST['clear_orders'] == 'true' && !isset($_REQUEST['action'])) {
+    // Buffer output to prevent "headers already sent" errors
+    ob_start();
+    Utility::clear_orders();
+    $done = Language::get("Done!");
+    ob_end_flush();
+}
+
+// Register handler for admin-post.php submissions
+function mds_clear_orders_admin_handler() {
+    // Verify nonce for security
+    if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'mds-admin')) {
+        wp_die('Security check failed');
+    }
+    
+    // Process the form submission
+    if (isset($_POST['clear_orders']) && $_POST['clear_orders'] == 'true') {
+        // Clear orders
+        Utility::clear_orders();
+        
+        // Redirect back to the admin page after processing
+        wp_redirect(admin_url('admin.php?page=mds-clear-orders&cleared=1'));
+        exit;
+    }
+}
+
+// Register the admin post handler
+add_action('admin_post_mds_admin_form_submission', 'mds_clear_orders_admin_handler');
 
 if ( isset( $done ) ) {
 	?>
