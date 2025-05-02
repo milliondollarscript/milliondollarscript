@@ -169,22 +169,24 @@ function updateTippyPosition() {
 }
 
 function add_tippy() {
-	const defaultContent = "<div class='ajax-loader'></div>";
+	// Get user's platform for iOS detection
 	const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
+	
+	// Content to show while loading tooltip data
+	const defaultContent = "<div class='ajax-loader'></div>";
 
+	// Calculate appropriate delay based on trigger type
 	let delay = 50;
 	if (MDS.TOOLTIP_TRIGGER === 'mouseenter') {
 		delay = 400;
 	}
 
-	// Selector for tippy tooltips
-	let tooltipSelector = '.mds-container area,.list-link';
-	
-	// Reset any previous click handlers on areas before adding new ones
+	// Clean up any existing handlers to prevent duplicates
+	jQuery(document).off('click.mds-tippy');
 	jQuery('area').off('click.mds-tippy');
-	
-	// Use a delegated event handler that's more reliable with dynamically loaded content
-	jQuery(document).off('click.mds-tippy', 'area').on('click.mds-tippy', 'area', function(e) {
+
+	// Use a delegated event handler for area clicks
+	jQuery(document).on('click.mds-tippy', 'area', function(e) {
 		// If no tippy instance or content isn't loaded yet, prevent the default navigation
 		if (!this._tippy || !this._tippy._content) {
 			e.preventDefault();
@@ -194,18 +196,18 @@ function add_tippy() {
 			if (!this._tippy && typeof tippy === 'function') {
 				tippy(this, {
 					theme: 'light',
-					content: "<div class='ajax-loader'></div>",
+					content: defaultContent,
 					duration: 50,
-					delay: MDS.TOOLTIP_TRIGGER === 'mouseenter' ? 400 : 50,
+					delay: delay,
 					trigger: MDS.TOOLTIP_TRIGGER,
 					allowHTML: true,
-					followCursor: 'initial',
+					followCursor: false, // Disable followCursor to prevent black bar artifacts
 					hideOnClick: true,
 					interactive: true,
 					maxWidth: parseInt(MDS.MAX_POPUP_SIZE, 10),
 					placement: 'auto',
 					touch: true,
-					appendTo: 'parent',
+					appendTo: document.body, // Use body instead of parent to avoid positioning artifacts
 					zIndex: 99999
 				});
 				this._tippy.show();
@@ -214,8 +216,10 @@ function add_tippy() {
 		}
 	});
 	
+	// Selector for tippy tooltips
+	let tooltipSelector = '.mds-container area,.list-link';
 
-	// Only initialize tippy if the selector is not empty
+	// Apply tippy to all matching elements
 	if (tooltipSelector) {
 		tippy(tooltipSelector, {
 			theme: 'light',
@@ -223,36 +227,48 @@ function add_tippy() {
 			duration: 50,
 			delay: delay,
 			trigger: MDS.TOOLTIP_TRIGGER,
+			// Enable HTML content in tooltips
 			allowHTML: true,
-			followCursor: 'initial',
+			// Disable cursor following to prevent black bar artifacts
+			followCursor: false,
 			hideOnClick: true,
 			interactive: true,
 			maxWidth: parseInt(MDS.MAX_POPUP_SIZE, 10),
 			placement: 'auto',
 			touch: true,
-			appendTo: 'parent',
+			// Append to document body to prevent positioning artifacts
+			appendTo: document.body,
 			zIndex: 99999,
+			// Configure the popper.js positioning options to prevent visual artifacts
 			popperOptions: {
-				strategy: 'absolute',
+				// Fixed positioning strategy
+				strategy: 'fixed',
+				
+				// Modifiers that control tooltip positioning
 				modifiers: [
+					// Add space between the reference element and tooltip
 					{
 						name: 'offset',
 						options: {
-							offset: [0, 10],
+							offset: [0, 5],
 						},
 					},
+					
+					// Control how the tooltip flips when it would overflow the viewport
 					{
 						name: 'flip',
 						options: {
-							fallbackPlacements: ['bottom', 'right'],
+							fallbackPlacements: ['top', 'bottom', 'right', 'left'],
 						},
 					},
+					
+					// Prevent the tooltip from overflowing the viewport
 					{
 						name: 'preventOverflow',
 						options: {
-							altAxis: true,
-							tether: false,
-							boundary: document,
+							boundary: window,
+							padding: 5,
+							tether: false
 						},
 					},
 				],
