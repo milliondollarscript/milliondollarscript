@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.11.34
+Stable tag: 2.5.11.37
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -36,6 +36,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Improved tooltip handling for multiple grids to ensure tooltips work consistently on all grids.
 * Fix: Resolved 'headers already sent' errors in process-pixels.php and clear-orders.php by proper handling of form submissions through admin-post.php.
 * Fix: Improved consistency of admin notices by using the Notices class throughout the plugin.
+* Fix: Tooltip AJAX content not loading on second grid when multiple grids are displayed on the same page.
 
 = 2.5.10 =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
