@@ -878,6 +878,24 @@ function upload_changed_pixels(
 		if ( $banner_data['AUTO_APPROVE'] != 'Y' ) {
 			// to be approved by the admin
 			disapprove_modified_order( $order_id, $BID );
+		} else {
+			// Auto-approved - mark blocks as approved
+			global $wpdb;
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				[ 'approved' => 'Y' ],
+				[ 'order_id' => $order_id, 'banner_id' => $BID ],
+				[ '%s' ],
+				[ '%d', '%d' ]
+			);
+			
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				[ 'approved' => 'Y' ],
+				[ 'order_id' => $order_id, 'banner_id' => $BID ],
+				[ '%s' ],
+				[ '%d', '%d' ]
+			);
 		}
 
 		if ( $banner_data['AUTO_PUBLISH'] == 'Y' ) {
