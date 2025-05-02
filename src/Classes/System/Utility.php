@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Million Dollar Script Two
  *
@@ -28,6 +27,8 @@
  */
 
 namespace MillionDollarScript\Classes\System;
+
+use MillionDollarScript\Classes\Admin\Notices;
 
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
@@ -1153,13 +1154,13 @@ class Utility {
 		} else {
 			// Log an error or handle the case where functions are missing
 			// error_log('MDS Error: Required image processing functions not found in Utility::process_grid_image.');
-			// Optionally, trigger a user notice
+			// Trigger a user notice using the Notices class
 			if ( current_user_can( 'manage_options' ) ) {
-				add_action( 'admin_notices', function() {
-					echo '<div class="notice notice-error is-dismissible"><p>';
-					echo esc_html__( 'Million Dollar Script Error: Could not process grid image. Required functions are missing.', 'milliondollarscript' );
-					echo '</p></div>';
-				});
+				// Use the Notices class for consistent handling of admin notices
+				Notices::add_notice(
+					esc_html__( 'Million Dollar Script Error: Could not process grid image. Required functions are missing.', 'milliondollarscript' ),
+					'error'
+				);
 			}
 		}
 	}
