@@ -1,0 +1,35 @@
+/**
+ * Special CSS fixes for tippy.js tooltips
+ * This addresses browser-specific rendering artifacts (black bar issue)
+ */
+
+/* Fix for the black bar in Chromium browsers */
+.tippy-box {
+    /* Force hardware acceleration but prevent rendering artifacts */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-font-smoothing: subpixel-antialiased;
+}
+
+/* Fix tooltip positioning to ensure arrows point at the clicked element */
+.tippy-box[data-placement^=top] > .tippy-arrow,
+.tippy-box[data-placement^=bottom] > .tippy-arrow,
+.tippy-box[data-placement^=left] > .tippy-arrow,
+.tippy-box[data-placement^=right] > .tippy-arrow {
+    transform-origin: center center;
+}
+
+/* Improve tooltip appearance */
+.tippy-content {
+    /* Prevent visual artifacts and ensure proper rendering */
+    position: relative;
+    z-index: 1;
+    padding: 8px 10px;
+}
+
+/* Force proper rendering contexts in Firefox */
+@-moz-document url-prefix() {
+    .tippy-box {
+        filter: none !important;
+    }
+}
