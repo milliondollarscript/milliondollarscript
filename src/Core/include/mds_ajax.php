@@ -149,10 +149,7 @@ class Mds_Ajax {
 						window.mds_js_loaded = true;
 
 						<?php if($tooltips == 'POPUP') { ?>
-							// Load tippy tooltips CSS files
-							jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo MDS_CORE_URL; ?>css/tippy/light.css'}).appendTo('head');
-							// Load custom CSS fixes for tippy tooltips
-							jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo MDS_BASE_URL; ?>src/Assets/css/tippy-fix.css'}).appendTo('head');
+						jQuery('<link/>', {rel: 'stylesheet', href: '<?php echo MDS_CORE_URL; ?>css/tippy/light.css'}).appendTo('head');
 						<?php } ?>
 						jQuery('<link/>', {
 							rel: 'stylesheet',
