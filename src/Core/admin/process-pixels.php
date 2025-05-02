@@ -26,6 +26,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Utility;
 
@@ -34,9 +35,7 @@ defined( 'ABSPATH' ) or exit;
 // Handle admin-post.php form submissions separately to prevent header issues
 if (isset($_GET['processed']) && $_GET['processed'] == '1') {
     // This is a return visit after processing
-    add_action('admin_notices', function() {
-        echo '<div class="notice notice-success"><p>Grid processing completed successfully.</p></div>';
-    });
+    Notices::add_notice(Language::get("Grid processing completed successfully."), 'success');
 }
 
 ini_set( 'max_execution_time', 500 );

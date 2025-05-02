@@ -26,6 +26,7 @@
  *
  */
 
+use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
@@ -34,10 +35,8 @@ defined( 'ABSPATH' ) or exit;
 
 // Show success message if returning from a successful clear operation
 if (isset($_GET['cleared']) && $_GET['cleared'] == '1') {
-    // Display success message using admin_notices
-    add_action('admin_notices', function() {
-        echo '<div class="notice notice-success"><p>' . Language::get("Orders cleared successfully!") . '</p></div>';
-    });
+    // Use the Notices class to handle admin notices consistently
+    Notices::add_notice(Language::get("Orders cleared successfully!"), 'success');
 }
 
 // Handle direct requests (not through admin-post.php)
