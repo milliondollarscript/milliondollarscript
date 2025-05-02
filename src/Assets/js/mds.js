@@ -190,6 +190,30 @@ function add_tippy() {
 			e.preventDefault();
 			e.stopPropagation();
 			
+			// Check for valid data attributes that are needed for tooltips
+			const $this = jQuery(this);
+			let tippyData = $this.data('data');
+			
+			// If data attributes are missing, try to extract them from attributes
+			if (!tippyData || !tippyData.banner_id || !tippyData.block_id) {
+				// Extract from area attributes if available (for backward compatibility)
+				const href = $this.attr('href') || '';
+				const matches = href.match(/bid=(\d+).*?aid=(\d+).*?block_id=(\d+)/i) || 
+							 href.match(/aid=(\d+).*?bid=(\d+).*?block_id=(\d+)/i);
+				
+				if (matches) {
+					// Create data object from URL parameters
+					tippyData = {
+						banner_id: parseInt(matches[1] || matches[2], 10),
+						aid: parseInt(matches[2] || matches[1], 10),
+						block_id: parseInt(matches[3], 10)
+					};
+					
+					// Store the data for future use
+					$this.data('data', tippyData);
+				}
+			}
+			
 			// If tippy isn't initialized yet on this element, initialize it
 			if (!this._tippy && typeof tippy === 'function') {
 				tippy(this, {
@@ -257,52 +281,78 @@ function add_tippy() {
 					},
 				],
 			},
+			// Initialize tooltip instance properties
 			onCreate(instance) {
 				instance._isFetching = false;
 				instance._content = null;
 				instance._error = null;
-				window.tippy_instance = instance;
+				
+				// Store the instance in a local property instead of overwriting global one
+				// This prevents issues with multiple grids where the last one would overwrite others
+				instance._initialized = true;
 			},
+			// Handle tooltip show event - load content via AJAX
 			onShow(instance) {
+				// Skip if we're already fetching, have content, or encountered an error
 				if (instance._isFetching || instance._content || instance._error) {
 					return;
 				}
 
+				// Special handling for iOS devices
 				if (isIOS) {
 					jQuery(instance.reference).trigger('click');
 				}
 
+				// Mark as fetching to prevent duplicate requests
 				instance._isFetching = true;
+				
+				// Get the data from the area element
+				const $reference = jQuery(instance.reference);
+				const data = $reference.data('data');
+				
+				// Check if we have valid data
+				if (!data || !data.banner_id || !data.block_id) {
+					const mapName = $reference.closest('map').attr('id');
+					console.error('MDS Tooltip: Missing data attributes for tooltip on ' + mapName);
+					instance.setContent('Error: Missing data for this block');
+					instance._error = 'missing_data';
+					instance._isFetching = false;
+					return;
+				}
 
-				const data = jQuery(instance.reference).data('data');
-
+				// Prepare AJAX request data
 				const ajax_data = {
 					action: 'mds_ajax',
 					type: 'ga',
 					mds_nonce: MDS.mds_nonce,
-					aid: data.aid,
+					aid: data.aid || 0,
 					bid: data.banner_id,
 					block_id: data.block_id,
 				};
 
+				// Make the AJAX request to get tooltip content
 				jQuery.ajax({
 					method: 'POST',
 					url: MDS.ajaxurl,
 					data: ajax_data,
 					dataType: 'html',
 					crossDomain: true,
-				}).done(function (data) {
-					instance.setContent(data);
+				}).done(function (responseData) {
+					// Update tooltip with the loaded content
+					instance.setContent(responseData);
 					instance._content = true;
 				}).fail(function (jqXHR, textStatus, errorThrown) {
+					// Handle AJAX failure
 					instance._error = errorThrown;
 					instance.setContent(`Request failed. ${errorThrown}`);
 				}).always(function () {
+					// Always mark fetching as complete
 					instance._isFetching = false;
+					// Reload any dynamic content in the tooltip
 					mds_load_ajax();
 				});
-
 			},
+			// Reset tooltip content when it's hidden
 			onHidden(instance) {
 				instance.setContent(defaultContent);
 				instance._content = null;
@@ -310,18 +360,23 @@ function add_tippy() {
 			}
 		});
 
+		// Track touch interactions to improve tooltip behavior
 		window.is_touch = false;
 
+		// Detect touch devices
 		document.addEventListener('touchstart', function () {
 			window.is_touch = true;
 		});
 
+		// Hide tooltips on scroll to improve performance
 		document.addEventListener('scroll', function () {
-			if (!window.is_touch && window.tippy_instance != null && typeof window.tippy_instance.hide === 'function') {
-				window.tippy_instance.hide();
+			if (!window.is_touch) {
+				// Hide all active tooltips on scroll (more efficient than hiding individual ones)
+				tippy.hideAll();
 			}
 		});
 
+		// Update tooltip positions on window resize
 		window.addEventListener('resize', function () {
 			updateTippyPosition();
 		});
