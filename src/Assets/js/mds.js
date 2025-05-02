@@ -177,12 +177,22 @@ function add_tippy() {
 		delay = 400;
 	}
 
-	// Conditionally select areas based on page context
+	// Selector for tippy tooltips
 	let tooltipSelector = '.mds-container area,.list-link';
-	if (jQuery('body').hasClass('mds-page-manage')) {
-		// On the manage page, don't attach tooltips to areas
-		tooltipSelector = '.list-link';
-	}
+	
+	// Reset any previous click handlers before adding new ones
+	jQuery('area').off('click.mds-tippy');
+	
+	// Prevent grid areas from immediately redirecting on first click
+	jQuery('.mds-container area').on('click.mds-tippy', function(e) {
+		// If already showing tippy content, allow the click through
+		// Otherwise prevent default to allow tippy to show
+		if (!this._tippy || !this._tippy._content) {
+			e.preventDefault();
+			return false;
+		}
+	});
+	
 
 	// Only initialize tippy if the selector is not empty
 	if (tooltipSelector) {

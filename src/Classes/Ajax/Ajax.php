@@ -182,8 +182,8 @@ class Ajax {
                     <div class='grid-inner' id='<?php echo $container; ?>'>
 						<?php include_once( $map_file ); ?>
                         <img id="theimage" src="<?php echo $BANNER_URL; ?>grid<?php echo $BID; ?>.<?php echo $ext; ?>?v=<?php echo filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" ); ?>"
-                             width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0"
-                             usemap="#main" alt=""/>
+                            width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0"
+                            usemap="#map-grid-<?php echo $BID; ?>" alt=""/>
                         <div class="tooltip-source">
                             <img src="<?php echo esc_url( MDS_CORE_URL ); ?>images/periods.gif" alt=""/>
                         </div>

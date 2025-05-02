@@ -126,7 +126,9 @@ function process_map( $BID, $map_file = '' ) {
 	// open file
 	$fh = fopen( "$map_file", "w" );
 
-	fwrite( $fh, '<map name="main" id="main">' );
+	// Generate a unique map name for each grid to prevent conflicts when multiple grids appear on the same page
+	$map_name = 'map-grid-' . $BID;
+	fwrite( $fh, '<map name="' . $map_name . '" id="' . $map_name . '">' );
 
 	// render client-side click areas
 	$sql = "SELECT DISTINCT block_id,
