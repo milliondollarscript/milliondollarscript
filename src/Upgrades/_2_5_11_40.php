@@ -29,8 +29,10 @@
 
 namespace MillionDollarScript\Upgrades;
 
+use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Data\Database;
 use MillionDollarScript\Classes\Data\DatabaseStatic;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -78,6 +80,67 @@ class _2_5_11_40 {
                     $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN `order_in_progress` ENUM('Y','N') NOT NULL DEFAULT 'N' AFTER `user_id`" );
                     $wpdb->flush();
                 }
+            }
+            
+            // 4. Schedule the deletion of mu-plugins/milliondollarscript-cookies.php file
+            // This is done as the last step to avoid logging users out during the upgrade
+            $this->schedule_cookies_file_deletion();
+        }
+    }
+    
+    /**
+     * Schedule deletion of mu-plugins/milliondollarscript-cookies.php file
+     * This needs to happen asynchronously via cron to avoid logging users out during the upgrade
+     * 
+     * @return void
+     */
+    private function schedule_cookies_file_deletion(): void {
+        // Check if the cookies file exists
+        $mu_plugins_dir = WPMU_PLUGIN_DIR;
+        $cookies_file = $mu_plugins_dir . '/milliondollarscript-cookies.php';
+        
+        if (file_exists($cookies_file)) {
+            // Schedule the deletion for 5 minutes later via cron
+            if (!wp_next_scheduled('mds_delete_cookies_file')) {
+                wp_schedule_single_event(time() + 300, 'mds_delete_cookies_file');
+                
+                // Add an admin notice to warn about logout
+                $notice = Language::get('The Million Dollar Script cookies file will be removed in 5 minutes. ');
+                $notice .= Language::get('This will log all users out, but is necessary for proper plugin functionality. ');
+                $notice .= Language::get('Please save your work and log back in after 5 minutes.');
+                
+                Notices::add_notice($notice, 'warning');
+            }
+            
+            // Add the action hook for handling the deletion
+            add_action('mds_delete_cookies_file', array($this, 'delete_cookies_file'));
+        }
+    }
+    
+    /**
+     * Delete the mu-plugins/milliondollarscript-cookies.php file
+     * This is called by the scheduled cron job
+     * 
+     * @return void
+     */
+    public function delete_cookies_file(): void {
+        $mu_plugins_dir = WPMU_PLUGIN_DIR;
+        $cookies_file = $mu_plugins_dir . '/milliondollarscript-cookies.php';
+        
+        if (file_exists($cookies_file)) {
+            // Try to delete the file
+            if (@unlink($cookies_file)) {
+                // Log the successful deletion
+                error_log('Million Dollar Script cookies file deleted successfully');
+            } else {
+                // Log the failure to delete
+                error_log('Failed to delete Million Dollar Script cookies file: ' . $cookies_file);
+                
+                // Add admin notice about manual deletion
+                $notice = Language::get('Failed to automatically delete the Million Dollar Script cookies file. ');
+                $notice .= Language::get('Please manually delete this file: ') . '<code>' . esc_html($cookies_file) . '</code>';
+                
+                Notices::add_notice($notice, 'error');
             }
         }
     }
