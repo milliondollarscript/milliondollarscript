@@ -90,48 +90,96 @@ class _2_5_11_40 {
     
     /**
      * Delete the mu-plugins/milliondollarscript-cookies.php file directly
+     * This is done as the last step in the upgrade process and may log users out
      * 
      * @return void
      */
     private function schedule_cookies_file_deletion(): void {
-        // Get the path to the cookies file
+        /**
+         * Determine file path for the cookies file that needs to be deleted/disabled
+         */
         $mu_plugins_dir = WPMU_PLUGIN_DIR;
         $cookies_file = $mu_plugins_dir . '/milliondollarscript-cookies.php';
         
-        // Add admin notice about logout to warn the user
-        $notice = Language::get('The Million Dollar Script cookies file has been deleted. ');
-        $notice .= Language::get('All users will be logged out after the upgrade process completes. ');
+        /**
+         * Add admin notice to warn users about potential logout
+         */
+        $notice = Language::get('The Million Dollar Script cookies file has been removed or disabled. ');
+        $notice .= Language::get('You may be logged out when the page next refreshes. ');
         $notice .= Language::get('This is necessary for proper plugin functionality.');
         
         Notices::add_notice($notice, 'warning');
         
-        // Directly delete the file
-        if (file_exists($cookies_file)) {
-            // Log the attempt
-            error_log('Attempting to delete the cookies file: ' . $cookies_file);
-            
-            // Try chmod to ensure we have permissions to delete the file
-            @chmod($cookies_file, 0666);
-            
-            // Try to delete the file
-            if (@unlink($cookies_file)) {
-                // Log the successful deletion
-                error_log('Million Dollar Script cookies file deleted successfully');
-            } else {
-                // Log the failure to delete
-                error_log('Failed to delete Million Dollar Script cookies file: ' . $cookies_file);
-                
-                // Try PHP's file_put_contents to empty the file if we can't delete it
-                if (@file_put_contents($cookies_file, '<?php // Disabled by MDS Upgrade') !== false) {
-                    error_log('Successfully disabled the cookies file by emptying it');
-                } else {
-                    // Add admin notice about manual deletion if all attempts fail
-                    $manual_notice = Language::get('Failed to automatically delete the Million Dollar Script cookies file. ');
-                    $manual_notice .= Language::get('Please manually delete this file: ') . '<code>' . esc_html($cookies_file) . '</code>';
-                    
-                    Notices::add_notice($manual_notice, 'error');
-                }
+        /**
+         * Check if file exists before attempting deletion
+         */
+        if (!file_exists($cookies_file)) {
+            error_log('Cookies file not found, no action needed: ' . $cookies_file);
+            return;
+        }
+        
+        /**
+         * Log deletion attempt
+         */
+        error_log('Attempting to delete cookies file: ' . $cookies_file);
+        
+        /**
+         * Multiple deletion attempts with different strategies
+         */
+        $success = false;
+        
+        /**
+         * Strategy 1: Direct deletion with permissions update
+         */
+        @chmod($cookies_file, 0666);
+        if (@unlink($cookies_file)) {
+            error_log('Successfully deleted cookies file using unlink');
+            $success = true;
+        }
+        
+        /**
+         * Strategy 2: Empty the file if we can't delete it
+         */
+        if (!$success) {
+            if (@file_put_contents($cookies_file, '<?php // File disabled by MDS Upgrade') !== false) {
+                error_log('Successfully disabled cookies file by emptying it');
+                $success = true;
             }
+        }
+        
+        /**
+         * Strategy 3: Use PHP stream wrapper with context options
+         */
+        if (!$success) {
+            $context = stream_context_create(['http' => ['method' => 'DELETE']]);
+            if (@file_exists($cookies_file) && @file_get_contents($cookies_file, false, $context) !== false) {
+                error_log('Successfully deleted cookies file using stream context');
+                $success = true;
+            }
+        }
+        
+        /**
+         * Strategy 4: Rename the file as a last resort
+         */
+        if (!$success && file_exists($cookies_file)) {
+            $backup_file = $cookies_file . '.disabled';
+            if (@rename($cookies_file, $backup_file)) {
+                error_log('Successfully renamed cookies file to: ' . $backup_file);
+                $success = true;
+            }
+        }
+        
+        /**
+         * If all deletion attempts failed, notify administrator
+         */
+        if (!$success) {
+            error_log('CRITICAL: Failed to delete or disable cookies file: ' . $cookies_file);
+            
+            $manual_notice = Language::get('Failed to automatically delete the required cookies file. ');
+            $manual_notice .= Language::get('Please manually delete this file to avoid login issues: ');
+            $manual_notice .= '<code>' . esc_html($cookies_file) . '</code>';
+            
+            Notices::add_notice($manual_notice, 'error');
         }
     }
     
