@@ -73,6 +73,11 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 	exit;
 }
 
+// WP plugin activation actions.
+register_activation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_activate' );
+register_deactivation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_deactivate' );
+register_uninstall_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_uninstall' );
+
 /**
  * Performs upgrade operations.
  *
@@ -83,10 +88,28 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
  * @throws \Exception if there is an error during the upgrade process.
  */
 function perform_upgrade_operations( bool $load_post = true ): void {
-	$mdsdb   = new Database();
-	$version = $mdsdb->upgrade();
-	if ( $version !== false ) {
-		$mdsdb->up_dbver( $version );
+	if ( ! isset( $mds_bootstrap ) ) {
+		$mds_bootstrap = new Classes\System\Bootstrap();
+	}
+
+	// Initialize database if needed
+	$mdsdb = new Classes\Data\Database();
+
+	if ( ! $mdsdb->mds_sql_installed() ) {
+		if ( ! $load_post ) {
+			return;
+		}
+	} else {
+		try {
+			$result = $mdsdb->upgrade();
+		} catch ( \Exception $e ) {
+			if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+				$message = $e->getMessage();
+				wp_die( esc_html( $message ) );
+			} else {
+				throw $e;
+			}
+		}
 	}
 
 	// Reset cron.
@@ -131,13 +154,16 @@ add_action( 'upgrader_process_complete', '\MillionDollarScript\milliondollarscri
 function milliondollarscript_two_upgrade2(): void {
 	global $wpdb;
 
-	$sql    = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key`='dbver';";
+	// Load database version
+	$sql = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key`='dbver';";
 	$result = $wpdb->get_var( $sql );
 	if ( $wpdb->num_rows > 0 ) {
 		$version = $result;
-		if ( version_compare( $version, '2.5.10.66', '<' ) ) {
+		if ( version_compare( $version, MDS_DB_VERSION, '<' ) ) {
 			perform_upgrade_operations( false );
 		}
+	} else {
+		perform_upgrade_operations( false );
 	}
 }
 
@@ -192,6 +218,7 @@ function milliondollarscript_two_uninstall(): void {
 		Classes\System\Utility::clear_orders();
 
 		$tables = Database::get_mds_tables();
+		$tables = array_merge($tables, Database::get_old_mds_tables());
 
 		foreach ( $tables as $table ) {
 			$wpdb->query(
@@ -217,11 +244,6 @@ require_once ABSPATH . 'wp-includes/pluggable.php';
 
 // Please wait, loading...
 require_once MDS_BASE_PATH . 'vendor/autoload.php';
-
-// WP plugin activation actions.
-register_activation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_activate' );
-register_deactivation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_deactivate' );
-register_uninstall_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_uninstall' );
 
 // Starting up...
 global $mds_bootstrap;

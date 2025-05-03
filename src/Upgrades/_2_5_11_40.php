@@ -56,9 +56,15 @@ class _2_5_11_40 {
         $table_name = MDS_DB_PREFIX . 'config';
         
         /**
+         * Log the attempt
+         */
+        error_log( 'MDS Upgrade: Attempting to remove empty config keys from ' . $table_name );
+        
+        /**
          * Check if table exists
          */
         if (!DatabaseStatic::table_exists($table_name)) {
+            error_log( 'MDS Upgrade: Config table ' . $table_name . ' does not exist. Skipping empty key deletion.' );
             return;
         }
         
@@ -119,6 +125,17 @@ class _2_5_11_40 {
         } else {
             error_log('No empty config_key entries found. Table is clean.');
         }
+
+        /**
+         * Drop old MDS tables
+         */
+        $tables = Database::get_old_mds_tables();
+
+		foreach ( $tables as $table ) {
+			$wpdb->query(
+				"DROP TABLE IF EXISTS " . MDS_DB_PREFIX . $table,
+			);
+		}
     }
 
     /**
@@ -136,6 +153,9 @@ class _2_5_11_40 {
     public function upgrade( $version ): void {
         if ( version_compare( $version, '2.5.11.40', '<' ) ) {
             global $wpdb;
+            
+            // Log that the upgrade is starting
+            error_log( 'MDS Upgrade _2_5_11_40 starting.' );
             
             // 0. CRITICAL: Remove empty keys immediately to prevent PRIMARY KEY conflicts
             $this->remove_empty_config_keys();
@@ -169,6 +189,9 @@ class _2_5_11_40 {
             // 4. Schedule the deletion of mu-plugins/milliondollarscript-cookies.php file
             // This is done as the last step to avoid logging users out during the upgrade
             $this->schedule_cookies_file_deletion();
+            
+            // Log that the upgrade finished
+            error_log( 'MDS Upgrade _2_5_11_40 finished.' );
         }
     }
     

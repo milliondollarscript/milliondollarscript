@@ -197,54 +197,279 @@ class Config {
 	}
 
 	/**
+	 * Verify and repair the config table to ensure it has the correct structure.
+	 * This will check for and fix known issues with the table structure.
+	 * 
+	 * @return boolean True if the table is verified and ready to use, false if there are unfixable problems.
+	 */
+	public static function verify_and_repair_config_table(): bool {
+		global $wpdb;
+		$table_name = self::$table_name;
+		
+		// Check if table exists using WordPress's built-in method
+		$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
+		error_log("MDS Config::verify_and_repair_config_table - Config table '{$table_name}' exists: " . ($table_exists ? 'yes' : 'no'));
+		
+		if (!$table_exists) {
+			// Table doesn't exist, it will be created when needed
+			return true;
+		}
+		
+		// Check table structure
+		$table_structure = $wpdb->get_results("DESCRIBE {$table_name}");
+		if (empty($table_structure)) {
+			error_log("MDS Config::verify_and_repair_config_table - Could not retrieve table structure for '{$table_name}'");
+			return false;
+		}
+		
+		// Check if required columns exist and have correct structure
+		$has_config_key = false;
+		$has_val = false;
+		$config_key_is_primary = false;
+		
+		foreach ($table_structure as $column) {
+			if ($column->Field === 'config_key') {
+				$has_config_key = true;
+				if ($column->Key === 'PRI') {
+					$config_key_is_primary = true;
+				}
+			}
+			if ($column->Field === 'val') {
+				$has_val = true;
+			}
+		}
+		
+		error_log("MDS Config::verify_and_repair_config_table - Table structure check: config_key exists: " . ($has_config_key ? 'yes' : 'no') . 
+			", val exists: " . ($has_val ? 'yes' : 'no') . 
+			", config_key is primary: " . ($config_key_is_primary ? 'yes' : 'no'));
+		
+		// If structure is incorrect, try to fix it
+		if (!$has_config_key || !$has_val || !$config_key_is_primary) {
+			// Severe structural issues - back up and recreate the table
+			try {
+				// Back up existing data if possible
+				$backup_data = [];
+				if ($has_config_key && $has_val) {
+					$rows = $wpdb->get_results("SELECT * FROM {$table_name} WHERE config_key IS NOT NULL AND config_key != '' AND TRIM(config_key) != ''");
+					foreach ($rows as $row) {
+						if (!empty($row->config_key)) {
+							$backup_data[$row->config_key] = $row->val;
+						}
+					}
+					error_log("MDS Config::verify_and_repair_config_table - Backed up " . count($backup_data) . " valid config entries");
+				}
+				
+				// Drop and recreate the table
+				error_log("MDS Config::verify_and_repair_config_table - Dropping and recreating config table due to structural issues");
+				$wpdb->query("DROP TABLE IF EXISTS {$table_name}");
+				
+				$charset_collate = $wpdb->get_charset_collate();
+				$sql = "CREATE TABLE {$table_name} (
+					config_key varchar(255) NOT NULL,
+					val text NOT NULL,
+					PRIMARY KEY  (config_key)
+				) {$charset_collate};";
+				
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+				dbDelta($sql);
+				
+				// Restore backed up data if we have any
+				if (!empty($backup_data)) {
+					foreach ($backup_data as $key => $value) {
+						if (!empty($key)) {
+							$wpdb->insert(
+								$table_name,
+								[
+									'config_key' => $key,
+									'val'        => $value,
+								],
+								['%s', '%s']
+							);
+						}
+					}
+					error_log("MDS Config::verify_and_repair_config_table - Restored " . count($backup_data) . " config entries");
+				}
+				
+				return true;
+			} catch (\Exception $e) {
+				error_log("MDS Config::verify_and_repair_config_table - Failed to repair table: " . $e->getMessage());
+				return false;
+			}
+		}
+		
+		// Check for and fix any problematic rows
+		try {
+			// Look for empty or NULL config_key entries
+			$wpdb->query("DELETE FROM `{$table_name}` WHERE `config_key` IS NULL OR `config_key` = '' OR TRIM(`config_key`) = ''");
+			
+			// Look for invisible characters that might be causing problems
+			$suspicious_rows = $wpdb->get_results("SELECT * FROM `{$table_name}` WHERE LENGTH(`config_key`) = 0 OR LENGTH(TRIM(`config_key`)) = 0");
+			if (!empty($suspicious_rows)) {
+				error_log("MDS Config::verify_and_repair_config_table - Found " . count($suspicious_rows) . " suspicious rows with potentially invisible characters");
+				
+				// Try to delete them
+				foreach ($suspicious_rows as $row) {
+					$id = $row->config_key;
+					$wpdb->query($wpdb->prepare("DELETE FROM `{$table_name}` WHERE `config_key` = %s", $id));
+					error_log("MDS Config::verify_and_repair_config_table - Deleted suspicious config_key: '" . bin2hex($id) . "'");
+				}
+			}
+			
+			return true;
+		} catch (\Exception $e) {
+			error_log("MDS Config::verify_and_repair_config_table - Error cleaning problematic rows: " . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
 	 * Load the config from the database.
 	 *
 	 * @return array
 	 */
 	public static function load(): array {
+		global $wpdb;
+		$table_name = self::$table_name;
+
 		// If self::$config exists and is not empty, return it
 		if ( isset( self::$config ) && is_array( self::$config ) && ! empty( self::$config ) ) {
 			return self::$config;
 		}
 
-		global $wpdb;
-
 		$config = [];
-
-		$table_name = self::$table_name;
 
 		// Load defaults
 		$defaults = self::defaults();
-
-		// Check if config table exists
-		if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
-			// Config table must already be installed.
-
-			// Fetch current config from database
+		
+		// Verify and repair the config table if needed
+		$table_verified = self::verify_and_repair_config_table();
+		error_log("MDS Config::load - Config table verification: " . ($table_verified ? 'successful' : 'failed'));
+		
+		// Check if config table exists after verification/repair
+		$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
+		
+		if ($table_exists) {
+			// Fetch current config from database 
 			$config = self::get_results_assoc();
-
+			
+			// Handle the case where there might still be an empty key causing problems
+			$has_duplicate_entry_issue = false;
+			
 			// Update database with any new defaults
 			foreach ( $defaults as $key => $default ) {
-				if ( ! array_key_exists( $key, $config ) ) {
-					$wpdb->insert(
-						$table_name,
-						[
-							'config_key' => $key,
-							'val'        => $default['value'],
-						],
-						[
-							'%s',
-							'%' . $default['type'],
-						]
-					);
+				// Skip if key is empty or only whitespace
+				if (empty($key) || trim($key) === '') {
+					error_log("MDS Config::load - Skipping empty key in defaults");
+					continue;
+				}
+
+				error_log("MDS Config::load - Checking default key: '{$key}'");
+
+				// Check if this key already exists in the config
+				if (!array_key_exists($key, $config)) {
+					// If we already had an issue with duplicates, skip this insert
+					if ($has_duplicate_entry_issue) {
+						continue;
+					}
+					
+					error_log("MDS Config::load - Inserting default key: '{$key}' with value: '" . $default['value'] . "'");
+					
+					try {
+						$result = $wpdb->insert(
+							$table_name,
+							[
+								'config_key' => $key,
+								'val'        => $default['value'],
+							],
+							[
+								'%s',
+								'%' . $default['type'],
+							]
+						);
+
+						if ($result === false) {
+							$error = $wpdb->last_error;
+							error_log("MDS Config::load - Failed to insert default key '{$key}': " . $error);
+							
+							// Check if this is a duplicate entry error for empty key
+							if (strpos($error, "Duplicate entry ''" ) !== false) {
+								$has_duplicate_entry_issue = true;
+								error_log("MDS Config::load - Detected duplicate entry issue with empty key. Taking drastic measures...");
+								
+								// Emergency clean: back up valid data and recreate table
+								$valid_data = [];
+								try {
+									// Get all non-empty keys
+									$rows = $wpdb->get_results("SELECT * FROM {$table_name} WHERE LENGTH(config_key) > 0");
+									
+									foreach ($rows as $row) {
+										$valid_data[$row->config_key] = $row->val;
+									}
+									
+									error_log("MDS Config::load - Emergency: Backed up " . count($valid_data) . " valid config entries");
+									
+									// Drop and recreate config table
+									$wpdb->query("DROP TABLE IF EXISTS {$table_name}");
+									
+									// Recreate table
+									$charset_collate = $wpdb->get_charset_collate();
+									$sql = "CREATE TABLE {$table_name} (
+										config_key varchar(255) NOT NULL,
+										val text NOT NULL,
+										PRIMARY KEY  (config_key)
+									) {$charset_collate};";
+									
+									require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+									dbDelta($sql);
+									
+									// Restore valid data
+									foreach ($valid_data as $key => $value) {
+										$wpdb->insert(
+											$table_name,
+											[
+												'config_key' => $key,
+												'val'        => $value,
+											],
+											['%s', '%s']
+										);
+									}
+									error_log("MDS Config::load - Emergency: Restored " . count($valid_data) . " valid config entries");
+									
+									// Try inserting the current key again
+									$result = $wpdb->insert(
+										$table_name,
+										[
+											'config_key' => $key,
+											'val'        => $default['value'],
+										],
+										[
+											'%s',
+											'%' . $default['type'],
+										]
+									);
+									
+									error_log("MDS Config::load - Emergency: Recreated table and restored data. Insert result: " . ($result !== false ? 'success' : 'failed: ' . $wpdb->last_error));
+								} catch (\Exception $e) {
+									error_log("MDS Config::load - Emergency repair failed: " . $e->getMessage());
+								}
+							}
+						}
+					} catch (\Exception $e) {
+						error_log("MDS Config::load - Exception inserting default key '{$key}': " . $e->getMessage());
+					}
 				}
 			}
 
 			// Reload config from database to include new defaults
 			$config = self::get_results_assoc();
 		} else {
-			// No config table yet so use defaults.
+			// No config table yet so use defaults
 			foreach ( $defaults as $key => $default ) {
+				// Skip empty keys
+				if (empty($key) || trim($key) === '') {
+					continue;
+				}
+				
 				$value = '';
 				$type  = $default['type'];
 				if ( $type === 'd' ) {

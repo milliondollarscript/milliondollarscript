@@ -128,11 +128,17 @@ function install_db(): void {
 ) $charset_collate;" );
 
 	// Config table
-	dbDelta( "CREATE TABLE `{$tables['config']}` (
-    `config_key` VARCHAR(100) NOT NULL DEFAULT '',
-    `val` VARCHAR(255) NOT NULL DEFAULT '',
-    PRIMARY KEY  (`config_key`)
-) $charset_collate;" );
+	if ( $wpdb->get_var( "SHOW TABLES LIKE '{$tables['config']}'" ) != $tables['config'] ) {
+		// Create config table for fresh install
+		dbDelta( "CREATE TABLE `{$tables['config']}` (
+			`config_key` VARCHAR(255) NOT NULL DEFAULT '',
+			`val` VARCHAR(255) NOT NULL DEFAULT '',
+			PRIMARY KEY  (`config_key`)
+		) $charset_collate;" );
+	} else {
+		// Repair config table on upgrade
+		Config::verify_and_repair_config_table();
+	}
 
 	// Mail queue table
 	dbDelta( "CREATE TABLE `{$tables['mail_queue']}` (
@@ -318,12 +324,22 @@ function install_db(): void {
 
 	// Update database with new defaults
 	foreach ( $defaults as $key => $default ) {
+		// Skip empty keys to prevent PRIMARY KEY errors
+		if ( empty($key) || trim($key) === '' ) {
+			continue;
+		}
+
+		// Check if this key already exists in the config table
 		if ( ! array_key_exists( $key, $config ) ) {
+			// Ensure value is valid for the selected type
+			$value = $default['value'];
+			
+			// Insert the config key and value
 			$wpdb->insert(
 				$tables['config'],
 				array(
 					'config_key' => $key,
-					'val'        => $default['value'],
+					'val'        => $value,
 				),
 				array(
 					'%s',

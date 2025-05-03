@@ -62,6 +62,27 @@ class Database {
 	}
 
 	/**
+	 * Returns all old MDS database tables without prefixes.
+	 *
+	 * @return string[]
+	 */
+	public static function get_old_mds_tables(): array {
+		return [
+			'ads',
+			'categories',
+			'codes',
+			'codes_translations',
+			'currencies',
+			'form_fields',
+			'form_field_translations',
+			'form_lists',
+			'lang',
+			'temp_orders',
+			'users',
+		];
+	}
+
+	/**
 	 * Initialize the database connection and store in the global space.
 	 *
 	 * @return void
@@ -144,10 +165,12 @@ class Database {
 				$upgrade = new $classname();
 				$upgrade->upgrade( $current_version );
 
-				// Update database version.
-				self::up_dbver( $upgrade_version );
+				// DO NOT Update database version inside the loop
 			}
 		}
+
+		// Update database version ONCE after all upgrades have run
+		self::up_dbver( MDS_DB_VERSION );
 
 		// TODO: remember to update the DB version in /milliondollarscript-two.php
 
