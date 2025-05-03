@@ -59,7 +59,10 @@ class Filesystem {
 	public function make_folder( $folder, bool $delete = false ): \WP_Error|bool {
 		if ( $this->get_filesystem() ) {
 
-			/** @var $wp_filesystem \WP_Filesystem_Direct */
+			/**
+			 * @var \WP_Filesystem_Base $wp_filesystem
+			 * @psalm-suppress UndefinedGlobalVariable Using WordPress global
+			 */
 			global $wp_filesystem;
 
 			// optionally delete the folder
@@ -91,7 +94,10 @@ class Filesystem {
 	public function delete_folder( $folder ): \WP_Error|bool {
 		if ( $this->get_filesystem() ) {
 
-			/** @var $wp_filesystem \WP_Filesystem_Direct */
+			/**
+			 * @var \WP_Filesystem_Base $wp_filesystem
+			 * @psalm-suppress UndefinedGlobalVariable Using WordPress global
+			 */
 			global $wp_filesystem;
 
 			// delete the folder
@@ -117,7 +123,10 @@ class Filesystem {
 	public function copy( $src, $dest, bool $overwrite = false ): bool {
 		if ( $this->get_filesystem() ) {
 
-			/** @var $wp_filesystem \WP_Filesystem_Direct */
+			/**
+			 * @var \WP_Filesystem_Base $wp_filesystem
+			 * @psalm-suppress UndefinedGlobalVariable Using WordPress global
+			 */
 			global $wp_filesystem;
 
 			// copy src to dest
@@ -138,8 +147,16 @@ class Filesystem {
 	public function list_files( string $dir, string $filter = '' ): array {
 		$files = [];
 		if ( $this->get_filesystem() ) {
+			/**
+			 * @var \WP_Filesystem_Base $wp_filesystem
+			 * @psalm-suppress UndefinedGlobalVariable Using WordPress global
+			 */
 			global $wp_filesystem;
+			
+			// Get directory listing
 			$fileList = $wp_filesystem->dirlist( $dir );
+			
+			// Filter by name if filter is provided
 			foreach ( $fileList as $filename => $fileinfo ) {
 				if ( $filter === '' || str_contains( $filename, $filter ) ) {
 					$files[] = esc_html( $dir . $filename );
@@ -171,4 +188,30 @@ class Filesystem {
 		return true;
 	}
 
+	/**
+	 * Delete a file using WordPress filesystem
+	 *
+	 * @param string $file_path Path to the file to delete
+	 *
+	 * @return bool True if delete was successful or file doesn't exist, false otherwise
+	 */
+	public function delete_file( string $file_path ): bool {
+		if ( $this->get_filesystem() ) {
+			/**
+			 * @var \WP_Filesystem_Base $wp_filesystem
+			 * @psalm-suppress UndefinedGlobalVariable Using WordPress global
+			 */
+			global $wp_filesystem;
+
+			// Check if file exists before attempting deletion
+			if ( ! $wp_filesystem->exists( $file_path ) ) {
+				return true; // File doesn't exist, consider it a success
+			}
+
+			// Delete the file using WordPress filesystem
+			return $wp_filesystem->delete( $file_path, false );
+		}
+
+		return false;
+	}
 }

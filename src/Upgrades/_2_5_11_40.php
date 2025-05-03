@@ -33,6 +33,7 @@ use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Data\Database;
 use MillionDollarScript\Classes\Data\DatabaseStatic;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Filesystem;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -89,14 +90,14 @@ class _2_5_11_40 {
     }
     
     /**
-     * Delete the mu-plugins/milliondollarscript-cookies.php file directly
+     * Delete the mu-plugins/milliondollarscript-cookies.php file using WordPress filesystem API
      * This is done as the last step in the upgrade process and may log users out
      * 
      * @return void
      */
     private function schedule_cookies_file_deletion(): void {
         /**
-         * Determine file path for the cookies file that needs to be deleted/disabled
+         * Determine file path for the cookies file that needs to be deleted
          */
         $mu_plugins_dir = WPMU_PLUGIN_DIR;
         $cookies_file = $mu_plugins_dir . '/milliondollarscript-cookies.php';
@@ -111,75 +112,57 @@ class _2_5_11_40 {
         Notices::add_notice($notice, 'warning');
         
         /**
-         * Check if file exists before attempting deletion
-         */
-        if (!file_exists($cookies_file)) {
-            error_log('Cookies file not found, no action needed: ' . $cookies_file);
-            return;
-        }
-        
-        /**
          * Log deletion attempt
          */
-        error_log('Attempting to delete cookies file: ' . $cookies_file);
+        error_log('Attempting to delete cookies file via WordPress filesystem: ' . $cookies_file);
         
         /**
-         * Multiple deletion attempts with different strategies
+         * Use WordPress filesystem API to delete the file
+         * This handles all file permission issues automatically
          */
-        $success = false;
+        $fs = new Filesystem(admin_url());
+        $deleted = $fs->delete_file($cookies_file);
         
         /**
-         * Strategy 1: Direct deletion with permissions update
+         * Log the result and provide admin notice if needed
          */
-        @chmod($cookies_file, 0666);
-        if (@unlink($cookies_file)) {
-            error_log('Successfully deleted cookies file using unlink');
-            $success = true;
-        }
-        
-        /**
-         * Strategy 2: Empty the file if we can't delete it
-         */
-        if (!$success) {
-            if (@file_put_contents($cookies_file, '<?php // File disabled by MDS Upgrade') !== false) {
-                error_log('Successfully disabled cookies file by emptying it');
-                $success = true;
-            }
-        }
-        
-        /**
-         * Strategy 3: Use PHP stream wrapper with context options
-         */
-        if (!$success) {
-            $context = stream_context_create(['http' => ['method' => 'DELETE']]);
-            if (@file_exists($cookies_file) && @file_get_contents($cookies_file, false, $context) !== false) {
-                error_log('Successfully deleted cookies file using stream context');
-                $success = true;
-            }
-        }
-        
-        /**
-         * Strategy 4: Rename the file as a last resort
-         */
-        if (!$success && file_exists($cookies_file)) {
-            $backup_file = $cookies_file . '.disabled';
-            if (@rename($cookies_file, $backup_file)) {
-                error_log('Successfully renamed cookies file to: ' . $backup_file);
-                $success = true;
-            }
-        }
-        
-        /**
-         * If all deletion attempts failed, notify administrator
-         */
-        if (!$success) {
-            error_log('CRITICAL: Failed to delete or disable cookies file: ' . $cookies_file);
+        if ($deleted) {
+            error_log('Successfully deleted or verified absence of cookies file via WordPress filesystem');
+        } else {
+            error_log('CRITICAL: Failed to delete cookies file via WordPress filesystem: ' . $cookies_file);
             
-            $manual_notice = Language::get('Failed to automatically delete the required cookies file. ');
-            $manual_notice .= Language::get('Please manually delete this file to avoid login issues: ');
-            $manual_notice .= '<code>' . esc_html($cookies_file) . '</code>';
+            /**
+             * Fallback strategy: Try to empty the file if deletion failed
+             */
+            $success = false;
             
-            Notices::add_notice($manual_notice, 'error');
+            /**
+             * Get filesystem access before attempting file operations
+             */
+            if ($fs->get_filesystem()) {
+                global $wp_filesystem;
+                
+                /**
+                 * If file exists, try to empty it with disabled PHP code
+                 */
+                if ($wp_filesystem->exists($cookies_file)) {
+                    if ($wp_filesystem->put_contents($cookies_file, '<?php // File disabled by MDS Upgrade', FS_CHMOD_FILE)) {
+                        error_log('Successfully disabled cookies file by emptying it');
+                        $success = true;
+                    }
+                }
+            }
+            
+            /**
+             * If all attempts failed, notify administrator for manual action
+             */
+            if (!$success) {
+                $manual_notice = Language::get('Failed to automatically delete the required cookies file. ');
+                $manual_notice .= Language::get('Please manually delete this file to avoid login issues: ');
+                $manual_notice .= '<code>' . esc_html($cookies_file) . '</code>';
+                
+                Notices::add_notice($manual_notice, 'error');
+            }
         }
     }
     
