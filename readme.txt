@@ -37,6 +37,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Resolved 'headers already sent' errors in process-pixels.php and clear-orders.php by proper handling of form submissions through admin-post.php.
 * Fix: Improved consistency of admin notices by using the Notices class throughout the plugin.
 * Fix: Tooltip AJAX content not loading on second grid when multiple grids are displayed on the same page.
+* Fix: Resolved database upgrade issues when upgrading from version 2.3.5, preventing errors related to missing columns.
 
 = 2.5.10 =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.

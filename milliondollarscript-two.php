@@ -154,12 +154,13 @@ function milliondollarscript_two_activate(): void {
 	// Set a flag to indicate activation is in progress.
 	update_option( MDS_PREFIX . 'activation', '1' );
 
-	// Check if database requires upgrades and do them before install deltas happen.
-	perform_upgrade_operations();
-
-	// Install MDS database
+	// Install MDS database first to ensure tables exist
 	require_once MDS_CORE_PATH . 'admin/install.php';
 	install_db();
+
+	// Run upgrade operations after tables are created
+	// This ensures the config table exists before we try to read/write the dbver
+	perform_upgrade_operations();
 
 	// Load MDS core
 	require_once MDS_CORE_PATH . 'include/init.php';
