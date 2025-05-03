@@ -158,6 +158,9 @@ class Bootstrap {
 		// 	register_widget( '\MillionDollarScript\Classes\Web\Widget' );
 		// } );
 
+		// Register AJAX handlers for Logs
+		add_action( 'init', [ '\MillionDollarScript\Classes\Pages\Logs', 'register_ajax_handlers' ], 10 );
+
 		// Add Admin page
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Admin\Admin', 'menu' ], 10 );
 

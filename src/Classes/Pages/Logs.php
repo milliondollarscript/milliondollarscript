@@ -35,7 +35,12 @@ class Logs {
         if ( $hook_suffix ) {
             add_action( 'admin_print_styles-' . $hook_suffix, [ self::class, 'enqueue_assets' ] );
         }
-
+    }
+    
+    /**
+     * Register AJAX handlers. This must be called early during WordPress initialization.
+     */
+    public static function register_ajax_handlers(): void {
         // Register AJAX actions
         add_action( 'wp_ajax_mds_toggle_logging', [ self::class, 'ajax_toggle_logging' ] );
         add_action( 'wp_ajax_mds_clear_log', [ self::class, 'ajax_clear_log' ] );
@@ -123,27 +128,30 @@ class Logs {
      * Enqueue JS and CSS assets for the Logs page.
      */
     public static function enqueue_assets(): void {
-        $screen = get_current_screen();
-        if ( ! $screen || strpos( $screen->id, self::ADMIN_LOGS_PAGE_SLUG ) === false ) {
-            return;
-        }
+        // This is already called within the render method which checks if we're on the right page
+        // No need for additional checks here
 
         $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-logs.js';
         $script_url = MDS_BASE_URL . 'src/Assets/js/admin-logs.js';
         $style_path = MDS_BASE_PATH . 'src/Assets/css/admin-logs.css';
         $style_url = MDS_BASE_URL . 'src/Assets/css/admin-logs.css';
 
+        $script_handle = 'mds-admin-logs-js';
+        $style_handle = 'mds-admin-logs-css';
+
         if ( file_exists( $script_path ) ) {
             wp_enqueue_script(
-                MDS_PREFIX . 'admin-logs-js',
+                $script_handle,
                 $script_url,
                 [ 'jquery', 'wp-util' ], // wp-util includes wp.ajax
                 filemtime( $script_path ),
                 true
             );
-            wp_localize_script( MDS_PREFIX . 'admin-logs-js', 'mdsLogsData', [
+            
+            // Create the data to be passed to JavaScript
+            $log_data = [
                 'ajax_url' => admin_url( 'admin-ajax.php' ),
-                'nonce'    => wp_create_nonce( 'mds_log_ajax_nonce' ),
+                'nonce'    => wp_create_nonce( 'mds_log_actions' ),
                 'initial_log_state' => Options::get_option( 'log_enable', 'no' ) === 'yes', // Pass initial state
                 'text'     => [
                     'confirm_clear'         => Language::get('Are you sure you want to clear the log file? This action cannot be undone.'),
@@ -157,12 +165,13 @@ class Logs {
                     'log_toggled_on'        => Language::get('Logging enabled.'),
                     'log_toggled_off'       => Language::get('Logging disabled.'),
                 ]
-            ] );
+            ];
+            wp_localize_script( $script_handle, 'mdsLogsData', $log_data );
         }
 
         if ( file_exists( $style_path ) ) {
             wp_enqueue_style(
-                MDS_PREFIX . 'admin-logs-css',
+                $style_handle,
                 $style_url,
                 [],
                 filemtime( $style_path )
@@ -176,21 +185,28 @@ class Logs {
      * AJAX handler for toggling the mds_log_enable option.
      */
     public static function ajax_toggle_logging(): void {
-        check_ajax_referer( 'mds_log_ajax_nonce', 'nonce' );
+        // Verify nonce for security
+        check_ajax_referer( 'mds_log_actions', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( [ 'message' => Language::get('Permission denied.') ], 403 );
         }
 
-        $enabled = isset( $_POST['enabled'] ) && $_POST['enabled'] === 'true';
-        Options::update_option( 'log_enable', $enabled );
-
-        $message = $enabled ? Language::get('Logging enabled.') : Language::get('Logging disabled.');
-        if ( Options::get_option( 'log_enable' ) === $enabled ) {
-            // No change needed, still consider it a success from the user's perspective
-            wp_send_json_success( [ 'message' => $enabled ? Language::get('Logging is already enabled.') : Language::get('Logging is already disabled.') ] );
+        // Get the enabled parameter
+        $enabled = isset($_POST['enabled']) ? $_POST['enabled'] : 'no';
+        
+        // Ensure it's either 'yes' or 'no'
+        $enabled = ($enabled === 'yes') ? 'yes' : 'no';
+        
+        // Update the option
+        $result = Options::update_option('log_enable', $enabled);
+        
+        // If update was successful or the value was already set
+        if ($result || Options::get_option('log_enable') === $enabled) {
+            $message = $enabled ? Language::get('Logging enabled.') : Language::get('Logging disabled.');
+            wp_send_json_success(['message' => $message]);
         } else {
-            wp_send_json_success( [ 'message' => $message ] );
+            wp_send_json_error(['message' => Language::get('Failed to update logging setting.')]);
         }
     }
 
@@ -198,12 +214,15 @@ class Logs {
      * AJAX handler for clearing the log file.
      */
     public static function ajax_clear_log(): void {
-        check_ajax_referer( 'mds_log_ajax_nonce', 'nonce' );
+        // Verify the nonce for security
+        check_ajax_referer( 'mds_log_actions', 'nonce' );
 
+        // Check user permissions
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( [ 'message' => Language::get('Permission denied.') ], 403 );
         }
 
+        // Attempt to clear the log file
         if ( SystemLogs::clear_log() ) {
             wp_send_json_success( [ 'message' => Language::get('Log file cleared successfully.') ] );
         } else {
@@ -215,16 +234,19 @@ class Logs {
      * AJAX handler for fetching log entries.
      */
     public static function ajax_fetch_log_entries(): void {
-        check_ajax_referer( 'mds_log_ajax_nonce', 'nonce' );
-
+        // Verify nonce for security
+        check_ajax_referer( 'mds_log_actions', 'nonce' );
+        
+        // Check user permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => Language::get('Permission denied.') ], 403 );
+        }
+        
+        // Get parameters
         $last_size = isset($_POST['last_size']) ? absint($_POST['last_size']) : 0;
         $log_file_path = SystemLogs::get_log_file_path();
         $current_size = 0;
         $is_incremental = $last_size > 0;
-
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => Language::get('Permission denied.') ], 403 );
-        }
 
         if ( ! $log_file_path || ! file_exists( $log_file_path ) ) {
             // File doesn't exist
@@ -232,7 +254,7 @@ class Logs {
                 'content' => '', 
                 'message' => Language::get('Log file is empty or does not exist.'),
                 'size' => 0,
-                'entries' => [], // For later
+                'entries' => []
             ] );
         }
 
@@ -246,7 +268,7 @@ class Logs {
                 'content' => '', 
                 'message' => Language::get('Log file is empty.'),
                 'size' => 0,
-                'entries' => [], // For later
+                'entries' => []
             ] );
         }
 
@@ -256,10 +278,10 @@ class Logs {
             // For now, just send back empty content for incremental.
             wp_send_json_success( [ 
                 'content' => '', 
-                'message' => '', // No message needed here, just no new content
+                'message' => '',
                 'size' => $current_size, 
-                'entries' => [], // For later
-            ] ); 
+                'entries' => []
+            ] );
         }
 
         // Read the appropriate content (full or incremental)
@@ -329,10 +351,10 @@ class Logs {
         }
 
         wp_send_json_success( [ 
-            'content' => '', // No longer sending raw content
+            'content' => '', 
             'size' => $current_size, 
-            'message' => '', // Clear any previous message if sending content
-            'entries' => $entries // Placeholder
+            'message' => '',
+            'entries' => $entries
         ] );
     }
 }

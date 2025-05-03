@@ -55,8 +55,10 @@ jQuery(document).ready(function($) {
         return html;
     }
 
-    // Fetch initial log content
+    // Fetch log entries from the server
+    // If incremental is true, only fetch new entries since the last fetch
     function fetchLogEntries(incremental = false) {
+        // Prepare data for the AJAX request
         var ajaxData = {
             action: 'mds_fetch_log_entries',
             nonce: mdsLogsData.nonce
@@ -96,7 +98,7 @@ jQuery(document).ready(function($) {
                 showNotice(response.data.message || mdsLogsData.text.error_occurred, 'error');
                 $logViewer.html('<p>' + mdsLogsData.text.error_loading + '</p>');
             }
-        }).fail(function() {
+        }).fail(function(jqXHR, textStatus, errorThrown) {
             hideSpinner();
             showNotice(mdsLogsData.text.error_occurred, 'error');
             $logViewer.html('<p>' + mdsLogsData.text.error_loading + '</p>');
@@ -112,7 +114,7 @@ jQuery(document).ready(function($) {
         $.post(mdsLogsData.ajax_url, {
             action: 'mds_toggle_logging',
             nonce: mdsLogsData.nonce,
-            enabled: isEnabled
+            enabled: isEnabled ? 'yes' : 'no'
         }, function(response) {
             hideSpinner();
             if (response.success) {
@@ -171,6 +173,6 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Initial Load
+    // Initial load of log entries when the page loads
     fetchLogEntries();
 });
