@@ -98,12 +98,41 @@ class _2_5_11_40 {
             $config_key_column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `{$table_name}` LIKE 'config_key'" );
             
             if ($key_column_exists && !$config_key_column_exists) {
-                // Rename the column from 'key' to 'config_key'
+                // First remove any existing primary key
+                $primary_exists = $wpdb->get_var("SHOW KEYS FROM `{$table_name}` WHERE Key_name = 'PRIMARY'" );
+                if ($primary_exists) {
+                    $wpdb->query("ALTER TABLE `{$table_name}` DROP PRIMARY KEY");
+                    $wpdb->flush();
+                }
+                
+                // Rename the column from 'key' to 'config_key' and make it PRIMARY KEY
                 $wpdb->query( "ALTER TABLE `{$table_name}` CHANGE `key` `config_key` VARCHAR(100) NOT NULL DEFAULT ''" );
+                $wpdb->query( "ALTER TABLE `{$table_name}` ADD PRIMARY KEY (`config_key`)" );
                 $wpdb->flush();
             } else if (!$key_column_exists && !$config_key_column_exists) {
-                // If neither column exists, create config_key
+                // If neither column exists, create config_key as PRIMARY KEY
                 $wpdb->query( "ALTER TABLE `{$table_name}` ADD COLUMN `config_key` VARCHAR(100) NOT NULL DEFAULT '' FIRST" );
+                $wpdb->query( "ALTER TABLE `{$table_name}` ADD PRIMARY KEY (`config_key`)" );
+                $wpdb->flush();
+            } else if ($config_key_column_exists) {
+                // Make sure config_key is PRIMARY KEY and NOT NULL
+                
+                // First check if config_key allows NULL
+                $column_info = $wpdb->get_row("SHOW COLUMNS FROM `{$table_name}` WHERE Field = 'config_key'");
+                if ($column_info && $column_info->Null === 'YES') {
+                    $wpdb->query( "ALTER TABLE `{$table_name}` MODIFY `config_key` VARCHAR(100) NOT NULL DEFAULT ''" );
+                    $wpdb->flush();
+                }
+                
+                // Then check if it's PRIMARY KEY
+                $primary_exists = $wpdb->get_var("SHOW KEYS FROM `{$table_name}` WHERE Key_name = 'PRIMARY'" );
+                if (!$primary_exists) {
+                    $wpdb->query( "ALTER TABLE `{$table_name}` ADD PRIMARY KEY (`config_key`)" );
+                    $wpdb->flush();
+                }
+                
+                // Remove any duplicate rows or empty config_key values
+                $wpdb->query("DELETE FROM `{$table_name}` WHERE `config_key` = ''");
                 $wpdb->flush();
             }
         }
