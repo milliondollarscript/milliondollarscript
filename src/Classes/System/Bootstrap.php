@@ -65,8 +65,9 @@ class Bootstrap {
 		// Load language
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Language\Language', 'load_textdomain' ] );
 
-		// Add main page
+		// Register admin pages
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\MillionDollarScript', 'menu' ], 9 );
+		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Logs', 'menu' ], 11 );
 
 		// Add user fields
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\User\Users', 'custom_fields' ] );
@@ -249,6 +250,7 @@ class Bootstrap {
 		add_filter( 'cron_schedules', [ '\MillionDollarScript\Classes\System\Cron', 'add_minute' ] );
 		add_action( 'milliondollarscript_cron_minute', [ '\MillionDollarScript\Classes\System\Cron', 'minute' ] );
 		add_action( 'milliondollarscript_clean_temp_files', [ '\MillionDollarScript\Classes\System\Cron', 'clean_temp_files' ] );
+		add_action( 'milliondollarscript_clean_old_logs', [ '\MillionDollarScript\Classes\System\Cron', 'clean_old_log_files' ] );
 
 		// Hook for when loaded
 		do_action( 'mds-loaded', $this );

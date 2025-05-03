@@ -193,6 +193,12 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Feat: Added grid selection dropdown to the Manage Pixels page (configurable in MDS Options).
 * Fix: Resolve 'Link expired' error when changing the selected grid on the Packages admin page.
 
+= 2.5.10.207 =
+*   Fixed PHP 8.2 deprecation notice for dynamic property creation.
+*   Fixed issue where the "Delete" button on the Blocked IPs page could delete the wrong entry if the table wasn't sorted by ID.
+*   Improved CSS loading logic to prevent potential conflicts or redundant loading.
+*   Added a new daily cron task to automatically delete debug log files older than 30 days.
+
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
 * Add a "snapshot" branch to replace the "dev" branch. The dev branch will now be used for ongoing development while the new snapshot branch will be used as the dev branch was before. For lightly tested, periodic snapshots of the dev branch when new features or fixes are ready for wider testing.

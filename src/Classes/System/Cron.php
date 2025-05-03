@@ -30,6 +30,9 @@ namespace MillionDollarScript\Classes\System;
 
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\System\Filesystem;
+use MillionDollarScript\Classes\Data\Config;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -64,6 +67,11 @@ class Cron {
 		if ( ! wp_next_scheduled( 'milliondollarscript_clean_temp_files' ) ) {
 			wp_schedule_event( time(), 'hourly', 'milliondollarscript_clean_temp_files' );
 		}
+
+		// Add new daily task for cleaning old logs
+		if ( ! wp_next_scheduled( 'milliondollarscript_clean_old_logs' ) ) {
+			wp_schedule_event( time(), 'daily', 'milliondollarscript_clean_old_logs' );
+		}
 	}
 
 	/**
@@ -74,6 +82,8 @@ class Cron {
 	public static function clear_cron(): void {
 		wp_clear_scheduled_hook( 'milliondollarscript_cron_minute' );
 		wp_clear_scheduled_hook( 'milliondollarscript_clean_temp_files' );
+		// Clear the new daily log cleaning task
+		wp_clear_scheduled_hook( 'milliondollarscript_clean_old_logs' );
 	}
 
 	/**
@@ -127,4 +137,71 @@ class Cron {
 			}
 		}
 	}
+
+	/**
+	 * Clean old log files.
+	 *
+	 * Deletes MDS log files older than a specified number of days (default 30).
+	 */
+	public static function clean_old_log_files(): void {
+		$filesystem = new Filesystem();
+		$upload_dir = Utility::get_upload_path();
+		$log_basename = Config::get( 'MDS_LOG_FILE', 'mds_debug' );
+		// Ensure the basename doesn't already contain path separators or extension
+		$log_basename = preg_replace('/\.log$/i', '', basename( $log_basename )); 
+
+		// Use file_exists as it works for directories too in our Filesystem wrapper
+		if ( ! $upload_dir || ! $filesystem->file_exists( $upload_dir ) ) {
+			// Log error or return if upload directory doesn't exist
+			Logs::log('clean_old_log_files: Upload directory not found or inaccessible: ' . $upload_dir, Logs::LEVEL_ERROR);
+			return;
+		}
+
+		// Retention period in days (could make this an option later)
+		$retention_days = 30; 
+		$cutoff_timestamp = strtotime("-$retention_days days");
+
+		// Pattern to match log files, e.g., mds_debug_YYYY-MM-DD.log
+		$log_file_pattern = trailingslashit( $upload_dir ) . $log_basename . '_*.log';
+
+		// Use native PHP glob as Filesystem class doesn't have a suitable equivalent
+		$log_files = glob( $log_file_pattern );
+
+		if ( $log_files === false || empty( $log_files ) ) {
+			// Error during glob or no log files found to clean
+			return;
+		}
+
+		$deleted_count = 0;
+		$error_count = 0;
+
+		foreach ( $log_files as $file_path ) {
+			// Extract date from filename, e.g., mds_debug_2025-05-03.log
+			if ( preg_match( '/' . preg_quote($log_basename, '/') . '_(\d{4}-\d{2}-\d{2})\.log$/', $file_path, $matches ) ) {
+				$file_date_str = $matches[1];
+				$file_timestamp = strtotime( $file_date_str );
+
+				if ( $file_timestamp !== false && $file_timestamp < $cutoff_timestamp ) {
+					// File is older than retention period, try to delete
+					try {
+						if ( $filesystem->delete_file( $file_path ) ) {
+							$deleted_count++;
+						} else {
+							$error_count++;
+							Logs::log('clean_old_log_files: Failed to delete file: ' . $file_path, Logs::LEVEL_WARNING);
+						}
+					} catch ( \Exception $e ) {
+						$error_count++;
+						Logs::log('clean_old_log_files: Exception deleting file ' . $file_path . ': ' . $e->getMessage(), Logs::LEVEL_ERROR);
+					}
+				}
+			}
+		}
+
+		if ($deleted_count > 0 || $error_count > 0) {
+			Logs::log(sprintf('clean_old_log_files: Completed. Deleted %d files, encountered %d errors.', $deleted_count, $error_count), Logs::LEVEL_INFO);
+		}
+
+	}
+
 }
