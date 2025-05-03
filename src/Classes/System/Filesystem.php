@@ -205,13 +205,109 @@ class Filesystem {
 
 			// Check if file exists before attempting deletion
 			if ( ! $wp_filesystem->exists( $file_path ) ) {
-				return true; // File doesn't exist, consider it a success
+				/**
+				 * File doesn't exist, consider it a success
+				 */
+				return true;
 			}
 
 			// Delete the file using WordPress filesystem
 			return $wp_filesystem->delete( $file_path, false );
 		}
 
+		return false;
+	}
+
+	/**
+	 * Check if a file or directory exists using WordPress filesystem.
+	 *
+	 * @param string $path Path to check.
+	 * @return bool True if exists, false otherwise or on error.
+	 */
+	public function file_exists( string $path ): bool {
+		if ( $this->get_filesystem() ) {
+			/** @var \WP_Filesystem_Base $wp_filesystem */
+			global $wp_filesystem;
+			return $wp_filesystem->exists( $path );
+		}
+		return false;
+	}
+
+	/**
+	 * Check if a file is readable using WordPress filesystem.
+	 *
+	 * @param string $path Path to the file.
+	 * @return bool True if readable, false otherwise or on error.
+	 */
+	public function is_readable( string $path ): bool {
+		if ( $this->get_filesystem() ) {
+			/** @var \WP_Filesystem_Base $wp_filesystem */
+			global $wp_filesystem;
+			return $wp_filesystem->is_readable( $path );
+		}
+		return false;
+	}
+
+	/**
+	 * Get the contents of a file using WordPress filesystem.
+	 *
+	 * @param string $path Path to the file.
+	 * @return string|false File contents on success, false on failure.
+	 */
+	public function get_contents( string $path ) {
+		if ( $this->get_filesystem() ) {
+			/** @var \WP_Filesystem_Base $wp_filesystem */
+			global $wp_filesystem;
+			// Ensure the file exists and is readable first
+			if ( $wp_filesystem->exists( $path ) && $wp_filesystem->is_readable( $path ) ) {
+				return $wp_filesystem->get_contents( $path );
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Append content to a file.
+	 * Uses WP_Filesystem to check permissions/existence, but may fallback to native
+	 * file_put_contents for the actual append operation due to WP_Filesystem limitations.
+	 *
+	 * @param string $path Path to the file.
+	 * @param string $data The data to append.
+	 * @return bool True on success, false on failure.
+	 */
+	public function append_contents( string $path, string $data ): bool {
+		if ( $this->get_filesystem() ) {
+			/** @var \WP_Filesystem_Base $wp_filesystem */
+			global $wp_filesystem;
+
+			// Ensure the directory exists and is writable
+			$dir = dirname( $path );
+			if ( ! $wp_filesystem->is_dir( $dir ) ) {
+				// Attempt to create the directory if it doesn't exist
+				if ( ! $wp_filesystem->mkdir( $dir, FS_CHMOD_DIR ) ) {
+					error_log( 'MDS Filesystem::append_contents - Could not create directory: ' . $dir );
+					return false;
+				}
+			} elseif ( ! $wp_filesystem->is_writable( $dir ) ) {
+				error_log( 'MDS Filesystem::append_contents - Directory not writable: ' . $dir );
+				return false;
+			}
+
+			/**
+			 * WP_Filesystem doesn't have a native append. We use it to check/ensure
+			 * writability, then use native file_put_contents with append flag.
+			 */
+			try {
+				/**
+				 * The $wp_filesystem context should ensure permissions are okay.
+				 */
+				$result = file_put_contents( $path, $data, FILE_APPEND | LOCK_EX );
+				return $result !== false;
+			} catch ( \Exception $e ) {
+				error_log( 'MDS Filesystem::append_contents - Exception appending to file ' . $path . ': ' . $e->getMessage() );
+				return false;
+			}
+		}
 		return false;
 	}
 }

@@ -56,7 +56,7 @@ class Config {
 		return [
 			'DEBUG'                       => [ 'value' => 0, 'type' => 'd' ],
 			'MDS_LOG'                     => [ 'value' => 0, 'type' => 'd' ],
-			'MDS_LOG_FILE'                => [ 'value' => MDS_CORE_PATH . '.mds.log', 'type' => 's' ],
+			'MDS_LOG_FILE'                => [ 'value' => 'mds_debug.log', 'type' => 's' ],
 			'BUILD_DATE'                  => [ 'value' => $build_date, 'type' => 's' ],
 			'VERSION_INFO'                => [ 'value' => MDS_VERSION, 'type' => 's' ],
 			'MDS_RESIZE'                  => [ 'value' => 'YES', 'type' => 's' ],
@@ -208,7 +208,6 @@ class Config {
 		
 		// Check if table exists using WordPress's built-in method
 		$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
-		error_log("MDS Config::verify_and_repair_config_table - Config table '{$table_name}' exists: " . ($table_exists ? 'yes' : 'no'));
 		
 		if (!$table_exists) {
 			// Table doesn't exist, it will be created when needed
@@ -218,7 +217,6 @@ class Config {
 		// Check table structure
 		$table_structure = $wpdb->get_results("DESCRIBE {$table_name}");
 		if (empty($table_structure)) {
-			error_log("MDS Config::verify_and_repair_config_table - Could not retrieve table structure for '{$table_name}'");
 			return false;
 		}
 		
@@ -239,10 +237,6 @@ class Config {
 			}
 		}
 		
-		error_log("MDS Config::verify_and_repair_config_table - Table structure check: config_key exists: " . ($has_config_key ? 'yes' : 'no') . 
-			", val exists: " . ($has_val ? 'yes' : 'no') . 
-			", config_key is primary: " . ($config_key_is_primary ? 'yes' : 'no'));
-		
 		// If structure is incorrect, try to fix it
 		if (!$has_config_key || !$has_val || !$config_key_is_primary) {
 			// Severe structural issues - back up and recreate the table
@@ -256,11 +250,9 @@ class Config {
 							$backup_data[$row->config_key] = $row->val;
 						}
 					}
-					error_log("MDS Config::verify_and_repair_config_table - Backed up " . count($backup_data) . " valid config entries");
 				}
 				
 				// Drop and recreate the table
-				error_log("MDS Config::verify_and_repair_config_table - Dropping and recreating config table due to structural issues");
 				$wpdb->query("DROP TABLE IF EXISTS {$table_name}");
 				
 				$charset_collate = $wpdb->get_charset_collate();
@@ -287,12 +279,10 @@ class Config {
 							);
 						}
 					}
-					error_log("MDS Config::verify_and_repair_config_table - Restored " . count($backup_data) . " config entries");
 				}
 				
 				return true;
 			} catch (\Exception $e) {
-				error_log("MDS Config::verify_and_repair_config_table - Failed to repair table: " . $e->getMessage());
 				return false;
 			}
 		}
@@ -305,19 +295,14 @@ class Config {
 			// Look for invisible characters that might be causing problems
 			$suspicious_rows = $wpdb->get_results("SELECT * FROM `{$table_name}` WHERE LENGTH(`config_key`) = 0 OR LENGTH(TRIM(`config_key`)) = 0");
 			if (!empty($suspicious_rows)) {
-				error_log("MDS Config::verify_and_repair_config_table - Found " . count($suspicious_rows) . " suspicious rows with potentially invisible characters");
-				
-				// Try to delete them
 				foreach ($suspicious_rows as $row) {
 					$id = $row->config_key;
 					$wpdb->query($wpdb->prepare("DELETE FROM `{$table_name}` WHERE `config_key` = %s", $id));
-					error_log("MDS Config::verify_and_repair_config_table - Deleted suspicious config_key: '" . bin2hex($id) . "'");
 				}
 			}
 			
 			return true;
 		} catch (\Exception $e) {
-			error_log("MDS Config::verify_and_repair_config_table - Error cleaning problematic rows: " . $e->getMessage());
 			return false;
 		}
 	}
@@ -343,7 +328,6 @@ class Config {
 		
 		// Verify and repair the config table if needed
 		$table_verified = self::verify_and_repair_config_table();
-		error_log("MDS Config::load - Config table verification: " . ($table_verified ? 'successful' : 'failed'));
 		
 		// Check if config table exists after verification/repair
 		$table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
@@ -359,11 +343,8 @@ class Config {
 			foreach ( $defaults as $key => $default ) {
 				// Skip if key is empty or only whitespace
 				if (empty($key) || trim($key) === '') {
-					error_log("MDS Config::load - Skipping empty key in defaults");
 					continue;
 				}
-
-				error_log("MDS Config::load - Checking default key: '{$key}'");
 
 				// Check if this key already exists in the config
 				if (!array_key_exists($key, $config)) {
@@ -371,8 +352,6 @@ class Config {
 					if ($has_duplicate_entry_issue) {
 						continue;
 					}
-					
-					error_log("MDS Config::load - Inserting default key: '{$key}' with value: '" . $default['value'] . "'");
 					
 					try {
 						$result = $wpdb->insert(
@@ -389,12 +368,8 @@ class Config {
 
 						if ($result === false) {
 							$error = $wpdb->last_error;
-							error_log("MDS Config::load - Failed to insert default key '{$key}': " . $error);
-							
-							// Check if this is a duplicate entry error for empty key
 							if (strpos($error, "Duplicate entry ''" ) !== false) {
 								$has_duplicate_entry_issue = true;
-								error_log("MDS Config::load - Detected duplicate entry issue with empty key. Taking drastic measures...");
 								
 								// Emergency clean: back up valid data and recreate table
 								$valid_data = [];
@@ -405,8 +380,6 @@ class Config {
 									foreach ($rows as $row) {
 										$valid_data[$row->config_key] = $row->val;
 									}
-									
-									error_log("MDS Config::load - Emergency: Backed up " . count($valid_data) . " valid config entries");
 									
 									// Drop and recreate config table
 									$wpdb->query("DROP TABLE IF EXISTS {$table_name}");
@@ -433,7 +406,6 @@ class Config {
 											['%s', '%s']
 										);
 									}
-									error_log("MDS Config::load - Emergency: Restored " . count($valid_data) . " valid config entries");
 									
 									// Try inserting the current key again
 									$result = $wpdb->insert(
@@ -447,15 +419,11 @@ class Config {
 											'%' . $default['type'],
 										]
 									);
-									
-									error_log("MDS Config::load - Emergency: Recreated table and restored data. Insert result: " . ($result !== false ? 'success' : 'failed: ' . $wpdb->last_error));
 								} catch (\Exception $e) {
-									error_log("MDS Config::load - Emergency repair failed: " . $e->getMessage());
 								}
 							}
 						}
 					} catch (\Exception $e) {
-						error_log("MDS Config::load - Exception inserting default key '{$key}': " . $e->getMessage());
 					}
 				}
 			}

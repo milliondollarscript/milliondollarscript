@@ -19,7 +19,7 @@ class Logs {
 	const LEVEL_ERROR   = 'ERROR';
 	const LEVEL_FATAL   = 'FATAL';
 	/**
-	 * Only logged if WP_DEBUG is also true
+	 * Only logged if DEBUG is also true
 	 */
 	const LEVEL_DEBUG   = 'DEBUG';
 

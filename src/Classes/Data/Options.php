@@ -375,6 +375,11 @@ class Options {
 					     'dev'      => Language::get( 'Development' )
 				     ] )
 				     ->set_help_text( Language::get( '<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the "main" branch. Code from the other branches will eventually make it\'s way here when it\'s deemed to be stable enough.<br /><br /><strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the "snapshot" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the "dev" branch while working towards the next release when it\'s thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the "dev" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you\'re doing. You should never use this branch on a live site.<br /><br /><span style="color: red">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>' ) ),
+
+				// Enable Logging
+				Field::make( 'checkbox', MDS_PREFIX . 'log_enable', Language::get( 'Enable Logging' ) )
+				     ->set_default_value( 'no' )
+				     ->set_help_text( Language::get( 'Enable this to record debug information to the log file. Useful for troubleshooting.' ) ),
 			],
 
 			Language::get( 'Language' ) => [
@@ -467,6 +472,7 @@ class Options {
 			}
 		}
 
+		// Fallback for non-Carbon Fields or if function doesn't exist
 		$n = '_' . MDS_PREFIX . $name;
 		$c = '_' . MDS_PREFIX . $container_id;
 
@@ -529,8 +535,14 @@ class Options {
 	 * @return bool
 	 */
 	public static function update_option( string $name, string $value ): bool {
-		$key = '_' . MDS_PREFIX . $name;
+		// Use carbon_set_theme_option for Carbon Fields
+		if ( function_exists( 'carbon_set_theme_option' ) ) {
+			carbon_set_theme_option( MDS_PREFIX . $name, $value );
+			return true; // Assume success, carbon function doesn't return status
+		}
 
+		// Fallback to standard update_option if Carbon Fields isn't available (shouldn't happen)
+		$key = '_' . MDS_PREFIX . $name;
 		return update_option( $key, $value );
 	}
 

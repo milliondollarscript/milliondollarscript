@@ -255,4 +255,10 @@ if ( $mds_bootstrap == null ) {
 register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'schedule_cron' ] );
 register_deactivation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'clear_cron' ] );
 
+
+// Cron jobs
+add_action( 'mds_daily_cron_hook', [ 'MillionDollarScript\Classes\System\Cron', 'daily_tasks' ] );
+register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'schedule_cron' ] );
+register_deactivation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'clear_cron' ] );
+
 // Done!

@@ -1,0 +1,151 @@
+/* Million Dollar Script - Admin Logs CSS */
+
+/* Toggle Switch Styles */
+.mds-switch {
+	position: relative;
+	display: inline-block;
+	width: 60px;
+	height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.mds-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+/* The slider */
+.mds-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	-webkit-transition: .4s;
+	transition: .4s;
+}
+
+.mds-slider:before {
+	position: absolute;
+	content: "";
+	height: 26px;
+	width: 26px;
+	left: 4px;
+	bottom: 4px;
+	background-color: white;
+	-webkit-transition: .4s;
+	transition: .4s;
+}
+
+input:checked + .mds-slider {
+	background-color: #2196F3; /* WordPress blue */
+}
+
+input:focus + .mds-slider {
+	box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .mds-slider:before {
+	-webkit-transform: translateX(26px);
+	-ms-transform: translateX(26px);
+	transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.mds-slider.mds-round {
+	border-radius: 34px;
+}
+
+.mds-slider.mds-round:before {
+	border-radius: 50%;
+}
+
+/* Log Viewer Styles */
+#mds-log-viewer {
+	background-color: #f9f9f9;
+	border: 1px solid #ccc;
+	padding: 10px;
+	max-height: 500px;
+	overflow-y: auto;
+	font-family: monospace;
+	font-size: 13px;
+	white-space: pre-wrap; 
+	word-wrap: break-word; 
+}
+
+.mds-log-entries {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.mds-log-entry {
+	padding: 2px 5px;
+	margin-bottom: 2px;
+	border-bottom: 1px dotted #eee;
+}
+
+.mds-log-entry:last-child {
+	border-bottom: none;
+}
+
+.mds-log-timestamp {
+	color: #777;
+}
+
+.mds-log-level {
+	font-weight: bold;
+	margin-right: 5px;
+}
+
+.mds-log-count {
+	color: #0073aa; /* WP Blue */
+	font-style: italic;
+	margin-left: 5px;
+}
+
+/* Level specific styles */
+.mds-log-level-debug {
+	color: #999;
+}
+
+.mds-log-level-info {
+	color: #333;
+}
+
+.mds-log-level-warning {
+	color: #ffb900; /* WP Yellow */
+}
+
+.mds-log-level-error {
+	color: #dc3232; /* WP Red */
+}
+
+.mds-log-level-critical {
+	color: #dc3232; /* WP Red */
+	font-weight: bold;
+}
+
+.mds-log-level-raw {
+	color: #555;
+	font-style: italic;
+}
+
+/* Spinner Alignment */
+#mds-log-viewer-controls {
+	min-height: 28px; /* Prevent layout shift when spinner appears/disappears */
+	position: relative;
+}
+
+#mds-log-spinner {
+	float: right;
+	margin-top: 4px;
+	visibility: hidden; /* Hide by default */
+}
+
+#mds-log-spinner.is-active {
+	visibility: visible;
+}
