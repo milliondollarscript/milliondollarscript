@@ -38,6 +38,10 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Improved consistency of admin notices by using the Notices class throughout the plugin.
 * Fix: Tooltip AJAX content not loading on second grid when multiple grids are displayed on the same page.
 * Fix: Resolved database upgrade issues when upgrading from version 2.3.5, preventing errors related to missing columns.
+* Fixed PHP 8.2 deprecation notice for dynamic property creation.
+* Fixed issue where the "Delete" button on the Blocked IPs page could delete the wrong entry if the table wasn't sorted by ID.
+* Improved CSS loading logic to prevent potential conflicts or redundant loading.
+* Added a new daily cron task to automatically delete debug log files older than 30 days.
 
 = 2.5.10 =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
@@ -193,11 +197,17 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Feat: Added grid selection dropdown to the Manage Pixels page (configurable in MDS Options).
 * Fix: Resolve 'Link expired' error when changing the selected grid on the Packages admin page.
 
-= 2.5.10.207 =
-*   Fixed PHP 8.2 deprecation notice for dynamic property creation.
-*   Fixed issue where the "Delete" button on the Blocked IPs page could delete the wrong entry if the table wasn't sorted by ID.
-*   Improved CSS loading logic to prevent potential conflicts or redundant loading.
-*   Added a new daily cron task to automatically delete debug log files older than 30 days.
+= 2.5.10.189 =
+* Fix: Corrected issue where updating pixel link/URL didn't reflect immediately on the grid.
+* Fix: Resolved PHP warning related to array key in Shortcode class.
+* Fix: Added check for `wp_doing_cron` before enqueuing assets.
+* Fix: Removed deprecated `wp_filter_content_tags` usage.
+* Fix: Ensured `order_id` is consistently available in the `mds_order_created` action hook.
+* Chore: Added daily cron task to delete log files older than 30 days.
+* Refactor: Updated logging system to use Options API and hardcoded filename, removing Config dependency.
+
+= 2.5.10.188 =
+* Fix: Ensured the "Show Sold Pixels" filter works correctly on the user-facing Manage Pixels page.
 
 = 2.5.9 =
 * Fix another issue that could cause plugin database migrations to not run.
