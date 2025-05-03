@@ -40,6 +40,86 @@ defined( 'ABSPATH' ) or exit;
 /** @noinspection PhpUnused */
 
 class _2_5_11_40 {
+    
+    /**
+     * CRITICAL: Remove empty config_key entries from the config table
+     * This must run before any other operations to prevent PRIMARY KEY conflicts
+     * 
+     * @return void
+     */
+    private function remove_empty_config_keys(): void {
+        global $wpdb;
+        
+        /**
+         * Get the config table name
+         */
+        $table_name = MDS_DB_PREFIX . 'config';
+        
+        /**
+         * Check if table exists
+         */
+        if (!DatabaseStatic::table_exists($table_name)) {
+            return;
+        }
+        
+        /**
+         * Check if config_key column exists
+         */
+        $config_key_exists = $wpdb->get_var("SHOW COLUMNS FROM `{$table_name}` LIKE 'config_key'");
+        if (!$config_key_exists) {
+            return;
+        }
+        
+        /**
+         * Backup important values that might be affected
+         */
+        error_log('Checking for empty config_key entries in ' . $table_name);
+        $empty_keys_count = (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}` WHERE `config_key` = ''");
+        
+        if ($empty_keys_count > 0) {
+            error_log("Found {$empty_keys_count} empty config_key entries. Removing them...");
+            
+            /**
+             * Try to remove any PRIMARY KEY constraint before deletion
+             * This helps prevent constraint errors
+             */
+            try {
+                $wpdb->query("ALTER TABLE `{$table_name}` DROP PRIMARY KEY");
+                $wpdb->flush();
+            } catch (\Exception $e) {
+                error_log('Failed to drop PRIMARY KEY: ' . $e->getMessage());
+                // Continue anyway, the key may not exist yet
+            }
+            
+            /**
+             * Delete empty config_key entries
+             */
+            $wpdb->query("DELETE FROM `{$table_name}` WHERE `config_key` = ''");
+            
+            /**
+             * Verify deletion
+             */
+            $remaining = (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}` WHERE `config_key` = ''");
+            if ($remaining === 0) {
+                error_log("Successfully removed all empty config_key entries");
+            } else {
+                error_log("WARNING: {$remaining} empty config_key entries still remain");
+            }
+            
+            /**
+             * Try to add back the PRIMARY KEY constraint
+             */
+            try {
+                $wpdb->query("ALTER TABLE `{$table_name}` ADD PRIMARY KEY (`config_key`)");
+                $wpdb->flush();
+            } catch (\Exception $e) {
+                error_log('Failed to add PRIMARY KEY after empty key removal: ' . $e->getMessage());
+                // This will be handled in ensure_config_key_column or fix_config_key_issues
+            }
+        } else {
+            error_log('No empty config_key entries found. Table is clean.');
+        }
+    }
 
     /**
      * Upgrade the database schema to version 2.5.11.40
@@ -57,7 +137,10 @@ class _2_5_11_40 {
         if ( version_compare( $version, '2.5.11.40', '<' ) ) {
             global $wpdb;
             
-            // 1. PRIORITY: Fix config_key column issue first
+            // 0. CRITICAL: Remove empty keys immediately to prevent PRIMARY KEY conflicts
+            $this->remove_empty_config_keys();
+            
+            // 1. Fix config_key column issue
             // This is critical because other parts of the code rely on this column
             $this->ensure_config_key_column();
             
