@@ -1,0 +1,572 @@
+/**
+ * Styles for the Million Dollar Script Setup Wizard
+ * Designed to match the main MDS plugin aesthetic
+ */
+
+/* Main container styles */
+.mds-wizard {
+    max-width: 1000px;
+    margin: 20px auto;
+    font-family: Arial, sans-serif;
+    color: #333;
+    background-color: #fff;
+    box-shadow: 0 0 7px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    border-radius: 20px;
+    position: relative;
+    padding-bottom: 20px;
+    letter-spacing: 0.3px;
+}
+
+/* Header fire effect */
+.mds-wizard-fire-header {
+    pointer-events: auto;
+    z-index: 2;
+    position: relative;
+    display: block;
+    background: #333;
+    width: 100%;
+    overflow: hidden;
+    margin: 0 0 25px 0;
+    border-bottom-right-radius: 20px;
+    padding: 30px 0;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mds-wizard-fire-header h1 {
+    color: #fff;
+    margin: 0;
+    padding: 15px 20px;
+    font-size: 2.4em;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 0.5px;
+    position: relative;
+    z-index: 5;
+    text-shadow: -1px -1px 2px #000,
+                1px -1px 2px #000,
+                -1px 1px 2px #000,
+                2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mds-wizard-fire-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(124, 114, 87, 0.8), rgba(136, 105, 40, 0.6));
+    animation: gradientShift 5s ease infinite alternate;
+    z-index: 3;
+}
+
+@keyframes gradientShift {
+    0% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 0.8;
+    }
+}
+
+.mds-fire-sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 215, 0, 0.8);
+    border-radius: 50%;
+    z-index: 4;
+    animation: sparkle 2s infinite ease-in-out;
+}
+
+/* Fire cursor effect */
+#mds-wizard-fire-cursor {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    pointer-events: none;
+    z-index: 6;
+    opacity: 0;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 200, 0, 0.8) 0%,
+        rgba(255, 160, 0, 0.6) 25%,
+        rgba(255, 140, 0, 0.4) 50%,
+        rgba(255, 120, 0, 0.1) 75%,
+        rgba(255, 100, 0, 0) 100%
+    );
+    filter: blur(3px);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+}
+
+/* Additions for fire cursor embers */
+@keyframes emberPulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+#mds-wizard-fire-cursor::before,
+#mds-wizard-fire-cursor::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 100, 0, 0.7) 0%, /* More reddish ember */
+        rgba(220, 50, 0, 0.4) 50%,
+        rgba(200, 0, 0, 0) 100%
+    );
+    filter: blur(2px);
+    pointer-events: none; /* Make sure they don't interfere with mouse */
+    animation: emberPulse 1.5s infinite ease-in-out;
+}
+
+#mds-wizard-fire-cursor::before {
+    width: 25px;
+    height: 25px;
+    top: 15px; /* Offset position */
+    left: 10px;
+    animation-delay: 0.2s; /* Slightly different timing */
+}
+
+#mds-wizard-fire-cursor::after {
+    width: 35px;
+    height: 35px;
+    top: 60px; /* Different offset */
+    right: 5px;
+    animation-delay: 0.7s; /* Different timing */
+}
+
+@keyframes sparkle {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-20px) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Step indicator */
+.mds-wizard-steps {
+    margin: 0 20px 30px;
+    position: relative;
+    z-index: 10;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    position: relative;
+    z-index: 10;
+}
+
+.step-indicator li {
+    flex: 1;
+    text-align: center;
+    padding: 15px 10px;
+    margin: 0 5px;
+    background-color: transparent;
+    position: relative;
+    font-weight: 600;
+    animation: mdsStepIdle 3s linear infinite alternate;
+    animation-delay: calc(var(--step-index, 0) * 500ms);
+    border-radius: 4px;
+    color: #fff;
+    text-shadow: -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000, 1px 1px 1px #000;
+    transition: all 0.3s ease;
+}
+
+@keyframes mdsStepIdle {
+    0% {
+        background-color: rgba(124, 114, 87, 0.3);
+    }
+    100% {
+        background-color: rgba(124, 114, 87, 0.7);
+    }
+}
+
+.step-indicator li.active {
+    background-color: rgba(136, 105, 40, 0.9);
+    color: #fff;
+    animation: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.step-indicator li.completed {
+    background-color: rgba(70, 180, 80, 0.8);
+    color: #fff;
+    animation: none;
+}
+
+.step-indicator li.active:after,
+.step-indicator li.completed:after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    margin-left: -10px;
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: currentColor transparent transparent transparent;
+}
+
+.step-indicator li.active:after {
+    border-top-color: rgba(136, 105, 40, 0.9);
+}
+
+.step-indicator li.completed:after {
+    border-top-color: rgba(70, 180, 80, 0.8);
+}
+
+.step-indicator li:hover {
+    animation: none;
+    background-color: rgba(124, 114, 87, 0.8);
+    transform: translateY(-2px);
+}
+
+/* Content area */
+.mds-wizard-content {
+    background: #fff;
+    padding: 30px 35px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    margin: 0 20px;
+    position: relative;
+    z-index: 5;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    line-height: 1.6;
+}
+
+.mds-wizard-content h2 {
+    margin-top: 0;
+    padding-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+    color: rgb(136, 105, 40);
+    font-size: 2em;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 0.3px;
+}
+
+.mds-wizard-content p {
+    font-size: 1.15em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Features list on welcome page */
+.mds-wizard-features {
+    list-style-type: none;
+    margin-left: 5px;
+    margin-bottom: 30px;
+}
+
+.mds-wizard-features li {
+    margin-bottom: 12px;
+    padding-left: 30px;
+    position: relative;
+    font-size: 1.1em;
+}
+
+.mds-wizard-features li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: rgb(136, 105, 40);
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+/* Pages list */
+.mds-wizard-pages {
+    margin: 1.5em 0;
+    padding: 0 1em;
+}
+
+.mds-wizard-pages li {
+    margin-bottom: 10px;
+    padding-left: 25px;
+    position: relative;
+}
+
+.mds-wizard-pages li:before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #0073aa;
+    font-weight: bold;
+    font-size: 1.5em;
+    line-height: 0.8;
+}
+
+/* Action buttons area */
+.mds-wizard-navigation {
+    margin-top: 25px;
+    display: flex;
+    justify-content: space-between;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.mds-wizard-navigation .button {
+    min-width: 120px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border-color: rgb(136, 105, 40);
+}
+
+.mds-wizard-navigation .button-primary {
+    background: rgb(136, 105, 40);
+    border-color: rgb(136, 105, 40);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.mds-wizard-navigation .button-primary:hover,
+.mds-wizard-navigation .button-primary:focus {
+    background: rgb(156, 125, 60);
+    border-color: rgb(156, 125, 60);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.mds-wizard-navigation .button-secondary {
+    color: rgb(136, 105, 40);
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mds-wizard-navigation .button-secondary:hover,
+.mds-wizard-navigation .button-secondary:focus {
+    background: rgb(250, 245, 235);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Status messages */
+#mds-create-pages-status,
+#mds-settings-status {
+    margin: 15px 0;
+    padding: 10px 15px;
+    border-radius: 3px;
+}
+
+.mds-status-success {
+    background-color: #ecf7ed;
+    border-left: 4px solid #46b450;
+    color: #2c5934;
+}
+
+.mds-status-error {
+    background-color: #fbeaea;
+    border-left: 4px solid #dc3232;
+    color: #8a2424;
+}
+
+/* Complete step */
+.mds-wizard-complete {
+    text-align: center;
+    padding: 20px 0;
+    position: relative;
+}
+
+.mds-wizard-complete:before {
+    content: '';
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(136, 105, 40, 0.5), transparent);
+    z-index: 1;
+}
+
+.mds-wizard-complete .dashicons {
+    font-size: 5em;
+    height: 1em;
+    width: 1em;
+    color: rgb(136, 105, 40);
+    margin-bottom: 25px;
+    position: relative;
+    z-index: 2;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.mds-wizard-complete h3 {
+    margin-top: 30px;
+    color: rgb(136, 105, 40);
+    font-size: 1.4em;
+}
+
+.mds-wizard-complete p {
+    font-size: 1.2em;
+    line-height: 1.6;
+    max-width: 80%;
+    margin: 0 auto 20px;
+}
+
+.mds-wizard-complete ul {
+    text-align: left;
+    display: inline-block;
+    margin: 20px auto;
+    padding-left: 15px;
+}
+
+.mds-wizard-complete li {
+    margin-bottom: 12px;
+    position: relative;
+    padding-left: 25px;
+}
+
+.mds-wizard-complete li:before {
+    content: '✨';
+    position: absolute;
+    left: 0;
+    color: rgb(136, 105, 40);
+}
+
+/* Promotional Services Sections */
+.mds-wizard-pro-services {
+    margin: 35px 0 25px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.mds-wizard-pro-services h3 {
+    color: rgb(136, 105, 40);
+    font-size: 1.4em;
+    margin: 1.5em 0 0.8em;
+    text-align: center;
+    position: relative;
+}
+
+.mds-wizard-pro-services h3:after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgb(136, 105, 40), transparent);
+}
+
+.mds-promo-box {
+    background: linear-gradient(to bottom, #fff, #f8f9fa);
+    border: 1px solid #ddd;
+    border-left: 4px solid rgb(136, 105, 40);
+    padding: 25px;
+    margin-bottom: 30px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.mds-promo-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-left-width: 6px;
+}
+
+.mds-promo-box h4 {
+    color: rgb(136, 105, 40);
+    margin-top: 0;
+    font-size: 1.3em;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(136, 105, 40, 0.2);
+}
+
+.mds-promo-box p {
+    font-size: 1.05em;
+    line-height: 1.5;
+}
+
+.mds-promo-box ul {
+    margin: 1.2em 0 1.8em;
+}
+
+.mds-promo-box li {
+    margin-bottom: 12px;
+    padding-left: 25px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.mds-promo-box li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: rgb(136, 105, 40);
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.mds-promo-box .promo-cta {
+    text-align: center;
+    margin: 1.8em 0 0.5em;
+}
+
+.mds-promo-box .promo-cta .button {
+    padding: 8px 24px;
+    height: auto;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+    border-color: rgb(136, 105, 40);
+    background-color: rgb(136, 105, 40);
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.mds-promo-box .promo-cta .button:hover,
+.mds-promo-box .promo-cta .button:focus {
+    background-color: rgb(156, 125, 60);
+    border-color: rgb(156, 125, 60);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Forms */
+#mds-wizard-settings-form .form-table th {
+    width: 200px;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 782px) {
+    .step-indicator li {
+        font-size: 12px;
+        padding: 10px 5px;
+    }
+    
+    .mds-wizard-content {
+        padding: 15px 20px;
+    }
+}
