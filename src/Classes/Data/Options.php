@@ -322,6 +322,21 @@ class Options {
 						'no'  => Language::get( 'No' ),
 					] )
 					->set_help_text( Language::get( 'If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL.' ) ),
+
+				// Invert Pixels
+				Field::make( 'checkbox', MDS_PREFIX . 'invert-pixels', Language::get( 'Invert Pixels' ) )
+					->set_default_value( '' ) // Default is 'no' (unchecked)
+					->set_help_text( Language::get( 'If checked, reverses the order pixels are displayed within the grid container.' ) ),
+
+				// Stats Display Mode
+				Field::make( 'select', MDS_PREFIX . 'stats-display-mode', Language::get( 'Stats Display Mode' ) )
+					->set_options( [
+						'hover'  => Language::get( 'Show on Hover' ),
+						'always' => Language::get( 'Always Show' ),
+						'never'  => Language::get( 'Never Show' ),
+					] )
+					->set_default_value( 'hover' )
+					->set_help_text( Language::get( 'Determines how pixel statistics (like views/clicks) are displayed on the grid.' ) ),
 			],
 
 			Language::get( 'Login' ) => [
