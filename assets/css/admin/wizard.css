@@ -156,9 +156,13 @@
 
 /* Step indicator */
 .mds-wizard-steps {
-    margin: 0 20px 30px;
-    position: relative;
-    z-index: 10;
+    background-color: rgba(229, 231, 235, 0.7); /* Light gray background */
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    list-style: none;
+    display: flex;
+    justify-content: space-around;
 }
 
 .step-indicator {
@@ -172,67 +176,39 @@
 }
 
 .step-indicator li {
-    flex: 1;
-    text-align: center;
-    padding: 15px 10px;
-    margin: 0 5px;
-    background-color: transparent;
     position: relative;
-    font-weight: 600;
-    animation: mdsStepIdle 3s linear infinite alternate;
-    animation-delay: calc(var(--step-index, 0) * 500ms);
-    border-radius: 4px;
-    color: #fff;
-    text-shadow: -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000, 1px 1px 1px #000;
-    transition: all 0.3s ease;
-}
-
-@keyframes mdsStepIdle {
-    0% {
-        background-color: rgba(124, 114, 87, 0.3);
-    }
-    100% {
-        background-color: rgba(124, 114, 87, 0.7);
-    }
+    padding: 10px 20px;
+    border-radius: 5px;
+    background-color: transparent; /* Default: transparent */
+    color: #333;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    cursor: default;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
 }
 
 .step-indicator li.active {
-    background-color: rgba(136, 105, 40, 0.9);
+    background-color: #2271b1; /* WordPress blue */
     color: #fff;
-    animation: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(34, 113, 177, 0.3);
+    border-color: #2271b1;
 }
 
 .step-indicator li.completed {
-    background-color: rgba(70, 180, 80, 0.8);
+    background-color: #00a0d2; /* Lighter blue/teal */
     color: #fff;
-    animation: none;
+    border-color: #00a0d2;
 }
 
-.step-indicator li.active:after,
-.step-indicator li.completed:after {
-    content: "";
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    margin-left: -10px;
-    border-width: 10px 10px 0;
-    border-style: solid;
-    border-color: currentColor transparent transparent transparent;
+.step-indicator li.completed::before {
+    content: '✔';
+    margin-right: 8px;
+    font-weight: bold;
 }
 
-.step-indicator li.active:after {
-    border-top-color: rgba(136, 105, 40, 0.9);
-}
-
-.step-indicator li.completed:after {
-    border-top-color: rgba(70, 180, 80, 0.8);
-}
-
-.step-indicator li:hover {
-    animation: none;
-    background-color: rgba(124, 114, 87, 0.8);
-    transform: translateY(-2px);
+.step-indicator li:not(.active):not(.completed):hover {
+    background-color: #f0f0f1; /* Slightly lighter gray on hover */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* Content area */
@@ -384,23 +360,23 @@
 }
 
 .mds-wizard-complete:before {
-    content: '';
+    content: "";
     position: absolute;
-    top: 60px;
+    top: 100px; /* Adjust as needed based on the icon size */
     left: 50%;
     transform: translateX(-50%);
     width: 150px;
     height: 2px;
-    background: linear-gradient(to right, transparent, rgba(136, 105, 40, 0.5), transparent);
+    background: linear-gradient(to right, transparent, rgba(34, 113, 177, 0.5), transparent); /* Use #2271b1 related color */
     z-index: 1;
 }
 
 .mds-wizard-complete .dashicons {
-    font-size: 5em;
+    font-size: 4em; /* Reduced size */
     height: 1em;
     width: 1em;
-    color: rgb(136, 105, 40);
-    margin-bottom: 25px;
+    color: #00a0d2; /* Match completed step color */
+    margin-bottom: 30px; /* Increased margin */
     position: relative;
     z-index: 2;
     animation: pulse 2s infinite;
