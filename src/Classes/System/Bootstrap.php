@@ -254,6 +254,12 @@ class Bootstrap {
 		add_action( 'milliondollarscript_cron_minute', [ '\MillionDollarScript\Classes\System\Cron', 'minute' ] );
 		add_action( 'milliondollarscript_clean_temp_files', [ '\MillionDollarScript\Classes\System\Cron', 'clean_temp_files' ] );
 		add_action( 'milliondollarscript_clean_old_logs', [ '\MillionDollarScript\Classes\System\Cron', 'clean_old_log_files' ] );
+		
+		// Schedule daily renewal reminder emails
+		if ( ! wp_next_scheduled( 'mds_renewal_reminder_cron' ) ) {
+			wp_schedule_event( time(), 'daily', 'mds_renewal_reminder_cron' );
+		}
+		add_action( 'mds_renewal_reminder_cron', [ '\MillionDollarScript\Classes\Email\Emails', 'send_renewal_reminders' ] );
 
 		// Hook for when loaded
 		do_action( 'mds-loaded', $this );

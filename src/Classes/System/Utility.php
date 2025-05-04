@@ -1023,8 +1023,7 @@ class Utility {
 		$size = intval( $currentUsage ) + $currentLimit + ( floor( $width * $height * 4 * 1.5 + 1048576 ) );
 
 		// make sure memory limit is within range
-		$MEMORY_LIMIT = Config::get( 'MEMORY_LIMIT' );
-		$size         = min( max( $size, $MEMORY_LIMIT ), $maxMemoryUsage );
+		$size = min( $size, $maxMemoryUsage );
 
 		//updating the default value
 		ini_set( 'memory_limit', $size );
