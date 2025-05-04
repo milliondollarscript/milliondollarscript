@@ -400,56 +400,25 @@ class Wizard {
         $created_pages = [];
         $errors        = [];
 
-        // Create new pages in WP.
+        // Create new pages in WP using the helper method.
         foreach ( $pages as $page_type => $data ) {
-            // Check if page already exists by checking the option
-            $existing_page_id = Options::get_option( $data['option'] ); // Use Options::get_option to check Carbon field
+            // Check if page already exists by checking the Carbon Fields option
+            $existing_page_id = Options::get_option( $data['option'] );
 
             if ( empty( $existing_page_id ) || ! get_post( $existing_page_id ) ) {
+                // Page doesn't exist or is invalid, try creating it
+                $result = Utility::create_mds_page( $page_type, $data );
 
-                $id = $data['id'] ?? 1;
-                $align = $data['align'] ?? 'center';
-                $width = $data['width'] ?? '100%';
-                $height = $data['height'] ?? 'auto';
-                $title = $data['title'] ?? Language::get( 'MDS Page' ); // Use provided title or a default
-
-                // Use the shortcode format from Admin::create_pages
-                $shortcode = '[milliondollarscript id="%d" align="%s" width="%s" height="%s" type="%s"]';
-                $content   = sprintf( $shortcode, $id, $align, $width, $height, $page_type );
-
-                $page_details = [
-                    'post_type'    => 'page',
-                    'post_status'  => 'publish',
-                    'post_title'   => $title,
-                    'post_content' => $content,
-                ];
-
-                $page_id = wp_insert_post( $page_details, true ); // Pass true for WP_Error on failure
-
-                if ( is_wp_error( $page_id ) ) {
-                    $errors[ $data['option'] ] = $page_id->get_error_message();
+                if ( is_wp_error( $result ) ) {
+                    // Store error message for this specific page
+                    $errors[ $data['option'] ] = $result->get_error_message();
                     continue; // Skip to next page on error
-                } else {
-                    // Add or update the meta value if the current theme or its parent is 'Divi'
-                    $current_theme = wp_get_theme();
-                    if ( 'Divi' === $current_theme->get( 'Name' ) || ( $current_theme->parent() && 'Divi' === $current_theme->parent()->get( 'Name' ) ) ) {
-                        update_post_meta( $page_id, '_et_pb_page_layout', 'et_no_sidebar' );
-                    }
-
-                    // Update the option using the standard WP function with underscore prefix
-                    // We use update_option here because Admin::create_pages does, ensuring consistency.
-                    // Carbon Fields should pick this up automatically or on the next admin load.
-                    update_option( '_' . MDS_PREFIX . $data['option'], $page_id );
-
-                    // Store post modified time for future use.
-                    $modified_time = get_post_modified_time( 'Y-m-d H:i:s', false, $page_id );
-                    update_post_meta( $page_id, '_modified_time', $modified_time );
-
-                    // Store created page details in the format expected by wizard JS
+                } elseif ( $result ) {
+                    // Page created successfully, store details in the required format
                     $created_pages[ $data['option'] ] = [
-                        'id'        => $page_id,
-                        'title'     => $title,
-                        'permalink' => get_permalink( $page_id ),
+                        'id'        => $result,
+                        'title'     => $data['title'], // Use the title from the definition
+                        'permalink' => get_permalink( $result ),
                     ];
                 }
             } else {

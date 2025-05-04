@@ -33,6 +33,7 @@ use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Language\LanguageScanner;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -62,69 +63,43 @@ class Admin {
 	public static function create_pages(): void {
 		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
 
+		// Get page definitions
 		$pages = Utility::get_pages();
 
 		$output = [];
+		$errors = [];
 
-		// Create new pages in WP.
-		foreach ( $pages as $page => $data ) {
-			if ( empty( $data['page_id'] ) ) {
+		// Create new pages in WP using the helper method.
+		foreach ( $pages as $page_type => $data ) {
+			// Check if the page already exists by checking the _option
+			// Note: We check the raw option like this method originally did.
+			$existing_page_id = get_option( '_' . MDS_PREFIX . $data['option'], false );
+			
+			if ( ! $existing_page_id || ! get_post( $existing_page_id ) ) {
+				// Page doesn't exist or isn't valid, try creating it
+				$result = Utility::create_mds_page( $page_type, $data );
 
-				$id = 1;
-				if ( isset( $data['id'] ) ) {
-					$id = $data['id'];
+				if ( is_wp_error( $result ) ) {
+					// Store error message for this specific page
+					$errors[ $data['option'] ] = $result->get_error_message();
+				} elseif ( $result ) {
+					// Store the newly created page ID
+					$output[ $data['option'] ] = $result;
 				}
-
-				$align = 'center';
-				if ( isset( $data['align'] ) ) {
-					$align = $data['align'];
-				}
-
-				$width = '100%';
-				if ( isset( $data['width'] ) ) {
-					$width = $data['width'];
-				}
-
-				$height = 'auto';
-				if ( isset( $data['height'] ) ) {
-					$height = $data['height'];
-				}
-
-				// TODO: Add an option to use blocks for new pages instead of shortcodes:
-				// <!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_preview":"\u003cdiv class=\u0022cf-preview\u0022\u003e\u003cimg src='https://mds.ddev.site/app/plugins/milliondollarscript-two/src/Core/images/bg-main.gif' /\u003e\u003c/div\u003e\u003c!\u002d\u002d /.cf-preview \u002d\u002d\u003e","milliondollarscript_id":"1","milliondollarscript_align":"center","milliondollarscript_width":"100%","milliondollarscript_height":"auto","milliondollarscript_type":"users"}} /-->
-
-				$shortcode = '[milliondollarscript id="%d" align="%s" width="%s" height="%s" type="%s"]';
-				$content   = wp_sprintf( $shortcode, $id, $align, $width, $height, $page );
-
-				$page_id = wp_insert_post( [
-					'post_type'    => 'page',
-					'post_status'  => 'publish',
-					'post_title'   => $data['title'],
-					'post_content' => $content,
-				] );
-
-				if ( is_wp_error( $page_id ) ) {
-					wp_send_json_error( array( 'message' => $page_id->get_error_message() ), 500 );
-				} else {
-					// Add or update the meta value if the current theme or its parent is 'Divi'
-					$current_theme = wp_get_theme();
-					if ( 'Divi' === $current_theme->get( 'Name' ) || ( $current_theme->parent() && 'Divi' === $current_theme->parent()->get( 'Name' ) ) ) {
-						update_post_meta( $page_id, '_et_pb_page_layout', 'et_no_sidebar' );
-					}
-				}
-
-				// Update the option for this page.
-				update_option( '_' . MDS_PREFIX . $data['option'], $page_id );
-
-				// Store post modified time for future use.
-				$modified_time = get_post_modified_time( 'Y-m-d H:i:s', false, $page_id );
-				update_post_meta( $page_id, '_modified_time', $modified_time );
-
-				$output[ $data['option'] ] = $page_id;
+			} else {
+				// Page already exists, add its ID to the output
+				$output[ $data['option'] ] = $existing_page_id;
 			}
 		}
 
-		wp_send_json( $output );
+		// Handle response - send success if no errors, otherwise send error
+		if ( ! empty( $errors ) ) {
+			$error_message = Language::get( 'Some pages could not be created.' ) . ' ' . implode( '; ', $errors );
+			wp_send_json_error( [ 'message' => $error_message, 'created' => $output ], 500 );
+		} else {
+			// Send only the option => id map on success, as originally done
+			wp_send_json( $output ); 
+		}
 	}
 
 	/**

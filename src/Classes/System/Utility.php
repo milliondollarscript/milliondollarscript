@@ -791,7 +791,8 @@ class Utility {
 	public static function get_clicks_for_banner( string $BID = '' ) {
 
 		$sql = "SELECT *, SUM(clicks) AS clk FROM `" . MDS_DB_PREFIX . "clicks` where banner_id='" . intval( $BID ) . "'  GROUP BY banner_id, block_id, user_id, date";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+
 		$row = mysqli_fetch_array( $result );
 
 		if ( $row == null ) {
@@ -1368,4 +1369,80 @@ class Utility {
 		return false;
 	}
 	
+	/**
+	 * Creates a single MDS page with standard shortcode and metadata.
+	 *
+	 * @param string $page_type The type identifier for the page (e.g., 'grid', 'order').
+	 * @param array  $data      The page data array from get_pages() (must include 'option', 'title').
+	 * 
+	 * @return int|\WP_Error The created page ID on success, WP_Error on failure.
+	 */
+	public static function create_mds_page( string $page_type, array $data ) {
+		if ( empty( $data['option'] ) || empty( $data['title'] ) ) {
+			return new \WP_Error( 'missing_data', Language::get( 'Missing required page data (option or title).' ) );
+		}
+
+		$id     = $data['id'] ?? 1;
+		$align  = $data['align'] ?? 'center';
+		$width  = $data['width'] ?? '100%';
+		$height = $data['height'] ?? 'auto';
+		$title  = $data['title'];
+		$option = $data['option'];
+
+		// Construct the standard shortcode
+		$shortcode = '[milliondollarscript id="%d" align="%s" width="%s" height="%s" type="%s"]';
+		$content   = sprintf( $shortcode, $id, $align, $width, $height, $page_type );
+
+		$page_details = [
+			'post_type'    => 'page',
+			'post_status'  => 'publish',
+			'post_title'   => $title,
+			'post_content' => $content,
+		];
+
+		$page_id = wp_insert_post( $page_details, true ); // Pass true for WP_Error on failure
+
+		if ( is_wp_error( $page_id ) ) {
+			return $page_id; // Return the error object
+		}
+
+		// Add Divi theme compatibility meta
+		$current_theme = wp_get_theme();
+		if ( 'Divi' === $current_theme->get( 'Name' ) || ( $current_theme->parent() && 'Divi' === $current_theme->parent()->get( 'Name' ) ) ) {
+			update_post_meta( $page_id, '_et_pb_page_layout', 'et_no_sidebar' );
+		}
+
+		// Update the option using the standard WP function with underscore prefix
+		update_option( '_' . MDS_PREFIX . $option, $page_id );
+
+		// Store post modified time
+		$modified_time = get_post_modified_time( 'Y-m-d H:i:s', false, $page_id );
+		update_post_meta( $page_id, '_modified_time', $modified_time );
+
+		return $page_id; // Return the successfully created page ID
+	}
+
+	/**
+	 * Check if the Million Dollar Script custom post type exists.
+{{ ... }}
+
+```
+
+Follow these instructions to make the following change to my code document.
+
+Instruction: Fix EndOfFile lint error by adding the closing brace '}' for the Utility class at the very end of the file.
+
+Code Edit:
+```
+{{ ... }}
+		return $page_id; // Return the successfully created page ID
+	}
+
+	/**
+	 * Check if the Million Dollar Script custom post type exists.
+	{{ ... }}
+	 */
+	public static function check_cpt_exists() {
+		return post_type_exists( MDS_POST_TYPE );
+	}
 }
