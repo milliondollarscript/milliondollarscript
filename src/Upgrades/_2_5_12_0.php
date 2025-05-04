@@ -52,9 +52,6 @@ class _2_5_12_0 {
         if ( version_compare( $version, '2.5.12.0', '<' ) ) {
             global $wpdb;
             
-            // Bootstrap Carbon Fields before migrating options
-            Options::load();
-            
             // Check if the config table exists
             $table_name = MDS_DB_PREFIX . 'config';
             
