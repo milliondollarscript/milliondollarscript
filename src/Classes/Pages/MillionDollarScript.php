@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\Pages;
 
 use MillionDollarScript\Classes\Data\Database;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -105,20 +106,20 @@ class MillionDollarScript {
 
 			<?php
 			// Get times
-			$time_gmt    = gmdate( 'Y-m-d H:i:s' ) . ' GMT';
+			$time_gmt    = gmdate( 'Y-m-d H:i:s' );
 			$time_server = date( 'Y-m-d H:i:s' );
 			$time_local  = '<span id="mdsLocalTime"></span>';
 			// Get last updated date
-			$last_updated_date = get_mds_build_date(true);
+			$last_updated_date = Utility::get_mds_build_date(true);
 			$last_updated_text = $last_updated_date ? Language::get_replace('Last Updated: %s', '%s', $last_updated_date) : Language::get('Last Updated: N/A');
 
 			?>
             <div class="milliondollarscript-time milliondollarscript-section">
 
-                <div class="mds-time mds-gmt"><?php Language::out_replace('GMT: %s', '%s', esc_html( $time_gmt ) ); ?></div>
-                <div class="mds-time mds-server"><?php Language::out_replace('Server: %s', '%s', esc_html( $time_server ) ); ?></div>
-                <div class="mds-time mds-local"><?php Language::out_replace('Local: %s', '%s', $time_local); // WPCS: XSS ok. ?></div>
-                <div class="mds-time mds-build-date"><?php echo esc_html( $last_updated_text ); ?></div>
+				<div class="mds-time mds-build-date"><?php echo esc_html( $last_updated_text ); ?></div>
+				<div class="mds-time mds-gmt"><?php Language::out_replace('GMT: %s', '%s', esc_html( $time_gmt ) ); ?></div>
+				<div class="mds-time mds-server"><?php Language::out_replace('Server: %s', '%s', esc_html( $time_server ) ); ?></div>
+				<div class="mds-time mds-local"><?php Language::out_replace('Local: %s', '%s', $time_local); ?></div>
                 <script>
 					const localTime = new Date();
 					const formattedLocalTime = localTime.getFullYear() + '-'

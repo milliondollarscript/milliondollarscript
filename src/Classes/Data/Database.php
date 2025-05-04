@@ -108,8 +108,6 @@ class Database {
 	 * @throws \Exception
 	 */
 	public function upgrade(): bool|string {
-		require_once MDS_CORE_PATH . 'include/version.php';
-
 		$db_version = $this->get_dbver();
 
 		$current_version = DatabaseStatic::convert_version( $db_version );

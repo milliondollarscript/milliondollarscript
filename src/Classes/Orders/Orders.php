@@ -1187,7 +1187,7 @@ class Orders {
 			// Function ran recently, exit to prevent overlap
 			return;
 		}
-		
+
 		// Update the timestamp immediately to act as a lock
 		update_option( 'mds_last_expire_run', $unix_time );
 
