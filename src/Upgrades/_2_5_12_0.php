@@ -52,6 +52,9 @@ class _2_5_12_0 {
         if ( version_compare( $version, '2.5.12.0', '<' ) ) {
             global $wpdb;
             
+            // Bootstrap Carbon Fields before migrating options
+            Options::load();
+            
             // Check if the config table exists
             $table_name = MDS_DB_PREFIX . 'config';
             
@@ -76,36 +79,70 @@ class _2_5_12_0 {
     private function migrate_config_to_options(array $config_values): void {
         // Map of config_key values to their new option names and tabs
         $config_map = [
-            // General configuration
-            'URL_ENABLED' => ['option' => 'url-enabled', 'tab' => 'general'],
-            'ENABLE_MOUSEOVER' => ['option' => 'enable-mouseover', 'tab' => 'general'],
-            'ENABLE_GRID_HOME_PAGE' => ['option' => 'enable-grid-home-page', 'tab' => 'general'],
-            'CURRENCY' => ['option' => 'currency', 'tab' => 'general'],
-            'CURRENCY_SYMBOL' => ['option' => 'currency-symbol', 'tab' => 'general'],
-            'CURRENCY_POSITION' => ['option' => 'currency-position', 'tab' => 'general'],
-            'DECIMAL_POINT' => ['option' => 'decimal-point', 'tab' => 'general'],
-            'THOUSANDS_SEP' => ['option' => 'thousands-separator', 'tab' => 'general'],
-            'DECIMAL_PLACES' => ['option' => 'decimal-places', 'tab' => 'general'],
-            'DATE_FORMAT' => ['option' => 'date-format', 'tab' => 'general'],
-            'TIME_FORMAT' => ['option' => 'time-format', 'tab' => 'general'],
-            'GMT_DIF' => ['option' => 'gmt-difference', 'tab' => 'general'],
+            // Options page - pages and emails already handled
             
-            // Display options
-            'ENABLE_CLOAKING' => ['option' => 'enable-cloaking', 'tab' => 'display'],
-            'INVERT_PIXELS' => ['option' => 'invert-pixels', 'tab' => 'display'],
-            'ADVANCED_CLICK_COUNT' => ['option' => 'advanced-click-count', 'tab' => 'display'],
-            'LINK_TARGET' => ['option' => 'link-target', 'tab' => 'display'],
-            'NO_FOLLOW' => ['option' => 'no-follow', 'tab' => 'display'],
+            // Grid tab (display, performance, and grid specific settings)
+            'OUTPUT_JPEG'               => ['option' => 'output-jpeg', 'tab' => 'grid'],
+            'JPEG_QUALITY'              => ['option' => 'jpeg-quality', 'tab' => 'grid'],
+            'INTERLACE_SWITCH'          => ['option' => 'interlace-switch', 'tab' => 'grid'],
+            'DISPLAY_PIXEL_BACKGROUND'  => ['option' => 'display-pixel-background', 'tab' => 'grid'],
+            'INVERT_PIXELS'             => ['option' => 'invert-pixels', 'tab' => 'grid'],
+            'STATS_DISPLAY_MODE'        => ['option' => 'stats-display-mode', 'tab' => 'grid'],
+            'MDS_AGRESSIVE_CACHE'       => ['option' => 'aggressive-cache', 'tab' => 'grid'],
+            'USE_AJAX'                  => ['option' => 'use-ajax', 'tab' => 'grid'],
+            'MDS_RESIZE'                => ['option' => 'resize', 'tab' => 'grid'],
+            'BLOCK_SELECTION_MODE'      => ['option' => 'block-selection-mode', 'tab' => 'grid'],
             
-            // Email configurations
-            'EMAIL_ADMIN_PAYMENT_NOTIFY' => ['option' => 'email-admin-payment-notify', 'tab' => 'email'],
-            'EMAIL_USER_ORDER_COMPLETED' => ['option' => 'email-user-order-completed', 'tab' => 'email'],
-            'EMAIL_USER_ORDER_PENDING' => ['option' => 'email-user-order-pending', 'tab' => 'email'],
+            // Popup tab settings
+            'ENABLE_MOUSEOVER'          => ['option' => 'enable-mouseover', 'tab' => 'popup'],
+            'TOOLTIP_TRIGGER'           => ['option' => 'tooltip-trigger', 'tab' => 'popup'],
+            
+            // URL & Analytics tab settings
+            'ENABLE_CLOAKING'           => ['option' => 'enable-cloaking', 'tab' => 'url-analytics'],
+            'VALIDATE_LINK'             => ['option' => 'validate-link', 'tab' => 'url-analytics'],
+            'ADVANCED_CLICK_COUNT'      => ['option' => 'advanced-click-count', 'tab' => 'url-analytics'],
+            'ADVANCED_VIEW_COUNT'       => ['option' => 'advanced-view-count', 'tab' => 'url-analytics'],
+            'REDIRECT_SWITCH'           => ['option' => 'redirect-switch', 'tab' => 'url-analytics'],
+            'REDIRECT_URL'              => ['option' => 'redirect-url', 'tab' => 'url-analytics'],
+            
+            // User Interface tab settings
+            'MDS_PIXEL_TEMPLATE'        => ['option' => 'mds-pixel-template', 'tab' => 'user-interface'],
+            'EXCLUDE_FROM_SEARCH'       => ['option' => 'exclude-from-search', 'tab' => 'user-interface'],
+            'DYNAMIC_ID'                => ['option' => 'dynamic-id', 'tab' => 'user-interface'],
+            
+            // Checkout & Orders tab settings
+            'CHECKOUT_URL'              => ['option' => 'checkout-url', 'tab' => 'checkout-orders'],
+            'THANK_YOU_PAGE'            => ['option' => 'thank-you-page', 'tab' => 'checkout-orders'],
+            'CONFIRM_ORDERS'            => ['option' => 'confirm-orders', 'tab' => 'checkout-orders'],
+            
+            // Order Timing tab settings
+            'MINUTES_RENEW'             => ['option' => 'minutes-renew', 'tab' => 'order-timing'],
+            'MINUTES_CONFIRMED'         => ['option' => 'minutes-confirmed', 'tab' => 'order-timing'],
+            'MINUTES_UNCONFIRMED'       => ['option' => 'minutes-unconfirmed', 'tab' => 'order-timing'],
+            'MINUTES_CANCEL'            => ['option' => 'minutes-cancel', 'tab' => 'order-timing'],
+            
+            // Email page toggles
+            'EMAIL_USER_ORDER_CONFIRMED'  => ['option' => 'email-user-order-confirmed', 'tab' => 'email'],
+            'EMAIL_ADMIN_ORDER_CONFIRMED' => ['option' => 'email-admin-order-confirmed', 'tab' => 'email'],
+            'EMAIL_USER_ORDER_COMPLETED'  => ['option' => 'email-user-order-completed', 'tab' => 'email'],
             'EMAIL_ADMIN_ORDER_COMPLETED' => ['option' => 'email-admin-order-completed', 'tab' => 'email'],
-            'EMAIL_ADMIN_ORDER_PENDING' => ['option' => 'email-admin-order-pending', 'tab' => 'email'],
+            'EMAIL_USER_ORDER_PENDED'     => ['option' => 'email-user-order-pended', 'tab' => 'email'],
+            'EMAIL_ADMIN_ORDER_PENDED'    => ['option' => 'email-admin-order-pended', 'tab' => 'email'],
+            'EMAIL_USER_ORDER_EXPIRED'    => ['option' => 'email-user-order-expired', 'tab' => 'email'],
+            'EMAIL_ADMIN_ORDER_EXPIRED'   => ['option' => 'email-admin-order-expired', 'tab' => 'email'],
+            'EMAIL_USER_ORDER_DENIED'     => ['option' => 'email-user-order-denied', 'tab' => 'email'],
+            'EMAIL_ADMIN_ORDER_DENIED'    => ['option' => 'email-admin-order-denied', 'tab' => 'email'],
+            'EMAIL_ADMIN_PUBLISH_NOTIFY'  => ['option' => 'email-admin-publish-notify', 'tab' => 'email'],
+            'EMAIL_USER_EXPIRE_WARNING'   => ['option' => 'email-user-renewal-reminder', 'tab' => 'email'],
             
-            // System settings - keep as separate WP options not in Carbon Fields
-            'dbver' => ['option' => MDS_PREFIX . 'db-version', 'tab' => 'system', 'wp_option' => true],
+            // Email Settings tab
+            'EMAILS_DAYS_KEEP'          => ['option' => 'emails-days-keep', 'tab' => 'email-settings'],
+            'EMAILS_PER_BATCH'           => ['option' => 'emails-per-batch', 'tab' => 'email-settings'],
+            'EMAILS_MAX_RETRY'           => ['option' => 'emails-max-retry', 'tab' => 'email-settings'],
+            'EMAILS_ERROR_WAIT'          => ['option' => 'emails-error-wait', 'tab' => 'email-settings'],
+            
+            // System-level stored with update_option
+            'dbver'     => ['option' => MDS_PREFIX . 'db-version', 'tab' => 'system', 'wp_option' => true],
             'BUILD_DATE' => ['option' => MDS_PREFIX . 'build-date', 'tab' => 'system', 'wp_option' => true],
         ];
         
@@ -120,7 +157,8 @@ class _2_5_12_0 {
                 
                 // For system-level options that shouldn't be in Carbon Fields
                 if (isset($map_data['wp_option']) && $map_data['wp_option']) {
-                    update_option($map_data['option'], $value);
+                    // Store system options directly
+                    Options::update_option($map_data['option'], $value);
                     continue;
                 }
                 
@@ -128,8 +166,8 @@ class _2_5_12_0 {
                 // Convert value types as needed
                 $converted_value = $this->convert_value_type($key, $value);
                 
-                // Use WordPress update_option with Carbon Fields naming convention
-                update_option('_' . MDS_PREFIX . $map_data['option'], $converted_value);
+                // Store via Carbon Fields API
+                Options::update_option($map_data['option'], $converted_value);
             } else {
                 // For any unmapped config values, store them in a legacy section
                 // to ensure no configuration is lost
@@ -137,8 +175,8 @@ class _2_5_12_0 {
                 // Create a sanitized option name from the config key
                 $option_name = sanitize_key(strtolower(str_replace('_', '-', $key)));
                 
-                // Store it with a legacy prefix for later identification
-                update_option('_' . MDS_PREFIX . 'legacy-' . $option_name, $value);
+                // Store legacy values via Carbon Fields
+                Options::update_option('legacy-' . $option_name, $value);
                 
                 // Log migration of unmapped config for reference
                 error_log("MDS Migration: Unmapped config key '{$key}' stored as legacy option");
@@ -155,23 +193,32 @@ class _2_5_12_0 {
      * @return mixed Converted value
      */
     private function convert_value_type(string $key, $value) {
-        // Boolean values
+        // Boolean config keys (YES/NO toggles)
         $boolean_keys = [
-            'URL_ENABLED', 'ENABLE_MOUSEOVER', 'ENABLE_GRID_HOME_PAGE', 
-            'ENABLE_CLOAKING', 'INVERT_PIXELS', 'ADVANCED_CLICK_COUNT',
-            'NO_FOLLOW', 'EMAIL_ADMIN_PAYMENT_NOTIFY', 'EMAIL_USER_ORDER_COMPLETED',
-            'EMAIL_USER_ORDER_PENDING', 'EMAIL_ADMIN_ORDER_COMPLETED', 
-            'EMAIL_ADMIN_ORDER_PENDING'
+            'INTERLACE_SWITCH', 'DISPLAY_PIXEL_BACKGROUND', 'ENABLE_MOUSEOVER',
+            'TOOLTIP_TRIGGER', 'ENABLE_CLOAKING', 'VALIDATE_LINK',
+            'ADVANCED_CLICK_COUNT', 'ADVANCED_VIEW_COUNT', 'INVERT_PIXELS',
+            'MDS_AGRESSIVE_CACHE', 'MDS_RESIZE', 'BLOCK_SELECTION_MODE',
+            'REDIRECT_SWITCH',
+            'EMAIL_USER_ORDER_CONFIRMED', 'EMAIL_ADMIN_ORDER_CONFIRMED',
+            'EMAIL_USER_ORDER_COMPLETED', 'EMAIL_ADMIN_ORDER_COMPLETED',
+            'EMAIL_USER_ORDER_PENDED', 'EMAIL_ADMIN_ORDER_PENDED',
+            'EMAIL_USER_ORDER_EXPIRED', 'EMAIL_ADMIN_ORDER_EXPIRED',
+            'EMAIL_USER_ORDER_DENIED', 'EMAIL_ADMIN_ORDER_DENIED',
+            'EMAIL_ADMIN_PUBLISH_NOTIFY', 'EMAIL_USER_EXPIRE_WARNING'
         ];
-        
-        // Integer values
+
+        // Integer config keys
         $integer_keys = [
-            'DECIMAL_PLACES', 'GMT_DIF'
+            'JPEG_QUALITY', 'MINUTES_RENEW', 'MINUTES_CONFIRMED',
+            'MINUTES_UNCONFIRMED', 'MINUTES_CANCEL', 'EMAILS_DAYS_KEEP',
+            'EMAILS_PER_BATCH', 'EMAILS_MAX_RETRY', 'EMAILS_ERROR_WAIT'
         ];
         
         // Convert based on key type
         if (in_array($key, $boolean_keys)) {
-            return in_array(strtoupper($value), ['YES', 'Y', '1', 'TRUE']);
+            // Carbon Fields stores checked checkboxes as 'yes'
+            return in_array(strtoupper($value), ['YES', 'Y', '1', 'TRUE']) ? 'yes' : '';
         } elseif (in_array($key, $integer_keys)) {
             return intval($value);
         }
