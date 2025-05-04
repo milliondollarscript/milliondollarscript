@@ -232,7 +232,7 @@ class Options {
 				Field::make( 'radio', MDS_PREFIX . 'redirect-switch', Language::get( 'Redirect when clicking available blocks?' ) )
 					->set_options( [
 						'YES' => Language::get( 'Yes - When an available block is clicked, redirect to specific URL' ),
-						'NO'  => Language::get( 'No (default)' ),
+						'NO'  => Language::get( 'No' ),
 					] )
 					->set_default_value( 'NO' ),
 
@@ -437,6 +437,31 @@ class Options {
 					->set_help_text( Language::get( 'Enabling this will prevent users from editing their orders after they are approved or completed.' ) ),
 			],
 
+			Language::get( 'Order Timing' ) => [
+				// Expired Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-renew', Language::get( 'Minutes to Keep Expired Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '10080' )
+					->set_help_text( Language::get( 'How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
+				// Confirmed Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-confirmed', Language::get( 'Minutes to Keep Confirmed Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '10080' )
+					->set_help_text( Language::get( 'How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
+
+				// Unconfirmed Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-unconfirmed', Language::get( 'Minutes to Keep Unconfirmed Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '60' )
+					->set_help_text( Language::get( 'How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant.' ) ),
+
+				// Cancelled Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-cancel', Language::get( 'Minutes to Keep Cancelled Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '4320' )
+					->set_help_text( Language::get( 'How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed.' ) ),
+			],
+
 			Language::get( 'Fields' ) => [
 
 				// Make Popup Text Optional
@@ -500,31 +525,6 @@ class Options {
 					] )
 					->set_default_value( 'YES' )
 					->set_help_text( Language::get( 'Enables detailed view tracking statistics.' ) ),
-			],
-
-			Language::get( 'Order Timing' ) => [
-				// Expired Orders
-				Field::make( 'text', MDS_PREFIX . 'minutes-renew', Language::get( 'Minutes to Keep Expired Orders' ) )
-					->set_attribute( 'type', 'number' )
-					->set_default_value( '10080' )
-					->set_help_text( Language::get( 'How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
-				// Confirmed Orders
-				Field::make( 'text', MDS_PREFIX . 'minutes-confirmed', Language::get( 'Minutes to Keep Confirmed Orders' ) )
-					->set_attribute( 'type', 'number' )
-					->set_default_value( '10080' )
-					->set_help_text( Language::get( 'How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
-
-				// Unconfirmed Orders
-				Field::make( 'text', MDS_PREFIX . 'minutes-unconfirmed', Language::get( 'Minutes to Keep Unconfirmed Orders' ) )
-					->set_attribute( 'type', 'number' )
-					->set_default_value( '60' )
-					->set_help_text( Language::get( 'How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant.' ) ),
-
-				// Cancelled Orders
-				Field::make( 'text', MDS_PREFIX . 'minutes-cancel', Language::get( 'Minutes to Keep Cancelled Orders' ) )
-					->set_attribute( 'type', 'number' )
-					->set_default_value( '4320' )
-					->set_help_text( Language::get( 'How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed.' ) ),
 			],
 
 			Language::get( 'System' ) => [

@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.12.20\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.12.22\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-04 05:31:03\n"
-"PO-Revision-Date: 2025-05-04 05:31:03\n"
-"X-Generator: Million Dollar Script Two 2.5.12.20\n"
+"POT-Creation-Date: 2025-05-04 05:40:49\n"
+"PO-Revision-Date: 2025-05-04 05:40:49\n"
+"X-Generator: Million Dollar Script Two 2.5.12.22\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1143,9 +1143,6 @@ msgstr ""
 msgid "Yes - When an available block is clicked, redirect to specific URL"
 msgstr ""
 
-msgid "No (default)"
-msgstr ""
-
 msgid "Redirect URL"
 msgstr ""
 
@@ -1332,6 +1329,33 @@ msgstr ""
 msgid "Enabling this will prevent users from editing their orders after they are approved or completed."
 msgstr ""
 
+msgid "Order Timing"
+msgstr ""
+
+msgid "Minutes to Keep Expired Orders"
+msgstr ""
+
+msgid "How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Confirmed Orders"
+msgstr ""
+
+msgid "How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Unconfirmed Orders"
+msgstr ""
+
+msgid "How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Cancelled Orders"
+msgstr ""
+
+msgid "How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed."
+msgstr ""
+
 msgid "Fields"
 msgstr ""
 
@@ -1387,33 +1411,6 @@ msgid "Yes - Views (clicking the block to trigger the popup) will be counted by 
 msgstr ""
 
 msgid "Enables detailed view tracking statistics."
-msgstr ""
-
-msgid "Order Timing"
-msgstr ""
-
-msgid "Minutes to Keep Expired Orders"
-msgstr ""
-
-msgid "How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
-msgstr ""
-
-msgid "Minutes to Keep Confirmed Orders"
-msgstr ""
-
-msgid "How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
-msgstr ""
-
-msgid "Minutes to Keep Unconfirmed Orders"
-msgstr ""
-
-msgid "How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant."
-msgstr ""
-
-msgid "Minutes to Keep Cancelled Orders"
-msgstr ""
-
-msgid "How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed."
 msgstr ""
 
 msgid "System"
