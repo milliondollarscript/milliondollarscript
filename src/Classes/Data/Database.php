@@ -114,11 +114,6 @@ class Database {
 
 		$current_version = DatabaseStatic::convert_version( $db_version );
 
-		// Change config key column to config_key here since we're going to use it.
-		if ( version_compare( MDS_DB_VERSION, $current_version, '>' ) ) {
-			$this->alter_config_key();
-		}
-
 		// Check for an older version and don't upgrade from them.
 		if ( version_compare( $current_version, '1.3', '<' ) ) {
 			$error_message = wp_sprintf( Language::get( 'You must upgrade the plugin to 2.3.5 before updating to %s.' ), MDS_VERSION );
@@ -183,42 +178,47 @@ class Database {
 	 * @return string
 	 */
 	public function get_dbver(): string {
-		if ( get_option( MDS_PREFIX . 'activation' ) == '1' ) {
-			// If plugin is currently being activated check if the config table exists.
-			$table_name = MDS_DB_PREFIX . "config";
-			if ( ! DatabaseStatic::table_exists( $table_name ) ) {
-				// If the config table doesn't exist then this is the first time the plugin has been activated so return the database version of the plugin.
-				return MDS_DB_VERSION;
-			}
+		// Try to get the version from WordPress options.
+		$version = get_option( 'mds_db_version', false );
+
+		if ( false === $version ) {
+			// Option doesn't exist, likely first activation or upgrade from very old version.
+			// Set the option to the current plugin DB version.
+			add_option( 'mds_db_version', MDS_DB_VERSION );
+			return MDS_DB_VERSION; // Return current version
 		}
 
-		$this->alter_config_key();
-
-		global $wpdb;
-
-		$sql    = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key`='dbver';";
-		$result = $wpdb->get_var( $sql );
-		if ( $wpdb->num_rows == 0 ) {
-
-			// add database version config value
-			$wpdb->insert(
-				MDS_DB_PREFIX . 'config',
-				[
-					'config_key' => 'dbver',
-					'val'        => MDS_DB_VERSION
-				],
-				[
-					'%s',
-					'%s'
-				]
-			);
-
-			$version = MDS_DB_VERSION;
-		} else {
-			$version = $result;
-		}
-
+		// Return the version stored in options.
 		return $version;
+	}
+
+	/**
+	 * Update database version
+	 *
+	 * @param string $version The new version number.
+	 * @return void
+	 */
+	public function update_dbver( string $version ): void {
+		update_option( 'mds_db_version', $version );
+	}
+
+	/**
+	 * Initialize database settings
+	 *
+	 * @return void
+	 */
+	public function initialize_database_settings(): void {
+		// Check if initialization has already been done
+		if ( get_option( 'mds_db_initialized' ) ) {
+			return;
+		}
+
+		// This should only run ONCE during the very first activation.
+		// Sets the initial DB version in the options table.
+		$this->get_dbver(); // This ensures the mds_db_version option is created if it doesn't exist.
+
+		// Mark initialization as done
+		update_option( 'mds_db_initialized', true );
 	}
 
 	/**
@@ -294,27 +294,42 @@ class Database {
 	}
 
 	/**
-	 * Alter the config key from 'key' to 'config_key'.
+	 * Set a value in the configuration table - DEPRECATED.
 	 *
+	 * @deprecated 2.5.12 Use Options::set() or update_option() instead.
+	 *
+	 * @param string $key The configuration key.
+	 * @param string $val The value to set.
 	 * @return void
 	 */
-	public function alter_config_key(): void {
-		global $wpdb;
-		$table_name = MDS_DB_PREFIX . "config";
-
-		if ( DatabaseStatic::table_exists( $table_name ) ) {
-			// Check if 'key' column exists
-			$key_column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `{$table_name}` LIKE 'key'" );
-
-			if ( $key_column_exists ) {
-				// Check if 'key' has already been altered to 'config_key'
-				$config_key_column_exists = $wpdb->get_var( "SHOW COLUMNS FROM `{$table_name}` LIKE 'config_key'" );
-
-				if ( ! $config_key_column_exists ) {
-					$wpdb->query( "ALTER TABLE `{$table_name}` CHANGE `key` `config_key` VARCHAR(100) NOT NULL DEFAULT ''" );
-					$wpdb->flush();
-				}
-			}
+	public function set_config( string $key, string $val ): void {
+		_deprecated_function( __METHOD__, '2.5.12', 'Options::set() or update_option()' );
+		// Only handle the known 'dbver' case for backward compatibility.
+		if ( $key === 'dbver' ) {
+			update_option( 'mds_db_version', $val );
+		} else {
+			// Do nothing for other keys, as the original table is gone.
+			// error_log('Deprecated set_config called for unknown key: ' . $key);
 		}
+	}
+
+	/**
+	 * Get a value from the configuration table - DEPRECATED.
+	 *
+	 * @deprecated 2.5.12 Use Options::get() or get_option() instead.
+	 *
+	 * @param string $key The configuration key.
+	 * @param mixed  $default The default value to return if the key is not found.
+	 * @return mixed The configuration value or the default.
+	 */
+	public function get_config( string $key, $default = null ) {
+		_deprecated_function( __METHOD__, '2.5.12', 'Options::get() or get_option()' );
+		// Only handle the known 'dbver' case for backward compatibility.
+		if ( $key === 'dbver' ) {
+			return get_option( 'mds_db_version', $default );
+		}
+
+		// Return default for any other key, as the original table is gone.
+		return $default;
 	}
 }
