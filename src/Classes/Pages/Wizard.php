@@ -230,16 +230,25 @@ class Wizard {
         ?>
         <h2><?php echo Language::get('Create Pages'); ?></h2>
         <p><?php echo Language::get('Million Dollar Script requires several WordPress pages to function correctly. Click the button below to automatically create these pages:'); ?></p>
-        
+
         <ul class="mds-wizard-pages">
             <li><?php echo Language::get('Main Grid Page - Displays your pixel grid'); ?></li>
             <li><?php echo Language::get('Order Page - For processing orders'); ?></li>
             <li><?php echo Language::get('Checkout Page - For checkout process'); ?></li>
             <li><?php echo Language::get('Pixels Page - For viewing purchased pixels'); ?></li>
         </ul>
-        
+
+        <p class="mds-wizard-note">
+            <?php echo Language::get('Note: MDS also creates pages for managing settings (like Options, Emails, Logs) accessible via the admin dashboard.'); ?><br>
+            <?php echo Language::get_replace(
+                'To add the main grid or order pages to your site\'s navigation, you\'ll need to edit your menu. Learn how: <a href="%WP_MENU_URL%" target="_blank">WordPress Menus</a>. If using a block theme, see <a href="%FSE_URL%" target="_blank">Full Site Editing</a>.',
+                ['%WP_MENU_URL%', '%FSE_URL%'],
+                ['https://wordpress.org/documentation/article/appearance-menus-screen/', 'https://wordpress.org/documentation/article/site-editor/']
+            ); ?>
+        </p>
+
         <div id="mds-create-pages-status"></div>
-        
+
         <div class="mds-wizard-navigation">
             <a href="<?php echo esc_url(admin_url('index.php?page=' . self::PAGE_SLUG . '&step=welcome')); ?>" class="button"><?php echo Language::get('Back'); ?></a>
             <button id="mds-create-pages-button" class="button button-primary"><?php echo Language::get('Create Pages'); ?></button>
@@ -335,7 +344,7 @@ class Wizard {
             
             <div class="mds-wizard-pro-services">
                 <h3><?php echo Language::get('Enhance Your Million Dollar Script Experience'); ?></h3>
-                
+
                 <div class="mds-promo-box">
                     <h4><?php echo Language::get('Custom Development Services'); ?></h4>
                     <p><?php echo Language::get('Need custom features or integrations? Our development team can help:'); ?></p>
@@ -354,20 +363,12 @@ class Wizard {
                     </p>
                 </div>
                 
-                <div class="mds-promo-box">
-                    <h4><?php echo Language::get('Professional Installation Service'); ?></h4>
-                    <p><?php echo Language::get('Want an expert to handle your installation? Our premium service includes:'); ?></p>
-                    
-                    <ul>
-                        <li><?php echo Language::get('Hassle-free setup by the plugin creator'); ?></li>
-                        <li><?php echo Language::get('Integration with your existing WordPress site'); ?></li>
-                        <li><?php echo Language::get('Custom configuration to match your requirements'); ?></li>
-                        <li><?php echo Language::get('One month of priority support included'); ?></li>
-                    </ul>
-                    
+                <div class="mds-promo-box mds-hosting-promo">
+                    <h4><?php echo Language::get('Need Reliable Hosting?'); ?></h4>
+                    <p><?php echo Language::get('Power your Million Dollar Script site with fast, affordable hosting. Hostinger offers great performance and value, perfect for getting your pixel grid online.'); ?></p>
                     <p class="promo-cta">
-                        <a href="https://milliondollarscript.com/install-service/" target="_blank" class="button button-primary">
-                            <?php echo Language::get('Get Professional Installation'); ?>
+                        <a href="https://hostinger.com?REFERRALCODE=BRJPALEBR5IO" target="_blank" class="button button-secondary">
+                            <?php echo Language::get('Check out Hostinger Deals'); ?>
                         </a>
                     </p>
                 </div>
