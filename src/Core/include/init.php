@@ -27,18 +27,11 @@
  */
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
 require_once MDS_CORE_PATH . 'include/database.php';
-require_once MDS_BASE_PATH . 'src/Classes/Data/Config.php';
-
-$MDSConfig = Config::load();
-
-if ( isset( $MDSConfig['MEMORY_LIMIT'] ) ) {
-	@ini_set( 'memory_limit', $MDSConfig['MEMORY_LIMIT'] );
-}
-
 require_once MDS_CORE_PATH . 'include/wp_functions.php';
 mds_load_wp();
 

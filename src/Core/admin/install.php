@@ -44,7 +44,6 @@ function install_db(): void {
 		'banners'      => MDS_DB_PREFIX . 'banners',
 		'blocks'       => MDS_DB_PREFIX . 'blocks',
 		'clicks'       => MDS_DB_PREFIX . 'clicks',
-		'config'       => MDS_DB_PREFIX . 'config',
 		'mail_queue'   => MDS_DB_PREFIX . 'mail_queue',
 		'orders'       => MDS_DB_PREFIX . 'orders',
 		'packages'     => MDS_DB_PREFIX . 'packages',
@@ -126,19 +125,6 @@ function install_db(): void {
     `clicks` INT NOT NULL,
     PRIMARY KEY  (`banner_id`,`block_id`,`date`)
 ) $charset_collate;" );
-
-	// Config table
-	if ( $wpdb->get_var( "SHOW TABLES LIKE '{$tables['config']}'" ) != $tables['config'] ) {
-		// Create config table for fresh install
-		dbDelta( "CREATE TABLE `{$tables['config']}` (
-			`config_key` VARCHAR(255) NOT NULL DEFAULT '',
-			`val` VARCHAR(255) NOT NULL DEFAULT '',
-			PRIMARY KEY  (`config_key`)
-		) $charset_collate;" );
-	} else {
-		// Repair config table on upgrade
-		Config::verify_and_repair_config_table();
-	}
 
 	// Mail queue table
 	dbDelta( "CREATE TABLE `{$tables['mail_queue']}` (
@@ -314,38 +300,4 @@ function install_db(): void {
 		);
 	}
 
-	// Insert default config
-
-	// Load defaults
-	$defaults = Config::defaults();
-
-	// Fetch current config from database
-	$config = Config::get_results_assoc();
-
-	// Update database with new defaults
-	foreach ( $defaults as $key => $default ) {
-		// Skip empty keys to prevent PRIMARY KEY errors
-		if ( empty($key) || trim($key) === '' ) {
-			continue;
-		}
-
-		// Check if this key already exists in the config table
-		if ( ! array_key_exists( $key, $config ) ) {
-			// Ensure value is valid for the selected type
-			$value = $default['value'];
-			
-			// Insert the config key and value
-			$wpdb->insert(
-				$tables['config'],
-				array(
-					'config_key' => $key,
-					'val'        => $value,
-				),
-				array(
-					'%s',
-					'%' . $default['type'],
-				)
-			);
-		}
-	}
 }

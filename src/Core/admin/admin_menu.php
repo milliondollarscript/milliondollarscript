@@ -52,10 +52,6 @@ defined( 'ABSPATH' ) or exit;
     <li>
         <a href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank"><?php Language::out( 'View Site' ); ?></a>
     </li>
-    <!-- Settings -->
-    <li>
-        <a href="<?php echo admin_url( 'admin.php?page=mds-main-config' ); ?>"><?php Language::out( 'Settings' ); ?></a>
-    </li>
     <!-- Pixel Management -->
     <li>
         <a href="#"><?php Language::out( 'Pixel Management' ); ?></a>

@@ -37,6 +37,6 @@ $mds_site_url = get_site_url();
 <div class="admin-container">
     <?php require __DIR__ . "/admin_menu.php"; ?>
     <div class="admin-content">
-        <?php require __DIR__ . "/main-config.php"; ?>
+        <?php require __DIR__ . "/manage-grids.php"; ?>
     </div>
 </div>
