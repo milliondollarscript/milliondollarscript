@@ -53,7 +53,8 @@ class Currency {
 	 */
 	public static function get_currencies(): array {
 		$codes = [];
-		if ( class_exists( 'WC_Payments_Utils' ) && \WC_Payments_Features::is_customer_multi_currency_enabled() && Options::get_option( 'woocommerce', 'no', false, 'options' ) == 'yes' ) {
+		// Check for WooCommerce Payments with multi-currency and WooCommerce integration
+		if ( class_exists( 'WC_Payments_Utils' ) && \WC_Payments_Features::is_customer_multi_currency_enabled() && Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
 			$currencies = \WC_Payments_Multi_Currency()->get_enabled_currencies();
 			foreach ( $currencies as $currency ) {
 				$codes[] = $currency->get_code();

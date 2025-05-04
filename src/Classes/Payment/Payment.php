@@ -50,7 +50,8 @@ class Payment {
 
 		$checkout_url = Options::get_option( 'checkout-url' );
 		if ( empty( $checkout_url ) ) {
-			if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) == 'yes' ) {
+			// Check if WooCommerce is active and integration is enabled
+			if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) ) {
 
 				if ( ! empty( $order_id ) ) {
 

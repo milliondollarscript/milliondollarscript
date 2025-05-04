@@ -365,8 +365,8 @@ class WooCommerce {
 	 */
 	public static function add_to_cart_validation( $passed, $product_id, $quantity, $variation_id = '', $variations = '' ): mixed {
 
-		// Clear cart if option is set to yes
-		if ( Options::get_option( 'clear-cart', 'no', false, 'options' ) == 'yes' ) {
+		// Clear cart if the option is enabled
+		if ( Options::get_option( 'clear-cart', 'no', false, 'options' ) ) {
 			WooCommerceFunctions::clear_cart();
 		}
 
