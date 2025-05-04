@@ -41,7 +41,18 @@ function get_mds_build_date( $format = false ): bool|int|string {
 		}
 	}
 
-	// Fallback to file modification time if update checker data isn't available
+	// Fallback 1: Try parsing the local readme.txt
+	if ( ! $timestamp ) {
+		$readme_path = dirname( MDS_CORE_PATH ) . '/readme.txt'; // Assumes readme.txt is in the plugin root
+		if ( is_readable( $readme_path ) ) {
+			$readme_content = file_get_contents( $readme_path );
+			if ( $readme_content && preg_match( '/^Last updated:\s*(.*)$/im', $readme_content, $matches ) ) {
+				$timestamp = strtotime( trim( $matches[1] ) );
+			}
+		}
+	}
+
+	// Fallback 2: File modification time of this file (version.php)
 	if ( ! $timestamp ) {
 		$timestamp = filemtime( __FILE__ );
 	}
