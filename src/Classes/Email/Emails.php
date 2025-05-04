@@ -493,16 +493,19 @@ Note: This is an automated email.<br />
 				// Emails per Batch
 				Field::make( 'text', MDS_PREFIX . 'emails-per-batch', Language::get( 'Emails per Batch' ) )
 					 ->set_attribute( 'type', 'number' )
+					 ->set_default_value( '12' )
 					 ->set_help_text( Language::get( 'Send a maximum number of emails per batch.' ) ),
 
 				// Emails Max Retry
 				Field::make( 'text', MDS_PREFIX . 'emails-max-retry', Language::get( 'Emails Max Retry' ) )
 					 ->set_attribute( 'type', 'number' )
+					 ->set_default_value( '15' )
 					 ->set_help_text( Language::get( 'On error, retry this number of times before giving up.' ) ),
 
 				// Emails Error Wait (minutes)
 				Field::make( 'text', MDS_PREFIX . 'emails-error-wait', Language::get( 'Email Error Wait (minutes)' ) )
 					 ->set_attribute( 'type', 'number' )
+					 ->set_default_value( '20' )
 					 ->set_help_text( Language::get( 'On error, wait at least this many minutes before retry.' ) ),
 
 				// Keep sent emails for X days
@@ -516,7 +519,8 @@ Note: This is an automated email.<br />
 			Language::get( 'Order Published' )         => [
 				// Enable notifications for Order Published
 				Field::make( 'checkbox', MDS_PREFIX . 'email-admin-publish-notify', Language::get( 'Pixels Modified: Send a notification email to Admin?' ) )
-				     ->set_default_value( 'yes' )
+				     ->set_default_value( '' )
+				     ->set_option_value( 'yes' )
 				     ->set_help_text( Language::get( 'If checked then a notification email will be sent to the site admin when pixels are published.' ) ),
 				Field::make( 'text', MDS_PREFIX . 'order-published-subject', Language::get( 'Order Published Subject' ) )
 				     ->set_default_value( Language::get( 'Order Published' ) )

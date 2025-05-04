@@ -128,6 +128,9 @@ class Options {
 				Field::make( 'text', MDS_PREFIX . 'users-no-orders-page', Language::get( 'Users No Orders Page' ) )
 					->set_attribute( 'type', 'number' )
 					->set_help_text( Language::get( 'The no orders page for Users.' ) ),
+			],
+
+			Language::get( 'URLs & Redirects' ) => [
 
 				// WP Pages
 				Field::make( 'html', MDS_PREFIX . 'wp_pages', Language::get( 'WP Pages' ) )
@@ -206,6 +209,45 @@ class Options {
 				Field::make( 'text', MDS_PREFIX . 'endpoint', Language::get( 'Endpoint' ) )
 					->set_default_value( 'milliondollarscript' )
 					->set_help_text( Language::get( 'The endpoint to use for dynamic pages. Example: /<span style="color: red;">endpoint</span>/order. If left empty will use the default: milliondollarscript' ) ),
+
+				// URL Cloaking
+				Field::make( 'radio', MDS_PREFIX . 'enable-cloaking', Language::get( 'Enable URL cloaking?' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - All links will point directly to the Advertiser\'s URL. Click tracking will be managed by JavaScript.' ),
+						'NO'  => Language::get( 'No - All links will be re-directed to the /milliondollarscript/click/ endpoint.' ),
+					] )
+					->set_default_value( 'YES' )
+					->set_help_text( Language::get( 'Supposedly, when enabled, the advertiser\'s link will get a better advantage from search engines.' ) ),
+
+				// Link Validation
+				Field::make( 'radio', MDS_PREFIX . 'validate-link', Language::get( 'Validate URL?' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - The script will try to connect to the Advertiser\'s URL to make sure that the link is correct.' ),
+						'NO'  => Language::get( 'No' ),
+					] )
+					->set_default_value( 'NO' )
+					->set_help_text( Language::get( 'If enabled, validates URLs before allowing them to be saved.' ) ),
+
+				// Redirect Available Blocks
+				Field::make( 'radio', MDS_PREFIX . 'redirect-switch', Language::get( 'Redirect when clicking available blocks?' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - When an available block is clicked, redirect to specific URL' ),
+						'NO'  => Language::get( 'No (default)' ),
+					] )
+					->set_default_value( 'NO' ),
+
+				// Redirect URL
+				Field::make( 'text', MDS_PREFIX . 'redirect-url', Language::get( 'Redirect URL' ) )
+					->set_default_value( 'https://www.example.com' )
+					->set_help_text( Language::get( 'URL to redirect to when an available block is clicked (if enabled above).' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'    => MDS_PREFIX . 'redirect-switch',
+							'value'    => 'YES',
+							'compare'  => '=',
+						],
+					] ),
 			],
 
 			Language::get( 'Grid' ) => [
@@ -247,12 +289,14 @@ class Options {
 							)
 						)
 					)
-					->set_option_value( 'YES' )
+					->set_default_value( 'yes' )
+					->set_option_value( 'yes' )
 					->set_help_text( Language::get( 'Enable interlaced loading preview for PNG/GIF images.' ) ),
 
 				// Pixel Background
 				Field::make( 'checkbox', MDS_PREFIX . 'display-pixel-background', Language::get( 'Display Pixel Background' ) )
-					->set_option_value( 'YES' )
+					->set_default_value( '' )
+					->set_option_value( 'yes' )
 					->set_help_text( Language::get( 'Show a blank pixel grid background while the grid loads.' ) ),
 
 				// Pixel Selection Method
@@ -438,85 +482,7 @@ class Options {
 
 			],
 
-			Language::get( 'System' ) => [
-
-				// Delete data on uninstall?
-				Field::make( 'checkbox', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
-					->set_default_value( '' )
-					->set_default_value( 'yes' )
-					->set_help_text( Language::get( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.' ) ),
-
-				// Plugin updates
-				Field::make( 'select', MDS_PREFIX . 'updates', Language::get( 'Plugin updates' ) )
-					->set_default_value( 'yes' )
-					->set_options( [
-						'yes'      => Language::get( 'Update' ),
-						'no'       => Language::get( 'Don\'t update' ),
-						'snapshot' => Language::get( 'Snapshot' ),
-						'dev'      => Language::get( 'Development' )
-					] )
-					->set_help_text( Language::get( '<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the "main" branch. Code from the other branches will eventually make it\'s way here when it\'s deemed to be stable enough.<br /><br /><strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the "snapshot" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the "dev" branch while working towards the next release when it\'s thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the "dev" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you\'re doing. You should never use this branch on a live site.<br /><br /><span style="color: red">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>' ) ),
-
-				// Enable Logging
-				Field::make( 'checkbox', MDS_PREFIX . 'log_enable', Language::get( 'Enable Logging' ) )
-					->set_default_value( 'no' )
-					->set_help_text( Language::get( 'Enable this to record debug information to the log file. Useful for troubleshooting.' ) ),
-			],
-
-			Language::get( 'Language' ) => [
-
-				// Update Language
-				Field::make( 'html', MDS_PREFIX . 'update-language', Language::get( 'Update Language' ) )
-					->set_html( '<div class="button button-primary" id="mds_update_language" style="margin-top: 10px;">' . Language::get( 'Update Language' ) . '</div/>' )
-					->set_help_text( Language::get( 'This will automatically add any missing entries to the plugin language file.' ) ),
-
-				// Transliterate Slugs
-				Field::make( 'checkbox', MDS_PREFIX . 'transliterate-slugs', Language::get( 'Transliterate Cyrillic Slugs' ) )
-					->set_option_value( 'on' )
-				     ->set_help_text( Language::get( 'If enabled, attempts to convert Cyrillic characters in ad titles to Latin equivalents for cleaner URL slugs (post names). If disabled, WordPress default slug generation is used.' ) ),
-			],
-
-			Language::get( 'URL & Analytics' ) => [
-
-				// URL Cloaking
-				Field::make( 'radio', MDS_PREFIX . 'enable-cloaking', Language::get( 'Enable URL cloaking?' ) )
-					->set_options( [
-						'YES' => Language::get( 'Yes - All links will point directly to the Advertiser\'s URL. Click tracking will be managed by JavaScript.' ),
-						'NO'  => Language::get( 'No - All links will be re-directed to the /milliondollarscript/click/ endpoint.' ),
-					] )
-					->set_default_value( 'YES' )
-					->set_help_text( Language::get( 'Supposedly, when enabled, the advertiser\'s link will get a better advantage from search engines.' ) ),
-
-				// Link Validation
-				Field::make( 'radio', MDS_PREFIX . 'validate-link', Language::get( 'Validate URL?' ) )
-					->set_options( [
-						'YES' => Language::get( 'Yes - The script will try to connect to the Advertiser\'s URL to make sure that the link is correct.' ),
-						'NO'  => Language::get( 'No' ),
-					] )
-					->set_default_value( 'NO' )
-					->set_help_text( Language::get( 'If enabled, validates URLs before allowing them to be saved.' ) ),
-
-				// Redirect Available Blocks
-				Field::make( 'radio', MDS_PREFIX . 'redirect-switch', Language::get( 'Redirect when clicking available blocks?' ) )
-					->set_options( [
-						'YES' => Language::get( 'Yes - When an available block is clicked, redirect to specific URL' ),
-						'NO'  => Language::get( 'No (default)' ),
-					] )
-					->set_default_value( 'NO' ),
-
-				// Redirect URL
-				Field::make( 'text', MDS_PREFIX . 'redirect-url', Language::get( 'Redirect URL' ) )
-					->set_default_value( 'https://www.example.com' )
-					->set_help_text( Language::get( 'URL to redirect to when an available block is clicked (if enabled above).' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'    => MDS_PREFIX . 'redirect-switch',
-							'value'    => 'YES',
-							'compare'  => '=',
-						],
-					] ),
-
+			Language::get( 'Analytics' ) => [
 				// Advanced Click Count
 				Field::make( 'radio', MDS_PREFIX . 'advanced-click-count', Language::get( 'Advanced Click Tracking' ) )
 					->set_options( [
@@ -537,13 +503,11 @@ class Options {
 			],
 
 			Language::get( 'Order Timing' ) => [
-
 				// Expired Orders
 				Field::make( 'text', MDS_PREFIX . 'minutes-renew', Language::get( 'Minutes to Keep Expired Orders' ) )
 					->set_attribute( 'type', 'number' )
 					->set_default_value( '10080' )
 					->set_help_text( Language::get( 'How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
-
 				// Confirmed Orders
 				Field::make( 'text', MDS_PREFIX . 'minutes-confirmed', Language::get( 'Minutes to Keep Confirmed Orders' ) )
 					->set_attribute( 'type', 'number' )
@@ -563,6 +527,45 @@ class Options {
 					->set_help_text( Language::get( 'How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed.' ) ),
 			],
 
+			Language::get( 'System' ) => [
+
+				// Delete data on uninstall?
+				Field::make( 'checkbox', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
+					->set_default_value( '' )
+					->set_option_value( 'yes' )
+					->set_help_text( Language::get( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.' ) ),
+
+				// Plugin updates
+				Field::make( 'select', MDS_PREFIX . 'updates', Language::get( 'Plugin updates' ) )
+					->set_default_value( 'yes' )
+					->set_options( [
+						'yes'      => Language::get( 'Update' ),
+						'no'       => Language::get( 'Don\'t update' ),
+						'snapshot' => Language::get( 'Snapshot' ),
+						'dev'      => Language::get( 'Development' )
+					] )
+					->set_help_text( Language::get( '<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the "main" branch. Code from the other branches will eventually make it\'s way here when it\'s deemed to be stable enough.<br /><br /><strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the "snapshot" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the "dev" branch while working towards the next release when it\'s thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the "dev" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you\'re doing. You should never use this branch on a live site.<br /><br /><span style="color: red">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>' ) ),
+
+				// Enable Logging
+				Field::make( 'checkbox', MDS_PREFIX . 'log_enable', Language::get( 'Enable Logging' ) )
+					->set_default_value( '' )
+					->set_option_value( 'yes' )
+					->set_help_text( Language::get( 'Enable this to record debug information to the log file. Useful for troubleshooting.' ) ),
+			],
+
+			Language::get( 'Language' ) => [
+
+				// Update Language
+				Field::make( 'html', MDS_PREFIX . 'update-language', Language::get( 'Update Language' ) )
+					->set_html( '<div class="button button-primary" id="mds_update_language" style="margin-top: 10px;">' . Language::get( 'Update Language' ) . '</div/>' )
+					->set_help_text( Language::get( 'This will automatically add any missing entries to the plugin language file.' ) ),
+
+				// Transliterate Slugs
+				Field::make( 'checkbox', MDS_PREFIX . 'transliterate-slugs', Language::get( 'Transliterate Cyrillic Slugs' ) )
+					->set_default_value( '' )
+					->set_option_value( 'on' )
+					->set_help_text( Language::get( 'If enabled, attempts to convert Cyrillic characters in ad titles to Latin equivalents for cleaner URL slugs (post names). If disabled, WordPress default slug generation is used.' ) ),
+			],
 		];
 
 		self::$tabs = apply_filters( 'mds_options', self::$tabs, MDS_PREFIX );
