@@ -243,10 +243,6 @@ class Forms {
 				require_once MDS_CORE_PATH . 'admin/clear-orders.php';
 				$params['clear_orders'] = 'true';
 				break;
-			case 'main-config':
-				$params['mds-config-updated'] = 'true';
-				require_once MDS_CORE_PATH . 'admin/main-config.php';
-				break;
 			case 'map-of-orders':
 				require_once MDS_CORE_PATH . 'admin/map-of-orders.php';
 				break;

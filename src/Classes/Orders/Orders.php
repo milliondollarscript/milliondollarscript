@@ -1526,12 +1526,13 @@ class Orders {
 					'order-completed-content'
 				);
 
-				if ( Config::get( 'EMAIL_USER_ORDER_COMPLETED' ) == 'YES' ) {
+				// Send email to user if enabled
+				if ( Emails::get_email( 'email-user-order-completed' ) === 'yes' ) {
 					Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
 				}
 
-				// send a copy to admin
-				if ( Config::get( 'EMAIL_ADMIN_ORDER_COMPLETED' ) == 'YES' ) {
+				// Send a copy to admin if enabled
+				if ( Emails::get_email( 'email-admin-order-completed' ) === 'yes' ) {
 					Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
 				}
 			}
@@ -1633,12 +1634,13 @@ class Orders {
 					'order-confirmed-content'
 				);
 
-				if ( Config::get( 'EMAIL_USER_ORDER_CONFIRMED' ) == 'YES' ) {
+				// Send email to user if enabled
+				if ( Emails::get_email( 'email-user-order-confirmed' ) === 'yes' ) {
 					Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 2 );
 				}
 
-				// send a copy to admin
-				if ( Config::get( 'EMAIL_ADMIN_ORDER_CONFIRMED' ) == 'YES' ) {
+				// Send a copy to admin if enabled
+				if ( Emails::get_email( 'email-admin-order-confirmed' ) === 'yes' ) {
 					Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 2 );
 				}
 			}
@@ -1727,12 +1729,13 @@ class Orders {
 				'order-pending-content'
 			);
 
-			if ( Config::get( 'EMAIL_USER_ORDER_PENDED' ) == 'YES' ) {
+			// Send email to user if enabled
+			if ( Emails::get_email( 'email-user-order-pended' ) === 'yes' ) {
 				Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 3 );
 			}
 
-			// send a copy to admin
-			if ( Config::get( 'EMAIL_ADMIN_ORDER_PENDED' ) == 'YES' ) {
+			// Send a copy to admin if enabled
+			if ( Emails::get_email( 'email-admin-order-pended' ) === 'yes' ) {
 				Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 3 );
 			}
 		}
@@ -1825,14 +1828,13 @@ class Orders {
 				'order-expired-subject'
 			);
 
-			$EMAIL_USER_ORDER_EXPIRED = Config::get( 'EMAIL_USER_ORDER_EXPIRED' );
-			if ( $EMAIL_USER_ORDER_EXPIRED == 'YES' ) {
+			// Send email to user if enabled
+			if ( Emails::get_email( 'email-user-order-expired' ) === 'yes' ) {
 				Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 4 );
 			}
 
-			// send a copy to admin
-			$EMAIL_ADMIN_ORDER_EXPIRED = Config::get( 'EMAIL_ADMIN_ORDER_EXPIRED' );
-			if ( $EMAIL_ADMIN_ORDER_EXPIRED == 'YES' ) {
+			// Send a copy to admin if enabled
+			if ( Emails::get_email( 'email-admin-order-expired' ) === 'yes' ) {
 				Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 4 );
 			}
 		}
@@ -2004,23 +2006,22 @@ class Orders {
 			$message = Emails::get_email_replace(
 				$search,
 				$replace,
-				'order-completed-renewal-content'
+				'order-renewal-content'
 			);
 
 			$subject = Emails::get_email_replace(
 				$search,
 				$replace,
-				'order-completed-renewal-subject'
+				'order-renewal-subject'
 			);
 
-			$EMAIL_USER_ORDER_COMPLETED = Config::get( 'EMAIL_USER_ORDER_COMPLETED' );
-			if ( $EMAIL_USER_ORDER_COMPLETED == 'YES' ) {
+			// Send email to user if enabled
+			if ( Emails::get_email( 'email-user-order-completed-renewal' ) === 'yes' ) {
 				Mail::send( $user_info->user_email, $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
 			}
 
-			// send a copy to admin
-			$EMAIL_ADMIN_ORDER_COMPLETED = Config::get( 'EMAIL_ADMIN_ORDER_COMPLETED' );
-			if ( $EMAIL_ADMIN_ORDER_COMPLETED == 'YES' ) {
+			// Send a copy to admin if enabled
+			if ( Emails::get_email( 'email-admin-order-completed-renewal' ) === 'yes' ) {
 				Mail::send( get_bloginfo( 'admin_email' ), $subject, $message, $user_info->first_name . " " . $user_info->last_name, get_bloginfo( 'admin_email' ), get_bloginfo( 'name' ), 1 );
 			}
 
