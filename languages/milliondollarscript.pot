@@ -5,18 +5,33 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.10.218\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.12.20\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-04-25 07:53:04\n"
-"PO-Revision-Date: 2025-04-25 07:53:04\n"
-"X-Generator: Million Dollar Script Two 2.5.10.218\n"
+"POT-Creation-Date: 2025-05-04 05:31:03\n"
+"PO-Revision-Date: 2025-05-04 05:31:03\n"
+"X-Generator: Million Dollar Script Two 2.5.12.20\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
+
+msgid "The Million Dollar Script cookies file has been removed or disabled. "
+msgstr ""
+
+msgid "You may be logged out when the page next refreshes. "
+msgstr ""
+
+msgid "This is necessary for proper plugin functionality."
+msgstr ""
+
+msgid "Failed to automatically delete the required cookies file. "
+msgstr ""
+
+msgid "Please manually delete this file to avoid login issues: "
+msgstr ""
 
 msgid "Privileged"
 msgstr ""
@@ -88,9 +103,6 @@ msgid "<p>You are required to select at least %MIN_BLOCKS% blocks form the grid.
 msgstr ""
 
 msgid "Unable to find pixels."
-msgstr ""
-
-msgid "No file was uploaded."
 msgstr ""
 
 msgid "Sorry, you are not allowed to access this page."
@@ -172,6 +184,9 @@ msgid "Upload Your pixels -> <b>Write Your Ad</b> -> Confirm -> Payment -> Thank
 msgstr ""
 
 msgid "Upload Your pixels -> Write Your Ad -> <b>Confirm</b> -> Payment -> Thank you!"
+msgstr ""
+
+msgid "No blocks selected for checking."
 msgstr ""
 
 msgid "This space is not available! Please try to place your pixels in a different area."
@@ -372,6 +387,18 @@ msgstr ""
 msgid "Order Confirmed"
 msgstr ""
 
+msgid "Email Advertiser when an order is Confirmed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the advertiser when an order is confirmed."
+msgstr ""
+
+msgid "Email Admin when an order is Confirmed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the site admin when an order is confirmed."
+msgstr ""
+
 msgid "Order Confirmed Subject"
 msgstr ""
 
@@ -390,6 +417,18 @@ msgstr ""
 msgid "Order Completed"
 msgstr ""
 
+msgid "Email Advertiser when an order is Completed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the advertiser when an order is completed."
+msgstr ""
+
+msgid "Email Admin when an order is Completed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the site admin when an order is completed."
+msgstr ""
+
 msgid "Order Completed Subject"
 msgstr ""
 
@@ -400,6 +439,18 @@ msgid "This email is sent when an order has been completed. Placeholders: %FIRST
 msgstr ""
 
 msgid "Order Pending"
+msgstr ""
+
+msgid "Email Advertiser when an order is Pended?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the advertiser when an order is pending."
+msgstr ""
+
+msgid "Email Admin when an order is Pended?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the site admin when an order is pending."
 msgstr ""
 
 msgid "Order Pending Subject"
@@ -420,6 +471,18 @@ msgstr ""
 msgid "Order Expired"
 msgstr ""
 
+msgid "Email Advertiser when an order is Expired?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the advertiser when an order is expired."
+msgstr ""
+
+msgid "Email Admin when an order is Expired?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the site admin when an order is expired."
+msgstr ""
+
 msgid "Order Expired Subject"
 msgstr ""
 
@@ -436,6 +499,18 @@ msgid "This email is sent when an order is expired. Placeholders: %FIRST_NAME%, 
 msgstr ""
 
 msgid "Order Completed Renewal"
+msgstr ""
+
+msgid "Email Advertiser when a renewal is completed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the advertiser when an order renewal is completed."
+msgstr ""
+
+msgid "Email Admin when a renewal is completed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the site admin when an order renewal is completed."
 msgstr ""
 
 msgid "Order Completed Renewal Subject"
@@ -474,6 +549,18 @@ msgstr ""
 msgid "Order Denied"
 msgstr ""
 
+msgid "Email Advertiser when an order is Denied?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the advertiser when an order is denied."
+msgstr ""
+
+msgid "Email Admin when an order is Denied?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the site admin when an order is denied."
+msgstr ""
+
 msgid "Order Denied Subject"
 msgstr ""
 
@@ -483,13 +570,133 @@ msgstr ""
 msgid "Order Denied Content"
 msgstr ""
 
-msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Denied' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have been denied and will\nnot be show on the grid.<br />\n<br />\nPlease log in and update your order:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Manage Pixels'<br />\n<br />\n3. Click on 'Manage' on the Order shown as 'Denied'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Denied<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgid "RE: Order Status Change Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order status changed to 'Denied' on %SITE_NAME%.<br />\n<br />\nThis means that your pixels have been denied and will\nno longer be show on the grid.<br />\n<br />\nPlease log in and update your order:<br />\n<br />\n1. Log in to your account<br />\n<br />\n2. Go to 'Manage Pixels'<br />\n<br />\n3. Click on 'Manage' on the Order shown as 'Denied'.<br />\n<br />\n4. Complete the payment<br />\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Denied<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
 msgstr ""
 
 msgid "This email is sent when an order is denied. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
 msgstr ""
 
+msgid "Order Renewal"
+msgstr ""
+
+msgid "Email Advertiser when an order is Renewed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the advertiser when an order is renewed."
+msgstr ""
+
+msgid "Email Admin when an order is Renewed?"
+msgstr ""
+
+msgid "If checked then an email will be sent to the site admin when an order is renewed."
+msgstr ""
+
+msgid "Order Renewal Subject"
+msgstr ""
+
+msgid "Order Renewed"
+msgstr ""
+
+msgid "The subject line of the email sent when an order is renewed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DEADLINE%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "Order Renewal Content"
+msgstr ""
+
+msgid "RE: Order Renewal Notification.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nYour order has been successfully renewed on %SITE_NAME%.<br />\n<br />\nThank you for continuing to advertise with us. Your pixels will remain displayed on the grid for the renewed period.\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays: %PIXEL_DAYS%<br />\nPrice: %PRICE%<br />\nStatus: Renewed<br />\n--------------------------.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "This email is sent when an order is renewed. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "Renewal Reminder"
+msgstr ""
+
+msgid "Send renewal reminder to Advertiser?"
+msgstr ""
+
+msgid "If checked then reminder emails will be sent to the advertiser before their order expires."
+msgstr ""
+
+msgid "Send renewal reminder to Admin?"
+msgstr ""
+
+msgid "If checked then reminder emails will be sent to the site admin before an order expires."
+msgstr ""
+
+msgid "Days before expiration to send first reminder"
+msgstr ""
+
+msgid "Number of days before expiration to send the first reminder email."
+msgstr ""
+
+msgid "Days before expiration to send second reminder"
+msgstr ""
+
+msgid "Number of days before expiration to send the second reminder email. Leave empty to disable."
+msgstr ""
+
+msgid "Days before expiration to send third reminder"
+msgstr ""
+
+msgid "Number of days before expiration to send the third reminder email. Leave empty to disable."
+msgstr ""
+
+msgid "Renewal Reminder Subject"
+msgstr ""
+
+msgid "Your Order Will Expire Soon"
+msgstr ""
+
+msgid "The subject line of the reminder email. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DAYS_LEFT%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "Renewal Reminder Content"
+msgstr ""
+
+msgid "RE: Order Expiration Reminder.<br />\n<br />\nDear %FIRST_NAME% %LAST_NAME%,<br />\n<br />\nThis is a friendly reminder that your order will expire in %DAYS_LEFT% days on %SITE_NAME%.<br />\n<br />\nTo ensure your pixels remain visible on our grid, please log in to your account and renew your order before it expires.\n<br />\n========================<br />\nORDER DETAILS<br />\n=========================<br />\nOrder ID: #%ORDER_ID%<br />\nPixels: %PIXEL_COUNT%<br />\nDays remaining: %DAYS_LEFT%<br />\nPrice for renewal: %PRICE%<br />\nStatus: Active (Expiring Soon)<br />\n--------------------------.<br />\n<br />\nTo renew your order, simply visit your account dashboard and click the \"Renew\" button next to your order.<br />\n<br />\nFeel free to contact %SITE_CONTACT_EMAIL% if you have any questions / problems.<br /> \n<br />\nThank you!<br />\n<br />\n%SITE_NAME% team.<br />\n%SITE_URL%<br />\n<br />\nNote: This is an automated email.<br />\n"
+msgstr ""
+
+msgid "This email is sent to remind users before their order expires. Placeholders: %FIRST_NAME%, %LAST_NAME%, %ORDER_ID%, %PIXEL_COUNT%, %PIXEL_DAYS%, %DAYS_LEFT%, %PRICE%, %SITE_CONTACT_EMAIL%, %SITE_NAME%, %SITE_URL%"
+msgstr ""
+
+msgid "Email Settings"
+msgstr ""
+
+msgid "Emails per Batch"
+msgstr ""
+
+msgid "Send a maximum number of emails per batch."
+msgstr ""
+
+msgid "Emails Max Retry"
+msgstr ""
+
+msgid "On error, retry this number of times before giving up."
+msgstr ""
+
+msgid "Email Error Wait (minutes)"
+msgstr ""
+
+msgid "On error, wait at least this many minutes before retry."
+msgstr ""
+
+msgid "Keep Sent Emails (days)"
+msgstr ""
+
+msgid "Number of days to keep sent emails in the database. Enter 0 to keep forever."
+msgstr ""
+
+msgid "Pixels Modified: Send a notification email to Admin?"
+msgstr ""
+
+msgid "If checked then a notification email will be sent to the site admin when pixels are published."
+msgstr ""
+
 msgid "Million Dollar Script Emails"
+msgstr ""
+
+msgid "Invalid package data submitted. Please check the fields and try again."
 msgstr ""
 
 msgid "Select Grid"
@@ -639,6 +846,99 @@ msgstr ""
 msgid "Insufficient permissions!"
 msgstr ""
 
+msgid "MDS Logs"
+msgstr ""
+
+msgid "Logs"
+msgstr ""
+
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+msgid "Million Dollar Script Logs"
+msgstr ""
+
+msgid "Log Settings"
+msgstr ""
+
+msgid "Enable Logging"
+msgstr ""
+
+msgid "Enable this to record debug information to the log file. Useful for troubleshooting."
+msgstr ""
+
+msgid "Enable Live Update"
+msgstr ""
+
+msgid "Automatically refresh the log view below with new entries every few seconds."
+msgstr ""
+
+msgid "Log File Path"
+msgstr ""
+
+msgid "Could not determine log path."
+msgstr ""
+
+msgid "Manage Log File"
+msgstr ""
+
+msgid "Clear Log File"
+msgstr ""
+
+msgid "Deletes the current log file. A new file will be created when the next log event occurs."
+msgstr ""
+
+msgid "Log Content"
+msgstr ""
+
+msgid "Loading log entries..."
+msgstr ""
+
+msgid "Are you sure you want to clear the log file? This action cannot be undone."
+msgstr ""
+
+msgid "An AJAX error occurred. Please check your browser console or server logs."
+msgstr ""
+
+msgid "Error loading logs."
+msgstr ""
+
+msgid "Live log update enabled."
+msgstr ""
+
+msgid "Live log update disabled."
+msgstr ""
+
+msgid "Log file cleared successfully."
+msgstr ""
+
+msgid "Log file has been cleared."
+msgstr ""
+
+msgid "Log file is empty."
+msgstr ""
+
+msgid "Logging enabled."
+msgstr ""
+
+msgid "Logging disabled."
+msgstr ""
+
+msgid "Permission denied."
+msgstr ""
+
+msgid "Failed to update logging setting."
+msgstr ""
+
+msgid "Could not clear log file. Check file permissions or if the file exists."
+msgstr ""
+
+msgid "Log file is empty or does not exist."
+msgstr ""
+
+msgid "Could not open log file for reading."
+msgstr ""
+
 msgid "Grid not found."
 msgstr ""
 
@@ -729,6 +1029,9 @@ msgstr ""
 msgid "The no orders page for Users."
 msgstr ""
 
+msgid "URLs & Redirects"
+msgstr ""
+
 msgid "WP Pages"
 msgstr ""
 
@@ -813,6 +1116,99 @@ msgstr ""
 msgid "The endpoint to use for dynamic pages. Example: /<span style=\"color: red;\">endpoint</span>/order. If left empty will use the default: milliondollarscript"
 msgstr ""
 
+msgid "Enable URL cloaking?"
+msgstr ""
+
+msgid "Yes - All links will point directly to the Advertiser's URL. Click tracking will be managed by JavaScript."
+msgstr ""
+
+msgid "No - All links will be re-directed to the /milliondollarscript/click/ endpoint."
+msgstr ""
+
+msgid "Supposedly, when enabled, the advertiser's link will get a better advantage from search engines."
+msgstr ""
+
+msgid "Validate URL?"
+msgstr ""
+
+msgid "Yes - The script will try to connect to the Advertiser's URL to make sure that the link is correct."
+msgstr ""
+
+msgid "If enabled, validates URLs before allowing them to be saved."
+msgstr ""
+
+msgid "Redirect when clicking available blocks?"
+msgstr ""
+
+msgid "Yes - When an available block is clicked, redirect to specific URL"
+msgstr ""
+
+msgid "No (default)"
+msgstr ""
+
+msgid "Redirect URL"
+msgstr ""
+
+msgid "URL to redirect to when an available block is clicked (if enabled above)."
+msgstr ""
+
+msgid "Output Grid Image As"
+msgstr ""
+
+msgid "JPEG (Lossy compression)"
+msgstr ""
+
+msgid "PNG (Non-lossy compression)"
+msgstr ""
+
+msgid "GIF (8-bit, 256 color)"
+msgstr ""
+
+msgid "Choose the output format for grid images."
+msgstr ""
+
+msgid "JPEG Quality"
+msgstr ""
+
+msgid "JPEG quality percentage (1-100)."
+msgstr ""
+
+msgid "Interlace Grid Image"
+msgstr ""
+
+msgid "Enable interlaced loading preview for PNG/GIF images."
+msgstr ""
+
+msgid "Display Pixel Background"
+msgstr ""
+
+msgid "Show a blank pixel grid background while the grid loads."
+msgstr ""
+
+msgid "Pixel Selection Method"
+msgstr ""
+
+msgid "Simple (Upload image → Place image on grid)"
+msgstr ""
+
+msgid "Advanced (Select blocks → Upload image)"
+msgstr ""
+
+msgid "Choose how users select pixels in the grid."
+msgstr ""
+
+msgid "Resize Uploaded Pixels Automatically"
+msgstr ""
+
+msgid "Uploaded pixels will be resized to fit into the blocks."
+msgstr ""
+
+msgid "Show Grid Dropdown on Manage Pixels Page?"
+msgstr ""
+
+msgid "If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL."
+msgstr ""
+
 msgid "Login"
 msgstr ""
 
@@ -841,6 +1237,30 @@ msgid "The text to show above the Login page. This will only be shown if there i
 msgstr ""
 
 msgid "Popup"
+msgstr ""
+
+msgid "Show a box when interacting with a block?"
+msgstr ""
+
+msgid "Yes - Show a popup box"
+msgstr ""
+
+msgid "No - No popup box"
+msgstr ""
+
+msgid "Controls whether popup boxes are displayed when interacting with the grid."
+msgstr ""
+
+msgid "Popup interaction method"
+msgstr ""
+
+msgid "Click - A box will popup when blocks are clicked on the grid"
+msgstr ""
+
+msgid "Hover - A box will popup when blocks are hovered over on the grid"
+msgstr ""
+
+msgid "Controls how users interact with the grid to display popup boxes."
 msgstr ""
 
 msgid "Popup Template"
@@ -948,13 +1368,55 @@ msgstr ""
 msgid "Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability."
 msgstr ""
 
+msgid "Analytics"
+msgstr ""
+
+msgid "Advanced Click Tracking"
+msgstr ""
+
+msgid "Yes - Clicks (clicking the link on the popup) will be counted by day"
+msgstr ""
+
+msgid "Enables detailed click tracking statistics."
+msgstr ""
+
+msgid "Advanced View Tracking"
+msgstr ""
+
+msgid "Yes - Views (clicking the block to trigger the popup) will be counted by day"
+msgstr ""
+
+msgid "Enables detailed view tracking statistics."
+msgstr ""
+
+msgid "Order Timing"
+msgstr ""
+
+msgid "Minutes to Keep Expired Orders"
+msgstr ""
+
+msgid "How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Confirmed Orders"
+msgstr ""
+
+msgid "How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Unconfirmed Orders"
+msgstr ""
+
+msgid "How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Cancelled Orders"
+msgstr ""
+
+msgid "How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed."
+msgstr ""
+
 msgid "System"
-msgstr ""
-
-msgid "Show Grid Dropdown on Manage Pixels Page?"
-msgstr ""
-
-msgid "If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL."
 msgstr ""
 
 msgid "Delete data on uninstall?"
@@ -1038,6 +1500,15 @@ msgstr ""
 msgid "Check this to set this product as a Million Dollar Script Pixels product."
 msgstr ""
 
+msgid "MDS: Corresponding MDS Order %MDS_ORDER_ID% pixels automatically cancelled due to full WooCommerce refund."
+msgstr ""
+
+msgid "MDS Error: Could not cancel associated pixels during refund sync - Orders class not found."
+msgstr ""
+
+msgid "MDS Error: Exception during pixel cancellation sync: %ERROR_MESSAGE%"
+msgstr ""
+
 msgid "WooCommerce"
 msgstr ""
 
@@ -1069,6 +1540,9 @@ msgid "Auto-complete Orders"
 msgstr ""
 
 msgid "Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab."
+msgstr ""
+
+msgid "Orders cleared successfully!"
 msgstr ""
 
 msgid "Done!"
@@ -1155,9 +1629,6 @@ msgstr ""
 msgid "No orders found matching your criteria."
 msgstr ""
 
-msgid "<h3>Main Configuration</h3>\n<p>Options on this page affect the running of the pixel advertising system.</p>\n<p><b>Tip:</b> Looking for where to settings for the grid? It is set in \"Manage\" -> <a href=\"%MANAGE_GRIDS_URL%\">Grids</a>. Click on Edit to edit the grid parameters.</p>"
-msgstr ""
-
 msgid "Security check failed."
 msgstr ""
 
@@ -1224,13 +1695,13 @@ msgstr ""
 msgid "Selected Grid:"
 msgstr ""
 
+msgid "Grid processing completed successfully."
+msgstr ""
+
 msgid "Check Completed."
 msgstr ""
 
 msgid "Million Dollar Script logo"
-msgstr ""
-
-msgid "Settings"
 msgstr ""
 
 msgid "Pixel Management"
@@ -1330,6 +1801,9 @@ msgid "Advertiser's Link"
 msgstr ""
 
 msgid "Views"
+msgstr ""
+
+msgid "Manage Refund (WooCommerce)"
 msgstr ""
 
 msgid "The path to your uploads directory: %UPLOAD_PATH%"
@@ -1452,6 +1926,12 @@ msgstr ""
 msgid "You are not logged in. Please log in or sign up for a new account."
 msgstr ""
 
+msgid "Error: Could not load grid data for the specified ID."
+msgstr ""
+
+msgid "Error: Could not load grid data."
+msgstr ""
+
 msgid "Thank you for your order!"
 msgstr ""
 
@@ -1500,7 +1980,10 @@ msgstr ""
 msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
 msgstr ""
 
-msgid "Upload failed. Please try again, or try a different file."
+msgid "Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF."
+msgstr ""
+
+msgid "Upload failed: Could not process the uploaded file. Please try again."
 msgstr ""
 
 msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
@@ -1629,5 +2112,23 @@ msgstr ""
 msgid "Status: "
 msgstr ""
 
-msgid "The size of the uploaded image is incorrect. It needs to be %SIZE_X% wide and %SIZE_Y% high (or less)"
+msgid "Invalid file key specified: %KEY%"
+msgstr ""
+
+msgid "Invalid upload method or upload error."
+msgstr ""
+
+msgid "PHP Upload Error Code: %CODE%"
+msgstr ""
+
+msgid "Possible file upload attack or server error during file move."
+msgstr ""
+
+msgid "Could not read image dimensions after conversion. File might be corrupted."
+msgstr ""
+
+msgid "Image too large. You uploaded an image that is %UPLOAD_W%x%UPLOAD_H% pixels. The image cannot be larger than %SIZE_X% pixels wide and %SIZE_Y% pixels high."
+msgstr ""
+
+msgid "Image processing failed: %ERROR%"
 msgstr ""
