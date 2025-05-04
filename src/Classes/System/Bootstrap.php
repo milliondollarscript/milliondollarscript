@@ -219,7 +219,8 @@ class Bootstrap {
 
 			new WooCommerceOptions();
 
-			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) == 'yes' ) {
+			// Check if WooCommerce integration is enabled
+			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
 				new WooCommerce();
 			}
 		}

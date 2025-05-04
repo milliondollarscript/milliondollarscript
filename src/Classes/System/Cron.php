@@ -92,8 +92,8 @@ class Cron {
 	 * @return void
 	 */
 	public static function minute(): void {
-		// Expire orders
-		if ( Options::get_option( 'expire-orders' ) == 'yes' ) {
+		// Expire orders - use direct value from Options
+		if ( Options::get_option( 'expire-orders' ) ) {
 			Orders::expire_orders();
 		}
 	}

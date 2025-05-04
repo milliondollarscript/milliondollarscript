@@ -69,8 +69,8 @@ class Logs {
 	 * @return bool True if message was logged, false otherwise
 	 */
 	public static function log( string $message, string $level = self::LEVEL_INFO ): bool {
-		// Check if logging is enabled using Options class - for Carbon Fields checkbox, value is 'yes' when checked
-		if ( Options::get_option( 'log-enable', '' ) !== 'yes' ) {
+		// Check if logging is enabled using Options class - for checkboxes, value is directly usable as boolean
+		if ( ! Options::get_option( 'log-enable', '' ) ) {
 			return false;
 		}
 
