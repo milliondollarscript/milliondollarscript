@@ -1084,7 +1084,8 @@ class FormFields {
 			return $search;
 		}
 
-		if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'yes' && Options::get_option( 'exclude-from-search', true ) === false ) {
+		// Check if MDS pixel template is enabled and exclude-from-search is disabled
+		if ( Options::get_option( 'mds-pixel-template', 'no' ) && !Options::get_option( 'exclude-from-search', true ) ) {
 
 			$s = sanitize_text_field( $s );
 

@@ -282,7 +282,8 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".png" );
 			@unlink( Utility::get_upload_path() . "grids/background" . $BID . ".png" );
 
-			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) == 'yes' ) {
+			// Check if WooCommerce integration is enabled
+			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
 				$product = WooCommerceFunctions::get_product();
 
 				WooCommerceFunctions::delete_variation( $product, $BID );
@@ -407,7 +408,8 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 		$_REQUEST['new'] = '';
 
 		// WooCommerce integration
-		if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce', 'no', false, 'options' ) == 'yes' ) {
+		// Check if WooCommerce is active and integration is enabled
+		if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
 			// Get product from CarbonFields
 			$product_option = Options::get_option( 'product', null, true );
 

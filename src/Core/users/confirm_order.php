@@ -214,7 +214,8 @@ if ( ! is_user_logged_in() ) {
 
 	$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
-	if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) != 'yes' ) {
+	// Check if order confirmation is disabled
+	if ( ! \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) ) {
 		$params             = [];
 		$params['BID']      = $BID;
 		$params['order_id'] = $order_row['order_id'];
@@ -297,7 +298,8 @@ if ( ! is_user_logged_in() ) {
 			], [ $max, Utility::get_page_url( 'manage' ) ] );
 		} else {
 
-			if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) == 'yes' ) {
+			// Check if order confirmation is enabled
+			if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) ) {
 				// Confirm order page buttons
 				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 					// go straight to publish...

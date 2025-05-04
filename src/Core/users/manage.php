@@ -78,7 +78,7 @@ if ( ! empty( $gd_info['PNG Support'] ) ) {
 global $BID, $f2, $wpdb;
 
 // Get the setting for showing the grid dropdown *before* determining BID
-$show_grid_dropdown_option = Options::get_option( 'manage-pixels-grid-dropdown' ) === 'yes';
+$show_grid_dropdown_option = (bool)Options::get_option( 'manage-pixels-grid-dropdown' );
 
 // --- Refactored BID Determination --- START
 
