@@ -504,6 +504,12 @@ Note: This is an automated email.<br />
 				Field::make( 'text', MDS_PREFIX . 'emails-error-wait', Language::get( 'Email Error Wait (minutes)' ) )
 					 ->set_attribute( 'type', 'number' )
 					 ->set_help_text( Language::get( 'On error, wait at least this many minutes before retry.' ) ),
+
+				// Keep sent emails for X days
+				Field::make( 'text', MDS_PREFIX . 'emails-days-keep', Language::get( 'Keep Sent Emails (days)' ) )
+					 ->set_attribute( 'type', 'number' )
+					 ->set_default_value( '30' )
+					 ->set_help_text( Language::get( 'Number of days to keep sent emails in the database. Enter 0 to keep forever.' ) ),
 			],
 
 			// Order Published

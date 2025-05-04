@@ -306,6 +306,24 @@ class Options {
 
 			Language::get( 'Popup' ) => [
 
+				// Enable Popup
+				Field::make( 'radio', MDS_PREFIX . 'enable-mouseover', Language::get( 'Show a box when interacting with a block?' ) )
+					->set_options( [
+						'POPUP' => Language::get( 'Yes - Show a popup box' ),
+						'NO'    => Language::get( 'No - No popup box' ),
+					] )
+					->set_default_value( 'POPUP' )
+					->set_help_text( Language::get( 'Controls whether popup boxes are displayed when interacting with the grid.' ) ),
+					
+				// Popup Interaction Method
+				Field::make( 'radio', MDS_PREFIX . 'tooltip-trigger', Language::get( 'Popup interaction method' ) )
+					->set_options( [
+						'click'       => Language::get( 'Click - A box will popup when blocks are clicked on the grid' ),
+						'mouseenter'  => Language::get( 'Hover - A box will popup when blocks are hovered over on the grid' ),
+					] )
+					->set_default_value( 'click' )
+					->set_help_text( Language::get( 'Controls how users interact with the grid to display popup boxes.' ) ),
+
 				// Popup Template
 				Field::make( 'rich_text', MDS_PREFIX . 'popup-template', Language::get( 'Popup Template' ) )
 					->set_settings( array( 'media_buttons' => false ) )
@@ -407,7 +425,7 @@ class Options {
 				// Enable Capabilities
 				Field::make( 'multiselect', MDS_PREFIX . 'capabilities', Language::get( 'Enable Capabilities' ) )
 					->set_default_value( $capabilities )
-					->add_options( $capabilities )
+					->set_options( $capabilities )
 					->set_conditional_logic( [
 						'relation' => 'AND',
 						[
@@ -458,6 +476,92 @@ class Options {
 				     ->set_help_text( Language::get( 'If enabled, attempts to convert Cyrillic characters in ad titles to Latin equivalents for cleaner URL slugs (post names). If disabled, WordPress default slug generation is used.' ) ),
 			],
 
+			Language::get( 'URL & Analytics' ) => [
+
+				// URL Cloaking
+				Field::make( 'radio', MDS_PREFIX . 'enable-cloaking', Language::get( 'Enable URL cloaking?' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - All links will point directly to the Advertiser\'s URL. Click tracking will be managed by JavaScript.' ),
+						'NO'  => Language::get( 'No - All links will be re-directed to the /milliondollarscript/click/ endpoint.' ),
+					] )
+					->set_default_value( 'YES' )
+					->set_help_text( Language::get( 'Supposedly, when enabled, the advertiser\'s link will get a better advantage from search engines.' ) ),
+
+				// Link Validation
+				Field::make( 'radio', MDS_PREFIX . 'validate-link', Language::get( 'Validate URL?' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - The script will try to connect to the Advertiser\'s URL to make sure that the link is correct.' ),
+						'NO'  => Language::get( 'No' ),
+					] )
+					->set_default_value( 'NO' )
+					->set_help_text( Language::get( 'If enabled, validates URLs before allowing them to be saved.' ) ),
+
+				// Redirect Available Blocks
+				Field::make( 'radio', MDS_PREFIX . 'redirect-switch', Language::get( 'Redirect when clicking available blocks?' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - When an available block is clicked, redirect to specific URL' ),
+						'NO'  => Language::get( 'No (default)' ),
+					] )
+					->set_default_value( 'NO' ),
+
+				// Redirect URL
+				Field::make( 'text', MDS_PREFIX . 'redirect-url', Language::get( 'Redirect URL' ) )
+					->set_default_value( 'https://www.example.com' )
+					->set_help_text( Language::get( 'URL to redirect to when an available block is clicked (if enabled above).' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'    => MDS_PREFIX . 'redirect-switch',
+							'value'    => 'YES',
+							'compare'  => '=',
+						],
+					] ),
+
+				// Advanced Click Count
+				Field::make( 'radio', MDS_PREFIX . 'advanced-click-count', Language::get( 'Advanced Click Tracking' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - Clicks (clicking the link on the popup) will be counted by day' ),
+						'NO'  => Language::get( 'No' ),
+					] )
+					->set_default_value( 'YES' )
+					->set_help_text( Language::get( 'Enables detailed click tracking statistics.' ) ),
+
+				// Advanced View Count
+				Field::make( 'radio', MDS_PREFIX . 'advanced-view-count', Language::get( 'Advanced View Tracking' ) )
+					->set_options( [
+						'YES' => Language::get( 'Yes - Views (clicking the block to trigger the popup) will be counted by day' ),
+						'NO'  => Language::get( 'No' ),
+					] )
+					->set_default_value( 'YES' )
+					->set_help_text( Language::get( 'Enables detailed view tracking statistics.' ) ),
+			],
+
+			Language::get( 'Order Timing' ) => [
+
+				// Expired Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-renew', Language::get( 'Minutes to Keep Expired Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '10080' )
+					->set_help_text( Language::get( 'How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
+
+				// Confirmed Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-confirmed', Language::get( 'Minutes to Keep Confirmed Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '10080' )
+					->set_help_text( Language::get( 'How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
+
+				// Unconfirmed Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-unconfirmed', Language::get( 'Minutes to Keep Unconfirmed Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '60' )
+					->set_help_text( Language::get( 'How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant.' ) ),
+
+				// Cancelled Orders
+				Field::make( 'text', MDS_PREFIX . 'minutes-cancel', Language::get( 'Minutes to Keep Cancelled Orders' ) )
+					->set_attribute( 'type', 'number' )
+					->set_default_value( '4320' )
+					->set_help_text( Language::get( 'How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed.' ) ),
+			],
 
 		];
 
