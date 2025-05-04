@@ -63,14 +63,14 @@ class Logs {
 	/**
 	 * Log a message to the MDS log file.
 	 *
-	 * @param string $message The message to log.
-	 * @param string $level The log level (e.g., INFO, WARNING, ERROR, FATAL, DEBUG).
+	 * @param string $message The message to log
+	 * @param string $level   The log level
 	 *
-	 * @return bool True on success, false on failure.
+	 * @return bool True if message was logged, false otherwise
 	 */
 	public static function log( string $message, string $level = self::LEVEL_INFO ): bool {
-		// Check if logging is enabled using Options class
-		if ( ! Options::get_option( 'log_enable' ) ) {
+		// Check if logging is enabled using Options class - for Carbon Fields checkbox, value is 'yes' when checked
+		if ( Options::get_option( 'log-enable', '' ) !== 'yes' ) {
 			return false;
 		}
 

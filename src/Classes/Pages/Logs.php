@@ -2,6 +2,9 @@
 
 namespace MillionDollarScript\Classes\Pages;
 
+// Load Carbon Fields functions
+use function carbon_get_theme_option;
+
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Logs as SystemLogs;
@@ -60,7 +63,7 @@ class Logs {
         settings_errors('mds_logs_notices');
 
         // Get current log status and content
-        $logging_enabled = Options::get_option( 'log_enable', 'no' ) === 'yes';
+        $logging_enabled = Options::get_option( 'log-enable', '' ) === 'yes';
         $log_file_path   = SystemLogs::get_log_file_path();
 
         ?>
@@ -152,7 +155,7 @@ class Logs {
             $log_data = [
                 'ajax_url' => admin_url( 'admin-ajax.php' ),
                 'nonce'    => wp_create_nonce( 'mds_log_actions' ),
-                'initial_log_state' => Options::get_option( 'log_enable', 'no' ) === 'yes', // Pass initial state
+                'initial_log_state' => Options::get_option( 'log-enable', '' ) === 'yes', // Pass initial state
                 'text'     => [
                     'confirm_clear'         => Language::get('Are you sure you want to clear the log file? This action cannot be undone.'),
                     'error_occurred'        => Language::get('An AJAX error occurred. Please check your browser console or server logs.'),
@@ -182,7 +185,7 @@ class Logs {
     // --- AJAX Handlers ---
 
     /**
-     * AJAX handler for toggling the mds_log_enable option.
+     * AJAX handler for toggling the mds_log-enable option.
      */
     public static function ajax_toggle_logging(): void {
         // Verify nonce for security
@@ -193,17 +196,23 @@ class Logs {
         }
 
         // Get the enabled parameter
-        $enabled = isset($_POST['enabled']) ? $_POST['enabled'] : 'no';
+        $enabled = isset($_POST['enabled']) ? sanitize_text_field($_POST['enabled']) : 'no';
         
         // Ensure it's either 'yes' or 'no'
-        $enabled = ($enabled === 'yes') ? 'yes' : 'no';
+        $enabled = ($enabled === 'yes') ? 'yes' : '';
+        
+        // Ensure Carbon Fields cache is flushed
+        carbon_get_theme_option(MDS_PREFIX . 'log-enable', true);
         
         // Update the option
-        $result = Options::update_option('log_enable', $enabled);
+        $result = Options::update_option('log-enable', $enabled);
+        
+        // Force the cache to be refreshed
+        carbon_get_theme_option(MDS_PREFIX . 'log-enable', true);
         
         // If update was successful or the value was already set
-        if ($result || Options::get_option('log_enable') === $enabled) {
-            $message = $enabled ? Language::get('Logging enabled.') : Language::get('Logging disabled.');
+        if ($result) {
+            $message = $enabled === 'yes' ? Language::get('Logging enabled.') : Language::get('Logging disabled.');
             wp_send_json_success(['message' => $message]);
         } else {
             wp_send_json_error(['message' => Language::get('Failed to update logging setting.')]);
