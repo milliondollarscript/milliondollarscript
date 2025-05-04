@@ -17,7 +17,7 @@ class Logs {
     /**
      * The slug for the admin page.
      */
-    const ADMIN_LOGS_PAGE_SLUG = 'mds-logs';
+    const ADMIN_LOGS_PAGE_SLUG = 'milliondollarscript_logs';
 
     /**
      * Registers the Logs submenu item.
@@ -28,7 +28,7 @@ class Logs {
             Language::get('MDS Logs'),
             Language::get('Logs'),
             'manage_options',
-            'mds-logs',
+            'milliondollarscript_logs',
             [self::class, 'render'],
             90
         );

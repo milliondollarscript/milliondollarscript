@@ -91,9 +91,15 @@ class MillionDollarScript {
                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_emails' ) ); ?>"><?php Language::out( 'Emails' ); ?></a>
                     </li>
                     <li style="--milliondollarscript-menu: 5">
-                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php Language::out( 'View Site' ); ?></a>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_changelog' ) ); ?>"><?php Language::out( 'Changelog' ); ?></a>
                     </li>
                     <li style="--milliondollarscript-menu: 6">
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_logs' ) ); ?>"><?php Language::out( 'Logs' ); ?></a>
+                    </li>
+                    <li style="--milliondollarscript-menu: 7">
+                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php Language::out( 'View Site' ); ?></a>
+                    </li>
+                    <li style="--milliondollarscript-menu: 8">
                         <a target="_blank" href="https://milliondollarscript.com/"><?php Language::out( 'MDS' ); ?></a>
                     </li>
                 </ul>

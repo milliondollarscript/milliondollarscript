@@ -46,7 +46,7 @@ class Changelog {
 		$container->add_fields( [
 			Field::make( 'html', MDS_PREFIX . 'changelog_content', Language::get( 'Changelog' ) )
 			     ->set_html( '<div>' . $changelogContent . '</div>' )
-			     ->set_help_text( Language::get( 'This displays the changelog for the current and new versions based on the selected update branch.' ) ),
+			     ->set_help_text( Language::get( 'This displays the changelog for the current and new versions based on the selected update branch. Note that if you wish to change the update branch you can do so on the <a href="' . admin_url( 'admin.php?page=milliondollarscript_options' ) . '">Million Dollar Script Options</a> page on the System tab.' ) ),
 		] );
 	}
 
