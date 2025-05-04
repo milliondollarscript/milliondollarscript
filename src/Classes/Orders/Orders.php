@@ -1178,26 +1178,18 @@ class Orders {
 		$now       = current_time( 'mysql' );
 		$unix_time = time();
 
-		// get the time of last run
-		$last_expire_run = Config::get( 'LAST_EXPIRE_RUN' );
+		// Get the time of last run from WordPress options
+		$last_expire_run = (int) get_option( 'mds_last_expire_run', 0 );
 
-		if ( @mysqli_affected_rows( $GLOBALS['connection'] ) == 0 ) {
-
-			// make sure it cannot be locked for more than 30 secs
-			// This is in case the process fails inside the lock
-			// and does not release it.
-
-			if ( $unix_time > $last_expire_run + 30 ) {
-				// release the lock
-
-				// update timestamp
-				$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`config_key`, `val`) VALUES ('LAST_EXPIRE_RUN', '$unix_time')  ";
-				@mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-			}
-
-			// this function is already executing in another process.
+		// Prevent running too frequently (less than 30 seconds apart)
+		// This acts as a simple locking mechanism
+		if ( $unix_time < $last_expire_run + 30 ) {
+			// Function ran recently, exit to prevent overlap
 			return;
 		}
+		
+		// Update the timestamp immediately to act as a lock
+		update_option( 'mds_last_expire_run', $unix_time );
 
 		// Delete New Orders that have been around too long
 		// $session_duration = intval( ini_get( "session.gc_maxlifetime" ) );
@@ -1347,11 +1339,8 @@ class Orders {
 			}
 		}
 
-		// update last run time stamp
-
-		// update timestamp
-		$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`config_key`, `val`) VALUES ('LAST_EXPIRE_RUN', '$unix_time')  ";
-		@mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		// Update last run time stamp in WordPress options
+		update_option( 'mds_last_expire_run', $unix_time );
 	}
 
 	public static function delete_temp_order( $sid, $delete_ad = true ) {
