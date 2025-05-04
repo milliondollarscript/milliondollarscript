@@ -8,7 +8,6 @@ use function carbon_get_theme_option;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Logs as SystemLogs;
-use MillionDollarScript\Classes\System\Utility; // Added for path/url
 
 /**
  * Handles the Million Dollar Script Logs admin submenu page.
@@ -63,7 +62,7 @@ class Logs {
         settings_errors('mds_logs_notices');
 
         // Get current log status and content
-        $logging_enabled = Options::get_option( 'log-enable', '' ) === 'yes';
+        $logging_enabled = Options::get_option( 'log-enable', '' );
         $log_file_path   = SystemLogs::get_log_file_path();
 
         ?>
@@ -155,7 +154,7 @@ class Logs {
             $log_data = [
                 'ajax_url' => admin_url( 'admin-ajax.php' ),
                 'nonce'    => wp_create_nonce( 'mds_log_actions' ),
-                'initial_log_state' => Options::get_option( 'log-enable', '' ) === 'yes', // Pass initial state
+                'initial_log_state' => (bool)Options::get_option( 'log-enable', '' ), // Pass initial state directly
                 'text'     => [
                     'confirm_clear'         => Language::get('Are you sure you want to clear the log file? This action cannot be undone.'),
                     'error_occurred'        => Language::get('An AJAX error occurred. Please check your browser console or server logs.'),
