@@ -118,7 +118,7 @@ jQuery(document).ready(function($) {
         }, function(response) {
             hideSpinner();
             if (response.success) {
-                showNotice(response.data.message, 'success');
+                // showNotice(response.data.message, 'success');
             } else {
                 showNotice(response.data.message || mdsLogsData.text.error_occurred, 'error');
                 // Revert checkbox state on failure
@@ -141,7 +141,7 @@ jQuery(document).ready(function($) {
             }, function(response) {
                 hideSpinner();
                 if (response.success) {
-                    showNotice(response.data.message, 'success');
+                    // showNotice(response.data.message, 'success');
                     $logViewer.html('<p>' + mdsLogsData.text.log_cleared_viewer + '</p>'); // Update viewer
                     lastLogSize = 0; // Reset size tracker
                 } else {
@@ -162,14 +162,14 @@ jQuery(document).ready(function($) {
             liveUpdateInterval = setInterval(function() {
                 fetchLogEntries(true);
             }, 5000); // Poll every 5 seconds
-            showNotice(mdsLogsData.text.live_update_enabled, 'info');
+            //showNotice(mdsLogsData.text.live_update_enabled, 'info');
         } else {
             // Stop polling
             if (liveUpdateInterval) {
                 clearInterval(liveUpdateInterval);
                 liveUpdateInterval = null;
             }
-            showNotice(mdsLogsData.text.live_update_disabled, 'info');
+           // showNotice(mdsLogsData.text.live_update_disabled, 'info');
         }
     });
 
