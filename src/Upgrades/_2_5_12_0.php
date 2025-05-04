@@ -140,7 +140,6 @@ class _2_5_12_0 {
             
             // System-level stored with update_option
             'dbver'     => ['option' => MDS_PREFIX . 'db-version', 'tab' => 'system', 'wp_option' => true],
-            'BUILD_DATE' => ['option' => MDS_PREFIX . 'build-date', 'tab' => 'system', 'wp_option' => true],
         ];
         
         // Process each config value

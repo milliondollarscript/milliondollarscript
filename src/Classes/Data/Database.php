@@ -124,12 +124,6 @@ class Database {
 			return false;
 		}
 
-		// $charset_collate = $wpdb->get_charset_collate();
-
-		// Add BUILD_DATE to config
-		// $sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='" . get_mds_build_date() . "' WHERE `key`='BUILD_DATE';";
-		// $wpdb->query( $sql );
-
 		// Get list of upgrade files.
 		$upgrade_files = glob( MDS_BASE_PATH . 'src/Upgrades/*.php' );
 

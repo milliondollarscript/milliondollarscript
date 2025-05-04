@@ -311,7 +311,7 @@ class _2_5_11_40 {
         
         try {
             // 1. First, backup important config values
-            $important_keys = ['dbver', 'BUILD_DATE', 'VERSION_INFO'];
+            $important_keys = ['dbver', 'VERSION_INFO'];
             $backup_values = [];
             
             foreach ($important_keys as $key) {
@@ -379,7 +379,7 @@ class _2_5_11_40 {
         global $wpdb;
         
         // 1. First, backup important config values
-        $important_keys = ['dbver', 'BUILD_DATE', 'VERSION_INFO'];
+        $important_keys = ['dbver', 'VERSION_INFO'];
         $backup_values = [];
         
         foreach ($important_keys as $key) {

@@ -29,11 +29,28 @@
 defined( 'ABSPATH' ) or exit;
 
 function get_mds_build_date( $format = false ): bool|int|string {
-	$date = filemtime( __FILE__ );
+	global $MDSUpdateChecker;
 
-	if ( $format ) {
-		$date = date( 'Y-m-d H:i:s', $date );
+	$timestamp = false;
+
+	if ( $MDSUpdateChecker ) {
+		$update = $MDSUpdateChecker->getUpdate();
+		if ( $update && ! empty( $update->last_updated ) ) {
+			// The last_updated field is usually a string like '2023-10-27 15:30:00'
+			$timestamp = strtotime( $update->last_updated );
+		}
 	}
 
-	return $date;
+	// Fallback to file modification time if update checker data isn't available
+	if ( ! $timestamp ) {
+		$timestamp = filemtime( __FILE__ );
+	}
+
+	if ( $format && $timestamp ) {
+		return date( 'Y-m-d H:i:s', $timestamp );
+	} elseif ( $timestamp ) {
+		return $timestamp;
+	}
+
+	return false; // Return false if we couldn't get a date
 }

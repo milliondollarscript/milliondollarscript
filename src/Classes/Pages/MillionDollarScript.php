@@ -104,16 +104,21 @@ class MillionDollarScript {
             </div>
 
 			<?php
-			$time_gmt    = wp_sprintf( Language::get( 'Current GMT Time: %s' ), current_time( 'mysql', 1 ) );
-			$time_server = wp_sprintf( Language::get( 'Current Server Time: %s' ), current_time( 'mysql' ) );
-			$time_local  = wp_sprintf( Language::get( 'Current Local Time: %s' ), '<span id="mdsLocalTime"></span>' );
+			// Get times
+			$time_gmt    = gmdate( 'Y-m-d H:i:s' ) . ' GMT';
+			$time_server = date( 'Y-m-d H:i:s' );
+			$time_local  = '<span id="mdsLocalTime"></span>';
+			// Get last updated date
+			$last_updated_date = get_mds_build_date(true);
+			$last_updated_text = $last_updated_date ? Language::get_replace('Last Updated: %s', '%s', $last_updated_date) : Language::get('Last Updated: N/A');
 
 			?>
             <div class="milliondollarscript-time milliondollarscript-section">
 
-                <div class="mds-time mds-gmt"><?php esc_html_e( $time_gmt ); ?></div>
-                <div class="mds-time mds-server"><?php esc_html_e( $time_server ); ?></div>
-                <div class="mds-time mds-local"><?php echo wp_kses( $time_local, array( 'span' => array( 'id' => array() ) ) ); ?></div>
+                <div class="mds-time mds-gmt"><?php Language::out_replace('GMT: %s', '%s', esc_html( $time_gmt ) ); ?></div>
+                <div class="mds-time mds-server"><?php Language::out_replace('Server: %s', '%s', esc_html( $time_server ) ); ?></div>
+                <div class="mds-time mds-local"><?php Language::out_replace('Local: %s', '%s', $time_local); // WPCS: XSS ok. ?></div>
+                <div class="mds-time mds-build-date"><?php echo esc_html( $last_updated_text ); ?></div>
                 <script>
 					const localTime = new Date();
 					const formattedLocalTime = localTime.getFullYear() + '-'
