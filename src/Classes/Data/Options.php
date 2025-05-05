@@ -67,6 +67,7 @@ class Options {
 
 				// Create Pages
 				Field::make( 'html', MDS_PREFIX . 'create-pages', Language::get( 'Create Pages' ) )
+					/* eslint-disable-next-line */
 					->set_html( '<div class="button button-primary" id="mds_create_pages" style="margin-top: 10px;">' . Language::get( 'Create Pages' ) . '</div/>' )
 					->set_help_text( Language::get( 'Clicking this button will create multiple pages for use with MDS.' ) ),
 
@@ -254,11 +255,53 @@ class Options {
 
 				// TODO: Dark Mode toggle. Has to recolor all MDS styles to invert them and invert the grid image colors as well.
 
-				// Button Color
-				Field::make( 'color', MDS_PREFIX . 'button-color', Language::get( 'Button Color' ) )
+				// Button Color (Primary Background)
+				Field::make( 'color', MDS_PREFIX . 'button-color', Language::get( 'Button Color (Primary)' ) )
 					->set_default_value( '#0073aa' )
 					->set_palette( [ '#0073aa' ] )
-					->set_help_text( Language::get( 'The color of the buttons that appear throughout the plugin pages.' ) ),
+					->set_help_text( Language::get( 'Background color for primary buttons.' ) ),
+
+				// Button Text Color (Primary)
+				Field::make( 'color', MDS_PREFIX . 'button_text_color', Language::get( 'Button Text Color (Primary)' ) )
+					->set_default_value( '#ffffff' ) // Default assumption: white text
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for primary buttons.' ) ),
+
+				// Button Secondary Background
+				Field::make( 'color', MDS_PREFIX . 'button_secondary_bg', Language::get( 'Button Secondary Background' ) )
+					->set_default_value( '#91877D' )
+					->set_palette( [ '#91877D' ] )
+					->set_help_text( Language::get( 'Background color for secondary buttons.' ) ),
+
+				// Button Secondary Text
+				Field::make( 'color', MDS_PREFIX . 'button_secondary_text', Language::get( 'Button Secondary Text' ) )
+					->set_default_value( '#ffffff' ) // Default from mds.css for .btn-secondary
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for secondary buttons.' ) ),
+
+				// Button Success Background
+				Field::make( 'color', MDS_PREFIX . 'button_success_bg', Language::get( 'Button Success Background' ) )
+					->set_default_value( '#28a745' )
+					->set_palette( [ '#28a745' ] )
+					->set_help_text( Language::get( 'Background color for success buttons.' ) ),
+
+				// Button Success Text
+				Field::make( 'color', MDS_PREFIX . 'button_success_text', Language::get( 'Button Success Text' ) )
+					->set_default_value( '#ffffff' ) // Default from mds.css for .btn-success
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for success buttons.' ) ),
+
+				// Button Danger Background
+				Field::make( 'color', MDS_PREFIX . 'button_danger_bg', Language::get( 'Button Danger Background' ) )
+					->set_default_value( '#f44336' )
+					->set_palette( [ '#f44336' ] )
+					->set_help_text( Language::get( 'Background color for danger/delete buttons.' ) ),
+
+				// Button Danger Text
+				Field::make( 'color', MDS_PREFIX . 'button_danger_text', Language::get( 'Button Danger Text' ) )
+					->set_default_value( '#ffffff' ) // Default from mds.css for .btn-danger
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for danger/delete buttons.' ) ),
 
 				// Primary Color
 				Field::make( 'color', MDS_PREFIX . 'primary_color', Language::get( 'Primary Color' ) )
@@ -678,7 +721,7 @@ class Options {
 	 * Get options from database
 	 *
 	 * @param $name
-	 * @param null $default
+	 * @param mixed $default
 	 * @param bool $carbon_fields
 	 * @param string $container_id
 	 *
@@ -863,19 +906,72 @@ class Options {
 	 * @return bool True on success, false on failure
 	 */
 	public static function update_wizard_settings(string $pixel_selection, float $price_per_pixel, int $grid_width, int $grid_height): bool {
+		global $wpdb; // Make $wpdb available
+
 		try {
-			// Update pixel selection method
+			// Update standard WordPress options first
 			self::update_option('pixel-selection', $pixel_selection);
-			
-			// Update price per pixel
-			self::update_option('price-per-pixel', $price_per_pixel);
-			
-			// Update grid dimensions
-			self::update_option('grid-width', $grid_width);
+			// Note: We save price_per_pixel as an option for potential future use, 
+			// but the primary price used by the grid is price_per_block in the banners table.
+			self::update_option('price-per-pixel', $price_per_pixel); 
+			// Note: We save grid pixel dimensions as options for potential future use,
+			// but the primary dimensions used by the grid are block dimensions in the banners table.
+			self::update_option('grid-width', $grid_width); 
 			self::update_option('grid-height', $grid_height);
+
+			// --- Update the database `banners` table for the default grid (ID=1) ---
+			$banner_id = 1; // Assume default grid ID
+			$banner_data = load_banner_constants($banner_id);
+
+			if ($banner_data && isset($banner_data['block_width'], $banner_data['block_height']) && $banner_data['block_width'] > 0 && $banner_data['block_height'] > 0) {
+				
+				// Calculate block dimensions (use ceil to ensure full coverage)
+				$grid_width_blocks = ceil($grid_width / $banner_data['block_width']);
+				$grid_height_blocks = ceil($grid_height / $banner_data['block_height']);
+				
+				// Calculate price per block
+				$price_per_block = $price_per_pixel * $banner_data['block_width'] * $banner_data['block_height'];
+
+				// Prepare data for update
+				$update_data = [
+					'grid_width' => $grid_width_blocks,
+					'grid_height' => $grid_height_blocks,
+					'price_per_block' => $price_per_block,
+					'date_updated' => current_time('mysql', 1) // Update timestamp
+				];
+				
+				// Define data formats
+				$update_formats = [
+					'%d', // grid_width
+					'%d', // grid_height
+					'%f', // price_per_block
+					'%s'  // date_updated
+				];
+
+				// Update the database
+				$table_name = MDS_DB_PREFIX . 'banners';
+				$where = ['banner_id' => $banner_id];
+				$where_format = ['%d'];
+				
+				$updated_rows = $wpdb->update($table_name, $update_data, $where, $update_formats, $where_format);
+
+				if ($updated_rows === false) {
+					// Log error or handle update failure
+					error_log('MDS Wizard: Failed to update banners table for banner_id ' . $banner_id);
+					// Optionally return false here if this update is critical
+				}
+
+			} else {
+				// Log error if banner data couldn't be loaded or block dimensions are invalid
+				error_log('MDS Wizard: Could not load banner data or invalid block dimensions for banner_id ' . $banner_id);
+				// Optionally return false here
+			}
+			// --- End database update ---
 			
 			return true;
 		} catch (\Exception $e) {
+			// Log exception
+			error_log('MDS Wizard Error: Exception during update_wizard_settings - ' . $e->getMessage());
 			return false;
 		}
 	}
