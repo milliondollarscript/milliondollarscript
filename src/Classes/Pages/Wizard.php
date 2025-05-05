@@ -71,24 +71,36 @@ class Wizard {
      * Enqueues scripts and styles for the wizard page.
      */
     public static function enqueue_assets(): void {
-        // Safe ways to get plugin URL and version
-        $plugin_file = dirname(dirname(dirname(dirname(__FILE__)))) . '/milliondollarscript-two.php';
-        $plugin_url = plugin_dir_url($plugin_file);
-        $version = '1.0';
-        
-        // Check if constants are defined globally
-        if (defined('MDS_PLUGIN_URL')) {
-            // Need to access the constant from global scope, not class namespace
-            $plugin_url = constant('MDS_PLUGIN_URL');
-        }
-        
-        if (defined('MDS_VERSION')) {
-            $version = MDS_VERSION;
-        }
-        
         // Register and enqueue wizard styles and scripts
-        wp_enqueue_style('mds-wizard-styles', $plugin_url . 'assets/css/admin/wizard.css', [], $version);
-        wp_enqueue_script('mds-wizard-scripts', $plugin_url . 'assets/js/admin/wizard.js', ['jquery'], $version, true);
+        wp_enqueue_style('mds-wizard-styles', MDS_BASE_URL . 'assets/css/admin/wizard.css', [], MDS_VERSION);
+        
+        // Enqueue the new header styles for the fire effect
+        wp_enqueue_style(
+            'mds-wizard-header-styles', 
+            MDS_BASE_URL . 'assets/css/admin/wizard-header.css', 
+            ['mds-wizard-styles'], 
+            filemtime(MDS_BASE_PATH . 'assets/css/admin/wizard-header.css')
+        );
+        
+        wp_enqueue_script('mds-wizard-scripts', MDS_BASE_URL . 'assets/js/admin/wizard.js', ['jquery'], MDS_VERSION, true);
+        
+        // Load admin-js script similar to dashboard
+        wp_enqueue_script(
+            MDS_PREFIX . 'admin-js',
+            MDS_BASE_URL . 'src/Assets/js/admin.min.js',
+            ['jquery'],
+            filemtime(MDS_BASE_PATH . 'src/Assets/js/admin.min.js'),
+            true
+        );
+        
+        // Load fire.js for the dynamic fire effect
+        wp_enqueue_script(
+            'fire', 
+            MDS_BASE_URL . 'src/Assets/js/fire/fire.min.js', 
+            [MDS_PREFIX . 'admin-js'], 
+            filemtime(MDS_BASE_PATH . 'src/Assets/js/fire/fire.min.js'), 
+            true
+        );
         
         // Localize script with data needed for AJAX
         wp_localize_script('mds-wizard-scripts', 'mdsWizard', [
@@ -117,23 +129,23 @@ class Wizard {
         
         self::enqueue_assets();
         
-        // Generate sparkles for the fire effect
-        $sparkles = '';
-        for ($i = 0; $i < 25; $i++) {
-            $top = rand(5, 80);
-            $left = rand(5, 95);
-            $delay = rand(0, 20) / 10;
-            $duration = (rand(10, 30) / 10);
-            $sparkles .= "<div class='mds-fire-sparkle' style='top: {$top}%; left: {$left}%; animation-delay: {$delay}s; animation-duration: {$duration}s;'></div>";
-        }
+        // Include the fire.html content
+        require_once MDS_BASE_PATH . 'src/Assets/js/fire/fire.html';
+        
+        // Display notices above the header
+        echo '<div id="mds-notices-container">';
+        echo '</div>'; // This empty container will be used by JavaScript to move admin notices above the header
         
         ?>
-        <div class="wrap mds-wizard">
-            <div class="mds-wizard-fire-header">
-                <div class="mds-wizard-fire-gradient"></div>
-                <div id="mds-wizard-fire-cursor"></div>
-                <?php echo $sparkles; ?>
-                <h1><?php echo Language::get('Million Dollar Script Setup Wizard'); ?></h1>
+        <div class="wrap mds-wizard milliondollarscript">
+            <div class="milliondollarscript-fire">
+                <canvas id="milliondollarscript-fire"></canvas>
+
+                <div class="milliondollarscript-header">
+                    <img src="<?php echo esc_url(MDS_BASE_URL . 'src/Assets/images/milliondollarscript-transparent.png'); ?>" class="milliondollarscript-logo" alt="<?php Language::out('Million Dollar Script Logo'); ?>"/>
+                </div>
+                
+                <h1 class="milliondollarscript-wizard-title"><?php Language::out('Setup Wizard'); ?></h1>
             </div>
             
             <div class="mds-wizard-steps">
@@ -175,6 +187,16 @@ class Wizard {
                 ?>
             </div>
         </div>
+        
+        <script type="text/javascript">
+        // Move WordPress admin notices above our header
+        jQuery(document).ready(function($) {
+            // Find all WordPress admin notices and move them to our container
+            $('.notice, .updated, .update-nag, .error, .warning').each(function() {
+                $(this).detach().appendTo('#mds-notices-container');
+            });
+        });
+        </script>
         <?php
     }
     
