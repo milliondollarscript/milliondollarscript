@@ -1,4 +1,28 @@
-var particle_tex = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QYTCCY1R1556QAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAC4ElEQVRYw8VXa4/aMBAcB0OgB0ff///vVWpV0UAOcBz3w832hr0EyLVSLa0S7mLPePbhdcAbRykl2HsIobx1nTARMIzMVQJlCqEwATgAmMmcSj7rhUjm8y4iYQLwjKDxCoGO7/leIuEKeCXAkTZzZiM762j2ux8jEW+Az2kRwIIWxSA7NzvTZgCSrDtIIt4Ar/lcAVjSjNBcpiaCJwBH2pNz0yCJOOASBV/yueb7O5qpYcN23YpqAcDJC+wy5oXAwO4XBH0AsAGwJZG1/M/GkQT2tJ1sqFcrpVwEpSpQSZSb7Ab+HsAHIbKhMjZOABr+bTFQI7LLjHxBQFLO734l4F8APPK5ohI29iRWO2U0MC07+mcRnlWIIpWmXS0+3xB4C+ArgM/iCiWw5xrm+44xkfjbMiPTHYMEouT9gi5YO/BPVMRSsuM3P51LLCae3LqdumgsC6LLhC3VeATwkU9LSUu9wPeW3zeSxtGV8ZcsEP9X4oYosVC7gKxJ5kEIVNz1hsArCUglYBjB4iCOlGe1SpSpJM9tdxXlnssGdJ7a7VJ8x7Ag6giiB9DkEUMIpZRSXMHIUlq1yrUMOPW5xUCSb2xOkkNJ1y8+Df0OFdyKzJZRXYvPo+T5TqK+kUxQEqMusBrdOQItgAMXX4p/E4MwcN6BoD8AfOf3B6kDuu7FeaAEtJE40Vou7Gv/nhFvo6EbvhG8obWyVvZF6A8BxoH5J3GnR/5/5ypcIvjOHUYNi5E9d3THUVzR++YkurbKy++7prP425+GRmJPAr/43g4E4+s0pAomU5KioQfLgTbWD+wlE8wtploGkG81JBaIcOc5JNq16dCOyLLGuqFWsihJAI4XIlEBzjW9LB6lvKo6BnISRS7S8GZPOEJCY+N8R1fciSL5Gvg99wJ/QFUi/dC9IEmZzkNR/5abUTVwII0R6KXt6kMI/T+5G7pbUrhyNyxTrmWTLqcDt+JXBP7mlvzfxm8amZhMH7WSmQAAAABJRU5ErkJggg==`;
+/**
+ * Generates initial particle data.
+ * 
+ * @param {number} num_parts - Number of particles to generate.
+ * @param {number} min_age - Minimum age of particles.
+ * @param {number} max_age - Maximum age of particles.
+ * @returns {number[]} Initial particle data.
+ */
+function initialParticleData(num_parts, min_age, max_age) {
+	var data = [];
+	for (var i = 0; i < num_parts; ++i) {
+		data.push(0.0); // Position X
+		data.push(0.0); // Position Y
+		var life = min_age + Math.random() * (max_age - min_age);
+		data.push(life + 1); // Age (start aged to respawn immediately)
+		data.push(life); // Life
+		data.push(0.0); // Velocity X
+		data.push(0.0); // Velocity Y
+		// Add initial Size (will be randomized on first update in shader)
+		data.push(1.0); // Initial Size (Placeholder)
+		// Add initial Rotation (will be randomized on first update in shader)
+		data.push(0.0); // Initial Rotation (Placeholder)
+	}
+	return data;
+}
 
 function createShader(gl, shader_info) {
 	var shader = gl.createShader(shader_info.type);
@@ -72,6 +96,10 @@ function initialParticleData(num_parts, min_age, max_age) {
 		data.push(life);
 		data.push(0.0);
 		data.push(0.0);
+		// Add initial Size (will be randomized on first update in shader)
+		data.push(1.0); // Initial Size (Placeholder)
+		// Add initial Rotation (will be randomized on first update in shader)
+		data.push(0.0); // Initial Rotation (Placeholder)
 	}
 	return data;
 }
@@ -139,6 +167,8 @@ function init(
 			"v_Age",
 			"v_Life",
 			"v_Velocity",
+			"v_Size",
+			"v_Rotation",
 		]);
 	var render_program = createGLProgram(
 		gl,
@@ -167,6 +197,16 @@ function init(
 			location: gl.getAttribLocation(update_program, "i_Velocity"),
 			num_components: 2,
 			type: gl.FLOAT
+		},
+		i_Size: {
+			location: gl.getAttribLocation(update_program, "i_Size"),
+			num_components: 1,
+			type: gl.FLOAT
+		},
+		i_Rotation: {
+			location: gl.getAttribLocation(update_program, "i_Rotation"),
+			num_components: 1,
+			type: gl.FLOAT
 		}
 	};
 	var render_attrib_locations = {
@@ -184,6 +224,18 @@ function init(
 		},
 		i_Life: {
 			location: gl.getAttribLocation(render_program, "i_Life"),
+			num_components: 1,
+			type: gl.FLOAT,
+			divisor: 1
+		},
+		i_Size: {
+			location: gl.getAttribLocation(render_program, "i_Size"),
+			num_components: 1,
+			type: gl.FLOAT,
+			divisor: 1
+		},
+		i_Rotation: {
+			location: gl.getAttribLocation(render_program, "i_Rotation"),
 			num_components: 1,
 			type: gl.FLOAT,
 			divisor: 1
@@ -238,7 +290,7 @@ function init(
 			vao: vaos[0],
 			buffers: [{
 				buffer_object: buffers[0],
-				stride: 4 * 6,
+				stride: 4 * 8, // 32 bytes
 				attribs: update_attrib_locations
 			}]
 		},
@@ -246,7 +298,7 @@ function init(
 			vao: vaos[1],
 			buffers: [{
 				buffer_object: buffers[1],
-				stride: 4 * 6,
+				stride: 4 * 8, // 32 bytes
 				attribs: update_attrib_locations
 			}]
 		},
@@ -254,7 +306,7 @@ function init(
 			vao: vaos[2],
 			buffers: [{
 				buffer_object: buffers[0],
-				stride: 4 * 6,
+				stride: 4 * 8, // 32 bytes
 				attribs: render_attrib_locations
 			},
 				{
@@ -267,7 +319,7 @@ function init(
 			vao: vaos[3],
 			buffers: [{
 				buffer_object: buffers[1],
-				stride: 4 * 6,
+				stride: 4 * 8, // 32 bytes
 				attribs: render_attrib_locations
 			},
 				{
@@ -287,7 +339,9 @@ function init(
 		setupParticleBufferVAO(gl, vao_desc[i].buffers, vao_desc[i].vao);
 	}
 
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	// Set clear color to transparent black
+	gl.clearColor(0.0, 0.0, 0.0, 0.0);
+
 	var rg_noise_texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, rg_noise_texture);
 	gl.texImage2D(gl.TEXTURE_2D,
@@ -303,11 +357,12 @@ function init(
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	gl.enable(gl.BLEND);
-	gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
 	var particle_tex = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, particle_tex);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, part_img);
+	// Use actual image dimensions instead of hardcoded 32x32
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, part_img.width, part_img.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, part_img);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 	return {
@@ -317,7 +372,7 @@ function init(
 		write: 1,
 		particle_update_program: update_program,
 		particle_render_program: render_program,
-		num_particles: initial_data.length / 6,
+		num_particles: initial_data.length / 8,
 		old_timestamp: 0.0,
 		rg_noise: rg_noise_texture,
 		total_time: 0.0,
@@ -334,120 +389,187 @@ function init(
 }
 
 function render(gl, state, timestamp_millis) {
+	// Calculate particle count and time step
 	var num_part = state.born_particles;
-	var time_delta = 0.0;
-	if (state.old_timestamp != 0) {
-		time_delta = timestamp_millis - state.old_timestamp;
-		if (time_delta > 500.0) {
-			time_delta = 0.0;
-		}
+	var time_delta = state.old_timestamp === 0 ? 0.0 : timestamp_millis - state.old_timestamp;
+	if (time_delta > 500.0) { // Prevent large jumps if tab was inactive
+		time_delta = 0.0; 
 	}
+	state.old_timestamp = timestamp_millis; // Update timestamp
+
+	// Spawn new particles gradually
 	if (state.born_particles < state.num_particles) {
 		state.born_particles = Math.min(state.num_particles,
-			Math.floor(state.born_particles + state.birth_rate * time_delta));
+			state.born_particles + state.birth_rate * time_delta / 1000.0);
 	}
-	state.old_timestamp = timestamp_millis;
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+	// Setup transform feedback
 	gl.useProgram(state.particle_update_program);
-	gl.uniform1f(
-		gl.getUniformLocation(state.particle_update_program, "u_TimeDelta"),
-		time_delta / 1000.0);
-	gl.uniform1f(
-		gl.getUniformLocation(state.particle_update_program, "u_TotalTime"),
-		state.total_time);
-	gl.uniform2f(
-		gl.getUniformLocation(state.particle_update_program, "u_Gravity"),
-		state.gravity[0], state.gravity[1]);
-	gl.uniform2f(
-		gl.getUniformLocation(state.particle_update_program, "u_Origin"),
-		state.origin[0],
-		state.origin[1]);
-	gl.uniform1f(
-		gl.getUniformLocation(state.particle_update_program, "u_MinTheta"),
-		state.min_theta);
-	gl.uniform1f(
-		gl.getUniformLocation(state.particle_update_program, "u_MaxTheta"),
-		state.max_theta);
-	gl.uniform1f(
-		gl.getUniformLocation(state.particle_update_program, "u_MinSpeed"),
-		state.min_speed);
-	gl.uniform1f(
-		gl.getUniformLocation(state.particle_update_program, "u_MaxSpeed"),
-		state.max_speed);
-	state.total_time += time_delta;
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, state.rg_noise);
-	gl.uniform1i(
-		gl.getUniformLocation(state.particle_update_program, "u_RgNoise"),
-		0);
+	gl.uniform1f(gl.getUniformLocation(state.particle_update_program, "u_TotalTime"), timestamp_millis / 1000.0);
+	gl.uniform1f(gl.getUniformLocation(state.particle_update_program, "u_TimeDelta"), time_delta / 1000.0);
+	// Note: u_MousePos, u_MouseVelocity, u_IsMouseMoving, u_MouseInfluence are now set directly by event listeners
 	gl.bindVertexArray(state.particle_sys_vaos[state.read]);
-	gl.bindBufferBase(
-		gl.TRANSFORM_FEEDBACK_BUFFER, 0, state.particle_sys_buffers[state.write]);
-	gl.enable(gl.RASTERIZER_DISCARD);
+	gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, state.particle_sys_buffers[state.write]);
 	gl.beginTransformFeedback(gl.POINTS);
 	gl.drawArrays(gl.POINTS, 0, num_part);
 	gl.endTransformFeedback();
-	gl.disable(gl.RASTERIZER_DISCARD);
 	gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, null);
-	gl.bindVertexArray(state.particle_sys_vaos[state.read + 2]);
+
+	// --- Rendering Pass ---
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Render to canvas
+	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+
+	// Setup rendering pass
 	gl.useProgram(state.particle_render_program);
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, state.particle_tex);
-	gl.uniform1i(
-		gl.getUniformLocation(state.particle_render_program, "u_Sprite"),
-		0);
-	gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, num_part);
+	gl.bindVertexArray(state.particle_sys_vaos[state.read + 2]);
+
+	// Blend mode for particles
+	gl.enable(gl.BLEND);
+	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Standard alpha blending
+
+	// Set render uniforms
+	var aspect = state.canvas_width / state.canvas_height;
+	gl.uniform1i(gl.getUniformLocation(state.particle_render_program, "u_Sprite"), 0); // Texture unit 0
+	gl.uniform1f(gl.getUniformLocation(state.particle_render_program, "u_Aspect"), aspect);
+
+	// Draw particles
+	gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, num_part); // 6 vertices per quad
+
+	gl.disable(gl.BLEND);
+
+	// Swap buffers
 	var tmp = state.read;
 	state.read = state.write;
 	state.write = tmp;
+
+	// Request next frame
 	window.requestAnimationFrame(function (ts) {
 		render(gl, state, ts);
 	});
 }
 
-function main() {
-	let $fire = jQuery('#milliondollarscript-fire');
-	var canvas_element = $fire[0];
-	canvas_element.width = canvas_element.offsetWidth;
-	canvas_element.height = canvas_element.offsetHeight;
+function setupEventListeners(gl, canvas_element, state) {
+	// Variables for mouse velocity calculation
+	let lastMouseX = -1, lastMouseY = -1;
+	let lastMouseTime = 0;
+	let mouseVelocityX = 0, mouseVelocityY = 0;
+	let mouseMoveTimeout;
 
-	var webgl_context = canvas_element.getContext("webgl2");
-	if (webgl_context != null) {
-		// document.body.appendChild(canvas_element);
-		var part_img = new Image();
-		part_img.src = particle_tex;
-		part_img.onload = function () {
-			var state =
-				init(
-					webgl_context,
-					100,
-					0.2,
-					0.8, 0.9,
-					-Math.PI, Math.PI,
-					0.1, 0.5,
-					[0.0, -0.0],
-					part_img);
+	// Get uniform locations once
+	const uMousePosLoc = gl.getUniformLocation(state.particle_update_program, "u_MousePos");
+	const uMouseVelLoc = gl.getUniformLocation(state.particle_update_program, "u_MouseVelocity");
+	const uIsMovingLoc = gl.getUniformLocation(state.particle_update_program, "u_IsMouseMoving");
+	const uMouseInfLoc = gl.getUniformLocation(state.particle_update_program, "u_MouseInfluence");
 
-			// canvas_element.onmousemove = function (e) {
-			// 	var rect = this.getBoundingClientRect();
-			// 	var x = 2.0 * (e.clientX - rect.left) / this.width - 1.0;
-			// 	var y = -(2.0 * (e.clientY - rect.top) / this.height - 1.0);
-			// 	state.origin = [x, y];
-			// };
-			//
-			// let $pointerCapture = jQuery('.milliondollarscript-fire');
-			// $pointerCapture.on('mousemove', function (e) {
-			// 	var x = ((e.clientX - $fire.offset().left) / $fire.width()) * 2 - 1;
-			// 	var y = -((e.clientY - $fire.offset().top) / $fire.height()) * 2 + 1;
-			// 	state.origin = [x, y];
-			// });
+	canvas_element.addEventListener('mousemove', (e) => {
+		const rect = canvas_element.getBoundingClientRect();
+		const canvasWidth = rect.width || 1;
+		const canvasHeight = rect.height || 1;
+		const mouseX = ((e.clientX - rect.left) / canvasWidth) * 2 - 1;
+		const mouseY = ((rect.bottom - e.clientY) / canvasHeight) * 2 - 1; // Flipped Y
 
-			window.requestAnimationFrame(
-				function (ts) {
-					render(webgl_context, state, ts);
-				});
+		// Update position uniform
+		gl.uniform2f(uMousePosLoc, mouseX, mouseY);
+
+		const now = Date.now();
+		const dt = (now - lastMouseTime) / 1000.0; // Time delta in seconds
+
+		if (lastMouseX !== -1 && dt > 0.001) { // Avoid division by zero/tiny dt
+			const dx = mouseX - lastMouseX;
+			const dy = mouseY - lastMouseY;
+
+			mouseVelocityX = dx / dt;
+			mouseVelocityY = dy / dt;
+
+			const len = Math.sqrt(mouseVelocityX * mouseVelocityX + mouseVelocityY * mouseVelocityY);
+			const speedThreshold = 0.05; 
+
+			if (len > speedThreshold) {
+				// Update velocity and moving state uniforms
+				gl.uniform2f(uMouseVelLoc, mouseVelocityX, mouseVelocityY);
+				gl.uniform1f(uIsMovingLoc, 1.0);
+				
+				clearTimeout(mouseMoveTimeout);
+				mouseMoveTimeout = setTimeout(() => {
+					gl.uniform2f(uMouseVelLoc, 0.0, 0.0);
+					gl.uniform1f(uIsMovingLoc, 0.0);
+				}, 100); // Reset after 100ms
+			} 
 		}
-	} else {
-		document.write("WebGL2 is not supported by your browser");
+
+		lastMouseX = mouseX;
+			lastMouseY = mouseY;
+		lastMouseTime = now;
+	});
+
+	canvas_element.addEventListener('mouseenter', () => {
+		gl.uniform1f(uMouseInfLoc, 0.5); // Turn on influence
+		// Optional: Reset last mouse position to current to avoid jump in velocity?
+		// const rect = canvas_element.getBoundingClientRect();
+		// lastMouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+		// lastMouseY = ((rect.bottom - event.clientY) / rect.height) * 2 - 1;
+		// lastMouseTime = Date.now();
+	});
+
+	canvas_element.addEventListener('mouseleave', () => {
+		gl.uniform1f(uMouseInfLoc, 0.0); // Turn off influence
+		gl.uniform2f(uMousePosLoc, -2.0, -2.0); // Move emitter off-screen
+		gl.uniform2f(uMouseVelLoc, 0.0, 0.0); // Reset velocity
+		gl.uniform1f(uIsMovingLoc, 0.0); // Reset moving state
+		clearTimeout(mouseMoveTimeout); // Clear any pending reset
+		lastMouseX = -1; // Reset position tracking
+		lastMouseY = -1;
+	});
+}
+
+// Main initialization function
+function main() {
+	const canvas_element = document.getElementById('fire-canvas');
+	if (!canvas_element) {
+		console.error("Could not find canvas element with id 'fire-canvas'");
+		return;
 	}
+
+	const webgl_context = getWebGLContext(canvas_element);
+	if (!webgl_context) return;
+
+	const part_img = new Image();
+	part_img.src = canvas_element.getAttribute('data-particle-src');
+
+	part_img.onload = () => {
+		try {
+			const state = init(
+				webgl_context,
+				30, // Particle count
+				80, // Birth rate
+				0.4, 0.8, // Lifetime range
+				-Math.PI, Math.PI, // Angle range
+				0.03, 0.6, // Speed range
+				[0.0, -0.1], // Gravity
+				part_img // Texture
+			);
+
+			// Set up the consolidated event listeners
+			setupEventListeners(webgl_context, canvas_element, state);
+
+			// Start the animation loop
+			window.requestAnimationFrame((ts) => {
+				render(webgl_context, state, ts);
+			});
+		} catch (e) {
+			console.error('Error initializing fire effect:', e);
+		}
+	};
+
+	part_img.onerror = () => {
+		console.error("Failed to load particle image: " + part_img.src);
+	};
+}
+
+// Run main when the document is ready
+if (document.readyState === 'loading') { // Loading hasn't finished yet
+	document.addEventListener('DOMContentLoaded', main);
+} else { // `DOMContentLoaded` has already fired
+	main();
 }
