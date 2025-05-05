@@ -68,6 +68,15 @@ class Bootstrap {
 		// Register admin pages
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\MillionDollarScript', 'menu' ], 9 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Logs', 'menu' ], 11 );
+		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Wizard', 'menu' ], 12 );
+		
+		// Register setup wizard redirect
+		add_action( 'admin_init', [ '\MillionDollarScript\Classes\Pages\Wizard', 'maybe_redirect_to_wizard' ] );
+		
+		// Register AJAX handlers for the wizard
+		add_action( 'wp_ajax_mds_wizard_create_pages', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_create_pages' ] );
+		add_action( 'wp_ajax_mds_wizard_save_settings', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_save_settings' ] );
+		add_action( 'wp_ajax_mds_wizard_complete', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_mark_complete' ] );
 
 		// Add user fields
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\User\Users', 'custom_fields' ] );
@@ -163,6 +172,9 @@ class Bootstrap {
 
 		// Add Admin page
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Admin\Admin', 'menu' ], 10 );
+
+		// Add dynamic styles to admin head
+		add_action( 'admin_head', [ '\MillionDollarScript\Classes\Admin\Admin', 'output_dynamic_styles' ] );
 
 		// Initialize WooCommerce integrations
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\WooCommerce\Refunds', 'init' ] );

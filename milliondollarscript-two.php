@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.12.29
+  Version: 2.5.12.35
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -63,7 +63,7 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.12.0' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.12.29' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.12.35' );
 
 // Detect PHP version
 $minimum_version = '8.1.0';
@@ -77,6 +77,9 @@ if ( version_compare( PHP_VERSION, $minimum_version, '<' ) ) {
 register_activation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_activate' );
 register_deactivation_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_deactivate' );
 register_uninstall_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two_uninstall' );
+
+// Add activation hook for the wizard redirect transient
+register_activation_hook( __FILE__, ['MillionDollarScript\Classes\Pages\Wizard', 'set_redirect_transient'] );
 
 /**
  * Performs upgrade operations.
@@ -143,31 +146,6 @@ function milliondollarscript_two_upgrade( \WP_Upgrader $upgrader, array $hook_ex
 }
 
 add_action( 'upgrader_process_complete', '\MillionDollarScript\milliondollarscript_two_upgrade', 10, 2 );
-
-/**
- * Perform upgrade operations if the database version is less than the current version.
- *
- * TODO: Only keep this here until the next version is released.
- *
- * @throws \Exception
- */
-function milliondollarscript_two_upgrade2(): void {
-	global $wpdb;
-
-	// Load database version
-	$sql = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key`='dbver';";
-	$result = $wpdb->get_var( $sql );
-	if ( $wpdb->num_rows > 0 ) {
-		$version = $result;
-		if ( version_compare( $version, MDS_DB_VERSION, '<' ) ) {
-			perform_upgrade_operations( false );
-		}
-	} else {
-		perform_upgrade_operations( false );
-	}
-}
-
-add_action( 'plugins_loaded', '\MillionDollarScript\milliondollarscript_two_upgrade2' );
 
 /**
  * Activation
@@ -274,7 +252,6 @@ if ( $mds_bootstrap == null ) {
 // Registering scheduled events...
 register_activation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'schedule_cron' ] );
 register_deactivation_hook( __FILE__, [ '\MillionDollarScript\Classes\System\Cron', 'clear_cron' ] );
-
 
 // Cron jobs
 add_action( 'mds_daily_cron_hook', [ 'MillionDollarScript\Classes\System\Cron', 'daily_tasks' ] );

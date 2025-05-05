@@ -483,4 +483,48 @@ class Admin {
 			);
 		}
 	}
+
+	/**
+	 * Output dynamic CSS styles based on theme options.
+	 */
+	public static function output_dynamic_styles(): void {
+		$primary_color    = carbon_get_theme_option( MDS_PREFIX . 'primary_color' );
+		$secondary_color  = carbon_get_theme_option( MDS_PREFIX . 'secondary_color' );
+		$background_color = carbon_get_theme_option( MDS_PREFIX . 'background_color' );
+		$text_color       = carbon_get_theme_option( MDS_PREFIX . 'text_color' );
+		$button_color     = carbon_get_theme_option( MDS_PREFIX . 'button-color' ); // Get the existing button color too
+
+		// Basic validation/defaults if options aren't saved yet
+		$primary_color    = $primary_color ?: '#ff0000';
+		$secondary_color  = $secondary_color ?: '#000000';
+		$background_color = $background_color ?: '#ffffff';
+		$text_color       = $text_color ?: '#333333';
+		$button_color     = $button_color ?: '#0073aa';
+
+		// Use wp_add_inline_style if possible, otherwise echo directly
+		// For simplicity here, echoing directly. A more robust solution might enqueue a dummy style and attach this.
+		echo "<style type='text/css'>";
+
+		// Example CSS rules - These will need refinement based on actual MDS admin selectors
+		echo ":root { --mds-primary-color: " . esc_attr( $primary_color ) . ";";
+		echo "--mds-secondary-color: " . esc_attr( $secondary_color ) . ";";
+		echo "--mds-background-color: " . esc_attr( $background_color ) . ";";
+		echo "--mds-text-color: " . esc_attr( $text_color ) . ";";
+		echo "--mds-button-color: " . esc_attr( $button_color ) . ";}";
+
+		// Apply colors to specific elements (adjust selectors as needed)
+		// Background and Text
+		echo ".wrap.milliondollarscript { background-color: var(--mds-background-color); color: var(--mds-text-color); }";
+
+		// Links
+		echo ".wrap.milliondollarscript a { color: var(--mds-primary-color); }";
+
+		// Buttons (using existing button color option)
+		echo ".wrap.milliondollarscript .button-primary, .wrap.milliondollarscript .button { background-color: var(--mds-button-color); border-color: var(--mds-button-color); }"; // Example
+
+		// Example of using secondary color (e.g., borders, accents)
+		echo ".wrap.milliondollarscript h1, .wrap.milliondollarscript h2 { border-bottom: 1px solid var(--mds-secondary-color); }"; // Example
+
+		echo "</style>";
+	}
 }

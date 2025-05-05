@@ -250,6 +250,41 @@ class Options {
 					] ),
 			],
 
+			Language::get( 'Styles' ) => [
+
+				// TODO: Dark Mode toggle. Has to recolor all MDS styles to invert them and invert the grid image colors as well.
+
+				// Button Color
+				Field::make( 'color', MDS_PREFIX . 'button-color', Language::get( 'Button Color' ) )
+					->set_default_value( '#0073aa' )
+					->set_palette( [ '#0073aa' ] )
+					->set_help_text( Language::get( 'The color of the buttons that appear throughout the plugin pages.' ) ),
+
+				// Primary Color
+				Field::make( 'color', MDS_PREFIX . 'primary_color', Language::get( 'Primary Color' ) )
+					->set_default_value( '#ff0000' )
+					->set_palette( [ '#ff0000' ] )
+					->set_help_text( Language::get( 'Primary accent color used for highlights, links, etc.' ) ),
+
+				// Secondary Color
+				Field::make( 'color', MDS_PREFIX . 'secondary_color', Language::get( 'Secondary Color' ) )
+					->set_default_value( '#000000' )
+					->set_palette( [ '#000000' ] )
+					->set_help_text( Language::get( 'Secondary accent color.' ) ),
+
+				// Background Color
+				Field::make( 'color', MDS_PREFIX . 'background_color', Language::get( 'Background Color' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff' ] )
+					->set_help_text( Language::get( 'Main background color for admin pages.' ) ),
+
+				// Text Color
+				Field::make( 'color', MDS_PREFIX . 'text_color', Language::get( 'Text Color' ) )
+					->set_default_value( '#333333' )
+					->set_palette( [ '#333333' ] )
+					->set_help_text( Language::get( 'Default text color.' ) ),
+			],
+
 			Language::get( 'Grid' ) => [
 				// Output format
 				Field::make( 'select', MDS_PREFIX . 'output-jpeg', Language::get( 'Output Grid Image As' ) )
@@ -745,5 +780,103 @@ class Options {
 		$key = '_' . MDS_PREFIX . $name;
 
 		return delete_option( $key );
+	}
+	
+	/**
+	 * Creates the necessary pages for MDS functionality.
+	 * Used by both the Options page and the Setup Wizard.
+	 * 
+	 * @return array|\WP_Error Array of created page IDs on success, WP_Error on failure
+	 */
+	public static function create_pages() {
+		// Security check - this is called via AJAX
+		if (wp_doing_ajax() && (!check_ajax_referer('mds_admin_nonce', 'nonce', false) && !check_ajax_referer('mds_wizard_nonce', 'nonce', false))) {
+			return new \WP_Error('security_error', Language::get('Security check failed.'));
+		}
+		
+		// Check permissions
+		if (!current_user_can('manage_options')) {
+			return new \WP_Error('permissions_error', Language::get('You do not have permission to create pages.'));
+		}
+		
+		// Define the pages to create
+		$pages = [
+			[
+				'title' => Language::get('Million Dollar Script Grid'),
+				'content' => '[milliondollarscript]',
+				'option_name' => 'grid-page',
+			],
+			[
+				'title' => Language::get('Order Pixels'),
+				'content' => '[milliondollarscript view="order"]',
+				'option_name' => 'users-order-page',
+			],
+			[
+				'title' => Language::get('Your Pixels'),
+				'content' => '[milliondollarscript view="pixels"]',
+				'option_name' => 'users-pixels-page',
+			],
+			[
+				'title' => Language::get('Checkout'),
+				'content' => '[milliondollarscript view="checkout"]',
+				'option_name' => 'users-confirm-order-page',
+			],
+		];
+		
+		$created_pages = [];
+		
+		// Create each page
+		foreach ($pages as $page) {
+			$page_details = [
+				'post_title'   => $page['title'],
+				'post_content' => $page['content'],
+				'post_status'  => 'publish',
+				'post_type'    => 'page',
+			];
+			
+			$page_id = wp_insert_post($page_details);
+			
+			if (is_wp_error($page_id)) {
+				return $page_id; // Return WP_Error if page creation failed
+			}
+			
+			// Save the page ID in options
+			self::update_option($page['option_name'], $page_id);
+			
+			$created_pages[$page['option_name']] = [
+				'id' => $page_id,
+				'title' => $page['title'],
+				'permalink' => get_permalink($page_id)
+			];
+		}
+		
+		return $created_pages;
+	}
+	
+	/**
+	 * Updates settings from the wizard.
+	 * 
+	 * @param string $pixel_selection Pixel selection method ('simple' or 'advanced')
+	 * @param float $price_per_pixel Price per pixel
+	 * @param int $grid_width Grid width
+	 * @param int $grid_height Grid height
+	 * @return bool True on success, false on failure
+	 */
+	public static function update_wizard_settings(string $pixel_selection, float $price_per_pixel, int $grid_width, int $grid_height): bool {
+		try {
+			// Update pixel selection method
+			self::update_option('pixel-selection', $pixel_selection);
+			
+			// Update price per pixel
+			self::update_option('price-per-pixel', $price_per_pixel);
+			
+			// Update grid dimensions
+			self::update_option('grid-width', $grid_width);
+			self::update_option('grid-height', $grid_height);
+			
+			return true;
+		} catch (\Exception $e) {
+			return false;
+		}
 	}
 }

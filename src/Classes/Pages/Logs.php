@@ -133,8 +133,8 @@ class Logs {
         // This is already called within the render method which checks if we're on the right page
         // No need for additional checks here
 
-        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-logs.js';
-        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-logs.js';
+        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-logs.min.js';
+        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-logs.min.js';
         $style_path = MDS_BASE_PATH . 'src/Assets/css/admin-logs.css';
         $style_url = MDS_BASE_URL . 'src/Assets/css/admin-logs.css';
 
