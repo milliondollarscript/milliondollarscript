@@ -1,0 +1,113 @@
+/**
+ * Wizard header styles with fire effect
+ * Extends the main mds-wizard styles to include the fire header from dashboard
+ */
+
+/* Position admin notices above the header */
+#mds-notices-container {
+    margin: 10px 20px 0;
+}
+
+/* Adjust wizard container to accommodate the fire header */
+.mds-wizard.milliondollarscript {
+    padding-top: 0;
+    box-sizing: border-box;
+}
+
+/* Ensure the fire canvas properly covers the header area */
+.milliondollarscript-fire {
+    pointer-events: auto;
+    z-index: 997 !important;
+    position: relative;
+    display: block;
+    background: #07010a;
+    overflow: hidden;
+    width: calc(100% + 2rem);
+    margin: 0 -1rem 0 -1rem;
+    border-bottom-right-radius: 20px;
+}
+
+canvas#milliondollarscript-fire {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.milliondollarscript-header {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.milliondollarscript-logo {
+    max-width: 100%;
+    height: auto;
+    border-bottom-right-radius: 20px;
+}
+
+/* Style for the wizard title */
+.milliondollarscript-wizard-title {
+    display: block;
+    padding: 20px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.4rem;
+    text-decoration: none;
+    text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000;
+}
+
+/* Header bar styling */
+.milliondollarscript-header-bar {
+    background-color: transparent;
+    text-align: center;
+    padding: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.milliondollarscript-header-bar h1 {
+    margin: 0;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+/* Wizard navigation menu below the header-bar */
+.milliondollarscript-wizard-menu {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    margin: 0 0 30px;
+    padding: 0;
+}
+
+.milliondollarscript-wizard-menu li {
+    margin: 0 15px;
+}
+
+.milliondollarscript-wizard-menu a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.milliondollarscript-wizard-menu a:hover {
+    text-decoration: underline;
+}
+
+/* Adjust the steps indicator to work with the fire header */
+.mds-wizard-steps {
+    width: calc(100% + 2rem);
+    margin: -1rem -1rem 0 -1rem;
+}
+
+/* Content area styling */
+.mds-wizard-content {
+    background: #fff;
+    padding: 25px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}

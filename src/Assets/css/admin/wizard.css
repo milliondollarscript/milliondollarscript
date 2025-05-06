@@ -1,0 +1,457 @@
+/**
+ * Styles for the Million Dollar Script Setup Wizard
+ * Designed to match the main MDS plugin aesthetic
+ */
+
+/* Main container styles */
+.mds-wizard {
+    max-width: 100%;
+    font-family: Arial, sans-serif;
+    font-size: 1.2rem;
+    color: #333;
+    background-color: #fff;
+    box-shadow: 0 0 7px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    border-radius: 20px;
+    position: relative;
+    letter-spacing: 0.3px;
+
+    margin: 20px 20px 0 0;
+    padding: 1rem;
+}
+
+/* Header fire effect */
+.mds-wizard-fire-header {
+    pointer-events: auto;
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-bottom-right-radius: 20px;
+    padding: 30px 0;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    z-index: 997 !important;
+    background: #2271b1;
+    width: calc(100% + 2rem);
+    margin: -1rem -1rem 0 -1rem;
+}
+
+.mds-wizard-fire-header h1 {
+    color: #fff;
+    margin: 0;
+    padding: 15px 20px;
+    font-size: 2.4em;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 0.5px;
+    position: relative;
+    z-index: 5;
+    text-shadow: -1px -1px 2px #000,
+                1px -1px 2px #000,
+                -1px 1px 2px #000,
+                2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mds-wizard-fire-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(124, 114, 87, 0.8), rgba(136, 105, 40, 0.6));
+    animation: gradientShift 5s ease infinite alternate;
+    z-index: 3;
+}
+
+@keyframes gradientShift {
+    0% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 0.8;
+    }
+}
+
+.mds-fire-sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 215, 0, 0.8);
+    border-radius: 50%;
+    z-index: 4;
+    animation: sparkle 2s infinite ease-in-out;
+}
+
+/* Fire cursor effect */
+#mds-wizard-fire-cursor {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    pointer-events: none;
+    z-index: 6;
+    opacity: 0;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 200, 0, 0.8) 0%,
+        rgba(255, 160, 0, 0.6) 25%,
+        rgba(255, 140, 0, 0.4) 50%,
+        rgba(255, 120, 0, 0.1) 75%,
+        rgba(255, 100, 0, 0) 100%
+    );
+    filter: blur(3px);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+}
+
+/* Additions for fire cursor embers */
+@keyframes emberPulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+#mds-wizard-fire-cursor::before,
+#mds-wizard-fire-cursor::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 100, 0, 0.7) 0%, /* More reddish ember */
+        rgba(220, 50, 0, 0.4) 50%,
+        rgba(200, 0, 0, 0) 100%
+    );
+    filter: blur(2px);
+    pointer-events: none; /* Make sure they don't interfere with mouse */
+    animation: emberPulse 1.5s infinite ease-in-out;
+}
+
+#mds-wizard-fire-cursor::before {
+    width: 25px;
+    height: 25px;
+    top: 15px; /* Offset position */
+    left: 10px;
+    animation-delay: 0.2s; /* Slightly different timing */
+}
+
+#mds-wizard-fire-cursor::after {
+    width: 35px;
+    height: 35px;
+    top: 60px; /* Different offset */
+    right: 5px;
+    animation-delay: 0.7s; /* Different timing */
+}
+
+@keyframes sparkle {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-20px) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Step indicator */
+.mds-wizard-steps {
+    background-color: rgba(229, 231, 235, 0.7); /* Light gray background */
+    border-radius: 10px;
+    padding: 20px;
+    padding-top: calc(20px + 1rem);
+    margin-bottom: 20px;
+    list-style: none;
+    display: flex;
+    justify-content: space-around;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    position: relative;
+    z-index: 10;
+}
+
+.step-indicator li {
+    position: relative;
+    padding: 12px 24px;
+    border-radius: 5px;
+    background-color: transparent; /* Default: transparent */
+    color: #333;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    cursor: default;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
+    margin: 0 6px;
+}
+
+.step-indicator li.active {
+    font-size: 1.1em;
+    font-weight: bold;
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    border: 2px solid #005a8c;
+    border-radius: 8px;
+    z-index: 10;
+}
+
+.step-indicator li.completed {
+    background-color: #2271b1; /* WordPress blue */
+    color: #fff;
+    border-color: #2271b1;
+}
+
+.step-indicator li.completed::before {
+    content: '✔';
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.step-indicator li:not(.active):not(.completed):hover {
+    background-color: #f0f0f1; /* Slightly lighter gray on hover */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Content area */
+.mds-wizard-content {
+    background: #fff;
+    padding: 30px 35px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    margin: 0 20px;
+    position: relative;
+    z-index: 5;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    line-height: 1.6;
+}
+
+.mds-wizard-content h2 {
+    margin-top: 0;
+    padding-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+    color: #2271b1;
+    font-size: 2em;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 0.3px;
+}
+
+.mds-wizard-content p {
+    font-size: 1.15em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Features list on welcome page */
+.mds-wizard-features {
+    list-style-type: none;
+    margin-left: 5px;
+    margin-bottom: 30px;
+}
+
+.mds-wizard-features li {
+    margin-bottom: 12px;
+    padding-left: 30px;
+    position: relative;
+    font-size: 1.1em;
+}
+
+.mds-wizard-features li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #2271b1;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+/* Pages list */
+.mds-wizard-pages {
+    margin: 1.5em 0;
+    padding: 0 1em;
+}
+
+.mds-wizard-pages li {
+    margin-bottom: 10px;
+    padding-left: 25px;
+    position: relative;
+}
+
+.mds-wizard-pages li:before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #0073aa;
+    font-weight: bold;
+    font-size: 1.5em;
+    line-height: 0.8;
+}
+
+/* Action buttons area */
+.mds-wizard-navigation {
+    margin-top: 25px;
+    display: flex;
+    justify-content: space-between;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.mds-wizard-navigation .button {
+    min-width: 120px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border-color: #2271b1;
+    font-size: 1.2rem;
+}
+
+.mds-wizard-navigation .button-primary {
+    background: #2271b1;
+    border-color: #2271b1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    color: #fff;
+}
+
+.mds-wizard-navigation .button-primary:hover,
+.mds-wizard-navigation .button-primary:focus {
+    background: #005a8c;
+    border-color: #005a8c;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.mds-wizard-navigation .button-secondary {
+    color: #2271b1;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mds-wizard-navigation .button-secondary:hover,
+.mds-wizard-navigation .button-secondary:focus {
+    background: rgb(250, 245, 235);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Status messages */
+#mds-create-pages-status,
+#mds-settings-status {
+    margin: 15px 0;
+    padding: 10px 15px;
+    border-radius: 3px;
+}
+
+.mds-status-success {
+    background-color: #ecf7ed;
+    border-left: 4px solid #46b450;
+    color: #2c5934;
+}
+
+.mds-status-error {
+    background-color: #fbeaea;
+    border-left: 4px solid #dc3232;
+    color: #8a2424;
+}
+
+/* Complete step */
+.mds-wizard-complete {
+    text-align: center;
+    padding: 20px 0;
+    position: relative;
+}
+
+.mds-wizard-complete:before {
+    content: "";
+    position: absolute;
+    top: 100px; /* Adjust as needed based on the icon size */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #2271b1, transparent); /* Use #2271b1 related color */
+    z-index: 1;
+}
+
+.mds-wizard-complete .dashicons {
+    font-size: 4em; /* Reduced size */
+    height: 1em;
+    width: 1em;
+    color: #2271b1; /* Match completed step color */
+    margin-bottom: 30px; /* Increased margin */
+    position: relative;
+    z-index: 2;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.mds-wizard-complete h3 {
+    margin-top: 30px;
+    color: #2271b1;
+    font-size: 1.4em;
+}
+
+.mds-wizard-complete p {
+    font-size: 1.2em;
+    line-height: 1.6;
+    margin: 0 auto 20px;
+}
+
+.mds-wizard-complete ul {
+    text-align: left;
+    display: inline-block;
+    margin: 20px auto;
+    padding-left: 15px;
+}
+
+.mds-wizard-complete li {
+    margin-bottom: 12px;
+    position: relative;
+    padding-left: 25px;
+}
+
+.mds-wizard-complete li:before {
+    content: '✨';
+    position: absolute;
+    left: 0;
+    color: #2271b1;
+}
+
+/* Forms */
+#mds-wizard-settings-form .form-table th {
+    width: 200px;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 782px) {
+    .step-indicator li {
+        font-size: 12px;
+        padding: 10px 5px;
+    }
+    
+    .mds-wizard-content {
+        padding: 15px 20px;
+    }
+}

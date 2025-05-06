@@ -1,0 +1,121 @@
+/* Promotional Services Sections */
+.mds-wizard-pro-services {
+    margin: 35px 0 25px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.mds-wizard-pro-services h3 {
+    color: #2271b1;
+    font-size: 1.4em;
+    margin: 1.5em 0 0.8em;
+    text-align: center;
+    position: relative;
+}
+
+.mds-wizard-pro-services h3:after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #2271b1, transparent);
+}
+
+.mds-promo-box {
+    background-color: #fff;
+    border-left: 4px solid #2271b1;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-bottom: 30px;
+    padding: 25px;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+
+    /* Added flex item styles */
+    flex: 1 1 28%; /* Grow, Shrink, Basis - Reduced basis slightly */
+    min-width: 280px; /* Minimum width before wrapping */
+    /* Use existing margin-bottom for spacing when wrapped/stacked */
+}
+
+.mds-promo-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-left-width: 6px;
+}
+
+.mds-promo-box h4 {
+    color: #2271b1;
+    margin-top: 0;
+    font-size: 1.3em;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(34, 113, 177, 0.2);
+    line-height: 1.5;
+    text-align: center;
+}
+
+.mds-promo-box p {
+    font-size: 1.05em;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.mds-promo-box ul {
+    margin: 1.2em 0 1.8em;
+}
+
+.mds-promo-box li {
+    margin-bottom: 12px;
+    padding-left: 25px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.mds-promo-box li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #2271b1;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.mds-promo-box .promo-cta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+    margin: 1.8em 0 0.5em;
+}
+
+.mds-promo-box .promo-cta .button {
+    padding: 8px 24px;
+    height: auto;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+    border-color: #2271b1;
+    background-color: #2271b1;
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.mds-promo-box .promo-cta .button:hover,
+.mds-promo-box .promo-cta .button:focus {
+    background-color: #005a8c;
+    border-color: #005a8c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments for promo boxes */
+@media screen and (max-width: 768px) {
+    .mds-promo-box {
+        /* Adjustments for stacked layout */
+        width: 90%;
+        min-width: unset;
+        flex-basis: auto; /* Reset basis when stacked */
+        /* margin-bottom is handled by the base rule */
+    }
+}
