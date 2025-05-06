@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'milliondollarscript/milliondollarscript-two',
-        'pretty_version' => 'dev-main',
-        'version' => 'dev-main',
-        'reference' => '110bde69fb16cd5815ebfae1ed92b17888e321bf',
+        'pretty_version' => '2.5.12.40',
+        'version' => '2.5.12.40',
+        'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => false,
         ),
         'milliondollarscript/milliondollarscript-two' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => '110bde69fb16cd5815ebfae1ed92b17888e321bf',
+            'pretty_version' => '2.5.12.40',
+            'version' => '2.5.12.40',
+            'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
