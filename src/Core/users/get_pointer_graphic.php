@@ -28,6 +28,7 @@
 
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -113,6 +114,6 @@ try {
 	$image->show( $ext, $options );
 } catch ( Exception $e ) {
 
-	error_log( $e->getMessage() );
-	error_log( $e->getTraceAsString() );
+	Logs::log( $e->getMessage() );
+	Logs::log( $e->getTraceAsString() );
 }

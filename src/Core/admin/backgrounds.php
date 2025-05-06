@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -59,7 +60,7 @@ if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] === 'delete' && isset( 
 				} else {
 					$params['delete_error'] = 'failed_unlink';
 					// Log the error for debugging
-					error_log("MDS Error: Failed to unlink background file: " . $file_to_delete);
+					Logs::log("MDS Error: Failed to unlink background file: " . $file_to_delete);
 					break; // Stop if one fails
 				}
 			}

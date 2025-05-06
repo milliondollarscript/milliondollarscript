@@ -28,6 +28,7 @@
 
 use MillionDollarScript\Classes\Forms\Forms;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Utility;
@@ -297,7 +298,7 @@ if ( $has_packages ) {
             <div class="mds-select-wrapper">
                 <div class="mds-select-prompt">
 					<?php
-					if ( \MillionDollarScript\Classes\Data\Config::get( 'BLOCK_SELECTION_MODE' ) == 'YES' ) {
+					if ( Options::get_option( 'block-selection-mode', true ) == 'YES' ) {
 					?>
                 </div>
                 <div class="mds-select-items">

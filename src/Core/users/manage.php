@@ -268,7 +268,7 @@ if ( $count > 0 ) {
 	// Replacements for custom page links in WP
 	$order_page   = Utility::get_page_url( 'order' );
 	$manage_page  = Utility::get_page_url( 'manage' );
-	$account_page = \MillionDollarScript\Classes\Data\Options::get_option( 'account-page' );
+	$account_page = Options::get_option( 'account-page' );
 
 	Language::out_replace(
 		'<p>Here you can manage your pixels.<p>',
@@ -398,7 +398,7 @@ if ( $count > 0 ) {
             <map name="main" id="main">
 				<?php
 				// Check if order locking is enabled
-				$order_locking_enabled = \MillionDollarScript\Classes\Data\Options::get_option( 'order-locking', false );
+				$order_locking_enabled = Options::get_option( 'order-locking', false );
 
 				foreach ( $results as $row ) {
 

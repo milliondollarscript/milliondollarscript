@@ -30,6 +30,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -49,7 +50,7 @@ $cannot_get_package = false;
 
 if ( $has_packages && $_REQUEST['pack'] != '' ) {
 
-	\MillionDollarScript\Classes\System\Functions::verify_nonce( 'mds_packages' );
+	Functions::verify_nonce( 'mds_packages' );
 
 	// check to make sure this advertiser can order this package
 	if ( can_user_get_package( get_current_user_id(), $_REQUEST['pack'] ) ) {
@@ -152,7 +153,7 @@ if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $o
 			// The input is not valid; handle the error
 			// ...
 			//
-			error_log( "No pixels selected." );
+			Logs::log( "No pixels selected." );
 		}
 		?>
         <form method='post' action='<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>'>";

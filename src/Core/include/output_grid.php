@@ -3,6 +3,7 @@
 use MillionDollarScript\Classes\Data\Config;
 use Imagine\Image\Box;
 use Imagine\Image\Point;
+use MillionDollarScript\Classes\System\Logs;
 
 /*
  * Million Dollar Script Two
@@ -629,7 +630,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 				imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
 			} else {
 				// Handle error if opacity application failed (optional)
-				error_log("MDS Error: Failed to apply opacity to GD background image for BID: $BID");
+				Logs::log("MDS Error: Failed to apply opacity to GD background image for BID: $BID");
 				// As a fallback, maybe copy without opacity?
 				// imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
 			}

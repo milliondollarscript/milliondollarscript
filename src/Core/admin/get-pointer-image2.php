@@ -1,4 +1,6 @@
 <?php
+
+use MillionDollarScript\Classes\System\Logs;
 /*
  * Million Dollar Script Two
  *
@@ -43,7 +45,7 @@ if ( isset( $_REQUEST['block_id'] ) && $_REQUEST['block_id'] != '' ) {
 }
 
 if ( ! isset( $sql ) ) {
-	error_log( "No block_id or aid found in request for SQL query!" );
+	Logs::log( "No block_id or aid found in request for SQL query!" );
 	exit;
 }
 

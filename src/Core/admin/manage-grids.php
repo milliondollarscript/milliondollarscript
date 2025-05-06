@@ -608,7 +608,7 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
                         <label>
                             <input size="1" type="text" name="price_per_block"
-                                   value="<?php echo intval( $_REQUEST['price_per_block'] ); ?>"/>
+                                   value="<?php echo floatval( $_REQUEST['price_per_block'] ); ?>"/>
                         </label>(How much for 1 block of pixels?)
                     </div>
                     <div class="inventory-title">Currency</div>

@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Data\Database;
+use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -65,8 +66,8 @@ if ( $mdsdb == null ) {
  * @return string
  */
 function mds_sql_error( $sql ): string {
-	error_log( $sql );
-	error_log( mysqli_error( $GLOBALS['connection'] ) );
+	Logs::log( $sql );
+	Logs::log( mysqli_error( $GLOBALS['connection'] ) );
 
 	return "<br />SQL:[" . htmlspecialchars( $sql, ENT_QUOTES ) . "]<br />ERROR:[" . htmlspecialchars( mysqli_error( $GLOBALS['connection'] ), ENT_QUOTES ) . "]<br />";
 }
