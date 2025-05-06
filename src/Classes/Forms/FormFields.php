@@ -347,7 +347,7 @@ class FormFields {
 	 *
 	 * @return int|\WP_Error
 	 */
-	public static function add(): int|array|\WP_Error {
+	public static function add(): int|array|WP_Error {
 		$errors = '';
 		if ( $_SERVER['REQUEST_METHOD'] == 'POST' ) {
 
@@ -370,7 +370,7 @@ class FormFields {
 			if ( isset( $_REQUEST['manage-pixels'] ) ) {
 				$post_id = intval( $_REQUEST['manage-pixels'] );
 				if ( get_current_user_id() != get_post_field( 'post_author', $post_id ) ) {
-					return new \WP_Error( 'unauthorized', Language::get( 'Sorry, you are not allowed to access this page.' ) );
+					return new WP_Error( 'unauthorized', Language::get( 'Sorry, you are not allowed to access this page.' ) );
 				}
 			} else {
 

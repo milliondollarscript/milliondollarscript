@@ -285,11 +285,11 @@ class Filesystem {
 			if ( ! $wp_filesystem->is_dir( $dir ) ) {
 				// Attempt to create the directory if it doesn't exist
 				if ( ! $wp_filesystem->mkdir( $dir, FS_CHMOD_DIR ) ) {
-					error_log( 'MDS Filesystem::append_contents - Could not create directory: ' . $dir );
+					Logs::log( 'MDS Filesystem::append_contents - Could not create directory: ' . $dir );
 					return false;
 				}
 			} elseif ( ! $wp_filesystem->is_writable( $dir ) ) {
-				error_log( 'MDS Filesystem::append_contents - Directory not writable: ' . $dir );
+				Logs::log( 'MDS Filesystem::append_contents - Directory not writable: ' . $dir );
 				return false;
 			}
 
@@ -304,7 +304,7 @@ class Filesystem {
 				$result = file_put_contents( $path, $data, FILE_APPEND | LOCK_EX );
 				return $result !== false;
 			} catch ( \Exception $e ) {
-				error_log( 'MDS Filesystem::append_contents - Exception appending to file ' . $path . ': ' . $e->getMessage() );
+				Logs::log( 'MDS Filesystem::append_contents - Exception appending to file ' . $path . ': ' . $e->getMessage() );
 				return false;
 			}
 		}

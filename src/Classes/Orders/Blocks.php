@@ -113,7 +113,7 @@ class Blocks {
 							}
 						} elseif ( ! empty( $size ) ) {
 							// Select logic
-							$invert = Config::get( 'INVERT_PIXELS' ) === 'YES';
+							$invert = Config::get( 'INVERT_PIXELS' ) === 'yes';
 							if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 								// deselect
 								unset( $blocks2[ $block ] );

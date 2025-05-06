@@ -153,7 +153,7 @@ class Options {
 					->set_help_text( Language::get( 'The login page to redirect users to. If left empty will redirect to the default WP login. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full login URL here.' ) ),
 
 				// Login Link Target
-				Field::make( 'select', MDS_PREFIX . 'login-target', Language::get( 'Login Page Target' ) )
+				Field::make( 'radio', MDS_PREFIX . 'login-target', Language::get( 'Login Page Target' ) )
 					->set_default_value( 'current' )
 					->set_options( [
 						'current'  => Language::get( 'Current Page' ),
@@ -183,7 +183,7 @@ class Options {
 					->set_help_text( Language::get( 'The page id to use to act as your dynamic page. If entered, this page will be used to essentially trick WP into thinking the dynamically generated pages by this plugin such as /milliondollarscript/order, /milliondollarscript/manage, etc. are this page. The reason you might want to do this is so that you can assign styles, headers/footers or other things to that page and they will show on these dynamic pages properly.' ) ),
 
 				// Confirm Order page
-				Field::make( 'select', MDS_PREFIX . 'confirm-orders', Language::get( 'Confirm Orders Page' ) )
+				Field::make( 'radio', MDS_PREFIX . 'confirm-orders', Language::get( 'Confirm Orders Page' ) )
 					->set_default_value( 'yes' )
 					->set_options( [
 						'yes' => Language::get( 'Yes' ),
@@ -192,7 +192,7 @@ class Options {
 					->set_help_text( Language::get( 'Enable the Confirm Order page which shows after filling out the fields and before the checkout page.' ) ),
 
 				// MDS Pixels page template
-				Field::make( 'select', MDS_PREFIX . 'mds-pixel-template', Language::get( 'Enable MDS Pixels Pages?' ) )
+				Field::make( 'radio', MDS_PREFIX . 'mds-pixel-template', Language::get( 'Enable MDS Pixels Pages?' ) )
 					->set_default_value( 'no' )
 					->set_options( [
 						'yes' => Language::get( 'Yes' ),
@@ -201,9 +201,12 @@ class Options {
 					->set_help_text( Language::get( 'Set to Yes to enable the MDS Pixels page template for the MDS Pixels pages. Visiting a MDS Pixels page will then display the same details shown in the popup boxes. If set to No then when visiting a MDS Pixels page it will show a 404 (Page Not Found) error page.' ) ),
 
 				// Exclude from search
-				Field::make( 'checkbox', MDS_PREFIX . 'exclude-from-search', Language::get( 'Exclude from search' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'exclude-from-search', Language::get( 'Exclude from search' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'If checked then pixels will be excluded from search results. Note: Only the text and title fields are searchable.' ) ),
 
 				// Endpoint
@@ -356,7 +359,7 @@ class Options {
 					->set_help_text( Language::get( 'JPEG quality percentage (1-100).' ) ),
 
 				// Interlace Grid
-				Field::make( 'checkbox', MDS_PREFIX . 'interlace-switch', Language::get( 'Interlace Grid Image' ) )
+				Field::make( 'radio', MDS_PREFIX . 'interlace-switch', Language::get( 'Interlace Grid Image' ) )
 					->set_conditional_logic(
 						array(
 							'relation' => 'AND',
@@ -367,18 +370,24 @@ class Options {
 							)
 						)
 					)
-					->set_default_value( 'yes' )
-					->set_option_value( 'yes' )
+					->set_default_value( 'YES' )
+					->set_options( [
+						'YES' => Language::get( 'Yes' ),
+						'NO'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Enable interlaced loading preview for PNG/GIF images.' ) ),
 
 				// Pixel Background
-				Field::make( 'checkbox', MDS_PREFIX . 'display-pixel-background', Language::get( 'Display Pixel Background' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'display-pixel-background', Language::get( 'Display Pixel Background' ) )
+					->set_default_value( 'NO' )
+					->set_options( [
+						'YES' => Language::get( 'Yes' ),
+						'NO'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Show a blank pixel grid background while the grid loads.' ) ),
 
 				// Pixel Selection Method
-				Field::make( 'select', MDS_PREFIX . 'use-ajax', Language::get( 'Pixel Selection Method' ) )
+				Field::make( 'radio', MDS_PREFIX . 'use-ajax', Language::get( 'Pixel Selection Method' ) )
 					->set_default_value( 'SIMPLE' )
 					->set_options( [
 						'SIMPLE' => Language::get( 'Simple (Upload image → Place image on grid)', true ),
@@ -387,13 +396,16 @@ class Options {
 					->set_help_text( Language::get( 'Choose how users select pixels in the grid.' ) ),
 
 				// Resize uploaded pixels automatically
-				Field::make( 'checkbox', MDS_PREFIX . 'resize', Language::get( 'Resize Uploaded Pixels Automatically' ) )
-					->set_default_value( 'yes' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'resize', Language::get( 'Resize Uploaded Pixels Automatically' ) )
+					->set_default_value( 'YES' )
+					->set_options( [
+						'YES' => Language::get( 'Yes' ),
+						'NO'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Uploaded pixels will be resized to fit into the blocks.' ) ),
 
 				// Manage Pixels Grid Dropdown
-				Field::make( 'select', MDS_PREFIX . 'manage-pixels-grid-dropdown', Language::get( 'Show Grid Dropdown on Manage Pixels Page?' ) )
+				Field::make( 'radio', MDS_PREFIX . 'manage-pixels-grid-dropdown', Language::get( 'Show Grid Dropdown on Manage Pixels Page?' ) )
 					->set_default_value( 'yes' )
 					->set_options( [
 						'yes' => Language::get( 'Yes' ),
@@ -402,19 +414,22 @@ class Options {
 					->set_help_text( Language::get( 'If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL.' ) ),
 
 				// Invert Pixels
-				Field::make( 'checkbox', MDS_PREFIX . 'invert-pixels', Language::get( 'Invert Pixels' ) )
-					->set_default_value( '' ) // Default is 'no' (unchecked)
+				Field::make( 'radio', MDS_PREFIX . 'invert-pixels', Language::get( 'Invert Pixels' ) )
+					->set_default_value( 'NO' )
+					->set_options( [
+						'YES' => Language::get( 'Yes' ),
+						'NO'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'If checked, reverses the order pixels are displayed within the grid container.' ) ),
 
 				// Stats Display Mode
-				Field::make( 'select', MDS_PREFIX . 'stats-display-mode', Language::get( 'Stats Display Mode' ) )
+				Field::make( 'radio', MDS_PREFIX . 'stats-display-mode', Language::get( 'Stats Display Mode' ) )
+					->set_default_value( 'PIXELS' )
 					->set_options( [
-						'hover'  => Language::get( 'Show on Hover' ),
-						'always' => Language::get( 'Always Show' ),
-						'never'  => Language::get( 'Never Show' ),
+						'BLOCKS'  => Language::get( 'Blocks - Stats box will display sold/available blocks.' ),
+						'PIXELS'  => Language::get( 'Pixels - Stats box will display sold/available pixels.' ),
 					] )
-					->set_default_value( 'hover' )
-					->set_help_text( Language::get( 'Determines how pixel statistics (like views/clicks) are displayed on the grid.' ) ),
+					->set_help_text( Language::get( 'Display stats as blocks or pixels.' ) ),
 			],
 
 			Language::get( 'Login' ) => [
@@ -496,8 +511,23 @@ class Options {
 
 			Language::get( 'Orders' ) => [
 
+				// Block Selection Mode
+				Field::make( 'radio', MDS_PREFIX . 'block-selection-mode', Language::get( 'Block Selection Mode' ) )
+					->set_default_value( 'YES' )
+					->set_options( [
+						'YES' => Language::get( 'Yes - When Pixel Selection Method is set to Advanced users will be able to change the size of their block selection area.' ),
+						'NO'  => Language::get( 'No - Users will not be able to change the size of their block selection area.' ),
+					] )
+					->set_help_text( 
+						Language::get_replace( 
+							'Show block selection mode. Note that you can change the min and max block placement sizes by editing the grid under <a href="%GRIDS_URL%">Admin > Pixel Management > Grids</a>.',
+							'%GRIDS_URL%',
+							esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) )
+						)
+					),
+
 				// Expire Orders
-				Field::make( 'select', MDS_PREFIX . 'expire-orders', Language::get( 'Expire Orders' ) )
+				Field::make( 'radio', MDS_PREFIX . 'expire-orders', Language::get( 'Expire Orders' ) )
 					->set_default_value( 'yes' )
 					->set_options( [
 						'yes' => Language::get( 'Yes' ),
@@ -506,9 +536,12 @@ class Options {
 					->set_help_text( Language::get( 'Enable expiration of orders.' ) ),
 
 				// Auto-approve
-				Field::make( 'checkbox', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-approve' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-approve' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Enabling this will automatically approve orders before payments are verified by an admin.' ) ),
 
 				// Currency
@@ -524,9 +557,12 @@ class Options {
 					->set_help_text( Language::get( 'The currency symbol to use for orders and payments when WooCommerce isn\'t enabled. If WooCommerce is enabled then it will use the setting from it\'s settings. If WooCommerce Payments plugin is enabled then it will use those settings.' ) ),
 
 				// Order Locking
-				Field::make( 'checkbox', MDS_PREFIX . 'order-locking', Language::get( 'Order Locking' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'order-locking', Language::get( 'Order Locking' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Enabling this will prevent users from editing their orders after they are approved or completed.' ) ),
 			],
 
@@ -536,6 +572,7 @@ class Options {
 					->set_attribute( 'type', 'number' )
 					->set_default_value( '10080' )
 					->set_help_text( Language::get( 'How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant.' ) ),
+
 				// Confirmed Orders
 				Field::make( 'text', MDS_PREFIX . 'minutes-confirmed', Language::get( 'Minutes to Keep Confirmed Orders' ) )
 					->set_attribute( 'type', 'number' )
@@ -558,30 +595,42 @@ class Options {
 			Language::get( 'Fields' ) => [
 
 				// Make Popup Text Optional
-				Field::make( 'checkbox', MDS_PREFIX . 'text-optional', Language::get( 'Make Popup Text Optional' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'text-optional', Language::get( 'Make Popup Text Optional' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Setting to Yes will make the Popup Text field optional.' ) ),
 
 				// Make URL Optional
-				Field::make( 'checkbox', MDS_PREFIX . 'url-optional', Language::get( 'Make URL Optional' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'url-optional', Language::get( 'Make URL Optional' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Setting to Yes will make the URL field optional.' ) ),
 
 				// Make Image Optional
-				Field::make( 'checkbox', MDS_PREFIX . 'image-optional', Language::get( 'Make Image Optional' ) )
+				Field::make( 'radio', MDS_PREFIX . 'image-optional', Language::get( 'Make Image Optional' ) )
 					->set_default_value( 'yes' )
-					->set_option_value( 'yes' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Setting to Yes will make the Image field optional.' ) ),
 			],
 
 			Language::get( 'Permissions' ) => [
 
 				// Enable Permissions?
-				Field::make( 'checkbox', MDS_PREFIX . 'permissions', Language::get( 'Enable Permissions?' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'permissions', Language::get( 'Enable Permissions?' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'If you want to control access to MDS user pages you can enable permissions. This will require you to use a plugin like User Role Editor or to code it yourself in order to implement the proper roles and capabilities for your users. Only enable this if you want to enable the permission system for user roles and the following capabilities: ' ) . implode( ', ', $capabilities ) ),
 
 				// Enable Capabilities
@@ -623,9 +672,12 @@ class Options {
 			Language::get( 'System' ) => [
 
 				// Delete data on uninstall?
-				Field::make( 'checkbox', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled.' ) ),
 
 				// Plugin updates
@@ -640,9 +692,12 @@ class Options {
 					->set_help_text( Language::get( '<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the "main" branch. Code from the other branches will eventually make it\'s way here when it\'s deemed to be stable enough.<br /><br /><strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the "snapshot" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the "dev" branch while working towards the next release when it\'s thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the "dev" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you\'re doing. You should never use this branch on a live site.<br /><br /><span style="color: red">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>' ) ),
 
 				// Enable Logging
-				Field::make( 'checkbox', MDS_PREFIX . 'log-enable', Language::get( 'Enable Logging' ) )
-					->set_default_value( '' )
-					->set_option_value( 'yes' )
+				Field::make( 'radio', MDS_PREFIX . 'log-enable', Language::get( 'Enable Logging' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'Enable this to record debug information to the log file. Useful for troubleshooting.' ) ),
 			],
 
@@ -654,9 +709,12 @@ class Options {
 					->set_help_text( Language::get( 'This will automatically add any missing entries to the plugin language file.' ) ),
 
 				// Transliterate Slugs
-				Field::make( 'checkbox', MDS_PREFIX . 'transliterate-slugs', Language::get( 'Transliterate Cyrillic Slugs' ) )
-					->set_default_value( '' )
-					->set_option_value( 'on' )
+				Field::make( 'radio', MDS_PREFIX . 'transliterate-slugs', Language::get( 'Transliterate Cyrillic Slugs' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
 					->set_help_text( Language::get( 'If enabled, attempts to convert Cyrillic characters in ad titles to Latin equivalents for cleaner URL slugs (post names). If disabled, WordPress default slug generation is used.' ) ),
 			],
 		];
@@ -665,7 +723,7 @@ class Options {
 
 		$container = Container::make( 'theme_options', MDS_PREFIX . 'options', Language::get( 'Million Dollar Script Options' ) )
 									->set_page_parent( 'milliondollarscript' )
-									->set_page_file( MDS_PREFIX . 'options' )
+									->set_page_file( 'milliondollarscript_options' )
 									->set_page_menu_title( 'Options' );
 
 		foreach ( self::$tabs as $title => $fields ) {
@@ -894,85 +952,5 @@ class Options {
 		}
 		
 		return $created_pages;
-	}
-	
-	/**
-	 * Updates settings from the wizard.
-	 * 
-	 * @param string $pixel_selection Pixel selection method ('simple' or 'advanced')
-	 * @param float $price_per_pixel Price per pixel
-	 * @param int $grid_width Grid width
-	 * @param int $grid_height Grid height
-	 * @return bool True on success, false on failure
-	 */
-	public static function update_wizard_settings(string $pixel_selection, float $price_per_pixel, int $grid_width, int $grid_height): bool {
-		global $wpdb; // Make $wpdb available
-
-		try {
-			// Update standard WordPress options first
-			self::update_option('pixel-selection', $pixel_selection);
-			// Note: We save price_per_pixel as an option for potential future use, 
-			// but the primary price used by the grid is price_per_block in the banners table.
-			self::update_option('price-per-pixel', $price_per_pixel); 
-			// Note: We save grid pixel dimensions as options for potential future use,
-			// but the primary dimensions used by the grid are block dimensions in the banners table.
-			self::update_option('grid-width', $grid_width); 
-			self::update_option('grid-height', $grid_height);
-
-			// --- Update the database `banners` table for the default grid (ID=1) ---
-			$banner_id = 1; // Assume default grid ID
-			$banner_data = load_banner_constants($banner_id);
-
-			if ($banner_data && isset($banner_data['block_width'], $banner_data['block_height']) && $banner_data['block_width'] > 0 && $banner_data['block_height'] > 0) {
-				
-				// Calculate block dimensions (use ceil to ensure full coverage)
-				$grid_width_blocks = ceil($grid_width / $banner_data['block_width']);
-				$grid_height_blocks = ceil($grid_height / $banner_data['block_height']);
-				
-				// Calculate price per block
-				$price_per_block = $price_per_pixel * $banner_data['block_width'] * $banner_data['block_height'];
-
-				// Prepare data for update
-				$update_data = [
-					'grid_width' => $grid_width_blocks,
-					'grid_height' => $grid_height_blocks,
-					'price_per_block' => $price_per_block,
-					'date_updated' => current_time('mysql', 1) // Update timestamp
-				];
-				
-				// Define data formats
-				$update_formats = [
-					'%d', // grid_width
-					'%d', // grid_height
-					'%f', // price_per_block
-					'%s'  // date_updated
-				];
-
-				// Update the database
-				$table_name = MDS_DB_PREFIX . 'banners';
-				$where = ['banner_id' => $banner_id];
-				$where_format = ['%d'];
-				
-				$updated_rows = $wpdb->update($table_name, $update_data, $where, $update_formats, $where_format);
-
-				if ($updated_rows === false) {
-					// Log error or handle update failure
-					error_log('MDS Wizard: Failed to update banners table for banner_id ' . $banner_id);
-					// Optionally return false here if this update is critical
-				}
-
-			} else {
-				// Log error if banner data couldn't be loaded or block dimensions are invalid
-				error_log('MDS Wizard: Could not load banner data or invalid block dimensions for banner_id ' . $banner_id);
-				// Optionally return false here
-			}
-			// --- End database update ---
-			
-			return true;
-		} catch (\Exception $e) {
-			// Log exception
-			error_log('MDS Wizard Error: Exception during update_wizard_settings - ' . $e->getMessage());
-			return false;
-		}
 	}
 }

@@ -33,6 +33,7 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Payment;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\Refunds;
 
@@ -418,7 +419,7 @@ class WooCommerce {
 					$product->set_catalog_visibility( 'hidden' );
 					$product->save();
 				} catch ( \WC_Data_Exception $e ) {
-					error_log( 'Error setting MDS product hidden: ' . $e->getTraceAsString() );
+					Logs::log( 'Error setting MDS product hidden: ' . $e->getTraceAsString() );
 				}
 			}
 		}
@@ -596,7 +597,7 @@ class WooCommerce {
 	/**
 	 * Custom error message for WooCommerce notice.
 	 *
-	 * @param String $message
+	 * @param string $message
 	 *
 	 * @return string
 	 */

@@ -34,7 +34,7 @@ class Debug {
 
 	public static function log_trace(): void {
 		$e = new \Exception();
-		error_log( $e->getTraceAsString() );
+		Logs::log( $e->getTraceAsString() );
 	}
 
 	public static function output( $what, $label = '', $where = 'log', $encapsulate = false, $type = 'var_export', $user = 1 ): void {
@@ -71,7 +71,7 @@ class Debug {
 		if ( $where == 'screen' ) {
 			echo $output;
 		} else if ( $where == 'log' ) {
-			error_log( $output );
+			Logs::log( $output );
 		}
 	}
 

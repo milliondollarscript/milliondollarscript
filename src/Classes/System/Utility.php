@@ -33,6 +33,7 @@ use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms;
+use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 
@@ -122,7 +123,7 @@ class Utility {
 					$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
 					$filesystem = new Filesystem( $url );
 					if ( ! $filesystem->copy( $src, $dest ) ) {
-						error_log( wp_sprintf(
+						Logs::log( wp_sprintf(
 							Language::get( 'Error copying file. From: %s To: %s' ),
 							$src,
 							$dest
@@ -226,7 +227,7 @@ class Utility {
 			$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
 			$filesystem = new Filesystem( $url );
 			if ( ! $filesystem->delete_folder( $path ) ) {
-				error_log( wp_sprintf(
+				Logs::log( wp_sprintf(
 					Language::get( 'Error deleting folder: %s' ),
 					$path
 				) );
@@ -1004,7 +1005,7 @@ class Utility {
 	 */
 	public static function setMemoryLimit( $filename ) {
 		if ( ! file_exists( $filename ) ) {
-			error_log( "setMemoryLimit error, file not found: " . $filename );
+			Logs::log( "setMemoryLimit error, file not found: " . $filename );
 
 			return;
 		}
@@ -1424,25 +1425,8 @@ class Utility {
 
 	/**
 	 * Check if the Million Dollar Script custom post type exists.
-{{ ... }}
-
-```
-
-Follow these instructions to make the following change to my code document.
-
-Instruction: Fix EndOfFile lint error by adding the closing brace '}' for the Utility class at the very end of the file.
-
-Code Edit:
-```
-{{ ... }}
-		return $page_id; // Return the successfully created page ID
-	}
-
-	/**
-	 * Check if the Million Dollar Script custom post type exists.
-	{{ ... }}
 	 */
 	public static function check_cpt_exists() {
-		return post_type_exists( MDS_POST_TYPE );
+		return post_type_exists( FormFields::$post_type );
 	}
 }

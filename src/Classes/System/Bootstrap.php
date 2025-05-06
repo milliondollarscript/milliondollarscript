@@ -47,7 +47,9 @@ class Bootstrap {
 
 	function __construct() {
 		if ( isset( $this->instance ) ) {
+			// phpcs:disable
 			return $this->instance;
+			// phpcs:enable
 		}
 
 		$this->instance = $this;
@@ -279,6 +281,8 @@ class Bootstrap {
 
 		add_action( 'admin_notices', [ Notices::class, 'display_notices' ] );
 
+		// phpcs:disable
 		return $this;
+		// phpcs:enable
 	}
 }

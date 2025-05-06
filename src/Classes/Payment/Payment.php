@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\Payment;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
@@ -104,7 +105,7 @@ class Payment {
 									$cart_item_key = $cart->add_to_cart( $product_id, $quantity, $variation_id );
 									$cart->set_quantity( $cart_item_key, $quantity );
 								} catch ( \Exception $e ) {
-									error_log( Language::get( 'Error adding product to cart: ' ) . $e->getMessage() );
+									Logs::log( Language::get( 'Error adding product to cart: ' ) . $e->getMessage() );
 								}
 							}
 

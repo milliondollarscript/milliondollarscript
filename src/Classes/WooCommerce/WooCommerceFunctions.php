@@ -33,6 +33,7 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Payment;
+use MillionDollarScript\Classes\System\Logs;
 
 class WooCommerceFunctions {
 
@@ -45,18 +46,38 @@ class WooCommerceFunctions {
 	public static function update_attribute( array $grids, \WC_Product_Variable|\WC_Product $product ): void {
 		$options = array_column( $grids, 'banner_id' );
 
-		$attribute = new \WC_Product_Attribute();
-		$attribute->set_name( 'grid' );
-		$attribute->set_options( $options );
-		$attribute->set_position( 0 );
-		$attribute->set_visible( 1 );
-		$attribute->set_variation( 1 );
-		$attribute->set_id( 0 );
+		// Get existing attributes
+		$attributes = $product->get_attributes();
+		$grid_attribute = null;
 
-		$product->set_attributes( [ 'grid' => $attribute ] );
+		// Check if 'grid' attribute already exists
+		if ( isset( $attributes['grid'] ) ) {
+			$grid_attribute = $attributes['grid'];
+		} elseif ( isset( $attributes['pa_grid'] ) ) { // Check for taxonomy-based attribute name too
+			$grid_attribute = $attributes['pa_grid'];
+		}
+		
+		if ( $grid_attribute instanceof \WC_Product_Attribute ) {
+			// Update existing attribute's options
+			$grid_attribute->set_options( $options );
+			$attributes[ $grid_attribute->get_name() ] = $grid_attribute; // Ensure it's updated in the array
+		} else {
+			// Create new attribute if it doesn't exist
+			$new_attribute = new \WC_Product_Attribute();
+			$new_attribute->set_name( 'grid' ); // Use 'grid', WC might handle prefixing if needed
+			$new_attribute->set_options( $options );
+			$new_attribute->set_position( 0 );
+			$new_attribute->set_visible( 1 );
+			$new_attribute->set_variation( 1 );
+			$new_attribute->set_id( 0 ); // Let WC assign ID if it's taxonomy based
+			$attributes['grid'] = $new_attribute;
+		}
 
-		// Save the product.
-		$product->save();
+		// Set the potentially modified attributes array back to the product
+		$product->set_attributes( $attributes );
+
+		// Save the product is handled within update_attributes caller if needed.
+		// $product->save(); // Removed from here
 	}
 
 	/**
@@ -185,7 +206,7 @@ class WooCommerceFunctions {
 	 * @return void
 	 */
 	public static function update_attributes( \WC_Product_Variable|\WC_Product $product ): void {
-		global $BID;
+		global $wpdb;
 
 		// Fetch data
 		$grids               = self::get_update_attribute_data();
@@ -234,15 +255,29 @@ class WooCommerceFunctions {
 				// If no existing variation was found, make a new one.
 				$variation = new \WC_Product_Variation();
 				$variation->set_parent_id( $product->get_id() );
-				$variation->set_regular_price( $grid->price_per_block );
+				
+				// Fetch current price directly from DB for accuracy
+				$current_price = $wpdb->get_var(
+					$wpdb->prepare("SELECT price_per_block FROM " . $wpdb->prefix . "mds_banners WHERE banner_id = %d", $new_attribute_value)
+				);
+				if ($current_price === null) { $current_price = 0; } // Default if not found
+
+				$variation->set_regular_price( floatval($current_price) ); // Use fresh price
 				$variation->set_virtual( true );
 				$variation->set_downloadable( true );
 				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
 				$variation->save();
-			} else if ( $new_attribute_value == $BID ) {
-				// If an existing variation was found, update it with the new data only if it's the one being edited.
+			} else {
+				// If an existing variation was found, update it with the new data.
 				$variation = wc_get_product( $variation_id );
-				$variation->set_regular_price( $grid->price_per_block );
+
+				// Fetch current price directly from DB for accuracy
+				$current_price = $wpdb->get_var(
+					$wpdb->prepare("SELECT price_per_block FROM " . $wpdb->prefix . "mds_banners WHERE banner_id = %d", $new_attribute_value)
+				);
+				if ($current_price === null) { $current_price = 0; } // Default if not found
+
+				$variation->set_regular_price( floatval($current_price) ); // Use fresh price
 				$variation->set_virtual( true );
 				$variation->set_downloadable( true );
 				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
@@ -380,7 +415,7 @@ class WooCommerceFunctions {
 			wp_reset_postdata();
 		} else {
 			// create new product
-			$product    = self::create_product();
+			$product    = self::create_and_assign_default_product();
 			$product_id = $product->get_id();
 		}
 
@@ -421,13 +456,38 @@ class WooCommerceFunctions {
 	}
 
 	/**
+	 * Enable WooCommerce payments module in MDS.
+	 *
+	 * @return void
+	 */
+	public static function enable_woocommerce_payments(): void {
+		if ( class_exists( 'woocommerce' ) ) {
+			// Options::update_option('woocommerce', 'yes');
+
+			// Ensure a default product exists and is assigned
+			$product_id = WooCommerceFunctions::get_product_id();
+
+			if ( $product_id ) {
+				$product = wc_get_product( $product_id );
+
+				// Update WC Product attributes/variations ONLY if enabled and product is valid
+				WooCommerceFunctions::update_attributes( $product );
+
+				Logs::log("MDS Wizard: Successfully updated WC attributes for product ID: " . $product_id);
+			} else {
+				// Log error if product couldn't be created or assigned
+				Logs::log('MDS Wizard: Failed to get or create/assign WooCommerce product. Attributes not updated.');
+			}
+		}
+	}
+
+	/**
 	 * Disable WooCommerce payment module.
 	 *
 	 * @return void
 	 */
 	public static function disable_woocommerce_payments(): void {
-		global $wpdb;
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_ENABLED', 'val' => 'N' ] );
+		// Options::update_option('woocommerce', '');
 	}
 
 	/**
@@ -471,29 +531,46 @@ class WooCommerceFunctions {
 		return wc_get_product( $product_id );
 	}
 
+
 	/**
-	 * Enable WooCommerce payments module in MDS.
+	 * Checks for an existing MDS WC product, creates one if needed, assigns it to options,
+	 * and returns the WC_Product object.
 	 *
-	 * @return void
+	 * @return \WC_Product|false The product object or false on failure.
 	 */
-	public static function enable_woocommerce_payments(): void {
-		global $wpdb;
+	public static function create_and_assign_default_product() {
+		// Check if a product is already assigned
+		$product_option = Options::get_option( 'product', null, true );
+		$product_id = !empty($product_option[0]['id']) ? intval($product_option[0]['id']) : 0;
+		$product = $product_id ? wc_get_product($product_id) : false;
 
-		// Disable "Payment" module
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'EXTERNAL_ENABLED', 'val' => 'N' ] );
+		if ($product instanceof \WC_Product && $product->exists()) {
+			// Product already exists and is assigned
+			return $product;
+		}
 
-		// Enable WooCommerce module
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_ENABLED', 'val' => 'Y' ] );
+		// If no valid product assigned, create a new one
+		$new_product = self::create_product();
+		$new_product_id = $new_product->get_id();
 
-		// $product_id = self::get_product_id();
+		if ( ! $new_product_id || is_wp_error($new_product_id) ) {
+			Logs::log( 'MDS Wizard: Failed to create default WooCommerce product. Error: ' . ($new_product_id instanceof \WP_Error ? $new_product_id->get_error_message() : 'Unknown Error') );
+			return false;
+		}
 
-		$checkout_url = wc_get_checkout_url() . '?add-to-cart=%VARIATION%&quantity=%QUANTITY%';
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_URL', 'val' => $checkout_url ] );
+		// Assign the new product ID to the Carbon Fields option
+		// Assumes the option 'mds_product' stores value like: [['id' => ID, 'type' => 'post', 'subtype' => 'product']]
+		$option_value = [
+			[
+				'id' => $new_product_id,
+				'type' => 'post',
+				'subtype' => 'product'
+			]
+		];
+		carbon_set_theme_option( MDS_PREFIX . 'product', $option_value );
 
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_AUTO_APPROVE', 'val' => 'yes' ] );
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_BUTTON_TEXT', 'val' => '' ] );
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_BUTTON_IMAGE', 'val' => '' ] );
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_REDIRECT', 'val' => 'yes' ] );
+		// Return the newly created product object
+		return $new_product;
 	}
 
 	public static function delete_duplicate_variations( $product, $attribute = 'grid' ): void {
@@ -522,7 +599,7 @@ class WooCommerceFunctions {
 	 *
 	 * @param $item
 	 * @param $mds_order_id
-	 * @param null $quantity
+	 * @param int $quantity
 	 *
 	 * @return bool
 	 */
@@ -609,8 +686,6 @@ class WooCommerceFunctions {
 
 		global $wpdb;
 		$mds_quantity = $wpdb->get_var( $wpdb->prepare( "SELECT `quantity` FROM `" . MDS_DB_PREFIX . "orders` WHERE `order_id`=%d", intval( $mds_order_id ) ) );
-
-		$good = true;
 
 		global $f2;
 		$BID         = $f2->bid();

@@ -37,6 +37,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\System\Debug;
 use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
@@ -176,7 +177,7 @@ class Orders {
 		}
 
 		if ( $return_order_id ) {
-			return $result;
+			return (int) $result;
 		}
 
 		return true;
@@ -368,12 +369,12 @@ class Orders {
 	/**
 	 * Create a new order. If $user_id is omitted it will use the current user id.
 	 *
-	 * @param null $user_id
-	 * @param null $banner_id
+	 * @param int|null $user_id
+	 * @param int|null $banner_id
 	 *
 	 * @return int
 	 */
-	public static function create_order( $user_id = null, $banner_id = null ): int {
+	public static function create_order( int $user_id = null, int $banner_id = null ): int {
 		global $wpdb;
 
 		if ( is_null( $user_id ) ) {
@@ -1429,10 +1430,10 @@ class Orders {
 					if ( $wc_order->get_status() !== 'completed' ) {
 						$wc_order->update_status( 'completed', __( 'MDS order marked as completed.', 'milliondollarscript-two' ) );
 					} else {
-						error_log( '[MDS] WC order ' . $wc_order_id_int . ' already completed.' );
+						Logs::log( '[MDS] WC order ' . $wc_order_id_int . ' already completed.' );
 					}
 				} else {
-					error_log( '[MDS] Could not load WC order with ID ' . $wc_order_id_int );
+					Logs::log( '[MDS] Could not load WC order with ID ' . $wc_order_id_int );
 				}
 			}
 
@@ -2336,7 +2337,7 @@ class Orders {
 
 				$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders where `banner_id`='" . intval( $BID ) . "' and status <> 'deleted' and status <> 'new' AND user_id='" . intval( $user_id ) . "'";
 
-				$result = mysqli_query( $GLOBALS['connection'], $sql ) or error_log("MDS Debug: DB Error: " . mysqli_error( $GLOBALS['connection'] ) . " SQL: " . $sql); // Log DB errors
+				$result = mysqli_query( $GLOBALS['connection'], $sql ) or Logs::log("MDS Debug: DB Error: " . mysqli_error( $GLOBALS['connection'] ) . " SQL: " . $sql); // Log DB errors
 				$count = $result ? mysqli_num_rows( $result ) : 0; // Handle potential query failure
 
 				if ( $count >= $banner_data['G_MAX_ORDERS'] ) {

@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\Forms;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
 use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Language\Language;
@@ -335,7 +336,7 @@ class Forms {
 						if ($result === false) {
 							// Database error
 							$params['package_save_error'] = 'db_error';
-                            error_log('MDS Package Save Error: ' . $wpdb->last_error);
+                            Logs::log('MDS Package Save Error: ' . $wpdb->last_error);
 						} elseif ($result > 0) {
 							// Success (rows affected > 0)
 							$params['package_save_success'] = 'true';
