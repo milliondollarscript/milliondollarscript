@@ -31,6 +31,7 @@ namespace MillionDollarScript\Upgrades;
 
 use MillionDollarScript\Classes\Data\DatabaseStatic;
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -175,7 +176,7 @@ class _2_5_12_0 {
                 Options::update_option('legacy-' . $option_name, $value);
                 
                 // Log migration of unmapped config for reference
-                error_log("MDS Migration: Unmapped config key '{$key}' stored as legacy option");
+                Logs::log("MDS Migration: Unmapped config key '{$key}' stored as legacy option");
             }
         }
     }

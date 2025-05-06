@@ -34,6 +34,7 @@ use MillionDollarScript\Classes\Data\Database;
 use MillionDollarScript\Classes\Data\DatabaseStatic;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Filesystem;
+use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -58,13 +59,13 @@ class _2_5_11_40 {
         /**
          * Log the attempt
          */
-        error_log( 'MDS Upgrade: Attempting to remove empty config keys from ' . $table_name );
+        Logs::log( 'MDS Upgrade: Attempting to remove empty config keys from ' . $table_name );
         
         /**
          * Check if table exists
          */
         if (!DatabaseStatic::table_exists($table_name)) {
-            error_log( 'MDS Upgrade: Config table ' . $table_name . ' does not exist. Skipping empty key deletion.' );
+            Logs::log( 'MDS Upgrade: Config table ' . $table_name . ' does not exist. Skipping empty key deletion.' );
             return;
         }
         
@@ -79,11 +80,11 @@ class _2_5_11_40 {
         /**
          * Backup important values that might be affected
          */
-        error_log('Checking for empty config_key entries in ' . $table_name);
+        Logs::log('Checking for empty config_key entries in ' . $table_name);
         $empty_keys_count = (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}` WHERE `config_key` = ''");
         
         if ($empty_keys_count > 0) {
-            error_log("Found {$empty_keys_count} empty config_key entries. Removing them...");
+            Logs::log("Found {$empty_keys_count} empty config_key entries. Removing them...");
             
             /**
              * Try to remove any PRIMARY KEY constraint before deletion
@@ -93,7 +94,7 @@ class _2_5_11_40 {
                 $wpdb->query("ALTER TABLE `{$table_name}` DROP PRIMARY KEY");
                 $wpdb->flush();
             } catch (\Exception $e) {
-                error_log('Failed to drop PRIMARY KEY: ' . $e->getMessage());
+                Logs::log('Failed to drop PRIMARY KEY: ' . $e->getMessage());
                 // Continue anyway, the key may not exist yet
             }
             
@@ -107,9 +108,9 @@ class _2_5_11_40 {
              */
             $remaining = (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$table_name}` WHERE `config_key` = ''");
             if ($remaining === 0) {
-                error_log("Successfully removed all empty config_key entries");
+                Logs::log("Successfully removed all empty config_key entries");
             } else {
-                error_log("WARNING: {$remaining} empty config_key entries still remain");
+                Logs::log("WARNING: {$remaining} empty config_key entries still remain");
             }
             
             /**
@@ -119,11 +120,11 @@ class _2_5_11_40 {
                 $wpdb->query("ALTER TABLE `{$table_name}` ADD PRIMARY KEY (`config_key`)");
                 $wpdb->flush();
             } catch (\Exception $e) {
-                error_log('Failed to add PRIMARY KEY after empty key removal: ' . $e->getMessage());
+                Logs::log('Failed to add PRIMARY KEY after empty key removal: ' . $e->getMessage());
                 // This will be handled in ensure_config_key_column or fix_config_key_issues
             }
         } else {
-            error_log('No empty config_key entries found. Table is clean.');
+            Logs::log('No empty config_key entries found. Table is clean.');
         }
 
         /**
@@ -155,7 +156,7 @@ class _2_5_11_40 {
             global $wpdb;
             
             // Log that the upgrade is starting
-            error_log( 'MDS Upgrade _2_5_11_40 starting.' );
+            Logs::log( 'MDS Upgrade _2_5_11_40 starting.' );
             
             // 0. CRITICAL: Remove empty keys immediately to prevent PRIMARY KEY conflicts
             $this->remove_empty_config_keys();
@@ -191,7 +192,7 @@ class _2_5_11_40 {
             $this->schedule_cookies_file_deletion();
             
             // Log that the upgrade finished
-            error_log( 'MDS Upgrade _2_5_11_40 finished.' );
+            Logs::log( 'MDS Upgrade _2_5_11_40 finished.' );
         }
     }
     
@@ -220,7 +221,7 @@ class _2_5_11_40 {
         /**
          * Log deletion attempt
          */
-        error_log('Attempting to delete cookies file via WordPress filesystem: ' . $cookies_file);
+        Logs::log('Attempting to delete cookies file via WordPress filesystem: ' . $cookies_file);
         
         /**
          * Use WordPress filesystem API to delete the file
@@ -233,9 +234,9 @@ class _2_5_11_40 {
          * Log the result and provide admin notice if needed
          */
         if ($deleted) {
-            error_log('Successfully deleted or verified absence of cookies file via WordPress filesystem');
+            Logs::log('Successfully deleted or verified absence of cookies file via WordPress filesystem');
         } else {
-            error_log('CRITICAL: Failed to delete cookies file via WordPress filesystem: ' . $cookies_file);
+            Logs::log('CRITICAL: Failed to delete cookies file via WordPress filesystem: ' . $cookies_file);
             
             /**
              * Fallback strategy: Try to empty the file if deletion failed
@@ -253,7 +254,7 @@ class _2_5_11_40 {
                  */
                 if ($wp_filesystem->exists($cookies_file)) {
                     if ($wp_filesystem->put_contents($cookies_file, '<?php // File disabled by MDS Upgrade', FS_CHMOD_FILE)) {
-                        error_log('Successfully disabled cookies file by emptying it');
+                        Logs::log('Successfully disabled cookies file by emptying it');
                         $success = true;
                     }
                 }
@@ -340,7 +341,7 @@ class _2_5_11_40 {
             $wpdb->query("ALTER TABLE `{$table_name}` ADD PRIMARY KEY (`config_key`)");
             $wpdb->flush();
         } catch (\Exception $e) {
-            error_log('Error converting key to config_key: ' . $e->getMessage());
+            Logs::log('Error converting key to config_key: ' . $e->getMessage());
             
             // If there was an error, try more drastic measures - recreate table
             $this->rebuild_config_table($table_name, $backup_values ?? []);
@@ -365,7 +366,7 @@ class _2_5_11_40 {
             $wpdb->query("ALTER TABLE `{$table_name}` ADD PRIMARY KEY (`config_key`)");
             $wpdb->flush();
         } catch (\Exception $e) {
-            error_log('Error creating config_key column: ' . $e->getMessage());
+            Logs::log('Error creating config_key column: ' . $e->getMessage());
         }
     }
     
@@ -445,7 +446,7 @@ class _2_5_11_40 {
                 }
             }
         } catch (\Exception $e) {
-            error_log('Error fixing config_key issues: ' . $e->getMessage());
+            Logs::log('Error fixing config_key issues: ' . $e->getMessage());
             // Rebuild the table as a last resort
             $this->rebuild_config_table($table_name, $backup_values);
         }
@@ -515,9 +516,9 @@ class _2_5_11_40 {
                 }
             }
             
-            error_log('Successfully rebuilt config table with correct structure');
+            Logs::log('Successfully rebuilt config table with correct structure');
         } catch (\Exception $rebuild_error) {
-            error_log('Failed to rebuild config table: ' . $rebuild_error->getMessage());
+            Logs::log('Failed to rebuild config table: ' . $rebuild_error->getMessage());
         }
     }
 }
