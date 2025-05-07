@@ -46,8 +46,6 @@ class LanguageScanner {
 
 	private array $contents;
 
-	/** @var $wp_filesystem \WP_Filesystem_Direct */
-	private mixed $wp_filesystem;
 	private string $pot_file_path;
 
 	/**
@@ -59,12 +57,8 @@ class LanguageScanner {
 		$this->plugin_folder = $plugin_folder;
 		$this->pot_file_path = $plugin_folder . 'languages/milliondollarscript.pot';
 
-		$url        = wp_nonce_url( 'wp-admin/plugins.php', 'mds_filesystem_nonce' );
-		$filesystem = new Filesystem( $url );
-		if ( $filesystem->get_filesystem() ) {
-			global $wp_filesystem;
-			$this->wp_filesystem = $wp_filesystem;
-		}
+		$filesystem = new Filesystem();
+		$filesystem->make_folder( dirname( $this->pot_file_path ) );
 	}
 
 	/**
@@ -83,7 +77,7 @@ class LanguageScanner {
 		}
 
 		$full_contents = $header . "\n" . implode( "\n", $this->contents );
-		if ( ! $this->wp_filesystem->put_contents( $this->pot_file_path, $full_contents ) ) {
+		if ( ! Filesystem::put_contents( $this->pot_file_path, $full_contents ) ) {
 			throw new \Exception( Language::get( 'Could not write to file: ' ) . $this->pot_file_path );
 		}
 	}
@@ -96,7 +90,8 @@ class LanguageScanner {
 	 * @return void
 	 */
 	public function scan_file( string $file ): void {
-		$content = $this->wp_filesystem->get_contents( $file );
+		$filesystem = new Filesystem();
+		$content = $filesystem->get_contents( $file );
 
 		$parser    = ( new ParserFactory )->createForHostVersion();
 		$traverser = new NodeTraverser;

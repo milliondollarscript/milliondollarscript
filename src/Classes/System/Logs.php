@@ -113,7 +113,7 @@ class Logs {
 
 		$filesystem = new Filesystem();
 
-		if ( $filesystem->file_exists( $log_file ) ) {
+		if ( Filesystem::file_exists( $log_file ) ) {
 			try {
 				// Attempt to delete the file using Filesystem class
 				if ( $filesystem->delete_file( $log_file ) ) {
@@ -145,7 +145,7 @@ class Logs {
 		$log_file = self::get_log_file_path();
 		$filesystem = new Filesystem();
 
-		if ( $log_file === null || ! $filesystem->file_exists( $log_file ) || ! $filesystem->is_readable( $log_file ) ) {
+		if ( $log_file === null || ! Filesystem::file_exists( $log_file ) || ! $filesystem->is_readable( $log_file ) ) {
 			return false;
 		}
 
