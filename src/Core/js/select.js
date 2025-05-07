@@ -811,6 +811,7 @@ window.addEventListener('resize', function() {
 });
 
 jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
+	console.log('ajaxComplete');
 	const params = new URLSearchParams(settings.data);
 	const type = params.get('type');
 
@@ -976,6 +977,7 @@ jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
 	if ($mds_selection_size_slider.length > 0) {
 		$mds_selection_size_slider.on('input', function () {
 			const blockSize = parseInt(jQuery(this).val());
+			console.log('blockSize', blockSize);
 			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
 			$mds_selection_size_value.val(adjustedBlockSize);
 			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
