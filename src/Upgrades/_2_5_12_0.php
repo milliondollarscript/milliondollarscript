@@ -214,8 +214,7 @@ class _2_5_12_0 {
         
         // Convert based on key type
         if (in_array($key, $boolean_keys)) {
-            // Carbon Fields stores checked checkboxes as 'yes'
-            return in_array(strtoupper($value), ['YES', 'Y', '1', 'TRUE']) ? 'yes' : '';
+            return in_array(strtoupper($value), ['YES', 'Y', '1', 'TRUE']) ? 'yes' : 'no';
         } elseif (in_array($key, $integer_keys)) {
             return intval($value);
         }
