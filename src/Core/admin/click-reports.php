@@ -293,7 +293,6 @@ function mds_get_username($user_id) {
 $selected_order = isset($_GET['order_id']) && $_GET['order_id'] !== '' ? trim($_GET['order_id']) : '';
 $selected_block = isset($_GET['block_id']) && $_GET['block_id'] !== '' ? trim($_GET['block_id']) : '';
 $selected_user  = isset($_GET['user']) && $_GET['user'] !== '' ? trim($_GET['user']) : '';
-$view_type      = $view_type;
 
 // Build filtered block list
 $filtered_blocks = [];
@@ -472,16 +471,6 @@ if (function_exists('MillionDollarScript\Classes\System\Utility::display_paginat
     </div>
 
 <?php
-// REMOVED: AJAX handlers are now in Admin.php and hooked in Bootstrap.php
-/*
-add_action('wp_ajax_mds_save_click_report_view_type', function() {
-    // ... code removed ...
-});
-
-add_action('wp_ajax_mds_load_click_report_view_type', function() {
-    // ... code removed ...
-});
-*/
 
 // Add inline JS for saving/loading filters
 add_action('admin_footer', function() {
