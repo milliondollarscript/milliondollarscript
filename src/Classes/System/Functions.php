@@ -189,6 +189,7 @@ class Functions {
 		$register_order_script = false;
 
 		global $post;
+
 		if ( isset( $post ) && $post->ID == Options::get_option( 'users-order-page' ) ) {
 			$register_order_script = true;
 		} else {
@@ -203,7 +204,6 @@ class Functions {
 		}
 
 		if ( $register_order_script ) {
-
 			// select.js
 			if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'YES' ) {
 				$order_script  = 'select';

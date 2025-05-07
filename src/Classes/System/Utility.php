@@ -695,6 +695,34 @@ class Utility {
 		return self::has_endpoint();
 	}
 
+	/**
+	 * Check if the current page is an MDS page (endpoint or created WP page).
+	 *
+	 * @return bool
+	 */
+	public static function is_mds_page(): bool {
+		// Allow frontend AJAX via the mds_ajax action only
+		if ( wp_doing_ajax() && isset( $_REQUEST['action'] ) && 'mds_ajax' === $_REQUEST['action'] ) {
+			return true;
+		}
+
+		// Match endpoint URL patterns
+		if ( self::has_endpoint() ) {
+			return true;
+		}
+
+		// Match singular pages created via get_pages()
+		if ( is_singular() ) {
+			global $post;
+			$page_ids = self::get_page_ids();
+			if ( in_array( $post->ID, array_values($page_ids), false ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public static function output_message( $data = [] ): void {
 		if ( wp_doing_ajax() ) {
 			if ( isset( $data['success'] ) ) {

@@ -40,6 +40,49 @@ class Filesystem {
 	private string $url;
 
 	/**
+	 * WordPress Filesystem object.
+	 *
+	 * @var \WP_Filesystem_Base|null
+	 */
+	private static $static_wp_filesystem = null;
+
+	/**
+	 * Initialize and ensure the WordPress Filesystem API is available.
+	 *
+	 * @return bool True if the filesystem is initialized and available, false otherwise.
+	 */
+	private static function init_wp_filesystem(): bool {
+		global $wp_filesystem;
+
+		// If it's already initialized and is the correct object, nothing to do.
+		if ( $wp_filesystem instanceof \WP_Filesystem_Base ) {
+			self::$static_wp_filesystem = $wp_filesystem; // Cache it statically
+			return true;
+		}
+
+		// If our static cache has it, re-assign to global (e.g. if global was unset somehow)
+		if ( self::$static_wp_filesystem instanceof \WP_Filesystem_Base ) {
+			$wp_filesystem = self::$static_wp_filesystem;
+			return true;
+		}
+
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		if ( ! WP_Filesystem() ) {
+			// Filesystem credentials are not available or WP_Filesystem() failed.
+			// Error_Log::log_error( 'WP_Filesystem could not be initialized.' );
+			return false;
+		}
+
+		// WP_Filesystem() sets the global $wp_filesystem object.
+		// Cache it statically for subsequent calls within the same request.
+		self::$static_wp_filesystem = $wp_filesystem;
+		return true;
+	}
+
+	/**
 	 * Filesystem constructor.
 	 *
 	 * @param string $url
@@ -57,7 +100,7 @@ class Filesystem {
 	 * @return boolean|\WP_Error
 	 */
 	public function make_folder( $folder, bool $delete = false ): \WP_Error|bool {
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 
 			/**
 			 * @var \WP_Filesystem_Base $wp_filesystem
@@ -92,7 +135,7 @@ class Filesystem {
 	 * @return boolean|\WP_Error
 	 */
 	public function delete_folder( $folder ): \WP_Error|bool {
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 
 			/**
 			 * @var \WP_Filesystem_Base $wp_filesystem
@@ -121,7 +164,7 @@ class Filesystem {
 	 * @return bool
 	 */
 	public function copy( $src, $dest, bool $overwrite = false ): bool {
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 
 			/**
 			 * @var \WP_Filesystem_Base $wp_filesystem
@@ -146,7 +189,7 @@ class Filesystem {
 	 */
 	public function list_files( string $dir, string $filter = '' ): array {
 		$files = [];
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 			/**
 			 * @var \WP_Filesystem_Base $wp_filesystem
 			 * @psalm-suppress UndefinedGlobalVariable Using WordPress global
@@ -168,24 +211,18 @@ class Filesystem {
 	}
 
 	/**
-	 * Get credentials and try to get a WP_filesystem
+	 * Check if a file or directory exists using WordPress filesystem.
 	 *
-	 * @return bool
+	 * @param string $path Path to check.
+	 * @return bool True if exists, false otherwise or on error.
 	 */
-	public function get_filesystem(): bool {
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-
-		// request filesystem credentials
-		if ( false === ( $creds = \request_filesystem_credentials( $this->url ) ) ) {
-			return false;
+	public static function file_exists( string $path ): bool {
+		if ( self::init_wp_filesystem() ) { 
+			/** @var \WP_Filesystem_Base $wp_filesystem */
+			global $wp_filesystem;
+			return $wp_filesystem->exists( $path );
 		}
-
-		// get filesystem with credentials
-		if ( ! \WP_Filesystem( $creds ) ) {
-			return false;
-		}
-
-		return true;
+		return false;
 	}
 
 	/**
@@ -196,7 +233,7 @@ class Filesystem {
 	 * @return bool True if delete was successful or file doesn't exist, false otherwise
 	 */
 	public function delete_file( string $file_path ): bool {
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 			/**
 			 * @var \WP_Filesystem_Base $wp_filesystem
 			 * @psalm-suppress UndefinedGlobalVariable Using WordPress global
@@ -219,28 +256,13 @@ class Filesystem {
 	}
 
 	/**
-	 * Check if a file or directory exists using WordPress filesystem.
-	 *
-	 * @param string $path Path to check.
-	 * @return bool True if exists, false otherwise or on error.
-	 */
-	public function file_exists( string $path ): bool {
-		if ( $this->get_filesystem() ) {
-			/** @var \WP_Filesystem_Base $wp_filesystem */
-			global $wp_filesystem;
-			return $wp_filesystem->exists( $path );
-		}
-		return false;
-	}
-
-	/**
 	 * Check if a file is readable using WordPress filesystem.
 	 *
 	 * @param string $path Path to the file.
 	 * @return bool True if readable, false otherwise or on error.
 	 */
 	public function is_readable( string $path ): bool {
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 			/** @var \WP_Filesystem_Base $wp_filesystem */
 			global $wp_filesystem;
 			return $wp_filesystem->is_readable( $path );
@@ -255,7 +277,7 @@ class Filesystem {
 	 * @return string|false File contents on success, false on failure.
 	 */
 	public function get_contents( string $path ) {
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 			/** @var \WP_Filesystem_Base $wp_filesystem */
 			global $wp_filesystem;
 			// Ensure the file exists and is readable first
@@ -276,7 +298,7 @@ class Filesystem {
 	 * @return bool True on success, false on failure.
 	 */
 	public function append_contents( string $path, string $data ): bool {
-		if ( $this->get_filesystem() ) {
+		if ( self::init_wp_filesystem() ) {
 			/** @var \WP_Filesystem_Base $wp_filesystem */
 			global $wp_filesystem;
 
@@ -309,5 +331,39 @@ class Filesystem {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Write content to a file, overwriting if it exists.
+	 *
+	 * @param string $path Path to the file.
+	 * @param string $data The data to write.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function put_contents( string $path, string $data ): bool {
+		if ( ! self::init_wp_filesystem() ) { 
+			// Error_Log::log_error( 'Filesystem could not be initialized for put_contents.' );
+			return false;
+		}
+
+		/** @var \WP_Filesystem_Base $wp_filesystem */
+		global $wp_filesystem; // $wp_filesystem is initialized by init_wp_filesystem()
+
+		$directory = dirname( $path );
+
+		// Ensure the directory exists and is writable
+		if ( ! $wp_filesystem->is_dir( $directory ) ) {
+			// Attempt to create the directory if it doesn't exist
+			if ( ! $wp_filesystem->mkdir( $directory, FS_CHMOD_DIR ) ) {
+				Logs::log( 'MDS Filesystem::put_contents - Could not create directory: ' . $directory );
+				return false;
+			}
+		} elseif ( ! $wp_filesystem->is_writable( $directory ) ) {
+			Logs::log( 'MDS Filesystem::put_contents - Directory not writable: ' . $directory );
+			return false;
+		}
+
+		// Write the file
+		return $wp_filesystem->put_contents( $path, $data, FS_CHMOD_FILE );
 	}
 }

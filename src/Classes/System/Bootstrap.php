@@ -175,9 +175,6 @@ class Bootstrap {
 		// Add Admin page
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Admin\Admin', 'menu' ], 10 );
 
-		// Add dynamic styles to admin head
-		add_action( 'admin_head', [ '\MillionDollarScript\Classes\Admin\Admin', 'output_dynamic_styles' ] );
-
 		// Initialize WooCommerce integrations
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\WooCommerce\Refunds', 'init' ] );
 
@@ -205,6 +202,10 @@ class Bootstrap {
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'register_scripts' ] );
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
 		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
+
+		// Enqueue dynamic CSS inline for frontend and login pages
+		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Web\Styles', 'enqueue_dynamic_styles' ], 20 );
+		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\Web\Styles', 'enqueue_dynamic_styles' ], 20 );
 
 		// enqueue js on specific admin pages
 		$admin_page = is_admin() && isset( $_REQUEST['page'] );

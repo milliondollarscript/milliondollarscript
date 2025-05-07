@@ -70,7 +70,7 @@ class Logs {
 	 */
 	public static function log( string $message, string $level = self::LEVEL_INFO ): bool {
 		// Check if logging is enabled using Options class - for checkboxes, value is directly usable as boolean
-		if ( ! Options::get_option( 'log-enable', '' ) ) {
+		if ( ! Options::get_option( 'log-enable', 'no' ) ) {
 			return false;
 		}
 
