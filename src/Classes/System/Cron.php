@@ -146,9 +146,9 @@ class Cron {
 	public static function clean_old_log_files(): void {
 		$filesystem = new Filesystem();
 		$upload_dir = Utility::get_upload_path();
-		$log_basename = Config::get( 'MDS_LOG_FILE', 'mds_debug' );
+		$log_basename = Config::get( 'MDS_LOG_FILE' ) ?? 'mds_debug';
 		// Ensure the basename doesn't already contain path separators or extension
-		$log_basename = preg_replace('/\.log$/i', '', basename( $log_basename )); 
+		$log_basename = preg_replace('/\.log$/i', '', basename( (string) $log_basename )); 
 
 		// Use file_exists as it works for directories too in our Filesystem wrapper
 		if ( ! $upload_dir || ! $filesystem->file_exists( $upload_dir ) ) {
