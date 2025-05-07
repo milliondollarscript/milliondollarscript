@@ -124,7 +124,7 @@ class Shortcode {
 			$checkout_url         = Options::get_option( 'checkout-url' );
 			$is_wc_active         = WooCommerceFunctions::is_wc_active();
 			// Check if WooCommerce integration is enabled
-			$is_wc_option_enabled = Options::get_option( 'woocommerce' );
+			$is_wc_option_enabled = Options::get_option( 'woocommerce', 'no' ) == 'yes';
 			$is_order_id_present  = ! empty( $_REQUEST['order_id'] );
 			$is_user_logged_in    = is_user_logged_in();
 

@@ -52,7 +52,7 @@ class Payment {
 		$checkout_url = Options::get_option( 'checkout-url' );
 		if ( empty( $checkout_url ) ) {
 			// Check if WooCommerce is active and integration is enabled
-			if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) ) {
+			if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) == 'yes' ) {
 
 				if ( ! empty( $order_id ) ) {
 
@@ -73,7 +73,7 @@ class Payment {
 							return;
 						}
 
-						if ( Options::get_option( 'auto-approve' ) ) {
+						if ( Options::get_option( 'auto-approve' ) == 'yes' ) {
 							Orders::complete_order( $row['user_id'], $order_id );
 							Payment::debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );
 
@@ -224,7 +224,7 @@ class Payment {
 			return;
 		}
 
-		if ( Options::get_option( 'auto-approve' ) ) {
+		if ( Options::get_option( 'auto-approve' ) == 'yes' ) {
 			if ( $order_id != '' ) {
 				if ( ! is_user_logged_in() ) {
 					if ( Utility::has_endpoint_or_ajax() ) {

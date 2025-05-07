@@ -125,18 +125,18 @@ if ( ! is_user_logged_in() ) {
 
 		$field_value = carbon_get_post_meta( $mds_pixel_id, $field_name );
 
-		if ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional' ) ) {
-			if ( empty( $field_value ) && ! Options::get_option( 'text-optional', true ) ) {
+		if ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional', 'no' ) == 'yes' ) {
+			if ( empty( $field_value ) && ! Options::get_option( 'text-optional', 'no' ) == 'yes' ) {
 				$errors[] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field_label );
 			}
 
-		} else if ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional' ) ) {
-			if ( empty( $field_value ) && ! Options::get_option( 'url-optional', true ) ) {
+		} else if ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional', 'no' ) == 'yes' ) {
+			if ( empty( $field_value ) && ! Options::get_option( 'url-optional', 'no' ) == 'yes' ) {
 				$errors[] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field_label );
 			}
 
-		} else if ( $field_name == MDS_PREFIX . 'image' && ! Options::get_option( 'image-optional', true ) ) {
-			if ( empty( $field_value ) && ! Options::get_option( 'image-optional', true ) ) {
+		} else if ( $field_name == MDS_PREFIX . 'image' && ! Options::get_option( 'image-optional', 'yes' ) == 'yes' ) {
+			if ( empty( $field_value ) && ! Options::get_option( 'image-optional', 'yes' ) == 'yes' ) {
 				$errors[] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field_label );
 			}
 		}
@@ -215,7 +215,7 @@ if ( ! is_user_logged_in() ) {
 	$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 	// Check if order confirmation is disabled
-	if ( ! \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) ) {
+	if ( Options::get_option( 'confirm-orders', 'yes' ) == 'no' ) {
 		$params             = [];
 		$params['BID']      = $BID;
 		$params['order_id'] = $order_row['order_id'];
@@ -299,7 +299,7 @@ if ( ! is_user_logged_in() ) {
 		} else {
 
 			// Check if order confirmation is enabled
-			if ( \MillionDollarScript\Classes\Data\Options::get_option( 'confirm-orders' ) ) {
+			if ( Options::get_option( 'confirm-orders', 'yes' ) == 'yes' ) {
 				// Confirm order page buttons
 				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 					// go straight to publish...

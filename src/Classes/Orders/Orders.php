@@ -989,7 +989,7 @@ class Orders {
 								echo "<br />";
 							}
 
-							if ( ! Options::get_option( 'order-locking' ) ) {
+							if ( Options::get_option( 'order-locking' ) == 'no' ) {
 								echo "<a class='mds-button mds-manage' href='" . Utility::get_page_url( 'manage' ) . "?mds-action=manage&aid=" . $order['ad_id'] . "'>" . Language::get( 'Manage' ) . "</a>";
 							}
 						}

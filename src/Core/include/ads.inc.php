@@ -231,7 +231,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 			echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, Utility::get_page_url( 'manage' ), $order_by );
 		}
 
-		$order_locking = Options::get_option( 'order-locking', false );
+		$order_locking = Options::get_option( 'order-locking', 'no' ) == 'yes';
 
 		?>
         <div class="mds-pixels-list">
@@ -437,7 +437,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 			echo Functions::generate_navigation( $cur_page, $count, $records_per_page, $additional_params, Utility::get_page_url( 'manage' ), $order_by );
 		}
 
-		$order_locking = Options::get_option( 'order-locking', false );
+		$order_locking = Options::get_option( 'order-locking', 'no' ) == 'yes';
 
 		?>
         <div class="mds-pixels-list">

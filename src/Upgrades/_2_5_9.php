@@ -41,7 +41,7 @@ class _2_5_9 {
 		if ( version_compare( $version, '2.5.9', '<' ) ) {
 
 			// Update Plugin updates option from dev to snapshot
-			$updates = Options::get_option( 'updates' );
+			$updates = Options::get_option( 'updates', 'yes' );
 			if ( $updates == 'dev' ) {
 				Options::update_option( 'updates', 'snapshot' );
 			}

@@ -397,7 +397,7 @@ class Functions {
 
 		$order_id = $row['order_id'];
 		if ( /*! empty( $_REQUEST['change_pixels'] ) && */
-		Options::get_option( 'order-locking', false ) ) {
+		Options::get_option( 'order-locking', 'no' ) == 'yes' ) {
 			// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
 			$completion_status = Orders::get_completion_status( $order_id, $user_id );
 			if ( ! $completion_status && $row['status'] !== 'denied' ) {

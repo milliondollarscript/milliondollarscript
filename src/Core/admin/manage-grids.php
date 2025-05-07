@@ -329,22 +329,23 @@ function get_banner_image_sql_values( $BID ) {
 }
 
 function validate_block_size( $image_name, $BID ): bool {
+	global $wpdb;
+
 	if ( ! $BID ) {
 		// new grid...
 		return true;
 	}
 
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d";
+	$b_row = $wpdb->get_row( $wpdb->prepare( $sql, $BID ), ARRAY_A );
+
 	// If NFS block and nfs_covered is N don't check block size
-	if ( $image_name == 'nfs_block' && Options::get_option( 'nfs_covered' ) == 'N' ) {
+	if ( $image_name == 'nfs_block' && $b_row['nfs_covered'] == 'N' ) {
 		return true;
 	}
 
 	$block_w = $_REQUEST['block_width'];
 	$block_h = $_REQUEST['block_height'];
-
-	$sql    = "SELECT * FROM " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $BID );
-	$result = mysqli_query( $GLOBALS['connection'], $sql );
-	$b_row  = mysqli_fetch_array( $result );
 
 	if ( $b_row[ $image_name ] == '' ) {
 		// no data, assume that the default image will be loaded..

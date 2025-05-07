@@ -29,6 +29,8 @@
 
 namespace MillionDollarScript\Classes\System;
 
+use MillionDollarScript\Classes\Language\Language;
+
 defined( 'ABSPATH' ) or exit;
 
 /**
@@ -118,7 +120,7 @@ class Filesystem {
 			// if the folder doesn't exist create it
 			if ( ! $wp_filesystem->is_dir( $folder ) ) {
 				if ( ! $wp_filesystem->mkdir( $folder, FS_CHMOD_DIR ) ) {
-					return new \WP_Error( 'mkdir_failed_copy_dir', __( 'Could not create directory.' ), $folder );
+					return new \WP_Error( 'mkdir_failed_copy_dir', Language::get( 'Could not create directory.' ), $folder );
 				}
 			}
 

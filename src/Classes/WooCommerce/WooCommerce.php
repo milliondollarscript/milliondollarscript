@@ -133,7 +133,7 @@ class WooCommerce {
 	public static function payment_complete( $order_id ): void {
 		$order = wc_get_order( $order_id );
 
-		$auto_complete = Options::get_option( 'wc-auto-complete', true );
+		$auto_complete = Options::get_option( 'wc-auto-complete', 'yes' ) == 'yes';
 		if ( $auto_complete ) {
 			$to = 'completed';
 		} else {
@@ -164,7 +164,7 @@ class WooCommerce {
 				Orders::renew( $mds_order_id );
 
 			} else {
-				if ( Options::get_option( 'auto-approve' ) ) {
+				if ( Options::get_option( 'auto-approve', 'no' ) == 'yes' ) {
 					// Complete the order
 
 					$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
@@ -492,8 +492,8 @@ class WooCommerce {
 		}
 
 		// Get current order status
-		$auto_complete = Options::get_option( 'wc-auto-complete', true );
-		$auto_approve = Options::get_option( 'auto-approve', false );
+		$auto_complete = Options::get_option( 'wc-auto-complete', 'yes' ) == 'yes';
+		$auto_approve = Options::get_option( 'auto-approve', 'no' ) == 'yes';
 		
 		// Determine if we should complete the MDS order
 		$should_complete = false;

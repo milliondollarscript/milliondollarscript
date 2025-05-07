@@ -66,7 +66,7 @@ function mds_wp_login_check(): void {
 					$loginhref = esc_url( $login_page );
 
 					$login_redirect_url  = \MillionDollarScript\Classes\Data\Options::get_option( 'login-redirect' );
-					$woocommerce_enabled = \MillionDollarScript\Classes\Data\Options::get_option( 'woocommerce' );
+					$woocommerce_enabled = \MillionDollarScript\Classes\Data\Options::get_option( 'woocommerce', 'no' ) == 'yes';
 
 					if ( $woocommerce_enabled ) {
 						$loginhref .= ( str_contains( $loginhref, '?' ) ? '&' : '?' ) . 'redirect_to=' . esc_url_raw( $login_redirect_url );
