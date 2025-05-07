@@ -222,6 +222,7 @@ function add_tippy() {
 					duration: 50,
 					delay: MDS.TOOLTIP_TRIGGER === 'mouseenter' ? 400 : 50,
 					trigger: MDS.TOOLTIP_TRIGGER,
+					onTrigger: mdsTippyOnTrigger,
 					allowHTML: true,
 					followCursor: 'initial',
 					hideOnClick: true,
@@ -247,6 +248,7 @@ function add_tippy() {
 			duration: 50,
 			delay: delay,
 			trigger: MDS.TOOLTIP_TRIGGER,
+			onTrigger: mdsTippyOnTrigger,
 			allowHTML: true,
 			followCursor: 'initial',
 			hideOnClick: true,
@@ -380,6 +382,15 @@ function add_tippy() {
 		window.addEventListener('resize', function () {
 			updateTippyPosition();
 		});
+	}
+}
+
+// Helper function for onTrigger to prevent default link navigation on click
+function mdsTippyOnTrigger(instance, event) {
+	// Prevent default navigation if the event is a click
+	// and 'click' is part of the configured triggers.
+	if (event.type === 'click' && MDS.TOOLTIP_TRIGGER && MDS.TOOLTIP_TRIGGER.includes('click')) {
+		event.preventDefault();
 	}
 }
 
