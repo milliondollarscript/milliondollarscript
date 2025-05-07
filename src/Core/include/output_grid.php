@@ -237,7 +237,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			case 'orders':
 				$show_orders       = true;
 				$orders_grid_block = $blank_block->copy();
-				$tmp_block         = $imagine->load( $banner_data['USR_GRID_BLOCK'] );
+				$tmp_block         = $imagine->load( $banner_data['USR_ORD_BLOCK'] );
 				$tmp_block->resize( $block_size );
 				$orders_grid_block->paste( $tmp_block, $zero_point );
 				break;
@@ -434,7 +434,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			} else {
 				$block = $orders_grid_block->copy();
 			}
-			$block->resize( $block_size );
+			// Conditionally resize based on IMAGE_AUTO_RESIZE setting
+			if (isset($banner_data['IMAGE_AUTO_RESIZE']) && $banner_data['IMAGE_AUTO_RESIZE'] === 'on') {
+				$block->resize( $block_size );
+			}
 
 			$blocks[ $row['block_id'] ] = 'order';
 			$orders[ $row['block_id'] ] = $block;
@@ -456,7 +459,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			} else {
 				$block = $orders_grid_block->copy();
 			}
-			$block->resize( $block_size );
+			// Conditionally resize based on IMAGE_AUTO_RESIZE setting
+			if (isset($banner_data['IMAGE_AUTO_RESIZE']) && $banner_data['IMAGE_AUTO_RESIZE'] === 'on') {
+				$block->resize( $block_size );
+			}
 
 			$blocks[ $row['block_id'] ] = 'user';
 			$users[ $row['block_id'] ]  = $block;

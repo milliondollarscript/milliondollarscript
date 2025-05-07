@@ -130,13 +130,18 @@ function load_banner_constants( $BID ): ?array {
 	$row["AUTO_APPROVE"] = $row['auto_approve'];
 	$row["AUTO_PUBLISH"] = $row['auto_publish'];
 
+	// Added to support conditional image auto-resizing
+	// Assumes 'image_auto_resize' column exists in 'mds_banners' table (e.g., stores 'on' or 'off').
+	// Defaults to 'on' if the column is not present or empty in the database row.
+	$row["IMAGE_AUTO_RESIZE"] = !empty($row['image_auto_resize']) ? $row['image_auto_resize'] : 'on';
+
 	$row["G_MAX_ORDERS"] = intval($row['max_orders']);
 	$row["G_MAX_BLOCKS"] = intval($row['max_blocks']);
 	$row["G_MIN_BLOCKS"] = intval($row['min_blocks']);
 
 	$row["TIME"] = intval($row['time_stamp']);
 
-	//$row["BANNER_ROW", serialize($row));
+	//$row["BANNER_ROW", serialize($row)];
 
 	return $row;
 }
