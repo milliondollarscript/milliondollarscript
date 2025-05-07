@@ -487,7 +487,7 @@ class WooCommerceFunctions {
 	 * @return void
 	 */
 	public static function disable_woocommerce_payments(): void {
-		// Options::update_option('woocommerce', '');
+		// Options::update_option('woocommerce', 'no');
 	}
 
 	/**

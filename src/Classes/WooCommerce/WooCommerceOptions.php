@@ -55,9 +55,12 @@ class WooCommerceOptions {
 			// WooCommerce Integration
 			Field::make( 'separator', $prefix . 'separator', Language::get( 'WooCommerce' ) ),
 
-			Field::make( 'checkbox', $prefix . 'woocommerce', Language::get( 'WooCommerce Integration' ) )
+			Field::make( 'radio', $prefix . 'woocommerce', Language::get( 'WooCommerce Integration' ) )
 			     ->set_default_value( 'no' )
-			     ->set_option_value( 'yes' )
+			     ->set_options( [
+					'no' => Language::get( 'No' ),
+					'yes' => Language::get( 'Yes' ),
+				 ] )
 			     ->set_help_text( Language::get( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.' ) ),
 
 			// WooCommerce Product
@@ -81,9 +84,12 @@ class WooCommerceOptions {
 			     ->set_help_text( Language::get( 'The product for MDS to use. You should create a new product in WooCommerce and tick the Million Dollar Script Pixels checkbox on it.' ) ),
 
 			// WooCommerce Clear Cart
-			Field::make( 'checkbox', $prefix . 'clear-cart', Language::get( 'Clear cart' ) )
+			Field::make( 'radio', $prefix . 'clear-cart', Language::get( 'Clear cart' ) )
 			     ->set_default_value( 'no' )
-			     ->set_option_value( 'yes' )
+			     ->set_options( [
+				     'no' => Language::get( 'No' ),
+				     'yes' => Language::get( 'Yes' ),
+				 ] )
 			     ->set_conditional_logic( array(
 				     'relation' => 'AND',
 				     array(
@@ -95,9 +101,12 @@ class WooCommerceOptions {
 			     ->set_help_text( Language::get( 'Clear the cart when a MDS product is added to it.' ) ),
 
 			// WooCommerce de-dupe variations
-			Field::make( 'checkbox', $prefix . 'dedupe', Language::get( 'Remove duplicate variations' ) )
+			Field::make( 'radio', $prefix . 'dedupe', Language::get( 'Remove duplicate variations' ) )
 			     ->set_default_value( 'no' )
-			     ->set_option_value( 'yes' )
+			     ->set_options( [
+				     'no' => Language::get( 'No' ),
+				     'yes' => Language::get( 'Yes' ),
+				 ] )
 			     ->set_conditional_logic( array(
 				     'relation' => 'AND',
 				     array(
@@ -109,9 +118,12 @@ class WooCommerceOptions {
 			     ->set_help_text( Language::get( 'Checking this will remove all duplicate variations on the MDS product when the options are saved.' ) ),
 
 			// WooCommerce Auto-complete
-			Field::make( 'checkbox', $prefix . 'wc-auto-complete', Language::get( 'Auto-complete Orders' ) )
+			Field::make( 'radio', $prefix . 'wc-auto-complete', Language::get( 'Auto-complete Orders' ) )
 			     ->set_default_value( 'yes' )
-			     ->set_option_value( 'yes' )
+			     ->set_options( [
+				     'no' => Language::get( 'No' ),
+				     'yes' => Language::get( 'Yes' ),
+				 ] )
 			     ->set_conditional_logic( array(
 				     'relation' => 'AND',
 				     array(
