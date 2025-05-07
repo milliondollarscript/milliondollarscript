@@ -93,11 +93,20 @@ while ( $block_row = mysqli_fetch_array( $result3 ) ) {
 	}
 
 	$blocks[ $i ]['block_id'] = $block_row['block_id'];
+	$image_object; // Declare variable to hold the image object
 	if ( $block_row['image_data'] == '' ) {
-		$blocks[ $i ]['image_data'] = $imagine->load( $banner_data['GRID_BLOCK'] );
+		$image_object = $imagine->load( $banner_data['GRID_BLOCK'] );
 	} else {
-		$blocks[ $i ]['image_data'] = $imagine->load( base64_decode( $block_row['image_data'] ) );
+		$image_object = $imagine->load( base64_decode( $block_row['image_data'] ) );
 	}
+
+	// Conditionally resize based on auto-resize option
+	// Ensure Options class is available or use appropriate method to get option
+	if (class_exists('MillionDollarScript\Classes\Data\Options') && \MillionDollarScript\Classes\Data\Options::get_option('auto-resize') == 'yes') {
+		$block_size_obj = new \Imagine\Image\Box($banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT']);
+		$image_object->resize($block_size_obj);
+	}
+	$blocks[ $i ]['image_data'] = $image_object; // Store the (potentially resized) image object
 
 	$blocks[ $i ]['x'] = $block_row['x'];
 	$blocks[ $i ]['y'] = $block_row['y'];

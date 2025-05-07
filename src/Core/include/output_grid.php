@@ -3,6 +3,7 @@
 use MillionDollarScript\Classes\Data\Config;
 use Imagine\Image\Box;
 use Imagine\Image\Point;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Logs;
 
 /*
@@ -434,8 +435,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			} else {
 				$block = $orders_grid_block->copy();
 			}
-			// Conditionally resize based on IMAGE_AUTO_RESIZE setting
-			if (isset($banner_data['IMAGE_AUTO_RESIZE']) && $banner_data['IMAGE_AUTO_RESIZE'] === 'on') {
+			// Conditionally resize based on auto-resize option
+			if (Options::get_option('auto-resize') == 'yes') {
 				$block->resize( $block_size );
 			}
 
@@ -459,8 +460,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			} else {
 				$block = $orders_grid_block->copy();
 			}
-			// Conditionally resize based on IMAGE_AUTO_RESIZE setting
-			if (isset($banner_data['IMAGE_AUTO_RESIZE']) && $banner_data['IMAGE_AUTO_RESIZE'] === 'on') {
+			// Conditionally resize based on auto-resize option
+			if (Options::get_option('auto-resize') == 'yes') {
 				$block->resize( $block_size );
 			}
 
