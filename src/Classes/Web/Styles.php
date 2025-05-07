@@ -162,6 +162,31 @@ body, .mds-container, .mds-body-bg-color {
 .mds-secondary-color { color: var(--mds-secondary-color); }
 .mds-secondary-bg-color { background-color: var(--mds-secondary-color); }
 
+/* Original typography and inputs from output_dynamic_styles */
+.mds-container p,
+.mds-container label {
+    color: var(--mds-text-color);
+}
+.mds-container a {
+    color: var(--mds-primary-color);
+}
+.mds-container input[type='text'],
+.mds-container input[type='password'],
+.mds-container select,
+.mds-container textarea {
+    background-color: var(--mds-background-color);
+    border: 1px solid var(--mds-secondary-color);
+    color: var(--mds-text-color);
+}
+.mds-container table th {
+    background-color: var(--mds-secondary-color);
+    color: var(--mds-button-text-color); /* Assuming header text is like button text */
+}
+.mds-container table td {
+    /* background-color already handled by .mds-container bg */
+    /* color already handled by .mds-container text */
+}
+
 /* Buttons using CSS Variables */
 .mds-button, input[type='submit'].mds-button, button.mds-button {
     background-color: var(--mds-button-color);
@@ -235,31 +260,6 @@ a.mds-button:hover {
 .mds-pixel-grid a:hover, .mds-grid-link-color:hover { color: var(--mds-hover-color); }
 .mds-pixel-grid, .mds-pixel-grid td, .mds-grid-border-color {
     border-color: var(--mds-grid-border-color);
-}
-
-/* Original typography and inputs from output_dynamic_styles */
-.mds-container p,
-.mds-container label {
-    color: var(--mds-text-color);
-}
-.mds-container a {
-    color: var(--mds-primary-color);
-}
-.mds-container input[type='text'],
-.mds-container input[type='password'],
-.mds-container select,
-.mds-container textarea {
-    background-color: var(--mds-background-color);
-    border: 1px solid var(--mds-secondary-color);
-    color: var(--mds-text-color);
-}
-.mds-container table th {
-    background-color: var(--mds-secondary-color);
-    color: var(--mds-button-text-color); /* Assuming header text is like button text */
-}
-.mds-container table td {
-    /* background-color already handled by .mds-container bg */
-    /* color already handled by .mds-container text */
 }
 
 		";
