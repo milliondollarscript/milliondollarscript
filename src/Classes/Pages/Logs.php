@@ -62,7 +62,7 @@ class Logs {
         settings_errors('mds_logs_notices');
 
         // Get current log status and content
-        $logging_enabled = Options::get_option( 'log-enable', '' );
+        $logging_enabled = Options::get_option( 'log-enable', 'no' );
         $log_file_path   = SystemLogs::get_log_file_path();
 
         ?>
@@ -75,7 +75,7 @@ class Logs {
                     <th scope="row"><?php echo esc_html( Language::get('Enable Logging') ); ?></th>
                     <td>
                         <label class="mds-switch">
-                            <input type="checkbox" id="mds-toggle-logging" <?php checked( $logging_enabled ); ?>>
+                            <input type="checkbox" id="mds-toggle-logging" <?php checked( $logging_enabled, 'yes' ); ?>>
                             <span class="mds-slider mds-round"></span>
                         </label>
                         <p class="description">
@@ -154,7 +154,7 @@ class Logs {
             $log_data = [
                 'ajax_url' => admin_url( 'admin-ajax.php' ),
                 'nonce'    => wp_create_nonce( 'mds_log_actions' ),
-                'initial_log_state' => (bool)Options::get_option( 'log-enable', '' ), // Pass initial state directly
+                'initial_log_state' => (bool)Options::get_option( 'log-enable', 'no' ), // Pass initial state directly
                 'text'     => [
                     'confirm_clear'         => Language::get('Are you sure you want to clear the log file? This action cannot be undone.'),
                     'error_occurred'        => Language::get('An AJAX error occurred. Please check your browser console or server logs.'),
@@ -198,7 +198,7 @@ class Logs {
         $enabled = isset($_POST['enabled']) ? sanitize_text_field($_POST['enabled']) : 'no';
         
         // Ensure it's either 'yes' or 'no'
-        $enabled = ($enabled === 'yes') ? 'yes' : '';
+        $enabled = ($enabled === 'yes') ? 'yes' : 'no';
         
         // Ensure Carbon Fields cache is flushed
         carbon_get_theme_option(MDS_PREFIX . 'log-enable', true);

@@ -312,7 +312,7 @@ class Wizard {
         $current_settings['pixel_selection'] = ($pixel_selection_option === 'YES') ? 'advanced' : 'simple';
 
         // Get WooCommerce option
-        $current_settings['woocommerce_enabled'] = Options::get_option('woocommerce', '');
+        $current_settings['woocommerce_enabled'] = Options::get_option('woocommerce', 'no');
 
         // Get grid-specific settings from DB
         $grid_data = $wpdb->get_row(
@@ -373,7 +373,7 @@ class Wizard {
                 <tr>
                     <th scope="row"><?php echo Language::get('Enable WooCommerce Integration'); ?></th>
                     <td>
-                        <?php $woo_enabled = Options::get_option('woocommerce', ''); ?>
+                        <?php $woo_enabled = Options::get_option('woocommerce', 'no'); ?>
                         <input type="checkbox" name="enable_woocommerce" value="yes" <?php checked($woo_enabled, 'yes'); ?>>
                         <p class="description"><?php echo Language::get('Use WooCommerce for handling payments and pixel orders.'); ?></p>
                     </td>
