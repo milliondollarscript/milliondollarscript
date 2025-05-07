@@ -161,7 +161,7 @@ class Users {
 		}
 
 		$show_text = '';
-		if ( empty( $logo ) && Options::get_option( 'login-header-text', '' ) != '' ) {
+		if ( empty( $logo ) && Options::get_option( 'login-header-text', 'no' ) != '' ) {
 			$show_text = 'text-indent: 0;';
 		}
 
@@ -188,6 +188,6 @@ class Users {
 	 * @return string
 	 */
 	public static function login_headertext(): string {
-		return Language::get( Options::get_option( 'login-header-text', '' ) );
+		return Language::get( Options::get_option( 'login-header-text', 'no' ) );
 	}
 }
