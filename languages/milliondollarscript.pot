@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.12.22\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.12.57\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-04 05:40:49\n"
-"PO-Revision-Date: 2025-05-04 05:40:49\n"
-"X-Generator: Million Dollar Script Two 2.5.12.22\n"
+"POT-Creation-Date: 2025-05-07 10:49:47\n"
+"PO-Revision-Date: 2025-05-07 10:49:47\n"
+"X-Generator: Million Dollar Script Two 2.5.12.57\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -190,6 +190,12 @@ msgid "No blocks selected for checking."
 msgstr ""
 
 msgid "This space is not available! Please try to place your pixels in a different area."
+msgstr ""
+
+msgid "Missing required page data (option or title)."
+msgstr ""
+
+msgid "Could not create directory."
 msgstr ""
 
 msgid "Stats box"
@@ -759,6 +765,12 @@ msgstr ""
 msgid "Emails"
 msgstr ""
 
+msgid "Changelog"
+msgstr ""
+
+msgid "Logs"
+msgstr ""
+
 msgid "View Site"
 msgstr ""
 
@@ -771,13 +783,22 @@ msgstr ""
 msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
 msgstr ""
 
-msgid "Current GMT Time: %s"
+msgid "Last Updated: %s"
 msgstr ""
 
-msgid "Current Server Time: %s"
+msgid "Last Updated: N/A"
 msgstr ""
 
-msgid "Current Local Time: %s"
+msgid "GMT: %s"
+msgstr ""
+
+msgid "Server: %s"
+msgstr ""
+
+msgid "Local: %s"
+msgstr ""
+
+msgid "Orders"
 msgstr ""
 
 msgid "Customer Accounts"
@@ -798,7 +819,7 @@ msgstr ""
 msgid "Pixels Waiting for approval"
 msgstr ""
 
-msgid "Project Contributors"
+msgid "Credits"
 msgstr ""
 
 msgid "Ryan Rhode - Developer"
@@ -810,22 +831,43 @@ msgstr ""
 msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
 msgstr ""
 
+msgid "Premium Installation Service"
+msgstr ""
+
+msgid "The premium installation service handles full plugin setup and configuration for you."
+msgstr ""
+
+msgid "Learn More About The Installation Service"
+msgstr ""
+
+msgid "Custom Development Services"
+msgstr ""
+
+msgid "Want custom features or integrations?<br>The development team can help."
+msgstr ""
+
+msgid "Get Custom Development"
+msgstr ""
+
+msgid "Want Reliable Hosting?"
+msgstr ""
+
+msgid "Hostinger offers fast, affordable hosting for your MDS site."
+msgstr ""
+
+msgid "Check out Hostinger Deals"
+msgstr ""
+
 msgid "Million Dollar Script v%s"
 msgstr ""
 
 msgid "Database v%s"
 msgstr ""
 
-msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3. See %s for license information."
+msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3.<br>See %s for license information."
 msgstr ""
 
 msgid "Million Dollar Script Changelog"
-msgstr ""
-
-msgid "Changelog"
-msgstr ""
-
-msgid "This displays the changelog for the current and new versions based on the selected update branch."
 msgstr ""
 
 msgid "Success!"
@@ -847,9 +889,6 @@ msgid "Insufficient permissions!"
 msgstr ""
 
 msgid "MDS Logs"
-msgstr ""
-
-msgid "Logs"
 msgstr ""
 
 msgid "You do not have sufficient permissions to access this page."
@@ -939,6 +978,264 @@ msgstr ""
 msgid "Could not open log file for reading."
 msgstr ""
 
+msgid "Setup Wizard"
+msgstr ""
+
+msgid "Error:"
+msgstr ""
+
+msgid "Creating pages..."
+msgstr ""
+
+msgid "Saving settings..."
+msgstr ""
+
+msgid "Completing setup..."
+msgstr ""
+
+msgid "Welcome"
+msgstr ""
+
+msgid "Create Pages"
+msgstr ""
+
+msgid "Basic Settings"
+msgstr ""
+
+msgid "Complete"
+msgstr ""
+
+msgid "Welcome to Million Dollar Script!"
+msgstr ""
+
+msgid "This wizard will guide you through setting up your Million Dollar Script installation. We'll help you:"
+msgstr ""
+
+msgid "Create necessary pages for your site"
+msgstr ""
+
+msgid "Configure basic settings"
+msgstr ""
+
+msgid "Get started with your Million Dollar Script website"
+msgstr ""
+
+msgid "This wizard is optional. You can skip it and configure everything manually through the plugin settings."
+msgstr ""
+
+msgid "Need Professional Installation?"
+msgstr ""
+
+msgid "Want a hassle-free setup by the plugin developer? Our premium installation service includes:"
+msgstr ""
+
+msgid "Complete Million Dollar Script installation and configuration"
+msgstr ""
+
+msgid "WordPress installation (or use your existing install)"
+msgstr ""
+
+msgid "Optional WooCommerce integration"
+msgstr ""
+
+msgid "Optional Divi theme integration"
+msgstr ""
+
+msgid "Free bug fixes and support"
+msgstr ""
+
+msgid "Learn More About Our Installation Service"
+msgstr ""
+
+msgid "Need custom features or integrations? Our development team can help:"
+msgstr ""
+
+msgid "Custom features tailored to your business needs"
+msgstr ""
+
+msgid "Integration with other platforms and services"
+msgstr ""
+
+msgid "Expert development by the plugin creator"
+msgstr ""
+
+msgid "Transparent pricing and timeline"
+msgstr ""
+
+msgid "Need Reliable Hosting?"
+msgstr ""
+
+msgid "Power your Million Dollar Script site with fast, affordable hosting. Hostinger offers great performance and value, perfect for getting your pixel grid online."
+msgstr ""
+
+msgid "Skip Wizard"
+msgstr ""
+
+msgid "Let's Go!"
+msgstr ""
+
+msgid "Million Dollar Script requires several WordPress pages to function correctly. A shortcode will be inserted into the pages. Click the button below to automatically create these pages:"
+msgstr ""
+
+msgid "Grid Page"
+msgstr ""
+
+msgid "Displays your pixel grid"
+msgstr ""
+
+msgid "Order Page"
+msgstr ""
+
+msgid "For processing orders"
+msgstr ""
+
+msgid "Write Ad Page"
+msgstr ""
+
+msgid "For writing ads"
+msgstr ""
+
+msgid "Confirm Order Page"
+msgstr ""
+
+msgid "For confirming orders"
+msgstr ""
+
+msgid "Payment Page"
+msgstr ""
+
+msgid "For payment processing"
+msgstr ""
+
+msgid "Checkout Page"
+msgstr ""
+
+msgid "For checkout process"
+msgstr ""
+
+msgid "Manage Page"
+msgstr ""
+
+msgid "For managing orders"
+msgstr ""
+
+msgid "Thank-You Page"
+msgstr ""
+
+msgid "For thanking users"
+msgstr ""
+
+msgid "Upload Page"
+msgstr ""
+
+msgid "Shown when the user uploads their image"
+msgstr ""
+
+msgid "No Orders Page"
+msgstr ""
+
+msgid "Shown when the user has no orders yet"
+msgstr ""
+
+msgid "To add the main grid or order pages to your site's navigation, you'll need to edit your menu.<br>Learn how: <a href=\"%WP_MENU_URL%\" target=\"_blank\">WordPress Menus</a>. If using a block theme, see <a href=\"%FSE_URL%\" target=\"_blank\">Full Site Editing</a>."
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Skip This Step"
+msgstr ""
+
+msgid "Configure the following basic settings for your Million Dollar Script installation:"
+msgstr ""
+
+msgid "Pixel Selection Method"
+msgstr ""
+
+msgid "Simple - Better for beginners"
+msgstr ""
+
+msgid "Advanced - More options for users"
+msgstr ""
+
+msgid "Choose how users will select pixels on your grid."
+msgstr ""
+
+msgid "Price Per Pixel"
+msgstr ""
+
+msgid "Set the default price per pixel."
+msgstr ""
+
+msgid "Grid Width"
+msgstr ""
+
+msgid "Width of the pixel grid in pixels."
+msgstr ""
+
+msgid "Grid Height"
+msgstr ""
+
+msgid "Height of the pixel grid in pixels."
+msgstr ""
+
+msgid "Enable WooCommerce Integration"
+msgstr ""
+
+msgid "Use WooCommerce for handling payments and pixel orders."
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "Setup Complete!"
+msgstr ""
+
+msgid "Congratulations! You have successfully set up Million Dollar Script. Your website is now ready to accept pixel orders and start generating revenue."
+msgstr ""
+
+msgid "What's Next?"
+msgstr ""
+
+msgid "Cusotmize your grid in the Grid Management section"
+msgstr ""
+
+msgid "Customize your pixel blocks to match your branding"
+msgstr ""
+
+msgid "Set up payment gateways to start accepting orders"
+msgstr ""
+
+msgid "Promote your Million Dollar Script website to potential customers"
+msgstr ""
+
+msgid "Enhance Your Million Dollar Script Experience"
+msgstr ""
+
+msgid "Go to Dashboard"
+msgstr ""
+
+msgid "Security check failed."
+msgstr ""
+
+msgid "You do not have permission to create pages."
+msgstr ""
+
+msgid "Some pages could not be created."
+msgstr ""
+
+msgid "You do not have permission to perform this action."
+msgstr ""
+
+msgid "Settings saved successfully!"
+msgstr ""
+
+msgid "Error saving settings. Please try again or configure them manually from the Options page."
+msgstr ""
+
+msgid "Setup wizard completed successfully!"
+msgstr ""
+
 msgid "Grid not found."
 msgstr ""
 
@@ -949,9 +1246,6 @@ msgid "Invalid callback: %s"
 msgstr ""
 
 msgid "Pages"
-msgstr ""
-
-msgid "Create Pages"
 msgstr ""
 
 msgid "Clicking this button will create multiple pages for use with MDS."
@@ -967,9 +1261,6 @@ msgid "MDS Pages"
 msgstr ""
 
 msgid "<h3>The following options will automatically use the pages created above. You can change them. These are the page id #</h3>"
-msgstr ""
-
-msgid "Grid Page"
 msgstr ""
 
 msgid "The grid page."
@@ -1149,6 +1440,87 @@ msgstr ""
 msgid "URL to redirect to when an available block is clicked (if enabled above)."
 msgstr ""
 
+msgid "Styles"
+msgstr ""
+
+msgid "Button Color (Primary)"
+msgstr ""
+
+msgid "Background color for primary buttons."
+msgstr ""
+
+msgid "Button Text Color (Primary)"
+msgstr ""
+
+msgid "Text color for primary buttons."
+msgstr ""
+
+msgid "Button Secondary Background"
+msgstr ""
+
+msgid "Background color for secondary buttons."
+msgstr ""
+
+msgid "Button Secondary Text"
+msgstr ""
+
+msgid "Text color for secondary buttons."
+msgstr ""
+
+msgid "Button Success Background"
+msgstr ""
+
+msgid "Background color for success buttons."
+msgstr ""
+
+msgid "Button Success Text"
+msgstr ""
+
+msgid "Text color for success buttons."
+msgstr ""
+
+msgid "Button Danger Background"
+msgstr ""
+
+msgid "Background color for danger/delete buttons."
+msgstr ""
+
+msgid "Button Danger Text"
+msgstr ""
+
+msgid "Text color for danger/delete buttons."
+msgstr ""
+
+msgid "Primary Color"
+msgstr ""
+
+msgid "Primary accent color used for highlights, links, etc."
+msgstr ""
+
+msgid "Secondary Color"
+msgstr ""
+
+msgid "Secondary accent color."
+msgstr ""
+
+msgid "Background Color"
+msgstr ""
+
+msgid "Main background color for admin pages."
+msgstr ""
+
+msgid "Text Color"
+msgstr ""
+
+msgid "Default text color."
+msgstr ""
+
+msgid "Custom CSS"
+msgstr ""
+
+msgid "Add custom CSS to override default styles. This will be saved to the bottom of the dynamically generated CSS file."
+msgstr ""
+
 msgid "Output Grid Image As"
 msgstr ""
 
@@ -1182,9 +1554,6 @@ msgstr ""
 msgid "Show a blank pixel grid background while the grid loads."
 msgstr ""
 
-msgid "Pixel Selection Method"
-msgstr ""
-
 msgid "Simple (Upload image → Place image on grid)"
 msgstr ""
 
@@ -1204,6 +1573,24 @@ msgid "Show Grid Dropdown on Manage Pixels Page?"
 msgstr ""
 
 msgid "If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL."
+msgstr ""
+
+msgid "Invert Pixels"
+msgstr ""
+
+msgid "If checked, reverses the order pixels are displayed within the grid container."
+msgstr ""
+
+msgid "Stats Display Mode"
+msgstr ""
+
+msgid "Blocks - Stats box will display sold/available blocks."
+msgstr ""
+
+msgid "Pixels - Stats box will display sold/available pixels."
+msgstr ""
+
+msgid "Display stats as blocks or pixels."
 msgstr ""
 
 msgid "Login"
@@ -1296,7 +1683,16 @@ msgstr ""
 msgid "How to open links in the popup when they are clicked."
 msgstr ""
 
-msgid "Orders"
+msgid "Block Selection Mode"
+msgstr ""
+
+msgid "Yes - When Pixel Selection Method is set to Advanced users will be able to change the size of their block selection area."
+msgstr ""
+
+msgid "No - Users will not be able to change the size of their block selection area."
+msgstr ""
+
+msgid "Show block selection mode. Note that you can change the min and max block placement sizes by editing the grid under <a href=\"%GRIDS_URL%\">Admin > Pixel Management > Grids</a>."
 msgstr ""
 
 msgid "Expire Orders"
@@ -1456,6 +1852,15 @@ msgid "If enabled, attempts to convert Cyrillic characters in ad titles to Latin
 msgstr ""
 
 msgid "Million Dollar Script Options"
+msgstr ""
+
+msgid "Million Dollar Script Grid"
+msgstr ""
+
+msgid "Your Pixels"
+msgstr ""
+
+msgid "Checkout"
 msgstr ""
 
 msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
@@ -1624,9 +2029,6 @@ msgid "No Image"
 msgstr ""
 
 msgid "No orders found matching your criteria."
-msgstr ""
-
-msgid "Security check failed."
 msgstr ""
 
 msgid "Sorry, you are not allowed to perform this action."
