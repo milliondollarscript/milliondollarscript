@@ -92,7 +92,7 @@ if ( isset( $_REQUEST['save'] ) && $_REQUEST['save'] != "" ) {
 	Functions::verify_nonce( 'mds-form' );
 	$user_id = get_current_user_id();
 
-	if ( \MillionDollarScript\Classes\Data\Options::get_option( 'order-locking', false ) ) {
+	if ( \MillionDollarScript\Classes\Data\Options::get_option( 'order-locking', 'no' ) == 'yes' ) {
 		// Order locking is enabled so check if the order is approved or completed before allowing the user to save the ad.
 		$is_error = false;
 		if ( isset( $_REQUEST['manage-pixels'] ) && isset( $_REQUEST['order_id'] ) ) {

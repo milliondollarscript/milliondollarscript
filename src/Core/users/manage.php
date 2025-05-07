@@ -64,7 +64,7 @@ if ( $wrap ) {
 $gd_info      = gd_info();
 $gif_support  = '';
 $jpeg_support = '';
-$png_support  = MillionDollarScript\Classes\Data\Options::get_option( 'allow-png' );
+$png_support  = '';
 if ( ! empty( $gd_info['GIF Read Support'] ) ) {
 	$gif_support = "GIF";
 }
@@ -78,7 +78,7 @@ if ( ! empty( $gd_info['PNG Support'] ) ) {
 global $BID, $f2, $wpdb;
 
 // Get the setting for showing the grid dropdown *before* determining BID
-$show_grid_dropdown_option = (bool)Options::get_option( 'manage-pixels-grid-dropdown' );
+$show_grid_dropdown_option = Options::get_option( 'manage-pixels-grid-dropdown', 'yes' ) == 'yes';
 
 // --- Refactored BID Determination --- START
 
@@ -398,7 +398,7 @@ if ( $count > 0 ) {
             <map name="main" id="main">
 				<?php
 				// Check if order locking is enabled
-				$order_locking_enabled = Options::get_option( 'order-locking', false );
+				$order_locking_enabled = Options::get_option( 'order-locking', 'no' ) == 'yes';
 
 				foreach ( $results as $row ) {
 

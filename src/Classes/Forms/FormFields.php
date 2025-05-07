@@ -217,11 +217,11 @@ class FormFields {
 			}
 
 			$required = false;
-			if ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional' ) ) {
+			if ( $field_name == MDS_PREFIX . 'text' && Options::get_option( 'text-optional' ) == 'no' ) {
 				$required = true;
-			} else if ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional' ) ) {
+			} else if ( $field_name == MDS_PREFIX . 'url' && Options::get_option( 'url-optional' ) == 'no' ) {
 				$required = true;
-			} else if ( $field_name == MDS_PREFIX . 'image' && ! Options::get_option( 'image-optional', true ) ) {
+			} else if ( $field_name == MDS_PREFIX . 'image' && Options::get_option( 'image-optional', true ) == 'no' ) {
 				$required = true;
 			}
 
@@ -476,8 +476,8 @@ class FormFields {
 						}
 						if ( empty( $value ) ) {
 							// The field was empty so check if it's optional
-							if ( ( $field_name == MDS_PREFIX . 'text' && ! Options::get_option( 'text-optional' ) ) ||
-							     ( $field_name == MDS_PREFIX . 'url' && ! Options::get_option( 'url-optional' ) ) ) {
+							if ( ( $field_name == MDS_PREFIX . 'text' && Options::get_option( 'text-optional' ) == 'no' ) ||
+							     ( $field_name == MDS_PREFIX . 'url' && Options::get_option( 'url-optional' ) == 'no' ) ) {
 								// The field isn't optional so add an error
 								$errors[ $field_name ] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field->get_label() );
 							}
@@ -530,7 +530,7 @@ class FormFields {
 								$errors[ $field_name ] = $upload['error'];
 							}
 						} else {
-							if ( ! Options::get_option( 'image-optional', true ) ) {
+							if ( Options::get_option( 'image-optional', true ) == 'no' ) {
 								$errors[ $field_name ] = Language::get_replace( 'The %FIELD% field is required.', '%FIELD%', $field->get_label() );
 							}
 						}
@@ -1046,7 +1046,7 @@ class FormFields {
 			return;
 		}
 
-		if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'no' || Options::get_option( 'exclude-from-search', false ) === true ) {
+		if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'no' || Options::get_option( 'exclude-from-search', 'no' ) == 'yes' ) {
 			$post_types_to_exclude = [ self::$post_type ];
 
 			if ( $query->get( 'post_type' ) ) {
@@ -1085,7 +1085,7 @@ class FormFields {
 		}
 
 		// Check if MDS pixel template is enabled and exclude-from-search is disabled
-		if ( Options::get_option( 'mds-pixel-template', 'no' ) && !Options::get_option( 'exclude-from-search', true ) ) {
+		if ( Options::get_option( 'mds-pixel-template', 'no' ) && Options::get_option( 'exclude-from-search' ) == 'no' ) {
 
 			$s = sanitize_text_field( $s );
 

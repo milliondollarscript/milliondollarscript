@@ -298,7 +298,7 @@ if ( $has_packages ) {
             <div class="mds-select-wrapper">
                 <div class="mds-select-prompt">
 					<?php
-					if ( Options::get_option( 'block-selection-mode', true ) == 'YES' ) {
+					if ( Options::get_option( 'block-selection-mode', 'YES' ) == 'YES' ) {
 					?>
                 </div>
                 <div class="mds-select-items">
