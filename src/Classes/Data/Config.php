@@ -51,9 +51,9 @@ class Config {
 	 * @param $key
 	 * @param bool $format
 	 *
-	 * @return object|false|string
+	 * @return mixed
 	 */
-	public static function get( $key, bool $format = false ): object|false|string {
+	public static function get( $key, bool $format = false ): mixed {
 		// Fetch via Options with default
 		$option_name = str_replace('mds-', '', str_replace('_', '-', strtolower($key)));
 		return Options::get_option( $option_name );
