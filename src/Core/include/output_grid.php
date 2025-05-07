@@ -437,7 +437,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			}
 			// Conditionally resize based on auto-resize option
 			if (Options::get_option('auto-resize') == 'yes') {
-				$block->resize( $block_size );
+				// Force the image to fill the entire block space
+				$block = $block->thumbnail($block_size, \Imagine\Image\ImageInterface::THUMBNAIL_OUTBOUND);
 			}
 
 			$blocks[ $row['block_id'] ] = 'order';
@@ -462,7 +463,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			}
 			// Conditionally resize based on auto-resize option
 			if (Options::get_option('auto-resize') == 'yes') {
-				$block->resize( $block_size );
+				// Force the image to fill the entire block space
+				$block = $block->thumbnail($block_size, \Imagine\Image\ImageInterface::THUMBNAIL_OUTBOUND);
 			}
 
 			$blocks[ $row['block_id'] ] = 'user';
