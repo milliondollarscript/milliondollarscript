@@ -35,6 +35,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\User\Capabilities;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
+use MillionDollarScript\Classes\Web\Styles;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -329,6 +330,10 @@ class Options {
 					->set_default_value( '#333333' )
 					->set_palette( [ '#333333' ] )
 					->set_help_text( Language::get( 'Default text color.' ) ),
+
+				// Custom CSS
+				Field::make( 'textarea', MDS_PREFIX . 'custom-css', Language::get( 'Custom CSS' ) )
+					->set_help_text( Language::get( 'Add custom CSS to override default styles. This will be saved to the bottom of the dynamically generated CSS file.' ) ),
 			],
 
 			Language::get( 'Grid' ) => [
@@ -746,6 +751,11 @@ class Options {
 		$name = str_replace( '_' . MDS_PREFIX, '', $field->get_name() );
 
 		switch ( $name ) {
+			case 'custom-css':
+				add_filter('mds_dynamic_css', function($css) use ($field) {
+					return $css . $field->get_value();
+				});
+				break;
 			case 'path':
 				// Normalize path field
 				$field->set_value( wp_normalize_path( $field->get_value() ) );
@@ -771,6 +781,8 @@ class Options {
 			default:
 				break;
 		}
+
+		Styles::save_dynamic_css_file();
 
 		return apply_filters( 'mds_options_save', $field, $name );
 	}
@@ -952,5 +964,21 @@ class Options {
 		}
 		
 		return $created_pages;
+	}
+
+	public static function init(): void {
+		add_action( 'carbon_fields_register_fields', [ __CLASS__, 'register' ] );
+		add_action( 'carbon_fields_container_saved', [ __CLASS__, 'handle_theme_options_save' ] );
+
+		// AJAX handlers for options
+		add_action( 'wp_ajax_mds_get_options_data', [ __CLASS__, 'ajax_get_options_data' ] );
+	}
+
+	public static function handle_theme_options_save(): void {
+		// Verify we are on the correct container if necessary, though the hook is specific.
+		// The hook 'carbon_fields_theme_options_container_saved' fires for the 'theme_options' container.
+		// If there were multiple theme options containers with different IDs, we might check:
+		// if ( isset($_POST['carbon_fields_container_id']) && $_POST['carbon_fields_container_id'] === 'theme_options' ) { ... }
+		Styles::save_dynamic_css_file();
 	}
 }
