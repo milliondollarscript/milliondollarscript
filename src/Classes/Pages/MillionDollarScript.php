@@ -73,7 +73,7 @@ class MillionDollarScript {
 
         <div class="mds-main-page">
             <div class="milliondollarscript-fire">
-                <canvas id="milliondollarscript-fire"></canvas>
+                <canvas id="milliondollarscript-fire" data-particle-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/spark.png' ); ?>"></canvas>
 
                 <div class="milliondollarscript-header">
                     <img src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/milliondollarscript-transparent.png' ); ?>" class="milliondollarscript-logo" alt="<?php Language::out( 'Million Dollar Script Logo' ); ?>"/>
@@ -205,11 +205,11 @@ class MillionDollarScript {
 						<p><?php Language::out('The premium installation service handles full plugin setup and configuration for you.'); ?></p>
 						<p class="promo-cta">
 							<a href="https://milliondollarscript.com/install-service/" target="_blank" class="button button-primary"><?php Language::out('Learn More About The Installation Service'); ?></a>
-							</p>
-						</div>
-						<div class="mds-promo-box">
-							<h4><?php Language::out('Custom Development Services'); ?></h4>
-							<p><?php Language::out('Want custom features or integrations?<br>The development team can help.'); ?></p>
+						</p>
+					</div>
+					<div class="mds-promo-box">
+						<h4><?php Language::out('Custom Development Services'); ?></h4>
+						<p><?php Language::out('Want custom features or integrations?<br>The development team can help.'); ?></p>
 							<p class="promo-cta">
 								<a href="https://milliondollarscript.com/order-custom-development-services/" target="_blank" class="button button-primary"><?php Language::out('Get Custom Development'); ?></a>
 							</p>

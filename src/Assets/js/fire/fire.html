@@ -1,207 +1,202 @@
-<script type="text/x-vertex-shader" id="particle-update-vert">
-	#version 300 es
-	precision mediump float;
+<script type="text/x-vertex-shader" id="particle-update-vert">#version 300 es
+precision mediump float;
 
-	uniform float u_TimeDelta;
-	uniform float u_TotalTime;
-	uniform sampler2D u_RgNoise;
-	uniform vec2 u_Gravity;
-	uniform vec2 u_Origin;
-	uniform float u_MinSpeed;
-	uniform float u_MaxSpeed;
-	uniform float u_MouseInfluence;
-	uniform vec2 u_MousePos;
-	uniform vec2 u_MouseVelocity;
-	uniform float u_IsMouseMoving;
+uniform float u_TimeDelta;
+uniform float u_TotalTime;
+uniform sampler2D u_RgNoise;
+uniform vec2 u_Gravity;
+uniform vec2 u_Origin;
+uniform float u_MinSpeed;
+uniform float u_MaxSpeed;
+uniform float u_MouseInfluence;
+uniform vec2 u_MousePos;
+uniform vec2 u_MouseVelocity;
+uniform float u_IsMouseMoving;
 
-	in vec2 i_Position;
-	in float i_Age;
-	in float i_Life;
-	in vec2 i_Velocity;
-	in float i_Size;
-	in float i_Rotation;
+in vec2 i_Position;
+in float i_Age;
+in float i_Life;
+in vec2 i_Velocity;
+in float i_Size;
+in float i_Rotation;
 
-	out vec2 v_Position;
-	out float v_Age;
-	out float v_Life;
-	out vec2 v_Velocity;
-	out float v_Size;
-	out float v_Rotation;
+out vec2 v_Position;
+out float v_Age;
+out float v_Life;
+out vec2 v_Velocity;
+out float v_Size;
+out float v_Rotation;
 
-	// Noise function for turbulence
-	float noise(vec2 p) {
-		ivec2 noise_coord = ivec2(int(p.x*512.0) % 512, int(p.y*512.0) % 512);
-		return texelFetch(u_RgNoise, noise_coord, 0).r;
-	}
+// Noise function for turbulence
+float noise(vec2 p) {
+	ivec2 noise_coord = ivec2(int(p.x*512.0) % 512, int(p.y*512.0) % 512);
+	return texelFetch(u_RgNoise, noise_coord, 0).r;
+}
 
-	void main() {
-		if (i_Age >= i_Life) {
-			// Reset particle with new properties
-			ivec2 noise_coord = ivec2(gl_VertexID % 512, gl_VertexID / 512);
-			vec2 rand = texelFetch(u_RgNoise, noise_coord, 0).rg;
-			
-			// Add tiny random offset to starting position to reduce bunching
-			vec2 posOffset = (texelFetch(u_RgNoise, noise_coord + ivec2(0,2), 0).rg - 0.5) * 0.01;
-			v_Position = u_MousePos + posOffset;
-			
-			// Randomize lifetime slightly for more varied effect
-			// Widen range: 0.6 to 1.4 times base life (was 0.8 to 1.2)
-			float lifeVar = 0.6 + rand.g * 0.8;
-			v_Age = 0.0;
-			v_Life = i_Life * lifeVar;
-			
-			// Higher initial velocity for more energetic flames
-			vec2 speedRand = texelFetch(u_RgNoise, noise_coord + ivec2(0,1), 0).rg;
-			float speed = u_MinSpeed + speedRand.r * (u_MaxSpeed - u_MinSpeed);
-			
-			// Calculate emission angle based on mouse movement
-			float angle;
-			if (u_IsMouseMoving > 0.5) {
-				// Mouse is moving: Emit opposite to mouse velocity + spread
-				float mouseAngle = atan(u_MouseVelocity.y, u_MouseVelocity.x);
-				float oppositeAngle = mouseAngle + 3.14159; 
-				// Reduce spread for more focused fling (+/- 30 degrees)
-				float spread = (speedRand.g - 0.5) * (3.14159 / 3.0); 
-				angle = oppositeAngle + spread;
- 
- 				vec2 baseDirection = vec2(cos(angle), sin(angle));
- 				vec2 boost = vec2(0.0);
- 				if (length(u_MouseVelocity) > 0.001) { 
- 					boost = -normalize(u_MouseVelocity) * 0.02;
- 				}
- 				v_Velocity = baseDirection * speed + boost; 
- 			} else {
- 				// Mouse not moving: Emit omnidirectionally (full circle)
-				angle = speedRand.g * 2.0 * 3.14159; // Use 2.0*PI for full 360 degrees
- 				v_Velocity = vec2(cos(angle), sin(angle)) * speed;
- 			}
- 
- 			// Initialize size and rotation randomly
- 			vec2 sizeRotRand = texelFetch(u_RgNoise, noise_coord + ivec2(1,0), 0).rg;
- 			v_Size = 0.5 + sizeRotRand.r * 1.0; // Size between 0.5 and 1.5
- 			v_Rotation = (sizeRotRand.g - 0.5) * 2.0 * 3.14159; // Rotation between -PI and PI
- 		} else {
- 			// Update existing particle
-			
- 			// Apply turbulence based on position and time
- 			float turbAmt = 0.015;
- 			vec2 turbulence;
- 			turbulence.x = sin(i_Position.y * 10.0 + u_TotalTime * 2.0) * turbAmt;
- 			turbulence.y = cos(i_Position.x * 10.0 + u_TotalTime * 2.0) * turbAmt;
-			
- 			// Mouse influence - attracts particles toward mouse position when active
- 			vec2 mouseForce = vec2(0.0);
- 			if (u_MouseInfluence > 0.01) {
- 				vec2 toMouse = u_MousePos - i_Position;
- 				float dist = length(toMouse);
- 				if (dist > 0.001) {
- 					// Stronger effect on closer particles
- 					float strength = u_MouseInfluence / (dist * 3.0 + 0.1);
- 					mouseForce = normalize(toMouse) * strength * 0.03;
- 				}
- 			}
-			
- 			// Calculate new position with combined forces
- 			v_Position = i_Position + (i_Velocity + turbulence + mouseForce) * u_TimeDelta;
-			
- 			// Age particle
- 			v_Age = i_Age + u_TimeDelta;
- 			v_Life = i_Life;
-			
- 			// Update velocity with gravity and slight damping
- 			v_Velocity = i_Velocity * 0.99 + u_Gravity * u_TimeDelta;
-
- 			// Pass through size and rotation
- 			v_Size = i_Size;
- 			v_Rotation = i_Rotation;
- 		}
- 	}
- </script>
- <script type="text/x-fragment-shader" id="passthru-frag-shader">
- 	#version 300 es
- 	precision mediump float;
- 	in float v_Age;
- 	void main() { discard; }
- </script>
- <script type="text/x-vertex-shader" id="particle-render-vert">
- 	#version 300 es
- 	precision mediump float;
-
- 	uniform float u_Aspect;
-
- 	in vec2 i_Position;
- 	in float i_Age;
- 	in float i_Life;
- 	in vec2 i_Coord;
- 	in vec2 i_TexCoord;
- 	in float i_Size;
- 	in float i_Rotation;
-
- 	out float v_Age;
- 	out float v_Life;
- 	out vec2 v_TexCoord;
- 	out float v_NormalizedAge;
-
- 	void main() {
- 		// Calculate normalized age (clamped between 0 and 1)
- 		v_NormalizedAge = clamp(i_Age / i_Life, 0.0, 1.0);
-
- 		// Scale particles based on initial size and fade with age
- 		// Increase multiplier from 0.15 to 0.45 for larger sparks
- 		float scale = i_Size * (1.0 - v_NormalizedAge * 0.75) * 0.45; // Larger sparks
-
- 		// Apply rotation
- 		float c = cos(i_Rotation);
- 		float s = sin(i_Rotation);
- 		mat2 rotMat = mat2(c, -s, s, c);
- 		vec2 rotatedCoord = rotMat * i_Coord;
-
- 		// Calculate final vertex position
- 		vec2 vert_coord = i_Position + scale * rotatedCoord;
-
- 		// Pass data to fragment shader
- 		v_Age = i_Age;
- 		v_Life = i_Life;
- 		v_TexCoord = i_TexCoord;
+void main() {
+	if (i_Age >= i_Life) {
+		// Reset particle with new properties
+		ivec2 noise_coord = ivec2(gl_VertexID % 512, gl_VertexID / 512);
+		vec2 rand = texelFetch(u_RgNoise, noise_coord, 0).rg;
 		
- 		// Adjust final position for aspect ratio
- 		gl_Position = vec4(vert_coord.x / u_Aspect, vert_coord.y, 0.0, 1.0);
- 	}
- </script>
- <script type="text/x-fragment-shader" id="particle-render-frag">
- 	#version 300 es
- 	precision mediump float;
-
- 	uniform sampler2D u_Sprite;
- 	uniform float u_TotalTime;
-
- 	in vec2 v_TexCoord;
- 	in float v_NormalizedAge;
-
- 	out vec4 o_FragColor;
-
- 	/* From http://iquilezles.org/www/articles/palettes/palettes.htm */
- 	vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d) {
- 		return a + b*cos(6.28318*(c*t+d));
- 	}
-
- 	void main() {
- 		vec4 texColor = texture(u_Sprite, v_TexCoord);
-
- 		// Calculate opacity: fade out as normalized age approaches 1
- 		// Use power to make fade faster at the end
- 		float opacity = pow(1.0 - v_NormalizedAge, 1.5) * texColor.a;
-
- 		// Optional: Apply fire color palette based on age
- 		// vec3 fireColor = palette(v_NormalizedAge, vec3(0.1, 0.0, 0.0), vec3(1.0, 0.6, 0.1), vec3(1.0, 0.9, 0.3), vec3(0.0, 0.25, 0.5));
- 		// o_FragColor = vec4(texColor.rgb * fireColor, opacity);
-
- 		// Simpler: Just use texture color and calculated opacity
- 		o_FragColor = vec4(texColor.rgb, opacity);
-
- 		// Discard fragments that are fully transparent or based on texture alpha
- 		if (opacity < 0.01 || texColor.a < 0.1) {
- 			discard;
+		// Add tiny random offset to starting position to reduce bunching
+		vec2 posOffset = (texelFetch(u_RgNoise, noise_coord + ivec2(0,2), 0).rg - 0.5) * 0.01;
+		v_Position = u_MousePos + posOffset;
+		
+		// Randomize lifetime slightly for more varied effect
+		// Widen range: 0.6 to 1.4 times base life (was 0.8 to 1.2)
+		float lifeVar = 0.6 + rand.g * 0.8;
+		v_Age = 0.0;
+		v_Life = i_Life * lifeVar;
+		
+		// Higher initial velocity for more energetic flames
+		vec2 speedRand = texelFetch(u_RgNoise, noise_coord + ivec2(0,1), 0).rg;
+		float speed = u_MinSpeed + speedRand.r * (u_MaxSpeed - u_MinSpeed);
+		
+		// Calculate emission angle based on mouse movement
+		float angle;
+		if (u_IsMouseMoving > 0.5) {
+			// Mouse is moving: Emit opposite to mouse velocity + spread
+			float mouseAngle = atan(u_MouseVelocity.y, u_MouseVelocity.x);
+			float oppositeAngle = mouseAngle + 3.14159; 
+			// Reduce spread for more focused fling (+/- 30 degrees)
+			float spread = (speedRand.g - 0.5) * (3.14159 / 3.0); 
+			angle = oppositeAngle + spread;
+ 
+ 			vec2 baseDirection = vec2(cos(angle), sin(angle));
+ 			vec2 boost = vec2(0.0);
+ 			if (length(u_MouseVelocity) > 0.001) { 
+ 				boost = -normalize(u_MouseVelocity) * 0.02;
+ 			}
+ 			v_Velocity = baseDirection * speed + boost; 
+ 		} else {
+ 			// Mouse not moving: Emit omnidirectionally (full circle)
+			angle = speedRand.g * 2.0 * 3.14159; // Use 2.0*PI for full 360 degrees
+ 			v_Velocity = vec2(cos(angle), sin(angle)) * speed;
  		}
+ 
+ 		// Initialize size and rotation randomly
+ 		vec2 sizeRotRand = texelFetch(u_RgNoise, noise_coord + ivec2(1,0), 0).rg;
+ 		v_Size = 0.5 + sizeRotRand.r * 1.0; // Size between 0.5 and 1.5
+ 		v_Rotation = (sizeRotRand.g - 0.5) * 2.0 * 3.14159; // Rotation between -PI and PI
+ 	} else {
+ 		// Update existing particle
+		
+ 		// Apply turbulence based on position and time
+ 		float turbAmt = 0.015;
+ 		vec2 turbulence;
+ 		turbulence.x = sin(i_Position.y * 10.0 + u_TotalTime * 2.0) * turbAmt;
+ 		turbulence.y = cos(i_Position.x * 10.0 + u_TotalTime * 2.0) * turbAmt;
+		
+ 		// Mouse influence - attracts particles toward mouse position when active
+ 		vec2 mouseForce = vec2(0.0);
+ 		if (u_MouseInfluence > 0.01) {
+ 			vec2 toMouse = u_MousePos - i_Position;
+ 			float dist = length(toMouse);
+ 			if (dist > 0.001) {
+ 				// Stronger effect on closer particles
+ 				float strength = u_MouseInfluence / (dist * 3.0 + 0.1);
+ 				mouseForce = normalize(toMouse) * strength * 0.03;
+ 			}
+ 		}
+		
+ 		// Calculate new position with combined forces
+ 		v_Position = i_Position + (i_Velocity + turbulence + mouseForce) * u_TimeDelta;
+		
+ 		// Age particle
+ 		v_Age = i_Age + u_TimeDelta;
+ 		v_Life = i_Life;
+		
+ 		// Update velocity with gravity and slight damping
+ 		v_Velocity = i_Velocity * 0.99 + u_Gravity * u_TimeDelta;
+
+ 		// Pass through size and rotation
+ 		v_Size = i_Size;
+ 		v_Rotation = i_Rotation;
+ 	}
  }
- </script>
+</script>
+<script type="text/x-fragment-shader" id="passthru-frag-shader">#version 300 es
+precision mediump float;
+in float v_Age;
+void main() { discard; }
+</script>
+<script type="text/x-vertex-shader" id="particle-render-vert">#version 300 es
+precision mediump float;
+
+uniform float u_Aspect;
+
+in vec2 i_Position;
+in float i_Age;
+in float i_Life;
+in vec2 i_Coord;
+in vec2 i_TexCoord;
+in float i_Size;
+in float i_Rotation;
+
+out float v_Age;
+out float v_Life;
+out vec2 v_TexCoord;
+out float v_NormalizedAge;
+
+void main() {
+	// Calculate normalized age (clamped between 0 and 1)
+	v_NormalizedAge = clamp(i_Age / i_Life, 0.0, 1.0);
+
+	// Scale particles based on initial size and fade with age
+	float scale = i_Size * (1.0 - v_NormalizedAge * 0.75) * 6.0;
+
+	// Apply rotation
+	float c = cos(i_Rotation);
+	float s = sin(i_Rotation);
+	mat2 rotMat = mat2(c, -s, s, c);
+	vec2 rotatedCoord = rotMat * i_Coord;
+
+	// Calculate final vertex position
+	vec2 vert_coord = i_Position + scale * rotatedCoord;
+
+	// Pass data to fragment shader
+	v_Age = i_Age;
+	v_Life = i_Life;
+	v_TexCoord = i_TexCoord;
+	
+	// Adjust final position for aspect ratio
+	gl_Position = vec4(vert_coord.x / u_Aspect, vert_coord.y, 0.0, 1.0);
+}
+</script>
+<script type="text/x-fragment-shader" id="particle-render-frag">#version 300 es
+precision mediump float;
+
+uniform sampler2D u_Sprite;
+uniform float u_TotalTime;
+
+in vec2 v_TexCoord;
+in float v_NormalizedAge;
+
+out vec4 o_FragColor;
+
+/* From http://iquilezles.org/www/articles/palettes/palettes.htm */
+vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d) {
+	return a + b*cos(6.28318*(c*t+d));
+}
+
+void main() {
+	vec4 texColor = texture(u_Sprite, v_TexCoord);
+
+	// Calculate opacity: fade out as normalized age approaches 1
+	// Use power to make fade faster at the end
+	float opacity = pow(1.0 - v_NormalizedAge, 1.5) * texColor.a;
+
+	// Optional: Apply fire color palette based on age
+	// vec3 fireColor = palette(v_NormalizedAge, vec3(0.1, 0.0, 0.0), vec3(1.0, 0.6, 0.1), vec3(1.0, 0.9, 0.3), vec3(0.0, 0.25, 0.5));
+	// o_FragColor = vec4(texColor.rgb * fireColor, opacity);
+
+	// Simpler: Just use texture color and calculated opacity
+	o_FragColor = vec4(texColor.rgb, opacity);
+
+	// Discard fragments that are fully transparent or based on texture alpha
+	if (opacity < 0.01 || texColor.a < 0.1) {
+		discard;
+	}
+ }
+</script>
