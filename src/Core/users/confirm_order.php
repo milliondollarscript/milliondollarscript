@@ -306,7 +306,7 @@ if ( ! is_user_logged_in() ) {
 					?>
                     <input type='button' class='mds-button mds-complete'
                            value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
-                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'manage', [ 'mds-action' => 'complete', 'BID' => $BID, 'order_id' => Orders::get_current_order_id() ] ) ); ?>'">
+                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment', [ 'mds-action' => 'complete', 'BID' => $BID, 'order_id' => Orders::get_current_order_id() ] ) ); ?>'">
 					<?php
 				} else {
 					// go to payment

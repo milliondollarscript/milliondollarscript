@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.12.67
+Stable tag: 2.5.12.68
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -29,6 +29,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Improved WooCommerce integration and settings handling.
 * Fix: Click reports page updated for better admin reporting and UI consistency.
 * Fix: Changed all the checkboxes in the Options to radio buttons.
+* Fix: Fixed Complete Order button on Confirm screen when price per block is 0 or user is privileged to go to the Payment page.
 
 = 2.5.11 =
 * Add WooCommerce refund integration.
