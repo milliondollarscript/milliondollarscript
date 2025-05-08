@@ -27,6 +27,11 @@
  */
 
 use Imagine\Filter\Basic\Autorotate;
+use Imagine\Filter\Transformation;
+use Imagine\Gd\Imagine;
+use Imagine\Image\Box;
+use Imagine\Image\Point;
+use Imagine\Image\ManipulatorInterface;
 use Imagine\Image\Metadata\ExifMetadataReader;
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
@@ -669,9 +674,18 @@ function upload_changed_pixels(
 		throw new \Exception($error_message); // Throw exception instead of returning early
 	}
 
-	$imagine = new Imagine\Gd\Imagine();
+	$imagine = new Imagine();
 	try {
-		$uploaddir = Utility::get_upload_path() . "images/";
+		// Validate file existence and readability
+		if (!file_exists($files['tmp_name'])) {
+			throw new \Exception('Uploaded file does not exist: ' . $files['tmp_name']);
+		}
+
+		if (!is_readable($files['tmp_name'])) {
+			throw new \Exception('Cannot read uploaded file: ' . $files['tmp_name']);
+		}
+
+		$uploaddir  = Utility::get_upload_path() . "images/";
 		$filename   = sanitize_file_name( $files['name'] );
 		$file_parts = pathinfo( $filename );
 
@@ -696,10 +710,14 @@ function upload_changed_pixels(
 		}
 
 		// convert to png
-		$image    = $imagine->open( $uploadfile );
-		$fileinfo = pathinfo( $uploadfile );
-		$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
-		$image->save( $newname );
+		try {
+			$image    = $imagine->open( $uploadfile );
+			$fileinfo = pathinfo( $uploadfile );
+			$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
+			$image->save( $newname );
+		} catch (\Exception $e) {
+			throw new \Exception('Failed to convert image: ' . $e->getMessage());
+		}
 
 		// File is valid, and was successfully uploaded.
 		$tmp_image_file = $newname;
@@ -708,7 +726,7 @@ function upload_changed_pixels(
 
 		// autorotate
 		$imagine->setMetadataReader( new ExifMetadataReader() );
-		$filter = new Imagine\Filter\Transformation();
+		$filter = new Transformation();
 		$filter->add( new AutoRotate() );
 		$filter->apply( $image );
 
@@ -723,28 +741,59 @@ function upload_changed_pixels(
 		$actualWidth  = $actual_size[0];
 		$actualHeight = $actual_size[1];
 
-		// determine whether to resize and validate dimensions when disabled
-		$MDS_RESIZE = Config::get( 'MDS_RESIZE' );
-		if ( $MDS_RESIZE !== 'YES' ) {
-			// Check if dimensions are larger than required size
-			if ( $actualWidth > $size['x'] || $actualHeight > $size['y'] ) {
-				// Construct user-friendly error message
+		// Get the pixel image size
+		$pixel_image_size = Utility::get_pixel_image_size($order_id);
+
+		// Calculate the target pixel dimensions of the selected area based on grid selection
+		// $pixel_image_size['x'] and $pixel_image_size['y'] are the selection width and height in *pixels*
+		$target_selection_pixel_width  = $pixel_image_size['x'];
+		$target_selection_pixel_height = $pixel_image_size['y'];
+
+		// Get the global resize setting
+		$MDS_RESIZE = Options::get_option( 'resize', 'YES' );
+
+		if ( $MDS_RESIZE == 'YES' ) {
+			// Global resize is ON: Resize (thumbnail) the uploaded image to fit the selection's pixel area.
+			// Validate that target dimensions are positive before attempting resize.
+			if ($target_selection_pixel_width > 0 && $target_selection_pixel_height > 0) {
+				try {
+					$resize_box = new Box( $target_selection_pixel_width, $target_selection_pixel_height );
+
+					// Using THUMBNAIL_INSET preserves aspect ratio and fits within bounds.
+					// The $image object is updated by the thumbnail operation.
+					// $image = $image->thumbnail($resize_box, ManipulatorInterface::THUMBNAIL_INSET);
+					$image = $image->resize($resize_box);
+				} catch (\Exception $e) {
+					throw new \Exception('Failed to thumbnail image to fit selection: ' . $e->getMessage());
+				}
+			}
+		} else {
+			// Global resize is OFF: Validate that the uploaded image isn't larger than the selection's pixel area.
+			// If it is, an error is thrown. Otherwise, the original uploaded image (possibly already converted to PNG) is used.
+			if ( $actualWidth > $target_selection_pixel_width || $actualHeight > $target_selection_pixel_height ) {
 				$error_message = Language::get_replace(
-					'Image too large. You uploaded an image that is %UPLOAD_W%x%UPLOAD_H% pixels. The image cannot be larger than %SIZE_X% pixels wide and %SIZE_Y% pixels high.',
-					[ '%UPLOAD_W%', '%UPLOAD_H%', '%SIZE_X%', '%SIZE_Y%' ],
-					[ $actualWidth, $actualHeight, $size['x'], $size['y'] ]
+					'Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels.',
+					[ '%ACTUAL_W%', '%ACTUAL_H%', '%TARGET_W%', '%TARGET_H%' ],
+					[ $actualWidth, $actualHeight, $target_selection_pixel_width, $target_selection_pixel_height ]
 				);
 				throw new \Exception($error_message);
 			}
 		}
-		if ( $MDS_RESIZE === 'YES' ) {
-			$resize = new Imagine\Image\Box( $size['x'], $size['y'] );
-			$image->resize( $resize );
+
+		// Precompute block dimensions for performance
+		if ( $MDS_RESIZE == 'YES' && $size['x'] <= $target_selection_pixel_width && $size['y'] <= $target_selection_pixel_height) {
+			$ratio_diff_x = $size['x'] / $target_selection_pixel_width;
+			$ratio_diff_y = $size['y'] / $target_selection_pixel_height;
+			$blkW         = $banner_data['BLK_WIDTH'] * $ratio_diff_x;
+			$blkH         = $banner_data['BLK_HEIGHT'] * $ratio_diff_y;
+		} else {
+			$blkW         = $banner_data['BLK_WIDTH'];
+			$blkH         = $banner_data['BLK_HEIGHT'];
 		}
 
-		// Precompute block dimensions and color for performance
-		$block_size = new Imagine\Image\Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
-		$palette    = new Imagine\Image\Palette\RGB();
+		// Precompute  block dimensions and color for performance
+		$block_size   = new Box( $blkW, $blkH );
+		$palette    = new \Imagine\Image\Palette\RGB();
 		$color      = $palette->color( '#000', 0 );
 
 		// Compute block offsets from database
@@ -762,16 +811,16 @@ function upload_changed_pixels(
 			$low_y = $high_y = $blocks[0]['y'];
 			foreach ( $blocks as $block_row ) {
 				if ( $block_row['x'] > $high_x ) {
-					$high_x = $block_row['x'];
+					$high_x  = $block_row['x'];
 				}
 				if ( $block_row['x'] < $low_x ) {
-					$low_x = $block_row['x'];
+					$low_x   = $block_row['x'];
 				}
 				if ( $block_row['y'] > $high_y ) {
-					$high_y = $block_row['y'];
+					$high_y  = $block_row['y'];
 				}
 				if ( $block_row['y'] < $low_y ) {
-					$low_y = $block_row['y'];
+					$low_y   = $block_row['y'];
 				}
 			}
 			$_REQUEST['map_x'] = $high_x;
@@ -784,25 +833,20 @@ function upload_changed_pixels(
 		$updates = [];
 
 		// Create a fully transparent block placeholder
-		$transparent_color = $palette->color('#FFF', 100); // Use any color, alpha 100 = fully transparent
+		$transparent_color       = $palette->color('#FFF', 100); // Use any color, alpha 100 = fully transparent
 		$transparent_block_image = $imagine->create($block_size, $transparent_color);
-		$transparent_image_data = base64_encode($transparent_block_image->get("png", ['png_compression_level' => 9]));
+		$transparent_image_data  = base64_encode($transparent_block_image->get("png", ['png_compression_level' => 9]));
 
 		// Iterate over the entire selection area, not just the uploaded image area
-		$blkW = $banner_data['BLK_WIDTH'];
-		$blkH = $banner_data['BLK_HEIGHT'];
 		$blocksPerRow = $banner_data['G_WIDTH'];
-		$sizeX = $size['x']; // Keep original size for reference if needed, e.g., for block index calculation
-		$sizeY = $size['y'];
+		$selectionWidth  = $pixel_image_size['x'];
+		$selectionHeight = $pixel_image_size['y'];
 
 		// Use actual image dimensions for loop limits
 		$loopLimitX = $actualWidth;
 		$loopLimitY = $actualHeight;
 
 		// Calculate the total width and height of the block selection area
-		$selectionWidth = ($high_x - $low_x) + $banner_data['BLK_WIDTH'];
-		$selectionHeight = ($high_y - $low_y) + $banner_data['BLK_HEIGHT'];
-
 		for ( $y_offset = 0; $y_offset < $selectionHeight; $y_offset += $blkH ) {
 			for ( $x_offset = 0; $x_offset < $selectionWidth; $x_offset += $blkW ) {
 				// Calculate absolute map coordinates for this block in the grid
@@ -817,30 +861,61 @@ function upload_changed_pixels(
 				$img_y = $y_offset;
 
 				// Check if this block position is covered by the actual uploaded image
-				if ( $img_x < $actualWidth && $img_y < $actualHeight ) {
+				if ( (
+					$img_x < $actualWidth || 
+					($MDS_RESIZE == 'YES' && $actualWidth <= $target_selection_pixel_width)
+				) && (
+					$img_y < $actualHeight || 
+					($MDS_RESIZE == 'YES' && $actualHeight <= $target_selection_pixel_height)
+				) ) {
 					// --- This block IS covered by the uploaded image --- 
 
 					// Calculate the size for this specific crop from the uploaded image
-					$cropWidth = min( $blkW, $actualWidth - $img_x );
-					$cropHeight = min( $blkH, $actualHeight - $img_y );
+					if($MDS_RESIZE == 'YES' && $actualWidth <= $target_selection_pixel_width){
+						$cropWidth  = $blkW;
+					}else{
+						$cropWidth  = min( $blkW, $actualWidth - $img_x );
+					}
+					if($MDS_RESIZE == 'YES' && $actualHeight <= $target_selection_pixel_height) {
+							$cropHeight = $blkH;
+					}else{
+						$cropHeight = min( $blkH, $actualHeight - $img_y );
+					}
 
 					// Ensure dimensions are positive before attempting crop
 					if ($cropWidth > 0 && $cropHeight > 0) {
-						$current_block_size = new Imagine\Image\Box($cropWidth, $cropHeight);
-						$start_point = new Imagine\Image\Point($img_x, $img_y); // Use relative coords for crop
-
-						// Create new destination image (always use standard block size)
-						$dest = $imagine->create( $block_size, $color );
-
-						// Crop the calculated part from the source image copy
-						$block = $image->copy();
-						$block->crop($start_point, $current_block_size);
-
-						// Paste the (potentially smaller) cropped block into the top-left of the full-size destination image
-						$dest->paste( $block, new Imagine\Image\Point( 0, 0 ) );
-
-						// Get the image data
-						$current_image_data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
+						try {
+							$processed_block_image = $image->copy(); 
+							$processed_block_image->crop(new Point($img_x, $img_y), new Box($cropWidth, $cropHeight));
+				
+							if (Options::get_option('resize') == 'YES') {
+								// Global Auto-resize IS ON:
+								// Resize the cropped segment to fill the standard block dimensions.
+								$processed_block_image = $processed_block_image->resize($block_size);
+								
+								// Ensure the resized image is *exactly* the standard block size.
+								// If not, create a new blank canvas (transparent by default) of the standard size 
+								// and paste the resized image onto it.
+								if ($processed_block_image->getSize()->getWidth() !== $blkW || $processed_block_image->getSize()->getHeight() !== $blkH) {
+									$perfect_size_canvas = $imagine->create($block_size); 
+									$perfect_size_canvas->paste($processed_block_image, new Point(0, 0));
+									$processed_block_image = $perfect_size_canvas; 
+								}
+							} else {
+								// Global Auto-resize IS OFF:
+								// The $processed_block_image is currently the (potentially smaller) cropped segment.
+								// It needs to be placed on a standard-sized canvas which has the default $color background.
+								$standard_canvas_with_bg = $imagine->create($block_size, $color); 
+								$standard_canvas_with_bg->paste($processed_block_image, new Point(0,0)); // Paste at top-left
+								$processed_block_image = $standard_canvas_with_bg; 
+							}
+				
+							// Get the image data from the now correctly processed and sized block image.
+							$current_image_data = base64_encode( $processed_block_image->get( "png", array( 'png_compression_level' => 9 ) ) );
+							
+						} catch (\Exception $e) {
+							throw new \Exception('Failed to process block: ' . $e->getMessage());
+						}
 					} else {
 						// This case might occur if crop dimensions are zero (edge case), use transparent
 						$current_image_data = $transparent_image_data;

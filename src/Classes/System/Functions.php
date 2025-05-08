@@ -489,11 +489,19 @@ class Functions {
 			<div class="mds-pixel-info-block mds-pixel-info-upload">
 				<b><?php Language::out( 'Change Pixels' ); ?></b><br>
 				<?php
-				Language::out_replace(
-					'To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click "upload"',
-					[ '%SIZE_X%', '%SIZE_Y%' ],
-					[ $size['x'], $size['y'] ]
-				);
+				if(Options::get_option('resize', 'YES') == 'YES') {
+					Language::out_replace(
+						'To change these pixels, select an image and click "upload". It will be resized to fit %SIZE_X% pixels wide & %SIZE_Y% pixels high.',
+						[ '%SIZE_X%', '%SIZE_Y%' ],
+						[ $size['x'], $size['y'] ]
+					);
+				} else {
+					Language::out_replace(
+						'To change these pixels, select an image up to %SIZE_X% pixels wide & %SIZE_Y% pixels high and click "upload".',
+						[ '%SIZE_X%', '%SIZE_Y%' ],
+						[ $size['x'], $size['y'] ]
+					);
+				}
 				?>
 				<form name="change" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
 					enctype="multipart/form-data" method="post">

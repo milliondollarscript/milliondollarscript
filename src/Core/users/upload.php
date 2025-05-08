@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Currency;
@@ -318,7 +318,7 @@ if ( ! empty( $image ) ) {
 		}
 
 		// if image should be resized automatically make it fit within grid max/min block settings
-		if ( Config::get( 'MDS_RESIZE' ) != 'YES' ) {
+		if ( Options::get_option( 'resize' ) != 'YES' ) {
 			if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
 
 				$limit = $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];

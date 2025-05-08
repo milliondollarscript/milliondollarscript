@@ -27,6 +27,10 @@
  */
 
 use MillionDollarScript\Classes\System\Utility;
+use Imagine\Gd\Imagine;
+use Imagine\Image\Box;
+use Imagine\Image\ImageInterface;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -37,7 +41,7 @@ $BID = $f2->bid();
 
 $banner_data = load_banner_constants( $BID );
 
-$imagine = new Imagine\Gd\Imagine();
+$imagine = new Imagine();
 
 // get the order id
 $order_id = null;
@@ -93,21 +97,18 @@ while ( $block_row = mysqli_fetch_array( $result3 ) ) {
 	}
 
 	$blocks[ $i ]['block_id'] = $block_row['block_id'];
-	$image_object; // Declare variable to hold the image object
 	if ( $block_row['image_data'] == '' ) {
-		$image_object = $imagine->load( $banner_data['GRID_BLOCK'] );
+		$blocks[ $i ]['image_data'] = $imagine->load( $banner_data['GRID_BLOCK'] );
 	} else {
-		$image_object = $imagine->load( base64_decode( $block_row['image_data'] ) );
+		$blocks[ $i ]['image_data'] = $imagine->load( base64_decode( $block_row['image_data'] ) );
 	}
-
-	// Conditionally resize based on auto-resize option
-	// Ensure Options class is available or use appropriate method to get option
-	if (class_exists('MillionDollarScript\Classes\Data\Options') && \MillionDollarScript\Classes\Data\Options::get_option('auto-resize') == 'yes') {
-		$block_size_obj = new \Imagine\Image\Box($banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT']);
-		$image_object->resize($block_size_obj);
+	// Conditionally fill block space when auto-resize is enabled
+	if ( Options::get_option('resize') === 'YES' ) {
+		$blocks[ $i ]['image_data'] = $blocks[ $i ]['image_data']->thumbnail(
+			new Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] ),
+			\Imagine\Image\ManipulatorInterface::THUMBNAIL_OUTBOUND
+		);
 	}
-	$blocks[ $i ]['image_data'] = $image_object; // Store the (potentially resized) image object
-
 	$blocks[ $i ]['x'] = $block_row['x'];
 	$blocks[ $i ]['y'] = $block_row['y'];
 
@@ -131,10 +132,10 @@ foreach ( $blocks as $block ) {
 $std_image = $imagine->load( $banner_data['GRID_BLOCK'] );
 
 // grid size
-$size = new Imagine\Image\Box( $x_size, $y_size );
+$size = new Box( $x_size, $y_size );
 
 // create empty image
-$palette = new Imagine\Image\Palette\RGB();
+$palette = new \Imagine\Image\Palette\RGB();
 $color   = $palette->color( '#000', 0 );
 $image   = $imagine->create( $size, $color );
 
@@ -143,7 +144,7 @@ $block_count = 0;
 for ( $y = 0; $y < $y_size; $y += $banner_data['BLK_HEIGHT'] ) {
 	for ( $x = 0; $x < $x_size; $x += $banner_data['BLK_WIDTH'] ) {
 		if ( isset( $new_blocks[ $x . $y ] ) && $new_blocks[ $x . $y ]['image_data'] != '' ) {
-			$image->paste( $new_blocks[ $x . $y ]['image_data'], new Imagine\Image\Point( $x, $y ) );
+			$image->paste( $new_blocks[ $x . $y ]['image_data'], new \Imagine\Image\Point( $x, $y ) );
 		}
 	}
 }

@@ -436,11 +436,16 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 				$block = $orders_grid_block->copy();
 			}
 			// Conditionally resize based on auto-resize option
-			if (Options::get_option('auto-resize') == 'yes') {
+			if (Options::get_option('resize') == 'YES') {
 				// Force the image to fill the entire block space
-				$block = $block->thumbnail($block_size, \Imagine\Image\ImageInterface::THUMBNAIL_OUTBOUND);
+				$block = $block->thumbnail($block_size, Imagine\Image\ManipulatorInterface::THUMBNAIL_OUTBOUND);
+				// Ensure the processed image is exactly the block size
+				if ($block->getSize()->getWidth() !== $blkW || $block->getSize()->getHeight() !== $blkH) {
+					$blank = $imagine->create($block_size);
+					$blank->paste($block, new Point(0, 0));
+					$block = $blank;
+				}
 			}
-
 			$blocks[ $row['block_id'] ] = 'order';
 			$orders[ $row['block_id'] ] = $block;
 		}
@@ -462,11 +467,14 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 				$block = $orders_grid_block->copy();
 			}
 			// Conditionally resize based on auto-resize option
-			if (Options::get_option('auto-resize') == 'yes') {
+			if (Options::get_option('resize') == 'YES') {
 				// Force the image to fill the entire block space
-				$block = $block->thumbnail($block_size, \Imagine\Image\ImageInterface::THUMBNAIL_OUTBOUND);
+				$block = $block->thumbnail($block_size, Imagine\Image\ManipulatorInterface::THUMBNAIL_OUTBOUND);
+				// Ensure the processed image is exactly the block size
+				$blank = $imagine->create($block_size);
+				$blank->paste($block, new Point(0, 0));
+				$block = $blank;
 			}
-
 			$blocks[ $row['block_id'] ] = 'user';
 			$users[ $row['block_id'] ]  = $block;
 		}

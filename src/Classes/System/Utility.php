@@ -896,14 +896,20 @@ class Utility {
 	}
 
 	public static function get_pixel_image_size( $order_id ) {
+		global $wpdb;
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=" . intval( $order_id );
-		$result3 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d",
+				$order_id
+			),
+			ARRAY_A
+		);
 
 		// find high x, y & low x, y
 		// low x,y is the top corner, high x,y is the bottom corner
 		$BID = 1;
-		while ( $block_row = mysqli_fetch_array( $result3 ) ) {
+		foreach ( $results as $block_row ) {
 
 			$high_x = ! isset( $high_x ) ? $block_row['x'] : $high_x;
 			$high_y = ! isset( $high_y ) ? $block_row['y'] : $high_y;
@@ -1383,7 +1389,7 @@ class Utility {
 			}
 		}
 	
-		// Fallback 2: File modification time of this file (version.php)
+		// Fallback 2: File modification time of this file
 		if ( ! $timestamp ) {
 			$timestamp = filemtime( __FILE__ );
 		}

@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\Forms;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
@@ -70,7 +71,7 @@ if ( empty( $order_id ) ) {
 			}
 
 			// Check if the order is in progress
-			if ( ! \MillionDollarScript\Classes\Orders\Orders::is_order_in_progress( $order_id ) ) {
+			if ( ! Orders::is_order_in_progress( $order_id ) ) {
 				// Not in progress so redirect to the no orders page
 				Orders::no_orders();
 
@@ -105,7 +106,7 @@ $banner_data = load_banner_constants( $BID );
 Orders::update_temp_order_timestamp();
 
 // Handle file upload
-$uploaddir      = \MillionDollarScript\Classes\System\Utility::get_upload_path() . "images/";
+$uploaddir      = Utility::get_upload_path() . "images/";
 $tmp_image_file = Orders::get_tmp_img_name();
 $size           = [];
 $reqsize        = [];
@@ -164,7 +165,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 			$size = getimagesize( $tmp_image_file );
 
 			// Check dimensions ONLY if auto-resize is OFF
-			if ( Config::get( 'MDS_RESIZE' ) !== 'YES' ) {
+			if ( Options::get_option( 'resize' ) !== 'YES' ) {
 
 				// If any error occurred during dimension calculation/validation
 				/* if ( $error_occurred ) { // This check is now part of the removed logic
@@ -186,7 +187,7 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 			$block_size = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
 			// if image should be resized automatically make it fit within grid max/min block settings
-			if ( Config::get( 'MDS_RESIZE' ) == 'YES' ) {
+			if ( Options::get_option( 'resize' ) == 'YES' ) {
 				$rescale = [];
 				if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
 					$rescale['x'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $reqsize[0] );

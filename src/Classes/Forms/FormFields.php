@@ -614,7 +614,7 @@ class FormFields {
 					$attachment_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'image' );
 
 					// Resize if option is enabled
-					if ( Config::get( 'MDS_RESIZE' ) == 'YES' ) {
+					if ( Options::get_option( 'resize' ) == 'YES' ) {
 						$imagine = "";
 						if ( class_exists( 'Imagick' ) ) {
 							$imagine = new \Imagine\Imagick\Imagine();

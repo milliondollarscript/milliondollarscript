@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
@@ -70,7 +71,7 @@ try {
 	$block_size  = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
 	// make it smaller
-	if ( Config::get( 'MDS_RESIZE' ) == 'YES' ) {
+	if ( Options::get_option( 'resize' ) == 'YES' ) {
 		$rescale = [];
 		if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
 			$rescale['x'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $new_size[0] );

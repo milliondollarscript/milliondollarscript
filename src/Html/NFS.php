@@ -92,7 +92,7 @@ if ( $BID != '' ) {
 
 	$grid_img = Utility::get_upload_url() . 'grids/grid' . $BID;
 
-	$grid_ext = \MillionDollarScript\Classes\System\Utility::get_file_extension();
+	$grid_ext = Utility::get_file_extension();
 
 	$grid_img .= '.' . $grid_ext;
 
