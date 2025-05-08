@@ -29,7 +29,6 @@
 use MillionDollarScript\Classes\System\Utility;
 use Imagine\Gd\Imagine;
 use Imagine\Image\Box;
-use Imagine\Image\ImageInterface;
 use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;

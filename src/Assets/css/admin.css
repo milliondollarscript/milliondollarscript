@@ -262,7 +262,7 @@ div.milliondollarscript-fire {
 	top: 0;
 	left: 0;
 	display: none;
-	pointer-events: none;
+	pointer-events: auto;
 	background: transparent;
 }
 

@@ -1,7 +1,11 @@
 jQuery(document).ready(function () {
 	let $fire_container = jQuery('div.milliondollarscript-fire');
 	if ($fire_container.length > 0) {
-		main();
+		if (typeof main === 'function') {
+			main();
+		} else {
+			console.warn('window.main is undefined; skipping WebGL init.');
+		}
 
 		let $fire = jQuery('#milliondollarscript-fire');
 
