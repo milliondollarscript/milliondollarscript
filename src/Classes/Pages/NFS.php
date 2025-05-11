@@ -35,7 +35,7 @@ use Imagine\Image\Palette\RGB;
 use Imagine\Image\Point;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Blocks;
-use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -111,14 +111,14 @@ class NFS {
 		wp_enqueue_script( 'hoverIntent' );
 		wp_enqueue_script( 'viselect', MDS_CORE_URL . 'js/third-party/viselect.umd.js', [], filemtime( MDS_CORE_PATH . "/js/third-party/viselect.umd.js" ) );
 
-		wp_register_script( 'mds-nfs-js', MDS_BASE_URL . 'src/Assets/js/nfs.min.js', [
+		wp_register_script( 'mds-nfs-js', MDS_BASE_URL . 'src/Assets/js/admin-nfs.min.js', [
 			'jquery',
 			'jquery-ui-core',
 			'jquery-ui-button',
 			'jquery-ui-dialog',
 			'jquery-form',
 			'viselect'
-		], filemtime( MDS_BASE_PATH . 'src/Assets/js/nfs.min.js' ), true );
+		], filemtime( MDS_BASE_PATH . 'src/Assets/js/admin-nfs.min.js' ), true );
 		wp_localize_script( 'mds-nfs-js', 'MDS', [
 			'ajaxurl'       => admin_url( 'admin-ajax.php' ),
 			'adminpost'     => admin_url( 'admin-post.php' ),
@@ -148,7 +148,7 @@ class NFS {
 		check_ajax_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			self::no_perms();
+			Utility::no_perms();
 		}
 
 		if ( isset( $_POST['BID'] ) && ! empty( $_POST['BID'] ) ) {
@@ -171,7 +171,7 @@ class NFS {
 		check_ajax_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			self::no_perms();
+			Utility::no_perms();
 		}
 
 		$addingnfs = false;
@@ -368,7 +368,7 @@ class NFS {
 		check_ajax_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			self::no_perms();
+			Utility::no_perms();
 		}
 
 		global $wpdb, $f2;
@@ -394,7 +394,7 @@ class NFS {
 		check_ajax_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			self::no_perms();
+			Utility::no_perms();
 		}
 
 		global $f2;
@@ -415,18 +415,12 @@ class NFS {
 		check_admin_referer( 'mds_nfs_nonce', 'mds_nfs_nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			self::no_perms();
+			Utility::no_perms();
 		}
 
 		status_header( 200 );
 
 		wp_send_json_success( [ 'css' => self::get_inline_css(), 'html' => self::get_html() ] );
-	}
-
-	public static function no_perms(): void {
-		$error = new \WP_Error( '403', Language::get( "Insufficient permissions!" ) );
-		wp_send_json_error( $error );
-		wp_die();
 	}
 
 	public static function get_inline_css(): string {

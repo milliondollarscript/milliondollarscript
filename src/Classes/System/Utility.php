@@ -1463,4 +1463,13 @@ class Utility {
 	public static function check_cpt_exists() {
 		return post_type_exists( FormFields::$post_type );
 	}
+
+	/**
+	 * Send "Insufficient permissions!" json error and wp_die.
+	 */
+	public static function no_perms(): void {
+		$error = new \WP_Error( '403', Language::get( "Insufficient permissions!" ) );
+		wp_send_json_error( $error );
+		wp_die();
+	}
 }
