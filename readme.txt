@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.12.77
+Stable tag: 2.5.12.78
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -32,6 +32,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Fixed Complete Order button on Confirm screen when price per block is 0 or user is privileged to go to the Payment page.
 * Fix: Fixed uploading a new pixel image that was smaller than the original didn't resize properly when auto-resize is on.
 * Fix: Approve pixels.
+* Fix: WooCommerce and permission conditional logic checks on Carbon Fields.
 
 = 2.5.11 =
 * Add WooCommerce refund integration.

@@ -70,7 +70,7 @@ class WooCommerceOptions {
 				     array(
 					     'field'   => $prefix . 'woocommerce',
 					     'compare' => '=',
-					     'value'   => true,
+					     'value'   => 'yes',
 				     )
 			     ) )
 			     ->set_types( array(
@@ -95,7 +95,7 @@ class WooCommerceOptions {
 				     array(
 					     'field'   => $prefix . 'woocommerce',
 					     'compare' => '=',
-					     'value'   => true,
+					     'value'   => 'yes',
 				     )
 			     ) )
 			     ->set_help_text( Language::get( 'Clear the cart when a MDS product is added to it.' ) ),
@@ -112,7 +112,7 @@ class WooCommerceOptions {
 				     array(
 					     'field'   => $prefix . 'woocommerce',
 					     'compare' => '=',
-					     'value'   => true,
+					     'value'   => 'yes',
 				     )
 			     ) )
 			     ->set_help_text( Language::get( 'Checking this will remove all duplicate variations on the MDS product when the options are saved.' ) ),
@@ -129,7 +129,7 @@ class WooCommerceOptions {
 				     array(
 					     'field'   => $prefix . 'woocommerce',
 					     'compare' => '=',
-					     'value'   => true,
+					     'value'   => 'yes',
 				     )
 			     ) )
 			     ->set_help_text( Language::get( 'Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab.' ) ),

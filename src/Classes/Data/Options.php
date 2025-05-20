@@ -58,7 +58,7 @@ class Options {
 				array(
 					'field'   => MDS_PREFIX . 'woocommerce',
 					'compare' => '=',
-					'value'   => false,
+					'value'   => 'no',
 				),
 			);
 		}
@@ -646,7 +646,7 @@ class Options {
 						'relation' => 'AND',
 						[
 							'field'   => MDS_PREFIX . 'permissions',
-							'value'   => true,
+							'value'   => 'yes',
 							'compare' => '=',
 						],
 					] )
