@@ -195,6 +195,9 @@ class Bootstrap {
 		// Add NFS page
 		add_action( 'init', [ '\MillionDollarScript\Classes\Pages\NFS', 'init' ], 10 );
 
+		// Add Extensions page
+		add_action( 'init', [ '\MillionDollarScript\Classes\Pages\Extensions', 'init' ], 10 );
+
 		// Load Frontend AJAX
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Ajax\Ajax', 'init' ], 10 );
 

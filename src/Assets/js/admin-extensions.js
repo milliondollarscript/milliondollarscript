@@ -253,6 +253,57 @@ jQuery(document).ready(function ($) {
 		}
 	});
 
+	// Handle install extension button
+	$(document).on("click", ".mds-install-extension", function (e) {
+		e.preventDefault();
+
+		const $button = $(this);
+		const extensionId = $button.data("extension-id");
+
+		if (!confirm("Are you sure you want to install this extension?")) {
+			return;
+		}
+
+		// Disable button and show spinner
+		$button
+			.prop("disabled", true)
+			.html('<span class="spinner is-active"></span> Installing...');
+
+		// Make AJAX request to install extension
+		$.ajax({
+			url: MDS_EXTENSIONS_DATA.ajax_url,
+			type: "POST",
+			data: {
+				action: "mds_install_extension",
+				nonce: MDS_EXTENSIONS_DATA.nonce,
+				extension_id: extensionId,
+			},
+			dataType: "json",
+			success: function (response) {
+				if (response.success) {
+					showNotice(
+						"success",
+						response.data.message || "Extension installed successfully.",
+					);
+					if (response.data.reload) {
+						setTimeout(() => window.location.reload(), 1500);
+					}
+				} else {
+					showNotice(
+						"error",
+						response.data.message || "Failed to install extension.",
+					);
+					resetButton($button, "Install");
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error("Error installing extension:", error);
+				showNotice("error", "An error occurred while installing the extension.");
+				resetButton($button, "Install");
+			},
+		});
+	});
+
 	// Trigger event when an update check is complete for a row
 	$(document).on("mds-update-checked", function (e) {
 		$(this).trigger("mds-update-checked");
