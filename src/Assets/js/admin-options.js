@@ -1,49 +1,53 @@
 jQuery(document).ready(function ($) {
+	const { select, dispatch } = window.cf.vendor["@wordpress/data"];
+	const metaboxes = select("carbon-fields/metaboxes");
+	const { updateFieldValue } = dispatch("carbon-fields/metaboxes");
+	const fields = metaboxes.getFields();
 
-    const {select, dispatch} = window.cf.vendor['@wordpress/data'];
-    const metaboxes = select('carbon-fields/metaboxes');
-    const {updateFieldValue} = dispatch('carbon-fields/metaboxes');
-    const fields = metaboxes.getFields();
+	const buttons = ["update_language", "create_pages", "delete_pages"];
 
-    const buttons = [
-        'update_language',
-        'create_pages',
-        'delete_pages',
-    ];
+	for (let i = 0; i < buttons.length; i++) {
+		$("#mds_" + buttons[i]).click(function (e) {
+			e.preventDefault();
+			e.stopPropagation();
 
-    for (let i = 0; i < buttons.length; i++) {
-        $("#mds_" + buttons[i]).click(function (e) {
-            e.preventDefault();
-            e.stopPropagation();
+			const button = $(this);
+			button.prop("disabled", true);
+			button.css("background-color", "#663600");
 
-            const button = $(this);
-            button.prop('disabled', true);
-            button.css("background-color", "#663600");
+			$.post(
+				MDS.ajaxurl,
+				{
+					action: "mds_" + buttons[i],
+					nonce: MDS.nonce,
+				},
+				function (data) {
+					button.prop("disabled", false);
+					if (data) {
+						button.css("background-color", "#006606");
+					} else {
+						button.css("background-color", "#660000");
+					}
+					setTimeout(function () {
+						button.css("background-color", "");
+					}, 5000);
 
-            $.post(MDS.ajaxurl, {
-                action: "mds_" + buttons[i],
-                nonce: MDS.nonce
-            }, function (data) {
-                button.prop('disabled', false);
-                if (data) {
-                    button.css("background-color", "#006606");
-                } else {
-                    button.css("background-color", "#660000");
-                }
-                setTimeout(function () {
-                    button.css("background-color", "");
-                }, 5000);
-
-                // Update Carbon Fields options.
-                if (button.attr('id') === 'mds_create_pages' || button.attr('id') === 'mds_delete_pages') {
-                    const pages = JSON.parse(MDS.pages);
-                    for (let page in pages) {
-                        const option = pages[page]['option'];
-                        let field = Object.values(fields).find(f => f.base_name === MDS.MDS_PREFIX + option);
-                        updateFieldValue(field.id, data[option]);
-                    }
-                }
-            });
-        });
-    }
+					// Update Carbon Fields options.
+					if (
+						button.attr("id") === "mds_create_pages" ||
+						button.attr("id") === "mds_delete_pages"
+					) {
+						const pages = JSON.parse(MDS.pages);
+						for (let page in pages) {
+							const option = pages[page]["option"];
+							let field = Object.values(fields).find(
+								(f) => f.base_name === MDS.MDS_PREFIX + option,
+							);
+							updateFieldValue(field.id, data[option]);
+						}
+					}
+				},
+			);
+		});
+	}
 });

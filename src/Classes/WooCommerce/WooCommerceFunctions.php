@@ -691,6 +691,9 @@ class WooCommerceFunctions {
 		$BID         = $f2->bid();
 		$banner_data = load_banner_constants( $BID );
 
+		// Initialize $good as true - we'll set it to false if any checks fail
+		$good = true;
+
 		// https://stackoverflow.com/a/40715347
 		// Iterating through each "line" items in the order
 		foreach ( $order->get_items() as $item_id => $item_data ) {

@@ -1,6 +1,8 @@
 // Add spinner animation and tooltip CSS if not present
-if (!document.getElementById('mds-spinner-style')) {
-	document.head.insertAdjacentHTML('beforeend', `
+if (!document.getElementById("mds-spinner-style")) {
+	document.head.insertAdjacentHTML(
+		"beforeend",
+		`
 		<style id="mds-spinner-style">
 		.mds-error {
 			border-color: #e00 !important;
@@ -49,9 +51,9 @@ if (!document.getElementById('mds-spinner-style')) {
 			100% { transform: rotate(360deg); }
 		}
 		</style>
-	`);
+	`,
+	);
 }
-
 
 jQuery(document).ready(function ($) {
 	let $changed = null;
@@ -61,20 +63,22 @@ jQuery(document).ready(function ($) {
 
 	// Add a new field to lock the width/height. Should it be one field for both width/height or one lock each?
 	function update_fields() {
-		const $fields = $changed.closest('.cf-block__fields');
+		const $fields = $changed.closest(".cf-block__fields");
 		const $id = $fields.find($('input[name="' + MDS.MDS_PREFIX + 'id"]'));
 		const $width = $fields.find($('input[name="' + MDS.MDS_PREFIX + 'width"]'));
-		const $height = $fields.find($('input[name="' + MDS.MDS_PREFIX + 'height"]'));
+		const $height = $fields.find(
+			$('input[name="' + MDS.MDS_PREFIX + 'height"]'),
+		);
 		const $type = $fields.find($('select[name="' + MDS.MDS_PREFIX + 'type"]'));
 
 		let payload = {
 			id: $id.val(),
 			type: $type.val(),
 			width: $width.val(),
-			height: $height.val()
+			height: $height.val(),
 		};
 
-		const block = wp.data.select('core/block-editor').getSelectedBlock();
+		const block = wp.data.select("core/block-editor").getSelectedBlock();
 
 		// Abort any previous AJAX request
 		if (currentAjax && currentAjax.readyState !== 4) {
@@ -83,24 +87,28 @@ jQuery(document).ready(function ($) {
 
 		// Show loading indicators
 		// Wrap the input in a spinner wrapper if not already
-		$width.each(function() {
+		$width.each(function () {
 			var $w = $(this);
-			if (!$w.parent().hasClass('mds-spinner-wrapper')) {
+			if (!$w.parent().hasClass("mds-spinner-wrapper")) {
 				$w.wrap('<span class="mds-spinner-wrapper"></span>');
 			}
-			$w.addClass('mds-loading').data('oldval', $w.val());
-			if ($w.siblings('.mds-spinner').length === 0) {
-				$w.after('<span class="mds-spinner"><svg viewBox="0 0 38 38"><defs><linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a"><stop stop-color="#fff" stop-opacity="0" offset="0%"/><stop stop-color="#fff" stop-opacity=".631" offset="63.146%"/><stop stop-color="#fff" offset="100%"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke="#ccc" stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" stroke="#888" stroke-opacity="1"></path></g></g></svg></span>');
+			$w.addClass("mds-loading").data("oldval", $w.val());
+			if ($w.siblings(".mds-spinner").length === 0) {
+				$w.after(
+					'<span class="mds-spinner"><svg viewBox="0 0 38 38"><defs><linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a"><stop stop-color="#fff" stop-opacity="0" offset="0%"/><stop stop-color="#fff" stop-opacity=".631" offset="63.146%"/><stop stop-color="#fff" offset="100%"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke="#ccc" stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" stroke="#888" stroke-opacity="1"></path></g></g></svg></span>',
+				);
 			}
 		});
-		$height.each(function() {
+		$height.each(function () {
 			var $h = $(this);
-			if (!$h.parent().hasClass('mds-spinner-wrapper')) {
+			if (!$h.parent().hasClass("mds-spinner-wrapper")) {
 				$h.wrap('<span class="mds-spinner-wrapper"></span>');
 			}
-			$h.addClass('mds-loading').data('oldval', $h.val());
-			if ($h.siblings('.mds-spinner').length === 0) {
-				$h.after('<span class="mds-spinner"><svg viewBox="0 0 38 38"><defs><linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a"><stop stop-color="#fff" stop-opacity="0" offset="0%"/><stop stop-color="#fff" stop-opacity=".631" offset="63.146%"/><stop stop-color="#fff" offset="100%"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke="#ccc" stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" stroke="#888" stroke-opacity="1"></path></g></g></svg></span>');
+			$h.addClass("mds-loading").data("oldval", $h.val());
+			if ($h.siblings(".mds-spinner").length === 0) {
+				$h.after(
+					'<span class="mds-spinner"><svg viewBox="0 0 38 38"><defs><linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a"><stop stop-color="#fff" stop-opacity="0" offset="0%"/><stop stop-color="#fff" stop-opacity=".631" offset="63.146%"/><stop stop-color="#fff" offset="100%"/></linearGradient></defs><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke="#ccc" stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" stroke="#888" stroke-opacity="1"></path></g></g></svg></span>',
+				);
 			}
 		});
 
@@ -109,81 +117,103 @@ jQuery(document).ready(function ($) {
 			data: {
 				action: "mds_admin_ajax",
 				payload: payload,
-				mds_admin_ajax_nonce: MDS.mds_admin_ajax_nonce
+				mds_admin_ajax_nonce: MDS.mds_admin_ajax_nonce,
 			},
 			type: "POST",
 			dataType: "json",
 			success: function (response) {
 				// Remove any previous error/tooltip
-				$('.mds-tooltip').remove();
-				$id.removeClass('mds-error');
+				$(".mds-tooltip").remove();
+				$id.removeClass("mds-error");
 
 				if (response.success) {
-					const width_key = MDS.MDS_PREFIX + 'width';
-					const height_key = MDS.MDS_PREFIX + 'height';
+					const width_key = MDS.MDS_PREFIX + "width";
+					const height_key = MDS.MDS_PREFIX + "height";
 
 					// Update block attributes
 					block.attributes.data[width_key] = response.data.width;
 					block.attributes.data[height_key] = response.data.height;
 
-					wp.data.dispatch('core/block-editor').updateBlock(block.clientId, {attributes: block.attributes});
+					wp.data
+						.dispatch("core/block-editor")
+						.updateBlock(block.clientId, { attributes: block.attributes });
 
 					// Update the input fields in the UI
 					$width.val(response.data.width);
 					$height.val(response.data.height);
-				} else if (response.data === 'Grid not found.') {
+				} else if (response.data === "Grid not found.") {
 					// Show error style and tooltip on grid id input
-					$id.addClass('mds-error');
+					$id.addClass("mds-error");
 					const offset = $id.offset();
 					const tooltip = $('<div class="mds-tooltip">Grid not found.</div>');
-					$('body').append(tooltip);
+					$("body").append(tooltip);
 					const inputHeight = $id.outerHeight();
 					tooltip.css({
 						left: offset.left,
-						top: offset.top + inputHeight + 2
+						top: offset.top + inputHeight + 2,
 					});
-					setTimeout(function() {
-						tooltip.fadeOut(200, function() { $(this).remove(); });
-						$id.removeClass('mds-error');
+					setTimeout(function () {
+						tooltip.fadeOut(200, function () {
+							$(this).remove();
+						});
+						$id.removeClass("mds-error");
 					}, 2500);
 				}
 			},
-			complete: function() {
-				$width.removeClass('mds-loading').siblings('.mds-spinner').remove();
-				$height.removeClass('mds-loading').siblings('.mds-spinner').remove();
+			complete: function () {
+				$width.removeClass("mds-loading").siblings(".mds-spinner").remove();
+				$height.removeClass("mds-loading").siblings(".mds-spinner").remove();
 			},
-			error: function(xhr, status) {
-				if (status === 'abort') {
+			error: function (xhr, status) {
+				if (status === "abort") {
 					// Restore old values if aborted
-					$width.val($width.data('oldval')).removeClass('mds-loading').siblings('.mds-spinner').remove();
-					$height.val($height.data('oldval')).removeClass('mds-loading').siblings('.mds-spinner').remove();
+					$width
+						.val($width.data("oldval"))
+						.removeClass("mds-loading")
+						.siblings(".mds-spinner")
+						.remove();
+					$height
+						.val($height.data("oldval"))
+						.removeClass("mds-loading")
+						.siblings(".mds-spinner")
+						.remove();
 				}
-			}
+			},
 		});
 	}
 
 	// When the type select box is changed, update the block's type attribute before updating fields.
-	$(document).on('change', 'select[name="milliondollarscript_type"]', function () {
-		$changed = jQuery(this);
-		const block = wp.data.select('core/block-editor').getSelectedBlock();
-		if (block && block.attributes && block.attributes.data) {
-			const type_key = MDS.MDS_PREFIX + 'type';
-			block.attributes.data[type_key] = $changed.val();
-			wp.data.dispatch('core/block-editor').updateBlock(block.clientId, {attributes: block.attributes});
-		}
-		update_fields();
-	});
+	$(document).on(
+		"change",
+		'select[name="milliondollarscript_type"]',
+		function () {
+			$changed = jQuery(this);
+			const block = wp.data.select("core/block-editor").getSelectedBlock();
+			if (block && block.attributes && block.attributes.data) {
+				const type_key = MDS.MDS_PREFIX + "type";
+				block.attributes.data[type_key] = $changed.val();
+				wp.data
+					.dispatch("core/block-editor")
+					.updateBlock(block.clientId, { attributes: block.attributes });
+			}
+			update_fields();
+		},
+	);
 
 	// When the grid id is changed, wait a second, then update the fields.
 	let timer = null;
-	$(document).on('change input', 'input[name="milliondollarscript_id"]', function () {
-		$changed = jQuery(this);
-		// Remove error and tooltip on input/change
-		$(this).removeClass('mds-error');
-		$('.mds-tooltip').remove();
-		clearTimeout(timer);
-		timer = setTimeout(function () {
-			update_fields();
-		}, 1000)
-	});
+	$(document).on(
+		"change input",
+		'input[name="milliondollarscript_id"]',
+		function () {
+			$changed = jQuery(this);
+			// Remove error and tooltip on input/change
+			$(this).removeClass("mds-error");
+			$(".mds-tooltip").remove();
+			clearTimeout(timer);
+			timer = setTimeout(function () {
+				update_fields();
+			}, 1000);
+		},
+	);
 });
