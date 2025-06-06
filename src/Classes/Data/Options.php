@@ -678,8 +678,8 @@ class Options {
 
 				// Extension Server URL
 				Field::make( 'text', MDS_PREFIX . 'extension_server_url', Language::get( 'Extension Server URL' ) )
-					->set_default_value( 'http://localhost:15346' )
-					->set_help_text( Language::get( 'The URL of the extension server for automatic updates and downloads. Use http://localhost:15346 for development or your production server URL.' ) ),
+					->set_default_value( 'https://extensions.milliondollarscript.com' )
+					->set_help_text( Language::get( 'The URL of the extension server for automatic updates and downloads. Use http://host.docker.internal:15346 for development or your production server URL. Default: https://extensions.milliondollarscript.com' ) ),
 
 				// License Key
 				Field::make( 'text', MDS_PREFIX . 'license_key', Language::get( 'License Key' ) )
@@ -831,24 +831,6 @@ class Options {
 		}
 
 		return $val;
-	}
-
-	/**
-	 * Get the extension server URL.
-	 *
-	 * @return string
-	 */
-	public static function get_extension_server_url(): string {
-		return self::get_option( 'extension_server_url', 'http://localhost:15346' );
-	}
-
-	/**
-	 * Get the license key.
-	 *
-	 * @return string
-	 */
-	public static function get_license_key(): string {
-		return self::get_option( 'license_key', '' );
 	}
 
 	/**

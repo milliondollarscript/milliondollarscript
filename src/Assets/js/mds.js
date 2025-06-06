@@ -26,7 +26,7 @@
  */
 
 // Million Dollar Script Two JavaScript
-
+ 
 function add_ajax_loader(container) {
 	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
 	jQuery(container).append($ajax_loader);

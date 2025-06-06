@@ -39,6 +39,8 @@ if (!function_exists('get_plugin_data')) {
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Extension\ExtensionUpdater;
+use MillionDollarScript\Classes\Options\Options;
+use MillionDollarScript\Classes\System\Utility;
 
 /**
  * Handles the Million Dollar Script Extensions admin submenu page.
@@ -311,7 +313,7 @@ class Extensions {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
         
         // Get the license key for authentication
-        $license_key = get_option( 'mds_license_key', '' );
+        $license_key = Options::get_option( 'license_key', '' );
         
         // Set up the upgrader
         $upgrader = new \Plugin_Upgrader( new \Plugin_Upgrader_Skin( [ 'plugin' => $extension_id ] ) );
@@ -611,8 +613,8 @@ class Extensions {
      * @throws \Exception If the API request fails
      */
     protected static function fetch_available_extensions(): array {
-        $extension_server_url = get_option(MDS_PREFIX . 'extension_server_url', 'http://localhost:15346');
-        $license_key = get_option(MDS_PREFIX . 'license_key', '');
+        $extension_server_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+        $license_key = Options::get_option('license_key', '');
         
         $api_url = rtrim($extension_server_url, '/') . '/api/extensions';
         
@@ -622,7 +624,7 @@ class Extensions {
                 'Content-Type' => 'application/json',
                 'User-Agent' => 'MDS-WordPress-Plugin/' . MDS_VERSION,
             ],
-            'sslverify' => !self::is_development_environment(),
+            'sslverify' => !Utility::is_development_environment(),
         ];
         
         if (!empty($license_key)) {
@@ -683,18 +685,6 @@ class Extensions {
         
         return $transformed_extensions;
     }
-    
-    /**
-     * Check if we're in a development environment
-     * 
-     * @return bool True if development environment
-     */
-    protected static function is_development_environment(): bool {
-        $extension_server_url = get_option(MDS_PREFIX . 'extension_server_url', 'http://localhost:15346');
-        return strpos($extension_server_url, 'localhost') !== false || 
-               strpos($extension_server_url, '127.0.0.1') !== false ||
-               strpos($extension_server_url, 'http://') === 0;
-    }
 
     // --- AJAX Handlers ---
 
@@ -736,8 +726,8 @@ class Extensions {
         }
 
         try {
-            $extension_server_url = get_option(MDS_PREFIX . 'extension_server_url', 'http://localhost:15346');
-            $license_key = get_option(MDS_PREFIX . 'license_key', '');
+            $extension_server_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+            $license_key = Options::get_option('license_key', '');
             
             $api_url = rtrim($extension_server_url, '/') . '/api/extensions/' . urlencode($extension_id);
             
@@ -747,7 +737,7 @@ class Extensions {
                     'Content-Type' => 'application/json',
                     'User-Agent' => 'MDS-WordPress-Plugin/' . MDS_VERSION,
                 ],
-                'sslverify' => !self::is_development_environment(),
+                'sslverify' => !Utility::is_development_environment(),
             ];
             
             if (!empty($license_key)) {
@@ -803,8 +793,8 @@ class Extensions {
         }
 
         try {
-            $extension_server_url = get_option(MDS_PREFIX . 'extension_server_url', 'http://localhost:15346');
-            $license_key = get_option(MDS_PREFIX . 'license_key', '');
+            $extension_server_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+            $license_key = Options::get_option('license_key', '');
             
             $download_url = rtrim($extension_server_url, '/') . '/api/extensions/' . urlencode($extension_id) . '/download';
             
@@ -838,7 +828,7 @@ class Extensions {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
         
         // Get the license key for authentication
-        $license_key = get_option( MDS_PREFIX . 'license_key', '' );
+        $license_key = Options::get_option('license_key', '');
         
         // Set up the upgrader
         $upgrader = new \Plugin_Upgrader( new \Plugin_Upgrader_Skin( [ 'plugin' => $extension_id ] ) );
@@ -849,7 +839,7 @@ class Extensions {
                 if (!empty($license_key)) {
                     $args['headers']['x-license-key'] = $license_key;
                 }
-                $args['sslverify'] = !self::is_development_environment();
+                $args['sslverify'] = !Utility::is_development_environment();
             }
             return $args;
         }, 10, 2 );

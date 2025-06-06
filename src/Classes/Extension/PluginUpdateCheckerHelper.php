@@ -2,6 +2,8 @@
 
 namespace MillionDollarScript\Classes\Extension;
 
+use MillionDollarScript\Classes\System\Utility;
+
 /**
  * Helper class to manage plugin update checker integration
  */
@@ -75,7 +77,7 @@ class PluginUpdateCheckerHelper {
 
             public function checkForUpdate() {
                 // Determine SSL verification based on environment
-                $sslverify = !$this->isDevelopmentEnvironment();
+                $sslverify = !Utility::is_development_environment();
                 
                 $response = wp_remote_post(
                     $this->serverUrl . '/api/extensions/check-update',
@@ -145,12 +147,6 @@ class PluginUpdateCheckerHelper {
                 }
 
                 return $update;
-            }
-
-            private function isDevelopmentEnvironment() {
-                return strpos($this->serverUrl, 'localhost') !== false || 
-                       strpos($this->serverUrl, '127.0.0.1') !== false ||
-                       defined('WP_DEBUG') && WP_DEBUG;
             }
 
             private function getUserAgent() {
