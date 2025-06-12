@@ -186,26 +186,6 @@ function milliondollarscript_two_activate(): void {
  * Deactivation
  */
 function milliondollarscript_two_deactivate(): void {
-	global $wpdb;
-
-	Classes\System\Utility::clear_orders();
-
-	$tables = Database::get_mds_tables();
-	$tables = array_merge($tables, Database::get_old_mds_tables());
-
-	foreach ( $tables as $table ) {
-		$wpdb->query(
-			"DROP TABLE IF EXISTS " . MDS_DB_PREFIX . $table,
-		);
-	}
-
-	$wpdb->query(
-		"DELETE FROM " . $wpdb->prefix . "options WHERE `option_name` LIKE '%" . MDS_PREFIX . "%' 
-		OR `option_name` = 'mds_last_order_modification_time' 
-		OR `option_name` = 'mds_migrate_product_executed'
-		",
-	);
-
 	// Flush permalinks.
 	flush_rewrite_rules();
 }
@@ -232,6 +212,12 @@ function milliondollarscript_two_uninstall(): void {
 			"DELETE FROM " . $wpdb->prefix . "options WHERE `option_name` LIKE '%" . MDS_PREFIX . "%' 
 			OR `option_name` = 'mds_last_order_modification_time' 
 			OR `option_name` = 'mds_migrate_product_executed'
+			OR `option_name` = 'mds_db_version'
+			OR `option_name` = " . OPTION_NAME_WIZARD_COMPLETE . "
+			OR `option_name` = 'mds_use_woocommerce_integration'
+			OR `option_name` LIKE '_transient_timeout_mds_blocks_banner_id%'
+			OR `option_name` LIKE '_transient_mds_blocks_banner_id%'
+			OR `option_name` LIKE 'mds_background_opacity%'
 			",
 		);
 
