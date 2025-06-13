@@ -231,6 +231,44 @@ function install_db(): void {
     PRIMARY KEY  (`banner_id`,`block_id`,`date`) 
 ) $charset_collate;" );
 
+	// Email disable tokens table
+	dbDelta( "CREATE TABLE `" . MDS_DB_PREFIX . "email_disable_tokens` (
+		`id` BIGINT unsigned NOT NULL AUTO_INCREMENT,
+		`email_address` VARCHAR(255) NOT NULL,
+		`token` VARCHAR(64) NOT NULL,
+		`created_at` DATETIME NOT NULL,
+		`expires_at` DATETIME NOT NULL,
+		`used_at` DATETIME NULL,
+		PRIMARY KEY  (`id`),
+		UNIQUE KEY `token` (`token`),
+		KEY `email_address` (`email_address`)
+	) $charset_collate;" );
+
+	// MDS Scan History table
+	dbDelta( "CREATE TABLE `" . MDS_DB_PREFIX . "scan_history` (
+		`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+		`scan_type` ENUM('activation_scan', 'manual_scan', 'targeted_scan', 'scheduled_scan') NOT NULL,
+		`total_pages` INT(11) NOT NULL DEFAULT 0,
+		`scanned_pages` INT(11) NOT NULL DEFAULT 0,
+		`detected_pages` INT(11) NOT NULL DEFAULT 0,
+		`updated_pages` INT(11) NOT NULL DEFAULT 0,
+		`error_pages` INT(11) NOT NULL DEFAULT 0,
+		`execution_time` INT(11) NOT NULL DEFAULT 0,
+		`memory_usage` BIGINT(20) NOT NULL DEFAULT 0,
+		`confidence_threshold` DECIMAL(3,2) DEFAULT 0.60,
+		`batch_size` INT(11) DEFAULT 50,
+		`results_data` LONGTEXT DEFAULT NULL,
+		`scan_status` ENUM('running', 'completed', 'cancelled', 'failed') DEFAULT 'completed',
+		`started_by` VARCHAR(100) DEFAULT NULL,
+		`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		`completed_at` DATETIME DEFAULT NULL,
+		PRIMARY KEY  (`id`),
+		KEY `idx_scan_type` (`scan_type`),
+		KEY `idx_scan_status` (`scan_status`),
+		KEY `idx_created_at` (`created_at`),
+		KEY `idx_completed_at` (`completed_at`)
+	) $charset_collate;" );
+
 	// Insert default grid
 	if ( $insert_banners ) {
 		$wpdb->insert(

@@ -63,8 +63,8 @@ defined( 'MDS_CORE_URL' ) or define( 'MDS_CORE_URL', MDS_BASE_URL . 'src/Core/' 
 defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript' );
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
-defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.12.0' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.12.84' );
+defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.12.86' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.12.86' );
 
 // Detect PHP version
 $minimum_version = '8.1.0';
