@@ -215,9 +215,32 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	$default_block = $blank_block->copy();
 
 	if ( ! $ordering ) {
-		$tmp_block = $imagine->load( $banner_data['GRID_BLOCK'] );
+		$image_data = $banner_data['GRID_BLOCK'];
 	} else {
-		$tmp_block = $imagine->load( $banner_data['USR_GRID_BLOCK'] );
+		$image_data = $banner_data['USR_GRID_BLOCK'];
+	}
+
+	// Check for empty image data before processing
+	if ( empty( $image_data ) ) {
+		throw new \Exception( 'Grid block image data is empty for Banner ID ' . $BID . '. Please upload a default grid block image in the grid settings.' );
+	}
+
+	try {
+		// First, try to load with the default Imagine driver (usually Imagick)
+		$tmp_block = $imagine->load( $image_data );
+	} catch ( \Imagine\Exception\RuntimeException $e ) {
+		// Log the Imagick failure
+		error_log( '[MDS Fallback] Imagick failed to load image for Banner ID: ' . $BID . '. Error: ' . $e->getMessage() . '. Falling back to GD.' );
+
+		// If Imagick fails, fall back to the GD driver
+		$gd_imagine = new \Imagine\Gd\Imagine();
+		try {
+			$tmp_block = $gd_imagine->load( $image_data );
+		} catch ( \Imagine\Exception\RuntimeException $gd_e ) {
+			// If GD also fails, log it and re-throw the exception to stop the process
+			error_log( '[MDS Fallback] GD also failed to load image for Banner ID: ' . $BID . '. Error: ' . $gd_e->getMessage() );
+			throw $gd_e;
+		}
 	}
 
 	$tmp_block->resize( $block_size );

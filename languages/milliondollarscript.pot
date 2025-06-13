@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.12.57\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.12.85\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-07 10:49:47\n"
-"PO-Revision-Date: 2025-05-07 10:49:47\n"
-"X-Generator: Million Dollar Script Two 2.5.12.57\n"
+"POT-Creation-Date: 2025-06-12 19:23:56\n"
+"PO-Revision-Date: 2025-06-12 19:23:56\n"
+"X-Generator: Million Dollar Script Two 2.5.12.85\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -126,7 +126,10 @@ msgstr ""
 msgid "Change Pixels"
 msgstr ""
 
-msgid "To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\""
+msgid "To change these pixels, select an image and click \"upload\". It will be resized to fit %SIZE_X% pixels wide & %SIZE_Y% pixels high."
+msgstr ""
+
+msgid "To change these pixels, select an image up to %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\"."
 msgstr ""
 
 msgid "Upload"
@@ -193,6 +196,9 @@ msgid "This space is not available! Please try to place your pixels in a differe
 msgstr ""
 
 msgid "Missing required page data (option or title)."
+msgstr ""
+
+msgid "Insufficient permissions!"
 msgstr ""
 
 msgid "Could not create directory."
@@ -702,6 +708,15 @@ msgstr ""
 msgid "Million Dollar Script Emails"
 msgstr ""
 
+msgid "Your email address has been unsubscribed from these notifications."
+msgstr ""
+
+msgid "This email was sent to the administrator email address for this WordPress site. If you are not the administrator and wish to stop receiving these emails, please"
+msgstr ""
+
+msgid "<p><small>%EMAIL_DISABLE_MESSAGE% <a href=\"%DISABLE_LINK%\">click here</a>.</small></p>"
+msgstr ""
+
 msgid "Invalid package data submitted. Please check the fields and try again."
 msgstr ""
 
@@ -870,6 +885,159 @@ msgstr ""
 msgid "Million Dollar Script Changelog"
 msgstr ""
 
+msgid "Million Dollar Script Extensions"
+msgstr ""
+
+msgid "MDS Extensions"
+msgstr ""
+
+msgid "You do not have permission to check for updates."
+msgstr ""
+
+msgid "Missing required parameters."
+msgstr ""
+
+msgid "An error occurred while checking for updates."
+msgstr ""
+
+msgid "You do not have sufficient permissions to perform this action."
+msgstr ""
+
+msgid "Extension slug is missing."
+msgstr ""
+
+msgid "Could not find plugin file for slug: %s"
+msgstr ""
+
+msgid "Extension is already active."
+msgstr ""
+
+msgid "Extension activated successfully."
+msgstr ""
+
+msgid "You do not have permission to install updates."
+msgstr ""
+
+msgid "Extension updated successfully."
+msgstr ""
+
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+msgid "Could not connect to extension server: "
+msgstr ""
+
+msgid "You can only manage installed extensions at this time."
+msgstr ""
+
+msgid "Available Extensions"
+msgstr ""
+
+msgid "Extension"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Action"
+msgstr ""
+
+msgid "Premium"
+msgstr ""
+
+msgid "Free"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Activate"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
+msgid "Installed Extensions"
+msgstr ""
+
+msgid "No extensions installed."
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "Check for Updates"
+msgstr ""
+
+msgid "Check All for Updates"
+msgstr ""
+
+msgid "Permission denied."
+msgstr ""
+
+msgid "Failed to fetch extensions from server."
+msgstr ""
+
+msgid "Extension ID is required."
+msgstr ""
+
+msgid "Extension not found."
+msgstr ""
+
+msgid "Failed to fetch extension from server."
+msgstr ""
+
+msgid "You do not have permission to install extensions."
+msgstr ""
+
+msgid "Extension slug is required."
+msgstr ""
+
+msgid "Extension ID (UUID) is required."
+msgstr ""
+
+msgid "PHP ZipArchive extension is missing on the server. This is required to install extensions. Please ask your hosting provider or system administrator to install/enable it."
+msgstr ""
+
+msgid "Failed to retrieve package data from download URL. Response code: "
+msgstr ""
+
+msgid "Could not create temporary file for extension package."
+msgstr ""
+
+msgid "WP Filesystem not available for writing temporary package."
+msgstr ""
+
+msgid "Could not write package data to temporary file: "
+msgstr ""
+
+msgid "WP Filesystem not available for post-installation directory rename."
+msgstr ""
+
+msgid "Failed to delete existing directory at expected plugin path."
+msgstr ""
+
+msgid "Failed to correct plugin directory name after installation."
+msgstr ""
+
+msgid "Installation failed: "
+msgstr ""
+
+msgid "Upgrader returned an unexpected result and no specific errors were reported by the skin."
+msgstr ""
+
+msgid "POST_INSTALL_ERROR: Installation seemed to succeed, but the plugin file could not be located using slug: "
+msgstr ""
+
+msgid "Extension installed but failed to activate: "
+msgstr ""
+
+msgid "Extension installed and activated successfully."
+msgstr ""
+
 msgid "Success!"
 msgstr ""
 
@@ -885,13 +1053,7 @@ msgstr ""
 msgid "You haven't made any changes to save!"
 msgstr ""
 
-msgid "Insufficient permissions!"
-msgstr ""
-
 msgid "MDS Logs"
-msgstr ""
-
-msgid "You do not have sufficient permissions to access this page."
 msgstr ""
 
 msgid "Million Dollar Script Logs"
@@ -961,9 +1123,6 @@ msgid "Logging enabled."
 msgstr ""
 
 msgid "Logging disabled."
-msgstr ""
-
-msgid "Permission denied."
 msgstr ""
 
 msgid "Failed to update logging setting."
@@ -1812,6 +1971,18 @@ msgstr ""
 msgid "System"
 msgstr ""
 
+msgid "Extension Server URL"
+msgstr ""
+
+msgid "The URL of the extension server for automatic updates and downloads. Use http://host.docker.internal:15346 for development or your production server URL. Default: https://extensions.milliondollarscript.com"
+msgstr ""
+
+msgid "License Key"
+msgstr ""
+
+msgid "Your license key for accessing premium extensions and updates from the extension server."
+msgstr ""
+
 msgid "Delete data on uninstall?"
 msgstr ""
 
@@ -1819,9 +1990,6 @@ msgid "If yes then all database tables created by this plugin will be completely
 msgstr ""
 
 msgid "Plugin updates"
-msgstr ""
-
-msgid "Update"
 msgstr ""
 
 msgid "Don't update"
@@ -2409,6 +2577,9 @@ msgstr ""
 msgid "Register"
 msgstr ""
 
+msgid "\n\n%EMAIL_DISABLE_MESSAGE% click the following link: %DISABLE_LINK%"
+msgstr ""
+
 msgid "Price Options"
 msgstr ""
 
@@ -2526,7 +2697,7 @@ msgstr ""
 msgid "Could not read image dimensions after conversion. File might be corrupted."
 msgstr ""
 
-msgid "Image too large. You uploaded an image that is %UPLOAD_W%x%UPLOAD_H% pixels. The image cannot be larger than %SIZE_X% pixels wide and %SIZE_Y% pixels high."
+msgid "Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels."
 msgstr ""
 
 msgid "Image processing failed: %ERROR%"

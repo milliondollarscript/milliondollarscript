@@ -75,6 +75,18 @@ function render_map_area( $fh, $data, $b_row ) {
 		'url'       => $url,
 	);
 
+	/**
+	 * Filter the data values for a pixel area before they are JSON encoded.
+	 *
+	 * @since 2.5.12.84 Extension hook added
+	 *
+	 * @param array $data_values The array of data values for the pixel area.
+	 * @param array $data        The original pixel data.
+	 * @param array $b_row       The banner/grid row data.
+	 * @param int   $BID         The banner ID.
+	 */
+	$data_values = apply_filters( 'mds_pixel_area_data_values', $data_values, $data, $b_row, $BID );
+
 	fwrite( $fh, '<area href="" data-data="' . htmlspecialchars( json_encode( $data_values, JSON_HEX_QUOT | JSON_HEX_APOS ), ENT_QUOTES, 'UTF-8' ) . '" coords="' . $data['x1'] . ',' . $data['y1'] . ',' . ( $x2 + $b_row['block_width'] ) . ',' . ( $y2 + $b_row['block_height'] ) . '"' );
 	if ( $ENABLE_MOUSEOVER == 'NO' ) {
 		fwrite( $fh, " title=\"" . htmlspecialchars( $data['alt_text'], ENT_QUOTES, 'UTF-8' ) . "\" alt=\"" . htmlspecialchars( $data['alt_text'], ENT_QUOTES, 'UTF-8' ) . "\"" );

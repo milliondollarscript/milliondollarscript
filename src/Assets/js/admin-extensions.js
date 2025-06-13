@@ -36,6 +36,7 @@ jQuery(document).ready(function ($) {
 		const $row = $button.closest("tr");
 		const extensionId = $row.data("extension-id");
 		const currentVersion = $row.data("version");
+		const pluginFile = $row.data("plugin-file"); // Added this line
 
 		// Disable button and show spinner
 		$button
@@ -51,6 +52,7 @@ jQuery(document).ready(function ($) {
 				nonce: MDS_EXTENSIONS_DATA.nonce,
 				extension_id: extensionId,
 				current_version: currentVersion,
+				plugin_file: pluginFile, // Added this line
 			},
 			dataType: "json",
 			success: function (response) {
@@ -78,7 +80,8 @@ jQuery(document).ready(function ($) {
 
 		const $button = $(this);
 		const $row = $button.closest("tr");
-		const extensionId = $row.data("extension-id");
+		const extensionId = $button.data("extension-id"); // This is UUID
+		const extensionSlug = $button.data("extension-slug"); // This is the slug
 		const downloadUrl = $button.data("download-url");
 
 		if (!confirm("Are you sure you want to install this update?")) {
@@ -98,6 +101,7 @@ jQuery(document).ready(function ($) {
 				action: "mds_install_extension_update",
 				nonce: MDS_EXTENSIONS_DATA.nonce,
 				extension_id: extensionId,
+				extension_slug: extensionSlug,
 				download_url: downloadUrl,
 			},
 			dataType: "json",
@@ -141,7 +145,8 @@ jQuery(document).ready(function ($) {
                     ${updateInfo.changelog ? `<div class="mds-changelog">${updateInfo.changelog}</div>` : ""}
                     <p>
                         <button class="button button-primary mds-install-update"
-                                data-download-url="${updateInfo.download_url}">
+                                data-download-url="${updateInfo.download_url}"
+                                data-extension-slug="${updateInfo.extension_slug}">
                             Update Now
                         </button>
                     </p>
@@ -258,7 +263,8 @@ jQuery(document).ready(function ($) {
 		e.preventDefault();
 
 		const $button = $(this);
-		const extensionId = $button.data("extension-id");
+		const extensionId = $button.data("extension-id"); // This is UUID
+		const extensionSlug = $button.data("extension-slug"); // This is the slug
 
 		if (!confirm("Are you sure you want to install this extension?")) {
 			return;
@@ -276,7 +282,8 @@ jQuery(document).ready(function ($) {
 			data: {
 				action: "mds_install_extension",
 				nonce: MDS_EXTENSIONS_DATA.nonce,
-				extension_id: extensionId,
+				extension_id: extensionId,      // UUID
+				extension_slug: extensionSlug,  // Slug
 			},
 			dataType: "json",
 			success: function (response) {
@@ -304,8 +311,63 @@ jQuery(document).ready(function ($) {
 		});
 	});
 
-	// Trigger event when an update check is complete for a row
-	$(document).on("mds-update-checked", function (e) {
-		$(this).trigger("mds-update-checked");
+	// Handle activate extension button
+	$(document).on("click", ".mds-activate-extension", function (e) {
+		e.preventDefault();
+
+		const $button = $(this);
+		const extensionSlug = $button.data("extension-slug"); // Slug
+		const nonce = $button.data("nonce"); // Nonce from the button
+
+		if (!confirm(MDS_EXTENSIONS_DATA.i18n?.confirm_activation || "Are you sure you want to activate this extension?")) {
+			return;
+		}
+
+		// Disable button and show spinner
+		$button
+			.prop("disabled", true)
+			.html('<span class="spinner is-active"></span> ' + (MDS_EXTENSIONS_DATA.i18n?.activating || 'Activating...'));
+
+		// Make AJAX request to activate extension
+		$.ajax({
+			url: MDS_EXTENSIONS_DATA.ajax_url,
+			type: "POST",
+			data: {
+				action: "mds_activate_extension", // New AJAX action
+				nonce: nonce, // Use nonce from the button
+				extension_slug: extensionSlug,
+			},
+			dataType: "json",
+			success: function (response) {
+				if (response.success) {
+					showNotice(
+						"success",
+						response.data.message || (MDS_EXTENSIONS_DATA.i18n?.activation_success || "Extension activated successfully.")
+					);
+					// Reload the page to reflect changes (e.g., button state, active plugins list)
+					if (response.data.reload !== false) { // Allow explicit no-reload
+						setTimeout(() => window.location.reload(), 1500);
+					} else {
+                        // If no reload, manually update button (though reload is generally better)
+                        $button.removeClass('mds-activate-extension button-secondary')
+                               .addClass('mds-ext-active button-disabled') // Assuming button-disabled or similar class
+                               .text(MDS_EXTENSIONS_DATA.i18n?.active || 'Active')
+                               .prop('disabled', true);
+                    }
+				} else {
+					showNotice(
+						"error",
+						response.data.message || (MDS_EXTENSIONS_DATA.i18n?.activation_failed || "Failed to activate extension.")
+					);
+					resetButton($button, MDS_EXTENSIONS_DATA.i18n?.activate || "Activate");
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error("Error activating extension:", error);
+				showNotice("error", MDS_EXTENSIONS_DATA.i18n?.activation_error || "An error occurred while activating the extension.");
+				resetButton($button, MDS_EXTENSIONS_DATA.i18n?.activate || "Activate");
+			},
+		});
 	});
+
 });

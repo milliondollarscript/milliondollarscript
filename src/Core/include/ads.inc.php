@@ -103,6 +103,17 @@ function assign_ad_template( $prams ) {
 	$search[]  = '$text$';
 	$replace[] = $prams['text'];
 
+	// Allow extensions to add their own custom placeholders and values
+	$custom_replacements = [];
+	$custom_replacements = apply_filters( 'mds_assign_ad_template_replacements', $custom_replacements, $prams );
+
+	if ( ! empty( $custom_replacements ) && is_array( $custom_replacements ) ) {
+		foreach ( $custom_replacements as $placeholder => $value ) {
+			$search[]  = (string) $placeholder;
+			$replace[] = (string) $value;
+		}
+	}
+
 	return Language::get_replace(
 		Options::get_option( 'popup-template' ),
 		$search,

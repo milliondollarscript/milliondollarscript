@@ -43,11 +43,13 @@ defined( 'ABSPATH' ) or exit;
 class Ajax {
 
 	/**
-	 * Init NFS page.
+	 * Init MDS AJAX..
 	 *
 	 * @return void
 	 */
 	public static function init(): void {
+
+		// MDS AJAX
 		add_action( 'wp_ajax_mds_ajax', [ __CLASS__, 'mds_ajax' ] );
 		add_action( 'wp_ajax_nopriv_mds_ajax', [ __CLASS__, 'mds_ajax' ] );
 	}
@@ -252,6 +254,16 @@ class Ajax {
 		add_filter( 'wp_kses_allowed_html', [ '\MillionDollarScript\Classes\System\Functions', 'mds_allowed_mds_params' ] );
 		$output = apply_filters( 'the_content', Options::get_option( 'popup-template' ) );
 		remove_filter( 'wp_kses_allowed_html', [ '\MillionDollarScript\Classes\System\Functions', 'mds_allowed_mds_params' ] );
+
+		// Allow extensions to add their own custom placeholders and values
+		$custom_replacements = [];
+		$custom_replacements = apply_filters( 'mds_popup_custom_replacements', $custom_replacements, $post_id );
+
+		if ( ! empty( $custom_replacements ) && is_array( $custom_replacements ) ) {
+			foreach ( $custom_replacements as $placeholder => $value ) {
+				$output = str_replace( (string) $placeholder, (string) $value, $output );
+			}
+		}
 
 		foreach ( $fields as $field ) {
 			$field_name = str_replace( MDS_PREFIX, '', $field->get_base_name() );

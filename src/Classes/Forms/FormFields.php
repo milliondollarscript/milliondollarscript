@@ -138,6 +138,7 @@ class FormFields {
 
 			// Image
 			Field::make( 'image', MDS_PREFIX . 'image', Language::get( 'Image' ) ),
+
 		];
 
 		self::$fields = apply_filters( 'mds_form_fields', $fields, MDS_PREFIX );
