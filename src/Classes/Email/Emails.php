@@ -295,6 +295,11 @@ Note: This is an automated email.<br />
 
 			// Order Published
 			Language::get( 'Order Published' )         => [
+				// Enable notifications for Order Published
+				Field::make( 'checkbox', MDS_PREFIX . 'email-admin-publish-notify', Language::get( 'Pixels Modified: Send a notification email to Admin?' ) )
+				     ->set_default_value( '' )
+				     ->set_option_value( 'yes' )
+				     ->set_help_text( Language::get( 'If checked then a notification email will be sent to the site admin when pixels are published.' ) ),
 
 				Field::make( 'text', MDS_PREFIX . 'order-published-subject', Language::get( 'Order Published Subject' ) )
 				     ->set_default_value( Language::get( 'Order Published' ) )
@@ -514,35 +519,6 @@ Note: This is an automated email.<br />
 					 ->set_default_value( '30' )
 					 ->set_help_text( Language::get( 'Number of days to keep sent emails in the database. Enter 0 to keep forever.' ) ),
 			],
-
-			// Order Published
-			Language::get( 'Order Published' )         => [
-				// Enable notifications for Order Published
-				Field::make( 'checkbox', MDS_PREFIX . 'email-admin-publish-notify', Language::get( 'Pixels Modified: Send a notification email to Admin?' ) )
-				     ->set_default_value( '' )
-				     ->set_option_value( 'yes' )
-				     ->set_help_text( Language::get( 'If checked then a notification email will be sent to the site admin when pixels are published.' ) ),
-				Field::make( 'text', MDS_PREFIX . 'order-published-subject', Language::get( 'Order Published Subject' ) )
-				     ->set_default_value( Language::get( 'Order Published' ) )
-				     ->set_help_text( Language::get_replace( 'The subject line of the email sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
-
-				Field::make( 'rich_text', MDS_PREFIX . 'order-published-content', Language::get( 'Order Published Content' ) )
-				     ->set_settings( array( 'media_buttons' => false ) )
-				     ->set_default_value( Language::get( 'New pixels published on %SITE_NAME%!<br />
-<br />
-Grid: %GRID_NAME%<br />
-Username: %USER_LOGIN%<br />
-<br />
-URLS:<br />
-%URL_LIST%<br />
-<br />
-- To view and approve the pixels, please visit here:<br />
-<a href=\'%VIEW_URL%\'>Click Here...</a><br />
-' ) )
-				     ->set_help_text( Language::get_replace( 'This email is sent to the site admin when an order is published. Placeholders: %PLACEHOLDERS%', [ '%PLACEHOLDERS%' ], self::get_order_published_placeholders_text() ) ),
-
-			],
-
 		];
 
 		self::$tabs = apply_filters( 'mds_email_fields', self::$tabs, MDS_PREFIX );
@@ -609,10 +585,10 @@ URLS:<br />
 	/**
 	 * Get options from database.
 	 *
-	 * @param $name
+	 * @param string $name
 	 * @param bool $carbon_fields
 	 * @param string $container_id
-	 * @param null $default
+	 * @param mixed $default
 	 *
 	 * @return mixed
 	 */
