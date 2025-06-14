@@ -27,10 +27,11 @@
  */
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( ENABLE_MOUSEOVER === 'NO' ) {
+if ( Options::get_option( 'enable-mouseover' ) === 'NO' ) {
 	return;
 }
 
