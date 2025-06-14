@@ -1086,9 +1086,10 @@ class Utility {
 		$selected = explode( ",", $in_str );
 		$in_array = array_map( 'intval', $selected );
 		$in_str   = implode( ',', $in_array );
-        
+
         // Only proceed if we have blocks to check
-        if (empty($in_str)) {
+		// and not the first block which starts at 0
+        if (empty($in_str) && $in_str !== '0') {
             echo json_encode( [
                 "error" => "true",
                 "type"  => "unavailable",
