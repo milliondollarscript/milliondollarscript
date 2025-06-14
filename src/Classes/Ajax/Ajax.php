@@ -253,6 +253,9 @@ class Ajax {
 		$output = apply_filters( 'the_content', Options::get_option( 'popup-template' ) );
 		remove_filter( 'wp_kses_allowed_html', [ '\MillionDollarScript\Classes\System\Functions', 'mds_allowed_mds_params' ] );
 
+		// Create replacements array for custom template variables
+		$replacements = [];
+		
 		foreach ( $fields as $field ) {
 			$field_name = str_replace( MDS_PREFIX, '', $field->get_base_name() );
 			$value      = carbon_get_post_meta( $post_id, $field->get_base_name() );
@@ -266,9 +269,11 @@ class Ajax {
 			} else if ( $field_name === 'image' ) {
 				$image_id  = carbon_get_post_meta( $post_id, $field->get_base_name() );
 				$image_url = wp_get_attachment_url( $image_id );
-				$value     = '<img class="mds-popup-image" src="' . esc_url( $image_url ) . '" alt="">';
+				$max_image_size = Options::get_option( 'max-image-size', 350 );
+				$value     = '<img class="mds-popup-image" src="' . esc_url( $image_url ) . '" alt="" style="max-width:' . $max_image_size . 'px;max-height:' . $max_image_size . 'px;">';
 			}
 
+			$replacements['%' . $field_name . '%'] = $value;
 			$output = str_replace( '%' . $field_name . '%', $value, $output );
 
 			$allowed_tags                           = Language::allowed_html();
@@ -276,6 +281,14 @@ class Ajax {
 			$output                                 = wp_kses( $output, $allowed_tags, Language::allowed_protocols() );
 
 			$output = apply_filters( 'mds_field_output_after', $output, $field, $post_id );
+		}
+		
+		// Apply custom popup replacements filter for extensions
+		$replacements = apply_filters( 'mds_popup_custom_replacements', $replacements, $post_id );
+		
+		// Apply the additional replacements
+		foreach ( $replacements as $search => $replace ) {
+			$output = str_replace( $search, $replace, $output );
 		}
 
 		if ( $return ) {
