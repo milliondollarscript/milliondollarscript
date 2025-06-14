@@ -151,17 +151,17 @@
         },
         {
             "name": "htmlburger/carbon-fields",
-            "version": "v3.6.8",
-            "version_normalized": "3.6.8.0",
+            "version": "v3.6.9",
+            "version_normalized": "3.6.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/htmlburger/carbon-fields.git",
-                "reference": "6981efa8d53d9ba9a512596a462b88a6fbf4e83c"
+                "reference": "f82e80e3e3469d6e86cc17a8950b918ad448a059"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/htmlburger/carbon-fields/zipball/6981efa8d53d9ba9a512596a462b88a6fbf4e83c",
-                "reference": "6981efa8d53d9ba9a512596a462b88a6fbf4e83c",
+                "url": "https://api.github.com/repos/htmlburger/carbon-fields/zipball/f82e80e3e3469d6e86cc17a8950b918ad448a059",
+                "reference": "f82e80e3e3469d6e86cc17a8950b918ad448a059",
                 "shasum": ""
             },
             "require": {
@@ -172,7 +172,7 @@
                 "phpunit/phpunit": "7.5.20|9.6.3",
                 "yoast/phpunit-polyfills": "^1.0"
             },
-            "time": "2025-05-07T11:37:47+00:00",
+            "time": "2025-06-11T11:23:23+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -472,6 +472,6 @@
             "install-path": "../yahnis-elsts/plugin-update-checker"
         }
     ],
-    "dev": true,
+    "dev": false,
     "dev-package-names": []
 }
