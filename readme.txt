@@ -34,6 +34,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Approve pixels.
 * Fix: WooCommerce and permission conditional logic checks on Carbon Fields.
 * Fix: Allow selecting first block.
+* Fix: File upload in simple pixel selection method.
+* Feature: Add mds_popup_custom_replacements filter for custom popup template replacements.
+* Fix: Fixed Max Image Size option in popup template.
 * Add: Free and premium extension system.
 
 = 2.5.11 =

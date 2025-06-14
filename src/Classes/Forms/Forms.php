@@ -33,8 +33,8 @@ use MillionDollarScript\Classes\Orders\Steps;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
-use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -46,6 +46,232 @@ class Forms {
 		add_action( 'admin_post_nopriv_mds_form_submission', [ __CLASS__, 'mds_form_submission' ] );
 		add_action( 'admin_post_mds_form_submission', [ __CLASS__, 'mds_form_submission' ] );
 		add_action( 'admin_post_mds_admin_form_submission', [ __CLASS__, 'mds_admin_form_submission' ] );
+	}
+
+	/**
+	 * Process file upload for order-pixels page
+	 * 
+	 * @return array Upload result with success status and any error messages
+	 */
+	private static function process_order_pixels_upload(): array {
+		global $f2;
+		
+		$result = [
+			'success' => false,
+			'error' => '',
+			'messages' => ''
+		];
+		
+		// Validate file upload
+		if ( ! isset( $_FILES['graphic'] ) || $_FILES['graphic']['tmp_name'] == '' ) {
+			$result['error'] = Language::get( 'No file was uploaded. Please select an image file.' );
+			return $result;
+		}
+		
+		// Check for upload errors
+		if ( $_FILES['graphic']['error'] !== UPLOAD_ERR_OK ) {
+			switch ( $_FILES['graphic']['error'] ) {
+				case UPLOAD_ERR_INI_SIZE:
+				case UPLOAD_ERR_FORM_SIZE:
+					$result['error'] = Language::get( 'The uploaded file is too large.' );
+					break;
+				case UPLOAD_ERR_PARTIAL:
+					$result['error'] = Language::get( 'The file was only partially uploaded. Please try again.' );
+					break;
+				case UPLOAD_ERR_NO_TMP_DIR:
+					$result['error'] = Language::get( 'Missing temporary folder. Please contact the administrator.' );
+					break;
+				case UPLOAD_ERR_CANT_WRITE:
+					$result['error'] = Language::get( 'Failed to write file to disk. Please contact the administrator.' );
+					break;
+				case UPLOAD_ERR_EXTENSION:
+					$result['error'] = Language::get( 'File upload stopped by extension. Please contact the administrator.' );
+					break;
+				default:
+					$result['error'] = Language::get( 'Unknown upload error. Please try again.' );
+					break;
+			}
+			return $result;
+		}
+		
+		// Get required data
+		$BID = $f2->bid();
+		$banner_data = load_banner_constants( $BID );
+		$uploaddir = Utility::get_upload_path() . "images/";
+		
+		// Ensure upload directory exists and is writable
+		if ( ! is_dir( $uploaddir ) ) {
+			if ( ! wp_mkdir_p( $uploaddir ) ) {
+				$result['error'] = Language::get( 'Upload directory could not be created. Please contact the administrator.' );
+				return $result;
+			}
+		}
+		
+		if ( ! is_writable( $uploaddir ) ) {
+			$result['error'] = Language::get( 'Upload directory is not writable. Please contact the administrator.' );
+			return $result;
+		}
+		
+		// File validation
+		$file_parts = pathinfo( $_FILES['graphic']['name'] );
+		$ext = $f2->filter( strtolower( $file_parts['extension'] ) );
+		
+		// Validate file extension
+		$allowed_extensions = [ 'png', 'jpg', 'jpeg', 'gif' ];
+		if ( ! in_array( $ext, $allowed_extensions ) ) {
+			$result['error'] = Language::get( 'Invalid file extension. Please upload a JPG, PNG, or GIF file.' );
+			return $result;
+		}
+		
+		// Validate MIME type
+		$mime_type = mime_content_type( $_FILES['graphic']['tmp_name'] );
+		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
+		
+		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
+			$result['error'] = Language::get_replace( 
+				'Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF.', 
+				'%MIME_TYPE%', 
+				$mime_type 
+			);
+			return $result;
+		}
+		
+		// Check file size (additional safety check)
+		$max_file_size = wp_max_upload_size();
+		if ( $_FILES['graphic']['size'] > $max_file_size ) {
+			$result['error'] = Language::get_replace(
+				'File size too large. Maximum allowed size is %MAX_SIZE%.',
+				'%MAX_SIZE%',
+				size_format( $max_file_size )
+			);
+			return $result;
+		}
+		
+		// Clean up old temp files (24 hours)
+		if ( $dh = opendir( $uploaddir ) ) {
+			while ( ( $file = readdir( $dh ) ) !== false ) {
+				if ( $file === '.' || $file === '..' ) {
+					continue;
+				}
+				
+				$file_path = $uploaddir . $file;
+				if ( ! is_file( $file_path ) ) {
+					continue;
+				}
+				
+				$elapsed_time = 60 * 60 * 24; // 24 hours
+				$stat = stat( $file_path );
+				if ( $stat && $stat['mtime'] < ( time() - $elapsed_time ) ) {
+					if ( str_contains( $file, 'tmp_' . Orders::get_current_order_id() ) ) {
+						unlink( $file_path );
+					}
+				}
+			}
+			closedir( $dh );
+		}
+		
+		// Upload file
+		$uploadfile = $uploaddir . "tmp_" . Orders::get_current_order_id() . ".$ext";
+		
+		if ( ! move_uploaded_file( $_FILES['graphic']['tmp_name'], $uploadfile ) ) {
+			$result['error'] = Language::get( 'Upload failed: Could not process the uploaded file. Please try again.' );
+			return $result;
+		}
+		
+		// Set memory limit for image processing
+		Utility::setMemoryLimit( $uploadfile );
+		
+		// Get image dimensions
+		$size = getimagesize( $uploadfile );
+		if ( ! $size ) {
+			unlink( $uploadfile );
+			$result['error'] = Language::get( 'Invalid image file. Please upload a valid image.' );
+			return $result;
+		}
+		
+		// Validate minimum image dimensions
+		if ( $size[0] < 1 || $size[1] < 1 ) {
+			unlink( $uploadfile );
+			$result['error'] = Language::get( 'Image dimensions are too small. Please upload a larger image.' );
+			return $result;
+		}
+		
+		// Calculate required size and pixel count
+		$reqsize = Utility::get_required_size( $size[0], $size[1], $banner_data );
+		$pixel_count = $reqsize[0] * $reqsize[1];
+		$block_size = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+		
+		// Handle auto-resize if enabled
+		if ( Options::get_option( 'resize' ) == 'YES' ) {
+			$rescale = [];
+			if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
+				$rescale['x'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $reqsize[0] );
+				$rescale['y'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_HEIGHT'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'], $reqsize[1] );
+			} else if ( ( $block_size < $banner_data['G_MIN_BLOCKS'] ) && ( $banner_data['G_MIN_BLOCKS'] > 0 ) ) {
+				$rescale['x'] = min( $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $reqsize[0] );
+				$rescale['y'] = min( $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_HEIGHT'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'], $reqsize[1] );
+			}
+			
+			// Resize image if needed
+			if ( isset( $rescale['x'] ) ) {
+				try {
+					if ( class_exists( 'Imagick' ) ) {
+						$imagine = new \Imagine\Imagick\Imagine();
+					} else if ( function_exists( 'gd_info' ) ) {
+						$imagine = new \Imagine\Gd\Imagine();
+					} else {
+						$result['error'] = Language::get( 'Image processing library not available. Please contact the administrator.' );
+						unlink( $uploadfile );
+						return $result;
+					}
+					
+					$image = $imagine->open( $uploadfile );
+					$resize = new \Imagine\Image\Box( $rescale['x'], $rescale['y'] );
+					$image->resize( $resize );
+					
+					$fileinfo = pathinfo( $uploadfile );
+					$newname = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
+					$image->save( $newname );
+					
+					// Update dimensions after resize
+					$size[0] = $rescale['x'];
+					$size[1] = $rescale['y'];
+					$reqsize[0] = $rescale['x'];
+					$reqsize[1] = $rescale['y'];
+					$pixel_count = $reqsize[0] * $reqsize[1];
+					$block_size = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
+				} catch ( \Exception $e ) {
+					$result['error'] = Language::get( 'Image resize failed: ' ) . $e->getMessage();
+					unlink( $uploadfile );
+					return $result;
+				}
+			}
+		} else {
+			// Check size limits when auto-resize is disabled
+			if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
+				$limit = $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
+				$result['error'] = Language::get_replace(
+					'Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.',
+					[ '%MAX_PIXELS%', '%COUNT%' ],
+					[ $limit, $pixel_count ]
+				);
+				unlink( $uploadfile );
+				return $result;
+			} else if ( ( $block_size < $banner_data['G_MIN_BLOCKS'] ) && ( $banner_data['G_MIN_BLOCKS'] > 0 ) ) {
+				$limit = $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
+				$result['error'] = Language::get_replace(
+					'Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...',
+					[ '%MIN_PIXELS%', '%COUNT%' ],
+					[ $limit, $pixel_count ]
+				);
+				unlink( $uploadfile );
+				return $result;
+			}
+		}
+		
+		// Success
+		$result['success'] = true;
+		return $result;
 	}
 
 	/**
@@ -70,10 +296,33 @@ class Forms {
 			case 'banner_order':
 			case 'order':
 			case 'select':
-				$mds_dest          = 'order';
-				$package           = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
-				$params['package'] = $package;
-				Orders::order_screen();
+				// Check if this is a file upload from order-pixels page
+				if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
+					// Process the file upload
+					$upload_result = self::process_order_pixels_upload();
+					
+					// Set up parameters for redirect back to order-pixels page
+					$package           = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+					$order_id          = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+					$params['package'] = $package;
+					$params['order_id'] = $order_id;
+					
+					// Add upload result to parameters
+					if ( ! $upload_result['success'] ) {
+						$params['upload_error'] = urlencode( $upload_result['error'] );
+					} else {
+						$params['upload_success'] = '1';
+					}
+					
+					// Redirect to order page to display results
+					$mds_dest = 'order';
+				} else {
+					// Normal order/select flow without file upload
+					$mds_dest          = 'order';
+					$package           = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+					$params['package'] = $package;
+					Orders::order_screen();
+				}
 				break;
 			case 'banner_select':
 				$mds_dest = 'order';
@@ -90,7 +339,8 @@ class Forms {
 				require_once MDS_CORE_PATH . 'users/upload.php';
 				break;
 			case 'order-pixels':
-				require_once MDS_CORE_PATH . 'users/order-pixels.php';
+				// This case is now handled by the 'order' case above when file upload is detected
+				$mds_dest = 'order';
 				break;
 			case 'publish':
 			case 'banner_publish':
@@ -146,7 +396,47 @@ class Forms {
 
 		$page_url = Utility::get_page_url( $mds_dest );
 
-		Utility::redirect( $page_url, $params );
+		// Ensure we have a valid page URL
+		if ( empty( $page_url ) ) {
+			// Log the error for debugging
+			Logs::log( 'MDS Forms: Failed to generate page URL for destination: ' . $mds_dest );
+
+			// Try to create a basic endpoint URL as final fallback
+			$endpoint = Options::get_option( 'endpoint', 'milliondollarscript' );
+			if ( get_option( 'permalink_structure' ) ) {
+				$page_url = trailingslashit( home_url( "/{$endpoint}/{$mds_dest}" ) );
+			} else {
+				$page_url = add_query_arg( $endpoint, $mds_dest, home_url( '/' ) );
+			}
+
+			// If still empty, fallback to home page
+			if ( empty( $page_url ) ) {
+				$page_url = home_url();
+				Logs::log( 'MDS Forms: All URL generation methods failed, falling back to homepage' );
+			}
+		}
+
+		// Attempt redirect with comprehensive error handling
+		try {
+			Utility::redirect( $page_url, $params );
+		} catch ( \Exception $e ) {
+			// If redirect fails, try a direct WordPress redirect
+			Logs::log( 'MDS Forms: Utility::redirect failed: ' . $e->getMessage() );
+
+			// Build URL with parameters manually
+			if ( ! empty( $params ) ) {
+				$page_url = add_query_arg( $params, $page_url );
+			}
+
+			// Clear any output buffers to prevent "headers already sent" errors
+			while ( ob_get_level() > 0 ) {
+				ob_end_clean();
+			}
+
+			// Final fallback redirect
+			wp_safe_redirect( $page_url );
+			exit;
+		}
 	}
 
 	/**
