@@ -76,7 +76,7 @@ $banner_data = load_banner_constants( $BID );
 					followCursor: 'initial',
 					hideOnClick: true,
 					interactive: true,
-					maxWidth: parseInt('<?php echo intval( \MillionDollarScript\Classes\Data\Options::get_option( 'max-popup-size' ) ); ?>', 10),
+					maxWidth: parseInt('<?php echo intval( Options::get_option( 'max-popup-size' ) ); ?>', 10),
 					placement: 'auto',
 					touch: true,
 					appendTo: 'parent',
