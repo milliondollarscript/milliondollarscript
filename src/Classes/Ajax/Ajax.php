@@ -278,9 +278,11 @@ class Ajax {
 			} else if ( $field_name === 'image' ) {
 				$image_id  = carbon_get_post_meta( $post_id, $field->get_base_name() );
 				$image_url = wp_get_attachment_url( $image_id );
-				$value     = '<img class="mds-popup-image" src="' . esc_url( $image_url ) . '" alt="">';
+				$max_image_size = Options::get_option( 'max-image-size', 350 );
+				$value     = '<img class="mds-popup-image" src="' . esc_url( $image_url ) . '" alt="" style="max-width:' . $max_image_size . 'px;max-height:' . $max_image_size . 'px;">';
 			}
 
+			$custom_replacements['%' . $field_name . '%'] = $value;
 			$output = str_replace( '%' . $field_name . '%', $value, $output );
 
 			$allowed_tags                           = Language::allowed_html();

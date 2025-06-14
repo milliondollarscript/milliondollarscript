@@ -78,7 +78,8 @@ function assign_ad_template( $prams ) {
 	$search[] = '%image%';
 	$filename = 'tmp_' . $prams['ad_id'] . Utility::get_file_extension();
 	if ( file_exists( Utility::get_upload_path() . 'images/' . $filename ) && ! empty( $prams['image'] ) ) {
-		$replace[] = '<img alt="" src="' . Utility::get_upload_url() . "images/" . $filename . '" style="max-width:100px;max-height:100px;">';
+		$max_image_size = Options::get_option( 'max-image-size', 350 );
+		$replace[] = '<img alt="" src="' . Utility::get_upload_url() . "images/" . $filename . '" style="max-width:' . $max_image_size . 'px;max-height:' . $max_image_size . 'px;">';
 	} else {
 		$replace[] = '';
 	}
