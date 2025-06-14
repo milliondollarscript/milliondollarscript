@@ -27,7 +27,6 @@
  */
 
 use MillionDollarScript\Classes\Data\Config;
-use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\Forms;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
@@ -105,166 +104,33 @@ $banner_data = load_banner_constants( $BID );
 // Update time stamp on temp order (if exists)
 Orders::update_temp_order_timestamp();
 
-// Handle file upload
+// Handle file upload results from Forms.php redirect
 $uploaddir      = Utility::get_upload_path() . "images/";
 $tmp_image_file = Orders::get_tmp_img_name();
 $size           = [];
 $reqsize        = [];
 $pixel_count    = 0;
 $block_size     = 0;
+$messages       = "";
 
-if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
-	global $f2;
-
-	//$parts = split ('\.', $_FILES['graphic']['name']);
-	$parts = $file_parts = pathinfo( $_FILES['graphic']['name'] );
-	$ext   = $f2->filter( strtolower( $file_parts['extension'] ) );
-
-	$error              = "";
-	$mime_type          = mime_content_type( $_FILES['graphic']['tmp_name'] );
-	$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
-	if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-		$error = "<b>" . Language::get_replace( 'Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF.', '%MIME_TYPE%', $mime_type ) . "</b><br>";
-	}
-
-	$messages = "";
-	if ( ! empty( $error ) ) {
-		$messages           .= $error;
-		$image_changed_flag = false;
-	} else {
-		// clean up is handled by the delete_temp_order($sid) function...
-
-		//delete_temp_order( get_current_order_id() );
-
-		// delete temp_* files older than 24 hours
-		$dh = opendir( $uploaddir );
-		while ( ( $file = readdir( $dh ) ) !== false ) {
-
-			$elapsed_time = 60 * 60 * 24; // 24 hours
-
-			// delete old files
-			$stat = stat( $uploaddir . $file );
-			if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
-				if ( str_contains( $file, 'tmp_' . Orders::get_current_order_id() ) ) {
-					unlink( $uploaddir . $file );
-				}
-			}
-		}
-
-		$uploadfile = $uploaddir . "tmp_" . Orders::get_current_order_id() . ".$ext";
-
-		if ( move_uploaded_file( $_FILES['graphic']['tmp_name'], $uploadfile ) ) {
-			//echo "File is valid, and was successfully uploaded.\n";
-			$tmp_image_file = $uploadfile;
-
-			Utility::setMemoryLimit( $uploadfile );
-
-			// check the file size for min and max blocks.
-
-			// uploaded image size
-			$size = getimagesize( $tmp_image_file );
-
-			// Check dimensions ONLY if auto-resize is OFF
-			if ( Options::get_option( 'resize' ) !== 'YES' ) {
-
-				// If any error occurred during dimension calculation/validation
-				/* if ( $error_occurred ) { // This check is now part of the removed logic
-					// Clean up the invalid uploaded file FIRST
-					if (isset($uploadfile) && file_exists($uploadfile)) { 
-						unlink($uploadfile);
-				} */
-
-				// Removed logic
-			}
-
-			// maximum size snapped to block size
+// Check for upload results from redirect parameters
+if ( isset( $_GET['upload_error'] ) ) {
+	$messages .= "<b style='color:red;'>" . urldecode( $_GET['upload_error'] ) . "</b><br>";
+} elseif ( isset( $_GET['upload_success'] ) ) {
+	// Upload was successful, get the uploaded file info
+	if ( ! empty( $tmp_image_file ) && file_exists( $tmp_image_file ) ) {
+		$size = getimagesize( $tmp_image_file );
+		if ( $size ) {
 			$reqsize = Utility::get_required_size( $size[0], $size[1], $banner_data );
-
-			// pixel count
 			$pixel_count = $reqsize[0] * $reqsize[1];
-
-			// final size
 			$block_size = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
-
-			// if image should be resized automatically make it fit within grid max/min block settings
-			if ( Options::get_option( 'resize' ) == 'YES' ) {
-				$rescale = [];
-				if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
-					$rescale['x'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $reqsize[0] );
-					$rescale['y'] = min( $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_HEIGHT'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'], $reqsize[0] );
-				} else if ( ( $block_size < $banner_data['G_MIN_BLOCKS'] ) && ( $banner_data['G_MIN_BLOCKS'] > 0 ) ) {
-					$rescale['x'] = min( $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'], $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'], $reqsize[0] );
-					$rescale['y'] = min( $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_HEIGHT'], $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'], $reqsize[0] );
-				}
-
-				// resize uploaded image
-				if ( class_exists( 'Imagick' ) ) {
-					$imagine = new Imagine\Imagick\Imagine();
-				} else if ( function_exists( 'gd_info' ) ) {
-					$imagine = new Imagine\Gd\Imagine();
-				}
-				$image = $imagine->open( $tmp_image_file );
-
-				if ( isset( $rescale['x'] ) ) {
-					$resize = new Imagine\Image\Box( $rescale['x'], $rescale['y'] );
-					$image->resize( $resize );
-					$fileinfo = pathinfo( $tmp_image_file );
-					$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
-					$image->save( $newname );
-					$size[0]    = $rescale['x'];
-					$size[1]    = $rescale['y'];
-					$reqsize[0] = $rescale['x'];
-					$reqsize[1] = $rescale['y'];
-
-					// recount pixel count
-					$pixel_count = $reqsize[0] * $reqsize[1];
-
-					// recount final size
-					$block_size = $pixel_count / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
-				} else {
-					// save to png
-					$fileinfo = pathinfo( $tmp_image_file );
-					$newname  = ( $fileinfo['dirname'] ? $fileinfo['dirname'] . DIRECTORY_SEPARATOR : '' ) . $fileinfo['filename'] . '.png';
-					$image->save( $newname );
-				}
-			} else {
-				// TODO: handle png extension in these cases
-				if ( ( $block_size > $banner_data['G_MAX_BLOCKS'] ) && ( $banner_data['G_MAX_BLOCKS'] > 0 ) ) {
-
-					$limit = $banner_data['G_MAX_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
-
-					$messages .= Language::get_replace(
-						'<strong style="color:red;">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>',
-						[ '%MAX_PIXELS%', '%COUNT%' ],
-						[ $limit, $pixel_count ]
-					);
-					if ( ! empty($tmp_image_file) && file_exists($tmp_image_file) ) { 
-						unlink( $tmp_image_file );
-						unset( $tmp_image_file );  
-					}
-				} else if ( ( $block_size < $banner_data['G_MIN_BLOCKS'] ) && ( $banner_data['G_MIN_BLOCKS'] > 0 ) ) {
-
-					$limit = $banner_data['G_MIN_BLOCKS'] * $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'];
-
-					$messages .= Language::get_replace(
-						'<strong style="color:red;">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>',
-						[ '%MIN_PIXELS%', '%COUNT%' ],
-						[ $limit, $pixel_count ]
-					);
-					if ( ! empty($tmp_image_file) && file_exists($tmp_image_file) ) { 
-						unlink( $tmp_image_file );
-						unset( $tmp_image_file );  
-					}
-				}
-			}
-		} else {
-			//echo "Possible file upload attack!\n";
-			$messages .= "<b>" . Language::get( 'Upload failed: Could not process the uploaded file. Please try again.' ) . "</b><br>";
 		}
 	}
 }
 
-if ( isset( $_POST['mds_dest'] ) || str_ends_with( $_SERVER['REQUEST_URI'], 'admin-post.php' ) ) {
+// Only return early if this is a direct POST to admin-post.php without file upload processing
+// When Forms.php includes this file for file upload processing, we should continue execution
+if ( isset( $_POST['mds_dest'] ) && str_ends_with( $_SERVER['REQUEST_URI'], 'admin-post.php' ) && ! isset( $_FILES['graphic'] ) ) {
 	return;
 }
 

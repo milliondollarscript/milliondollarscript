@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.12.85
+Stable tag: 2.5.12.86
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -68,6 +68,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Feature: Added AJAX-powered controls to the Logs page for enabling/disabling logging and clearing the log without page reloads.
 * Feature: Implemented live log updates (optional toggle) and log entry consolidation (showing latest timestamp and count) on the Logs page.
 * Fix: Allow selecting first block.
+* Fix: File upload in simple pixel selection method.
 
 = 2.5.10 =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
