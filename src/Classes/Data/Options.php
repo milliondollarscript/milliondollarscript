@@ -498,7 +498,7 @@ class Options {
 
 				// Max Image Size
 				Field::make( 'text', MDS_PREFIX . 'max-image-size', Language::get( 'Max Image Size' ) )
-					->set_default_value( '350' )
+					->set_default_value( '332' )
 					->set_attribute( 'type', 'number' )
 					->set_help_text( Language::get( 'The maximum image size in pixels. The system will attempt to resize images larger than this.' ) ),
 
