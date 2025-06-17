@@ -278,7 +278,7 @@ class Ajax {
 			} else if ( $field_name === 'image' ) {
 				$image_id  = carbon_get_post_meta( $post_id, $field->get_base_name() );
 				$image_url = wp_get_attachment_url( $image_id );
-				$max_image_size = Options::get_option( 'max-image-size', 350 );
+				$max_image_size = Options::get_option( 'max-image-size', 332 );
 				$value     = '<img class="mds-popup-image" src="' . esc_url( $image_url ) . '" alt="" style="max-width:' . $max_image_size . 'px;max-height:' . $max_image_size . 'px;">';
 			}
 

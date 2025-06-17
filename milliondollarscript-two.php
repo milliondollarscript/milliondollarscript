@@ -214,6 +214,7 @@ function milliondollarscript_two_uninstall(): void {
 			OR `option_name` = 'mds_migrate_product_executed'
 			OR `option_name` = 'mds_db_version'
 			OR `option_name` = " . \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_WIZARD_COMPLETE . "
+			OR `option_name` = " . \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_WIZARD_COMPLETE . "
 			OR `option_name` = 'mds_use_woocommerce_integration'
 			OR `option_name` LIKE '_transient_timeout_mds_blocks_banner_id%'
 			OR `option_name` LIKE '_transient_mds_blocks_banner_id%'
