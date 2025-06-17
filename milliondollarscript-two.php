@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.12.91
+  Version: 2.5.12.92
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -64,7 +64,7 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.12.0' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.12.91' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.12.92' );
 
 // Detect PHP version
 $minimum_version = '8.1.0';
@@ -213,7 +213,7 @@ function milliondollarscript_two_uninstall(): void {
 			OR `option_name` = 'mds_last_order_modification_time' 
 			OR `option_name` = 'mds_migrate_product_executed'
 			OR `option_name` = 'mds_db_version'
-			OR `option_name` = " . OPTION_NAME_WIZARD_COMPLETE . "
+			OR `option_name` = " . \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_WIZARD_COMPLETE . "
 			OR `option_name` = 'mds_use_woocommerce_integration'
 			OR `option_name` LIKE '_transient_timeout_mds_blocks_banner_id%'
 			OR `option_name` LIKE '_transient_mds_blocks_banner_id%'

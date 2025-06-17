@@ -219,6 +219,14 @@ Grid iframe
 }
 
 /*
+Fix the grid image to be responsive
+*/
+.mds-container .grid-container .grid-inner img {
+	max-width: 100%;
+	height: auto;
+}
+
+/*
 Footer
 */
 .mds-container .footer {

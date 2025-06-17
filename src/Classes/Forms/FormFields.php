@@ -622,7 +622,7 @@ class FormFields {
 							$imagine = new \Imagine\Gd\Imagine();
 						}
 
-						$max_image_size = Options::get_option( 'max-image-size' );
+						$max_image_size = Options::get_option( 'max-image-size', 332 );
 
 						if ( ! empty( $attachment_id ) ) {
 							$image_path = get_attached_file( $attachment_id );
