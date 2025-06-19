@@ -65,38 +65,34 @@ function process_mail_queue( $send_count = 1 ) {
 	$unix_time = time();
 
 	// get the time of last run
-	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "config` where `config_key` = 'LAST_MAIL_QUEUE_RUN' ";
-	$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
-	$t_row = @mysqli_fetch_array( $result );
+	$last_mail_queue_run = \get_option(MDS_PREFIX . 'last-mail-queue-run', $now);
 
 	if ( isset( $DB_ERROR ) && $DB_ERROR != '' ) {
 		return $DB_ERROR;
 	}
 
 	// Poor man's lock (making sure that this function is a Singleton)
-	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='YES' WHERE `config_key`='MAIL_QUEUE_RUNNING' AND `val`='NO' ";
-	$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
-	if ( @mysqli_affected_rows( $GLOBALS['connection'] ) == 0 ) {
+	$mail_queue_running = \get_option(MDS_PREFIX . 'mail-queue-running', 'NO');	
+	if ( $mail_queue_running == 'NO' ) {
+		\update_option(MDS_PREFIX . 'mail-queue-running', 'YES');
+	} else {
 
 		// make sure it cannot be locked for more than 30 secs 
 		// This is in case the proccess fails inside the lock
 		// and does not release it.
 
-		if ( ! isset( $t_row ) || $unix_time > $t_row['val'] + 30 ) {
+		if ( $unix_time > $last_mail_queue_run + 30 ) {
 			// release the lock
-
-			$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `config_key`='MAIL_QUEUE_RUNNING' ";
-			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
+			\update_option(MDS_PREFIX . 'mail-queue-running', 'NO');
 
 			// update timestamp
-			$sql = "REPLACE INTO " . MDS_DB_PREFIX . "config (`config_key`, `val`) VALUES ('LAST_MAIL_QUEUE_RUN', '$unix_time')  ";
-			$result = @mysqli_query( $GLOBALS['connection'], $sql ) or $DB_ERROR = mysqli_error( $GLOBALS['connection'] );
+			\update_option(MDS_PREFIX . 'last-mail-queue-run', $unix_time);
 		}
 
 		return; // this function is already executing in another process.
 	}
 
-	if ( $unix_time > $t_row['val'] + 5 ) { // did 5 seconds elapse since last run?
+	if ( $unix_time > $last_mail_queue_run + 5 ) { // did 5 seconds elapse since last run?
 
 		$and_mail_id = "";
 		if ( func_num_args() > 1 ) {
@@ -165,8 +161,7 @@ function process_mail_queue( $send_count = 1 ) {
 	}
 
 	// release the poor man's lock
-	$sql = "UPDATE `" . MDS_DB_PREFIX . "config` SET `val`='NO' WHERE `config_key`='MAIL_QUEUE_RUNNING' ";
-	@mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+	\update_option(	MDS_PREFIX . 'mail-queue-running', 'NO');
 }
 
 // From WordPress /wp-includes/formatting.php

@@ -434,7 +434,7 @@ class WooCommerceFunctions {
 		if ( empty( $val ) ) {
 			$val = 'no';
 		}
-		$wpdb->replace( MDS_DB_PREFIX . 'config', [ 'config_key' => 'WOOCOMMERCE_AUTO_APPROVE', 'val' => $val ] );
+		Options::update_option('woocommerce_auto_approve', $val);
 	}
 
 	/**
