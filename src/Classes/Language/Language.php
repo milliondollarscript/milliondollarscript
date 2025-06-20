@@ -53,6 +53,11 @@ class Language {
 	public static function get( string $content, bool $html = true ): string {
 		$content = __( $content, MDS_TEXT_DOMAIN );
 
+		// Decode HTML entities that may have been introduced by translation BEFORE security processing
+		// This prevents double encoding by wp_kses_normalize_entities which converts & to &amp; first
+		// We decode entities first so they don't get double-encoded during the security filtering
+		$content = html_entity_decode( $content, ENT_NOQUOTES, 'UTF-8' );
+
 		if ( $html ) {
 			$content = wp_kses( $content, Language::allowed_html(), Language::allowed_protocols() );
 		} else {
@@ -90,6 +95,11 @@ class Language {
 		$content = __( $content, MDS_TEXT_DOMAIN );
 
 		$content = str_replace( $search, $replace, $content );
+
+		// Decode HTML entities that may have been introduced by translation BEFORE security processing
+		// This prevents double encoding by wp_kses_normalize_entities which converts & to &amp; first
+		// We decode entities first so they don't get double-encoded during the security filtering
+		$content = html_entity_decode( $content, ENT_NOQUOTES, 'UTF-8' );
 
 		if ( $html ) {
 			$protocols = Language::allowed_protocols();
@@ -366,6 +376,11 @@ class Language {
 	 */
 	public static function replace( string $string, array|string $search, array|string $replace ): array|string|null {
 		$translatable = __( $string, MDS_TEXT_DOMAIN );
+
+		// Decode HTML entities that may have been introduced by translation
+		// This prevents double encoding if the result is later processed by security functions
+		// We decode entities first so they don't get double-encoded during any security filtering
+		$translatable = html_entity_decode( $translatable, ENT_NOQUOTES, 'UTF-8' );
 
 		return str_replace( $search, $replace, $translatable );
 	}
