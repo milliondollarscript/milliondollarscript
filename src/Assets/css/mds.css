@@ -208,7 +208,7 @@ controls the look and feel of the 'pixels-sold/available' box:
 }
 
 /*
-Grid iframe
+Grid frame
 */
 .mds-container .grid-container .grid-inner {
 	border: none;
@@ -216,6 +216,7 @@ Grid iframe
 	margin: 0 auto;
 	display: block;
 	max-width: 100%;
+	line-height: 1;
 }
 
 /*
