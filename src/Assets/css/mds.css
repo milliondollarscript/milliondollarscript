@@ -931,6 +931,49 @@ Ads list page
 
 #mds-selection-size-slider {
 	width: 90%;
+	height: 8px;
+	border-radius: 4px;
+	background: var(--mds-bg-tertiary, #ddd);
+	outline: none;
+	opacity: 0.8;
+	transition: opacity 0.3s;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+#mds-selection-size-slider:hover {
+	opacity: 1;
+}
+
+/* Webkit/Chrome styling */
+#mds-selection-size-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--mds-primary-color, #91877D);
+	cursor: pointer;
+	border: 2px solid var(--mds-bg-primary, #fff);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Firefox styling */
+#mds-selection-size-slider::-moz-range-thumb {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--mds-primary-color, #91877D);
+	cursor: pointer;
+	border: 2px solid var(--mds-bg-primary, #fff);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#mds-selection-size-slider::-moz-range-track {
+	height: 8px;
+	border-radius: 4px;
+	background: var(--mds-bg-tertiary, #ddd);
+	border: none;
 }
 
 #mds-selection-size-value {
