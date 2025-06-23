@@ -266,6 +266,8 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching.' ) ),
 
+
+
 				// Dark Mode Colors Section
 				Field::make( 'html', MDS_PREFIX . 'dark-mode-colors-section', Language::get( 'Dark Mode Colors' ) )
 					->set_html( '<h3>' . Language::get( 'Dark Mode Color Scheme' ) . '</h3><p>' . Language::get( 'These colors are used when Dark Mode is enabled. They follow accessibility guidelines for proper contrast ratios.' ) . '</p>' )
@@ -1157,11 +1159,18 @@ class Options {
 			return [ 'status' => 'error', 'message' => 'Failed to apply new theme colors' ];
 		}
 
-		return [ 
+
+
+		// Fire action for other systems to hook into
+		do_action( 'mds_theme_changed', $new_theme, $current_theme );
+
+		$response = [ 
 			'status' => 'success', 
 			'message' => 'Theme changed from ' . $current_theme . ' to ' . $new_theme,
 			'backup_created' => $backup_created
 		];
+
+		return $response;
 	}
 
 	/**

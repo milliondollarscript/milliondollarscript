@@ -1007,7 +1007,7 @@ Ads list page
 	width: auto;
 	position: relative;
 	z-index: 1;
-	box-shadow: 1px 1px 0 0 #ccc;
+	box-shadow: 1px 1px 0 0 var(--mds-bg-tertiary, #ccc);
 }
 
 body #login {
@@ -1648,7 +1648,7 @@ a.mds-button {
 }
 
 /* Ensure Text Readability in All States */
-.mds-container .mds-manage-row.ui-accordion-header * {
+.mds-container .mds-manage-row.ui-accordion-header *:not(input):not(button):not(.mds-button):not(a.mds-button) {
 	color: inherit !important;
 }
 

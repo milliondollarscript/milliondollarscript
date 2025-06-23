@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.12.102
+Stable tag: 2.5.12.103
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -37,6 +37,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Fixed Max Image Size option in popup template.
 * Feature: Add mds_pixel_area_data_values filter for extensions to add additional data.
 * Feature: Add dark mode/light mode selection option.
+* Feature: Add dark mode/light mode grid image generation and switching.
 
 = 2.5.11 =
 * Add WooCommerce refund integration.

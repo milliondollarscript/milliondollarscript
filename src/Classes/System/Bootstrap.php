@@ -103,6 +103,9 @@ class Bootstrap {
 			add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Data\Options', 'save' ] );
 		}
 
+		// Initialize Grid Image Switcher for theme mode automation
+		add_action( 'init', [ '\MillionDollarScript\Classes\Services\GridImageSwitcher', 'init' ] );
+
 		// Add Block
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Blocks\Block', 'register_style' ] );
 		add_action( 'after_setup_theme', [ '\MillionDollarScript\Classes\Blocks\Block', 'load' ] );

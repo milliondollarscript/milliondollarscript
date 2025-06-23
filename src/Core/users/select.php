@@ -132,7 +132,7 @@ $order_blocks = array_map( function ( $block_id ) use ( $BID ) {
             -webkit-user-select: none;
             -webkit-touch-callout: none;
             -moz-user-select: none;
-            box-shadow: inset 0 0 0 1px #000;
+            box-shadow: inset 0 0 0 1px var(--mds-text-primary, #000);
             z-index: 10001;
         }
 
