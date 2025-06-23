@@ -4,6 +4,96 @@ jQuery(document).ready(function ($) {
 	const { updateFieldValue } = dispatch("carbon-fields/metaboxes");
 	const fields = metaboxes.getFields();
 
+	// Dark Mode Theme Switching with Confirmation
+	let originalThemeValue = $('input[name="_mds_theme_mode"]:checked').val();
+	
+	// Watch for theme mode changes
+	$('input[name="_mds_theme_mode"]').on('change', function() {
+		const newTheme = $(this).val();
+		const currentTheme = originalThemeValue;
+		
+		if (newTheme !== currentTheme) {
+			showThemeSwitchConfirmation(currentTheme, newTheme, $(this));
+		}
+	});
+	
+	function showThemeSwitchConfirmation(currentTheme, newTheme, radioElement) {
+		// Revert radio selection temporarily
+		$('input[name="_mds_theme_mode"][value="' + currentTheme + '"]').prop('checked', true);
+		
+		if (confirm("Switch Theme Mode?\n\n" + 
+				   "You are switching from " + currentTheme + " to " + newTheme + " mode.\n" + 
+				   "Your current settings will be backed up.\n\n" + 
+				   "Continue?")) {
+			// User confirmed, apply the change
+			radioElement.prop('checked', true);
+			originalThemeValue = newTheme;
+			
+			// Show processing message
+			showThemeProcessingMessage(newTheme);
+			
+			// Trigger form save after theme change
+			setTimeout(function() {
+				$('#submit').trigger('click');
+			}, 100);
+		}
+	}
+	
+	function showThemeProcessingMessage(theme) {
+		const message = $('<div class="notice notice-info mds-theme-processing">' +
+						 '<p><strong>Processing theme change...</strong> Applying ' + theme + ' mode colors and regenerating styles.</p>' +
+						 '</div>');
+		
+		$('.wrap h1').after(message);
+		
+		// Remove after a few seconds
+		setTimeout(function() {
+			$('.mds-theme-processing').fadeOut();
+		}, 3000);
+	}
+	
+	// Add CSS for theme processing message and button states
+	if (!$('#mds-theme-admin-styles').length) {
+		$('head').append(`
+			<style id="mds-theme-admin-styles">
+				.mds-theme-processing {
+					animation: pulse 1.5s infinite;
+				}
+				@keyframes pulse {
+					0%, 100% { opacity: 1; }
+					50% { opacity: 0.7; }
+				}
+				
+				/* Admin Button States with CSS Variables */
+				.mds-admin-button-processing {
+					background-color: var(--mds-accessible-warning, #f59e0b) !important;
+					color: #ffffff !important;
+				}
+				
+				.mds-admin-button-success {
+					background-color: var(--mds-accessible-success, #10b981) !important;
+					color: #ffffff !important;
+				}
+				
+				.mds-admin-button-error {
+					background-color: var(--mds-accessible-error, #ef4444) !important;
+					color: #ffffff !important;
+				}
+				
+				.mds-admin-button-reset {
+					background-color: '' !important;
+					color: '' !important;
+				}
+				
+				/* Row Highlighting */
+				.mds-highlight-row {
+					background-color: var(--mds-accessible-warning, #fef3c7) !important;
+					color: var(--mds-text-primary, #000) !important;
+				}
+			</style>
+		`);
+	}
+
 	const buttons = ["update_language", "create_pages", "delete_pages"];
 
 	for (let i = 0; i < buttons.length; i++) {
@@ -13,7 +103,10 @@ jQuery(document).ready(function ($) {
 
 			const button = $(this);
 			button.prop("disabled", true);
-			button.css("background-color", "#663600");
+			
+			// Use CSS class instead of hardcoded color
+			button.removeClass('mds-admin-button-success mds-admin-button-error')
+				  .addClass('mds-admin-button-processing');
 
 			$.post(
 				MDS.ajaxurl,
@@ -23,13 +116,19 @@ jQuery(document).ready(function ($) {
 				},
 				function (data) {
 					button.prop("disabled", false);
+					
+					// Remove processing state and apply result state
+					button.removeClass('mds-admin-button-processing');
+					
 					if (data) {
-						button.css("background-color", "#006606");
+						button.addClass('mds-admin-button-success');
 					} else {
-						button.css("background-color", "#660000");
+						button.addClass('mds-admin-button-error');
 					}
+					
 					setTimeout(function () {
-						button.css("background-color", "");
+						// Reset to default styling
+						button.removeClass('mds-admin-button-success mds-admin-button-error mds-admin-button-processing');
 					}, 5000);
 
 					// Update Carbon Fields options.

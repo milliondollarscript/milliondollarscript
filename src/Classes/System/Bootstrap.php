@@ -67,6 +67,9 @@ class Bootstrap {
 		// Load language
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Language\Language', 'load_textdomain' ] );
 
+		// Initialize theme hooks for dark mode support
+		add_action( 'init', [ '\MillionDollarScript\Classes\Web\Styles', 'init_theme_hooks' ] );
+
 		// Register admin pages
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\MillionDollarScript', 'menu' ], 9 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Logs', 'menu' ], 11 );

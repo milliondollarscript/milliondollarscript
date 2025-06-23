@@ -185,7 +185,7 @@ if ( $BID != '' ) {
     <b>Grid Name:</b> <?php echo $banner_data['G_NAME']; ?><br>
     <b>Default Price per block:</b> <?php echo $banner_data['G_PRICE']; ?><br>
 
-    <input type="button" style="background-color:#66FF33" value="New Price Zone..." onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>price-zones&amp;new=1&amp;BID=<?php echo $BID; ?>'"><br>
+    <input type="button" class="mds-admin-action-new" value="New Price Zone..." onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>price-zones&amp;new=1&amp;BID=<?php echo $BID; ?>'"><br>
 
     Listing rows that are marked as custom price.<br>
 	<?php
@@ -293,19 +293,19 @@ if ( $BID != '' ) {
                             <option value="">[Select]</option>
                             <option value="yellow" <?php if ( isset( $_REQUEST['color'] ) && $_REQUEST['color'] == 'yellow' ) {
 								echo ' selected ';
-							} ?> style="background-color: #FFFF00">Yellow
+							} ?> class="mds-price-zone-yellow">Yellow
                             </option>
                             <option value="cyan" <?php if ( isset( $_REQUEST['color'] ) && $_REQUEST['color'] == 'cyan' ) {
 								echo ' selected ';
-							} ?> style="background-color: #00FFFF">Cyan
+							} ?> class="mds-price-zone-cyan">Cyan
                             </option>
                             <option value="magenta" <?php if ( isset( $_REQUEST['color'] ) && $_REQUEST['color'] == 'magenta' ) {
 								echo ' selected ';
-							} ?> style="background-color: #FF00FF">Magenta
+							} ?> class="mds-price-zone-magenta">Magenta
                             </option>
                             <option value="white" <?php if ( isset( $_REQUEST['color'] ) && $_REQUEST['color'] == 'white' ) {
 								echo ' selected ';
-							} ?> style="background-color: #ffffff">White
+							} ?> class="mds-price-zone-white">White
                             </option>
                         </select>
 

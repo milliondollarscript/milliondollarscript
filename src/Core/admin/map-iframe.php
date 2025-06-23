@@ -337,7 +337,7 @@ $mds_site_url = get_site_url();
 	}
 
 </script>
-<span id='block_pointer' style='font-size:1px;line-height:1px;cursor: pointer;position:absolute;left:0; top:0;background-color:#FFFFFF; visibility:hidden; '><img src='<?php echo esc_url(MDS_CORE_URL . 'admin/images/pointer.png'); ?>'></span>
+<span id='block_pointer' class='mds-block-pointer'><img src='<?php echo esc_url(MDS_CORE_URL . 'admin/images/pointer.png'); ?>'></span>
 
 <form method='post' name="move_form" action='<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>'>
 	<?php wp_nonce_field( 'mds-admin' ); ?>

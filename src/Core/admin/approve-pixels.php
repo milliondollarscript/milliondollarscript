@@ -467,7 +467,7 @@ $results = $wpdb->get_results( $sql, ARRAY_A );
 									'_wpnonce'   => $approve_nonce
 								], admin_url( 'admin.php' ) );
 								?>
-								<a href="<?php echo esc_url( $approve_url ); ?>" class="button button-small" style="background-color: #388E3C; color: #fff;">Approve</a>
+								<a href="<?php echo esc_url( $approve_url ); ?>" class="button button-small mds-admin-action-approve">Approve</a>
                              <?php } ?>
                              <?php if ( $row['approved'] == 'Y' ) { ?>
                                 <?php
@@ -483,7 +483,7 @@ $results = $wpdb->get_results( $sql, ARRAY_A );
 									'_wpnonce'   => $disapprove_nonce
 								], admin_url( 'admin.php' ) );
 								?>
-								<a href="<?php echo esc_url( $disapprove_url ); ?>" class="button button-small" style="background-color: #E65100; color: #fff;">Disapprove</a>
+								<a href="<?php echo esc_url( $disapprove_url ); ?>" class="button button-small mds-admin-action-disapprove">Disapprove</a>
                              <?php } ?>
                             <?php
 							// Construct Deny link URL
@@ -498,7 +498,7 @@ $results = $wpdb->get_results( $sql, ARRAY_A );
 								'_wpnonce'   => $deny_nonce
 							], admin_url( 'admin.php' ) );
 							?>
-							<a href="<?php echo esc_url( $deny_url ); ?>" class="button button-small" style="background-color: #D32F2F; color:#fff;">Deny</a>
+							<a href="<?php echo esc_url( $deny_url ); ?>" class="button button-small mds-admin-action-deny">Deny</a>
                         </td>
                         <td><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $order_id ) ); ?>"><?php echo $order_id; ?></a></td>
                         <td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . intval($row['ad_id']) . '&action=edit' ) ); ?>"><?php echo esc_html( $row['ad_id'] ?? '' ); ?></a></td>

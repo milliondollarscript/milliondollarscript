@@ -443,7 +443,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
     <p>Note: A grid with 100 rows and 100 columns and a block size of 10x10 is a million pixels. Setting this to a
         larger value may affect the memory & performance of the script.</p>
 
-    <input type="button" style="background-color:#66FF33" value="New Grid..."
+    <input type="button" class="mds-admin-action-new" value="New Grid..."
            onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=new&new=1' ) ); ?>'">
     <br>
 

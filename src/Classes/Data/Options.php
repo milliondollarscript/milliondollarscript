@@ -257,6 +257,137 @@ class Options {
 
 			Language::get( 'Styles' ) => [
 
+				// Dark Mode Toggle
+				Field::make( 'radio', MDS_PREFIX . 'theme_mode', Language::get( 'Theme Mode' ) )
+					->set_default_value( 'light' )
+					->set_options( [
+						'light' => Language::get( 'Light Mode' ),
+						'dark'  => Language::get( 'Dark Mode' ),
+					] )
+					->set_help_text( Language::get( 'Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching.' ) ),
+
+				// Dark Mode Colors Section
+				Field::make( 'html', MDS_PREFIX . 'dark-mode-colors-section', Language::get( 'Dark Mode Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Dark Mode Color Scheme' ) . '</h3><p>' . Language::get( 'These colors are used when Dark Mode is enabled. They follow accessibility guidelines for proper contrast ratios.' ) . '</p>' )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Main Background
+				Field::make( 'color', MDS_PREFIX . 'dark_main_background', Language::get( 'Dark Mode - Main Background' ) )
+					->set_default_value( '#101216' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Primary background color for dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Secondary Background
+				Field::make( 'color', MDS_PREFIX . 'dark_secondary_background', Language::get( 'Dark Mode - Secondary Background' ) )
+					->set_default_value( '#14181c' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Secondary background color for cards, menus, etc.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Tertiary Background
+				Field::make( 'color', MDS_PREFIX . 'dark_tertiary_background', Language::get( 'Dark Mode - Tertiary Background' ) )
+					->set_default_value( '#1d2024' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Tertiary background for subtle elements.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Text Primary
+				Field::make( 'color', MDS_PREFIX . 'dark_text_primary', Language::get( 'Dark Mode - Primary Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#e0e0e0', '#cccccc', '#b0b0b0' ] )
+					->set_help_text( Language::get( 'Primary text color for dark mode (high contrast).' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Text Secondary
+				Field::make( 'color', MDS_PREFIX . 'dark_text_secondary', Language::get( 'Dark Mode - Secondary Text' ) )
+					->set_default_value( '#cccccc' )
+					->set_palette( [ '#ffffff', '#e0e0e0', '#cccccc', '#b0b0b0' ] )
+					->set_help_text( Language::get( 'Secondary text color for less prominent text.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Border Color
+				Field::make( 'color', MDS_PREFIX . 'dark_border_color', Language::get( 'Dark Mode - Border Color' ) )
+					->set_default_value( '#1a1c21' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Border color for cards, inputs, and dividers.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Tooltip Background
+				Field::make( 'color', MDS_PREFIX . 'dark_tooltip_background', Language::get( 'Dark Mode - Tooltip Background' ) )
+					->set_default_value( '#101216' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Background color for tooltips and popups.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Light Mode Colors Section (when dark mode is not selected)
+				Field::make( 'html', MDS_PREFIX . 'light-mode-colors-section', Language::get( 'Light Mode Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Light Mode Color Scheme' ) . '</h3><p>' . Language::get( 'Customize the color scheme for light mode display.' ) . '</p>' )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
 				// TODO: Dark Mode toggle. Has to recolor all MDS styles to invert them and invert the grid image colors as well.
 
 				// Button Color (Primary Background)
@@ -970,15 +1101,247 @@ class Options {
 		add_action( 'carbon_fields_register_fields', [ __CLASS__, 'register' ] );
 		add_action( 'carbon_fields_container_saved', [ __CLASS__, 'handle_theme_options_save' ] );
 
-		// AJAX handlers for options
-		add_action( 'wp_ajax_mds_get_options_data', [ __CLASS__, 'ajax_get_options_data' ] );
+		// AJAX handlers for theme switching
+		add_action( 'wp_ajax_mds_handle_theme_change', [ __CLASS__, 'ajax_handle_theme_change' ] );
 	}
 
 	public static function handle_theme_options_save(): void {
-		// Verify we are on the correct container if necessary, though the hook is specific.
-		// The hook 'carbon_fields_theme_options_container_saved' fires for the 'theme_options' container.
-		// If there were multiple theme options containers with different IDs, we might check:
-		// if ( isset($_POST['carbon_fields_container_id']) && $_POST['carbon_fields_container_id'] === 'theme_options' ) { ... }
+		// Regenerate dynamic styles after theme options are saved
 		Styles::save_dynamic_css_file();
+	}
+
+	/**
+	 * AJAX handler for theme switching
+	 */
+	public static function ajax_handle_theme_change(): void {
+		// Verify nonce
+		if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'mds_admin_nonce' ) ) {
+			wp_die( 'Security check failed' );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Insufficient permissions' );
+		}
+
+		$new_theme = sanitize_text_field( $_POST['theme'] ?? 'light' );
+		$result = self::handle_theme_change( $new_theme );
+
+		wp_send_json( $result );
+	}
+
+	/**
+	 * Check if theme mode is changing and handle backup/confirmation
+	 *
+	 * @param string $new_theme
+	 * @return array
+	 */
+	public static function handle_theme_change( string $new_theme ): array {
+		$current_theme = self::get_option( 'theme_mode', 'light' );
+		
+		if ( $current_theme === $new_theme ) {
+			return [ 'status' => 'no_change', 'message' => 'Theme is already set to ' . $new_theme ];
+		}
+
+		// Backup current theme settings
+		$backup_created = self::backup_current_theme_settings( $current_theme );
+		
+		if ( ! $backup_created ) {
+			return [ 'status' => 'error', 'message' => 'Failed to backup current theme settings' ];
+		}
+
+		// Apply new theme colors
+		$applied = self::apply_theme_colors( $new_theme );
+		
+		if ( ! $applied ) {
+			return [ 'status' => 'error', 'message' => 'Failed to apply new theme colors' ];
+		}
+
+		return [ 
+			'status' => 'success', 
+			'message' => 'Theme changed from ' . $current_theme . ' to ' . $new_theme,
+			'backup_created' => $backup_created
+		];
+	}
+
+	/**
+	 * Backup current theme settings before switching
+	 *
+	 * @param string $theme
+	 * @return bool
+	 */
+	public static function backup_current_theme_settings( string $theme ): bool {
+		$backup_key = 'theme_backup_' . $theme . '_' . time();
+		
+		$settings_to_backup = [
+			'primary_color',
+			'secondary_color', 
+			'background_color',
+			'text_color',
+			'button-color',
+			'button_text_color',
+			'button_secondary_bg',
+			'button_secondary_text',
+			'button_success_bg',
+			'button_success_text',
+			'button_danger_bg',
+			'button_danger_text'
+		];
+
+		// Add dark mode specific settings if backing up dark theme
+		if ( $theme === 'dark' ) {
+			$settings_to_backup = array_merge( $settings_to_backup, [
+				'dark_main_background',
+				'dark_secondary_background',
+				'dark_tertiary_background',
+				'dark_text_primary',
+				'dark_text_secondary',
+				'dark_border_color',
+				'dark_tooltip_background'
+			] );
+		}
+
+		$backup = [];
+		foreach ( $settings_to_backup as $setting ) {
+			$backup[ $setting ] = self::get_option( $setting );
+		}
+
+		return update_option( $backup_key, $backup );
+	}
+
+	/**
+	 * Apply theme-specific color settings
+	 *
+	 * @param string $theme
+	 * @return bool
+	 */
+	public static function apply_theme_colors( string $theme ): bool {
+		if ( $theme === 'dark' ) {
+			return self::apply_dark_theme_colors();
+		} else {
+			return self::apply_light_theme_colors();
+		}
+	}
+
+	/**
+	 * Apply dark theme color scheme
+	 *
+	 * @return bool
+	 */
+	public static function apply_dark_theme_colors(): bool {
+		$dark_colors = [
+			'background_color' => self::get_option( 'dark_main_background', '#101216' ),
+			'text_color' => self::get_option( 'dark_text_primary', '#ffffff' ),
+			'secondary_color' => self::get_option( 'dark_secondary_background', '#14181c' ),
+			'primary_color' => '#4a9eff', // Adjusted blue for dark mode visibility
+			'button_secondary_bg' => self::get_option( 'dark_secondary_background', '#14181c' ),
+			'button_secondary_text' => self::get_option( 'dark_text_primary', '#ffffff' ),
+		];
+
+		foreach ( $dark_colors as $option => $value ) {
+			if ( ! self::update_option( $option, $value ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Apply light theme color scheme (restore defaults)
+	 *
+	 * @return bool
+	 */
+	public static function apply_light_theme_colors(): bool {
+		$light_colors = [
+			'background_color' => '#ffffff',
+			'text_color' => '#333333',
+			'secondary_color' => '#000000',
+			'primary_color' => '#ff0000',
+			'button_secondary_bg' => '#91877D',
+			'button_secondary_text' => '#ffffff',
+		];
+
+		foreach ( $light_colors as $option => $value ) {
+			if ( ! self::update_option( $option, $value ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get theme-aware CSS variables
+	 *
+	 * @return array
+	 */
+	public static function get_theme_css_variables(): array {
+		$theme = self::get_option( 'theme_mode', 'light' );
+		
+		$variables = [
+			// Common variables
+			'--mds-theme-mode' => $theme,
+			'--mds-primary-color' => self::get_option( 'primary_color', '#ff0000' ),
+			'--mds-secondary-color' => self::get_option( 'secondary_color', '#000000' ),
+		];
+
+		if ( $theme === 'dark' ) {
+			$variables = array_merge( $variables, [
+				'--mds-bg-primary' => self::get_option( 'dark_main_background', '#101216' ),
+				'--mds-bg-secondary' => self::get_option( 'dark_secondary_background', '#14181c' ),
+				'--mds-bg-tertiary' => self::get_option( 'dark_tertiary_background', '#1d2024' ),
+				'--mds-text-primary' => self::get_option( 'dark_text_primary', '#ffffff' ),
+				'--mds-text-secondary' => self::get_option( 'dark_text_secondary', '#cccccc' ),
+				'--mds-border-color' => self::get_option( 'dark_border_color', '#1a1c21' ),
+				'--mds-tooltip-bg' => self::get_option( 'dark_tooltip_background', '#101216' ),
+			] );
+		} else {
+			$variables = array_merge( $variables, [
+				'--mds-bg-primary' => self::get_option( 'background_color', '#ffffff' ),
+				'--mds-bg-secondary' => '#f4f2f1',
+				'--mds-bg-tertiary' => '#efefef',
+				'--mds-text-primary' => self::get_option( 'text_color', '#333333' ),
+				'--mds-text-secondary' => '#666666',
+				'--mds-border-color' => '#dddddd',
+				'--mds-tooltip-bg' => '#333333',
+			] );
+		}
+
+		return $variables;
+	}
+
+	/**
+	 * Get accessible color contrasts for theme
+	 *
+	 * @param string $theme
+	 * @return array
+	 */
+	public static function get_accessible_colors( string $theme = null ): array {
+		if ( $theme === null ) {
+			$theme = self::get_option( 'theme_mode', 'light' );
+		}
+
+		if ( $theme === 'dark' ) {
+			return [
+				'bg_primary' => '#101216',
+				'text_primary' => '#ffffff',
+				'text_secondary' => '#cccccc',
+				'link_color' => '#66b3ff', // High contrast blue for dark backgrounds
+				'success_color' => '#4ade80',
+				'error_color' => '#f87171',
+				'warning_color' => '#fbbf24',
+			];
+		} else {
+			return [
+				'bg_primary' => '#ffffff',
+				'text_primary' => '#000000',
+				'text_secondary' => '#333333',
+				'link_color' => '#0066cc', // High contrast blue for light backgrounds
+				'success_color' => '#16a34a',
+				'error_color' => '#dc2626',
+				'warning_color' => '#d97706',
+			];
+		}
 	}
 }

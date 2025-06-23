@@ -83,15 +83,9 @@ class NFS {
 		$ui = $wp_scripts->query( 'jquery-ui-core' );
 		wp_enqueue_style( 'jquery-ui-theme-smoothness', 'https://code.jquery.com/ui/' . $ui->ver . '/themes/smoothness/jquery-ui.min.css' );
 
-		wp_enqueue_style(
-			MDS_PREFIX . 'admin-css',
-			MDS_CORE_URL . 'admin/css/admin.css',
-			array(),
-			filemtime( MDS_CORE_PATH . 'admin/css/admin.css' )
-		);
+		wp_enqueue_style( 'MillionDollarScriptStyles', MDS_BASE_URL . 'src/Assets/css/admin.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/admin.css' ) );
 
-		wp_enqueue_style( 'mds-admin-css', MDS_BASE_URL . 'src/Assets/css/admin.css' );
-		wp_add_inline_style( 'mds-admin-css',
+		wp_add_inline_style( 'MillionDollarScriptStyles',
 			self::get_inline_css()
 		);
 	}

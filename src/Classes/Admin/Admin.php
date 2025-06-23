@@ -432,9 +432,9 @@ class Admin {
 		// CSS
 		wp_enqueue_style(
 			MDS_PREFIX . 'admin-css',
-			MDS_CORE_URL . 'admin/css/admin.css',
+			MDS_BASE_URL . 'src/Assets/css/admin.css',
 			[],
-			filemtime( MDS_CORE_PATH . 'admin/css/admin.css' )
+			filemtime( MDS_BASE_PATH . 'src/Assets/css/admin.css' )
 		);
 
 		global $wp_scripts;
