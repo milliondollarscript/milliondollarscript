@@ -1715,13 +1715,14 @@ class Options {
 		$text_primary_option = $theme === 'dark' ? 'dark_text_primary' : 'text_color';
 		
 		return [
+			// Foundation variables
 			'--mds-bg-primary' => [
 				'option' => $bg_primary_option,
 				'key' => 'bg_primary',
 				'fallback' => $theme === 'dark' ? '#101216' : '#ffffff'
 			],
 			'--mds-bg-secondary' => [
-				'option' => $theme === 'dark' ? 'dark_secondary_background' : 'background_color',
+				'option' => $theme === 'dark' ? 'dark_secondary_background' : 'light_secondary_background',
 				'key' => 'bg_secondary', 
 				'fallback' => $theme === 'dark' ? '#14181c' : '#f4f2f1'
 			],
@@ -1749,6 +1750,43 @@ class Options {
 				'option' => $prefix . 'tooltip_background',
 				'key' => 'tooltip_bg',
 				'fallback' => $theme === 'dark' ? '#101216' : '#333333'
+			],
+			
+			// Component variables
+			'--mds-menu-bg' => [
+				'option' => $prefix . 'menu_background',
+				'key' => 'menu_bg',
+				'fallback' => $theme === 'dark' ? '#14181c' : '#F4F2F1'
+			],
+			'--mds-menu-text' => [
+				'option' => $prefix . 'menu_text',
+				'key' => 'menu_text',
+				'fallback' => $theme === 'dark' ? '#ffffff' : '#333333'
+			],
+			'--mds-menu-hover-bg' => [
+				'option' => $prefix . 'menu_hover_background',
+				'key' => 'menu_hover_bg',
+				'fallback' => $theme === 'dark' ? '#1d2024' : '#dddddd'
+			],
+			'--mds-input-bg' => [
+				'option' => $prefix . 'input_background',
+				'key' => 'input_bg',
+				'fallback' => $theme === 'dark' ? '#14181c' : '#ffffff'
+			],
+			'--mds-input-border' => [
+				'option' => $prefix . 'input_border',
+				'key' => 'input_border',
+				'fallback' => $theme === 'dark' ? '#666666' : '#cccccc'
+			],
+			'--mds-card-bg' => [
+				'option' => $prefix . 'card_background',
+				'key' => 'card_bg',
+				'fallback' => $theme === 'dark' ? '#14181c' : '#ffffff'
+			],
+			'--mds-shadow' => [
+				'option' => $prefix . 'shadow_color',
+				'key' => 'shadow',
+				'fallback' => $theme === 'dark' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.1)'
 			],
 		];
 	}
@@ -1796,6 +1834,7 @@ class Options {
 	private static function get_theme_variable_defaults(): array {
 		return [
 			'light' => [
+				// Foundation
 				'bg_primary' => '#ffffff',
 				'bg_secondary' => '#f4f2f1',
 				'bg_tertiary' => '#efefef',
@@ -1803,6 +1842,17 @@ class Options {
 				'text_secondary' => '#666666',
 				'border_primary' => '#dddddd',
 				'tooltip_bg' => '#333333',
+				
+				// Components
+				'menu_bg' => '#F4F2F1',
+				'menu_text' => '#333333',
+				'menu_hover_bg' => '#dddddd',
+				'input_bg' => '#ffffff',
+				'input_border' => '#cccccc',
+				'card_bg' => '#ffffff',
+				'shadow' => 'rgba(0, 0, 0, 0.1)',
+				
+				// Buttons
 				'btn_primary_bg' => '#0073aa',
 				'btn_primary_text' => '#ffffff',
 				'btn_secondary_bg' => '#91877D',
@@ -1813,13 +1863,25 @@ class Options {
 				'btn_danger_text' => '#ffffff',
 			],
 			'dark' => [
+				// Foundation
 				'bg_primary' => '#101216',
 				'bg_secondary' => '#14181c',
 				'bg_tertiary' => '#1d2024',
 				'text_primary' => '#ffffff',
 				'text_secondary' => '#cccccc',
-				'border_primary' => '#1a1c21',
+				'border_primary' => '#666666',
 				'tooltip_bg' => '#101216',
+				
+				// Components
+				'menu_bg' => '#14181c',
+				'menu_text' => '#ffffff',
+				'menu_hover_bg' => '#1d2024',
+				'input_bg' => '#14181c',
+				'input_border' => '#666666',
+				'card_bg' => '#14181c',
+				'shadow' => 'rgba(0, 0, 0, 0.5)',
+				
+				// Buttons
 				'btn_primary_bg' => '#0073aa',
 				'btn_primary_text' => '#ffffff',
 				'btn_secondary_bg' => '#6b6155',

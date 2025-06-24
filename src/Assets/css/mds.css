@@ -1066,7 +1066,7 @@ Ads list page
 .mds-container #submit_button1:hover,
 .mds-container #submit_button2:hover,
 .mds-container #reset_button:hover {
-	background-color: var(--mds-btn-secondary-bg, #555);
+	filter: brightness(1.1);
 }
 
 .mds-container .mds-pixel-wrapper {
@@ -1171,8 +1171,8 @@ a.mds-button {
 .mds-container input[type='button']:hover,
 .mds-container input[type='submit']:hover,
 .mds-button:hover {
-	background-color: var(--mds-secondary-color, #000000);
-	color: var(--mds-text-secondary, #ffffff);
+	background-color: var(--mds-btn-secondary-text, #ffffff);
+	color: var(--mds-btn-secondary-bg, #91877D);
 }
 
 .mds-container input[type='button']:active,

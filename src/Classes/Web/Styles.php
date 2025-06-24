@@ -102,18 +102,10 @@ class Styles {
         $background_color = Options::get_option( 'background_color', '#ffffff', true );
         $text_color       = Options::get_option( 'text_color', '#333333', true );
 
-        $button_color            = Options::get_option( 'button-color', '#0073aa', true );
-        $button_text_color       = Options::get_option( 'button_text_color', '#ffffff', true );
-        $button_secondary_bg     = Options::get_option( 'button_secondary_bg', '#91877D', true );
-        $button_secondary_text   = Options::get_option( 'button_secondary_text_color', '#ffffff', true );
+        // Button styling options (theme-independent)
         $button_tertiary_bg      = Options::get_option( 'button_tertiary_bg', '#F6F7F7', true );
         $button_tertiary_text    = Options::get_option( 'button_tertiary_text_color', '#000000', true );
         $button_border_radius    = Options::get_option( 'button_border_radius', '4', true );
-
-        $button_success_bg     = Options::get_option( 'button_success_bg', '#28a745', true );
-        $button_success_text   = Options::get_option( 'button_success_text_color', '#ffffff', true );
-        $button_danger_bg      = Options::get_option( 'button_danger_bg', '#f44336', true );
-        $button_danger_text    = Options::get_option( 'button_danger_text_color', '#ffffff', true );
 
         // Build CSS variables string
         $css_vars = [];
@@ -133,57 +125,10 @@ class Styles {
         $css_vars[] = "    --mds-legacy-background: {$background_color};";
         $css_vars[] = "    --mds-legacy-text: {$text_color};";
 
-        // Button variables
-        $css_vars[] = "    --mds-btn-primary-bg: {$button_color};";
-        $css_vars[] = "    --mds-btn-primary-text: {$button_text_color};";
-        $css_vars[] = "    --mds-btn-secondary-bg: {$button_secondary_bg};";
-        $css_vars[] = "    --mds-btn-secondary-text: {$button_secondary_text};";
+        // Theme-independent button variables
         $css_vars[] = "    --mds-btn-tertiary-bg: {$button_tertiary_bg};";
         $css_vars[] = "    --mds-btn-tertiary-text: {$button_tertiary_text};";
-        $css_vars[] = "    --mds-btn-success-bg: {$button_success_bg};";
-        $css_vars[] = "    --mds-btn-success-text: {$button_success_text};";
-        $css_vars[] = "    --mds-btn-danger-bg: {$button_danger_bg};";
-        $css_vars[] = "    --mds-btn-danger-text: {$button_danger_text};";
         $css_vars[] = "    --mds-btn-border-radius: {$button_border_radius}px;";
-
-        // Additional theme-specific variables
-        if ( $theme_mode === 'dark' ) {
-            // Foundation variables
-            $css_vars[] = "    --mds-bg-primary: #101216;";
-            $css_vars[] = "    --mds-bg-secondary: #14181c;";
-            $css_vars[] = "    --mds-bg-tertiary: #1d2024;";
-            $css_vars[] = "    --mds-text-primary: #ffffff;";
-            $css_vars[] = "    --mds-text-secondary: #cccccc;";
-            $css_vars[] = "    --mds-border-color: #666666;";
-            $css_vars[] = "    --mds-tooltip-bg: #101216;";
-            
-            // Component variables
-            $css_vars[] = "    --mds-menu-bg: var(--mds-bg-secondary);";
-            $css_vars[] = "    --mds-menu-text: var(--mds-text-primary);";
-            $css_vars[] = "    --mds-menu-hover-bg: var(--mds-bg-tertiary);";
-            $css_vars[] = "    --mds-input-bg: var(--mds-bg-secondary);";
-            $css_vars[] = "    --mds-input-border: var(--mds-border-color);";
-            $css_vars[] = "    --mds-card-bg: var(--mds-bg-secondary);";
-            $css_vars[] = "    --mds-shadow: rgba(0, 0, 0, 0.5);";
-        } else {
-            // Foundation variables
-            $css_vars[] = "    --mds-bg-primary: #ffffff;";
-            $css_vars[] = "    --mds-bg-secondary: #f4f2f1;";
-            $css_vars[] = "    --mds-bg-tertiary: #efefef;";
-            $css_vars[] = "    --mds-text-primary: #333333;";
-            $css_vars[] = "    --mds-text-secondary: #666666;";
-            $css_vars[] = "    --mds-border-color: #dddddd;";
-            $css_vars[] = "    --mds-tooltip-bg: #333333;";
-            
-            // Component variables
-            $css_vars[] = "    --mds-menu-bg: #F4F2F1;";
-            $css_vars[] = "    --mds-menu-text: #333333;";
-            $css_vars[] = "    --mds-menu-hover-bg: #dddddd;";
-            $css_vars[] = "    --mds-input-bg: #ffffff;";
-            $css_vars[] = "    --mds-input-border: #cccccc;";
-            $css_vars[] = "    --mds-card-bg: #ffffff;";
-            $css_vars[] = "    --mds-shadow: rgba(0, 0, 0, 0.1);";
-        }
 
         $css = "/* MDS Dynamic Theme Variables */\n:root {\n" . implode( "\n", $css_vars ) . "\n}\n\n";
 
