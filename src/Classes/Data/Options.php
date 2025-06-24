@@ -266,121 +266,19 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching.' ) ),
 
+				// ============================================================================
+				// BACKGROUND COLORS
+				// ============================================================================
 
+				// Main Background Colors
+				Field::make( 'html', MDS_PREFIX . 'main-background-section', Language::get( 'Main Background Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Main Background Colors' ) . '</h3><p>' . Language::get( 'Primary background colors for the main frontend interface including grid display, user pages, and content areas.' ) . '</p>' ),
 
-				// Dark Mode Colors Section
-				Field::make( 'html', MDS_PREFIX . 'dark-mode-colors-section', Language::get( 'Dark Mode Colors' ) )
-					->set_html( '<h3>' . Language::get( 'Dark Mode Color Scheme' ) . '</h3><p>' . Language::get( 'These colors are used when Dark Mode is enabled. They follow accessibility guidelines for proper contrast ratios.' ) . '</p>' )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Dark Mode - Main Background
-				Field::make( 'color', MDS_PREFIX . 'dark_main_background', Language::get( 'Dark Mode - Main Background' ) )
-					->set_default_value( '#101216' )
-					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
-					->set_help_text( Language::get( 'Primary background color for dark mode.' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Dark Mode - Secondary Background
-				Field::make( 'color', MDS_PREFIX . 'dark_secondary_background', Language::get( 'Dark Mode - Secondary Background' ) )
-					->set_default_value( '#14181c' )
-					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
-					->set_help_text( Language::get( 'Secondary background color for cards, menus, etc.' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Dark Mode - Tertiary Background
-				Field::make( 'color', MDS_PREFIX . 'dark_tertiary_background', Language::get( 'Dark Mode - Tertiary Background' ) )
-					->set_default_value( '#1d2024' )
-					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
-					->set_help_text( Language::get( 'Tertiary background for subtle elements.' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Dark Mode - Text Primary
-				Field::make( 'color', MDS_PREFIX . 'dark_text_primary', Language::get( 'Dark Mode - Primary Text' ) )
+				// Light Mode - Main Background
+				Field::make( 'color', MDS_PREFIX . 'background_color', Language::get( 'Light Mode - Primary Background' ) )
 					->set_default_value( '#ffffff' )
-					->set_palette( [ '#ffffff', '#e0e0e0', '#cccccc', '#b0b0b0' ] )
-					->set_help_text( Language::get( 'Primary text color for dark mode (high contrast).' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Dark Mode - Text Secondary
-				Field::make( 'color', MDS_PREFIX . 'dark_text_secondary', Language::get( 'Dark Mode - Secondary Text' ) )
-					->set_default_value( '#cccccc' )
-					->set_palette( [ '#ffffff', '#e0e0e0', '#cccccc', '#b0b0b0' ] )
-					->set_help_text( Language::get( 'Secondary text color for less prominent text.' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Dark Mode - Border Color
-				Field::make( 'color', MDS_PREFIX . 'dark_border_color', Language::get( 'Dark Mode - Border Color' ) )
-					->set_default_value( '#1a1c21' )
-					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
-					->set_help_text( Language::get( 'Border color for cards, inputs, and dividers.' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Dark Mode - Tooltip Background
-				Field::make( 'color', MDS_PREFIX . 'dark_tooltip_background', Language::get( 'Dark Mode - Tooltip Background' ) )
-					->set_default_value( '#101216' )
-					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
-					->set_help_text( Language::get( 'Background color for tooltips and popups.' ) )
-					->set_conditional_logic( [
-						'relation' => 'AND',
-						[
-							'field'   => MDS_PREFIX . 'theme_mode',
-							'compare' => '=',
-							'value'   => 'dark',
-						],
-					] ),
-
-				// Light Mode Colors Section (when dark mode is not selected)
-				Field::make( 'html', MDS_PREFIX . 'light-mode-colors-section', Language::get( 'Light Mode Colors' ) )
-					->set_html( '<h3>' . Language::get( 'Light Mode Color Scheme' ) . '</h3><p>' . Language::get( 'Customize the color scheme for light mode display.' ) . '</p>' )
+					->set_palette( [ '#ffffff' ] )
+					->set_help_text( Language::get( 'Primary background color for the main frontend interface including grid display, user pages, and content areas in light mode.' ) )
 					->set_conditional_logic( [
 						'relation' => 'AND',
 						[
@@ -390,79 +288,495 @@ class Options {
 						],
 					] ),
 
-				// TODO: Dark Mode toggle. Has to recolor all MDS styles to invert them and invert the grid image colors as well.
+				// Dark Mode - Main Background
+				Field::make( 'color', MDS_PREFIX . 'dark_main_background', Language::get( 'Dark Mode - Primary Background' ) )
+					->set_default_value( '#101216' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Primary background color for the main frontend interface including grid display, user pages, and content areas in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
 
-				// Button Color (Primary Background)
-				Field::make( 'color', MDS_PREFIX . 'button-color', Language::get( 'Button Color (Primary)' ) )
-					->set_default_value( '#0073aa' )
-					->set_palette( [ '#0073aa' ] )
-					->set_help_text( Language::get( 'Background color for primary buttons.' ) ),
+				// Secondary Background Colors
+				Field::make( 'html', MDS_PREFIX . 'secondary-background-section', Language::get( 'Secondary Background Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Secondary Background Colors' ) . '</h3><p>' . Language::get( 'Background colors for cards, menus, navigation bars, and elevated interface elements.' ) . '</p>' ),
 
-				// Button Text Color (Primary)
-				Field::make( 'color', MDS_PREFIX . 'button_text_color', Language::get( 'Button Text Color (Primary)' ) )
-					->set_default_value( '#ffffff' ) // Default assumption: white text
-					->set_palette( [ '#ffffff', '#000000' ] )
-					->set_help_text( Language::get( 'Text color for primary buttons.' ) ),
-
-				// Button Secondary Background
-				Field::make( 'color', MDS_PREFIX . 'button_secondary_bg', Language::get( 'Button Secondary Background' ) )
-					->set_default_value( '#91877D' )
-					->set_palette( [ '#91877D' ] )
-					->set_help_text( Language::get( 'Background color for secondary buttons.' ) ),
-
-				// Button Secondary Text
-				Field::make( 'color', MDS_PREFIX . 'button_secondary_text', Language::get( 'Button Secondary Text' ) )
-					->set_default_value( '#ffffff' ) // Default from mds.css for .btn-secondary
-					->set_palette( [ '#ffffff', '#000000' ] )
-					->set_help_text( Language::get( 'Text color for secondary buttons.' ) ),
-
-				// Button Success Background
-				Field::make( 'color', MDS_PREFIX . 'button_success_bg', Language::get( 'Button Success Background' ) )
-					->set_default_value( '#28a745' )
-					->set_palette( [ '#28a745' ] )
-					->set_help_text( Language::get( 'Background color for success buttons.' ) ),
-
-				// Button Success Text
-				Field::make( 'color', MDS_PREFIX . 'button_success_text', Language::get( 'Button Success Text' ) )
-					->set_default_value( '#ffffff' ) // Default from mds.css for .btn-success
-					->set_palette( [ '#ffffff', '#000000' ] )
-					->set_help_text( Language::get( 'Text color for success buttons.' ) ),
-
-				// Button Danger Background
-				Field::make( 'color', MDS_PREFIX . 'button_danger_bg', Language::get( 'Button Danger Background' ) )
-					->set_default_value( '#f44336' )
-					->set_palette( [ '#f44336' ] )
-					->set_help_text( Language::get( 'Background color for danger/delete buttons.' ) ),
-
-				// Button Danger Text
-				Field::make( 'color', MDS_PREFIX . 'button_danger_text', Language::get( 'Button Danger Text' ) )
-					->set_default_value( '#ffffff' ) // Default from mds.css for .btn-danger
-					->set_palette( [ '#ffffff', '#000000' ] )
-					->set_help_text( Language::get( 'Text color for danger/delete buttons.' ) ),
-
-				// Primary Color
-				Field::make( 'color', MDS_PREFIX . 'primary_color', Language::get( 'Primary Color' ) )
+				// Light Mode - Secondary Background (using existing primary_color as base)
+				Field::make( 'color', MDS_PREFIX . 'primary_color', Language::get( 'Light Mode - Secondary Background' ) )
 					->set_default_value( '#ff0000' )
 					->set_palette( [ '#ff0000' ] )
-					->set_help_text( Language::get( 'Primary accent color used for highlights, links, etc.' ) ),
+					->set_help_text( Language::get( 'Secondary background color for cards, menus, navigation bars, and elevated interface elements in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
 
-				// Secondary Color
-				Field::make( 'color', MDS_PREFIX . 'secondary_color', Language::get( 'Secondary Color' ) )
-					->set_default_value( '#000000' )
-					->set_palette( [ '#000000' ] )
-					->set_help_text( Language::get( 'Secondary accent color.' ) ),
+				// Dark Mode - Secondary Background
+				Field::make( 'color', MDS_PREFIX . 'dark_secondary_background', Language::get( 'Dark Mode - Secondary Background' ) )
+					->set_default_value( '#14181c' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Secondary background color for cards, menus, navigation bars, and elevated interface elements in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
 
-				// Background Color
-				Field::make( 'color', MDS_PREFIX . 'background_color', Language::get( 'Background Color' ) )
-					->set_default_value( '#ffffff' )
-					->set_palette( [ '#ffffff' ] )
-					->set_help_text( Language::get( 'Main background color for admin pages.' ) ),
+				// Tertiary Background Colors
+				Field::make( 'html', MDS_PREFIX . 'tertiary-background-section', Language::get( 'Tertiary Background Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Tertiary Background Colors' ) . '</h3><p>' . Language::get( 'Background colors for subtle overlays, hover states, and supporting interface elements.' ) . '</p>' ),
 
-				// Text Color
-				Field::make( 'color', MDS_PREFIX . 'text_color', Language::get( 'Text Color' ) )
+				// Light Mode - Tertiary Background
+				Field::make( 'color', MDS_PREFIX . 'light_tertiary_background', Language::get( 'Light Mode - Tertiary Background' ) )
+					->set_default_value( '#efefef' )
+					->set_palette( [ '#efefef', '#f0f0f0', '#f5f5f5', '#f8f8f8' ] )
+					->set_help_text( Language::get( 'Tertiary background color for subtle overlays, hover states, and supporting interface elements in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Tertiary Background
+				Field::make( 'color', MDS_PREFIX . 'dark_tertiary_background', Language::get( 'Dark Mode - Tertiary Background' ) )
+					->set_default_value( '#1d2024' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Tertiary background color for subtle overlays, hover states, and supporting interface elements in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// ============================================================================
+				// TEXT COLORS
+				// ============================================================================
+
+				// Primary Text Colors
+				Field::make( 'html', MDS_PREFIX . 'primary-text-section', Language::get( 'Primary Text Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Primary Text Colors' ) . '</h3><p>' . Language::get( 'Primary text colors for all content, headings, and interface labels with high contrast readability.' ) . '</p>' ),
+
+				// Light Mode - Primary Text
+				Field::make( 'color', MDS_PREFIX . 'text_color', Language::get( 'Light Mode - Primary Text' ) )
 					->set_default_value( '#333333' )
 					->set_palette( [ '#333333' ] )
-					->set_help_text( Language::get( 'Default text color.' ) ),
+					->set_help_text( Language::get( 'Primary text color for all content, headings, and interface labels throughout the frontend in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Primary Text
+				Field::make( 'color', MDS_PREFIX . 'dark_text_primary', Language::get( 'Dark Mode - Primary Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#e0e0e0', '#cccccc', '#b0b0b0' ] )
+					->set_help_text( Language::get( 'Primary text color for all content, headings, and interface labels throughout the frontend in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Secondary Text Colors
+				Field::make( 'html', MDS_PREFIX . 'secondary-text-section', Language::get( 'Secondary Text Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Secondary Text Colors' ) . '</h3><p>' . Language::get( 'Text colors for supporting information, metadata, and less prominent interface elements.' ) . '</p>' ),
+
+				// Light Mode - Secondary Text
+				Field::make( 'color', MDS_PREFIX . 'light_text_secondary', Language::get( 'Light Mode - Secondary Text' ) )
+					->set_default_value( '#666666' )
+					->set_palette( [ '#666666', '#999999', '#777777' ] )
+					->set_help_text( Language::get( 'Secondary text color for supporting information, metadata, and less prominent interface elements in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Secondary Text
+				Field::make( 'color', MDS_PREFIX . 'dark_text_secondary', Language::get( 'Dark Mode - Secondary Text' ) )
+					->set_default_value( '#cccccc' )
+					->set_palette( [ '#ffffff', '#e0e0e0', '#cccccc', '#b0b0b0' ] )
+					->set_help_text( Language::get( 'Secondary text color for supporting information, metadata, and less prominent interface elements in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Accent Colors
+				Field::make( 'html', MDS_PREFIX . 'accent-colors-section', Language::get( 'Accent Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Accent Colors' ) . '</h3><p>' . Language::get( 'Accent colors for highlights, links, and special emphasis elements.' ) . '</p>' ),
+
+				// Light Mode - Secondary Accent Color
+				Field::make( 'color', MDS_PREFIX . 'secondary_color', Language::get( 'Light Mode - Secondary Accent' ) )
+					->set_default_value( '#000000' )
+					->set_palette( [ '#000000' ] )
+					->set_help_text( Language::get( 'Secondary accent color for highlights, special emphasis, and decorative elements in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Secondary Accent Color
+				Field::make( 'color', MDS_PREFIX . 'dark_secondary_accent', Language::get( 'Dark Mode - Secondary Accent' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#e0e0e0', '#cccccc', '#b0b0b0', '#999999' ] )
+					->set_help_text( Language::get( 'Secondary accent color for highlights, special emphasis, and decorative elements in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// ============================================================================
+				// BUTTON COLORS
+				// ============================================================================
+
+				// Primary Button Colors
+				Field::make( 'html', MDS_PREFIX . 'primary-button-section', Language::get( 'Primary Button Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Primary Button Colors' ) . '</h3><p>' . Language::get( 'Colors for primary action buttons including submit, login, and main navigation actions.' ) . '</p>' ),
+
+				// Light Mode - Primary Button Background
+				Field::make( 'color', MDS_PREFIX . 'button-color', Language::get( 'Light Mode - Primary Button Background' ) )
+					->set_default_value( '#0073aa' )
+					->set_palette( [ '#0073aa' ] )
+					->set_help_text( Language::get( 'Background color for primary action buttons including submit, login, and main navigation actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Light Mode - Primary Button Text
+				Field::make( 'color', MDS_PREFIX . 'button_text_color', Language::get( 'Light Mode - Primary Button Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for primary action buttons including submit, login, and main navigation actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Primary Button Text
+				Field::make( 'color', MDS_PREFIX . 'dark_button_primary_text', Language::get( 'Dark Mode - Primary Button Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#000000', '#e0e0e0' ] )
+					->set_help_text( Language::get( 'Text color for primary action buttons including submit, login, and main navigation actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Primary Button Background
+				Field::make( 'color', MDS_PREFIX . 'dark_button_primary_bg', Language::get( 'Dark Mode - Primary Button Background' ) )
+					->set_default_value( '#0073aa' )
+					->set_palette( [ '#0073aa', '#005a87', '#004666', '#003344', '#002233' ] )
+					->set_help_text( Language::get( 'Background color for primary action buttons including submit, login, and main navigation actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Secondary Button Colors
+				Field::make( 'html', MDS_PREFIX . 'secondary-button-section', Language::get( 'Secondary Button Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Secondary Button Colors' ) . '</h3><p>' . Language::get( 'Colors for secondary action buttons including edit, manage, and alternative actions.' ) . '</p>' ),
+
+				// Light Mode - Secondary Button Background
+				Field::make( 'color', MDS_PREFIX . 'button_secondary_bg', Language::get( 'Light Mode - Secondary Button Background' ) )
+					->set_default_value( '#91877D' )
+					->set_palette( [ '#91877D' ] )
+					->set_help_text( Language::get( 'Background color for secondary action buttons including edit, manage, and alternative actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Light Mode - Secondary Button Text
+				Field::make( 'color', MDS_PREFIX . 'button_secondary_text', Language::get( 'Light Mode - Secondary Button Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for secondary action buttons including edit, manage, and alternative actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Secondary Button Background
+				Field::make( 'color', MDS_PREFIX . 'dark_button_secondary_bg', Language::get( 'Dark Mode - Secondary Button Background' ) )
+					->set_default_value( '#6b6155' )
+					->set_palette( [ '#6b6155', '#5a5045', '#494035', '#383025', '#272015' ] )
+					->set_help_text( Language::get( 'Background color for secondary action buttons including edit, manage, and alternative actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Secondary Button Text
+				Field::make( 'color', MDS_PREFIX . 'dark_button_secondary_text', Language::get( 'Dark Mode - Secondary Button Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#000000', '#e0e0e0', '#cccccc', '#b0b0b0' ] )
+					->set_help_text( Language::get( 'Text color for secondary action buttons including edit, manage, and alternative actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Success Button Colors
+				Field::make( 'html', MDS_PREFIX . 'success-button-section', Language::get( 'Success Button Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Success Button Colors' ) . '</h3><p>' . Language::get( 'Colors for success and confirmation buttons including confirm, upload, pay, and complete actions.' ) . '</p>' ),
+
+				// Light Mode - Success Button Background
+				Field::make( 'color', MDS_PREFIX . 'button_success_bg', Language::get( 'Light Mode - Success Button Background' ) )
+					->set_default_value( '#28a745' )
+					->set_palette( [ '#28a745' ] )
+					->set_help_text( Language::get( 'Background color for success and confirmation buttons including confirm, upload, pay, and complete actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Light Mode - Success Button Text
+				Field::make( 'color', MDS_PREFIX . 'button_success_text', Language::get( 'Light Mode - Success Button Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for success and confirmation buttons including confirm, upload, pay, and complete actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Success Button Background
+				Field::make( 'color', MDS_PREFIX . 'dark_button_success_bg', Language::get( 'Dark Mode - Success Button Background' ) )
+					->set_default_value( '#4ade80' )
+					->set_palette( [ '#4ade80', '#22c55e', '#16a34a', '#15803d' ] )
+					->set_help_text( Language::get( 'Background color for success and confirmation buttons including confirm, upload, pay, and complete actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Success Button Text
+				Field::make( 'color', MDS_PREFIX . 'dark_button_success_text', Language::get( 'Dark Mode - Success Button Text' ) )
+					->set_default_value( '#000000' )
+					->set_palette( [ '#000000', '#ffffff', '#1f2937' ] )
+					->set_help_text( Language::get( 'Text color for success and confirmation buttons including confirm, upload, pay, and complete actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Danger Button Colors
+				Field::make( 'html', MDS_PREFIX . 'danger-button-section', Language::get( 'Danger Button Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Danger Button Colors' ) . '</h3><p>' . Language::get( 'Colors for danger and destructive buttons including cancel, delete, and reset actions.' ) . '</p>' ),
+
+				// Light Mode - Danger Button Background
+				Field::make( 'color', MDS_PREFIX . 'button_danger_bg', Language::get( 'Light Mode - Danger Button Background' ) )
+					->set_default_value( '#f44336' )
+					->set_palette( [ '#f44336' ] )
+					->set_help_text( Language::get( 'Background color for danger and destructive buttons including cancel, delete, and reset actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Light Mode - Danger Button Text
+				Field::make( 'color', MDS_PREFIX . 'button_danger_text', Language::get( 'Light Mode - Danger Button Text' ) )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#000000' ] )
+					->set_help_text( Language::get( 'Text color for danger and destructive buttons including cancel, delete, and reset actions in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Danger Button Background
+				Field::make( 'color', MDS_PREFIX . 'dark_button_danger_bg', Language::get( 'Dark Mode - Danger Button Background' ) )
+					->set_default_value( '#f87171' )
+					->set_palette( [ '#f87171', '#ef4444', '#dc2626', '#b91c1c' ] )
+					->set_help_text( Language::get( 'Background color for danger and destructive buttons including cancel, delete, and reset actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Dark Mode - Danger Button Text
+				Field::make( 'color', MDS_PREFIX . 'dark_button_danger_text', Language::get( 'Dark Mode - Danger Button Text' ) )
+					->set_default_value( '#000000' )
+					->set_palette( [ '#000000', '#ffffff', '#1f2937' ] )
+					->set_help_text( Language::get( 'Text color for danger and destructive buttons including cancel, delete, and reset actions in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// ============================================================================
+				// INTERFACE ELEMENTS
+				// ============================================================================
+
+				// Border Colors
+				Field::make( 'html', MDS_PREFIX . 'border-colors-section', Language::get( 'Border Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Border Colors' ) . '</h3><p>' . Language::get( 'Colors for borders, dividers, input outlines, and interface element separators.' ) . '</p>' ),
+
+				// Light Mode - Border Color
+				Field::make( 'color', MDS_PREFIX . 'light_border_color', Language::get( 'Light Mode - Border Color' ) )
+					->set_default_value( '#dddddd' )
+					->set_palette( [ '#dddddd', '#e0e0e0', '#d0d0d0', '#cccccc' ] )
+					->set_help_text( Language::get( 'Border color for form inputs, cards, dividers, and interface element outlines in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Border Color
+				Field::make( 'color', MDS_PREFIX . 'dark_border_color', Language::get( 'Dark Mode - Border Color' ) )
+					->set_default_value( '#1a1c21' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Border color for form inputs, cards, dividers, and interface element outlines in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
+
+				// Tooltip Colors
+				Field::make( 'html', MDS_PREFIX . 'tooltip-colors-section', Language::get( 'Tooltip Colors' ) )
+					->set_html( '<h3>' . Language::get( 'Tooltip Colors' ) . '</h3><p>' . Language::get( 'Colors for tooltips, popups, informational overlays, and help elements.' ) . '</p>' ),
+
+				// Light Mode - Tooltip Background
+				Field::make( 'color', MDS_PREFIX . 'light_tooltip_background', Language::get( 'Light Mode - Tooltip Background' ) )
+					->set_default_value( '#333333' )
+					->set_palette( [ '#333333', '#444444', '#555555', '#222222' ] )
+					->set_help_text( Language::get( 'Background color for tooltips, popups, informational overlays, and help elements in light mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'light',
+						],
+					] ),
+
+				// Dark Mode - Tooltip Background
+				Field::make( 'color', MDS_PREFIX . 'dark_tooltip_background', Language::get( 'Dark Mode - Tooltip Background' ) )
+					->set_default_value( '#101216' )
+					->set_palette( [ '#101216', '#14181c', '#1d2024', '#181a20', '#1a1c21' ] )
+					->set_help_text( Language::get( 'Background color for tooltips, popups, informational overlays, and help elements in dark mode.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'theme_mode',
+							'compare' => '=',
+							'value'   => 'dark',
+						],
+					] ),
 
 				// Custom CSS
 				Field::make( 'textarea', MDS_PREFIX . 'custom-css', Language::get( 'Custom CSS' ) )
@@ -1182,33 +1496,8 @@ class Options {
 	public static function backup_current_theme_settings( string $theme ): bool {
 		$backup_key = 'theme_backup_' . $theme . '_' . time();
 		
-		$settings_to_backup = [
-			'primary_color',
-			'secondary_color', 
-			'background_color',
-			'text_color',
-			'button-color',
-			'button_text_color',
-			'button_secondary_bg',
-			'button_secondary_text',
-			'button_success_bg',
-			'button_success_text',
-			'button_danger_bg',
-			'button_danger_text'
-		];
-
-		// Add dark mode specific settings if backing up dark theme
-		if ( $theme === 'dark' ) {
-			$settings_to_backup = array_merge( $settings_to_backup, [
-				'dark_main_background',
-				'dark_secondary_background',
-				'dark_tertiary_background',
-				'dark_text_primary',
-				'dark_text_secondary',
-				'dark_border_color',
-				'dark_tooltip_background'
-			] );
-		}
+		// Get comprehensive list of variables to backup using unified system
+		$settings_to_backup = self::get_theme_backup_variables( $theme );
 
 		$backup = [];
 		foreach ( $settings_to_backup as $setting ) {
@@ -1216,6 +1505,71 @@ class Options {
 		}
 
 		return update_option( $backup_key, $backup );
+	}
+
+	/**
+	 * Get complete list of variables to backup for theme
+	 *
+	 * @param string $theme
+	 * @return array
+	 */
+	private static function get_theme_backup_variables( string $theme ): array {
+		// Shared variables (backed up for both themes)
+		$shared_variables = [
+			'primary_color',
+			'secondary_color',
+		];
+
+		// Dark mode accent variables (backed up separately)
+		if ( $theme === 'dark' ) {
+			$shared_variables[] = 'dark_secondary_accent';
+		}
+
+		// Theme-specific variables
+		if ( $theme === 'dark' ) {
+			$theme_variables = [
+				// Dark mode foundation variables
+				'dark_main_background',
+				'dark_secondary_background',
+				'dark_tertiary_background',
+				'dark_text_primary',
+				'dark_text_secondary',
+				'dark_border_color',
+				'dark_tooltip_background',
+				
+				// Dark mode button variables
+				'dark_button_primary_bg',
+				'dark_button_primary_text',
+				'dark_button_secondary_bg',
+				'dark_button_secondary_text',
+				'dark_button_success_bg',
+				'dark_button_success_text',
+				'dark_button_danger_bg',
+				'dark_button_danger_text',
+			];
+		} else {
+			$theme_variables = [
+				// Light mode foundation variables
+				'background_color',
+				'text_color',
+				'light_text_secondary',
+				'light_tertiary_background',
+				'light_tooltip_background',
+				'light_border_color',
+				
+				// Light mode button variables
+				'button-color',
+				'button_text_color',
+				'button_secondary_bg',
+				'button_secondary_text',
+				'button_success_bg',
+				'button_success_text',
+				'button_danger_bg',
+				'button_danger_text',
+			];
+		}
+
+		return array_merge( $shared_variables, $theme_variables );
 	}
 
 	/**
@@ -1238,16 +1592,33 @@ class Options {
 	 * @return bool
 	 */
 	public static function apply_dark_theme_colors(): bool {
-		$dark_colors = [
-			'background_color' => self::get_option( 'dark_main_background', '#101216' ),
-			'text_color' => self::get_option( 'dark_text_primary', '#ffffff' ),
-			'secondary_color' => self::get_option( 'dark_secondary_background', '#14181c' ),
-			'primary_color' => '#4a9eff', // Adjusted blue for dark mode visibility
-			'button_secondary_bg' => self::get_option( 'dark_secondary_background', '#14181c' ),
-			'button_secondary_text' => self::get_option( 'dark_text_primary', '#ffffff' ),
+		$defaults = self::get_theme_variable_defaults();
+		$dark_defaults = $defaults['dark'];
+		
+		// Foundation variables (mapped to shared options for compatibility)
+		$foundation_colors = [
+			'background_color' => self::get_option( 'dark_main_background', $dark_defaults['bg_primary'] ),
+			'text_color' => self::get_option( 'dark_text_primary', $dark_defaults['text_primary'] ),
+			'secondary_color' => self::get_option( 'dark_secondary_accent', '#ffffff' ),
+			'primary_color' => $dark_defaults['btn_primary_bg'], // Dark mode optimized blue
 		];
 
-		foreach ( $dark_colors as $option => $value ) {
+		// Button variables (complete set with new dark mode fields)
+		$button_colors = [
+			'button-color' => self::get_option( 'dark_button_primary_bg', $dark_defaults['btn_primary_bg'] ),
+			'button_text_color' => self::get_option( 'dark_button_primary_text', $dark_defaults['btn_primary_text'] ),
+			'button_secondary_bg' => self::get_option( 'dark_button_secondary_bg', $dark_defaults['btn_secondary_bg'] ),
+			'button_secondary_text' => self::get_option( 'dark_button_secondary_text', $dark_defaults['btn_secondary_text'] ),
+			'button_success_bg' => self::get_option( 'dark_button_success_bg', $dark_defaults['btn_success_bg'] ),
+			'button_success_text' => self::get_option( 'dark_button_success_text', $dark_defaults['btn_success_text'] ),
+			'button_danger_bg' => self::get_option( 'dark_button_danger_bg', $dark_defaults['btn_danger_bg'] ),
+			'button_danger_text' => self::get_option( 'dark_button_danger_text', $dark_defaults['btn_danger_text'] ),
+		];
+
+		// Apply all color updates atomically
+		$all_colors = array_merge( $foundation_colors, $button_colors );
+		
+		foreach ( $all_colors as $option => $value ) {
 			if ( ! self::update_option( $option, $value ) ) {
 				return false;
 			}
@@ -1262,16 +1633,33 @@ class Options {
 	 * @return bool
 	 */
 	public static function apply_light_theme_colors(): bool {
-		$light_colors = [
-			'background_color' => '#ffffff',
-			'text_color' => '#333333',
-			'secondary_color' => '#000000',
-			'primary_color' => '#ff0000',
-			'button_secondary_bg' => '#91877D',
-			'button_secondary_text' => '#ffffff',
+		$defaults = self::get_theme_variable_defaults();
+		$light_defaults = $defaults['light'];
+		
+		// Foundation variables (using light mode defaults)
+		$foundation_colors = [
+			'background_color' => $light_defaults['bg_primary'],
+			'text_color' => $light_defaults['text_primary'],
+			'secondary_color' => '#000000', // Keep existing secondary color logic
+			'primary_color' => '#ff0000', // Keep existing primary color logic
 		];
 
-		foreach ( $light_colors as $option => $value ) {
+		// Button variables (complete set with light mode defaults)
+		$button_colors = [
+			'button-color' => $light_defaults['btn_primary_bg'],
+			'button_text_color' => $light_defaults['btn_primary_text'],
+			'button_secondary_bg' => $light_defaults['btn_secondary_bg'],
+			'button_secondary_text' => $light_defaults['btn_secondary_text'],
+			'button_success_bg' => $light_defaults['btn_success_bg'],
+			'button_success_text' => $light_defaults['btn_success_text'],
+			'button_danger_bg' => $light_defaults['btn_danger_bg'],
+			'button_danger_text' => $light_defaults['btn_danger_text'],
+		];
+
+		// Apply all color updates atomically
+		$all_colors = array_merge( $foundation_colors, $button_colors );
+		
+		foreach ( $all_colors as $option => $value ) {
 			if ( ! self::update_option( $option, $value ) ) {
 				return false;
 			}
@@ -1287,37 +1675,161 @@ class Options {
 	 */
 	public static function get_theme_css_variables(): array {
 		$theme = self::get_option( 'theme_mode', 'light' );
+		$defaults = self::get_theme_variable_defaults();
 		
 		$variables = [
-			// Common variables
+			// Common variables (shared across themes)
 			'--mds-theme-mode' => $theme,
 			'--mds-primary-color' => self::get_option( 'primary_color', '#ff0000' ),
-			'--mds-secondary-color' => self::get_option( 'secondary_color', '#000000' ),
+			'--mds-secondary-color' => $theme === 'dark' 
+				? self::get_option( 'dark_secondary_accent', '#ffffff' )
+				: self::get_option( 'secondary_color', '#000000' ),
 		];
 
-		if ( $theme === 'dark' ) {
-			$variables = array_merge( $variables, [
-				'--mds-bg-primary' => self::get_option( 'dark_main_background', '#101216' ),
-				'--mds-bg-secondary' => self::get_option( 'dark_secondary_background', '#14181c' ),
-				'--mds-bg-tertiary' => self::get_option( 'dark_tertiary_background', '#1d2024' ),
-				'--mds-text-primary' => self::get_option( 'dark_text_primary', '#ffffff' ),
-				'--mds-text-secondary' => self::get_option( 'dark_text_secondary', '#cccccc' ),
-				'--mds-border-color' => self::get_option( 'dark_border_color', '#1a1c21' ),
-				'--mds-tooltip-bg' => self::get_option( 'dark_tooltip_background', '#101216' ),
-			] );
-		} else {
-			$variables = array_merge( $variables, [
-				'--mds-bg-primary' => self::get_option( 'background_color', '#ffffff' ),
-				'--mds-bg-secondary' => '#f4f2f1',
-				'--mds-bg-tertiary' => '#efefef',
-				'--mds-text-primary' => self::get_option( 'text_color', '#333333' ),
-				'--mds-text-secondary' => '#666666',
-				'--mds-border-color' => '#dddddd',
-				'--mds-tooltip-bg' => '#333333',
-			] );
+		// Get theme-specific variable mappings
+		$theme_variables = self::get_theme_variable_mappings( $theme );
+		
+		// Generate CSS variables using unified approach
+		foreach ( $theme_variables as $css_var => $config ) {
+			$option_name = $config['option'];
+			$default_value = $defaults[ $theme ][ $config['key'] ] ?? $config['fallback'];
+			$variables[ $css_var ] = self::get_option( $option_name, $default_value );
 		}
 
+		// Add button variables using unified approach
+		$button_variables = self::get_button_css_variables( $theme );
+		$variables = array_merge( $variables, $button_variables );
+
 		return $variables;
+	}
+
+	/**
+	 * Get theme variable mappings for CSS generation
+	 *
+	 * @param string $theme
+	 * @return array
+	 */
+	private static function get_theme_variable_mappings( string $theme ): array {
+		$prefix = $theme === 'dark' ? 'dark_' : 'light_';
+		$bg_primary_option = $theme === 'dark' ? 'dark_main_background' : 'background_color';
+		$text_primary_option = $theme === 'dark' ? 'dark_text_primary' : 'text_color';
+		
+		return [
+			'--mds-bg-primary' => [
+				'option' => $bg_primary_option,
+				'key' => 'bg_primary',
+				'fallback' => $theme === 'dark' ? '#101216' : '#ffffff'
+			],
+			'--mds-bg-secondary' => [
+				'option' => $theme === 'dark' ? 'dark_secondary_background' : 'background_color',
+				'key' => 'bg_secondary', 
+				'fallback' => $theme === 'dark' ? '#14181c' : '#f4f2f1'
+			],
+			'--mds-bg-tertiary' => [
+				'option' => $prefix . 'tertiary_background',
+				'key' => 'bg_tertiary',
+				'fallback' => $theme === 'dark' ? '#1d2024' : '#efefef'
+			],
+			'--mds-text-primary' => [
+				'option' => $text_primary_option,
+				'key' => 'text_primary',
+				'fallback' => $theme === 'dark' ? '#ffffff' : '#333333'
+			],
+			'--mds-text-secondary' => [
+				'option' => $prefix . 'text_secondary',
+				'key' => 'text_secondary',
+				'fallback' => $theme === 'dark' ? '#cccccc' : '#666666'
+			],
+			'--mds-border-color' => [
+				'option' => $prefix . 'border_color',
+				'key' => 'border_primary',
+				'fallback' => $theme === 'dark' ? '#666666' : '#dddddd'
+			],
+			'--mds-tooltip-bg' => [
+				'option' => $prefix . 'tooltip_background',
+				'key' => 'tooltip_bg',
+				'fallback' => $theme === 'dark' ? '#101216' : '#333333'
+			],
+		];
+	}
+
+	/**
+	 * Get button CSS variables for theme
+	 *
+	 * @param string $theme
+	 * @return array
+	 */
+	private static function get_button_css_variables( string $theme ): array {
+		$defaults = self::get_theme_variable_defaults();
+		$theme_defaults = $defaults[ $theme ];
+		
+		if ( $theme === 'dark' ) {
+			return [
+				'--mds-btn-primary-bg' => self::get_option( 'dark_button_primary_bg', $theme_defaults['btn_primary_bg'] ),
+				'--mds-btn-primary-text' => self::get_option( 'dark_button_primary_text', $theme_defaults['btn_primary_text'] ),
+				'--mds-btn-secondary-bg' => self::get_option( 'dark_button_secondary_bg', $theme_defaults['btn_secondary_bg'] ),
+				'--mds-btn-secondary-text' => self::get_option( 'dark_button_secondary_text', $theme_defaults['btn_secondary_text'] ),
+				'--mds-btn-success-bg' => self::get_option( 'dark_button_success_bg', $theme_defaults['btn_success_bg'] ),
+				'--mds-btn-success-text' => self::get_option( 'dark_button_success_text', $theme_defaults['btn_success_text'] ),
+				'--mds-btn-danger-bg' => self::get_option( 'dark_button_danger_bg', $theme_defaults['btn_danger_bg'] ),
+				'--mds-btn-danger-text' => self::get_option( 'dark_button_danger_text', $theme_defaults['btn_danger_text'] ),
+			];
+		} else {
+			return [
+				'--mds-btn-primary-bg' => self::get_option( 'button-color', $theme_defaults['btn_primary_bg'] ),
+				'--mds-btn-primary-text' => self::get_option( 'button_text_color', $theme_defaults['btn_primary_text'] ),
+				'--mds-btn-secondary-bg' => self::get_option( 'button_secondary_bg', $theme_defaults['btn_secondary_bg'] ),
+				'--mds-btn-secondary-text' => self::get_option( 'button_secondary_text', $theme_defaults['btn_secondary_text'] ),
+				'--mds-btn-success-bg' => self::get_option( 'button_success_bg', $theme_defaults['btn_success_bg'] ),
+				'--mds-btn-success-text' => self::get_option( 'button_success_text', $theme_defaults['btn_success_text'] ),
+				'--mds-btn-danger-bg' => self::get_option( 'button_danger_bg', $theme_defaults['btn_danger_bg'] ),
+				'--mds-btn-danger-text' => self::get_option( 'button_danger_text', $theme_defaults['btn_danger_text'] ),
+			];
+		}
+	}
+
+	/**
+	 * Get default values for theme variables
+	 *
+	 * @return array
+	 */
+	private static function get_theme_variable_defaults(): array {
+		return [
+			'light' => [
+				'bg_primary' => '#ffffff',
+				'bg_secondary' => '#f4f2f1',
+				'bg_tertiary' => '#efefef',
+				'text_primary' => '#333333',
+				'text_secondary' => '#666666',
+				'border_primary' => '#dddddd',
+				'tooltip_bg' => '#333333',
+				'btn_primary_bg' => '#0073aa',
+				'btn_primary_text' => '#ffffff',
+				'btn_secondary_bg' => '#91877D',
+				'btn_secondary_text' => '#ffffff',
+				'btn_success_bg' => '#28a745',
+				'btn_success_text' => '#ffffff',
+				'btn_danger_bg' => '#f44336',
+				'btn_danger_text' => '#ffffff',
+			],
+			'dark' => [
+				'bg_primary' => '#101216',
+				'bg_secondary' => '#14181c',
+				'bg_tertiary' => '#1d2024',
+				'text_primary' => '#ffffff',
+				'text_secondary' => '#cccccc',
+				'border_primary' => '#1a1c21',
+				'tooltip_bg' => '#101216',
+				'btn_primary_bg' => '#0073aa',
+				'btn_primary_text' => '#ffffff',
+				'btn_secondary_bg' => '#6b6155',
+				'btn_secondary_text' => '#ffffff',
+				'btn_success_bg' => '#4ade80',
+				'btn_success_text' => '#000000',
+				'btn_danger_bg' => '#f87171',
+				'btn_danger_text' => '#000000',
+			]
+		];
 	}
 
 	/**
