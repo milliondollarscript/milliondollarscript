@@ -150,6 +150,9 @@ class Users {
 	 * Change logo on login page.
 	 */
 	public static function login_head(): void {
+		echo '<style>';
+		
+		// Handle custom logo
 		$login_header_image = Options::get_option( 'login-header-image' );
 		if ( empty( $login_header_image ) ) {
 			$logo = wp_get_attachment_url( get_theme_mod( 'custom_logo' ) );
@@ -161,25 +164,102 @@ class Users {
 		}
 
 		$show_text = '';
-		if ( empty( $logo ) && Options::get_option( 'login-header-text', 'no' ) != '' ) {
+		if ( empty( $logo ) && Options::get_option( 'login-header-text', get_bloginfo( 'name' ) ) != '' ) {
 			$show_text = 'text-indent: 0;';
 		}
 
+		// Base login page styles
 		echo '
-	<style>
-    	.login h1 a {
-    		background-image:url(' . esc_url( $logo ) . ') !important;
-    		background-size: contain;
-    		margin:0 auto;
-    		width:auto;
-    		height:100px;
-    		' . $show_text . '
-    	}
-    	#backtoblog {
-    		display:none;
-    	}
-    </style>
-';
+		.login h1 a {
+			background-image: url(' . esc_url( $logo ) . ') !important;
+			background-size: contain;
+			margin: 0 auto;
+			width: auto;
+			max-height: 100px;
+			' . $show_text . '
+		}
+		#backtoblog {
+			display: none;
+		}';
+
+		// Check if we're in dark mode using the correct option name
+		$theme_mode = Options::get_option( 'theme_mode', 'light' );
+		
+		if ( $theme_mode === 'dark' ) {
+			// Get the plugin's configured dark mode colors with sensible fallbacks
+			$dark_main_bg = Options::get_option( 'dark_main_background', '#101216' );
+			$dark_secondary_bg = Options::get_option( 'dark_secondary_background', '#14181c' );
+			$dark_tertiary_bg = Options::get_option( 'dark_tertiary_background', '#1d2024' );
+			$dark_text_primary = Options::get_option( 'dark_text_primary', '#ffffff' );
+			$dark_button_primary_bg = Options::get_option( 'dark_button_primary_bg', '#0073aa' );
+			$dark_button_primary_text = Options::get_option( 'dark_button_primary_text', '#ffffff' );
+			$dark_button_danger_bg = Options::get_option( 'dark_button_danger_bg', '#f87171' );
+			$dark_border_color = Options::get_option( 'dark_border_color', '#666666' );
+
+			// Fallback to hardcoded values if options are empty (theme not configured yet)
+			if ( empty( $dark_main_bg ) ) $dark_main_bg = '#1a1a1a';
+			if ( empty( $dark_secondary_bg ) ) $dark_secondary_bg = '#2d2d2d';
+			if ( empty( $dark_tertiary_bg ) ) $dark_tertiary_bg = '#3d3d3d';
+			if ( empty( $dark_text_primary ) ) $dark_text_primary = '#ffffff';
+			if ( empty( $dark_button_primary_bg ) ) $dark_button_primary_bg = '#0073aa';
+			if ( empty( $dark_button_primary_text ) ) $dark_button_primary_text = '#ffffff';
+			if ( empty( $dark_button_danger_bg ) ) $dark_button_danger_bg = '#dc3232';
+			if ( empty( $dark_border_color ) ) $dark_border_color = '#555555';
+
+			echo '
+			/* Dark mode support for login page */
+			body.login {
+				background-color: ' . esc_attr( $dark_main_bg ) . ' !important;
+				color: ' . esc_attr( $dark_text_primary ) . ' !important;
+			}
+			.login form {
+				background-color: ' . esc_attr( $dark_secondary_bg ) . ' !important;
+				border: 1px solid ' . esc_attr( $dark_border_color ) . ' !important;
+			}
+			.login form input[type="text"],
+			.login form input[type="password"] {
+				background-color: ' . esc_attr( $dark_tertiary_bg ) . ' !important;
+				border: 1px solid ' . esc_attr( $dark_border_color ) . ' !important;
+				color: ' . esc_attr( $dark_text_primary ) . ' !important;
+			}
+			.login form input[type="text"]:focus,
+			.login form input[type="password"]:focus {
+				border-color: ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+				box-shadow: 0 0 0 1px ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+			}
+			.login form .forgetmenot label {
+				color: ' . esc_attr( $dark_text_primary ) . ' !important;
+			}
+			.login #nav a,
+			.login #backtoblog a {
+				color: ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+			}
+			.login #nav a:hover,
+			.login #backtoblog a:hover {
+				color: #005a87 !important;
+			}
+			.login .message {
+				background-color: ' . esc_attr( $dark_secondary_bg ) . ' !important;
+				border-left: 4px solid ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+				color: ' . esc_attr( $dark_text_primary ) . ' !important;
+			}
+			.login .error {
+				background-color: ' . esc_attr( $dark_secondary_bg ) . ' !important;
+				border-left: 4px solid ' . esc_attr( $dark_button_danger_bg ) . ' !important;
+				color: ' . esc_attr( $dark_text_primary ) . ' !important;
+			}
+			.login .wp-core-ui .button-primary {
+				background: ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+				border-color: ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+				color: ' . esc_attr( $dark_button_primary_text ) . ' !important;
+			}
+			.login .wp-core-ui .button-primary:hover {
+				background: #005a87 !important;
+				border-color: #005a87 !important;
+			}';
+		}
+		
+		echo '</style>';
 	}
 
 	/**
@@ -188,6 +268,6 @@ class Users {
 	 * @return string
 	 */
 	public static function login_headertext(): string {
-		return Language::get( Options::get_option( 'login-header-text', 'no' ) );
+		return Language::get( Options::get_option( 'login-header-text', get_bloginfo( 'name' ) ) );
 	}
 }

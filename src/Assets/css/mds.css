@@ -1335,7 +1335,7 @@ a.mds-button {
 	margin-bottom: 10px;
 }
 
-#loginform label {
+body:not(.login) #loginform label {
 	display: block;
 	margin-bottom: 5px;
 }
