@@ -652,7 +652,6 @@ class Forms {
 				foreach ( $_REQUEST['banner_list'] as $key => $banner_id ) {
 					$params['banner_list'][ intval( $key ) ] = ( $banner_id == 'all' ? 'all' : intval( $banner_id ) );
 				}
-				require_once MDS_CORE_PATH . 'admin/process-pixels.php';
 				break;
 		}
 
