@@ -148,6 +148,16 @@ class Styles {
 
         // Additional theme-specific variables
         if ( $theme_mode === 'dark' ) {
+            // Foundation variables
+            $css_vars[] = "    --mds-bg-primary: #101216;";
+            $css_vars[] = "    --mds-bg-secondary: #14181c;";
+            $css_vars[] = "    --mds-bg-tertiary: #1d2024;";
+            $css_vars[] = "    --mds-text-primary: #ffffff;";
+            $css_vars[] = "    --mds-text-secondary: #cccccc;";
+            $css_vars[] = "    --mds-border-color: #666666;";
+            $css_vars[] = "    --mds-tooltip-bg: #101216;";
+            
+            // Component variables
             $css_vars[] = "    --mds-menu-bg: var(--mds-bg-secondary);";
             $css_vars[] = "    --mds-menu-text: var(--mds-text-primary);";
             $css_vars[] = "    --mds-menu-hover-bg: var(--mds-bg-tertiary);";
@@ -156,6 +166,16 @@ class Styles {
             $css_vars[] = "    --mds-card-bg: var(--mds-bg-secondary);";
             $css_vars[] = "    --mds-shadow: rgba(0, 0, 0, 0.5);";
         } else {
+            // Foundation variables
+            $css_vars[] = "    --mds-bg-primary: #ffffff;";
+            $css_vars[] = "    --mds-bg-secondary: #f4f2f1;";
+            $css_vars[] = "    --mds-bg-tertiary: #efefef;";
+            $css_vars[] = "    --mds-text-primary: #333333;";
+            $css_vars[] = "    --mds-text-secondary: #666666;";
+            $css_vars[] = "    --mds-border-color: #dddddd;";
+            $css_vars[] = "    --mds-tooltip-bg: #333333;";
+            
+            // Component variables
             $css_vars[] = "    --mds-menu-bg: #F4F2F1;";
             $css_vars[] = "    --mds-menu-text: #333333;";
             $css_vars[] = "    --mds-menu-hover-bg: #dddddd;";
