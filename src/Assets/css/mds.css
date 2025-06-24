@@ -1172,12 +1172,14 @@ a.mds-button {
 .mds-container input[type='submit']:hover,
 .mds-button:hover {
 	background-color: var(--mds-secondary-color, #000000);
+	color: var(--mds-text-secondary, #ffffff);
 }
 
 .mds-container input[type='button']:active,
 .mds-container input[type='submit']:active,
 .mds-button:active {
 	background-color: var(--mds-btn-secondary-bg, #91877D);
+	color: var(--mds-btn-secondary-text, #ffffff);
 	filter: brightness(0.8);
 }
 
@@ -1203,12 +1205,14 @@ a.mds-button {
 .mds-container input[type='submit'].mds-complete:hover,
 .mds-button.mds-complete:hover {
 	background-color: var(--mds-accessible-success, #66FF33);
+	color: var(--mds-btn-success-text, #fff);
 }
 
 .mds-container input[type='button'].mds-complete:active,
 .mds-container input[type='submit'].mds-complete:active,
 .mds-button.mds-complete:active {
 	background-color: var(--mds-accessible-success, #1e7e34);
+	color: var(--mds-btn-success-text, #fff);
 }
 
 .mds-container #reset_button,

@@ -68,8 +68,28 @@ class WooCommerce {
 		// Remove order again button
 		add_action( 'woocommerce_order_details_before_order_table', [ __CLASS__, 'maybe_remove_order_again_button' ] );
 
+		// Add a filter for WooCommerce CSS style overrides
+		add_filter( 'mds_dynamic_css', [ __CLASS__, 'woocommerce_css_style_overrides' ] );
+
 		// Initialize Refund specific hooks
 		Refunds::init();
+	}
+
+	/**
+	 * Add CSS style overrides for WooCommerce
+	 *
+	 * @param string $css
+	 *
+	 * @return string
+	 */
+	public static function woocommerce_css_style_overrides( $css ): string {
+		$css .= "
+		.entry-summary p.price ins, .woocommerce #content div.product p.price, .woocommerce #content div.product span.price, .woocommerce #content input.button, .woocommerce #content input.button.alt, .woocommerce #content input.button.alt:hover, .woocommerce #content input.button:hover, .woocommerce #respond input#submit, .woocommerce #respond input#submit.alt, .woocommerce #respond input#submit.alt:hover, .woocommerce #respond input#submit:hover, .woocommerce-page #content div.product p.price, .woocommerce-page #content div.product span.price, .woocommerce-page #content input.button, .woocommerce-page #content input.button.alt, .woocommerce-page #content input.button.alt:hover, .woocommerce-page #respond input#submit, .woocommerce-page #respond input#submit.alt, .woocommerce-page #respond input#submit.alt:hover, .woocommerce-page #respond input#submit:hover, .woocommerce-page .star-rating span:before, .woocommerce-page a.button, .woocommerce-page a.button.alt, .woocommerce-page a.button.alt:hover, .woocommerce-page a.button:hover, .woocommerce-page button.button, .woocommerce-page button.button.alt, .woocommerce-page button.button.alt.disabled, .woocommerce-page button.button.alt.disabled:hover, .woocommerce-page button.button.alt:hover, .woocommerce-page button.button:hover, .woocommerce-page div.product p.price, .woocommerce-page div.product span.price, .woocommerce-page input.button, .woocommerce-page input.button.alt, .woocommerce-page input.button.alt:hover, .woocommerce-page input.button:hover, .woocommerce .star-rating span:before, .woocommerce a.button, .woocommerce a.button.alt, .woocommerce a.button.alt:hover, .woocommerce a.button:hover, .woocommerce button.button, .woocommerce button.button.alt, .woocommerce button.button.alt.disabled, .woocommerce button.button.alt.disabled:hover, .woocommerce button.button.alt:hover, .woocommerce div.product p.price, .woocommerce div.product span.price, .woocommerce input.button, .woocommerce input.button.alt, .woocommerce input.button.alt:hover, .woocommerce input.button:hover {
+			background-color: var(--mds-btn-primary-bg, #0073aa);
+			color: var(--mds-btn-primary-text, #ffffff);
+		}
+		";
+		return $css;
 	}
 
 	/**
