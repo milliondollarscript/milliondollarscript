@@ -215,6 +215,10 @@ $status = $compatibility_manager->getCompatibilityStatus();
                     <?php echo esc_html( Language::get( 'Debug System Status' ) ); ?>
                 </button>
                 
+                <button type="button" class="button button-secondary" id="mds-reset-migration" style="color: #d63638;">
+                    <?php echo esc_html( Language::get( 'Reset Migration Status' ) ); ?>
+                </button>
+                
                 <?php if ( ! empty( $status['pending_migrations'] ) ): ?>
                 <button type="button" class="button button-primary" id="mds-force-migration">
                     <span class="dashicons dashicons-admin-tools"></span>
@@ -538,6 +542,39 @@ jQuery(document).ready(function($) {
     // Hide debug output
     $('#mds-hide-debug').on('click', function() {
         $('#mds-debug-output').hide();
+    });
+    
+    // Reset migration button
+    $('#mds-reset-migration').on('click', function() {
+        if (!confirm('Are you sure you want to reset the migration status? This will clear all metadata and force a fresh migration.')) {
+            return;
+        }
+        
+        var $button = $(this);
+        $button.prop('disabled', true).text('Resetting...');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'mds_reset_migration',
+                nonce: '<?php echo wp_create_nonce( 'mds_reset_migration' ); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Migration status reset successfully!\n\n' + response.data.message);
+                    location.reload();
+                } else {
+                    alert('Reset failed: ' + (response.data.message || 'Unknown error'));
+                }
+            },
+            error: function() {
+                alert('Reset failed: Network error occurred');
+            },
+            complete: function() {
+                $button.prop('disabled', false).text('Reset Migration Status');
+            }
+        });
     });
     
     // Force migration button

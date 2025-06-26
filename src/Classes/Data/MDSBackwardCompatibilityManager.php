@@ -113,6 +113,7 @@ class MDSBackwardCompatibilityManager {
             add_action( 'init', [ $this, 'handleAdminCompatibility' ], 10 );
             add_action( 'wp_ajax_mds_manual_migration', [ $this, 'handleManualMigration' ] );
             add_action( 'wp_ajax_mds_debug_status', [ $this, 'handleDebugStatus' ] );
+            add_action( 'wp_ajax_mds_reset_migration', [ $this, 'handleResetMigration' ] );
         }
         
         // Hook into plugin activation/upgrade
@@ -257,23 +258,47 @@ class MDSBackwardCompatibilityManager {
                 // Detect page type and create metadata
                 $detection_result = $this->detection_engine->detectMDSPage( $page_id );
                 
-                if ( $detection_result['is_mds_page'] && $detection_result['confidence'] >= 0.6 ) {
+                // Get page info for debugging
+                $post = get_post( $page_id );
+                $page_title = $post ? $post->post_title : "Unknown Page $page_id";
+                
+                // Log detection result for debugging
+                error_log( sprintf( 
+                    'MDS Migration: Page %d (%s) - is_mds_page: %s, confidence: %s, page_type: %s',
+                    $page_id,
+                    $page_title,
+                    $detection_result['is_mds_page'] ? 'true' : 'false',
+                    $detection_result['confidence'],
+                    $detection_result['page_type'] ?? 'none'
+                ) );
+                
+                // Lower the confidence threshold for migration to be more inclusive
+                if ( $detection_result['is_mds_page'] && $detection_result['confidence'] >= 0.3 ) {
                     $metadata_data = $this->buildMetadataFromDetection( $page_id, $detection_result );
                     
                     $result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $detection_result['page_type'], 'migration', $metadata_data );
                     
                     if ( ! is_wp_error( $result ) ) {
                         $results['migrated_pages']++;
+                        error_log( "MDS Migration: Successfully migrated page $page_id ($page_title)" );
                     } else {
                         $results['failed_pages']++;
+                        $error_msg = $result->get_error_message();
                         $results['errors'][] = sprintf(
                             'Page %d: %s',
                             $page_id,
-                            $result->get_error_message()
+                            $error_msg
                         );
+                        error_log( "MDS Migration: Failed to migrate page $page_id ($page_title): $error_msg" );
                     }
                 } else {
                     $results['skipped_pages']++;
+                    error_log( sprintf(
+                        'MDS Migration: Skipped page %d (%s) - Low confidence: %s (threshold: 0.3)',
+                        $page_id,
+                        $page_title,
+                        $detection_result['confidence']
+                    ) );
                 }
             } catch ( \Exception $e ) {
                 $results['failed_pages']++;
@@ -1188,6 +1213,26 @@ class MDSBackwardCompatibilityManager {
     }
     
     /**
+     * Reset migration status for re-running
+     *
+     * @return bool
+     */
+    public function resetMigrationStatus(): bool {
+        delete_option( 'mds_migration_results' );
+        delete_option( 'mds_migration_completed' );
+        
+        // Also clear any existing metadata to start fresh
+        global $wpdb;
+        $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}mds_page_metadata" );
+        $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}mds_page_config" );
+        $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}mds_detection_log" );
+        
+        error_log( 'MDS Migration: Reset migration status and cleared metadata tables' );
+        
+        return true;
+    }
+    
+    /**
      * AJAX handler for debug status
      *
      * @return void
@@ -1206,6 +1251,35 @@ class MDSBackwardCompatibilityManager {
         $debug_info = $this->debugSystemStatus();
         
         wp_send_json_success( $debug_info );
+    }
+    
+    /**
+     * AJAX handler for reset migration
+     *
+     * @return void
+     */
+    public function handleResetMigration(): void {
+        // Verify nonce
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'mds_reset_migration' ) ) {
+            wp_die( 'Security check failed' );
+        }
+        
+        // Check permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Insufficient permissions' );
+        }
+        
+        $success = $this->resetMigrationStatus();
+        
+        if ( $success ) {
+            wp_send_json_success( [
+                'message' => 'Migration status has been reset. You can now run the migration again.'
+            ] );
+        } else {
+            wp_send_json_error( [
+                'message' => 'Failed to reset migration status.'
+            ] );
+        }
     }
     
     public function handleManualMigration(): void {
