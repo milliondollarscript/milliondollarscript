@@ -247,11 +247,20 @@ class MDSBackwardCompatibilityManager {
         $potential_mds_pages = $this->findPotentialMDSPages();
         $results['total_pages'] = count( $potential_mds_pages );
         
+        error_log( "MDS Migration: Starting migration for " . count( $potential_mds_pages ) . " potential MDS pages" );
+        
         foreach ( $potential_mds_pages as $page_id ) {
             try {
                 // Check if already has metadata
-                if ( $this->metadata_manager->hasMetadata( $page_id ) ) {
+                $has_metadata = $this->metadata_manager->hasMetadata( $page_id );
+                $post = get_post( $page_id );
+                $page_title = $post ? $post->post_title : "Unknown Page $page_id";
+                
+                error_log( "MDS Migration: Checking page $page_id ($page_title) - hasMetadata: " . ($has_metadata ? 'true' : 'false') );
+                
+                if ( $has_metadata ) {
                     $results['skipped_pages']++;
+                    error_log( "MDS Migration: Skipped page $page_id ($page_title) - Already has metadata" );
                     continue;
                 }
                 
@@ -919,7 +928,7 @@ class MDSBackwardCompatibilityManager {
         $migration_results = get_option( 'mds_migration_results' );
         $migration_completed = get_option( 'mds_migration_completed' );
         
-        // If database is ready but no migration records exist, mark as completed
+        // If database is ready but no migration records exist, mark as completed ONLY if we have metadata
         if ( ! $migration_results && ! $migration_completed ) {
             // Check if we have any metadata records - if so, migration likely completed
             $total_metadata = $this->metadata_manager->getTotalPagesWithMetadata();
@@ -936,6 +945,7 @@ class MDSBackwardCompatibilityManager {
                 ] );
                 return []; // No pending migrations
             } else {
+                // No metadata exists, definitely need migration
                 $pending[] = 'initial_migration';
             }
         }
