@@ -286,6 +286,14 @@ class MDSBackwardCompatibilityManager {
                 if ( $detection_result['page_type'] && $detection_result['confidence'] >= 0.2 ) {
                     $metadata_data = $this->buildMetadataFromDetection( $page_id, $detection_result );
                     
+                    // Log the exact data being passed for debugging
+                    error_log( sprintf(
+                        'MDS Migration: Creating metadata for page %d - page_type: %s, creation_method: auto_detected, metadata_data: %s',
+                        $page_id,
+                        $detection_result['page_type'],
+                        json_encode( $metadata_data )
+                    ) );
+                    
                     $result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $detection_result['page_type'], 'auto_detected', $metadata_data );
                     
                     if ( ! is_wp_error( $result ) ) {
@@ -401,10 +409,10 @@ class MDSBackwardCompatibilityManager {
         
         return [
             'page_type' => $detection_result['page_type'] ?? 'unknown',
-            'creation_method' => 'migration',
+            'creation_method' => 'auto_detected',
             'creation_source' => 'backward_compatibility_v' . self::COMPATIBILITY_VERSION,
             'mds_version' => MDS_VERSION,
-            'content_type' => $detection_result['content_type'] ?? 'unknown',
+            'content_type' => $detection_result['content_type'] ?? 'custom',
             'status' => $this->determinePageStatus( $post ),
             'confidence_score' => $detection_result['confidence'] ?? 0.5,
             'shortcode_attributes' => $detection_result['shortcode_attributes'] ?? [],
@@ -437,7 +445,7 @@ class MDSBackwardCompatibilityManager {
             case 'private':
                 return 'inactive';
             default:
-                return 'unknown';
+                return 'inactive'; // Default to 'inactive' instead of 'unknown'
         }
     }
     
