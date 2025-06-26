@@ -183,7 +183,6 @@ class Styles {
         $css .= "    background-color: var(--mds-btn-secondary-bg);\n";
         $css .= "    color: var(--mds-btn-secondary-text);\n";
         $css .= "}\n\n";
-
         $css .= ".mds-button.mds-success,\n";
         $css .= ".mds-container input[type='button'].mds-confirm,\n";
         $css .= ".mds-container input[type='button'].mds-upload,\n";
@@ -195,6 +194,18 @@ class Styles {
         $css .= ".mds-container #submit_button2 {\n";
         $css .= "    background-color: var(--mds-btn-success-bg);\n";
         $css .= "    color: var(--mds-btn-success-text);\n";
+        $css .= "}\n\n";
+
+        $css .= ".mds-button.mds-success:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-confirm:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-upload:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-write:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-pay:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-continue:hover,\n";
+        $css .= ".mds-container input[type='submit'].mds-complete:hover,\n";
+        $css .= ".mds-container #submit_button1:hover,\n";
+        $css .= ".mds-container #submit_button2:hover {\n";
+        $css .= "    filter: brightness(1.1);\n";
         $css .= "}\n\n";
 
         $css .= ".mds-button.mds-danger,\n";
