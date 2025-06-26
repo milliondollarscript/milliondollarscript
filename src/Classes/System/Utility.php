@@ -36,6 +36,8 @@ use MillionDollarScript\Classes\Forms;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Logs;
+use MillionDollarScript\Classes\System\Filesystem;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -503,23 +505,114 @@ class Utility {
 	 */
 	public static function get_page_url( string $page_name, array $args = [] ): ?string {
 		$pages = self::get_pages();
-		if ( isset( $pages[ $page_name ] ) ) {
-			// return actual page permalink
-			$url = get_permalink( $pages[ $page_name ]['page_id'] );
+		$url = false;
+		
+		// Try to get page-based URL first
+		if ( isset( $pages[ $page_name ] ) && ! empty( $pages[ $page_name ]['page_id'] ) ) {
+			$page_id = $pages[ $page_name ]['page_id'];
+			// Validate that the page actually exists
+			if ( get_post_status( $page_id ) !== false ) {
+				$url = get_permalink( $page_id );
+				error_log( "MDS: Generated page-based URL for '{$page_name}': {$url}" );
+			} else {
+				error_log( "MDS: Page ID {$page_id} for '{$page_name}' does not exist or is invalid" );
+			}
 		} else {
-			// build endpoint URL
+			$page_id = isset( $pages[ $page_name ]['page_id'] ) ? $pages[ $page_name ]['page_id'] : 'not set';
+			error_log( "MDS: No valid page found for '{$page_name}', page_id: {$page_id}" );
+		}
+		
+		// If page-based URL failed and this is a critical page, try to auto-create it
+		if ( empty( $url ) && in_array( $page_name, [ 'order', 'grid', 'manage' ] ) ) {
+			$created_page_id = self::ensure_page_exists( $page_name );
+			if ( $created_page_id ) {
+				$url = get_permalink( $created_page_id );
+				// Clear the cached pages to reflect the new page
+				global $mds_pages;
+				$mds_pages = null;
+			}
+		}
+		
+		// Fallback to endpoint URL if page-based URL still failed
+		if ( empty( $url ) ) {
 			$endpoint = Options::get_option( 'endpoint', 'milliondollarscript' );
 			if ( get_option( 'permalink_structure' ) ) {
 				$url = trailingslashit( home_url( "/{$endpoint}/{$page_name}" ) );
 			} else {
 				$url = add_query_arg( $endpoint, $page_name, home_url( '/' ) );
 			}
+			error_log( "MDS: Using endpoint-based URL for '{$page_name}': {$url}" );
 		}
+		
 		// append additional args if provided
-		if ( $args ) {
+		if ( $args && ! empty( $url ) ) {
 			$url = add_query_arg( $args, $url );
 		}
+		
 		return $url;
+	}
+
+	/**
+	 * Ensure a specific page exists, creating it if necessary.
+	 *
+	 * @param string $page_name The page name (order, grid, etc.)
+	 * @return int|false The page ID if successful, false otherwise
+	 */
+	private static function ensure_page_exists( string $page_name ): int|false {
+		// Map page names to their option names and content
+		$page_configs = [
+			'order' => [
+				'option_name' => 'users-order-page',
+				'title' => Language::get( 'Order Pixels' ),
+				'content' => '[milliondollarscript view="order"]'
+			],
+			'grid' => [
+				'option_name' => 'grid-page',
+				'title' => Language::get( 'Million Dollar Script Grid' ),
+				'content' => '[milliondollarscript]'
+			],
+			'manage' => [
+				'option_name' => 'users-manage-page',
+				'title' => Language::get( 'Manage Pixels' ),
+				'content' => '[milliondollarscript view="manage"]'
+			]
+		];
+		
+		if ( ! isset( $page_configs[ $page_name ] ) ) {
+			return false;
+		}
+		
+		$config = $page_configs[ $page_name ];
+		
+		// Check if page already exists but wasn't found (maybe option is wrong)
+		$existing_page = get_page_by_title( $config['title'] );
+		if ( $existing_page ) {
+			// Update the option with the correct page ID
+			Options::update_option( $config['option_name'], $existing_page->ID );
+			return $existing_page->ID;
+		}
+		
+		// Create the page
+		$page_data = [
+			'post_title'   => $config['title'],
+			'post_content' => $config['content'],
+			'post_status'  => 'publish',
+			'post_type'    => 'page',
+		];
+		
+		$page_id = wp_insert_post( $page_data );
+		
+		if ( is_wp_error( $page_id ) || ! $page_id ) {
+			error_log( 'MDS: Failed to create page for ' . $page_name . ': ' . ( is_wp_error( $page_id ) ? $page_id->get_error_message() : 'Unknown error' ) );
+			return false;
+		}
+		
+		// Save the page ID in options
+		Options::update_option( $config['option_name'], $page_id );
+		
+		error_log( 'MDS: Auto-created missing page for ' . $page_name . ' with ID: ' . $page_id );
+		
+		return $page_id;
 	}
 
 	/**
@@ -1454,6 +1547,51 @@ class Utility {
 		// Store post modified time
 		$modified_time = get_post_modified_time( 'Y-m-d H:i:s', false, $page_id );
 		update_post_meta( $page_id, '_modified_time', $modified_time );
+
+		// Create MDS page metadata
+		try {
+			$metadata_manager = \MillionDollarScript\Classes\Data\MDSPageMetadataManager::getInstance();
+			
+			$metadata_data = [
+				'page_type' => $page_type,
+				'creation_method' => 'wizard',
+				'creation_source' => 'setup_wizard_v' . MDS_VERSION,
+				'mds_version' => MDS_VERSION,
+				'content_type' => 'shortcode',
+				'status' => 'active',
+				'confidence_score' => 1.0,
+				'shortcode_attributes' => [
+					'id' => $id,
+					'align' => $align,
+					'width' => $width,
+					'height' => $height,
+					'type' => $page_type
+				],
+				'page_config' => [
+					'option_key' => $option,
+					'shortcode_template' => $shortcode
+				],
+				'display_settings' => [
+					'align' => $align,
+					'width' => $width,
+					'height' => $height
+				],
+				'integration_settings' => [
+					'theme_name' => $current_theme->get( 'Name' ),
+					'divi_layout' => ( 'Divi' === $current_theme->get( 'Name' ) || ( $current_theme->parent() && 'Divi' === $current_theme->parent()->get( 'Name' ) ) ) ? 'et_no_sidebar' : null
+				]
+			];
+			
+			$metadata_result = $metadata_manager->createMetadata( $page_id, $metadata_data );
+			
+			if ( is_wp_error( $metadata_result ) ) {
+				// Log the error but don't fail page creation
+				error_log( 'MDS Page Metadata creation failed for page ' . $page_id . ': ' . $metadata_result->get_error_message() );
+			}
+		} catch ( \Exception $e ) {
+			// Log the error but don't fail page creation
+			error_log( 'MDS Page Metadata creation exception for page ' . $page_id . ': ' . $e->getMessage() );
+		}
 
 		return $page_id; // Return the successfully created page ID
 	}

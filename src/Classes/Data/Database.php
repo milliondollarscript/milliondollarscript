@@ -52,6 +52,7 @@ class Database {
 			'blocks',
 			'clicks',
 			'config',
+			'email_disable_tokens',
 			'mail_queue',
 			'orders',
 			'packages',
@@ -252,22 +253,20 @@ class Database {
 	 * @return string
 	 */
 	public function up_dbver( string $version = '0' ): string {
-		global $wpdb;
-
 		if ( version_compare( $version, '0', '>' ) ) {
 			$val = $version;
 		} else {
 			$val = MDS_DB_VERSION;
 		}
 
-		\update_option(MDS_PREFIX . 'db-version', $val);
+		// Use WordPress options instead of deprecated config table
+		update_option( 'mds_db_version', $val );
 
 		if ( $val == $version ) {
 			return $version;
 		}
 
-		$val = \get_option(MDS_PREFIX . 'db-version', MDS_DB_VERSION);
-
+		$val = get_option( 'mds_db_version', MDS_DB_VERSION );
 		return $val;
 	}
 

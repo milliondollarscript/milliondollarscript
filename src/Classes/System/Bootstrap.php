@@ -195,11 +195,24 @@ class Bootstrap {
 		add_action( 'wp_ajax_mds_load_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'load_click_report_view_type' ] );
 		add_action( 'wp_ajax_mds_save_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'save_click_report_view_type' ] );
 
+		// Disable admin email
+		add_action( 'wp_ajax_mds_disable_admin_email', [ 'MillionDollarScript\Classes\Email\Mail', 'handle_disable_admin_email' ] );
+		add_action( 'wp_ajax_nopriv_mds_disable_admin_email', [ 'MillionDollarScript\Classes\Email\Mail', 'handle_disable_admin_email' ] );
+
 		// Load Block Editor JS
 		add_action( 'enqueue_block_editor_assets', [ '\MillionDollarScript\Classes\Admin\Admin', 'block_editor_scripts' ] );
 
 		// Add NFS page
 		add_action( 'init', [ '\MillionDollarScript\Classes\Pages\NFS', 'init' ], 10 );
+
+		// Initialize MDS Page Metadata System
+		add_action( 'init', [ $this, 'init_metadata_system' ], 5 );
+
+		// Initialize MDS Backward Compatibility System
+		add_action( 'init', [ $this, 'init_backward_compatibility_system' ], 6 );
+
+		// Initialize MDS Page Management Interface
+		add_action( 'init', [ $this, 'init_page_management_interface' ], 7 );
 
 		// Load Frontend AJAX
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Ajax\Ajax', 'init' ], 10 );
@@ -291,5 +304,72 @@ class Bootstrap {
 		// phpcs:disable
 		return $this;
 		// phpcs:enable
+	}
+
+	/**
+	 * Initialize the MDS Page Metadata System
+	 *
+	 * @return void
+	 */
+	public function init_metadata_system(): void {
+		try {
+			$metadata_manager = \MillionDollarScript\Classes\Data\MDSPageMetadataManager::getInstance();
+			$result = $metadata_manager->initialize();
+			
+			if ( is_wp_error( $result ) ) {
+				error_log( 'MDS Metadata System initialization failed: ' . $result->get_error_message() );
+			}
+		} catch ( \Exception $e ) {
+			error_log( 'MDS Metadata System initialization exception: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Initialize the MDS Backward Compatibility System
+	 *
+	 * @return void
+	 */
+	public function init_backward_compatibility_system(): void {
+		try {
+			// Initialize backward compatibility manager
+			$compatibility_manager = \MillionDollarScript\Classes\Data\MDSBackwardCompatibilityManager::getInstance();
+			
+			// Initialize legacy shortcode handler
+			$legacy_handler = \MillionDollarScript\Classes\Data\MDSLegacyShortcodeHandler::getInstance();
+			
+			// Log successful initialization
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'MDS Backward Compatibility System initialized successfully' );
+			}
+		} catch ( \Exception $e ) {
+			error_log( 'MDS Backward Compatibility System initialization exception: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Initialize the MDS Page Management Interface
+	 *
+	 * @return void
+	 */
+	public function init_page_management_interface(): void {
+		try {
+			// Only initialize in admin
+			if ( ! is_admin() ) {
+				return;
+			}
+			
+			// Initialize page management interface
+			new \MillionDollarScript\Classes\Admin\MDSPageManagementInterface();
+			
+			// Initialize page creator interface
+			new \MillionDollarScript\Classes\Admin\MDSPageCreatorInterface();
+			
+			// Log successful initialization
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'MDS Page Management and Creator Interfaces initialized successfully' );
+			}
+		} catch ( \Exception $e ) {
+			error_log( 'MDS Page Management Interface initialization exception: ' . $e->getMessage() );
+		}
 	}
 }

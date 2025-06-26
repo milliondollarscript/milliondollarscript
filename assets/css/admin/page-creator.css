@@ -1,0 +1,540 @@
+/**
+ * MDS Enhanced Page Creator Styles
+ * Modern, user-friendly interface for creating MDS pages
+ */
+
+/* Container and Layout */
+.mds-create-pages {
+    max-width: 1200px;
+}
+
+.mds-page-creator-container {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.mds-creator-form {
+    padding: 20px;
+}
+
+/* Steps */
+.mds-creator-step {
+    margin-bottom: 40px;
+    padding: 20px;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    background: #fafafa;
+    transition: all 0.3s ease;
+}
+
+.mds-creator-step.active {
+    background: #fff;
+    border-color: #0073aa;
+    box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1);
+}
+
+.mds-creator-step.inactive {
+    opacity: 0.7;
+}
+
+.mds-creator-step h2 {
+    margin-top: 0;
+    color: #23282d;
+    font-size: 1.3em;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+.mds-creator-step .description {
+    color: #666;
+    font-style: italic;
+    margin-bottom: 20px;
+}
+
+/* Implementation Types */
+.mds-implementation-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.mds-implementation-option {
+    position: relative;
+}
+
+.mds-radio-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 0;
+    background: #fff;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.mds-radio-card:hover {
+    border-color: #0073aa;
+    box-shadow: 0 2px 8px rgba(0, 115, 170, 0.15);
+}
+
+.mds-radio-card input[type="radio"] {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    margin: 0;
+}
+
+.mds-radio-card input[type="radio"]:checked + .mds-card-content {
+    background: #f0f8ff;
+}
+
+.mds-implementation-option.selected .mds-radio-card {
+    border-color: #0073aa;
+    background: #f0f8ff;
+}
+
+.mds-card-content {
+    padding: 20px;
+    padding-right: 50px; /* Space for radio button */
+}
+
+.mds-card-content h3 {
+    margin: 0 0 10px 0;
+    color: #0073aa;
+    font-size: 1.1em;
+}
+
+.mds-card-content p {
+    margin: 0 0 15px 0;
+    color: #666;
+}
+
+.mds-pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.mds-pros, .mds-cons {
+    font-size: 0.9em;
+}
+
+.mds-pros strong {
+    color: #46b450;
+}
+
+.mds-cons strong {
+    color: #dc3232;
+}
+
+.mds-pros ul, .mds-cons ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
+}
+
+.mds-pros li, .mds-cons li {
+    margin-bottom: 3px;
+    color: #666;
+}
+
+/* Page Types */
+.mds-page-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.mds-page-type-option {
+    position: relative;
+}
+
+.mds-checkbox-card {
+    display: block;
+    cursor: pointer;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 0;
+    background: #fff;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.mds-checkbox-card:hover {
+    border-color: #0073aa;
+    box-shadow: 0 1px 4px rgba(0, 115, 170, 0.15);
+}
+
+.mds-checkbox-card input[type="checkbox"] {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    margin: 0;
+}
+
+.mds-checkbox-card input[type="checkbox"]:checked + .mds-card-content {
+    background: #f0f8ff;
+    border-color: #0073aa;
+}
+
+.mds-checkbox-card input[type="checkbox"]:disabled {
+    opacity: 0.6;
+}
+
+.mds-checkbox-card input[type="checkbox"]:disabled + .mds-card-content {
+    background: #f9f9f9;
+    opacity: 0.8;
+}
+
+.mds-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.mds-card-header .dashicons {
+    color: #0073aa;
+    font-size: 20px;
+}
+
+.mds-card-header h3 {
+    margin: 0;
+    flex: 1;
+    color: #23282d;
+    font-size: 1em;
+}
+
+.mds-required-badge {
+    background: #dc3232;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+/* Page Configurations */
+#mds-page-configurations {
+    margin-top: 20px;
+}
+
+.mds-page-config {
+    background: #fff;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.mds-page-config h4 {
+    margin: 0 0 15px 0;
+    color: #0073aa;
+    border-bottom: 1px solid #e1e1e1;
+    padding-bottom: 8px;
+}
+
+.mds-page-config .form-table {
+    margin-top: 0;
+}
+
+.mds-page-config .form-table th {
+    width: 200px;
+    padding: 15px 10px 15px 0;
+}
+
+.mds-page-config .form-table td {
+    padding: 15px 0;
+}
+
+.mds-page-config fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mds-page-config fieldset label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: normal;
+}
+
+.mds-page-config fieldset input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Loading States */
+.mds-loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+.mds-loading::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ddd;
+    border-top-color: #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Actions */
+.mds-creator-actions {
+    background: #f9f9f9;
+    border-top: 1px solid #e1e1e1;
+    padding: 20px;
+    margin: 20px -20px -20px -20px;
+    text-align: right;
+}
+
+.mds-creator-actions .button {
+    margin-left: 10px;
+}
+
+.mds-creator-actions .button-primary {
+    background: #0073aa;
+    border-color: #0073aa;
+}
+
+.mds-creator-actions .button-primary:hover {
+    background: #005a87;
+    border-color: #005a87;
+}
+
+.mds-creator-actions .button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Preview Panel */
+.mds-preview-panel, .mds-results-panel {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.mds-preview-panel h3, .mds-results-panel h3 {
+    margin-top: 0;
+    color: #0073aa;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+.mds-preview-summary, .mds-results-summary {
+    background: #f0f8ff;
+    border: 1px solid #0073aa;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.mds-preview-summary p, .mds-results-summary p {
+    margin: 5px 0;
+}
+
+.mds-preview-warnings {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.mds-preview-warnings h4 {
+    color: #856404;
+    margin-top: 0;
+}
+
+.mds-preview-warnings ul {
+    margin-bottom: 0;
+    color: #856404;
+}
+
+.mds-preview-recommendations {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.mds-preview-recommendations h4 {
+    color: #0c5460;
+    margin-top: 0;
+}
+
+.mds-preview-recommendations ul {
+    margin-bottom: 0;
+    color: #0c5460;
+}
+
+.mds-preview-pages {
+    margin-top: 20px;
+}
+
+.mds-preview-pages h4 {
+    margin-bottom: 10px;
+    color: #23282d;
+}
+
+.mds-preview-pages table {
+    margin-top: 10px;
+}
+
+/* Results Sections */
+.mds-results-created {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.mds-results-created h4 {
+    color: #155724;
+    margin-top: 0;
+}
+
+.mds-results-updated {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.mds-results-updated h4 {
+    color: #0c5460;
+    margin-top: 0;
+}
+
+.mds-results-errors {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.mds-results-errors h4 {
+    color: #721c24;
+    margin-top: 0;
+}
+
+.mds-results-errors li.error {
+    color: #721c24;
+}
+
+/* Quick Create Widget */
+.mds-quick-create {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.mds-quick-create h3 {
+    margin-top: 0;
+    color: #0073aa;
+}
+
+.mds-quick-create p {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .mds-implementation-types {
+        grid-template-columns: 1fr;
+    }
+    
+    .mds-page-types {
+        grid-template-columns: 1fr;
+    }
+    
+    .mds-pros-cons {
+        grid-template-columns: 1fr;
+    }
+    
+    .mds-creator-actions {
+        text-align: center;
+    }
+    
+    .mds-creator-actions .button {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .mds-page-config .form-table th {
+        width: auto;
+        display: block;
+        padding-bottom: 5px;
+    }
+    
+    .mds-page-config .form-table td {
+        display: block;
+        padding-top: 0;
+    }
+}
+
+/* Accessibility */
+.mds-radio-card:focus-within,
+.mds-checkbox-card:focus-within {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.mds-radio-card input[type="radio"]:focus,
+.mds-checkbox-card input[type="checkbox"]:focus {
+    outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .mds-creator-step.active {
+        border-width: 3px;
+    }
+    
+    .mds-radio-card:hover,
+    .mds-checkbox-card:hover {
+        border-width: 3px;
+    }
+    
+    .mds-required-badge {
+        border: 2px solid #000;
+    }
+}
+
+/* Print styles */
+@media print {
+    .mds-creator-actions {
+        display: none;
+    }
+    
+    .mds-preview-panel,
+    .mds-results-panel {
+        border: 2px solid #000;
+    }
+} 
