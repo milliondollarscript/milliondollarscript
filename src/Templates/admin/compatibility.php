@@ -211,6 +211,10 @@ $status = $compatibility_manager->getCompatibilityStatus();
                     <?php echo esc_html( Language::get( 'Refresh Status' ) ); ?>
                 </button>
                 
+                <button type="button" class="button button-secondary" id="mds-debug-status">
+                    <?php echo esc_html( Language::get( 'Debug System Status' ) ); ?>
+                </button>
+                
                 <?php if ( ! empty( $status['pending_migrations'] ) ): ?>
                 <button type="button" class="button button-primary" id="mds-force-migration">
                     <span class="dashicons dashicons-admin-tools"></span>
@@ -436,6 +440,35 @@ jQuery(document).ready(function($) {
     // Refresh status button
     $('#mds-refresh-status').on('click', function() {
         location.reload();
+    });
+    
+    // Debug status button
+    $('#mds-debug-status').on('click', function() {
+        var $button = $(this);
+        $button.prop('disabled', true).text('Loading...');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'mds_debug_status',
+                nonce: '<?php echo wp_create_nonce( 'mds_debug_status' ); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    var debugInfo = JSON.stringify(response.data, null, 2);
+                    alert('Debug Information:\n\n' + debugInfo);
+                } else {
+                    alert('Debug failed: ' + (response.data || 'Unknown error'));
+                }
+            },
+            error: function() {
+                alert('Debug failed: Network error occurred');
+            },
+            complete: function() {
+                $button.prop('disabled', false).text('Debug System Status');
+            }
+        });
     });
     
     // Force migration button

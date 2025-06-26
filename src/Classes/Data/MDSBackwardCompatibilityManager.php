@@ -112,6 +112,7 @@ class MDSBackwardCompatibilityManager {
         if ( is_admin() ) {
             add_action( 'init', [ $this, 'handleAdminCompatibility' ], 10 );
             add_action( 'wp_ajax_mds_manual_migration', [ $this, 'handleManualMigration' ] );
+            add_action( 'wp_ajax_mds_debug_status', [ $this, 'handleDebugStatus' ] );
         }
         
         // Hook into plugin activation/upgrade
@@ -1124,6 +1125,89 @@ class MDSBackwardCompatibilityManager {
      *
      * @return void
      */
+    /**
+     * Debug method to check system status
+     *
+     * @return array
+     */
+    public function debugSystemStatus(): array {
+        global $wpdb;
+        
+        $debug_info = [
+            'timestamp' => current_time( 'mysql' ),
+            'metadata_manager_ready' => false,
+            'tables_exist' => [],
+            'total_metadata_records' => 0,
+            'migration_options' => [],
+            'pending_migrations' => [],
+            'errors' => []
+        ];
+        
+        try {
+            // Check if metadata manager is ready
+            $debug_info['metadata_manager_ready'] = $this->metadata_manager->isDatabaseReady();
+            
+            // Check individual tables
+            $tables = [
+                'mds_page_metadata' => $wpdb->prefix . 'mds_page_metadata',
+                'mds_page_config' => $wpdb->prefix . 'mds_page_config',
+                'mds_detection_log' => $wpdb->prefix . 'mds_detection_log'
+            ];
+            
+            foreach ( $tables as $name => $full_name ) {
+                $table_exists = $wpdb->get_var( $wpdb->prepare(
+                    "SHOW TABLES LIKE %s",
+                    $full_name
+                ) );
+                $debug_info['tables_exist'][$name] = ( $table_exists === $full_name );
+            }
+            
+            // Try to get metadata count
+            if ( $debug_info['tables_exist']['mds_page_metadata'] ) {
+                $debug_info['total_metadata_records'] = $wpdb->get_var(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}mds_page_metadata"
+                );
+            }
+            
+            // Check migration options
+            $debug_info['migration_options'] = [
+                'mds_migration_results' => get_option( 'mds_migration_results', 'NOT_SET' ),
+                'mds_migration_completed' => get_option( 'mds_migration_completed', 'NOT_SET' ),
+                'mds_compatibility_version' => get_option( 'mds_compatibility_version', 'NOT_SET' ),
+                'mds_page_management_version' => get_option( 'mds_page_management_version', 'NOT_SET' )
+            ];
+            
+            // Get pending migrations
+            $debug_info['pending_migrations'] = $this->getPendingMigrations();
+            
+        } catch ( \Exception $e ) {
+            $debug_info['errors'][] = $e->getMessage();
+        }
+        
+        return $debug_info;
+    }
+    
+    /**
+     * AJAX handler for debug status
+     *
+     * @return void
+     */
+    public function handleDebugStatus(): void {
+        // Verify nonce
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'mds_debug_status' ) ) {
+            wp_die( 'Security check failed' );
+        }
+        
+        // Check permissions
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Insufficient permissions' );
+        }
+        
+        $debug_info = $this->debugSystemStatus();
+        
+        wp_send_json_success( $debug_info );
+    }
+    
     public function handleManualMigration(): void {
         // Verify nonce
         if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'mds_manual_migration' ) ) {
