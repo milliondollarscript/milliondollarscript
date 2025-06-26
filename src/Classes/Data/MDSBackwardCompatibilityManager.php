@@ -286,7 +286,7 @@ class MDSBackwardCompatibilityManager {
                 if ( $detection_result['page_type'] && $detection_result['confidence'] >= 0.2 ) {
                     $metadata_data = $this->buildMetadataFromDetection( $page_id, $detection_result );
                     
-                    $result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $detection_result['page_type'], 'migration', $metadata_data );
+                    $result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $detection_result['page_type'], 'auto_detected', $metadata_data );
                     
                     if ( ! is_wp_error( $result ) ) {
                         $results['migrated_pages']++;
@@ -891,10 +891,10 @@ class MDSBackwardCompatibilityManager {
         if ( $detection_result['is_mds_page'] ) {
             // Update or create metadata
             if ( $this->metadata_manager->hasMetadata( $post_id ) ) {
-                $this->metadata_manager->createOrUpdateMetadata( $post_id, $detection_result['page_type'], 'auto_scan', [] );
+                $this->metadata_manager->createOrUpdateMetadata( $post_id, $detection_result['page_type'], 'auto_detected', [] );
             } else {
                 $metadata_data = $this->buildMetadataFromDetection( $post_id, $detection_result );
-                $this->metadata_manager->createOrUpdateMetadata( $post_id, $detection_result['page_type'], 'auto_scan', $metadata_data );
+                $this->metadata_manager->createOrUpdateMetadata( $post_id, $detection_result['page_type'], 'auto_detected', $metadata_data );
             }
         }
     }
