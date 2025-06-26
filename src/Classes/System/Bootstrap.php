@@ -355,9 +355,12 @@ class Bootstrap {
 			// Initialize page management interface
 			new \MillionDollarScript\Classes\Admin\MDSPageManagementInterface();
 			
+			// Initialize page creator interface
+			new \MillionDollarScript\Classes\Admin\MDSPageCreatorInterface();
+			
 			// Log successful initialization
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'MDS Page Management Interface initialized successfully' );
+				error_log( 'MDS Page Management and Creator Interfaces initialized successfully' );
 			}
 		} catch ( \Exception $e ) {
 			error_log( 'MDS Page Management Interface initialization exception: ' . $e->getMessage() );
