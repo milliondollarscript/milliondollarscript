@@ -149,8 +149,6 @@ class MDSBackwardCompatibilityManager {
             return;
         }
         
-        error_log( 'MDS Compatibility: handleAdminCompatibility called' );
-        
         // Always add compatibility admin menu
         add_action( 'admin_menu', [ $this, 'addCompatibilityAdminMenu' ], 20 );
         
@@ -258,7 +256,7 @@ class MDSBackwardCompatibilityManager {
                 if ( $detection_result['is_mds_page'] && $detection_result['confidence'] >= 0.6 ) {
                     $metadata_data = $this->buildMetadataFromDetection( $page_id, $detection_result );
                     
-                    $result = $this->metadata_manager->createMetadata( $page_id, $metadata_data );
+                    $result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $detection_result['page_type'], 'migration', $metadata_data );
                     
                     if ( ! is_wp_error( $result ) ) {
                         $results['migrated_pages']++;
@@ -854,10 +852,10 @@ class MDSBackwardCompatibilityManager {
         if ( $detection_result['is_mds_page'] ) {
             // Update or create metadata
             if ( $this->metadata_manager->hasMetadata( $post_id ) ) {
-                $this->metadata_manager->updateMetadataFromDetection( $post_id, $detection_result );
+                $this->metadata_manager->createOrUpdateMetadata( $post_id, $detection_result['page_type'], 'auto_scan', [] );
             } else {
                 $metadata_data = $this->buildMetadataFromDetection( $post_id, $detection_result );
-                $this->metadata_manager->createMetadata( $post_id, $metadata_data );
+                $this->metadata_manager->createOrUpdateMetadata( $post_id, $detection_result['page_type'], 'auto_scan', $metadata_data );
             }
         }
     }
