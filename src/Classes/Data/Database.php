@@ -260,29 +260,15 @@ class Database {
 			$val = MDS_DB_VERSION;
 		}
 
-		$wpdb->update(
-			MDS_DB_PREFIX . 'config',
-			[
-				'val' => $val,
-			],
-			[
-				'config_key' => 'dbver'
-			],
-			[
-				'%s',
-			],
-			[
-				'%s'
-			]
-		);
+		\update_option(MDS_PREFIX . 'db-version', $val);
 
 		if ( $val == $version ) {
 			return $version;
 		}
 
-		$sql = "SELECT `val` FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key`='dbver';";
+		$val = \get_option(MDS_PREFIX . 'db-version', MDS_DB_VERSION);
 
-		return $wpdb->get_var( $sql );
+		return $val;
 	}
 
 	/**

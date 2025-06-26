@@ -72,7 +72,7 @@ jQuery(document).ready(function () {
 	// TODO: make dynamic call passed through localize
 	if (postType === "mds-pixel" && postId) {
 		const row = jQuery("#post-" + postId);
-		row.css("background-color", "#fffd99");
+		row.addClass("mds-highlight-row");
 		row[0].scrollIntoView();
 	}
 });

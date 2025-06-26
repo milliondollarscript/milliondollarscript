@@ -32,79 +32,71 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-// Handle admin-post.php form submissions separately to prevent header issues
-if (isset($_GET['processed']) && $_GET['processed'] == '1') {
-    // This is a return visit after processing
-    Notices::add_notice(Language::get("Grid processing completed successfully."), 'success');
-}
-
-ini_set( 'max_execution_time', 500 );
+@ini_set( 'max_execution_time', 500 );
 
 global $f2;
 
-// Handle form submission for processing pixels
-// This runs during page load, not after a form submission through admin-post.php
-if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' && !isset($_REQUEST['action']) ) {
-
-	// Buffer output to prevent "headers already sent" errors
-	ob_start();
-
-	// Process all selected banners
-	if ( ( $_REQUEST['banner_list'][0] ) == 'all' ) {
-		// Process all banners
-		$sql = "select * from " . MDS_DB_PREFIX . "banners ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$BID = $row['banner_id'];
-			echo process_image( $row['banner_id'] );
-			publish_image( $row['banner_id'] );
-			process_map( $row['banner_id'] );
-		}
-	} else {
-		// Process selected banners
-
-		foreach ( $_REQUEST['banner_list'] as $key => $banner_id ) {
-			# Banner ID.
-			$BID = $banner_id;
-
-			echo process_image( $banner_id );
-			publish_image( $banner_id );
-			process_map( $banner_id );
-		}
-	}
-
-	echo "<br>Finished.<hr>";
-	ob_end_flush();
-}
-
-// This function is called by admin-post.php to handle form submissions
-function mds_process_pixels_admin_handler() {
-	// Verify nonce for security
-	if ( !isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'mds-admin') ) {
-		wp_die('Security check failed');
-	}
-
-	// Process the form submission
-	if ( isset($_POST['process']) && $_POST['process'] == '1' ) {
-		// Redirect back to the admin page after processing
-		$redirect_url = admin_url('admin.php?page=mds-process-pixels&processed=1');
-
-		// If there are banner_list parameters, add them to the redirect URL
-		if ( isset($_POST['banner_list']) && is_array($_POST['banner_list']) ) {
-			$redirect_url .= '&process=1';
-			foreach ( $_POST['banner_list'] as $banner_id ) {
-				$redirect_url .= '&banner_list[]=' . urlencode($banner_id);
+// Handle processing after redirect from admin-post.php
+if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' && !isset($_REQUEST['action']) && isset($_REQUEST['banner_list']) ) {
+	
+	$processing_output = '';
+	$banners_processed = 0;
+	
+	try {
+		// Process all selected banners
+		if ( isset($_REQUEST['banner_list']) && is_array($_REQUEST['banner_list']) && $_REQUEST['banner_list'][0] == 'all' ) {
+			// Process all banners
+			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners";
+			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			while ( $row = mysqli_fetch_array( $result ) ) {
+				$BID = $row['banner_id'];
+				$processing_output .= process_image( $row['banner_id'] );
+				publish_image( $row['banner_id'] );
+				process_map( $row['banner_id'] );
+				$banners_processed++;
+			}
+		} else if ( isset($_REQUEST['banner_list']) && is_array($_REQUEST['banner_list']) ) {
+			// Process selected banners
+			foreach ( $_REQUEST['banner_list'] as $key => $banner_id ) {
+				if ( $banner_id == 'all' ) continue;
+				$BID = intval( $banner_id );
+				$processing_output .= process_image( $BID );
+				publish_image( $BID );
+				process_map( $BID );
+				$banners_processed++;
 			}
 		}
-
-		// Perform the redirect
-		wp_redirect($redirect_url);
-		exit;
+		
+	} catch (Exception $e) {
+		$processing_error = $e->getMessage();
 	}
 }
 
-// Register the admin post handler
-add_action('admin_post_mds_admin_form_submission', 'mds_process_pixels_admin_handler');
+// Display feedback messages after processing
+if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' && !isset($_REQUEST['action']) ) {
+	if ( isset($banners_processed) && $banners_processed > 0 ) {
+		echo '<div class="notice notice-success is-dismissible"><p>' . 
+			esc_html( Language::get_replace(
+				"Successfully processed [COUNT] grid(s).", 
+				'[COUNT]', 
+				$banners_processed
+			) ) . 
+			'</p></div>';
+		
+		// Output any processing messages
+		if ( !empty($processing_output) ) {
+			echo '<div class="notice notice-info is-dismissible"><p>' . wp_kses_post($processing_output) . '</p></div>';
+		}
+	}
+	
+	if ( isset($processing_error) ) {
+		echo '<div class="notice notice-error is-dismissible"><p>' . 
+			esc_html( Language::get("Error processing grids: ") . $processing_error ) . 
+			'</p></div>';
+	}
+}
+
+
 
 // Process images
 

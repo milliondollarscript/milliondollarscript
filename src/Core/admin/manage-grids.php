@@ -30,6 +30,8 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
+use MillionDollarScript\Classes\Data\DarkModeImages;
+use MillionDollarScript\Classes\Services\GridImageGenerator;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -377,6 +379,135 @@ function validate_block_size( $image_name, $BID ): bool {
 	return true;
 }
 
+/**
+ * Handle dark mode image generation for a specific grid
+ * 
+ * @param int $banner_id Banner ID to update
+ * @param string $theme_mode Theme mode ('light' or 'dark')
+ * @return string HTML result message
+ */
+function handle_dark_mode_generation( int $banner_id, string $theme_mode ): string {
+	try {
+		// Create backup first
+		$backup_created = backup_single_grid_images( $banner_id, $theme_mode );
+		
+		// Get theme-appropriate images
+		$images = get_theme_images_for_grid( $theme_mode );
+		
+		if ( empty( $images ) ) {
+			return '<p style="color: red;">Error: Failed to generate theme images</p>';
+		}
+
+		// Update the specific banner's images
+		$result = update_single_banner_images( $banner_id, $images );
+		
+		if ( $result ) {
+			$process_pixels_url = admin_url( 'admin.php?page=mds-process-pixels' );
+			$message = '<p style="color: green;">✓ Successfully updated grid images for ' . ucfirst($theme_mode) . ' mode</p>';
+			if ( $backup_created ) {
+				$message .= '<p><small>Backup created: ' . date('Y-m-d H:i:s') . '</small></p>';
+			}
+			$message .= '<div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 10px 0; border-radius: 4px;">';
+			$message .= '<p style="margin: 0; color: #856404;"><strong>Next Step Required:</strong> You must now run the Process Pixels task to regenerate the actual grid images.</p>';
+			$message .= '<p style="margin: 5px 0 0 0;"><a href="' . esc_url($process_pixels_url) . '" class="button button-primary">Go to Process Pixels</a></p>';
+			$message .= '</div>';
+			return $message;
+		} else {
+			return '<p style="color: red;">Error: Failed to update grid images</p>';
+		}
+
+	} catch ( Exception $e ) {
+		error_log( 'MDS Grid Dark Mode Generation Error: ' . $e->getMessage() );
+		return '<p style="color: red;">Error: ' . esc_html( $e->getMessage() ) . '</p>';
+	}
+}
+
+/**
+ * Get theme-appropriate images for grid
+ * 
+ * @param string $theme_mode Theme mode ('light' or 'dark')
+ * @return array Associative array of image data
+ */
+function get_theme_images_for_grid( string $theme_mode ): array {
+	// Try dynamic generation first if GD is available and we're in dark mode
+	if ( $theme_mode === 'dark' && GridImageGenerator::is_gd_available() ) {
+		try {
+			return GridImageGenerator::generate_theme_images( $theme_mode );
+		} catch ( Exception $e ) {
+			error_log( 'MDS Dynamic Image Generation Failed: ' . $e->getMessage() );
+			// Fall back to static images
+		}
+	}
+
+	// Use static images as fallback or for light mode
+	return DarkModeImages::get_images_by_theme( $theme_mode );
+}
+
+/**
+ * Update a single banner's images in the database
+ * 
+ * @param int $banner_id Banner ID to update
+ * @param array $images Associative array of image data
+ * @return bool True if successful, false otherwise
+ */
+function update_single_banner_images( int $banner_id, array $images ): bool {
+	global $wpdb;
+	
+	$table_name = $wpdb->prefix . 'mds_banners';
+	
+	// Only update the images that should be updated for dark mode
+	$updateable_images = DarkModeImages::get_updateable_images();
+	$update_data = [];
+	
+	foreach ( $updateable_images as $image_name ) {
+		if ( isset( $images[ $image_name ] ) ) {
+			$update_data[ $image_name ] = $images[ $image_name ];
+		}
+	}
+
+	if ( empty( $update_data ) ) {
+		return false;
+	}
+
+	$result = $wpdb->update(
+		$table_name,
+		$update_data,
+		[ 'banner_id' => $banner_id ],
+		array_fill( 0, count( $update_data ), '%s' ), // All images are strings
+		[ '%d' ] // banner_id is integer
+	);
+
+	return $result !== false;
+}
+
+/**
+ * Backup current grid images for a single banner
+ * 
+ * @param int $banner_id Banner ID to backup
+ * @param string $theme_mode Current theme mode
+ * @return bool True if backup successful
+ */
+function backup_single_grid_images( int $banner_id, string $theme_mode ): bool {
+	global $wpdb;
+	
+	$table_name = $wpdb->prefix . 'mds_banners';
+	$backup_key = 'mds_grid_backup_' . $banner_id . '_' . $theme_mode . '_' . time();
+	
+	// Get current images for the specific banner
+	$banner = $wpdb->get_row( $wpdb->prepare( "
+		SELECT banner_id, grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block 
+		FROM {$table_name}
+		WHERE banner_id = %d
+	", $banner_id ) );
+
+	if ( ! $banner ) {
+		return false;
+	}
+
+	// Store backup as WordPress option
+	return update_option( $backup_key, $banner );
+}
+
 if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 
 	$error = validate_input();
@@ -443,7 +574,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
     <p>Note: A grid with 100 rows and 100 columns and a block size of 10x10 is a million pixels. Setting this to a
         larger value may affect the memory & performance of the script.</p>
 
-    <input type="button" style="background-color:#66FF33" value="New Grid..."
+    <input type="button" class="mds-admin-action-new" value="New Grid..."
            onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=new&new=1' ) ); ?>'">
     <br>
 
@@ -735,6 +866,51 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                         </label>
                     </div>
                 </div>
+                
+                <?php
+                // Dark Mode Image Management Section
+                $current_theme = Options::get_option( 'theme_mode', 'light' );
+                ?>
+                <div class="inventory-section-title">
+                    Dark Mode Image Management
+                </div>
+                <div class="inventory-entry">
+                    <div class="inventory-content">
+                        <p>Current theme mode: <strong><?php echo ucfirst($current_theme); ?></strong></p>
+                        <p>Generate theme-appropriate grid images automatically based on your color settings.</p>
+                        
+                        <?php if ( isset( $_REQUEST['mds_grid_dark_mode_action'] ) ): ?>
+                            <div class="notice notice-info">
+                                <?php
+                                $action_result = '';
+                                if ( $_REQUEST['mds_grid_dark_mode_action'] === 'generate_dark' ) {
+                                    $action_result = handle_dark_mode_generation( $BID, 'dark' );
+                                } elseif ( $_REQUEST['mds_grid_dark_mode_action'] === 'generate_light' ) {
+                                    $action_result = handle_dark_mode_generation( $BID, 'light' );
+                                }
+                                echo $action_result;
+                                ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <div style="margin: 10px 0;">
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=edit&BID=' . $BID . '&mds_grid_dark_mode_action=generate_dark' ) ); ?>" 
+                               class="button button-secondary"
+                               onclick="return confirm('This will replace current grid images with dark mode versions. Continue?');">
+                                Generate Dark Mode Images
+                            </a>
+                            
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=edit&BID=' . $BID . '&mds_grid_dark_mode_action=generate_light' ) ); ?>" 
+                               class="button button-secondary"
+                               onclick="return confirm('This will replace current grid images with light mode versions. Continue?');">
+                                Generate Light Mode Images
+                            </a>
+                        </div>
+                        
+                        <p><small><strong>Note:</strong> This will update the grid images for this specific grid only. Backup copies are created automatically.</small></p>
+                    </div>
+                </div>
+                
                 <div class="inventory-section-title">Block Graphics - Displayed on the public Grid</div>
                 <div class="inventory-entry">
                     <div class="inventory-title">Grid Block</div>

@@ -242,21 +242,14 @@ class _2_5_11_40 {
              * Fallback strategy: Try to empty the file if deletion failed
              */
             $success = false;
-            
+
             /**
-             * Get filesystem access before attempting file operations
+             * If file exists, try to empty it with disabled PHP code
              */
-            if ($fs->get_filesystem()) {
-                global $wp_filesystem;
-                
-                /**
-                 * If file exists, try to empty it with disabled PHP code
-                 */
-                if ($wp_filesystem->exists($cookies_file)) {
-                    if ($wp_filesystem->put_contents($cookies_file, '<?php // File disabled by MDS Upgrade', FS_CHMOD_FILE)) {
-                        Logs::log('Successfully disabled cookies file by emptying it');
-                        $success = true;
-                    }
+            if ($fs->file_exists($cookies_file)) {
+                if ($fs->put_contents($cookies_file, '<?php // File disabled by MDS Upgrade')) {
+                    Logs::log('Successfully disabled cookies file by emptying it');
+                    $success = true;
                 }
             }
             

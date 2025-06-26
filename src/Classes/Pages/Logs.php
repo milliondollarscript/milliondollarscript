@@ -146,7 +146,7 @@ class Logs {
                 <!-- Pagination etc. will go here -->
                 <span id="mds-log-spinner" class="spinner"></span>
             </div>
-            <div id="mds-log-viewer" style="height: 400px; overflow-y: scroll; background: #f9f9f9; border: 1px solid #ccc; padding: 10px; font-family: monospace; white-space: pre-wrap;">
+            <div id="mds-log-viewer" class="mds-log-viewer">
                 <?php echo esc_html( Language::get('Loading log entries...') ); ?>
             </div>
         </div>

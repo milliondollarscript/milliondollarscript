@@ -25,6 +25,284 @@
  *
  */
 
+/* === CORE ADMIN STYLES === */
+
+.milliondollarscript-logo-sm {
+	display: block;
+	height: auto;
+	max-width: 100%;
+	margin: 0 auto;
+	z-index: 999;
+	position: relative;
+	overflow: hidden;
+	border-bottom-right-radius: 20px;
+}
+
+.admin-container {
+	display: flex;
+	flex-wrap: wrap;
+	padding: 8px;
+	flex-direction: column;
+}
+
+.mds-menu-toggle {
+	background-color: #1d2327;
+	display: none;
+	padding-top: 5px;
+}
+
+.mds-admin-menu {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	justify-content: center;
+	background-color: #1d2327;
+	white-space: nowrap;
+	align-items: center;
+	position: relative;
+}
+
+.mds-admin-menu li {
+	padding-top: 5px;
+	border-bottom: 4px solid transparent;
+	transition: border-bottom 0.3s;
+	margin-bottom: 0;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.3;
+	hyphens: auto;
+	word-break: break-word;
+	user-select: none;
+	-webkit-font-smoothing: subpixel-antialiased;
+	position: relative;
+}
+
+.mds-admin-menu li a {
+	display: block;
+	color: #f0f0f1;
+	text-decoration: none;
+	padding: 10px;
+}
+
+.mds-admin-menu li:hover, .mds-admin-menu li:focus {
+	background-color: #32373c;
+	box-shadow: 0 0 5px 1px #000;
+}
+
+.mds-admin-menu li a:hover, .mds-admin-menu .active a {
+	color: #72aee6;
+}
+
+.mds-admin-menu li:hover {
+	border-bottom: 4px solid #72aee6;
+}
+
+.mds-admin-menu ul {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	display: none;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	background-color: #32373c;
+	width: 200px;
+	z-index: 1000;
+}
+
+.mds-admin-menu ul ul {
+	left: 100%;
+	top: 0;
+}
+
+.mds-admin-menu img {
+	height: 20px;
+	width: auto;
+	vertical-align: middle;
+}
+
+.mds-admin-menu li > ul {
+	display: none;
+}
+
+@media screen and (min-width: 1000px) {
+	.mds-admin-menu {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.mds-menu-toggle {
+		display: none;
+	}
+}
+
+@media screen and (max-width: 999px) {
+	.mds-admin-menu {
+		display: none;
+	}
+
+	.mds-menu-toggle {
+		display: block;
+	}
+}
+
+.admin-content {
+	flex: 10 10 0;
+	padding: 8px;
+	margin: 8px;
+	max-width: calc(100% - 240px);
+}
+
+.admin-config {
+	display: grid;
+	grid-template-columns: 1fr 3fr;
+	grid-template-rows: auto;
+	gap: 1px;
+}
+
+.admin-config div {
+	padding: 8px;
+	background-color: #f5f5f5;
+	border: 1px solid #dcdcdc;
+}
+
+.admin-config-heading {
+	margin-top: 1px;
+	font-weight: bold;
+	grid-column: 1 / span 2;
+}
+
+.admin-config-left {
+
+}
+
+.admin-config-right {
+
+}
+
+.admin-config-footer {
+	grid-column: 1 / span 2;
+}
+
+a {
+	text-decoration: none;
+	color: #008cd4;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #6000cd;
+}
+
+.phpinfo-container table,
+.phpinfo-container hr {
+	width: 100%;
+}
+
+.system-info .v {
+	word-break: break-all;
+}
+
+.inventory-reset-link {
+	color: #ff0000 !important;
+	font-size: 2em;
+	text-decoration: none !important;
+}
+
+.inventory-save {
+	font-size: 1.2em;
+	margin: 8px;
+}
+
+.mds-top-clicks-table {
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0;
+	background-color: #fff;
+}
+
+.mds-top-clicks-heading {
+	background-color: #d9d9d9;
+	color: black;
+	font-weight: bold;
+}
+
+.mds-top-clicks-table td {
+	font-family: Arial, sans-serif;
+	padding: 3px;
+}
+
+.mds-top-clicks-table tr:not(:first-child):hover {
+	background-color: #f5f5f5;
+}
+
+/* Basic table styles */
+.table-responsive {
+	width: 100%;
+	max-width: 100%;
+	margin: auto;
+}
+
+.table-responsive table {
+	width: 100%;
+	max-width: 100%;
+	border-collapse: collapse;
+	display: table;
+}
+
+.table-responsive th, .table-responsive td {
+	padding: 10px;
+	text-align: left;
+	border: 1px solid #ddd;
+}
+
+/* Styles for screens smaller than 800px */
+@media screen and (max-width: 800px) {
+	.table-responsive table, .table-responsive thead, .table-responsive tbody, .table-responsive tr {
+		display: block;
+		border: 1px solid #ddd;
+	}
+
+	.table-responsive thead tr {
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+
+	.table-responsive tr {
+		margin-bottom: 1rem;
+		border: 2px solid #ddd;
+	}
+
+	.table-responsive th, .table-responsive td {
+		display: block;
+		border: none;
+		border-bottom: 1px solid #ddd;
+		position: relative;
+	}
+
+	.table-responsive td:before {
+		position: absolute;
+		top: 0;
+		left: 6px;
+		width: 25%;
+		padding-right: 10px;
+		white-space: nowrap;
+		content: attr(data-column);
+	}
+}
+
+.table-responsive .tr-normal {
+	background-color: #ffffff;
+}
+
+.table-responsive .tr-normal:hover {
+	background-color: #FBFDDB;
+}
+
+/* === MDS MAIN PAGE STYLES === */
+
 .mds-main-page {
 	font-family: Arial, sans-serif;
 	color: #333;
@@ -316,3 +594,151 @@ div.milliondollarscript-fire {
 		padding: 5px 10px;
 	}
 }
+
+/* --- MDS ADMIN CLASSES (copied from mds.css for admin area) --- */
+
+.mds-highlight-row {
+	background-color: var(--mds-accessible-warning, #fef3c7) !important;
+	color: var(--mds-text-primary, #000) !important;
+}
+
+.mds-admin-action-approve {
+	background-color: var(--mds-accessible-success, #388E3C) !important;
+	color: #ffffff !important;
+	border: none !important;
+}
+
+.mds-admin-action-disapprove {
+	background-color: var(--mds-accessible-warning, #E65100) !important;
+	color: #ffffff !important;
+	border: none !important;
+}
+
+.mds-admin-action-deny {
+	background-color: var(--mds-accessible-error, #D32F2F) !important;
+	color: #ffffff !important;
+	border: none !important;
+}
+
+.mds-admin-action-new {
+	background-color: var(--mds-accessible-success, #66FF33) !important;
+	color: var(--mds-text-primary, #000) !important;
+	border: none !important;
+}
+
+.mds-block-pointer {
+	font-size: 1px;
+	line-height: 1px;
+	cursor: pointer;
+	position: absolute;
+	left: 0;
+	top: 0;
+	background-color: var(--mds-card-bg, #FFFFFF);
+	visibility: hidden;
+}
+
+.inventory-container {
+	display: flex;
+	gap: 8px;
+	flex-flow: row wrap;
+	align-items: flex-start;
+}
+
+.inventory-column div {
+	padding: 8px;
+	outline: 1px solid #ccc;
+}
+
+.inventory-column {
+	background: #fff;
+	flex: 1;
+}
+
+.inventory-section-title {
+	font-weight: bold;
+	font-size: 1.2rem;
+}
+
+.inventory2-title,
+.inventory-title {
+	background-color: #eaeaea;
+}
+
+.inventory-content {
+}
+
+.inventory2-container {
+	background-color: #fff;
+	display: grid;
+	grid: 1fr / 2fr 1fr 2fr 1fr 1fr 3fr 1fr 1fr;
+	justify-items: stretch;
+	align-items: stretch;
+	justify-content: stretch;
+	align-content: stretch;
+}
+
+.inventory2-title {
+	font-weight: bold;
+}
+
+.inventory2-title,
+.inventory2-content {
+	padding: 4px;
+	outline: 1px solid #ccc;
+}
+
+.inventory2-content a:link,
+.inventory2-content a:visited {
+	font-size: 1.2em;
+	text-decoration: none;
+	display: inline-block;
+	padding: 6px;
+	border-radius: 6px;
+	color: #008cd4;
+	outline: 2px inset #70abc9;
+	margin: 3px;
+}
+
+.inventory2-content a:hover {
+	color: #0ea1ee;
+	outline: 2px outset #4fabda;
+}
+
+.inventory2-content a:focus {
+	color: #008cd4;
+	outline: 3px outset #008cd4;
+}
+
+.mds-theme-processing {
+	background: #fef3c7;
+	color: #333;
+	border: 1px solid #f59e0b;
+	padding: 12px 18px;
+	font-size: 1.1em;
+	border-radius: 6px;
+	margin: 10px 0;
+	box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+	z-index: 1000;
+}
+
+.mds-price-zone-yellow {
+	background-color: var(--mds-accessible-warning, #FFFF00);
+	color: var(--mds-text-primary, #000);
+}
+
+.mds-price-zone-cyan {
+	background-color: #00FFFF;
+	color: var(--mds-text-primary, #000);
+}
+
+.mds-price-zone-magenta {
+	background-color: #FF00FF;
+	color: var(--mds-card-bg, #ffffff);
+}
+
+.mds-price-zone-white {
+	background-color: var(--mds-card-bg, #ffffff);
+	color: var(--mds-text-primary, #000);
+	border: 1px solid var(--mds-border-color, #ccc);
+}
+/* --- END MDS ADMIN CLASSES --- */

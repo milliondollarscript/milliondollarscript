@@ -89,183 +89,238 @@ class Styles {
      * @return string The generated CSS.
      */
     public static function get_dynamic_css(): string {
-        // Fetch colors via Options::get_option with fallbacks
+        // Get current theme mode
+        $theme_mode = Options::get_option( 'theme_mode', 'light' );
+        
+        // Get theme-aware CSS variables from Options class
+        $theme_variables = Options::get_theme_css_variables();
+        $accessible_colors = Options::get_accessible_colors( $theme_mode );
+        
+        // Legacy color options (for backwards compatibility)
         $primary_color    = Options::get_option( 'primary_color', '#ff0000', true );
         $secondary_color  = Options::get_option( 'secondary_color', '#000000', true );
         $background_color = Options::get_option( 'background_color', '#ffffff', true );
         $text_color       = Options::get_option( 'text_color', '#333333', true );
 
-        $button_color            = Options::get_option( 'button-color', '#0073aa', true );
-        $button_text_color       = Options::get_option( 'button_text_color', '#ffffff', true );
-        $button_secondary_bg     = Options::get_option( 'button_secondary_bg', '#91877D', true );
-        $button_secondary_text   = Options::get_option( 'button_secondary_text_color', '#ffffff', true ); // Matched key from previous edit
-        $button_tertiary_bg      = Options::get_option( 'button_tertiary_bg', '#F6F7F7', true );     // Matched key from previous edit
-        $button_tertiary_text    = Options::get_option( 'button_tertiary_text_color', '#000000', true ); // Matched key from previous edit
-        $button_border_radius    = Options::get_option( 'button_border_radius', '4', true );          // Matched key from previous edit
+        // Button styling options (theme-independent)
+        $button_tertiary_bg      = Options::get_option( 'button_tertiary_bg', '#F6F7F7', true );
+        $button_tertiary_text    = Options::get_option( 'button_tertiary_text_color', '#000000', true );
+        $button_border_radius    = Options::get_option( 'button_border_radius', '4', true );
 
-        $button_success_bg     = Options::get_option( 'button_success_bg', '#28a745', true );
-        $button_success_text   = Options::get_option( 'button_success_text_color', '#ffffff', true ); // Assuming text color for success
-        $button_danger_bg      = Options::get_option( 'button_danger_bg', '#f44336', true );
-        $button_danger_text    = Options::get_option( 'button_danger_text_color', '#ffffff', true );   // Assuming text color for danger
+        // Build CSS variables string
+        $css_vars = [];
+        foreach ( $theme_variables as $property => $value ) {
+            $css_vars[] = "    {$property}: {$value};";
+        }
 
-        $error_color       = Options::get_option( 'error_color', '#dc3232', true );
-        $success_color     = Options::get_option( 'success_color', '#46b450', true );
-        $warning_color     = Options::get_option( 'warning_color', '#ffb900', true );
-        $info_color        = Options::get_option( 'info_color', '#72aee6', true );
-        $grid_link_color   = Options::get_option( 'grid_link_color', '#0073aa', true );
-        $hover_color       = Options::get_option( 'hover_color', '#005177', true );
-        $grid_border_color = Options::get_option( 'grid_border_color', '#dddddd', true );
+        // Add accessible color overrides for current theme
+        $css_vars[] = "    --mds-accessible-link: {$accessible_colors['link_color']};";
+        $css_vars[] = "    --mds-accessible-success: {$accessible_colors['success_color']};";
+        $css_vars[] = "    --mds-accessible-error: {$accessible_colors['error_color']};";
+        $css_vars[] = "    --mds-accessible-warning: {$accessible_colors['warning_color']};";
 
-        // Sanitize for CSS output (important when embedding directly, less so for CSS vars but good practice)
-        // For CSS variables, the browser handles parsing, but it's still good to ensure they are valid color codes or values.
-        // For simplicity, we'll assume Options::get_option handles basic sanitization or returns valid defaults.
-        // If more complex sanitization (e.g. ensuring valid hex) is needed, it could be added here.
+        // Legacy variables for backward compatibility
+        $css_vars[] = "    --mds-legacy-primary: {$primary_color};";
+        $css_vars[] = "    --mds-legacy-secondary: {$secondary_color};";
+        $css_vars[] = "    --mds-legacy-background: {$background_color};";
+        $css_vars[] = "    --mds-legacy-text: {$text_color};";
 
-        $css = "
-:root {
-    --mds-primary-color: {$primary_color};
-    --mds-secondary-color: {$secondary_color};
-    --mds-background-color: {$background_color};
-    --mds-text-color: {$text_color};
+        // Theme-independent button variables
+        $css_vars[] = "    --mds-btn-tertiary-bg: {$button_tertiary_bg};";
+        $css_vars[] = "    --mds-btn-tertiary-text: {$button_tertiary_text};";
+        $css_vars[] = "    --mds-btn-border-radius: {$button_border_radius}px;";
 
-    --mds-button-color: {$button_color};
-    --mds-button-text-color: {$button_text_color};
-    --mds-button-secondary-bg: {$button_secondary_bg};
-    --mds-button-secondary-text-color: {$button_secondary_text};
-    --mds-button-tertiary-bg: {$button_tertiary_bg};
-    --mds-button-tertiary-text-color: {$button_tertiary_text};
-    --mds-button-border-radius: {$button_border_radius}px; /* Assuming px is desired for radius */
+        $css = "/* MDS Dynamic Theme Variables */\n:root {\n" . implode( "\n", $css_vars ) . "\n}\n\n";
 
-    --mds-button-success-bg: {$button_success_bg};
-    --mds-button-success-text-color: {$button_success_text};
-    --mds-button-danger-bg: {$button_danger_bg};
-    --mds-button-danger-text-color: {$button_danger_text};
+        // Theme-specific body class application
+        $css .= "/* Theme Application */\n";
+        $css .= "body.mds-container,\n.mds-container {\n";
+        $css .= "    background-color: var(--mds-bg-primary);\n";
+        $css .= "    color: var(--mds-text-primary);\n";
+        $css .= "}\n\n";
 
-    --mds-error-color: {$error_color};
-    --mds-success-color: {$success_color};
-    --mds-warning-color: {$warning_color};
-    --mds-info-color: {$info_color};
+        // Base component styling using CSS variables
+        $css .= "/* Base Component Styling */\n";
+        $css .= ".mds-container p,\n.mds-container label {\n";
+        $css .= "    color: var(--mds-text-primary);\n";
+        $css .= "}\n\n";
 
-    --mds-grid-link-color: {$grid_link_color};
-    --mds-hover-color: {$hover_color};
-    --mds-grid-border-color: {$grid_border_color};
-}
+        $css .= ".mds-container a {\n";
+        $css .= "    color: var(--mds-accessible-link);\n";
+        $css .= "}\n\n";
 
-body, .mds-container, .mds-text-color {
-    color: var(--mds-text-color);
-}
-body, .mds-container, .mds-body-bg-color {
-    background-color: var(--mds-background-color);
-}
-.mds-primary-color { color: var(--mds-primary-color); }
-.mds-primary-bg-color { background-color: var(--mds-primary-color); }
-.mds-secondary-color { color: var(--mds-secondary-color); }
-.mds-secondary-bg-color { background-color: var(--mds-secondary-color); }
+        $css .= ".mds-container a:hover {\n";
+        $css .= "    color: var(--mds-primary-color);\n";
+        $css .= "}\n\n";
 
-/* Original typography and inputs from output_dynamic_styles */
-.mds-container p,
-.mds-container label {
-    color: var(--mds-text-color);
-}
-.mds-container a {
-    color: var(--mds-primary-color);
-}
-.mds-container input[type='text'],
-.mds-container input[type='password'],
-.mds-container select,
-.mds-container textarea {
-    background-color: var(--mds-background-color);
-    border: 1px solid var(--mds-secondary-color);
-    color: var(--mds-text-color);
-}
-.mds-container table th {
-    background-color: var(--mds-secondary-color);
-    color: var(--mds-button-text-color); /* Assuming header text is like button text */
-}
-.mds-container table td {
-    /* background-color already handled by .mds-container bg */
-    /* color already handled by .mds-container text */
-}
+        // Input styling
+        $css .= "/* Form Input Styling */\n";
+        $css .= ".mds-container input[type='text'],\n";
+        $css .= ".mds-container input[type='password'],\n";
+        $css .= ".mds-container input[type='email'],\n";
+        $css .= ".mds-container select,\n";
+        $css .= ".mds-container textarea {\n";
+        $css .= "    background-color: var(--mds-input-bg);\n";
+        $css .= "    border: 1px solid var(--mds-input-border);\n";
+        $css .= "    color: var(--mds-text-primary) !important;\n";
+        $css .= "}\n\n";
 
-/* Buttons using CSS Variables */
-.mds-button, input[type='submit'].mds-button, button.mds-button {
-    background-color: var(--mds-button-color);
-    color: var(--mds-button-text-color);
-    border-radius: var(--mds-button-border-radius);
-    border: none; /* Consistent with original output */
-}
-.mds-button-secondary, input[type='submit'].mds-button-secondary, button.mds-button-secondary {
-    background-color: var(--mds-button-secondary-bg);
-    color: var(--mds-button-secondary-text-color);
-    border-radius: var(--mds-button-border-radius);
-    border: none;
-}
-.mds-button-tertiary, input[type='submit'].mds-button-tertiary, button.mds-button-tertiary {
-    background-color: var(--mds-button-tertiary-bg);
-    color: var(--mds-button-tertiary-text-color);
-    border-radius: var(--mds-button-border-radius);
-    border: none;
-}
+        // Button styling
+        $css .= "/* Button Styling */\n";
+        $css .= "#loginform input[type=\"submit\"],\n";
+        $css .= ".mds-register-link,\n";
+        $css .= ".mds-container input[type='button'],\n";
+        $css .= ".mds-container input[type='submit'],\n";
+        $css .= ".mds-button,\n";
+        $css .= "a.mds-button {\n";
+        $css .= "    background-color: var(--mds-btn-primary-bg);\n";
+        $css .= "    color: var(--mds-btn-primary-text);\n";
+        $css .= "    border-radius: var(--mds-btn-border-radius);\n";
+        $css .= "    border: none;\n";
+        $css .= "}\n\n";
 
-#loginform input[type=\"submit\"],
-.mds-register-link,
-.mds-container input[type='button'],
-.mds-container input[type='submit'],
-.mds-button, a.mds-button {
-    /* Base button style, uses primary button vars */
-    background-color: var(--mds-button-color);
-    color: var(--mds-button-text-color);
-    border-radius: var(--mds-button-border-radius);
-    border: none;
-}
+        $css .= ".mds-button-secondary {\n";
+        $css .= "    background-color: var(--mds-btn-secondary-bg);\n";
+        $css .= "    color: var(--mds-btn-secondary-text);\n";
+        $css .= "}\n\n";
+        $css .= ".mds-button.mds-success,\n";
+        $css .= ".mds-container input[type='button'].mds-confirm,\n";
+        $css .= ".mds-container input[type='button'].mds-upload,\n";
+        $css .= ".mds-container input[type='button'].mds-write,\n";
+        $css .= ".mds-container input[type='button'].mds-pay,\n";
+        $css .= ".mds-container input[type='button'].mds-continue,\n";
+        $css .= ".mds-container input[type='submit'].mds-complete,\n";
+        $css .= ".mds-container #submit_button1,\n";
+        $css .= ".mds-container #submit_button2 {\n";
+        $css .= "    background-color: var(--mds-btn-success-bg);\n";
+        $css .= "    color: var(--mds-btn-success-text);\n";
+        $css .= "}\n\n";
 
-.mds-button.mds-success,
-.mds-container input[type='button'].mds-confirm,
-.mds-container input[type='button'].mds-upload,
-.mds-container input[type='button'].mds-write,
-.mds-container input[type='button'].mds-pay,
-.mds-container input[type='button'].mds-continue,
-.mds-container input[type='submit'].mds-complete,
-.mds-container #submit_button1, /* Specific ID from original */
-.mds-container #submit_button2  /* Specific ID from original */
-{
-    background-color: var(--mds-button-success-bg);
-    color: var(--mds-button-success-text-color);
-}
+        $css .= ".mds-button.mds-success:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-confirm:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-upload:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-write:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-pay:hover,\n";
+        $css .= ".mds-container input[type='button'].mds-continue:hover,\n";
+        $css .= ".mds-container input[type='submit'].mds-complete:hover,\n";
+        $css .= ".mds-container #submit_button1:hover,\n";
+        $css .= ".mds-container #submit_button2:hover {\n";
+        $css .= "    filter: brightness(1.1);\n";
+        $css .= "}\n\n";
 
-.mds-button.mds-danger,
-.mds-container #reset_button /* Specific ID from original */
-{
-    background-color: var(--mds-button-danger-bg);
-    color: var(--mds-button-danger-text-color);
-}
+        $css .= ".mds-button.mds-danger,\n";
+        $css .= ".mds-container #reset_button {\n";
+        $css .= "    background-color: var(--mds-btn-danger-bg);\n";
+        $css .= "    color: var(--mds-btn-danger-text);\n";
+        $css .= "}\n\n";
 
-/* General hover effect for buttons, can be refined */
-.mds-button:hover,
-#loginform input[type=\"submit\"]:hover,
-.mds-container input[type='button']:hover,
-.mds-container input[type='submit']:hover,
-a.mds-button:hover {
-    filter: brightness(90%);
-}
+        // Message styling
+        $css .= "/* Message & Alert Styling */\n";
+        $css .= ".mds-success-message {\n";
+        $css .= "    background-color: " . ( $theme_mode === 'dark' ? 'rgba(74, 222, 128, 0.1)' : '#DFF2BF' ) . ";\n";
+        $css .= "    color: var(--mds-accessible-success);\n";
+        $css .= "    border: 1px solid var(--mds-accessible-success);\n";
+        $css .= "}\n\n";
 
-/* Alerts & Notices */
-.mds-notice.mds-error, .mds-error-text { color: var(--mds-error-color); }
-.mds-notice.mds-success, .mds-success-text { color: var(--mds-success-color); }
-.mds-notice.mds-warning, .mds-warning-text { color: var(--mds-warning-color); }
-.mds-notice.mds-info, .mds-info-text { color: var(--mds-info-color); }
+        $css .= ".mds-error-message {\n";
+        $css .= "    background-color: " . ( $theme_mode === 'dark' ? 'rgba(248, 113, 113, 0.1)' : '#FFE6E6' ) . ";\n";
+        $css .= "    color: var(--mds-accessible-error);\n";
+        $css .= "    border: 1px solid var(--mds-accessible-error);\n";
+        $css .= "}\n\n";
 
-/* Grid Specific */
-.mds-pixel-grid a, .mds-grid-link-color { color: var(--mds-grid-link-color); }
-.mds-pixel-grid a:hover, .mds-grid-link-color:hover { color: var(--mds-hover-color); }
-.mds-pixel-grid, .mds-pixel-grid td, .mds-grid-border-color {
-    border-color: var(--mds-grid-border-color);
-}
+        $css .= ".mds-caution-message {\n";
+        $css .= "    background-color: " . ( $theme_mode === 'dark' ? 'rgba(251, 191, 36, 0.1)' : '#FFF3CD' ) . ";\n";
+        $css .= "    color: var(--mds-accessible-warning);\n";
+        $css .= "    border: 1px solid var(--mds-accessible-warning);\n";
+        $css .= "}\n\n";
 
-		";
+        $css .= ".mds-info-message {\n";
+        $css .= "    background-color: " . ( $theme_mode === 'dark' ? 'rgba(59, 130, 246, 0.1)' : '#d1e9ff' ) . ";\n";
+        $css .= "    color: var(--mds-accessible-link);\n";
+        $css .= "    border: 1px solid var(--mds-accessible-link);\n";
+        $css .= "}\n\n";
 
-		// Allow filtering of the CSS
-		$css = apply_filters( 'mds_dynamic_css', $css );
+        // Menu and navigation styling
+        $css .= "/* Menu & Navigation Styling */\n";
+        $css .= ".mds-container .menu-bar,\n";
+        $css .= ".mds-container .users-menu-bar,\n";
+        $css .= ".mds-users-menu {\n";
+        $css .= "    background-color: var(--mds-menu-bg);\n";
+        $css .= "}\n\n";
+
+        $css .= ".mds-container .users-menu-bar a {\n";
+        $css .= "    color: var(--mds-menu-text);\n";
+        $css .= "}\n\n";
+
+        $css .= ".mds-container .users-menu-bar a:hover {\n";
+        $css .= "    background-color: var(--mds-menu-hover-bg);\n";
+        $css .= "    color: var(--mds-text-primary);\n";
+        $css .= "}\n\n";
+
+        // Card and container styling
+        $css .= "/* Card & Container Styling */\n";
+        $css .= ".mds-container .heading,\n";
+        $css .= ".stats-container .status,\n";
+        $css .= ".mds-order-details .mds-order-details-section,\n";
+        $css .= "#loginform {\n";
+        $css .= "    background-color: var(--mds-card-bg);\n";
+        $css .= "    color: var(--mds-text-primary);\n";
+        $css .= "}\n\n";
+
+        $css .= ".stats-container .status {\n";
+        $css .= "    border: 1px solid var(--mds-border-color);\n";
+        $css .= "}\n\n";
+
+        // Table styling
+        $css .= "/* Table Styling */\n";
+        $css .= ".mds-container table th {\n";
+        $css .= "    background-color: var(--mds-bg-secondary);\n";
+        $css .= "    color: var(--mds-text-primary);\n";
+        $css .= "}\n\n";
+
+        $css .= ".mds-container .table-row.header {\n";
+        $css .= "    background-color: var(--mds-bg-secondary);\n";
+        $css .= "    color: var(--mds-text-primary);\n";
+        $css .= "}\n\n";
+
+        // Dark mode specific overrides
+        if ( $theme_mode === 'dark' ) {
+            $css .= "/* Dark Mode Specific Overrides */\n";
+            $css .= ".mds-container .select-input {\n";
+            $css .= "    background-color: var(--mds-bg-secondary);\n";
+            $css .= "    color: var(--mds-text-primary);\n";
+            $css .= "    box-shadow: 0 0 5px var(--mds-shadow);\n";
+            $css .= "}\n\n";
+
+            $css .= ".mds-pixel-info-container {\n";
+            $css .= "    background-color: var(--mds-bg-secondary);\n";
+            $css .= "    box-shadow: 0 2px 8px var(--mds-shadow);\n";
+            $css .= "}\n\n";
+
+            $css .= ".mds-pixel-info-block {\n";
+            $css .= "    background-color: var(--mds-bg-tertiary);\n";
+            $css .= "}\n\n";
+
+            // Navigation dark mode styling
+            $css .= ".mds-navigation a, .mds-navigation span {\n";
+            $css .= "    color: var(--mds-text-primary);\n";
+            $css .= "    border: 1px solid var(--mds-border-color);\n";
+            $css .= "    background-color: var(--mds-bg-secondary);\n";
+            $css .= "}\n\n";
+
+            $css .= ".mds-navigation a:hover {\n";
+            $css .= "    background-color: var(--mds-bg-tertiary);\n";
+            $css .= "    border-color: var(--mds-primary-color);\n";
+            $css .= "}\n\n";
+
+            $css .= ".mds-navigation span {\n";
+            $css .= "    background-color: var(--mds-primary-color);\n";
+            $css .= "    border-color: var(--mds-primary-color);\n";
+            $css .= "}\n\n";
+        }
+
+        // Allow filtering of the CSS
+        $css = apply_filters( 'mds_dynamic_css', $css );
 
         return trim( $css );
     }
@@ -303,5 +358,65 @@ a.mds-button:hover {
         $version = filemtime( $css_filepath );
 
         wp_enqueue_style( $handle, $src, $deps, $version );
+    }
+
+    /**
+     * Get theme-aware body classes for frontend
+     *
+     * @return array Array of body classes
+     */
+    public static function get_theme_body_classes(): array {
+        $theme_mode = Options::get_option( 'theme_mode', 'light' );
+        
+        $classes = [
+            'mds-theme-' . $theme_mode,
+            'mds-theme-active'
+        ];
+        
+        return $classes;
+    }
+
+    /**
+     * Add theme classes to body class
+     *
+     * @param array $classes Existing body classes
+     * @return array Modified body classes
+     */
+    public static function add_theme_body_classes( array $classes ): array {
+        // Only add theme classes on MDS pages
+        if ( Utility::is_mds_page() ) {
+            $theme_classes = self::get_theme_body_classes();
+            $classes = array_merge( $classes, $theme_classes );
+        }
+        
+        return $classes;
+    }
+
+    /**
+     * Initialize theme body class hooks
+     */
+    public static function init_theme_hooks(): void {
+        // Add theme body classes to frontend
+        add_filter( 'body_class', [ self::class, 'add_theme_body_classes' ] );
+        
+        // Add theme classes to admin body (for admin pages)
+        add_filter( 'admin_body_class', [ self::class, 'get_admin_theme_classes' ] );
+    }
+
+    /**
+     * Get admin theme classes
+     *
+     * @param string $classes Existing admin body classes
+     * @return string Modified admin body classes
+     */
+    public static function get_admin_theme_classes( string $classes ): string {
+        $theme_mode = Options::get_option( 'theme_mode', 'light' );
+        
+        // Add theme class to admin for MDS pages
+        if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'mds-' ) === 0 ) {
+            $classes .= ' mds-admin-theme-' . $theme_mode;
+        }
+        
+        return $classes;
     }
 }

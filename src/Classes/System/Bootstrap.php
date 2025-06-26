@@ -67,6 +67,9 @@ class Bootstrap {
 		// Load language
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\Language\Language', 'load_textdomain' ] );
 
+		// Initialize theme hooks for dark mode support
+		add_action( 'init', [ '\MillionDollarScript\Classes\Web\Styles', 'init_theme_hooks' ] );
+
 		// Register admin pages
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\MillionDollarScript', 'menu' ], 9 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Logs', 'menu' ], 11 );
@@ -113,6 +116,9 @@ class Bootstrap {
 		if ( $page == MDS_PREFIX . 'options' ) {
 			add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Data\Options', 'save' ] );
 		}
+
+		// Initialize Grid Image Switcher for theme mode automation
+		add_action( 'init', [ '\MillionDollarScript\Classes\Services\GridImageSwitcher', 'init' ] );
 
 		// Add Block
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Blocks\Block', 'register_style' ] );
