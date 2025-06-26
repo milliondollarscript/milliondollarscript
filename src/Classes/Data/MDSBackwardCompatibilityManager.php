@@ -458,6 +458,7 @@ class MDSBackwardCompatibilityManager {
             'total_updates' => 0,
             'successful_updates' => 0,
             'failed_updates' => 0,
+            'updated_pages' => 0,
             'errors' => []
         ];
         
@@ -495,6 +496,7 @@ class MDSBackwardCompatibilityManager {
                     
                     if ( $update_result && ! is_wp_error( $update_result ) ) {
                         $results['successful_updates']++;
+                        $results['updated_pages']++;
                         
                         // Add migration note to post meta
                         add_post_meta( $post->ID, '_mds_shortcode_migrated', [
@@ -774,7 +776,7 @@ class MDSBackwardCompatibilityManager {
                             ]
                         ];
                         
-                        $result = $this->metadata_manager->createMetadata( $page_id, $metadata_data );
+                        $result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $page_type, 'migration', $metadata_data );
                         
                         if ( ! is_wp_error( $result ) ) {
                             $results['migrated_options']++;
