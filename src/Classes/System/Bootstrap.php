@@ -71,6 +71,12 @@ class Bootstrap {
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\MillionDollarScript', 'menu' ], 9 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Logs', 'menu' ], 11 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Wizard', 'menu' ], 12 );
+		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Extensions', 'menu' ], 13 );
+		
+		// Add server test page (only in development or when WP_DEBUG is enabled)
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			add_action( 'admin_menu', [ '\MillionDollarScript\Classes\System\ExtensionServerTest', 'add_admin_menu' ], 14 );
+		}
 		
 		// Register setup wizard redirect
 		add_action( 'admin_init', [ '\MillionDollarScript\Classes\Pages\Wizard', 'maybe_redirect_to_wizard' ] );
@@ -79,6 +85,14 @@ class Bootstrap {
 		add_action( 'wp_ajax_mds_wizard_create_pages', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_create_pages' ] );
 		add_action( 'wp_ajax_mds_wizard_save_settings', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_save_settings' ] );
 		add_action( 'wp_ajax_mds_wizard_complete', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_mark_complete' ] );
+		
+		// Register AJAX handlers for extensions
+		add_action( 'wp_ajax_mds_extensions_refresh', [ '\MillionDollarScript\Classes\Pages\Extensions', 'ajax_refresh_extensions' ] );
+		add_action( 'wp_ajax_mds_extensions_install', [ '\MillionDollarScript\Classes\Pages\Extensions', 'ajax_install_extension' ] );
+		add_action( 'wp_ajax_mds_extensions_activate', [ '\MillionDollarScript\Classes\Pages\Extensions', 'ajax_activate_extension' ] );
+		add_action( 'wp_ajax_mds_extensions_deactivate', [ '\MillionDollarScript\Classes\Pages\Extensions', 'ajax_deactivate_extension' ] );
+		add_action( 'wp_ajax_mds_extensions_check_updates', [ '\MillionDollarScript\Classes\Pages\Extensions', 'ajax_check_updates' ] );
+		add_action( 'wp_ajax_mds_extensions_update', [ '\MillionDollarScript\Classes\Pages\Extensions', 'ajax_update_extension' ] );
 
 		// Add user fields
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\User\Users', 'custom_fields' ] );
