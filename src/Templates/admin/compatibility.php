@@ -234,6 +234,17 @@ $status = $compatibility_manager->getCompatibilityStatus();
                     <p><span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Running migration...</p>
                 </div>
             </div>
+            
+            <div id="mds-debug-output" style="display: none; margin-top: 15px;">
+                <div class="notice notice-info">
+                    <h3>Debug System Status</h3>
+                    <div style="margin-bottom: 10px;">
+                        <button type="button" class="button button-secondary" id="mds-copy-debug">Copy to Clipboard</button>
+                        <button type="button" class="button button-secondary" id="mds-hide-debug">Hide Debug Info</button>
+                    </div>
+                    <pre id="mds-debug-content" style="background: #f1f1f1; padding: 15px; border: 1px solid #ddd; border-radius: 4px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 12px;"></pre>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -445,7 +456,11 @@ jQuery(document).ready(function($) {
     // Debug status button
     $('#mds-debug-status').on('click', function() {
         var $button = $(this);
+        var $output = $('#mds-debug-output');
+        var $content = $('#mds-debug-content');
+        
         $button.prop('disabled', true).text('Loading...');
+        $output.hide();
         
         $.ajax({
             url: ajaxurl,
@@ -457,7 +472,13 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     var debugInfo = JSON.stringify(response.data, null, 2);
-                    alert('Debug Information:\n\n' + debugInfo);
+                    $content.text(debugInfo);
+                    $output.show();
+                    
+                    // Scroll to debug output
+                    $('html, body').animate({
+                        scrollTop: $output.offset().top - 50
+                    }, 500);
                 } else {
                     alert('Debug failed: ' + (response.data || 'Unknown error'));
                 }
@@ -469,6 +490,54 @@ jQuery(document).ready(function($) {
                 $button.prop('disabled', false).text('Debug System Status');
             }
         });
+    });
+    
+    // Copy debug info to clipboard
+    $('#mds-copy-debug').on('click', function() {
+        var content = $('#mds-debug-content').text();
+        
+        // Try to use the modern clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(content).then(function() {
+                var $button = $('#mds-copy-debug');
+                var originalText = $button.text();
+                $button.text('Copied!').addClass('button-primary');
+                
+                setTimeout(function() {
+                    $button.text(originalText).removeClass('button-primary');
+                }, 2000);
+            });
+        } else {
+            // Fallback for older browsers
+            var textArea = document.createElement('textarea');
+            textArea.value = content;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                var $button = $('#mds-copy-debug');
+                var originalText = $button.text();
+                $button.text('Copied!').addClass('button-primary');
+                
+                setTimeout(function() {
+                    $button.text(originalText).removeClass('button-primary');
+                }, 2000);
+            } catch (err) {
+                alert('Failed to copy to clipboard. Please select the text manually and copy.');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+    });
+    
+    // Hide debug output
+    $('#mds-hide-debug').on('click', function() {
+        $('#mds-debug-output').hide();
     });
     
     // Force migration button
