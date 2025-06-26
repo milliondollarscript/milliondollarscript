@@ -281,8 +281,9 @@ class MDSBackwardCompatibilityManager {
                     $detection_result['page_type'] ?? 'none'
                 ) );
                 
-                // Lower the confidence threshold for migration to be more inclusive
-                if ( $detection_result['is_mds_page'] && $detection_result['confidence'] >= 0.3 ) {
+                // For migration, be very permissive - if we detect any page type, create metadata
+                // These pages have obvious MDS names like "Grid", "Order Pixels", "Manage Pixels"
+                if ( $detection_result['page_type'] && $detection_result['confidence'] >= 0.2 ) {
                     $metadata_data = $this->buildMetadataFromDetection( $page_id, $detection_result );
                     
                     $result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $detection_result['page_type'], 'migration', $metadata_data );
@@ -303,7 +304,7 @@ class MDSBackwardCompatibilityManager {
                 } else {
                     $results['skipped_pages']++;
                     error_log( sprintf(
-                        'MDS Migration: Skipped page %d (%s) - Low confidence: %s (threshold: 0.3)',
+                        'MDS Migration: Skipped page %d (%s) - Low confidence: %s (threshold: 0.2) or no page_type detected',
                         $page_id,
                         $page_title,
                         $detection_result['confidence']
@@ -1121,7 +1122,7 @@ class MDSBackwardCompatibilityManager {
             
             // Run block migrations
             $block_results = $this->migrateLegacyBlocks();
-            if ( $block_results['updated_pages'] > 0 ) {
+            if ( ($block_results['updated_pages'] ?? 0) > 0 ) {
                 $results['migrations_run']++;
             }
             
