@@ -162,7 +162,7 @@ class Styles {
         $css .= ".mds-container textarea {\n";
         $css .= "    background-color: var(--mds-input-bg);\n";
         $css .= "    border: 1px solid var(--mds-input-border);\n";
-        $css .= "    color: var(--mds-text-primary);\n";
+        $css .= "    color: var(--mds-text-primary) !important;\n";
         $css .= "}\n\n";
 
         // Button styling
