@@ -882,14 +882,19 @@ class MDSBackwardCompatibilityManager {
         
         // Check if initial migration is complete
         $migration_results = get_option( 'mds_migration_results' );
-        if ( ! $migration_results ) {
+        $migration_completed = get_option( 'mds_migration_completed' );
+        
+        if ( ! $migration_results && ! $migration_completed ) {
             $pending[] = 'initial_migration';
         }
         
-        // Check for pages that need metadata
-        $pages_without_metadata = $this->getPagesWithoutMetadata();
-        if ( ! empty( $pages_without_metadata ) ) {
-            $pending[] = 'metadata_migration';
+        // Only check for pending metadata if migration hasn't been completed recently
+        if ( ! $migration_completed || ( time() - $migration_completed > 86400 ) ) { // 24 hours
+            $pages_without_metadata = $this->getPagesWithoutMetadata();
+            if ( ! empty( $pages_without_metadata ) && count( $pages_without_metadata ) > 5 ) {
+                // Only flag as pending if there are many pages without metadata
+                $pending[] = 'metadata_migration';
+            }
         }
         
         return $pending;
@@ -949,8 +954,6 @@ class MDSBackwardCompatibilityManager {
      * @return void
      */
     public function addCompatibilityAdminMenu(): void {
-        error_log( 'MDS Compatibility: Adding admin menu' );
-        
         $hook = add_submenu_page(
             'milliondollarscript',
             Language::get( 'Compatibility' ),
@@ -959,12 +962,6 @@ class MDSBackwardCompatibilityManager {
             'mds-compatibility',
             [ $this, 'renderCompatibilityPage' ]
         );
-        
-        if ( $hook ) {
-            error_log( 'MDS Compatibility: Admin menu added successfully with hook: ' . $hook );
-        } else {
-            error_log( 'MDS Compatibility: Failed to add admin menu' );
-        }
     }
     
     /**
