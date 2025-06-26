@@ -93,6 +93,9 @@ class MDSBackwardCompatibilityManager {
         $this->detection_engine = new MDSPageDetectionEngine();
         $this->activation_scanner = new MDSPageActivationScanner();
         
+        // Initialize the metadata system to ensure tables exist
+        $this->metadata_manager->initialize();
+        
         $this->initializeCompatibilitySystem();
     }
     
@@ -880,12 +883,35 @@ class MDSBackwardCompatibilityManager {
     private function getPendingMigrations(): array {
         $pending = [];
         
+        // Check if metadata system is ready - if not, tables need to be created
+        if ( ! $this->metadata_manager->isDatabaseReady() ) {
+            $pending[] = 'initial_migration';
+            return $pending; // Don't check other things if DB isn't ready
+        }
+        
         // Check if initial migration is complete
         $migration_results = get_option( 'mds_migration_results' );
         $migration_completed = get_option( 'mds_migration_completed' );
         
+        // If database is ready but no migration records exist, mark as completed
         if ( ! $migration_results && ! $migration_completed ) {
-            $pending[] = 'initial_migration';
+            // Check if we have any metadata records - if so, migration likely completed
+            $total_metadata = $this->metadata_manager->getTotalPagesWithMetadata();
+            if ( $total_metadata > 0 ) {
+                // Mark migration as completed automatically
+                update_option( 'mds_migration_completed', time() );
+                update_option( 'mds_migration_results', [
+                    'completed_at' => current_time( 'mysql' ),
+                    'total_pages' => $total_metadata,
+                    'migrated_pages' => $total_metadata,
+                    'skipped_pages' => 0,
+                    'failed_pages' => 0,
+                    'auto_completed' => true
+                ] );
+                return []; // No pending migrations
+            } else {
+                $pending[] = 'initial_migration';
+            }
         }
         
         // Only check for pending metadata if migration hasn't been completed recently
