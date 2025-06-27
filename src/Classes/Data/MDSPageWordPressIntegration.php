@@ -86,6 +86,9 @@ class MDSPageWordPressIntegration {
         
         // Schedule periodic tasks
         add_action( 'wp', [ $this, 'schedulePeriodicTasks' ] );
+        
+        // Add post state indicators to WordPress admin
+        add_filter( 'display_post_states', [ $this, 'addMDSPostStates' ], 10, 2 );
     }
     
     /**
@@ -294,6 +297,34 @@ class MDSPageWordPressIntegration {
             'callback' => [ $this, 'validatePagesRest' ],
             'permission_callback' => [ $this, 'checkRestPermissions' ]
         ] );
+        
+        // Get page error details
+        register_rest_route( 'mds/v1', '/pages/(?P<id>\d+)/errors', [
+            'methods' => 'GET',
+            'callback' => [ $this, 'getPageErrorsRest' ],
+            'permission_callback' => [ $this, 'checkRestPermissions' ],
+            'args' => [
+                'id' => [
+                    'validate_callback' => function( $param ) {
+                        return is_numeric( $param );
+                    }
+                ]
+            ]
+        ] );
+        
+        // Fix page errors
+        register_rest_route( 'mds/v1', '/pages/(?P<id>\d+)/fix', [
+            'methods' => 'POST',
+            'callback' => [ $this, 'fixPageErrorsRest' ],
+            'permission_callback' => [ $this, 'checkRestPermissions' ],
+            'args' => [
+                'id' => [
+                    'validate_callback' => function( $param ) {
+                        return is_numeric( $param );
+                    }
+                ]
+            ]
+        ] );
     }
     
     /**
@@ -418,6 +449,249 @@ class MDSPageWordPressIntegration {
         if ( !wp_next_scheduled( 'mds_cleanup_orphaned_pages' ) ) {
             wp_schedule_event( time(), 'weekly', 'mds_cleanup_orphaned_pages' );
         }
+    }
+    
+    /**
+     * Add MDS post states to WordPress admin pages list
+     *
+     * @param array $post_states
+     * @param WP_Post $post
+     * @return array
+     */
+    public function addMDSPostStates( array $post_states, $post ): array {
+        // Only show for pages
+        if ( $post->post_type !== 'page' ) {
+            return $post_states;
+        }
+        
+        // Check if this page has MDS metadata
+        $metadata = $this->manager->getMetadata( $post->ID );
+        
+        if ( $metadata ) {
+            // Get page type labels
+            $page_type_labels = [
+                'grid' => Language::get( 'Pixel Grid' ),
+                'order' => Language::get( 'Order Page' ),
+                'write-ad' => Language::get( 'Write Ad' ),
+                'confirm-order' => Language::get( 'Order Confirmation' ),
+                'payment' => Language::get( 'Payment' ),
+                'manage' => Language::get( 'Manage Ads' ),
+                'thank-you' => Language::get( 'Thank You' ),
+                'list' => Language::get( 'Advertiser List' ),
+                'upload' => Language::get( 'File Upload' ),
+                'no-orders' => Language::get( 'No Orders' )
+            ];
+            
+            $page_type = $metadata->page_type;
+            $label = $page_type_labels[$page_type] ?? ucfirst( str_replace( '-', ' ', $page_type ) );
+            
+            // Add MDS indicator with page type
+            $post_states['mds_page'] = sprintf( 
+                '%s: %s', 
+                Language::get( 'MDS' ), 
+                $label 
+            );
+            
+            // Add status indicator if not active
+            if ( $metadata->status !== 'active' ) {
+                $status_labels = [
+                    'inactive' => Language::get( 'Inactive' ),
+                    'needs_repair' => Language::get( 'Needs Repair' ),
+                    'validation_failed' => Language::get( 'Validation Failed' ),
+                    'missing_content' => Language::get( 'Missing Content' )
+                ];
+                
+                $status = $metadata->status;
+                $status_label = $status_labels[$status] ?? ucfirst( str_replace( '_', ' ', $status ) );
+                
+                $status_with_help = sprintf( 
+                    '%s: %s', 
+                    Language::get( 'Status' ), 
+                    $status_label 
+                );
+                
+                // Add help icon with error details if validation errors exist
+                if ( !empty( $metadata->validation_errors ) ) {
+                    $error_details = implode( ', ', $metadata->validation_errors );
+                    $status_with_help .= sprintf(
+                        ' <span class="mds-error-help dashicons dashicons-editor-help" title="%s" data-post-id="%d" style="cursor: pointer; color: #d63638;"></span>',
+                        esc_attr( $error_details ),
+                        $post->ID
+                    );
+                }
+                
+                $post_states['mds_status'] = $status_with_help;
+            }
+        }
+        
+        return $post_states;
+    }
+    
+    /**
+     * Get page error details via REST API
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function getPageErrorsRest( WP_REST_Request $request ) {
+        $page_id = intval( $request->get_param( 'id' ) );
+        
+        if ( ! $page_id ) {
+            return new \WP_Error( 'invalid_page_id', Language::get( 'Invalid page ID' ), [ 'status' => 400 ] );
+        }
+        
+        $metadata = $this->manager->getMetadata( $page_id );
+        if ( ! $metadata ) {
+            return new \WP_Error( 'page_not_found', Language::get( 'Page metadata not found' ), [ 'status' => 404 ] );
+        }
+        
+        $post = get_post( $page_id );
+        if ( ! $post ) {
+            return new \WP_Error( 'post_not_found', Language::get( 'Page not found' ), [ 'status' => 404 ] );
+        }
+        
+        return new \WP_REST_Response( [
+            'success' => true,
+            'data' => [
+                'page_id' => $page_id,
+                'page_title' => $post->post_title,
+                'status' => $metadata->status,
+                'validation_errors' => $metadata->validation_errors ?? [],
+                'confidence_score' => $metadata->confidence_score,
+                'page_type' => $metadata->page_type,
+                'page_config' => $metadata->page_config,
+                'last_validated' => $metadata->last_validated?->format( 'Y-m-d H:i:s' ),
+                'suggested_fixes' => $this->generateSuggestedFixes( $metadata )
+            ]
+        ] );
+    }
+    
+    /**
+     * Fix page errors via REST API
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function fixPageErrorsRest( WP_REST_Request $request ) {
+        $page_id = intval( $request->get_param( 'id' ) );
+        
+        if ( ! $page_id ) {
+            return new \WP_Error( 'invalid_page_id', Language::get( 'Invalid page ID' ), [ 'status' => 400 ] );
+        }
+        
+        $metadata = $this->manager->getMetadata( $page_id );
+        if ( ! $metadata ) {
+            return new \WP_Error( 'page_not_found', Language::get( 'Page metadata not found' ), [ 'status' => 404 ] );
+        }
+        
+        // Re-validate the page to get current state
+        $validation_result = $this->manager->validatePage( $page_id );
+        
+        if ( is_wp_error( $validation_result ) ) {
+            return $validation_result;
+        }
+        
+        // Apply automatic fixes
+        $fixes_applied = $this->applyAutomaticFixes( $metadata );
+        
+        // Re-validate after fixes
+        $this->manager->validatePage( $page_id );
+        $updated_metadata = $this->manager->getMetadata( $page_id );
+        
+        return new \WP_REST_Response( [
+            'success' => true,
+            'data' => [
+                'page_id' => $page_id,
+                'fixes_applied' => $fixes_applied,
+                'new_status' => $updated_metadata->status,
+                'remaining_errors' => $updated_metadata->validation_errors ?? []
+            ]
+        ] );
+    }
+    
+    /**
+     * Generate suggested fixes for page errors
+     *
+     * @param MDSPageMetadata $metadata
+     * @return array
+     */
+    private function generateSuggestedFixes( MDSPageMetadata $metadata ): array {
+        $fixes = [];
+        
+        if ( empty( $metadata->validation_errors ) ) {
+            return $fixes;
+        }
+        
+        foreach ( $metadata->validation_errors as $error ) {
+            if ( strpos( $error, 'Grid page missing grid size configuration' ) !== false ) {
+                $fixes[] = [
+                    'type' => 'config',
+                    'title' => Language::get( 'Add Grid Size Configuration' ),
+                    'description' => Language::get( 'This grid page needs a grid size configuration to function properly.' ),
+                    'action' => 'add_grid_config',
+                    'auto_fixable' => true
+                ];
+            }
+            
+            if ( strpos( $error, 'Order page missing payment methods configuration' ) !== false ) {
+                $fixes[] = [
+                    'type' => 'config',
+                    'title' => Language::get( 'Add Payment Methods Configuration' ),
+                    'description' => Language::get( 'This order page needs payment methods configuration.' ),
+                    'action' => 'add_payment_config',
+                    'auto_fixable' => true
+                ];
+            }
+            
+            if ( strpos( $error, 'No MDS content found' ) !== false ) {
+                $fixes[] = [
+                    'type' => 'content',
+                    'title' => Language::get( 'Add MDS Content' ),
+                    'description' => Language::get( 'This page needs MDS shortcode or block content to function.' ),
+                    'action' => 'add_content',
+                    'auto_fixable' => false
+                ];
+            }
+        }
+        
+        return $fixes;
+    }
+    
+    /**
+     * Apply automatic fixes to page metadata
+     *
+     * @param MDSPageMetadata $metadata
+     * @return array
+     */
+    private function applyAutomaticFixes( MDSPageMetadata $metadata ): array {
+        $fixes_applied = [];
+        
+        if ( empty( $metadata->validation_errors ) ) {
+            return $fixes_applied;
+        }
+        
+        foreach ( $metadata->validation_errors as $error ) {
+            if ( strpos( $error, 'Grid page missing grid size configuration' ) !== false ) {
+                if ( empty( $metadata->page_config['grid_size'] ) ) {
+                    $metadata->page_config['grid_size'] = '100x100';
+                    $fixes_applied[] = 'Added default grid size configuration (100x100)';
+                }
+            }
+            
+            if ( strpos( $error, 'Order page missing payment methods configuration' ) !== false ) {
+                if ( empty( $metadata->page_config['payment_methods'] ) ) {
+                    $metadata->page_config['payment_methods'] = ['paypal'];
+                    $fixes_applied[] = 'Added default payment methods configuration (PayPal)';
+                }
+            }
+        }
+        
+        if ( ! empty( $fixes_applied ) ) {
+            $metadata->touch();
+            $this->manager->getRepository()->save( $metadata );
+        }
+        
+        return $fixes_applied;
     }
     
     /**

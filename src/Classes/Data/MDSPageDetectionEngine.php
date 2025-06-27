@@ -45,7 +45,7 @@ class MDSPageDetectionEngine {
             'shortcode_attrs' => ['type' => 'grid', 'display' => 'grid'],
             'content_keywords' => ['pixel', 'grid', 'buy pixel', 'advertising space'],
             'title_keywords' => ['grid', 'pixel', 'advertising'],
-            'block_names' => ['milliondollarscript/grid-block'],
+            'block_names' => ['milliondollarscript/grid-block', 'carbon-fields/million-dollar-script'],
             'css_classes' => ['mds-grid', 'pixel-grid', 'advertising-grid']
         ],
         'order' => [
@@ -192,6 +192,26 @@ class MDSPageDetectionEngine {
             }
         }
         
+        // Check for custom MDS shortcodes (mds_*)
+        $custom_mds_pattern = '/\[mds_([^\]]+)\]/';
+        if ( preg_match_all( $custom_mds_pattern, $content, $matches, PREG_SET_ORDER ) ) {
+            foreach ( $matches as $match ) {
+                $shortcode_name = $match[1]; // e.g., "platform_leaderboard"
+                $confidence += 0.7; // Good confidence for custom MDS shortcodes
+                
+                $patterns[] = [
+                    'type' => 'shortcode',
+                    'shortcode_name' => 'mds_' . $shortcode_name,
+                    'custom_type' => $this->extractPageTypeFromShortcodeName( $shortcode_name )
+                ];
+                
+                // Set page type based on shortcode name
+                if ( !$page_type ) {
+                    $page_type = $this->extractPageTypeFromShortcodeName( $shortcode_name );
+                }
+            }
+        }
+        
         // Check for legacy shortcodes
         $legacy_shortcodes = [ 'mds', 'million_dollar_script', 'pixel_grid' ];
         foreach ( $legacy_shortcodes as $shortcode ) {
@@ -233,7 +253,7 @@ class MDSPageDetectionEngine {
                 }
                 
                 // Check for MDS blocks
-                if ( strpos( $block['blockName'], 'milliondollarscript/' ) === 0 ) {
+                if ( strpos( $block['blockName'], 'milliondollarscript/' ) === 0 || $block['blockName'] === 'carbon-fields/million-dollar-script' ) {
                     $confidence += 0.8; // High confidence for MDS blocks
                     $patterns[] = [
                         'type' => 'block',
@@ -526,6 +546,19 @@ class MDSPageDetectionEngine {
     }
     
     /**
+     * Extract page type from custom shortcode name
+     *
+     * @param string $shortcode_name e.g., "platform_leaderboard"
+     * @return string
+     */
+    private function extractPageTypeFromShortcodeName( string $shortcode_name ): string {
+        // Convert "platform_leaderboard" to "platform-leaderboard" for consistency
+        $type = str_replace( '_', '-', $shortcode_name );
+        
+        return $type;
+    }
+    
+    /**
      * Determine page type from block
      *
      * @param array $block
@@ -533,6 +566,20 @@ class MDSPageDetectionEngine {
      */
     private function determinePageTypeFromBlock( array $block ): ?string {
         $block_name = $block['blockName'];
+        
+        // Handle Carbon Fields MDS block
+        if ( $block_name === 'carbon-fields/million-dollar-script' ) {
+            // For Carbon Fields blocks, check the block attributes for type information
+            $attrs = $block['attrs'] ?? [];
+            if ( !empty( $attrs['type'] ) ) {
+                return $attrs['type'];
+            }
+            if ( !empty( $attrs['pageType'] ) ) {
+                return $attrs['pageType'];
+            }
+            // Default to 'grid' for Carbon Fields MDS blocks if no specific type is found
+            return 'grid';
+        }
         
         // Extract type from block name
         if ( preg_match( '/milliondollarscript\/(.+)-block$/', $block_name, $matches ) ) {

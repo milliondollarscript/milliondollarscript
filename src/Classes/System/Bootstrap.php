@@ -108,7 +108,7 @@ class Bootstrap {
 
 		// Add Block
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Blocks\Block', 'register_style' ] );
-		add_action( 'after_setup_theme', [ '\MillionDollarScript\Classes\Blocks\Block', 'load' ] );
+		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Blocks\Block', 'load' ] );
 
 		// Add Emails page
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Email\Emails', 'register' ] );
@@ -317,10 +317,14 @@ class Bootstrap {
 			$result = $metadata_manager->initialize();
 			
 			if ( is_wp_error( $result ) ) {
-				error_log( 'MDS Metadata System initialization failed: ' . $result->get_error_message() );
+				Logs::log( 'MDS Metadata System initialization failed: ' . $result->get_error_message() );
 			}
+			
+			// Initialize WordPress integration (includes post state hooks)
+			$wp_integration = \MillionDollarScript\Classes\Data\MDSPageWordPressIntegration::getInstance();
+			$wp_integration->initialize();
 		} catch ( \Exception $e ) {
-			error_log( 'MDS Metadata System initialization exception: ' . $e->getMessage() );
+			Logs::log( 'MDS Metadata System initialization exception: ' . $e->getMessage() );
 		}
 	}
 
@@ -336,13 +340,8 @@ class Bootstrap {
 			
 			// Initialize legacy shortcode handler
 			$legacy_handler = \MillionDollarScript\Classes\Data\MDSLegacyShortcodeHandler::getInstance();
-			
-			// Log successful initialization
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'MDS Backward Compatibility System initialized successfully' );
-			}
 		} catch ( \Exception $e ) {
-			error_log( 'MDS Backward Compatibility System initialization exception: ' . $e->getMessage() );
+			Logs::log( 'MDS Backward Compatibility System initialization exception: ' . $e->getMessage() );
 		}
 	}
 
@@ -363,13 +362,8 @@ class Bootstrap {
 			
 			// Initialize page creator interface
 			new \MillionDollarScript\Classes\Admin\MDSPageCreatorInterface();
-			
-			// Log successful initialization
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'MDS Page Management and Creator Interfaces initialized successfully' );
-			}
 		} catch ( \Exception $e ) {
-			error_log( 'MDS Page Management Interface initialization exception: ' . $e->getMessage() );
+			Logs::log( 'MDS Page Management Interface initialization exception: ' . $e->getMessage() );
 		}
 	}
 }

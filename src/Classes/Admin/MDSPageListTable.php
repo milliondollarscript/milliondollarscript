@@ -72,8 +72,6 @@ class MDSPageListTable extends WP_List_Table {
             'page_type' => Language::get( 'Page Type' ),
             'implementation' => Language::get( 'Implementation' ),
             'status' => Language::get( 'Status' ),
-            'last_scan' => Language::get( 'Last Scan' ),
-            'confidence' => Language::get( 'Confidence' ),
             'actions' => Language::get( 'Actions' )
         ];
     }
@@ -88,9 +86,7 @@ class MDSPageListTable extends WP_List_Table {
             'title' => [ 'title', false ],
             'page_type' => [ 'page_type', false ],
             'implementation' => [ 'implementation', false ],
-            'status' => [ 'status', false ],
-            'last_scan' => [ 'last_scan', false ],
-            'confidence' => [ 'confidence', false ]
+            'status' => [ 'status', false ]
         ];
     }
     
@@ -233,12 +229,6 @@ class MDSPageListTable extends WP_List_Table {
                 case 'status':
                     $result = strcmp( $a['status'], $b['status'] );
                     break;
-                case 'last_scan':
-                    $result = strcmp( $a['last_scan'] ?? '', $b['last_scan'] ?? '' );
-                    break;
-                case 'confidence':
-                    $result = $a['confidence'] <=> $b['confidence'];
-                    break;
                 default:
                     $result = strcmp( $a['title'], $b['title'] );
             }
@@ -271,7 +261,7 @@ class MDSPageListTable extends WP_List_Table {
     public function column_title( $item ): string {
         $title = esc_html( $item['title'] );
         
-        // Row actions
+        // Row actions - only keep Edit and View since Details, Scan, and Repair are available in Actions column
         $actions = [
             'edit' => sprintf(
                 '<a href="%s">%s</a>',
@@ -282,26 +272,8 @@ class MDSPageListTable extends WP_List_Table {
                 '<a href="%s" target="_blank">%s</a>',
                 esc_url( $item['post_url'] ),
                 esc_html( Language::get( 'View' ) )
-            ),
-            'details' => sprintf(
-                '<a href="#" class="mds-view-details" data-page-id="%d">%s</a>',
-                $item['ID'],
-                esc_html( Language::get( 'Details' ) )
-            ),
-            'scan' => sprintf(
-                '<a href="#" class="mds-scan-page" data-page-id="%d">%s</a>',
-                $item['ID'],
-                esc_html( Language::get( 'Scan' ) )
             )
         ];
-        
-        if ( in_array( $item['status'], [ 'needs_repair', 'validation_failed', 'missing_content' ] ) ) {
-            $actions['repair'] = sprintf(
-                '<a href="#" class="mds-repair-page" data-page-id="%d">%s</a>',
-                $item['ID'],
-                esc_html( Language::get( 'Repair' ) )
-            );
-        }
         
         return $title . $this->row_actions( $actions );
     }
@@ -326,13 +298,33 @@ class MDSPageListTable extends WP_List_Table {
             'no-orders' => Language::get( 'No Orders' )
         ];
         
-        $label = $type_labels[$item['page_type']] ?? ucfirst( str_replace( '-', ' ', $item['page_type'] ) );
+        // Check if it's a predefined type
+        if ( isset( $type_labels[$item['page_type']] ) ) {
+            $label = $type_labels[$item['page_type']];
+        } else {
+            // For custom types, format them nicely
+            $label = $this->formatCustomPageType( $item['page_type'] );
+        }
         
         return sprintf(
             '<span class="mds-page-type mds-page-type-%s">%s</span>',
             esc_attr( $item['page_type'] ),
             esc_html( $label )
         );
+    }
+    
+    /**
+     * Format custom page type for display
+     *
+     * @param string $page_type
+     * @return string
+     */
+    private function formatCustomPageType( string $page_type ): string {
+        // Convert "platform-leaderboard" to "Platform Leaderboard"
+        $formatted = str_replace( ['-', '_'], ' ', $page_type );
+        $formatted = ucwords( $formatted );
+        
+        return $formatted;
     }
     
     /**
@@ -345,7 +337,6 @@ class MDSPageListTable extends WP_List_Table {
         $implementation_labels = [
             'shortcode' => Language::get( 'Shortcode' ),
             'block' => Language::get( 'Block' ),
-            'hybrid' => Language::get( 'Hybrid' ),
             'unknown' => Language::get( 'Unknown' )
         ];
         
@@ -377,17 +368,34 @@ class MDSPageListTable extends WP_List_Table {
         $label = $status_labels[$item['status']] ?? $item['status'];
         
         $status_class = 'mds-status-' . $item['status'];
+        $has_error = false;
+        
         if ( in_array( $item['status'], [ 'needs_repair', 'validation_failed', 'missing_content' ] ) ) {
             $status_class .= ' mds-status-warning';
+            $has_error = true;
         } elseif ( $item['status'] === 'active' ) {
             $status_class .= ' mds-status-success';
         }
         
-        return sprintf(
+        $status_html = sprintf(
             '<span class="mds-status %s">%s</span>',
             esc_attr( $status_class ),
             esc_html( $label )
         );
+        
+        // Add help link for error statuses that links to error scanning functionality
+        if ( $has_error ) {
+            $help_link = sprintf(
+                ' <a href="#" class="mds-status-help-link" data-page-id="%d" title="%s">
+                    <span class="dashicons dashicons-editor-help"></span>
+                </a>',
+                $item['ID'],
+                esc_attr( Language::get( 'Click to scan for specific errors and get repair suggestions for this page' ) )
+            );
+            $status_html .= $help_link;
+        }
+        
+        return $status_html;
     }
     
     /**

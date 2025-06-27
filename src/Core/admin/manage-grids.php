@@ -32,6 +32,7 @@ use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\Data\DarkModeImages;
 use MillionDollarScript\Classes\Services\GridImageGenerator;
+use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -417,7 +418,7 @@ function handle_dark_mode_generation( int $banner_id, string $theme_mode ): stri
 		}
 
 	} catch ( Exception $e ) {
-		error_log( 'MDS Grid Dark Mode Generation Error: ' . $e->getMessage() );
+		Logs::log( 'MDS Grid Dark Mode Generation Error: ' . $e->getMessage() );
 		return '<p style="color: red;">Error: ' . esc_html( $e->getMessage() ) . '</p>';
 	}
 }
@@ -434,7 +435,7 @@ function get_theme_images_for_grid( string $theme_mode ): array {
 		try {
 			return GridImageGenerator::generate_theme_images( $theme_mode );
 		} catch ( Exception $e ) {
-			error_log( 'MDS Dynamic Image Generation Failed: ' . $e->getMessage() );
+			Logs::log( 'MDS Dynamic Image Generation Failed: ' . $e->getMessage() );
 			// Fall back to static images
 		}
 	}

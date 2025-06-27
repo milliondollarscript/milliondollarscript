@@ -1,10 +1,40 @@
 <?php
 
+/*
+ * Million Dollar Script Two
+ *
+ * @author      Ryan Rhode
+ * @copyright   (C) 2025, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *    Million Dollar Script
+ *    Pixels to Profit: Ignite Your Revolution
+ *    https://milliondollarscript.com/
+ *
+ */
+
 namespace MillionDollarScript\Classes\Services;
+
+defined( 'ABSPATH' ) or exit;
 
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Data\DarkModeImages;
 use MillionDollarScript\Classes\Services\GridImageGenerator;
+use MillionDollarScript\Classes\System\Logs;
 
 /**
  * Grid Image Switcher Service
@@ -80,7 +110,7 @@ class GridImageSwitcher {
 			// Create backup before switching
 			$backup_created = self::backup_grid_images( $theme_mode );
 			if ( ! $backup_created ) {
-				error_log( 'MDS Grid Image Switch: Failed to create backup before switching' );
+				Logs::log( 'MDS Grid Image Switch: Failed to create backup before switching' );
 			}
 
 			// Get all banners that need image updates
@@ -122,7 +152,7 @@ class GridImageSwitcher {
 			}
 
 			// Log the operation
-			error_log( "MDS Grid Image Switch: Updated {$updated_count} banners to {$theme_mode} mode" );
+			Logs::log( "MDS Grid Image Switch: Updated {$updated_count} banners to {$theme_mode} mode" );
 
 			if ( empty( $failed_updates ) ) {
 				return [
@@ -142,7 +172,7 @@ class GridImageSwitcher {
 			}
 
 		} catch ( \Exception $e ) {
-			error_log( 'MDS Grid Image Switch Error: ' . $e->getMessage() );
+			Logs::log( 'MDS Grid Image Switch Error: ' . $e->getMessage() );
 			return [
 				'status' => 'error',
 				'message' => 'An error occurred while switching grid images: ' . $e->getMessage()
@@ -175,7 +205,7 @@ class GridImageSwitcher {
 			try {
 				return GridImageGenerator::generate_theme_images( $theme_mode );
 			} catch ( \Exception $e ) {
-				error_log( 'MDS Dynamic Image Generation Failed: ' . $e->getMessage() );
+				Logs::log( 'MDS Dynamic Image Generation Failed: ' . $e->getMessage() );
 				// Fall back to static images
 			}
 		}

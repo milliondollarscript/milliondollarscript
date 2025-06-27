@@ -234,13 +234,13 @@ $status = $compatibility_manager->getCompatibilityStatus();
             <?php endif; ?>
             
             <div id="mds-migration-progress" style="display: none; margin-top: 15px;">
-                <div class="notice notice-info">
+                <div class="mds-notice mds-notice-info">
                     <p><span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Running migration...</p>
                 </div>
             </div>
             
             <div id="mds-debug-output" style="display: none; margin-top: 15px;">
-                <div class="notice notice-info">
+                <div class="mds-notice mds-notice-info">
                     <h3>Debug System Status</h3>
                     <div style="margin-bottom: 10px;">
                         <button type="button" class="button button-secondary" id="mds-copy-debug">Copy to Clipboard</button>
@@ -248,6 +248,58 @@ $status = $compatibility_manager->getCompatibilityStatus();
                     </div>
                     <pre id="mds-debug-content" style="background: #f1f1f1; padding: 15px; border: 1px solid #ddd; border-radius: 4px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 12px;"></pre>
                 </div>
+            </div>
+            
+            <!-- Error Resolution Section -->
+            <div class="mds-error-resolution" style="margin-top: 30px;">
+                <h2><?php echo esc_html( Language::get( 'Error Resolution' ) ); ?></h2>
+                
+                <div class="mds-error-controls">
+                    <button type="button" class="button button-secondary" id="mds-scan-errors">
+                        <span class="dashicons dashicons-search"></span>
+                        <?php echo esc_html( Language::get( 'Scan for Page Errors' ) ); ?>
+                    </button>
+                    
+                    <button type="button" class="button button-primary" id="mds-fix-all-errors" style="display: none;">
+                        <span class="dashicons dashicons-admin-tools"></span>
+                        <?php echo esc_html( Language::get( 'Fix All Auto-Fixable Errors' ) ); ?>
+                    </button>
+                </div>
+                
+                <div id="mds-error-results" style="display: none; margin-top: 20px;">
+                    <div class="mds-error-list"></div>
+                </div>
+                
+                <div id="mds-error-progress" style="display: none; margin-top: 15px;">
+                    <div class="mds-notice mds-notice-info">
+                        <p><span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> <span id="mds-error-progress-text">Scanning for errors...</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Details Modal -->
+<div id="mds-error-modal" style="display: none;">
+    <div class="mds-modal-overlay">
+        <div class="mds-modal-content">
+            <div class="mds-modal-header">
+                <h3 id="mds-modal-title"><?php echo esc_html( Language::get( 'Page Error Details' ) ); ?></h3>
+                <button type="button" class="mds-modal-close" id="mds-modal-close">
+                    <span class="dashicons dashicons-no"></span>
+                </button>
+            </div>
+            <div class="mds-modal-body" id="mds-modal-body">
+                <!-- Content loaded via AJAX -->
+            </div>
+            <div class="mds-modal-footer">
+                <button type="button" class="button button-secondary" id="mds-modal-cancel">
+                    <?php echo esc_html( Language::get( 'Close' ) ); ?>
+                </button>
+                <button type="button" class="button button-primary" id="mds-modal-fix" style="display: none;">
+                    <?php echo esc_html( Language::get( 'Apply Fix' ) ); ?>
+                </button>
             </div>
         </div>
     </div>
@@ -382,9 +434,159 @@ $status = $compatibility_manager->getCompatibilityStatus();
 .mds-error-item {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 8px;
-    padding: 5px;
+    padding: 15px;
     background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.mds-error-item-content {
+    flex: 1;
+}
+
+.mds-error-item-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.mds-error-item-details {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.mds-error-item-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.mds-error-item.auto-fixable {
+    border-left: 4px solid #46b450;
+}
+
+.mds-error-item.manual-fix {
+    border-left: 4px solid #ffb900;
+}
+
+.mds-error-item.critical {
+    border-left: 4px solid #dc3232;
+}
+
+/* Modal Styles */
+.mds-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 160000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mds-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mds-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    background: #f9f9f9;
+}
+
+.mds-modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.mds-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+}
+
+.mds-modal-close:hover {
+    color: #dc3232;
+}
+
+.mds-modal-body {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.mds-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+    background: #f9f9f9;
+}
+
+.mds-error-detail {
+    margin-bottom: 15px;
+}
+
+.mds-error-detail-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.mds-error-detail-value {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 3px solid #0073aa;
+}
+
+.mds-suggested-fixes {
+    margin-top: 20px;
+}
+
+.mds-suggested-fix {
+    background: #f0f8ff;
+    border: 1px solid #0073aa;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.mds-suggested-fix-title {
+    font-weight: bold;
+    color: #0073aa;
+    margin-bottom: 5px;
+}
+
+.mds-suggested-fix-description {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.mds-auto-fixable {
+    background: #f0f9f0;
+    border-color: #46b450;
+}
+
+.mds-auto-fixable .mds-suggested-fix-title {
+    color: #46b450;
     border-radius: 3px;
     border-left: 3px solid #dc3232;
 }
@@ -440,6 +642,24 @@ $status = $compatibility_manager->getCompatibilityStatus();
     }
 }
 
+/* Custom notice styles to avoid WordPress notice relocation */
+.mds-notice {
+    background: #fff;
+    border-left: 4px solid #fff;
+    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
+    margin: 5px 15px 2px;
+    padding: 1px 12px;
+}
+
+.mds-notice-info {
+    border-left-color: #00a0d2;
+}
+
+.mds-notice p {
+    margin: 0.5em 0;
+    padding: 2px;
+}
+
 @keyframes rotation {
     from {
         transform: rotate(0deg);
@@ -452,6 +672,46 @@ $status = $compatibility_manager->getCompatibilityStatus();
 
 <script>
 jQuery(document).ready(function($) {
+    // Check if pending migrations section should be hidden on page load
+    function checkAndHidePendingMigrations() {
+        console.log('Checking pending migrations status...');
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'mds_debug_status',
+                nonce: '<?php echo wp_create_nonce( 'mds_debug_status' ); ?>'
+            },
+            success: function(response) {
+                console.log('Debug status response:', response);
+                if (response.success && response.data && response.data.pending_migrations) {
+                    console.log('Pending migrations:', response.data.pending_migrations);
+                    // If no pending migrations, hide the pending migrations section
+                    if (response.data.pending_migrations.length === 0) {
+                        console.log('No pending migrations - hiding section');
+                        $('.mds-pending-migrations').hide();
+                        $('.mds-migration-results').show(); // Make sure results show if hidden
+                        $('#mds-migration-progress').hide(); // Also hide any progress divs
+                    } else {
+                        console.log('Still have pending migrations:', response.data.pending_migrations.length);
+                    }
+                } else {
+                    console.log('Invalid response format');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('AJAX error:', error);
+            }
+        });
+    }
+    
+    // Ensure progress and debug divs are hidden on page load
+    $('#mds-migration-progress').hide();
+    $('#mds-debug-output').hide();
+    
+    // Run the check immediately on page load
+    checkAndHidePendingMigrations();
+    
     // Refresh status button
     $('#mds-refresh-status').on('click', function() {
         location.reload();
@@ -616,13 +876,32 @@ jQuery(document).ready(function($) {
     });
     
     // Auto-refresh every 30 seconds if migration is running
-    <?php if ( ! empty( $status['pending_migrations'] ) ): ?>
-    setInterval(function() {
-        // Check if we're still on the same page
-        if (window.location.href.indexOf('page=mds-compatibility') !== -1) {
-            location.reload();
-        }
-    }, 30000);
-    <?php endif; ?>
+    // Check for pending migrations dynamically via AJAX instead of PHP template logic
+    function checkMigrationStatus() {
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'mds_debug_status',
+                nonce: '<?php echo wp_create_nonce( 'mds_debug_status' ); ?>'
+            },
+            success: function(response) {
+                if (response.success && response.data && response.data.pending_migrations) {
+                    // Only auto-refresh if there are actually pending migrations
+                    if (response.data.pending_migrations.length > 0) {
+                        setTimeout(function() {
+                            if (window.location.href.indexOf('page=mds-compatibility') !== -1) {
+                                location.reload();
+                            }
+                        }, 30000);
+                    }
+                }
+            }
+        });
+    }
+    
+    // Initial check and then check every 30 seconds
+    checkMigrationStatus();
+    setInterval(checkMigrationStatus, 30000);
 });
 </script> 

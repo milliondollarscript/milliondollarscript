@@ -30,7 +30,7 @@
 namespace MillionDollarScript\Classes\Data;
 
 use MillionDollarScript\Classes\Language\Language;
-use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -247,7 +247,7 @@ class MDSBackwardCompatibilityManager {
         $potential_mds_pages = $this->findPotentialMDSPages();
         $results['total_pages'] = count( $potential_mds_pages );
         
-        error_log( "MDS Migration: Starting migration for " . count( $potential_mds_pages ) . " potential MDS pages" );
+        Logs::log( "MDS Migration: Starting migration for " . count( $potential_mds_pages ) . " potential MDS pages" );
         
         foreach ( $potential_mds_pages as $page_id ) {
             try {
@@ -256,11 +256,11 @@ class MDSBackwardCompatibilityManager {
                 $post = get_post( $page_id );
                 $page_title = $post ? $post->post_title : "Unknown Page $page_id";
                 
-                error_log( "MDS Migration: Checking page $page_id ($page_title) - hasMetadata: " . ($has_metadata ? 'true' : 'false') );
+                Logs::log( "MDS Migration: Checking page $page_id ($page_title) - hasMetadata: " . ($has_metadata ? 'true' : 'false') );
                 
                 if ( $has_metadata ) {
                     $results['skipped_pages']++;
-                    error_log( "MDS Migration: Skipped page $page_id ($page_title) - Already has metadata" );
+                    Logs::log( "MDS Migration: Skipped page $page_id ($page_title) - Already has metadata" );
                     continue;
                 }
                 
@@ -272,7 +272,7 @@ class MDSBackwardCompatibilityManager {
                 $page_title = $post ? $post->post_title : "Unknown Page $page_id";
                 
                 // Log detection result for debugging
-                error_log( sprintf( 
+                Logs::log( sprintf( 
                     'MDS Migration: Page %d (%s) - is_mds_page: %s, confidence: %s, page_type: %s',
                     $page_id,
                     $page_title,
@@ -287,7 +287,7 @@ class MDSBackwardCompatibilityManager {
                     $metadata_data = $this->buildMetadataFromDetection( $page_id, $detection_result );
                     
                     // Log the exact data being passed for debugging
-                    error_log( sprintf(
+                    Logs::log( sprintf(
                         'MDS Migration: Creating metadata for page %d - page_type: %s, creation_method: auto_detected, metadata_data: %s',
                         $page_id,
                         $detection_result['page_type'],
@@ -298,7 +298,7 @@ class MDSBackwardCompatibilityManager {
                     
                     if ( ! is_wp_error( $result ) ) {
                         $results['migrated_pages']++;
-                        error_log( "MDS Migration: Successfully migrated page $page_id ($page_title)" );
+                        Logs::log( "MDS Migration: Successfully migrated page $page_id ($page_title)" );
                     } else {
                         $results['failed_pages']++;
                         $error_msg = $result->get_error_message();
@@ -307,11 +307,11 @@ class MDSBackwardCompatibilityManager {
                             $page_id,
                             $error_msg
                         );
-                        error_log( "MDS Migration: Failed to migrate page $page_id ($page_title): $error_msg" );
+                        Logs::log( "MDS Migration: Failed to migrate page $page_id ($page_title): $error_msg" );
                     }
                 } else {
                     $results['skipped_pages']++;
-                    error_log( sprintf(
+                    Logs::log( sprintf(
                         'MDS Migration: Skipped page %d (%s) - Low confidence: %s (threshold: 0.2) or no page_type detected',
                         $page_id,
                         $page_title,
@@ -344,14 +344,18 @@ class MDSBackwardCompatibilityManager {
         
         $page_ids = [];
         
-        // Find pages with MDS shortcodes
-        $shortcode_patterns = implode( '|', $this->legacy_shortcode_patterns );
+        // Find pages with MDS shortcodes - use word boundaries to avoid matching extension shortcodes
+        $shortcode_patterns = [];
+        foreach ( $this->legacy_shortcode_patterns as $pattern ) {
+            $shortcode_patterns[] = '\\[' . preg_quote( $pattern, '\\' ) . '($|[\\s\\]])';
+        }
+        $combined_pattern = '(' . implode( '|', $shortcode_patterns ) . ')';
         $shortcode_query = $wpdb->prepare(
             "SELECT ID FROM {$wpdb->posts} 
              WHERE post_type = 'page' 
              AND post_status IN ('publish', 'private', 'draft')
              AND post_content REGEXP %s",
-            '\[(' . $shortcode_patterns . ')([^\]]*)\]'
+            $combined_pattern
         );
         
         $shortcode_pages = $wpdb->get_col( $shortcode_query );
@@ -519,9 +523,9 @@ class MDSBackwardCompatibilityManager {
         foreach ( $legacy_patterns as $old_shortcode => $new_shortcode ) {
             $posts = $wpdb->get_results( $wpdb->prepare(
                 "SELECT ID, post_content FROM {$wpdb->posts} 
-                 WHERE post_content LIKE %s 
+                 WHERE post_content REGEXP %s 
                  AND post_type IN ('page', 'post')",
-                '%[' . $old_shortcode . '%'
+                '\\[' . preg_quote( $old_shortcode, '\\' ) . '($|[\\s\\]])'
             ) );
             
             foreach ( $posts as $post ) {
@@ -583,11 +587,21 @@ class MDSBackwardCompatibilityManager {
      * @return string
      */
     private function updateShortcodeInContent( string $content, string $old_shortcode, string $new_shortcode ): string {
-        // Pattern to match the old shortcode with attributes
-        $pattern = '/\[' . preg_quote( $old_shortcode, '/' ) . '([^\]]*)\]/';
+        // Pattern to match the old shortcode with attributes - ensure exact match with word boundary
+        $pattern = '/\[' . preg_quote( $old_shortcode, '/' ) . '(\s[^\]]*|\])/';
         
         return preg_replace_callback( $pattern, function( $matches ) use ( $new_shortcode ) {
-            $attributes = isset( $matches[1] ) ? $matches[1] : '';
+            // Extract attributes properly, handling both cases
+            $raw_attributes = $matches[1];
+            if ( $raw_attributes === ']' ) {
+                $attributes = '';
+            } else {
+                // Remove leading space and trailing bracket if present
+                $attributes = trim( $raw_attributes );
+                if ( substr( $attributes, -1 ) === ']' ) {
+                    $attributes = substr( $attributes, 0, -1 );
+                }
+            }
             
             // Parse and normalize attributes
             $parsed_attrs = shortcode_parse_atts( $attributes );
@@ -1041,31 +1055,22 @@ class MDSBackwardCompatibilityManager {
      * @return void
      */
     public function renderCompatibilityPage(): void {
-        // Debug logging
-        error_log( 'MDS Compatibility Page: renderCompatibilityPage called' );
         
         // Check user capabilities
         if ( ! current_user_can( 'manage_options' ) ) {
-            error_log( 'MDS Compatibility Page: User lacks manage_options capability' );
             wp_die( __( 'Sorry, you are not allowed to access this page.' ) );
         }
         
-        error_log( 'MDS Compatibility Page: User has manage_options capability' );
-        
         if ( isset( $_POST['run_migration'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'mds_run_migration' ) ) {
-            error_log( 'MDS Compatibility Page: Running migration' );
             $this->runManualMigration();
         }
         
         $migration_results = get_option( 'mds_migration_results', [] );
         $pending_migrations = $this->getPendingMigrations();
         
-        error_log( 'MDS Compatibility Page: Including template' );
-        
         // Check if template file exists before including
         $template_path = MDS_BASE_PATH . 'src/Templates/admin/compatibility.php';
         if ( ! file_exists( $template_path ) ) {
-            error_log( 'MDS Compatibility Page: Template file not found at ' . $template_path );
             wp_die( 'Template file not found: ' . $template_path );
         }
         
@@ -1156,9 +1161,9 @@ class MDSBackwardCompatibilityManager {
                 'migrated_options' => $options_results['migrated_options'] ?? 0
             ] );
             
-        } catch ( Exception $e ) {
+        } catch ( \Exception $e ) {
             $results['errors'][] = $e->getMessage();
-            error_log( 'MDS Force Migration Error: ' . $e->getMessage() );
+            Logs::log( 'MDS Force Migration Error: ' . $e->getMessage() );
         }
         
         return $results;
@@ -1246,7 +1251,7 @@ class MDSBackwardCompatibilityManager {
         $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}mds_page_config" );
         $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}mds_detection_log" );
         
-        error_log( 'MDS Migration: Reset migration status and cleared metadata tables' );
+        Logs::log( 'MDS Migration: Reset migration status and cleared metadata tables' );
         
         return true;
     }

@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.12.57\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.12.129\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-07 10:49:47\n"
-"PO-Revision-Date: 2025-05-07 10:49:47\n"
-"X-Generator: Million Dollar Script Two 2.5.12.57\n"
+"POT-Creation-Date: 2025-06-27 04:48:54\n"
+"PO-Revision-Date: 2025-06-27 04:48:54\n"
+"X-Generator: Million Dollar Script Two 2.5.12.129\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -126,7 +126,10 @@ msgstr ""
 msgid "Change Pixels"
 msgstr ""
 
-msgid "To change these pixels, select an image %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\""
+msgid "To change these pixels, select an image and click \"upload\". It will be resized to fit %SIZE_X% pixels wide & %SIZE_Y% pixels high."
+msgstr ""
+
+msgid "To change these pixels, select an image up to %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\"."
 msgstr ""
 
 msgid "Upload"
@@ -150,10 +153,16 @@ msgstr ""
 msgid "Please wait..."
 msgstr ""
 
-msgid "Grid"
+msgid "Order Pixels"
 msgstr ""
 
-msgid "Order Pixels"
+msgid "Million Dollar Script Grid"
+msgstr ""
+
+msgid "Manage Pixels"
+msgstr ""
+
+msgid "Grid"
 msgstr ""
 
 msgid "Write Your Ad"
@@ -163,9 +172,6 @@ msgid "Confirm Order"
 msgstr ""
 
 msgid "Payment"
-msgstr ""
-
-msgid "Manage Pixels"
 msgstr ""
 
 msgid "Thank-You!"
@@ -193,6 +199,9 @@ msgid "This space is not available! Please try to place your pixels in a differe
 msgstr ""
 
 msgid "Missing required page data (option or title)."
+msgstr ""
+
+msgid "Insufficient permissions!"
 msgstr ""
 
 msgid "Could not create directory."
@@ -537,6 +546,12 @@ msgstr ""
 msgid "Order Published"
 msgstr ""
 
+msgid "Pixels Modified: Send a notification email to Admin?"
+msgstr ""
+
+msgid "If checked then a notification email will be sent to the site admin when pixels are published."
+msgstr ""
+
 msgid "Order Published Subject"
 msgstr ""
 
@@ -693,13 +708,64 @@ msgstr ""
 msgid "Number of days to keep sent emails in the database. Enter 0 to keep forever."
 msgstr ""
 
-msgid "Pixels Modified: Send a notification email to Admin?"
-msgstr ""
-
-msgid "If checked then a notification email will be sent to the site admin when pixels are published."
-msgstr ""
-
 msgid "Million Dollar Script Emails"
+msgstr ""
+
+msgid "No file was uploaded. Please select an image file."
+msgstr ""
+
+msgid "The uploaded file is too large."
+msgstr ""
+
+msgid "The file was only partially uploaded. Please try again."
+msgstr ""
+
+msgid "Missing temporary folder. Please contact the administrator."
+msgstr ""
+
+msgid "Failed to write file to disk. Please contact the administrator."
+msgstr ""
+
+msgid "File upload stopped by extension. Please contact the administrator."
+msgstr ""
+
+msgid "Unknown upload error. Please try again."
+msgstr ""
+
+msgid "Upload directory could not be created. Please contact the administrator."
+msgstr ""
+
+msgid "Upload directory is not writable. Please contact the administrator."
+msgstr ""
+
+msgid "Invalid file extension. Please upload a JPG, PNG, or GIF file."
+msgstr ""
+
+msgid "Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF."
+msgstr ""
+
+msgid "File size too large. Maximum allowed size is %MAX_SIZE%."
+msgstr ""
+
+msgid "Upload failed: Could not process the uploaded file. Please try again."
+msgstr ""
+
+msgid "Invalid image file. Please upload a valid image."
+msgstr ""
+
+msgid "Image dimensions are too small. Please upload a larger image."
+msgstr ""
+
+msgid "Image processing library not available. Please contact the administrator."
+msgstr ""
+
+msgid "Image resize failed: "
+msgstr ""
+
+msgid "Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set."
+msgstr ""
+
+msgid "Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels..."
 msgstr ""
 
 msgid "Invalid package data submitted. Please check the fields and try again."
@@ -883,9 +949,6 @@ msgid "This will unselect all Not For Sale blocks. Are you sure you want to do t
 msgstr ""
 
 msgid "You haven't made any changes to save!"
-msgstr ""
-
-msgid "Insufficient permissions!"
 msgstr ""
 
 msgid "MDS Logs"
@@ -1236,6 +1299,393 @@ msgstr ""
 msgid "Setup wizard completed successfully!"
 msgstr ""
 
+msgid "Manage Pages"
+msgstr ""
+
+msgid "Pages per page"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Troubleshooting"
+msgstr ""
+
+msgid "Are you sure you want to perform this action on selected pages?"
+msgstr ""
+
+msgid "Are you sure you want to delete this page? This action cannot be undone."
+msgstr ""
+
+msgid "This will attempt to repair the page. Continue?"
+msgstr ""
+
+msgid "Scanning page..."
+msgstr ""
+
+msgid "Repairing page..."
+msgstr ""
+
+msgid "Updating configuration..."
+msgstr ""
+
+msgid "Exporting data..."
+msgstr ""
+
+msgid "An error occurred"
+msgstr ""
+
+msgid "Operation completed successfully"
+msgstr ""
+
+msgid "Are you sure you want to scan all pages? This may take a while."
+msgstr ""
+
+msgid "Are you sure you want to repair all pages with issues?"
+msgstr ""
+
+msgid "Manage MDS Pages"
+msgstr ""
+
+msgid "Create New Pages"
+msgstr ""
+
+msgid "Total MDS Pages"
+msgstr ""
+
+msgid "Active Pages"
+msgstr ""
+
+msgid "Needs Attention"
+msgstr ""
+
+msgid "Auto-Detected"
+msgstr ""
+
+msgid "Quick Actions"
+msgstr ""
+
+msgid "Scan All Pages"
+msgstr ""
+
+msgid "Bulk Update Implementations"
+msgstr ""
+
+msgid "Validate All Pages"
+msgstr ""
+
+msgid "Refresh List"
+msgstr ""
+
+msgid "All Page Types"
+msgstr ""
+
+msgid "All Statuses"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "All Implementation Types"
+msgstr ""
+
+msgid "Shortcode"
+msgstr ""
+
+msgid "Block"
+msgstr ""
+
+msgid "Search pages..."
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Clear Filters"
+msgstr ""
+
+msgid "Page Details"
+msgstr ""
+
+msgid "Page Configuration"
+msgstr ""
+
+msgid "Save Configuration"
+msgstr ""
+
+msgid "Error Resolution"
+msgstr ""
+
+msgid "Scan for Page Errors"
+msgstr ""
+
+msgid "Repair All Issues"
+msgstr ""
+
+msgid "Fix All Auto-Fixable Errors"
+msgstr ""
+
+msgid "Reset Page Statuses"
+msgstr ""
+
+msgid "Export Page Data"
+msgstr ""
+
+msgid "Pixel Grid"
+msgstr ""
+
+msgid "Write Advertisement"
+msgstr ""
+
+msgid "Order Confirmation"
+msgstr ""
+
+msgid "Payment Processing"
+msgstr ""
+
+msgid "Manage Ads"
+msgstr ""
+
+msgid "Thank You"
+msgstr ""
+
+msgid "Advertiser List"
+msgstr ""
+
+msgid "File Upload"
+msgstr ""
+
+msgid "Security check failed"
+msgstr ""
+
+msgid "Insufficient permissions"
+msgstr ""
+
+msgid "No pages selected"
+msgstr ""
+
+msgid "Unknown action: %s"
+msgstr ""
+
+msgid "Bulk action completed: %d successful, %d errors"
+msgstr ""
+
+msgid "Errors:"
+msgstr ""
+
+msgid " and %d more..."
+msgstr ""
+
+msgid "Page not found"
+msgstr ""
+
+msgid "No metadata found for page"
+msgstr ""
+
+msgid "Added missing shortcode"
+msgstr ""
+
+msgid "Added missing block"
+msgstr ""
+
+msgid "Updated page status"
+msgstr ""
+
+msgid "Configuration updated successfully"
+msgstr ""
+
+msgid "Page scanned and metadata updated"
+msgstr ""
+
+msgid "Page is not an MDS page"
+msgstr ""
+
+msgid "Page Information"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Created"
+msgstr ""
+
+msgid "Modified"
+msgstr ""
+
+msgid "MDS Metadata"
+msgstr ""
+
+msgid "Page Type"
+msgstr ""
+
+msgid "Implementation"
+msgstr ""
+
+msgid "Creation Method"
+msgstr ""
+
+msgid "Confidence Score"
+msgstr ""
+
+msgid "Last Scan"
+msgstr ""
+
+msgid "Detection Analysis"
+msgstr ""
+
+msgid "Is MDS Page"
+msgstr ""
+
+msgid "Detection Confidence"
+msgstr ""
+
+msgid "Detected Type"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Page Errors"
+msgstr ""
+
+msgid "Suggested Fix:"
+msgstr ""
+
+msgid "Fix This Error"
+msgstr ""
+
+msgid "This error requires manual intervention."
+msgstr ""
+
+msgid "Edit Page"
+msgstr ""
+
+msgid "View Page"
+msgstr ""
+
+msgid "This page allows you to manage all MDS pages on your site. You can view page status, perform bulk operations, and configure individual pages."
+msgstr ""
+
+msgid "Available actions include scanning pages for MDS content, repairing broken pages, updating configurations, and exporting page data."
+msgstr ""
+
+msgid "If pages are not working correctly, try scanning them first, then use the repair function. Check the page details for more information about any issues."
+msgstr ""
+
+msgid "Scan completed: %d pages processed, %d MDS pages found"
+msgstr ""
+
+msgid "Compatibility: %d fixes applied"
+msgstr ""
+
+msgid "Page errors: %d fixes applied"
+msgstr ""
+
+msgid "Standard repairs: %d pages processed"
+msgstr ""
+
+msgid "No issues found to repair. All pages appear to be functioning correctly."
+msgstr ""
+
+msgid "Repair completed: %d total fixes applied, %d errors encountered"
+msgstr ""
+
+msgid "Error fixing completed: %d errors fixed, %d failed"
+msgstr ""
+
+msgid "Missing MDS shortcode"
+msgstr ""
+
+msgid "This page should contain an MDS shortcode but none was found"
+msgstr ""
+
+msgid "Missing MDS block"
+msgstr ""
+
+msgid "This page should contain an MDS block but none was found"
+msgstr ""
+
+msgid "Error is not auto-fixable"
+msgstr ""
+
+msgid "Page type updated"
+msgstr ""
+
+msgid "Unknown error type"
+msgstr ""
+
+msgid "Error fixed successfully"
+msgstr ""
+
+msgid "Pending migration found"
+msgstr ""
+
+msgid "Migration %s is pending and should be run"
+msgstr ""
+
+msgid "Pages missing metadata"
+msgstr ""
+
+msgid "%d MDS pages are missing metadata records"
+msgstr ""
+
+msgid "Migration completed: %d pages migrated"
+msgstr ""
+
+msgid "Migration completed but no new pages were migrated"
+msgstr ""
+
+msgid "Migration failed: %s"
+msgstr ""
+
+msgid "Created metadata for %d pages"
+msgstr ""
+
+msgid "No new metadata was created - pages may already have metadata"
+msgstr ""
+
+msgid "Failed to create missing metadata: "
+msgstr ""
+
+msgid "Unknown compatibility error type"
+msgstr ""
+
+msgid "Invalid page ID"
+msgstr ""
+
+msgid "No metadata found for this page"
+msgstr ""
+
+msgid "No error data provided"
+msgstr ""
+
+msgid "Invalid error data format"
+msgstr ""
+
+msgid "Page metadata not found. Please scan the page first."
+msgstr ""
+
+msgid "Page metadata not found"
+msgstr ""
+
+msgid "Page configuration saved successfully"
+msgstr ""
+
+msgid "Post not found"
+msgstr ""
+
+msgid "Failed to update status for page %d: %s"
+msgstr ""
+
+msgid "Page status reset completed: %d pages updated"
+msgstr ""
+
 msgid "Grid not found."
 msgstr ""
 
@@ -1243,6 +1693,375 @@ msgid "Error sending data."
 msgstr ""
 
 msgid "Invalid callback: %s"
+msgstr ""
+
+msgid "Generating preview..."
+msgstr ""
+
+msgid "Pages created successfully!"
+msgstr ""
+
+msgid "Are you sure you want to create these pages?"
+msgstr ""
+
+msgid "This will update existing pages. Continue?"
+msgstr ""
+
+msgid "Please select at least one page type"
+msgstr ""
+
+msgid "Please select an implementation type"
+msgstr ""
+
+msgid "Create MDS Pages"
+msgstr ""
+
+msgid "Manage Existing Pages"
+msgstr ""
+
+msgid "Quick Setup"
+msgstr ""
+
+msgid "Create a complete set of MDS pages with default settings."
+msgstr ""
+
+msgid "Create All Standard Pages"
+msgstr ""
+
+msgid "Choose Implementation Type"
+msgstr ""
+
+msgid "Select how you want your MDS pages to be implemented on your site."
+msgstr ""
+
+msgid "Shortcode Implementation"
+msgstr ""
+
+msgid "Traditional WordPress shortcodes. Works with any theme and is easy to customize."
+msgstr ""
+
+msgid "Pros:"
+msgstr ""
+
+msgid "Universal compatibility"
+msgstr ""
+
+msgid "Easy to use"
+msgstr ""
+
+msgid "Lightweight"
+msgstr ""
+
+msgid "Cons:"
+msgstr ""
+
+msgid "Less visual in editor"
+msgstr ""
+
+msgid "Requires shortcode knowledge"
+msgstr ""
+
+msgid "Gutenberg Blocks"
+msgstr ""
+
+msgid "Modern Gutenberg blocks with visual editing and live preview."
+msgstr ""
+
+msgid "Visual editing"
+msgstr ""
+
+msgid "Live preview"
+msgstr ""
+
+msgid "Modern interface"
+msgstr ""
+
+msgid "Requires Gutenberg"
+msgstr ""
+
+msgid "Slightly heavier"
+msgstr ""
+
+msgid "Select Page Types"
+msgstr ""
+
+msgid "Choose which MDS pages you want to create. You can select any combination of pages."
+msgstr ""
+
+msgid "Choose which grid you want to create pages for."
+msgstr ""
+
+msgid "Toggle sort by ID or Name"
+msgstr ""
+
+msgid "ID"
+msgstr ""
+
+msgid "Toggle sort direction"
+msgstr ""
+
+msgid "ASC"
+msgstr ""
+
+msgid "Configure Pages"
+msgstr ""
+
+msgid "Customize the settings for your selected pages."
+msgstr ""
+
+msgid "Handle Existing Pages"
+msgstr ""
+
+msgid "Choose what to do if pages already exist."
+msgstr ""
+
+msgid "Always create new pages, even if pages with similar names exist."
+msgstr ""
+
+msgid "Update Existing Pages"
+msgstr ""
+
+msgid "Update existing pages with new content if they already exist."
+msgstr ""
+
+msgid "Skip Existing Pages"
+msgstr ""
+
+msgid "Only create pages that do not already exist."
+msgstr ""
+
+msgid "Review and Create"
+msgstr ""
+
+msgid "Preview Creation"
+msgstr ""
+
+msgid "Creation Preview"
+msgstr ""
+
+msgid "Creation Results"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Database configuration error"
+msgstr ""
+
+msgid "Database error loading grids"
+msgstr ""
+
+msgid "No enabled grids found. Please enable a grid first."
+msgstr ""
+
+msgid "Main pixel grid display page"
+msgstr ""
+
+msgid "Page for ordering pixels"
+msgstr ""
+
+msgid "Page for creating advertisements"
+msgstr ""
+
+msgid "Order confirmation and review page"
+msgstr ""
+
+msgid "Payment processing page"
+msgstr ""
+
+msgid "Page for managing existing ads"
+msgstr ""
+
+msgid "Thank you page after purchase"
+msgstr ""
+
+msgid "List of all advertisers"
+msgstr ""
+
+msgid "File upload page"
+msgstr ""
+
+msgid "Page shown when no orders exist"
+msgstr ""
+
+msgid "Stats Box"
+msgstr ""
+
+msgid "Displays sold/available pixel statistics (150px × 60px)"
+msgstr ""
+
+msgid "Required"
+msgstr ""
+
+msgid "Implementation type is required"
+msgstr ""
+
+msgid "At least one page type must be selected"
+msgstr ""
+
+msgid "Database configuration error. Please check plugin configuration."
+msgstr ""
+
+msgid "Database error retrieving grid information."
+msgstr ""
+
+msgid "No grid found. Please create a grid first."
+msgstr ""
+
+msgid "Scan Pages"
+msgstr ""
+
+msgid "Repair Pages"
+msgstr ""
+
+msgid "Activate"
+msgstr ""
+
+msgid "Deactivate"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Needs Repair"
+msgstr ""
+
+msgid "Validation Failed"
+msgstr ""
+
+msgid "Missing Content"
+msgstr ""
+
+msgid "Click to scan for specific errors and get repair suggestions for this page"
+msgstr ""
+
+msgid "ago"
+msgstr ""
+
+msgid "View Details"
+msgstr ""
+
+msgid "Scan Page"
+msgstr ""
+
+msgid "Repair Page"
+msgstr ""
+
+msgid "Configure"
+msgstr ""
+
+msgid "No MDS pages found."
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Failed to create %s page: %s"
+msgstr ""
+
+msgid "Exception creating %s page: %s"
+msgstr ""
+
+msgid "Page already exists, skipped"
+msgstr ""
+
+msgid "Template not found for page type"
+msgstr ""
+
+msgid "Invalid implementation type"
+msgstr ""
+
+msgid "Invalid page type: %s"
+msgstr ""
+
+msgid "Invalid grid data for %s: %s"
+msgstr ""
+
+msgid "Grid data for %s is empty"
+msgstr ""
+
+msgid "Invalid number for %s"
+msgstr ""
+
+msgid "Value for %s is too small"
+msgstr ""
+
+msgid "Value for %s is too large"
+msgstr ""
+
+msgid "Invalid option for %s"
+msgstr ""
+
+msgid "Invalid multiselect for %s"
+msgstr ""
+
+msgid "Invalid option %s for %s"
+msgstr ""
+
+msgid "Page %s already exists and will be updated with new content"
+msgstr ""
+
+msgid "Page %s already exists and will be skipped"
+msgstr ""
+
+msgid "Page %s already exists but a new page will be created with a different name"
+msgstr ""
+
+msgid "Consider using shortcode implementation for better compatibility with your WordPress version"
+msgstr ""
+
+msgid "Consider creating an Order page to allow pixel purchases"
+msgstr ""
+
+msgid "Will create new"
+msgstr ""
+
+msgid "Will update existing"
+msgstr ""
+
+msgid "Will skip existing"
+msgstr ""
+
+msgid "Pixel Grid Configuration"
+msgstr ""
+
+msgid "Order Page Configuration"
+msgstr ""
+
+msgid "Write Advertisement Configuration"
+msgstr ""
+
+msgid "Order Confirmation Configuration"
+msgstr ""
+
+msgid "Payment Configuration"
+msgstr ""
+
+msgid "Manage Ads Configuration"
+msgstr ""
+
+msgid "Thank You Page Configuration"
+msgstr ""
+
+msgid "Advertiser List Configuration"
+msgstr ""
+
+msgid "File Upload Configuration"
+msgstr ""
+
+msgid "No Orders Configuration"
+msgstr ""
+
+msgid "Database operation failed"
 msgstr ""
 
 msgid "Pages"
@@ -1443,76 +2262,280 @@ msgstr ""
 msgid "Styles"
 msgstr ""
 
-msgid "Button Color (Primary)"
+msgid "Theme Mode"
 msgstr ""
 
-msgid "Background color for primary buttons."
+msgid "Light Mode"
 msgstr ""
 
-msgid "Button Text Color (Primary)"
+msgid "Dark Mode"
 msgstr ""
 
-msgid "Text color for primary buttons."
+msgid "Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching."
 msgstr ""
 
-msgid "Button Secondary Background"
+msgid "Main Background Colors"
 msgstr ""
 
-msgid "Background color for secondary buttons."
+msgid "Primary background colors for the main frontend interface including grid display, user pages, and content areas."
 msgstr ""
 
-msgid "Button Secondary Text"
+msgid "Light Mode - Primary Background"
 msgstr ""
 
-msgid "Text color for secondary buttons."
+msgid "Primary background color for the main frontend interface including grid display, user pages, and content areas in light mode."
 msgstr ""
 
-msgid "Button Success Background"
+msgid "Dark Mode - Primary Background"
 msgstr ""
 
-msgid "Background color for success buttons."
+msgid "Primary background color for the main frontend interface including grid display, user pages, and content areas in dark mode."
 msgstr ""
 
-msgid "Button Success Text"
+msgid "Secondary Background Colors"
 msgstr ""
 
-msgid "Text color for success buttons."
+msgid "Background colors for cards, menus, navigation bars, and elevated interface elements."
 msgstr ""
 
-msgid "Button Danger Background"
+msgid "Light Mode - Secondary Background"
 msgstr ""
 
-msgid "Background color for danger/delete buttons."
+msgid "Secondary background color for cards, menus, navigation bars, and elevated interface elements in light mode."
 msgstr ""
 
-msgid "Button Danger Text"
+msgid "Dark Mode - Secondary Background"
 msgstr ""
 
-msgid "Text color for danger/delete buttons."
+msgid "Secondary background color for cards, menus, navigation bars, and elevated interface elements in dark mode."
 msgstr ""
 
-msgid "Primary Color"
+msgid "Tertiary Background Colors"
 msgstr ""
 
-msgid "Primary accent color used for highlights, links, etc."
+msgid "Background colors for subtle overlays, hover states, and supporting interface elements."
 msgstr ""
 
-msgid "Secondary Color"
+msgid "Light Mode - Tertiary Background"
 msgstr ""
 
-msgid "Secondary accent color."
+msgid "Tertiary background color for subtle overlays, hover states, and supporting interface elements in light mode."
 msgstr ""
 
-msgid "Background Color"
+msgid "Dark Mode - Tertiary Background"
 msgstr ""
 
-msgid "Main background color for admin pages."
+msgid "Tertiary background color for subtle overlays, hover states, and supporting interface elements in dark mode."
 msgstr ""
 
-msgid "Text Color"
+msgid "Primary Text Colors"
 msgstr ""
 
-msgid "Default text color."
+msgid "Primary text colors for all content, headings, and interface labels with high contrast readability."
+msgstr ""
+
+msgid "Light Mode - Primary Text"
+msgstr ""
+
+msgid "Primary text color for all content, headings, and interface labels throughout the frontend in light mode."
+msgstr ""
+
+msgid "Dark Mode - Primary Text"
+msgstr ""
+
+msgid "Primary text color for all content, headings, and interface labels throughout the frontend in dark mode."
+msgstr ""
+
+msgid "Secondary Text Colors"
+msgstr ""
+
+msgid "Text colors for supporting information, metadata, and less prominent interface elements."
+msgstr ""
+
+msgid "Light Mode - Secondary Text"
+msgstr ""
+
+msgid "Secondary text color for supporting information, metadata, and less prominent interface elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Text"
+msgstr ""
+
+msgid "Secondary text color for supporting information, metadata, and less prominent interface elements in dark mode."
+msgstr ""
+
+msgid "Accent Colors"
+msgstr ""
+
+msgid "Accent colors for highlights, links, and special emphasis elements."
+msgstr ""
+
+msgid "Light Mode - Secondary Accent"
+msgstr ""
+
+msgid "Secondary accent color for highlights, special emphasis, and decorative elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Accent"
+msgstr ""
+
+msgid "Secondary accent color for highlights, special emphasis, and decorative elements in dark mode."
+msgstr ""
+
+msgid "Primary Button Colors"
+msgstr ""
+
+msgid "Colors for primary action buttons including submit, login, and main navigation actions."
+msgstr ""
+
+msgid "Light Mode - Primary Button Background"
+msgstr ""
+
+msgid "Background color for primary action buttons including submit, login, and main navigation actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Primary Button Text"
+msgstr ""
+
+msgid "Text color for primary action buttons including submit, login, and main navigation actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Primary Button Text"
+msgstr ""
+
+msgid "Text color for primary action buttons including submit, login, and main navigation actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Primary Button Background"
+msgstr ""
+
+msgid "Background color for primary action buttons including submit, login, and main navigation actions in dark mode."
+msgstr ""
+
+msgid "Secondary Button Colors"
+msgstr ""
+
+msgid "Colors for secondary action buttons including edit, manage, and alternative actions."
+msgstr ""
+
+msgid "Light Mode - Secondary Button Background"
+msgstr ""
+
+msgid "Background color for secondary action buttons including edit, manage, and alternative actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Secondary Button Text"
+msgstr ""
+
+msgid "Text color for secondary action buttons including edit, manage, and alternative actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Button Background"
+msgstr ""
+
+msgid "Background color for secondary action buttons including edit, manage, and alternative actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Button Text"
+msgstr ""
+
+msgid "Text color for secondary action buttons including edit, manage, and alternative actions in dark mode."
+msgstr ""
+
+msgid "Success Button Colors"
+msgstr ""
+
+msgid "Colors for success and confirmation buttons including confirm, upload, pay, and complete actions."
+msgstr ""
+
+msgid "Light Mode - Success Button Background"
+msgstr ""
+
+msgid "Background color for success and confirmation buttons including confirm, upload, pay, and complete actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Success Button Text"
+msgstr ""
+
+msgid "Text color for success and confirmation buttons including confirm, upload, pay, and complete actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Success Button Background"
+msgstr ""
+
+msgid "Background color for success and confirmation buttons including confirm, upload, pay, and complete actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Success Button Text"
+msgstr ""
+
+msgid "Text color for success and confirmation buttons including confirm, upload, pay, and complete actions in dark mode."
+msgstr ""
+
+msgid "Danger Button Colors"
+msgstr ""
+
+msgid "Colors for danger and destructive buttons including cancel, delete, and reset actions."
+msgstr ""
+
+msgid "Light Mode - Danger Button Background"
+msgstr ""
+
+msgid "Background color for danger and destructive buttons including cancel, delete, and reset actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Danger Button Text"
+msgstr ""
+
+msgid "Text color for danger and destructive buttons including cancel, delete, and reset actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Danger Button Background"
+msgstr ""
+
+msgid "Background color for danger and destructive buttons including cancel, delete, and reset actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Danger Button Text"
+msgstr ""
+
+msgid "Text color for danger and destructive buttons including cancel, delete, and reset actions in dark mode."
+msgstr ""
+
+msgid "Border Colors"
+msgstr ""
+
+msgid "Colors for borders, dividers, input outlines, and interface element separators."
+msgstr ""
+
+msgid "Light Mode - Border Color"
+msgstr ""
+
+msgid "Border color for form inputs, cards, dividers, and interface element outlines in light mode."
+msgstr ""
+
+msgid "Dark Mode - Border Color"
+msgstr ""
+
+msgid "Border color for form inputs, cards, dividers, and interface element outlines in dark mode."
+msgstr ""
+
+msgid "Tooltip Colors"
+msgstr ""
+
+msgid "Colors for tooltips, popups, informational overlays, and help elements."
+msgstr ""
+
+msgid "Light Mode - Tooltip Background"
+msgstr ""
+
+msgid "Background color for tooltips, popups, informational overlays, and help elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Tooltip Background"
+msgstr ""
+
+msgid "Background color for tooltips, popups, informational overlays, and help elements in dark mode."
 msgstr ""
 
 msgid "Custom CSS"
@@ -1854,19 +2877,154 @@ msgstr ""
 msgid "Million Dollar Script Options"
 msgstr ""
 
-msgid "Million Dollar Script Grid"
-msgstr ""
-
 msgid "Your Pixels"
 msgstr ""
 
 msgid "Checkout"
 msgstr ""
 
-msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
+msgid "Failed to save metadata for page %d: %s"
+msgstr ""
+
+msgid "Error scanning page %d: %s"
+msgstr ""
+
+msgid "Error validating page %d: %s"
+msgstr ""
+
+msgid "There are %d orphaned MDS pages in your database. <a href=\"%s\">Clean them up</a>."
+msgstr ""
+
+msgid "Post no longer exists"
+msgstr ""
+
+msgid "Page no longer contains MDS content"
+msgstr ""
+
+msgid "Grid page missing grid size configuration"
+msgstr ""
+
+msgid "Order page missing payment methods configuration"
+msgstr ""
+
+msgid "Failed to initialize MDS metadata system: %s"
 msgstr ""
 
 msgid "Plugin Activation Error"
+msgstr ""
+
+msgid "Page Management"
+msgstr ""
+
+msgid "Cleaned up %d orphaned pages"
+msgstr ""
+
+msgid "Metadata not found"
+msgstr ""
+
+msgid "Page type is required"
+msgstr ""
+
+msgid "Add Grid Size Configuration"
+msgstr ""
+
+msgid "This grid page needs a grid size configuration to function properly."
+msgstr ""
+
+msgid "Add Payment Methods Configuration"
+msgstr ""
+
+msgid "This order page needs payment methods configuration."
+msgstr ""
+
+msgid "Add MDS Content"
+msgstr ""
+
+msgid "This page needs MDS shortcode or block content to function."
+msgstr ""
+
+msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
+msgstr ""
+
+msgid "Scan stopped due to execution time limit"
+msgstr ""
+
+msgid "Scan failed with exception: %s"
+msgstr ""
+
+msgid "Failed to create metadata for page %d: %s"
+msgstr ""
+
+msgid "Error processing page %d: %s"
+msgstr ""
+
+msgid "Failed to update page %d: %s"
+msgstr ""
+
+msgid "Page ID %d for %s does not exist"
+msgstr ""
+
+msgid "Failed to migrate page %d (%s): %s"
+msgstr ""
+
+msgid "MDS Page Management System has detected pages that need to be migrated to the new metadata system."
+msgstr ""
+
+msgid "Run Migration"
+msgstr ""
+
+msgid "Dismiss"
+msgstr ""
+
+msgid "Compatibility"
+msgstr ""
+
+msgid "Migration completed successfully!"
+msgstr ""
+
+msgid "Total pages"
+msgstr ""
+
+msgid "Migrated pages"
+msgstr ""
+
+msgid "Skipped pages"
+msgstr ""
+
+msgid "Failed pages"
+msgstr ""
+
+msgid "Post ID is required"
+msgstr ""
+
+msgid "Valid page type is required"
+msgstr ""
+
+msgid "Valid creation method is required"
+msgstr ""
+
+msgid "Valid content type is required"
+msgstr ""
+
+msgid "Valid status is required"
+msgstr ""
+
+msgid "Confidence score must be between 0 and 1"
+msgstr ""
+
+msgid "Manual Creation"
+msgstr ""
+
+msgid "Imported"
+msgstr ""
+
+msgid "API"
+msgstr ""
+
+msgid "Mixed Content"
+msgstr ""
+
+msgid "Custom"
 msgstr ""
 
 msgid "Error: You must be logged in to view this page"
@@ -2001,9 +3159,6 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
-msgid "Actions"
-msgstr ""
-
 msgid "Ad ID"
 msgstr ""
 
@@ -2011,9 +3166,6 @@ msgid "Username"
 msgstr ""
 
 msgid "Block Count"
-msgstr ""
-
-msgid "Title"
 msgstr ""
 
 msgid "Block Coordinates"
@@ -2094,7 +3246,10 @@ msgstr ""
 msgid "Selected Grid:"
 msgstr ""
 
-msgid "Grid processing completed successfully."
+msgid "Successfully processed [COUNT] grid(s)."
+msgstr ""
+
+msgid "Error processing grids: "
 msgstr ""
 
 msgid "Check Completed."
@@ -2379,12 +3534,6 @@ msgstr ""
 msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
 msgstr ""
 
-msgid "Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF."
-msgstr ""
-
-msgid "Upload failed: Could not process the uploaded file. Please try again."
-msgstr ""
-
 msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
 msgstr ""
 
@@ -2478,9 +3627,6 @@ msgstr ""
 msgid "* Required field"
 msgstr ""
 
-msgid "Edit"
-msgstr ""
-
 msgid "Not Published"
 msgstr ""
 
@@ -2526,8 +3672,131 @@ msgstr ""
 msgid "Could not read image dimensions after conversion. File might be corrupted."
 msgstr ""
 
-msgid "Image too large. You uploaded an image that is %UPLOAD_W%x%UPLOAD_H% pixels. The image cannot be larger than %SIZE_X% pixels wide and %SIZE_Y% pixels high."
+msgid "Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels."
 msgstr ""
 
 msgid "Image processing failed: %ERROR%"
+msgstr ""
+
+msgid "MDS Backward Compatibility"
+msgstr ""
+
+msgid "Compatibility Status"
+msgstr ""
+
+msgid "Compatibility Version"
+msgstr ""
+
+msgid "Migration Status"
+msgstr ""
+
+msgid "Pages with Metadata"
+msgstr ""
+
+msgid "Pending Migrations"
+msgstr ""
+
+msgid "The following migrations are pending and should be completed to ensure full compatibility:"
+msgstr ""
+
+msgid "Initial page migration to metadata system"
+msgstr ""
+
+msgid "Metadata migration for existing pages"
+msgstr ""
+
+msgid "Run Migration Now"
+msgstr ""
+
+msgid "This will migrate existing MDS pages to the new metadata system. This process is safe and reversible."
+msgstr ""
+
+msgid "Last Migration Results"
+msgstr ""
+
+msgid "Total Pages Processed"
+msgstr ""
+
+msgid "Successfully Migrated"
+msgstr ""
+
+msgid "Skipped (Already Migrated)"
+msgstr ""
+
+msgid "Failed"
+msgstr ""
+
+msgid "Migration Errors"
+msgstr ""
+
+msgid "Compatibility Information"
+msgstr ""
+
+msgid "What is Backward Compatibility?"
+msgstr ""
+
+msgid "The MDS Backward Compatibility system ensures that existing MDS pages continue to work seamlessly after upgrading to the new page management system. It automatically detects and migrates existing pages, shortcodes, and blocks to the new metadata system."
+msgstr ""
+
+msgid "Supported Legacy Features"
+msgstr ""
+
+msgid "Legacy shortcodes: [mds], [million_dollar_script], [pixel_grid]"
+msgstr ""
+
+msgid "Legacy Gutenberg blocks: mds/grid-block, mds/order-block, etc."
+msgstr ""
+
+msgid "Existing page option references"
+msgstr ""
+
+msgid "Custom page configurations and settings"
+msgstr ""
+
+msgid "Migration Process"
+msgstr ""
+
+msgid "Scan all pages for MDS content (shortcodes, blocks, references)"
+msgstr ""
+
+msgid "Analyze content and determine page types with confidence scoring"
+msgstr ""
+
+msgid "Create metadata records for detected MDS pages"
+msgstr ""
+
+msgid "Update legacy shortcodes and blocks to current standards"
+msgstr ""
+
+msgid "Preserve all existing functionality and settings"
+msgstr ""
+
+msgid "Safety and Reversibility"
+msgstr ""
+
+msgid "The migration process is designed to be safe and non-destructive. Original page content is preserved, and migration notes are added to track changes. If needed, pages can be restored to their original state."
+msgstr ""
+
+msgid "Advanced Actions"
+msgstr ""
+
+msgid "View Page Management"
+msgstr ""
+
+msgid "Refresh Status"
+msgstr ""
+
+msgid "Debug System Status"
+msgstr ""
+
+msgid "Reset Migration Status"
+msgstr ""
+
+msgid "Force Run Migration Now"
+msgstr ""
+
+msgid "Page Error Details"
+msgstr ""
+
+msgid "Apply Fix"
 msgstr ""

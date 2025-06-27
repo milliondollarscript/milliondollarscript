@@ -29,9 +29,11 @@
 
 namespace MillionDollarScript\Classes\Admin;
 
+use MillionDollarScript\Classes\Pages\Logs;
 use WP_Error;
 use MillionDollarScript\Classes\Data\MDSPageMetadataManager;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Logs as MDSLogs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -47,43 +49,115 @@ class MDSEnhancedPageCreator {
         'shortcode' => [
             'grid' => [
                 'title' => 'Pixel Grid',
-                'content' => '[milliondollarscript type="grid" display="grid" grid_size="100x100"]',
+                'content' => '[milliondollarscript type="grid" display="grid" id="{grid_id}" width="{width}" height="{height}" align="{align}"]',
                 'description' => 'Classic shortcode-based pixel grid display'
             ],
             'order' => [
                 'title' => 'Order Pixels',
-                'content' => '[milliondollarscript type="order" display="order"]',
+                'content' => '[milliondollarscript type="order" display="order" id="{grid_id}" align="{align}"]',
                 'description' => 'Shortcode-based order form for pixel purchases'
             ],
             'write-ad' => [
                 'title' => 'Write Advertisement',
-                'content' => '[milliondollarscript type="write-ad" display="write-ad"]',
+                'content' => '[milliondollarscript type="write-ad" display="write-ad" align="{align}"]',
                 'description' => 'Shortcode-based advertisement creation form'
+            ],
+            'confirm-order' => [
+                'title' => 'Order Confirmation',
+                'content' => '[milliondollarscript type="confirm-order" display="confirm-order" align="{align}"]',
+                'description' => 'Shortcode-based order confirmation page'
+            ],
+            'payment' => [
+                'title' => 'Payment Processing',
+                'content' => '[milliondollarscript type="payment" display="payment" align="{align}"]',
+                'description' => 'Shortcode-based payment processing page'
+            ],
+            'manage' => [
+                'title' => 'Manage Ads',
+                'content' => '[milliondollarscript type="manage" display="manage" align="{align}"]',
+                'description' => 'Shortcode-based ad management page'
+            ],
+            'thank-you' => [
+                'title' => 'Thank You',
+                'content' => '[milliondollarscript type="thank-you" display="thank-you" align="{align}"]',
+                'description' => 'Shortcode-based thank you page'
+            ],
+            'list' => [
+                'title' => 'Advertiser List',
+                'content' => '[milliondollarscript type="list" display="list" align="{align}"]',
+                'description' => 'Shortcode-based advertiser list page'
+            ],
+            'upload' => [
+                'title' => 'File Upload',
+                'content' => '[milliondollarscript type="upload" display="upload" align="{align}"]',
+                'description' => 'Shortcode-based file upload page'
+            ],
+            'no-orders' => [
+                'title' => 'No Orders',
+                'content' => '[milliondollarscript type="no-orders" display="no-orders" align="{align}"]',
+                'description' => 'Shortcode-based no orders page'
+            ],
+            'stats' => [
+                'title' => 'Stats Box',
+                'content' => '[milliondollarscript type="stats" id="{grid_id}" width="150px" height="60px" align="{align}"]',
+                'description' => 'Shortcode-based statistics display (150px × 60px)'
             ]
         ],
         'block' => [
             'grid' => [
                 'title' => 'Pixel Grid (Gutenberg)',
-                'content' => '<!-- wp:milliondollarscript/grid-block {"pageType":"grid","gridSize":"100x100"} /-->',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
                 'description' => 'Modern Gutenberg block-based pixel grid'
             ],
             'order' => [
                 'title' => 'Order Pixels (Gutenberg)',
-                'content' => '<!-- wp:milliondollarscript/order-block {"pageType":"order"} /-->',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
                 'description' => 'Modern Gutenberg block-based order form'
             ],
             'write-ad' => [
                 'title' => 'Write Advertisement (Gutenberg)',
-                'content' => '<!-- wp:milliondollarscript/write-ad-block {"pageType":"write-ad"} /-->',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
                 'description' => 'Modern Gutenberg block-based ad creation'
-            ]
-        ],
-        'hybrid' => [
-            'grid' => [
-                'title' => 'Pixel Grid (Hybrid)',
-                'content' => '<!-- wp:milliondollarscript/grid-block {"pageType":"grid","fallback":"shortcode"} /-->' . "\n\n" . 
-                           '[milliondollarscript type="grid" display="grid"]',
-                'description' => 'Hybrid implementation with block and shortcode fallback'
+            ],
+            'confirm-order' => [
+                'title' => 'Order Confirmation (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based confirmation page'
+            ],
+            'payment' => [
+                'title' => 'Payment Processing (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based payment page'
+            ],
+            'manage' => [
+                'title' => 'Manage Ads (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based management page'
+            ],
+            'thank-you' => [
+                'title' => 'Thank You (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based thank you page'
+            ],
+            'list' => [
+                'title' => 'Advertiser List (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based list page'
+            ],
+            'upload' => [
+                'title' => 'File Upload (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based upload page'
+            ],
+            'no-orders' => [
+                'title' => 'No Orders (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based no orders page'
+            ],
+            'stats' => [
+                'title' => 'Stats Box (Gutenberg)',
+                'content' => '<!-- wp:carbon-fields/million-dollar-script /-->',
+                'description' => 'Modern Gutenberg block-based statistics display (150px × 60px)'
             ]
         ]
     ];
@@ -91,77 +165,157 @@ class MDSEnhancedPageCreator {
     // Configuration options for different page types
     private array $page_configurations = [
         'grid' => [
-            'grid_size' => [
+            'grid_info' => [
+                'type' => 'dynamic_grid_info',
+                'label' => 'Grid Configuration',
+                'description' => 'Grid dimensions, pricing, and settings from your current grid'
+            ],
+            'align' => [
                 'type' => 'select',
-                'label' => 'Grid Size',
+                'label' => 'Alignment',
+                'description' => 'How to align the grid on the page',
+                'default' => 'center',
                 'options' => [
-                    '100x100' => '100x100 pixels (10,000 total)',
-                    '50x50' => '50x50 pixels (2,500 total)',
-                    '200x50' => '200x50 pixels (10,000 total)',
-                    'custom' => 'Custom size'
-                ],
-                'default' => '100x100'
+                    'left' => 'Left',
+                    'center' => 'Center', 
+                    'right' => 'Right'
+                ]
             ],
-            'pixel_price' => [
-                'type' => 'number',
-                'label' => 'Price per Pixel ($)',
-                'default' => 1.00,
-                'min' => 0.01,
-                'step' => 0.01
-            ],
-            'show_available_count' => [
+            'include_stats_above' => [
                 'type' => 'checkbox',
-                'label' => 'Show available pixel count',
-                'default' => true
-            ],
-            'enable_hover_preview' => [
-                'type' => 'checkbox',
-                'label' => 'Enable hover preview',
-                'default' => true
+                'label' => 'Include stats box above grid',
+                'description' => 'Adds a stats box (150px × 60px) above the pixel grid on the same page',
+                'default' => false
             ]
         ],
         'order' => [
-            'payment_methods' => [
-                'type' => 'multiselect',
-                'label' => 'Payment Methods',
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the order form on the page',
+                'default' => 'center',
                 'options' => [
-                    'paypal' => 'PayPal',
-                    'stripe' => 'Stripe (Credit Cards)',
-                    'bank_transfer' => 'Bank Transfer',
-                    'crypto' => 'Cryptocurrency'
-                ],
-                'default' => ['paypal', 'stripe']
-            ],
-            'require_account' => [
-                'type' => 'checkbox',
-                'label' => 'Require user account',
-                'default' => false
-            ],
-            'min_order_amount' => [
-                'type' => 'number',
-                'label' => 'Minimum order amount ($)',
-                'default' => 10.00,
-                'min' => 1.00,
-                'step' => 1.00
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
             ]
         ],
         'write-ad' => [
-            'max_ad_length' => [
-                'type' => 'number',
-                'label' => 'Maximum ad content length',
-                'default' => 500,
-                'min' => 50,
-                'step' => 10
-            ],
-            'allow_html' => [
-                'type' => 'checkbox',
-                'label' => 'Allow HTML in ad content',
-                'default' => false
-            ],
-            'require_moderation' => [
-                'type' => 'checkbox',
-                'label' => 'Require ad moderation',
-                'default' => true
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the write ad form on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'confirm-order' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the confirmation form on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'payment' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the payment form on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'manage' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the manage interface on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'thank-you' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the thank you message on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'list' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the advertiser list on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'upload' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the upload form on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'no-orders' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the no orders message on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
+            ]
+        ],
+        'stats' => [
+            'align' => [
+                'type' => 'select',
+                'label' => 'Alignment',
+                'description' => 'How to align the stats box on the page',
+                'default' => 'center',
+                'options' => [
+                    'left' => 'Left',
+                    'center' => 'Center',
+                    'right' => 'Right'
+                ]
             ]
         ]
     ];
@@ -207,20 +361,6 @@ class MDSEnhancedPageCreator {
                     'cons' => [
                         'Requires Gutenberg support',
                         'May not work with all themes'
-                    ]
-                ],
-                'hybrid' => [
-                    'label' => 'Hybrid Implementation',
-                    'description' => 'Blocks with shortcode fallback (best of both worlds)',
-                    'pros' => [
-                        'Maximum compatibility',
-                        'Visual editing when supported',
-                        'Automatic fallback',
-                        'Future-proof'
-                    ],
-                    'cons' => [
-                        'Slightly larger page size',
-                        'More complex structure'
                     ]
                 ]
             ],
@@ -313,59 +453,86 @@ class MDSEnhancedPageCreator {
             'errors' => [],
             'total_created' => 0,
             'total_updated' => 0,
-            'total_errors' => 0
+            'total_errors' => 0,
+            'debug_info' => []
         ];
         
-        // Validate selections
-        $validation_result = $this->validateSelections( $selections );
-        if ( is_wp_error( $validation_result ) ) {
-            $results['errors'][] = $validation_result->get_error_message();
-            return $results;
-        }
-        
-        $implementation_type = $selections['implementation_type'] ?? 'shortcode';
-        $selected_pages = $selections['page_types'] ?? [];
-        $configurations = $selections['configurations'] ?? [];
-        $create_mode = $selections['create_mode'] ?? 'create_new'; // create_new, update_existing, skip_existing
-        
-        foreach ( $selected_pages as $page_type ) {
-            try {
-                $page_result = $this->createSinglePage(
-                    $page_type,
-                    $implementation_type,
-                    $configurations[$page_type] ?? [],
-                    $create_mode
-                );
-                
-                if ( is_wp_error( $page_result ) ) {
-                    $results['errors'][] = sprintf(
-                        Language::get( 'Failed to create %s page: %s' ),
-                        $page_type,
-                        $page_result->get_error_message()
-                    );
-                    $results['total_errors']++;
-                } else {
-                    if ( $page_result['action'] === 'created' ) {
-                        $results['created_pages'][] = $page_result;
-                        $results['total_created']++;
-                    } else {
-                        $results['updated_pages'][] = $page_result;
-                        $results['total_updated']++;
-                    }
-                }
-                
-            } catch ( Exception $e ) {
-                $results['errors'][] = sprintf(
-                    Language::get( 'Exception creating %s page: %s' ),
-                    $page_type,
-                    $e->getMessage()
-                );
-                $results['total_errors']++;
+        try {
+            // Log incoming selections for debugging
+            
+            // Validate selections
+            $validation_result = $this->validateSelections( $selections );
+            if ( is_wp_error( $validation_result ) ) {
+                $error_msg = $validation_result->get_error_message();
+                $results['errors'][] = $error_msg;
+                return $results;
             }
+            
+            $implementation_type = $selections['implementation_type'] ?? 'shortcode';
+            $selected_pages = $selections['page_types'] ?? [];
+            $configurations = $selections['configurations'] ?? [];
+            $create_mode = $selections['create_mode'] ?? 'create_new'; // create_new, update_existing, skip_existing
+            $selected_grid_id = $selections['selected_grid_id'] ?? 1;
+            
+            // Inject selected grid ID into all page configurations
+            foreach ( $selected_pages as $page_type ) {
+                if ( !isset( $configurations[$page_type] ) ) {
+                    $configurations[$page_type] = [];
+                }
+                $configurations[$page_type]['grid_id'] = $selected_grid_id;
+            }
+            
+            
+            foreach ( $selected_pages as $page_type ) {
+                try {
+                    
+                    $page_result = $this->createSinglePage(
+                        $page_type,
+                        $implementation_type,
+                        $configurations[$page_type] ?? [],
+                        $create_mode
+                    );
+                    
+                    if ( is_wp_error( $page_result ) ) {
+                        $error_msg = sprintf(
+                            Language::get( 'Failed to create %s page: %s' ),
+                            $page_type,
+                            $page_result->get_error_message()
+                        );
+                        $results['errors'][] = $error_msg;
+                        $results['total_errors']++;
+                    } else {
+                        if ( $page_result['action'] === 'created' ) {
+                            $results['created_pages'][] = $page_result;
+                            $results['total_created']++;
+                        } else {
+                            $results['updated_pages'][] = $page_result;
+                            $results['total_updated']++;
+                        }
+                    }
+                    
+                } catch ( \Exception $e ) {
+                    $error_msg = sprintf(
+                        Language::get( 'Exception creating %s page: %s' ),
+                        $page_type,
+                        $e->getMessage()
+                    );
+                    $results['errors'][] = $error_msg;
+                    $results['total_errors']++;
+                }
+            }
+            
+            // Update WordPress options with new page assignments
+            if ( !empty( $results['created_pages'] ) || !empty( $results['updated_pages'] ) ) {
+                $this->updatePageAssignments( $results['created_pages'], $results['updated_pages'] );
+            }
+            
+        } catch ( \Exception $e ) {
+            $error_msg = 'Fatal error in page creation: ' . $e->getMessage();
+            $results['errors'][] = $error_msg;
+            $results['total_errors']++;
         }
         
-        // Update WordPress options with new page assignments
-        $this->updatePageAssignments( $results['created_pages'], $results['updated_pages'] );
         
         return $results;
     }
@@ -445,7 +612,7 @@ class MDSEnhancedPageCreator {
         
         if ( is_wp_error( $metadata_result ) ) {
             // Page was created but metadata failed - log warning but don't fail
-            error_log( 'MDS: Failed to create metadata for page ' . $page_id . ': ' . $metadata_result->get_error_message() );
+            MDSLogs::log( 'MDS: Failed to create metadata for page ' . $page_id . ': ' . $metadata_result->get_error_message() );
         }
         
         return [
@@ -521,11 +688,44 @@ class MDSEnhancedPageCreator {
     private function generatePageContent( array $template, array $configuration ): string {
         $content = $template['content'];
         
+        // Extract grid dimensions from grid_info if available
+        if ( isset( $configuration['grid_info'] ) ) {
+            $grid_info = $configuration['grid_info'];
+            if ( is_string( $grid_info ) ) {
+                $grid_data = json_decode( $grid_info, true );
+                if ( $grid_data ) {
+                    // Add grid dimensions to configuration
+                    $configuration['grid_id'] = $grid_data['grid_id'] ?? 1;
+                    $configuration['width'] = $grid_data['pixels']['width'] ?? 1000;
+                    $configuration['height'] = $grid_data['pixels']['height'] ?? 1000;
+                }
+            }
+        }
+        
+        // Handle combined grid + stats option
+        if ( !empty( $configuration['include_stats_above'] ) ) {
+            $grid_id = $configuration['grid_id'] ?? 1;
+            $align = $configuration['align'] ?? 'center';
+            
+            if ( str_contains( $content, 'type="grid"' ) ) {
+                // Shortcode implementation
+                $stats_shortcode = '[milliondollarscript type="stats" id="' . $grid_id . '" width="150px" height="60px" align="' . $align . '"]';
+                $content = $stats_shortcode . "\n\n" . $content;
+            } elseif ( str_contains( $content, 'wp:carbon-fields/million-dollar-script' ) ) {
+                // Gutenberg block implementation
+                $stats_block = '<!-- wp:carbon-fields/million-dollar-script {"mds_type":"stats","mds_grid_id":' . $grid_id . ',"mds_width":"150px","mds_height":"60px","mds_align":"' . $align . '"} /-->';
+                $content = $stats_block . "\n\n" . $content;
+            }
+        }
+        
         // Replace configuration placeholders
         foreach ( $configuration as $key => $value ) {
             $placeholder = '{' . $key . '}';
             if ( is_array( $value ) ) {
                 $value = implode( ',', $value );
+            } elseif ( is_bool( $value ) ) {
+                // Don't replace boolean placeholder values in content
+                continue;
             }
             $content = str_replace( $placeholder, $value, $content );
         }
@@ -570,7 +770,7 @@ class MDSEnhancedPageCreator {
             return new WP_Error( 'missing_implementation_type', Language::get( 'Implementation type is required' ) );
         }
         
-        $valid_types = [ 'shortcode', 'block', 'hybrid' ];
+        $valid_types = [ 'shortcode', 'block' ];
         if ( !in_array( $selections['implementation_type'], $valid_types ) ) {
             return new WP_Error( 'invalid_implementation_type', Language::get( 'Invalid implementation type' ) );
         }
@@ -594,6 +794,8 @@ class MDSEnhancedPageCreator {
                 if ( is_wp_error( $validation_result ) ) {
                     return $validation_result;
                 }
+                // Update the selections with the validated/normalized configuration
+                $selections['configurations'][$page_type] = $config;
             }
         }
         
@@ -604,10 +806,10 @@ class MDSEnhancedPageCreator {
      * Validate page configuration
      *
      * @param string $page_type
-     * @param array $configuration
+     * @param array &$configuration Configuration array (passed by reference to allow modifications)
      * @return bool|WP_Error
      */
-    private function validatePageConfiguration( string $page_type, array $configuration ): bool|WP_Error {
+    private function validatePageConfiguration( string $page_type, array &$configuration ): bool|WP_Error {
         $config_schema = $this->page_configurations[$page_type] ?? [];
         
         foreach ( $configuration as $key => $value ) {
@@ -619,41 +821,86 @@ class MDSEnhancedPageCreator {
             
             // Type validation
             switch ( $field_config['type'] ) {
+                case 'dynamic_grid_info':
+                    // Dynamic grid info fields contain JSON data
+                    if ( is_string( $value ) && !empty( $value ) ) {
+                        // Handle double-escaped JSON from AJAX
+                        $value = stripslashes( $value );
+                        
+                        $decoded = json_decode( $value, true );
+                        if ( json_last_error() !== JSON_ERROR_NONE ) {
+                            // Try one more time with additional unescaping
+                            $value = stripslashes( $value );
+                            $decoded = json_decode( $value, true );
+                            
+                            if ( json_last_error() !== JSON_ERROR_NONE ) {
+                                return new WP_Error( 'invalid_grid_data', sprintf( Language::get( 'Invalid grid data for %s: %s' ), $key, json_last_error_msg() ) );
+                            }
+                        }
+                        // Store the decoded data for later use
+                        $configuration[$key] = $decoded;
+                    } elseif ( is_array( $value ) ) {
+                        // Already decoded, validate it has required structure
+                        if ( empty( $value ) ) {
+                            return new WP_Error( 'empty_grid_data', sprintf( Language::get( 'Grid data for %s is empty' ), $key ) );
+                        }
+                        $configuration[$key] = $value;
+                    } elseif ( empty( $value ) ) {
+                        // Empty value is allowed - use defaults
+                        $configuration[$key] = [];
+                    }
+                    break;
+                    
                 case 'number':
-                    if ( !is_numeric( $value ) ) {
+                    if ( !is_numeric( $value ) && !empty( $value ) ) {
                         return new WP_Error( 'invalid_number', sprintf( Language::get( 'Invalid number for %s' ), $key ) );
                     }
                     
-                    if ( isset( $field_config['min'] ) && $value < $field_config['min'] ) {
-                        return new WP_Error( 'number_too_small', sprintf( Language::get( 'Value for %s is too small' ), $key ) );
-                    }
-                    
-                    if ( isset( $field_config['max'] ) && $value > $field_config['max'] ) {
-                        return new WP_Error( 'number_too_large', sprintf( Language::get( 'Value for %s is too large' ), $key ) );
+                    if ( !empty( $value ) ) {
+                        $numValue = floatval( $value );
+                        if ( isset( $field_config['min'] ) && $numValue < $field_config['min'] ) {
+                            return new WP_Error( 'number_too_small', sprintf( Language::get( 'Value for %s is too small' ), $key ) );
+                        }
+                        
+                        if ( isset( $field_config['max'] ) && $numValue > $field_config['max'] ) {
+                            return new WP_Error( 'number_too_large', sprintf( Language::get( 'Value for %s is too large' ), $key ) );
+                        }
+                        
+                        $configuration[$key] = $numValue;
                     }
                     break;
                     
                 case 'select':
-                    if ( !isset( $field_config['options'][$value] ) ) {
+                    if ( !empty( $value ) && !isset( $field_config['options'][$value] ) ) {
                         return new WP_Error( 'invalid_option', sprintf( Language::get( 'Invalid option for %s' ), $key ) );
                     }
                     break;
                     
                 case 'multiselect':
-                    if ( !is_array( $value ) ) {
+                    if ( !empty( $value ) && !is_array( $value ) ) {
                         return new WP_Error( 'invalid_multiselect', sprintf( Language::get( 'Invalid multiselect for %s' ), $key ) );
                     }
                     
-                    foreach ( $value as $option ) {
-                        if ( !isset( $field_config['options'][$option] ) ) {
-                            return new WP_Error( 'invalid_multiselect_option', sprintf( Language::get( 'Invalid option %s for %s' ), $option, $key ) );
+                    if ( is_array( $value ) ) {
+                        foreach ( $value as $option ) {
+                            if ( !isset( $field_config['options'][$option] ) ) {
+                                return new WP_Error( 'invalid_multiselect_option', sprintf( Language::get( 'Invalid option %s for %s' ), $option, $key ) );
+                            }
                         }
                     }
                     break;
                     
                 case 'checkbox':
-                    // Convert to boolean
-                    $configuration[$key] = (bool) $value;
+                    // Convert to boolean and store the normalized value
+                    $configuration[$key] = !empty( $value ) && $value !== '0' && $value !== 'false';
+                    break;
+                    
+                case 'text':
+                case 'textarea':
+                    // Sanitize text fields
+                    if ( is_string( $value ) ) {
+                        $configuration[$key] = sanitize_text_field( $value );
+                    }
                     break;
             }
         }
@@ -696,10 +943,31 @@ class MDSEnhancedPageCreator {
         $implementation_type = $selections['implementation_type'] ?? 'shortcode';
         $selected_pages = $selections['page_types'] ?? [];
         $configurations = $selections['configurations'] ?? [];
+        $create_mode = $selections['create_mode'] ?? 'create_new';
         
         foreach ( $selected_pages as $page_type ) {
             $existing_page_id = $this->getExistingPageId( $page_type );
             $template = $this->getPageTemplate( $page_type, $implementation_type );
+            
+            // Determine status based on create_mode and existing page
+            $status = $this->getPageStatus( $existing_page_id, $create_mode );
+            
+            // Get detailed information about existing page
+            $existing_page_data = null;
+            if ( $existing_page_id ) {
+                $existing_post = get_post( $existing_page_id );
+                if ( $existing_post ) {
+                    $existing_page_data = [
+                        'id' => $existing_page_id,
+                        'title' => get_the_title( $existing_page_id ),
+                        'url' => get_permalink( $existing_page_id ),
+                        'edit_link' => get_edit_post_link( $existing_page_id ),
+                        'status' => get_post_status( $existing_page_id ),
+                        'date_modified' => get_the_modified_date( 'Y-m-d H:i:s', $existing_page_id ),
+                        'author' => get_the_author_meta( 'display_name', $existing_post->post_author )
+                    ];
+                }
+            }
             
             $page_preview = [
                 'page_type' => $page_type,
@@ -707,17 +975,35 @@ class MDSEnhancedPageCreator {
                 'implementation_type' => $implementation_type,
                 'template_description' => $template['description'] ?? '',
                 'existing_page' => $existing_page_id ? get_permalink( $existing_page_id ) : null,
+                'existing_page_data' => $existing_page_data,
+                'status' => $status,
                 'configuration' => $configurations[$page_type] ?? []
             ];
             
             $preview['pages_to_create'][] = $page_preview;
             
-            // Add warnings for existing pages
+            // Add warnings based on create_mode and existing pages
             if ( $existing_page_id ) {
-                $preview['warnings'][] = sprintf(
-                    Language::get( 'Page %s already exists and will be updated/skipped based on your settings' ),
-                    $page_type
-                );
+                switch ( $create_mode ) {
+                    case 'update_existing':
+                        $preview['warnings'][] = sprintf(
+                            Language::get( 'Page %s already exists and will be updated with new content' ),
+                            $page_type
+                        );
+                        break;
+                    case 'skip_existing':
+                        $preview['warnings'][] = sprintf(
+                            Language::get( 'Page %s already exists and will be skipped' ),
+                            $page_type
+                        );
+                        break;
+                    case 'create_new':
+                        $preview['warnings'][] = sprintf(
+                            Language::get( 'Page %s already exists but a new page will be created with a different name' ),
+                            $page_type
+                        );
+                        break;
+                }
             }
         }
         
@@ -734,5 +1020,92 @@ class MDSEnhancedPageCreator {
         }
         
         return $preview;
+    }
+    
+    /**
+     * Get page status based on existing page and create mode
+     *
+     * @param int|null $existing_page_id
+     * @param string $create_mode
+     * @return string
+     */
+    private function getPageStatus( $existing_page_id, string $create_mode ): string {
+        if ( !$existing_page_id ) {
+            return Language::get( 'Will create new' );
+        }
+        
+        switch ( $create_mode ) {
+            case 'update_existing':
+                return Language::get( 'Will update existing' );
+            case 'skip_existing':
+                return Language::get( 'Will skip existing' );
+            case 'create_new':
+            default:
+                return Language::get( 'Will create new' );
+        }
+    }
+    
+    /**
+     * Get page configurations for selected page types
+     *
+     * @param array $page_types Selected page types
+     * @return array Configuration data for each page type
+     */
+    public function getPageConfigurations( array $page_types ): array {
+        $configurations = [];
+        
+        foreach ( $page_types as $page_type ) {
+            if ( isset( $this->page_configurations[$page_type] ) ) {
+                $configurations[$page_type] = [
+                    'title' => $this->getPageTypeTitle( $page_type ),
+                    'fields' => $this->page_configurations[$page_type]
+                ];
+            }
+        }
+        
+        return $configurations;
+    }
+    
+    /**
+     * Get page type title
+     *
+     * @param string $page_type
+     * @return string
+     */
+    private function getPageTypeTitle( string $page_type ): string {
+        $titles = [
+            'grid' => Language::get( 'Pixel Grid Configuration' ),
+            'order' => Language::get( 'Order Page Configuration' ),
+            'write-ad' => Language::get( 'Write Advertisement Configuration' ),
+            'confirm-order' => Language::get( 'Order Confirmation Configuration' ),
+            'payment' => Language::get( 'Payment Configuration' ),
+            'manage' => Language::get( 'Manage Ads Configuration' ),
+            'thank-you' => Language::get( 'Thank You Page Configuration' ),
+            'list' => Language::get( 'Advertiser List Configuration' ),
+            'upload' => Language::get( 'File Upload Configuration' ),
+            'no-orders' => Language::get( 'No Orders Configuration' )
+        ];
+        
+        return $titles[$page_type] ?? ucfirst( str_replace( '-', ' ', $page_type ) ) . ' Configuration';
+    }
+    
+    /**
+     * Generate creation preview
+     *
+     * @param array $form_data
+     * @return array
+     */
+    public function generateCreationPreview( array $form_data ): array {
+        return $this->getCreationPreview( $form_data );
+    }
+    
+    /**
+     * Create pages
+     *
+     * @param array $form_data
+     * @return array|WP_Error
+     */
+    public function createPages( array $form_data ) {
+        return $this->createPagesFromSelections( $form_data );
     }
 } 

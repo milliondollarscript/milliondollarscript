@@ -4,6 +4,23 @@ jQuery(document).ready(function ($) {
 	const { updateFieldValue } = dispatch("carbon-fields/metaboxes");
 	const fields = metaboxes.getFields();
 
+	// Fix for TinyMCE null node error in Carbon Fields
+	if (window.tinymce) {
+		const originalExecCommand = window.tinymce.Editor.prototype.execCommand;
+		window.tinymce.Editor.prototype.execCommand = function(cmd, ui, value, args) {
+			try {
+				// Check if editor is properly initialized and has valid DOM
+				if (!this.getElement() || !this.getElement().offsetParent) {
+					return false;
+				}
+				return originalExecCommand.call(this, cmd, ui, value, args);
+			} catch (error) {
+				console.warn('TinyMCE execCommand error prevented:', error);
+				return false;
+			}
+		};
+	}
+
 	// Dark Mode Theme Switching with Confirmation
 	let originalThemeValue = $('input[name="_mds_theme_mode"]:checked').val();
 	
@@ -97,7 +114,7 @@ jQuery(document).ready(function ($) {
 	const buttons = ["update_language", "create_pages", "delete_pages"];
 
 	for (let i = 0; i < buttons.length; i++) {
-		$("#mds_" + buttons[i]).click(function (e) {
+		$("#mds_" + buttons[i]).on('click', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
 

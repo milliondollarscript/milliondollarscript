@@ -45,11 +45,7 @@ class MDSLegacyShortcodeHandler {
     
     // Legacy shortcode mappings
     private array $legacy_shortcodes = [
-        'mds' => 'milliondollarscript',
-        'million_dollar_script' => 'milliondollarscript',
-        'pixel_grid' => 'milliondollarscript',
-        'mds_grid' => 'milliondollarscript',
-        'mds_display' => 'milliondollarscript'
+        'mds_grid' => 'milliondollarscript'
     ];
     
     // Attribute mappings for legacy shortcodes
@@ -65,31 +61,7 @@ class MDSLegacyShortcodeHandler {
     
     // Default values for legacy shortcodes
     private array $legacy_defaults = [
-        'mds' => [
-            'type' => 'grid',
-            'align' => 'center',
-            'width' => '100%',
-            'height' => 'auto'
-        ],
-        'million_dollar_script' => [
-            'type' => 'grid',
-            'align' => 'center',
-            'width' => '100%',
-            'height' => 'auto'
-        ],
-        'pixel_grid' => [
-            'type' => 'grid',
-            'align' => 'center',
-            'width' => '1000px',
-            'height' => '1000px'
-        ],
         'mds_grid' => [
-            'type' => 'grid',
-            'align' => 'center',
-            'width' => '100%',
-            'height' => 'auto'
-        ],
-        'mds_display' => [
             'type' => 'grid',
             'align' => 'center',
             'width' => '100%',
@@ -192,47 +164,15 @@ class MDSLegacyShortcodeHandler {
      */
     private function applyLegacySpecificConversions( string $legacy_tag, array $atts ): array {
         switch ( $legacy_tag ) {
-            case 'mds':
-                // MDS shortcode specific conversions
-                if ( isset( $atts['display'] ) ) {
-                    $atts['type'] = $atts['display'];
-                    unset( $atts['display'] );
-                }
-                break;
-                
-            case 'million_dollar_script':
-                // Million Dollar Script specific conversions
-                if ( isset( $atts['mode'] ) ) {
-                    $atts['type'] = $atts['mode'];
-                    unset( $atts['mode'] );
-                }
-                break;
-                
-            case 'pixel_grid':
-                // Pixel Grid specific conversions
-                $atts['type'] = 'grid'; // Always grid for pixel_grid
-                if ( isset( $atts['size'] ) ) {
-                    // Convert size format (e.g., "100x100" to width/height)
-                    $size_parts = explode( 'x', $atts['size'] );
-                    if ( count( $size_parts ) === 2 ) {
-                        $atts['width'] = $size_parts[0] . 'px';
-                        $atts['height'] = $size_parts[1] . 'px';
-                    }
-                    unset( $atts['size'] );
-                }
-                break;
-                
             case 'mds_grid':
                 // MDS Grid specific conversions
                 $atts['type'] = 'grid';
                 break;
-                
-            case 'mds_display':
-                // MDS Display specific conversions
-                if ( ! isset( $atts['type'] ) ) {
-                    $atts['type'] = 'grid';
-                }
-                break;
+         }
+
+        if ( isset( $atts['display'] ) ) {
+            $atts['type'] = $atts['display'];
+            unset( $atts['display'] );
         }
         
         return $atts;

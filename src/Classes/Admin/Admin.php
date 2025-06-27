@@ -468,6 +468,18 @@ class Admin {
 		);
 
 		wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
+		
+		// Enqueue error resolution script on compatibility page
+		$current_screen = get_current_screen();
+		if ( $current_screen && strpos( $current_screen->id, 'mds-compatibility' ) !== false ) {
+			wp_enqueue_script(
+				MDS_PREFIX . 'error-resolution',
+				MDS_BASE_URL . 'assets/js/admin/error-resolution.js',
+				[ 'jquery', 'wp-api' ],
+				filemtime( MDS_BASE_PATH . 'assets/js/admin/error-resolution.js' ),
+				true
+			);
+		}
 	}
 
 	public static function admin_pixels(): void {
