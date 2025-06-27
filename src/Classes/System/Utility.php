@@ -271,7 +271,7 @@ class Utility {
 //				$filesystem = new Filesystem( $url );
 //				if ( ! $filesystem->copy( $image_path, $path_filename ) ) {
 //					// File didn't copy properly.
-//					error_log( wp_sprintf(
+//					Logs::log( wp_sprintf(
 //						__( 'Error copying file. From: %s To: %s', 'million_dollar_script' ),
 //						$image_path,
 //						$path_filename
@@ -513,13 +513,12 @@ class Utility {
 			// Validate that the page actually exists
 			if ( get_post_status( $page_id ) !== false ) {
 				$url = get_permalink( $page_id );
-				error_log( "MDS: Generated page-based URL for '{$page_name}': {$url}" );
 			} else {
-				error_log( "MDS: Page ID {$page_id} for '{$page_name}' does not exist or is invalid" );
+				Logs::log( "MDS: Page ID {$page_id} for '{$page_name}' does not exist or is invalid" );
 			}
 		} else {
 			$page_id = isset( $pages[ $page_name ]['page_id'] ) ? $pages[ $page_name ]['page_id'] : 'not set';
-			error_log( "MDS: No valid page found for '{$page_name}', page_id: {$page_id}" );
+			Logs::log( "MDS: No valid page found for '{$page_name}', page_id: {$page_id}" );
 		}
 		
 		// If page-based URL failed and this is a critical page, try to auto-create it
@@ -541,7 +540,7 @@ class Utility {
 			} else {
 				$url = add_query_arg( $endpoint, $page_name, home_url( '/' ) );
 			}
-			error_log( "MDS: Using endpoint-based URL for '{$page_name}': {$url}" );
+			Logs::log( "MDS: Using endpoint-based URL for '{$page_name}': {$url}" );
 		}
 		
 		// append additional args if provided
@@ -603,14 +602,14 @@ class Utility {
 		$page_id = wp_insert_post( $page_data );
 		
 		if ( is_wp_error( $page_id ) || ! $page_id ) {
-			error_log( 'MDS: Failed to create page for ' . $page_name . ': ' . ( is_wp_error( $page_id ) ? $page_id->get_error_message() : 'Unknown error' ) );
+			Logs::log( 'MDS: Failed to create page for ' . $page_name . ': ' . ( is_wp_error( $page_id ) ? $page_id->get_error_message() : 'Unknown error' ) );
 			return false;
 		}
 		
 		// Save the page ID in options
 		Options::update_option( $config['option_name'], $page_id );
 		
-		error_log( 'MDS: Auto-created missing page for ' . $page_name . ' with ID: ' . $page_id );
+		Logs::log( 'MDS: Auto-created missing page for ' . $page_name . ' with ID: ' . $page_id );
 		
 		return $page_id;
 	}
@@ -1282,7 +1281,7 @@ class Utility {
 			process_map( $banner_id );
 		} else {
 			// Log an error or handle the case where functions are missing
-			// error_log('MDS Error: Required image processing functions not found in Utility::process_grid_image.');
+			// Logs::log('MDS Error: Required image processing functions not found in Utility::process_grid_image.');
 			// Trigger a user notice using the Notices class
 			if ( current_user_can( 'manage_options' ) ) {
 				// Use the Notices class for consistent handling of admin notices
@@ -1586,11 +1585,11 @@ class Utility {
 			
 			if ( is_wp_error( $metadata_result ) ) {
 				// Log the error but don't fail page creation
-				error_log( 'MDS Page Metadata creation failed for page ' . $page_id . ': ' . $metadata_result->get_error_message() );
+				Logs::log( 'MDS Page Metadata creation failed for page ' . $page_id . ': ' . $metadata_result->get_error_message() );
 			}
 		} catch ( \Exception $e ) {
 			// Log the error but don't fail page creation
-			error_log( 'MDS Page Metadata creation exception for page ' . $page_id . ': ' . $e->getMessage() );
+			Logs::log( 'MDS Page Metadata creation exception for page ' . $page_id . ': ' . $e->getMessage() );
 		}
 
 		return $page_id; // Return the successfully created page ID

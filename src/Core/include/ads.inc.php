@@ -41,6 +41,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -470,8 +471,17 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
                     <div>
 						<?php
 						$order_status = Orders::get_completion_status( $prams['order_id'], $user_id );
-						if ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) {
-
+						if ( $prams['status'] == 'confirmed' && ( Orders::is_order_in_progress( $prams['order_id'] ) || WooCommerceFunctions::is_wc_active() ) ) {
+							// Show Pay Now button for confirmed orders
+							$pay_args = [ 'order_id' => $prams['order_id'], 'BID' => $prams['banner_id'] ];
+							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
+							?>
+                            <input class="mds-button mds-pay" type="button"
+                                   value="<?php esc_attr_e( Language::get( 'Pay Now' ) ); ?>"
+                                   onclick="window.location='<?php echo $pay_url; ?>'">
+							<?php
+						} else if ( $prams['status'] != 'confirmed' && ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) ) {
+							// Show Edit button for non-confirmed orders
 							?>
                             <input class="mds-button mds-edit-button" type="button"
                                    value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"

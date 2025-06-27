@@ -923,7 +923,8 @@ class Orders {
 									'order_id' => $order['order_id'],
 									'BID'      => $order['banner_id'],
 								];
-								echo "<a class='mds-button mds-pay' href='" . esc_url( Utility::get_page_url( 'payment', $args ) ) . "'>" . Language::get( 'Pay Now' ) . "</a>";
+								$pay_url = esc_url( Utility::get_page_url( 'payment', $args ) );
+								echo "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $pay_url . "\"' />";
 							} else {
 								$args = [ 'BID' => $order['banner_id'] ];
 								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
@@ -954,7 +955,7 @@ class Orders {
 							// Pay Now button
 							$pay_args = [ 'order_id' => $order['order_id'], 'BID' => $order['banner_id'] ];
 							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
-							echo "<a class='mds-button mds-pay' href='" . $pay_url . "'>" . Language::get( 'Pay Now' ) . "</a>";
+							echo "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $pay_url . "\"' />";
 							// Cancel button
 							$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
 							$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
