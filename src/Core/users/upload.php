@@ -173,8 +173,16 @@ $current_user_id = get_current_user_id();
 $order_id        = intval( $order_id );
 $BID             = intval( $BID );
 
-$sql = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND order_id=%d AND banner_id=%d", $current_user_id, $order_id, $BID );
+// Use the same logic as order.php - check for reserved blocks for this user and banner
+// Then also check with order_id as a fallback
+$sql = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND status='reserved' AND banner_id=%d", $current_user_id, $BID );
 $res = $wpdb->get_results( $sql );
+
+// If no reserved blocks found, try checking by order_id
+if ( empty( $res ) ) {
+	$sql = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND order_id=%d AND banner_id=%d", $current_user_id, $order_id, $BID );
+	$res = $wpdb->get_results( $sql );
+}
 
 $count             = count( $res );
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
@@ -235,14 +243,18 @@ $order_row = mysqli_fetch_array( $result );
 if ( $result->num_rows == 0 ) {
 	// Check for any new orders
 	$order_row = Orders::find_new_order();
-	if ( $order_row == null ) {
+	if ( $order_row == null || $not_enough_blocks ) {
 
-		// Nothing found
-		Language::out_replace(
-			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
-			[ '%ORDER_URL%', '%BID%' ],
-			[ Utility::get_page_url( 'order' ), $BID ]
-		);
+		// Nothing found or not enough blocks
+		if ( $not_enough_blocks ) {
+			Functions::not_enough_blocks( Orders::get_current_order_id(), $banner_data['G_MIN_BLOCKS'] );
+		} else {
+			Language::out_replace(
+				'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
+				[ '%ORDER_URL%', '%BID%' ],
+				[ Utility::get_page_url( 'order' ), $BID ]
+			);
+		}
 
 		return;
 	}
@@ -379,14 +391,16 @@ if ( ! empty( $image ) ) {
 	// Check for any new orders
 	$order_row = Orders::find_new_order();
 
-	if ( $order_row == null || ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) ) {
-		Language::out_replace(
-			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
-			[ '%ORDER_URL%', '%BID%' ],
-			[ Utility::get_page_url( 'order' ), $BID ]
-		);
-	} else if ( $order_row['status'] != 'new' && $not_enough_blocks ) {
-		Functions::not_enough_blocks( $mds_order_id, $banner_data['G_MIN_BLOCKS'] );
+	if ( $order_row == null || ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) || $not_enough_blocks ) {
+		if ( $not_enough_blocks ) {
+			Functions::not_enough_blocks( $mds_order_id, $banner_data['G_MIN_BLOCKS'] );
+		} else {
+			Language::out_replace(
+				'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
+				[ '%ORDER_URL%', '%BID%' ],
+				[ Utility::get_page_url( 'order' ), $BID ]
+			);
+		}
 	} else {
 		if ( isset( $image ) ) {
 

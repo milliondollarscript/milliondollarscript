@@ -85,6 +85,7 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 			Utility::redirect( Utility::get_page_url( 'thank-you' ) );
 		} else {
 			Orders::confirm_order( get_current_user_id(), $order_id );
+			// After confirming, let the payment flow continue below
 		}
 
 	} else {
@@ -101,23 +102,16 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 
 	$_REQUEST['order_id'] = $order_id;
 
-} else if ( ! empty( $order_id ) ) {
-	// Handle Pay Now button on Manage Pixels page
-
-	// check the user's rank
-	$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
-
-	// Complete order if price is 0 or user is privileged
-	if ( ( $order_row['price'] == '0' ) || ( $privileged == 1 ) ) {
-		Orders::complete_order( get_current_user_id(), $order_id );
-		Orders::reset_order_progress();
-		Utility::redirect( Utility::get_page_url( 'thank-you' ) );
-	}
 }
 
-if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {
+if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) || $order_row['status'] == 'confirmed' ) {
 	Steps::update_step( 'payment' );
 	$_REQUEST['order_id'] = $order_id;
+	
+	// Reset order progress now that payment is starting - gives users a clean slate
+	// while preserving the current confirmed order for payment processing
+	Orders::reset_order_progress();
+	
 	\MillionDollarScript\Classes\Payment\Payment::handle_checkout( $order_id );
 } else {
 	if ( isset( $_REQUEST['renew'] ) && $_REQUEST['renew'] === 'true' ) {

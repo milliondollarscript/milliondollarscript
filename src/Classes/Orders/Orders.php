@@ -218,7 +218,7 @@ class Orders {
 
 		return $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT `order_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `user_id` = %d AND `order_in_progress` = 'Y' ORDER BY `order_id` DESC LIMIT 1",
+				"SELECT `order_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `user_id` = %d AND `order_in_progress` = 'Y' AND `status` = 'new' ORDER BY `order_id` DESC LIMIT 1",
 				$user_id
 			)
 		);
@@ -279,12 +279,88 @@ class Orders {
 			$user_id = get_current_user_id();
 		}
 
+		// Get the current order in progress before resetting
+		$current_order_id = self::get_current_order_in_progress( $user_id );
+		
+		// Clear data ONLY from 'new' orders to preserve confirmed orders waiting for payment
+		global $wpdb;
+		
+		// Only get 'new' status orders - preserve confirmed orders for payment
+		$new_user_orders = $wpdb->get_col( $wpdb->prepare(
+			"SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id = %d AND status = 'new'",
+			$user_id
+		));
+		
+		if ( ! empty( $new_user_orders ) ) {
+			$order_ids_placeholder = implode( ',', array_fill( 0, count( $new_user_orders ), '%d' ) );
+			
+			// Clear block reservations ONLY for new orders
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE " . MDS_DB_PREFIX . "blocks SET status = 'pending', order_id = NULL WHERE order_id IN ($order_ids_placeholder)",
+				...$new_user_orders
+			));
+			
+			// Get ad_ids from NEW orders only
+			$ad_ids = $wpdb->get_col( $wpdb->prepare(
+				"SELECT ad_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id IN ($order_ids_placeholder) AND ad_id IS NOT NULL",
+				...$new_user_orders
+			));
+			
+			// Clear block selections ONLY from new orders
+			$wpdb->update(
+				MDS_DB_PREFIX . 'orders',
+				array( 'blocks' => '', 'block_info' => '', 'order_in_progress' => 'N', 'ad_id' => null ),
+				array( 'user_id' => $user_id, 'status' => 'new' ),
+				array( '%s', '%s', '%s', null ),
+				array( '%d', '%s' )
+			);
+			
+			// Delete mds-pixel posts ONLY associated with NEW orders
+			if ( ! empty( $ad_ids ) ) {
+				foreach ( $ad_ids as $ad_id ) {
+					if ( $ad_id && get_post( $ad_id ) ) {
+						wp_delete_post( $ad_id, true ); // Force delete
+					}
+				}
+			}
+		}
+		
+		// Set any confirmed orders to not in progress, but preserve their data
+		$wpdb->update(
+			MDS_DB_PREFIX . 'orders',
+			array( 'order_in_progress' => 'N' ),
+			array( 'user_id' => $user_id, 'status' => 'confirmed' ),
+			array( '%s' ),
+			array( '%d', '%s' )
+		);
+		
+		// Also delete any other "new" status mds-pixel posts for this user that might not be associated with orders
+		$user_new_posts = get_posts( array(
+			'author'      => $user_id,
+			'post_status' => 'new',
+			'post_type'   => 'mds-pixel',
+			'numberposts' => -1
+		) );
+		
+		foreach ( $user_new_posts as $post ) {
+			wp_delete_post( $post->ID, true );
+		}
+
 		if ( WooCommerceFunctions::is_wc_active() ) {
 			WooCommerceFunctions::remove_item_from_cart( $user_id, self::get_current_order_id() );
 			WooCommerceFunctions::reset_session_variables( $user_id );
 		} else {
 			self::reset_progress( $user_id );
 			delete_user_meta( $user_id, 'mds_confirm' );
+		}
+		
+		// Clear the current order ID from session to force fresh start
+		if ( WooCommerceFunctions::is_wc_active() ) {
+			// Clear the order ID from WooCommerce session
+			if ( WC()->session && is_object( WC()->session ) ) {
+				WC()->session->__unset( 'mds_order_id' );
+				WC()->session->save_data();
+			}
 		}
 	}
 
@@ -384,6 +460,13 @@ class Orders {
 		if ( is_null( $banner_id ) ) {
 			global $f2;
 			$banner_id = $f2->bid();
+		}
+
+		// Only reset if there's no current order in progress
+		// This prevents clearing valid order data during the normal flow
+		$existing_order = self::get_current_order_in_progress( $user_id );
+		if ( empty( $existing_order ) ) {
+			self::reset_order_progress( $user_id );
 		}
 
 		$now = current_time( 'mysql' );
@@ -638,7 +721,9 @@ class Orders {
 	 */
 	public static function find_new_order(): array|null {
 		global $wpdb;
-		$sql       = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='new' AND user_id=%d", get_current_user_id() );
+		
+		// First check for any new orders in progress - these take priority
+		$sql       = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='new' AND user_id=%d ORDER BY order_id DESC LIMIT 1", get_current_user_id() );
 		$order_row = $wpdb->get_row( $sql, ARRAY_A );
 		if ( $wpdb->num_rows > 0 ) {
 
@@ -894,65 +979,20 @@ class Orders {
 
 				switch ( $order['status'] ) {
 					case "new":
+						// Action buttons are now shown in the accordion header
+						// Only show status and cancel button in the content area
 						$current_step = Steps::get_current_step( $order['order_id'] );
 						if ( $current_step != 0 ) {
 							echo Language::get( 'In progress' ) . '<br>';
-							if ( $steps[ $current_step ] == Steps::STEP_UPLOAD ) {
-								$args = [ 'BID' => $order['banner_id'] ];
-								// Default page name
-								$page_name = 'upload';
-								if ( $USE_AJAX == 'SIMPLE' ) {
-									$page_name = 'order';
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-upload' href='" . esc_url( Utility::get_page_url( $page_name, $args ) ) . "'>" . Language::get( 'Upload' ) . "</a>";
-							} else if ( $steps[ $current_step ] == Steps::STEP_WRITE_AD ) {
-								$args = [ 'BID' => $order['banner_id'] ];
-								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-write' href='" . esc_url( Utility::get_page_url( 'write-ad', $args ) ) . "'>" . Language::get( 'Write Ad' ) . "</a>";
-							} else if ( $steps[ $current_step ] == Steps::STEP_CONFIRM_ORDER ) {
-								$args = [ 'BID' => $order['banner_id'] ];
-								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-confirm' href='" . esc_url( Utility::get_page_url( 'confirm-order', $args ) ) . "'>" . Language::get( 'Confirm Now' ) . "</a>";
-							} else if ( $steps[ $current_step ] == Steps::STEP_PAYMENT ) {
-								$args = [
-									'order_id' => $order['order_id'],
-									'BID'      => $order['banner_id'],
-								];
-								$pay_url = esc_url( Utility::get_page_url( 'payment', $args ) );
-								echo "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $pay_url . "\"' />";
-							} else {
-								$args = [ 'BID' => $order['banner_id'] ];
-								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-continue' href='" . esc_url( Utility::get_page_url( 'order', $args ) ) . "'>" . Language::get( 'Continue' ) . "</a>";
-							}
-						} else {
-							$args = [ 'BID' => $order['banner_id'] ];
-							if ( $USE_AJAX == 'SIMPLE' ) {
-								$text = Language::get( 'Upload' );
-								$page_name = 'upload';
-								// Add order_id only if USE_AJAX is SIMPLE, based on original $temp_var logic
-								$args['order_id'] = $order['order_id'];
-							} else {
-								$text = Language::get( 'Order' );
-								$page_name = 'order';
-							}
-							echo "<a class='mds-button mds-upload' href='" . esc_url( Utility::get_page_url( $page_name, $args ) ) . "'>" . $text . "</a>";
 						}
 						$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
 						$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
-						echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . $cancel_url . "\"' >";
+						echo "<input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . $cancel_url . "\"' >";
 						break;
 					case "confirmed":
-						if ( self::is_order_in_progress( $order['order_id'] ) || ( WooCommerceFunctions::is_wc_active() ) ) {
+						if ( !self::has_payment( $order['order_id'] ) && ( self::is_order_in_progress( $order['order_id'] ) || ( WooCommerceFunctions::is_wc_active() ) ) ) {
 							update_user_meta( get_current_user_id(), 'mds_confirm', true );
-							// Pay Now button
+							// Pay Now button - only show if payment hasn't been made yet
 							$pay_args = [ 'order_id' => $order['order_id'], 'BID' => $order['banner_id'] ];
 							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
 							echo "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $pay_url . "\"' />";
@@ -960,6 +1000,9 @@ class Orders {
 							$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
 							$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
 							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . $cancel_url . "\"' >";
+						} else if ( self::has_payment( $order['order_id'] ) ) {
+							// Payment already made - show payment processing status
+							echo Language::get( 'Payment submitted and processing...' );
 						}
 						break;
 					case "completed":
@@ -1088,21 +1131,11 @@ class Orders {
 		$user_id    = get_current_user_id();
 		$status     = 'new';
 
-		$order_id = self::get_current_order_id();
-
-		if ( ! empty( $order_id ) ) {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND order_id = %d",
-				$user_id,
-				$order_id
-			);
-		} else {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
-				$user_id,
-				$status
-			);
-		}
+		// Only use orders with 'new' status and order_in_progress = 'Y' to ensure clean slate
+		$sql = $wpdb->prepare(
+			"SELECT * FROM $table_name WHERE user_id = %d AND status = 'new' AND order_in_progress = 'Y' ORDER BY order_id DESC LIMIT 1",
+			$user_id
+		);
 		$order_result = $wpdb->get_row( $sql );
 		$order_row    = $order_result ? (array) $order_result : [];
 
@@ -2376,6 +2409,130 @@ class Orders {
 				$now, $now, $order_id );
 			$wpdb->query( $sql );
 		}
+	}
+
+	/**
+	 * Check if an order has already been paid for or has a payment commitment
+	 *
+	 * @param int $order_id Order ID to check
+	 * @return bool True if payment exists or order is committed for payment, false otherwise
+	 */
+	public static function has_payment( int $order_id ): bool {
+		global $wpdb;
+		
+		// Check for actual DEBIT transactions (automated payments)
+		$payment_count = $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM " . MDS_DB_PREFIX . "transactions 
+			 WHERE order_id = %d AND type = 'DEBIT'", 
+			$order_id
+		));
+		
+		if ( $payment_count > 0 ) {
+			return true;
+		}
+		
+		// Check for WooCommerce orders that indicate payment was submitted
+		$ad_id = $wpdb->get_var( $wpdb->prepare(
+			"SELECT ad_id FROM " . MDS_DB_PREFIX . "orders 
+			 WHERE order_id = %d", 
+			$order_id
+		));
+		
+		if ( $ad_id ) {
+			$wc_order_id = get_post_meta( $ad_id, '_wc_order_id', true );
+			if ( $wc_order_id ) {
+				$wc_order = wc_get_order( $wc_order_id );
+				if ( $wc_order ) {
+					$wc_status = $wc_order->get_status();
+					// If WooCommerce order exists with these statuses, payment was submitted
+					if ( in_array( $wc_status, [ 'on-hold', 'processing', 'completed' ] ) ) {
+						return true;
+					}
+				}
+			}
+		}
+		
+		// Check order status - only 'completed' orders should be considered as having payment
+		// 'confirmed' orders without WooCommerce payment should still show "Pay Now"
+		$order_status = $wpdb->get_var( $wpdb->prepare(
+			"SELECT status FROM " . MDS_DB_PREFIX . "orders 
+			 WHERE order_id = %d", 
+			$order_id
+		));
+		
+		return $order_status === 'completed';
+	}
+
+	/**
+	 * Get header action buttons for new orders in manage page
+	 *
+	 * @param array $order Order data
+	 * @return string HTML for action buttons
+	 */
+	public static function get_header_action_buttons( array $order ): string {
+		if ( $order['status'] !== 'new' ) {
+			return '';
+		}
+
+		$buttons = '';
+		$steps = Steps::get_steps();
+		$current_step = $order['current_step'];
+		$USE_AJAX = Config::get( 'USE_AJAX' );
+
+		// Determine which button to show based on current step
+		if ( $steps[ $current_step ] == Steps::STEP_UPLOAD ) {
+			$args = [ 'BID' => $order['banner_id'] ];
+			$page_name = 'upload';
+			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				$page_name = 'order';
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( $page_name, $args ) );
+			$buttons .= "<input class='mds-button mds-upload' type='button' value='" . esc_attr( Language::get( 'Upload' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $steps[ $current_step ] == Steps::STEP_WRITE_AD ) {
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( 'write-ad', $args ) );
+			$buttons .= "<input class='mds-button mds-write' type='button' value='" . esc_attr( Language::get( 'Write Ad' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $steps[ $current_step ] == Steps::STEP_CONFIRM_ORDER ) {
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( 'confirm-order', $args ) );
+			$buttons .= "<input class='mds-button mds-confirm' type='button' value='" . esc_attr( Language::get( 'Confirm Now' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $steps[ $current_step ] == Steps::STEP_PAYMENT && !self::has_payment( $order['order_id'] ) ) {
+			$args = [
+				'order_id' => $order['order_id'],
+				'BID'      => $order['banner_id'],
+			];
+			$url = esc_url( Utility::get_page_url( 'payment', $args ) );
+			$buttons .= "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $current_step == 0 ) {
+			// Initial step - show appropriate start button
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				$text = Language::get( 'Upload' );
+				$page_name = 'upload';
+				$args['order_id'] = $order['order_id'];
+			} else {
+				$text = Language::get( 'Order' );
+				$page_name = 'order';
+			}
+			$url = esc_url( Utility::get_page_url( $page_name, $args ) );
+			$buttons .= "<input class='mds-button mds-upload' type='button' value='" . esc_attr( $text ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else {
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( 'order', $args ) );
+			$buttons .= "<input class='mds-button mds-continue' type='button' value='" . esc_attr( Language::get( 'Continue' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		}
+
+		return $buttons;
 	}
 
 }

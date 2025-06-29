@@ -1211,7 +1211,8 @@ class Utility {
 		}
 
 		// Second check: orders table for overlapping blocks
-		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %d AND status != 'deleted'", $BID, $order_id );
+		// Exclude confirmed/completed orders to allow new orders when previous ones are waiting for payment
+		$sql    = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE banner_id=%d AND order_id != %d AND status NOT IN ('deleted', 'confirmed', 'completed', 'paid')", $BID, $order_id );
 		$result = $wpdb->get_results( $sql );
         
 

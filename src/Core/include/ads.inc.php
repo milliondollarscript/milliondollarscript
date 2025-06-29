@@ -471,8 +471,8 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
                     <div>
 						<?php
 						$order_status = Orders::get_completion_status( $prams['order_id'], $user_id );
-						if ( $prams['status'] == 'confirmed' && ( Orders::is_order_in_progress( $prams['order_id'] ) || WooCommerceFunctions::is_wc_active() ) ) {
-							// Show Pay Now button for confirmed orders
+						if ( $prams['status'] == 'confirmed' && !Orders::has_payment( $prams['order_id'] ) && ( Orders::is_order_in_progress( $prams['order_id'] ) || WooCommerceFunctions::is_wc_active() ) ) {
+							// Show Pay Now button for confirmed orders that haven't been paid yet
 							$pay_args = [ 'order_id' => $prams['order_id'], 'BID' => $prams['banner_id'] ];
 							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
 							?>
@@ -480,8 +480,11 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
                                    value="<?php esc_attr_e( Language::get( 'Pay Now' ) ); ?>"
                                    onclick="window.location='<?php echo $pay_url; ?>'">
 							<?php
-						} else if ( $prams['status'] != 'confirmed' && ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) ) {
-							// Show Edit button for non-confirmed orders
+						} else if ( $prams['status'] == 'new' && ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) ) {
+							// Show appropriate action buttons for new orders based on current step
+							echo Orders::get_header_action_buttons( $prams );
+						} else if ( $prams['status'] != 'confirmed' && $prams['status'] != 'new' && ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) ) {
+							// Show Edit button for other non-confirmed orders (expired, denied, etc.)
 							?>
                             <input class="mds-button mds-edit-button" type="button"
                                    value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"

@@ -810,25 +810,34 @@ class WooCommerceFunctions {
 
 		// Check if WooCommerce is active
 		if ( class_exists( 'WooCommerce' ) ) {
-			// Check if the session is not null
-			if ( is_null( WC()->session ) ) {
-				// Initialize session
-				WC()->session = new \WC_Session_Handler;
-			}
-
-			// Load the user session data
-			WC()->session->set_customer_session_cookie( true );
-
-			// Get user sessions
-			$session_handler = new \WC_Session_Handler();
-			$session         = $session_handler->get_session( $user_id );
-
-			if ( $session ) {
+			// Check if the session is not null and initialized
+			if ( WC()->session && is_object( WC()->session ) ) {
 				foreach ( $keys as $key ) {
-					// Reset the relevant session data.
+					// Reset the relevant session data for the current session
 					WC()->session->__unset( $key );
 				}
+				// Save the session to ensure changes are persisted
+				WC()->session->save_data();
 			}
+			
+			// Clear WooCommerce persistent cart data
+			global $wpdb;
+			$wpdb->delete(
+				$wpdb->usermeta,
+				array(
+					'user_id' => $user_id,
+					'meta_key' => '_woocommerce_persistent_cart_' . get_current_blog_id()
+				)
+			);
+			
+			// Clear any MDS-related order meta from user
+			$wpdb->delete(
+				$wpdb->usermeta,
+				array(
+					'user_id' => $user_id,
+					'meta_key' => 'mds_confirm'
+				)
+			);
 		}
 
 		Orders::reset_progress( $user_id );

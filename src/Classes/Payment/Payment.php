@@ -154,7 +154,6 @@ class Payment {
 			} else {
 				if ( Utility::has_endpoint_or_ajax() ) {
 					self::default_message( $order_id );
-					Orders::reset_order_progress();
 
 					return;
 				}
@@ -181,8 +180,6 @@ class Payment {
 					$checkout_url
 				);
 			}
-
-			Orders::reset_order_progress();
 
 			if ( wp_doing_ajax() ) {
 				wp_send_json_success( [
@@ -241,8 +238,6 @@ class Payment {
 
 					Orders::complete_order( $row['user_id'], $order_id );
 					Payment::debit_transaction( $order_id, $row['price'], $row['currency'], '', 'order', 'MDS' );
-
-					Orders::reset_order_progress();
 					$message = Language::get( 'Your order has been successfully completed. Thank you for your purchase!' );
 					Utility::output_message( [
 						'success' => true,
@@ -253,7 +248,6 @@ class Payment {
 
 			// Only output if the URL has the endpoint in it or is an AJAX request.
 			if ( Utility::has_endpoint_or_ajax() ) {
-				Orders::reset_order_progress();
 				$message = Language::get( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
 				Utility::output_message( [
 					'success' => true,
@@ -266,7 +260,6 @@ class Payment {
 
 			// Only output if the URL has the endpoint in it or is an AJAX request.
 			if ( Utility::has_endpoint_or_ajax() ) {
-				Orders::reset_order_progress();
 				$message = Language::get( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
 				Utility::output_message( [
 					'success' => true,
@@ -277,7 +270,6 @@ class Payment {
 
 		$thank_you_page = Options::get_option( 'thank-you-page' );
 		if ( ! empty( $thank_you_page ) ) {
-			Orders::reset_order_progress();
 			if ( wp_doing_ajax() ) {
 				wp_send_json_success( [
 					'redirect' => $thank_you_page,

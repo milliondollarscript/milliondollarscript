@@ -87,22 +87,11 @@ class Functions {
 		$table_name = MDS_DB_PREFIX . 'orders';
 		$user_id    = get_current_user_id();
 
-		$order_id = Orders::get_current_order_id();
-
-		if ( ! empty( $order_id ) ) {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND order_id = %d",
-				$user_id,
-				$order_id
-			);
-		} else {
-			$status = 'new';
-			$sql    = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
-				$user_id,
-				$status
-			);
-		}
+		// Only use orders with 'new' status and order_in_progress = 'Y' to ensure clean slate
+		$sql = $wpdb->prepare(
+			"SELECT * FROM $table_name WHERE user_id = %d AND status = 'new' AND order_in_progress = 'Y' ORDER BY order_id DESC LIMIT 1",
+			$user_id
+		);
 		$order_result = $wpdb->get_row( $sql );
 		$order_row    = $order_result ? (array) $order_result : [];
 

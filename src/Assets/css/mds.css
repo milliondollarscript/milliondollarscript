@@ -1740,7 +1740,7 @@ body:not(.login) #loginform label {
 .mds-package-options-row > div:nth-child(2) {
 	flex: 0 1 auto;
 	min-width: 55px;
-	max-width: 150px;
+	max-width: 200px;
 	padding-left: 6px;
 	padding-right: 6px;
 	text-align: center;
