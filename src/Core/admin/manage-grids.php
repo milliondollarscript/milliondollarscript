@@ -113,8 +113,8 @@ function display_reset_link( $BID, $image_name ): void {
 	if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'edit' ) {
 		?>
         <a class="inventory-reset-link" title="Reset to default"
-           onclick="if (! confirmLink(this, 'Reset this image to deafult, are you sure?')) return false;"
-           href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>'>x</a>
+           onclick="confirmLink(this, 'Reset this image to deafult, are you sure?')"
+           data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>' href="#">x</a>
 		<?php
 	}
 }
@@ -1188,8 +1188,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 				}
 				if ( $row['banner_id'] != '1' ) {
 					?>
-                    <a onclick="if (! confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')) return false;"
-                       href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
+                    <a onclick="confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')"
+                       data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo $row['banner_id']; ?>' href="#">Delete</a>
 					<?php
 				}
 				?>

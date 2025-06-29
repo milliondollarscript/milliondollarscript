@@ -52,6 +52,32 @@ if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 	exit;
 }
 
+// Handle order cancellation requests
+$cancellation_message = '';
+if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] === 'yes' && isset( $_REQUEST['order_id'] ) ) {
+	$order_id = intval( $_REQUEST['order_id'] );
+	$user_id = get_current_user_id();
+	
+	if ( $order_id > 0 ) {
+		// Verify that the order belongs to the current user
+		$order = Orders::get_order( $order_id );
+		if ( $order && $order->user_id == $user_id ) {
+			// Check if this was confirmed via JavaScript (security measure)
+			if ( isset( $_REQUEST['is_js_confirmed'] ) && $_REQUEST['is_js_confirmed'] === '1' ) {
+				// Cancel the order
+				Orders::cancel_order( $order_id );
+				$cancellation_message = Language::get( 'Order has been successfully cancelled.' );
+			} else {
+				// Missing JavaScript confirmation - security concern
+				wp_die( esc_html__( 'Invalid request. Please use the cancel button.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 400 ] );
+			}
+		} else {
+			// Order doesn't exist or doesn't belong to user
+			wp_die( esc_html__( 'Order not found or access denied.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 404 ] );
+		}
+	}
+}
+
 $wrap = false;
 if ( empty( $_REQUEST['change_pixels'] ) && empty( $_FILES ) && empty( $_REQUEST['json'] ) ) {
 	$wrap = true;
@@ -326,6 +352,13 @@ if ( $count > 0 ) {
 	Language::out_replace( '<p>Your pixels were viewed %VIEW_COUNT% times.</p>', '%VIEW_COUNT%', number_format( intval( get_user_meta( $user_id, MDS_PREFIX . 'view_count', true ) ) ) );
 
 	echo $grid_selector_form_html;
+
+	// Display success message if order was cancelled
+	if ( ! empty( $cancellation_message ) ) {
+		?>
+		<div class="mds-success-message"><?php echo esc_html( $cancellation_message ); ?></div>
+		<?php
+	}
 
 	echo $contents;
 

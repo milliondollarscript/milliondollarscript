@@ -521,20 +521,20 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 						if ( $show != 'RE' ) {
 							?>
                             <input type="submit" value='Complete'
-                                   onclick="if (!confirmLink(this, 'Complete for all selected, are you sure?')) return false"
+                                   onclick="return confirm('Complete for all selected, are you sure?')"
                                    name='mass_complete'>
 							<?php
 						}
 						if ( $show != 'CA' ) {
 							?>
                             | <input type="submit" value='Cancel' name='mass_cancel'
-                                     onclick="if (!confirmLink(this, 'Cancel for all selected, are you sure?')) return false">
+                                     onclick="return confirm('Cancel for all selected, are you sure?')">
 							<?php
 						}
 						if ( $show == 'CA' ) {
 							?>
                             | <input type="submit" value='Delete' name='mass_delete'
-                                     onclick="if (!confirmLink(this, 'Delete for all selected, are you sure?')) return false">
+                                     onclick="return confirm('Delete for all selected, are you sure?')">
 							<?php
 						}
 					} ?>

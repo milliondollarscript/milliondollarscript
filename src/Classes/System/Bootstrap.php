@@ -230,6 +230,12 @@ class Bootstrap {
 		$admin_page = is_admin() && isset( $_REQUEST['page'] );
 		if ( $admin_page ) {
 			$current_page = $_REQUEST['page'];
+			
+			// Load admin.js on all MDS admin pages for confirmLink functionality
+			if ( str_starts_with( $current_page, 'mds-' ) ) {
+				add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\Admin\Admin', 'enqueue_admin_scripts' ] );
+			}
+			
 			if ( $current_page == 'mds-top-customers' ) {
 				add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
 			} else if ( $current_page == 'milliondollarscript_options' ) {

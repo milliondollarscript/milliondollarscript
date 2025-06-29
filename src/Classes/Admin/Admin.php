@@ -496,4 +496,30 @@ class Admin {
 		}
 	}
 
+	/**
+	 * Enqueue admin scripts for MDS admin pages.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_admin_scripts(): void {
+		if ( is_admin() ) {
+			// Use the existing registered script from Admin::scripts()
+			wp_enqueue_script( 'hoverIntent' );
+			
+			// Register the script if not already registered
+			if ( ! wp_script_is( MDS_PREFIX . 'admin-core-js', 'registered' ) ) {
+				wp_register_script(
+					MDS_PREFIX . 'admin-core-js',
+					MDS_CORE_URL . 'admin/js/admin.min.js',
+					[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form', 'hoverIntent' ],
+					filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
+					true
+				);
+			}
+			
+			// Enqueue the registered script
+			wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
+		}
+	}
+
 }

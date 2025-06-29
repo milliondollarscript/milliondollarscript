@@ -950,13 +950,29 @@ function mdsToggleMenu() {
 
 function confirmLink(theLink, theConfirmMsg) {
 	if (theConfirmMsg === "") {
-		return true;
+		window.location.href = theLink.href;
+		return false;
 	}
 
-	const is_confirmed = confirm(theConfirmMsg + "\n");
+	let is_confirmed = confirm(theConfirmMsg + "\n");
 	if (is_confirmed) {
-		theLink.href += "&is_js_confirmed=1";
+		let link = theLink.href;
+		// Check if href is empty, null, or just a hash (#)
+		if (link == null || link === '' || link.endsWith('#')) {
+			link = jQuery(theLink).data('link');
+		}
+		if (link == null || link === '') {
+			return true;
+		}
+
+		// Properly append query parameter
+		if (link.includes('?')) {
+			link += '&is_js_confirmed=1';
+		} else {
+			link += '?is_js_confirmed=1';
+		}
+		window.location.href = link;
 	}
 
-	return is_confirmed;
+	return false;
 }

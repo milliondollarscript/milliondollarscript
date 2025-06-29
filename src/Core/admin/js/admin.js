@@ -33,14 +33,20 @@ function confirmLink(theLink, theConfirmMsg) {
 	let is_confirmed = confirm(theConfirmMsg + '\n');
 	if (is_confirmed) {
 		let link = theLink.href;
-		if (link == null) {
+		// Check if href is empty, null, or just a hash (#)
+		if (link == null || link === '' || link.endsWith('#')) {
 			link = jQuery(theLink).data('link');
 		}
-		if (link == null) {
+		if (link == null || link === '') {
 			return true;
 		}
 
-		link += '&is_js_confirmed=1';
+		// Properly append query parameter
+		if (link.includes('?')) {
+			link += '&is_js_confirmed=1';
+		} else {
+			link += '?is_js_confirmed=1';
+		}
 		window.location.href = link;
 	}
 

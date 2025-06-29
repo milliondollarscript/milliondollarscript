@@ -101,5 +101,5 @@ if ( isset( $done ) ) {
 	?>
 
     <input type="submit" name="submit" value="Delete"
-           onclick="if (!confirmLink(this, '<?php Language::out( 'WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!' ); ?> <?php Language::out( 'You might want to run a backup before doing this. Are you sure?' ); ?>')) return false"/>
+           onclick="return confirm('<?php Language::out( 'WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!' ); ?> <?php Language::out( 'You might want to run a backup before doing this. Are you sure?' ); ?>')"/>
 </form>

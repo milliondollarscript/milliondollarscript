@@ -232,7 +232,7 @@ if ( $BID != '' ) {
                     <td><span style="font-family: Arial, Helvetica, sans-serif;"><?php echo $row['price']; ?></span></td>
                     <td><span style="font-family: Arial, Helvetica, sans-serif;"><?php echo $row['currency']; ?></span></td>
                     <td nowrap>
-                        <span style="font-family: Arial, Helvetica, sans-serif;"><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>price-zones&amp;price_id=<?php echo $row['price_id']; ?>&amp;BID=<?php echo $BID; ?>&mds-action=edit">Edit</a> | <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>price-zones&amp;price_id=<?php echo $row['price_id']; ?>&BID=<?php echo $BID; ?>&amp;mds-action=delete" onclick="return confirmLink(this, 'Delete, are you sure?');">Delete</a></span>
+                        <span style="font-family: Arial, Helvetica, sans-serif;"><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>price-zones&amp;price_id=<?php echo $row['price_id']; ?>&amp;BID=<?php echo $BID; ?>&mds-action=edit">Edit</a> | <a href="#" data-link="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>price-zones&amp;price_id=<?php echo $row['price_id']; ?>&BID=<?php echo $BID; ?>&amp;mds-action=delete" onclick="confirmLink(this, 'Delete, are you sure?');">Delete</a></span>
                     </td>
                 </tr>
 				<?php
