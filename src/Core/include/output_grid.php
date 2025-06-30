@@ -453,7 +453,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// Show user's blocks
 	if ( isset( $user ) ) {
-		$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `user_id`='" . intval( $user ) . "' AND image_data <> '' AND banner_id='" . intval( $BID ) . "' AND `status` <> 'deleted' ";
+		$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `user_id`='" . intval( $user ) . "' AND image_data <> '' AND banner_id='" . intval( $BID ) . "' AND `status` NOT IN ('deleted', 'cancelled') ";
 		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		while ( $row = mysqli_fetch_array( $result ) ) {
