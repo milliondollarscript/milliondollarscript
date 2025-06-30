@@ -433,7 +433,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 		$user_id = get_current_user_id();
 	}
 
-	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND `status` != 'deleted' ORDER BY %s %s", $BID, $user_id, $order, $ord );
+	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND `status` NOT IN ('deleted', 'cancelled') ORDER BY %s %s", $BID, $user_id, $order, $ord );
 	$result = $wpdb->get_results( $sql, ARRAY_A );
 
 	$count = count( $result );

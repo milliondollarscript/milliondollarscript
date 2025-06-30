@@ -420,7 +420,7 @@ if ( $count > 0 ) {
 		"SELECT b.* FROM " . MDS_DB_PREFIX . "blocks AS b
     INNER JOIN " . MDS_DB_PREFIX . "orders AS o ON b.order_id = o.order_id
     WHERE b.user_id=%d AND b.status IN ('sold','ordered','denied') AND b.banner_id=%d
-    AND o.status NOT IN ('confirmed', 'new', 'deleted')",
+    AND o.status NOT IN ('confirmed', 'new', 'deleted', 'cancelled')",
 		get_current_user_id(),
 		intval( $BID )
 	);
