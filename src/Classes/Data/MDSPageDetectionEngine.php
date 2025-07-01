@@ -114,7 +114,7 @@ class MDSPageDetectionEngine {
     ];
     
     // Minimum confidence threshold for detection
-    private float $min_confidence = 0.6;
+    private float $min_confidence = 0.3;
     
     /**
      * Detect if a page is an MDS page and determine its type
@@ -192,16 +192,31 @@ class MDSPageDetectionEngine {
             }
         }
         
-        // Check for custom MDS shortcodes (mds_*)
-        $custom_mds_pattern = '/\[mds_([^\]]+)\]/';
-        if ( preg_match_all( $custom_mds_pattern, $content, $matches, PREG_SET_ORDER ) ) {
-            foreach ( $matches as $match ) {
-                $shortcode_name = $match[1]; // e.g., "platform_leaderboard"
-                $confidence += 0.7; // Good confidence for custom MDS shortcodes
+        // Check for custom MDS shortcodes (mds_*) - Enhanced pattern matching
+        $custom_mds_patterns = [
+            '/\[mds_([a-zA-Z0-9_-]+)([^\]]*)\]/',          // Standard mds_ shortcodes
+            '/\[MDS_([a-zA-Z0-9_-]+)([^\]]*)\]/',          // Uppercase variants
+            '/\[milliondollar_([a-zA-Z0-9_-]+)([^\]]*)\]/', // Extended forms
+            '/\[million_dollar_([a-zA-Z0-9_-]+)([^\]]*)\]/', // Alternative forms
+        ];
+        
+        foreach ( $custom_mds_patterns as $pattern ) {
+            if ( preg_match_all( $pattern, $content, $matches, PREG_SET_ORDER ) ) {
+                foreach ( $matches as $match ) {
+                    $shortcode_name = strtolower( $match[1] ); // Normalize to lowercase
+                    $attributes_string = trim( $match[2] ?? '' );
+                    $confidence += 0.9; // High confidence for custom MDS shortcodes
+                
+                // Parse shortcode attributes properly
+                $parsed_attrs = [];
+                if ( !empty( $attributes_string ) ) {
+                    $parsed_attrs = shortcode_parse_atts( $attributes_string );
+                }
                 
                 $patterns[] = [
                     'type' => 'shortcode',
                     'shortcode_name' => 'mds_' . $shortcode_name,
+                    'attributes' => $parsed_attrs,
                     'custom_type' => $this->extractPageTypeFromShortcodeName( $shortcode_name )
                 ];
                 
@@ -209,18 +224,27 @@ class MDSPageDetectionEngine {
                 if ( !$page_type ) {
                     $page_type = $this->extractPageTypeFromShortcodeName( $shortcode_name );
                 }
+                }
             }
         }
         
-        // Check for legacy shortcodes
-        $legacy_shortcodes = [ 'mds', 'million_dollar_script', 'pixel_grid' ];
+        // Check for legacy shortcodes - Expanded list
+        $legacy_shortcodes = [ 
+            'mds', 'million_dollar_script', 'pixel_grid', 'milliondollarscript',
+            'pixel_advertising', 'ad_grid', 'mds_grid', 'pixel_board'
+        ];
         foreach ( $legacy_shortcodes as $shortcode ) {
             if ( has_shortcode( $content, $shortcode ) ) {
-                $confidence += 0.6; // Medium confidence for legacy shortcodes
+                $confidence += 0.7; // Increased confidence for legacy shortcodes
                 $patterns[] = [
                     'type' => 'legacy_shortcode',
                     'shortcode' => $shortcode
                 ];
+                
+                // Set generic page type for legacy shortcodes if not already set
+                if ( !$page_type ) {
+                    $page_type = 'grid'; // Default for legacy shortcodes
+                }
             }
         }
         
@@ -246,41 +270,7 @@ class MDSPageDetectionEngine {
         
         if ( has_blocks( $content ) ) {
             $blocks = parse_blocks( $content );
-            
-            foreach ( $blocks as $block ) {
-                if ( empty( $block['blockName'] ) ) {
-                    continue;
-                }
-                
-                // Check for MDS blocks
-                if ( strpos( $block['blockName'], 'milliondollarscript/' ) === 0 || $block['blockName'] === 'carbon-fields/million-dollar-script' ) {
-                    $confidence += 0.8; // High confidence for MDS blocks
-                    $patterns[] = [
-                        'type' => 'block',
-                        'block_name' => $block['blockName'],
-                        'attributes' => $block['attrs'] ?? []
-                    ];
-                    
-                    // Determine page type from block
-                    $detected_type = $this->determinePageTypeFromBlock( $block );
-                    if ( $detected_type ) {
-                        $page_type = $detected_type;
-                        $confidence += 0.1;
-                    }
-                }
-                
-                // Check for legacy blocks
-                $legacy_blocks = [ 'mds/', 'pixel-grid/', 'million-dollar-script/' ];
-                foreach ( $legacy_blocks as $prefix ) {
-                    if ( strpos( $block['blockName'], $prefix ) === 0 ) {
-                        $confidence += 0.6; // Medium confidence for legacy blocks
-                        $patterns[] = [
-                            'type' => 'legacy_block',
-                            'block_name' => $block['blockName']
-                        ];
-                    }
-                }
-            }
+            $this->processBlocksRecursively( $blocks, $patterns, $confidence, $page_type );
         }
         
         return [
@@ -289,6 +279,59 @@ class MDSPageDetectionEngine {
             'page_type' => $page_type,
             'patterns' => $patterns
         ];
+    }
+
+    private function processBlocksRecursively( array $blocks, array &$patterns, float &$confidence, &$page_type ): void {
+        foreach ( $blocks as $block ) {
+            if ( empty( $block['blockName'] ) ) {
+                continue;
+            }
+            
+            // Check for MDS blocks
+            if ( strpos( $block['blockName'], 'milliondollarscript/' ) === 0 || $block['blockName'] === 'carbon-fields/million-dollar-script' ) {
+                $confidence += 0.8; // High confidence for MDS blocks
+                $patterns[] = [
+                    'type' => 'block',
+                    'block_name' => $block['blockName'],
+                    'attributes' => $block['attrs'] ?? []
+                ];
+                
+                // Determine page type from block
+                $detected_type = $this->determinePageTypeFromBlock( $block );
+                if ( $detected_type ) {
+                    $page_type = $detected_type;
+                    $confidence += 0.1;
+                }
+            }
+            
+            // Check for legacy blocks with improved pattern matching
+            $legacy_blocks = [ 'mds/', 'pixel-grid/', 'million-dollar-script/', 'carbon-fields/mds-', 'mds-' ];
+            foreach ( $legacy_blocks as $prefix ) {
+                if ( strpos( $block['blockName'], $prefix ) === 0 ) {
+                    $confidence += 0.7; // Increased from 0.6 for legacy blocks
+                    $patterns[] = [
+                        'type' => 'legacy_block',
+                        'block_name' => $block['blockName'],
+                        'attributes' => $block['attrs'] ?? []
+                    ];
+                }
+            }
+            
+            // Check for custom MDS block patterns
+            if ( preg_match( '/(?:mds|million.?dollar.?script|pixel.?grid)/i', $block['blockName'] ) ) {
+                $confidence += 0.6;
+                $patterns[] = [
+                    'type' => 'custom_block',
+                    'block_name' => $block['blockName'],
+                    'attributes' => $block['attrs'] ?? []
+                ];
+            }
+            
+            // Recursively process inner blocks
+            if ( isset( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+                $this->processBlocksRecursively( $block['innerBlocks'], $patterns, $confidence, $page_type );
+            }
+        }
     }
     
     /**
@@ -305,6 +348,29 @@ class MDSPageDetectionEngine {
         $page_type = null;
         $best_match_score = 0.0;
         
+        // Check for general MDS patterns first
+        $general_mds_patterns = [
+            'million dollar script' => 0.3,
+            'milliondollarscript' => 0.3,
+            'pixel advertising' => 0.25,
+            'ad pixel' => 0.2,
+            'purchase pixel' => 0.3,
+            'advertise here' => 0.15,
+            'buy pixels' => 0.25,
+            'pixel grid' => 0.3,
+        ];
+        
+        foreach ( $general_mds_patterns as $pattern => $score ) {
+            if ( strpos( $content, $pattern ) !== false || strpos( $title, $pattern ) !== false ) {
+                $confidence += $score;
+                $patterns[] = [
+                    'type' => 'general_mds_pattern',
+                    'pattern' => $pattern,
+                    'score' => $score
+                ];
+            }
+        }
+        
         // Analyze content for each page type
         foreach ( $this->page_type_patterns as $type => $type_patterns ) {
             $type_score = 0.0;
@@ -313,7 +379,7 @@ class MDSPageDetectionEngine {
             // Check content keywords
             foreach ( $type_patterns['content_keywords'] as $keyword ) {
                 if ( strpos( $content, strtolower( $keyword ) ) !== false ) {
-                    $type_score += 0.1;
+                    $type_score += 0.15; // Increased from 0.1
                     $type_matches[] = [
                         'type' => 'content_keyword',
                         'keyword' => $keyword
@@ -324,7 +390,7 @@ class MDSPageDetectionEngine {
             // Check title keywords
             foreach ( $type_patterns['title_keywords'] as $keyword ) {
                 if ( strpos( $title, strtolower( $keyword ) ) !== false ) {
-                    $type_score += 0.15; // Title keywords are more significant
+                    $type_score += 0.25; // Increased from 0.15 - Title keywords are more significant
                     $type_matches[] = [
                         'type' => 'title_keyword',
                         'keyword' => $keyword
@@ -335,7 +401,7 @@ class MDSPageDetectionEngine {
             // Check CSS classes
             foreach ( $type_patterns['css_classes'] as $css_class ) {
                 if ( strpos( $content, $css_class ) !== false ) {
-                    $type_score += 0.2; // CSS classes are strong indicators
+                    $type_score += 0.3; // Increased from 0.2 - CSS classes are strong indicators
                     $type_matches[] = [
                         'type' => 'css_class',
                         'class' => $css_class
@@ -347,11 +413,14 @@ class MDSPageDetectionEngine {
             if ( $type_score > $best_match_score ) {
                 $best_match_score = $type_score;
                 $page_type = $type;
-                $patterns = $type_matches;
+                // Combine general patterns with type-specific patterns
+                $patterns = array_merge( $patterns, $type_matches );
             }
         }
         
-        $confidence = min( $best_match_score, 0.7 ); // Content analysis max confidence is 0.7
+        // Final confidence is combination of general MDS patterns + best type match
+        $final_confidence = $confidence + $best_match_score;
+        $confidence = min( $final_confidence, 0.9 ); // Increased max confidence for content analysis
         
         return [
             'method' => 'content',

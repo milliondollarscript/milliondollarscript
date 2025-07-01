@@ -275,7 +275,16 @@
     max-width: 800px;
     max-height: 80vh;
     overflow: hidden;
+    overflow-x: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* Progress modal specific styling */
+#mds-progress-indicator .mds-modal-content {
+    max-width: 400px;
+    margin: 15% auto;
 }
 
 .mds-modal-header {
@@ -383,6 +392,8 @@
     height: 20px;
     overflow: hidden;
     margin: 10px 0;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .mds-progress-bar {
@@ -395,6 +406,8 @@
     color: white;
     font-size: 12px;
     font-weight: 500;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .mds-progress-bar.success { background: #28a745; }
@@ -485,6 +498,267 @@
     }
 }
 
+/* Modal Notification System */
+.mds-notification-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999999;
+    display: none;
+}
+
+/* Progress modal should be on top of other modals */
+#mds-progress-indicator {
+    z-index: 1000000;
+}
+
+/* Confirmation modal base z-index */
+#mds-confirmation-modal {
+    z-index: 999998;
+}
+
+.mds-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.mds-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    margin: 10% auto;
+    transform: scale(0.9);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.mds-modal-content.mds-modal-show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.mds-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.mds-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.mds-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #646970;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.mds-modal-close:hover {
+    background: #f0f0f1;
+    color: #d63638;
+}
+
+.mds-modal-body {
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.mds-notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.mds-notification-icon::before {
+    content: attr(data-icon) "✓";
+}
+
+.mds-success-icon {
+    background: #00a32a;
+}
+
+.mds-success-icon::before {
+    content: "✓";
+}
+
+.mds-error-icon {
+    background: #d63638;
+}
+
+.mds-error-icon::before {
+    content: "✕";
+}
+
+.mds-warning-icon {
+    background: #dba617;
+}
+
+.mds-warning-icon::before {
+    content: "!";
+}
+
+.mds-info-icon {
+    background: #0073aa;
+}
+
+.mds-info-icon::before {
+    content: "i";
+}
+
+.mds-notification-content {
+    flex: 1;
+}
+
+.mds-notification-content p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1d2327;
+    text-align: left;
+}
+
+.mds-notification-details {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f1;
+}
+
+.mds-notification-details h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #646970;
+}
+
+.mds-notification-details ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.mds-notification-details li {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #646970;
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+.mds-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #ddd;
+    text-align: right;
+    background: #f9f9f9;
+    border-radius: 0 0 8px 8px;
+}
+
+.mds-modal-footer .button {
+    margin-left: 10px;
+    min-height: 32px;
+    padding: 6px 20px;
+    font-size: 13px;
+    line-height: 20px;
+    vertical-align: middle;
+    min-width: 60px;
+    text-align: center;
+}
+
+/* Progress modal specific improvements */
+.mds-progress-content .mds-modal-body {
+    padding: 25px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.mds-progress-content .mds-progress-message {
+    margin-top: 15px;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.4;
+    order: 3;
+    width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    height: 4.5em;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: center;
+    padding-top: 0.5em;
+}
+
+.mds-progress-content .mds-progress-spinner {
+    margin-bottom: 25px;
+    order: 1;
+    box-sizing: border-box;
+}
+
+.mds-progress-content .mds-progress {
+    order: 2;
+    width: 100%;
+    margin: 10px 0;
+    box-sizing: border-box;
+}
+
+.mds-progress-content .mds-modal-content {
+    max-width: 450px;
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+    .mds-modal-content {
+        margin: 5% 20px;
+        max-width: none;
+    }
+    
+    .mds-modal-header,
+    .mds-modal-body,
+    .mds-modal-footer {
+        padding: 15px;
+    }
+    
+    .mds-notification-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+}
 
 /* Print Styles */
 @media print {

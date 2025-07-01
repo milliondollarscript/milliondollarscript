@@ -5,14 +5,225 @@
 (function($) {
     'use strict';
 
+    // Modal notification system
+    const NotificationModal = {
+        create: function(type, title, message, details = null) {
+            const modal = $('<div>', {
+                'class': 'mds-notification-modal',
+                'id': 'mds-notification-modal'
+            });
+
+            const overlay = $('<div>', {
+                'class': 'mds-modal-overlay'
+            });
+
+            const content = $('<div>', {
+                'class': `mds-modal-content mds-${type}`
+            });
+
+            const header = $('<div>', {
+                'class': 'mds-modal-header'
+            }).append(
+                $('<h3>').text(title),
+                $('<button>', {
+                    'class': 'mds-modal-close',
+                    'type': 'button',
+                    'aria-label': 'Close'
+                }).html('&times;')
+            );
+
+            const body = $('<div>', {
+                'class': 'mds-modal-body'
+            }).append(
+                $('<div>', {
+                    'class': `mds-notification-icon mds-${type}-icon`
+                }),
+                $('<div>', {
+                    'class': 'mds-notification-content'
+                }).append(
+                    $('<p>').html(message)
+                )
+            );
+
+            if (details && details.length > 0) {
+                const detailsSection = $('<div>', {
+                    'class': 'mds-notification-details'
+                }).append(
+                    $('<h4>').text('Details'),
+                    $('<ul>')
+                );
+
+                details.forEach(function(detail) {
+                    detailsSection.find('ul').append($('<li>').text(detail));
+                });
+
+                body.find('.mds-notification-content').append(detailsSection);
+            }
+
+            const footer = $('<div>', {
+                'class': 'mds-modal-footer'
+            }).append(
+                $('<button>', {
+                    'class': 'button button-primary mds-modal-close',
+                    'type': 'button'
+                }).text('OK')
+            );
+
+            content.append(header, body, footer);
+            modal.append(overlay, content);
+
+            return modal;
+        },
+
+        show: function(type, title, message, details = null, callback = null) {
+            this.hide();
+            
+            const modal = this.create(type, title, message, details);
+            $('body').append(modal);
+            
+            modal.fadeIn(300);
+            modal.find('.mds-modal-content').addClass('mds-modal-show');
+
+            // Close handlers
+            modal.find('.mds-modal-close').on('click', function() {
+                NotificationModal.hide();
+                if (callback && typeof callback === 'function') {
+                    callback();
+                }
+            });
+
+            // Overlay click - close without callback
+            modal.find('.mds-modal-overlay').on('click', function() {
+                NotificationModal.hide();
+            });
+
+            // ESC key handler - close without callback
+            $(document).on('keydown.mds-modal', function(e) {
+                if (e.keyCode === 27) {
+                    NotificationModal.hide();
+                }
+            });
+        },
+
+        hide: function() {
+            // Remove both notification and confirmation modals
+            const modals = $('#mds-notification-modal, #mds-confirmation-modal');
+            if (modals.length) {
+                modals.find('.mds-modal-content').removeClass('mds-modal-show');
+                modals.fadeOut(300, function() {
+                    modals.remove();
+                });
+            }
+            $(document).off('keydown.mds-modal');
+        },
+
+        // Show confirmation modal with custom buttons
+        showConfirmation: function(title, message, onConfirm, onCancel = null) {
+            this.hide();
+            
+            const modal = $('<div>', {
+                'class': 'mds-notification-modal',
+                'id': 'mds-confirmation-modal'
+            });
+
+            const overlay = $('<div>', {
+                'class': 'mds-modal-overlay'
+            });
+
+            const content = $('<div>', {
+                'class': 'mds-modal-content mds-info'
+            });
+
+            const header = $('<div>', {
+                'class': 'mds-modal-header'
+            }).append(
+                $('<h3>').text(title),
+                $('<button>', {
+                    'class': 'mds-modal-close',
+                    'type': 'button',
+                    'aria-label': 'Close'
+                }).html('&times;')
+            );
+
+            const body = $('<div>', {
+                'class': 'mds-modal-body'
+            }).append(
+                $('<div>', {
+                    'class': 'mds-notification-icon mds-info-icon'
+                }),
+                $('<div>', {
+                    'class': 'mds-notification-content'
+                }).append(
+                    $('<p>').html(message)
+                )
+            );
+
+            const footer = $('<div>', {
+                'class': 'mds-modal-footer'
+            }).append(
+                $('<button>', {
+                    'class': 'button mds-modal-cancel',
+                    'type': 'button'
+                }).text('Cancel'),
+                $('<button>', {
+                    'class': 'button button-primary mds-modal-confirm',
+                    'type': 'button'
+                }).text('OK')
+            );
+
+            content.append(header, body, footer);
+            modal.append(overlay, content);
+            $('body').append(modal);
+            
+            modal.fadeIn(300);
+            modal.find('.mds-modal-content').addClass('mds-modal-show');
+
+            // Event handlers
+            modal.find('.mds-modal-close, .mds-modal-cancel, .mds-modal-overlay').on('click', function() {
+                NotificationModal.hide();
+                if (onCancel && typeof onCancel === 'function') {
+                    onCancel();
+                }
+            });
+
+            modal.find('.mds-modal-confirm').on('click', function() {
+                NotificationModal.hide();
+                if (onConfirm && typeof onConfirm === 'function') {
+                    onConfirm();
+                }
+            });
+
+            // ESC key handler
+            $(document).on('keydown.mds-modal', function(e) {
+                if (e.keyCode === 27) {
+                    NotificationModal.hide();
+                    if (onCancel && typeof onCancel === 'function') {
+                        onCancel();
+                    }
+                }
+            });
+        }
+    };
+
     // Main page management object
     const MDSPageManagement = {
         
         // Configuration
         config: {
-            ajaxUrl: mds_page_management.ajax_url,
-            nonce: mds_page_management.nonce,
-            strings: mds_page_management.strings
+            ajaxUrl: mdsPageManagement.ajaxUrl,
+            nonce: mdsPageManagement.nonce,
+            strings: mdsPageManagement.strings
+        },
+        
+        // Progress tracking
+        progressInterval: null,
+        currentProgress: 0,
+        
+        // Operation state tracking
+        operationState: {
+            isRunning: false,
+            operationType: null,
+            startTime: null
         },
 
         // Initialize the interface
@@ -69,7 +280,7 @@
             });
 
             // Auto-refresh
-            if (mds_page_management.auto_refresh) {
+            if (mdsPageManagement.autoRefresh) {
                 setInterval(this.refreshStats.bind(this), 30000); // Every 30 seconds
             }
         },
@@ -101,38 +312,158 @@
             this.refreshStats();
         },
 
-        // Scan all pages
+        // Operation state management
+        startOperation: function(operationType) {
+            if (this.operationState.isRunning) {
+                this.showNotice('warning', `Another operation (${this.operationState.operationType}) is already running. Please wait for it to complete.`);
+                return false;
+            }
+            
+            this.operationState.isRunning = true;
+            this.operationState.operationType = operationType;
+            this.operationState.startTime = Date.now();
+            
+            return true;
+        },
+        
+        endOperation: function() {
+            this.operationState.isRunning = false;
+            this.operationState.operationType = null;
+            this.operationState.startTime = null;
+        },
+        
+        isOperationRunning: function() {
+            return this.operationState.isRunning;
+        },
+
+        // Scan all pages with chunked processing
         scanAllPages: function(e) {
             e.preventDefault();
             
-            if (!confirm(this.config.strings.confirm_scan_all)) {
+            // Check if another operation is already running
+            if (!this.startOperation('Scan All Pages')) {
                 return;
             }
+            
+            const confirmMessage = this.config.strings.confirm_scan_all || 
+                'Are you sure you want to scan all pages? This will check all published pages for MDS content and may take some time.';
+            
+            NotificationModal.showConfirmation(
+                'Confirm Scan All Pages',
+                confirmMessage,
+                () => {
+                    this.startChunkedScan();
+                },
+                () => {
+                    // If user cancels, end the operation
+                    this.endOperation();
+                }
+            );
+        },
 
-            this.showProgress('Scanning all pages...', 0);
+        // Start chunked scanning process
+        startChunkedScan: function() {
+            this.showProgress('Initializing scan...', 0);
 
             $.ajax({
                 url: this.config.ajaxUrl,
                 type: 'POST',
                 data: {
-                    action: 'mds_scan_all_pages',
+                    action: 'mds_scan_all_pages_start',
                     nonce: this.config.nonce
                 },
                 success: function(response) {
                     if (response.success) {
-                        MDSPageManagement.showNotice('success', response.data.message);
-                        MDSPageManagement.refreshData();
+                        MDSPageManagement.processScanBatches(response.data);
                     } else {
-                        MDSPageManagement.showNotice('error', response.data.message);
+                        MDSPageManagement.showNotice('error', response.data || 'Failed to initialize scan');
+                        MDSPageManagement.hideProgress();
+                        MDSPageManagement.endOperation();
                     }
                 },
                 error: function() {
-                    MDSPageManagement.showNotice('error', 'An error occurred while scanning pages.');
-                },
-                complete: function() {
+                    MDSPageManagement.showNotice('error', 'An error occurred while initializing scan.');
                     MDSPageManagement.hideProgress();
+                    MDSPageManagement.endOperation();
                 }
             });
+        },
+
+        // Process scan batches recursively
+        processScanBatches: function(scanData) {
+            const { scan_id, total_pages, total_batches } = scanData;
+            let currentBatch = 0;
+
+            const processBatch = () => {
+                if (currentBatch >= total_batches) {
+                    this.completeScan(scan_id, total_pages);
+                    return;
+                }
+
+                const message = `Scanning pages ${(currentBatch * 10) + 1}-${Math.min((currentBatch + 1) * 10, total_pages)} of ${total_pages}...`;
+                // Update message only without changing progress percentage - use current progress
+                this.updateProgress(message, this.currentProgress);
+
+                $.ajax({
+                    url: this.config.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'mds_scan_all_pages_batch',
+                        scan_id: scan_id,
+                        batch_number: currentBatch,
+                        nonce: this.config.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            const data = response.data;
+                            currentBatch++;
+                            
+                            // Update progress with real data
+                            const realMessage = `Processed ${data.processed_pages} of ${data.total_pages} pages (${data.found_pages} MDS pages found)`;
+                            MDSPageManagement.updateProgress(realMessage, data.progress_percentage);
+                            
+                            if (data.is_complete) {
+                                MDSPageManagement.completeScan(scan_id, data.total_pages, data.found_pages);
+                            } else {
+                                // Continue with next batch after a short delay
+                                setTimeout(processBatch, 200);
+                            }
+                        } else {
+                            MDSPageManagement.showNotice('error', response.data || 'Batch processing failed');
+                            MDSPageManagement.hideProgress();
+                            MDSPageManagement.endOperation();
+                        }
+                    },
+                    error: function() {
+                        MDSPageManagement.showNotice('error', `Error processing batch ${currentBatch + 1}`);
+                        MDSPageManagement.hideProgress();
+                        MDSPageManagement.endOperation();
+                    }
+                });
+            };
+
+            // Start processing batches
+            processBatch();
+        },
+
+        // Complete the scan and show results
+        completeScan: function(scanId, totalPages, foundPages) {
+            // Update progress to 100%
+            this.updateProgress('Scan completed!', 100);
+            
+            // Extended delay to ensure database commits are fully processed before page refresh
+            setTimeout(() => {
+                this.hideProgress();
+                this.endOperation(); // End the operation state tracking
+                
+                const message = foundPages !== undefined ? 
+                    `Scan completed! Processed ${totalPages} pages and found ${foundPages} MDS pages.` :
+                    `Scan completed! Processed ${totalPages} pages.`;
+                
+                NotificationModal.show('success', 'Scan Complete', message, null, function() {
+                    MDSPageManagement.refreshData();
+                });
+            }, 2000);
         },
 
         // Repair all pages
@@ -154,8 +485,11 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        MDSPageManagement.showNotice('success', response.data.message);
-                        MDSPageManagement.refreshData();
+                        // Show success modal and refresh page when OK is clicked
+                        const title = 'Repair Complete';
+                        NotificationModal.show('success', title, response.data.message, null, function() {
+                            MDSPageManagement.refreshData();
+                        });
                     } else {
                         MDSPageManagement.showNotice('error', response.data.message);
                     }
@@ -330,9 +664,11 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        MDSPageManagement.showNotice('success', response.data.message);
-                        // Refresh the row
-                        window.location.reload();
+                        // Show success modal and refresh page when OK is clicked
+                        const title = 'Page Scan Complete';
+                        NotificationModal.show('success', title, response.data.message, null, function() {
+                            window.location.reload();
+                        });
                     } else {
                         MDSPageManagement.showNotice('error', response.data.message);
                     }
@@ -369,9 +705,13 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        MDSPageManagement.showNotice('success', response.data.message);
-                        // Refresh the row
-                        window.location.reload();
+                        // Show success modal and refresh page after user dismisses it
+                        const title = 'Page Repair Complete';
+                        NotificationModal.show('success', title, response.data.message);
+                        // Refresh after a delay to allow user to read the message
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
                     } else {
                         MDSPageManagement.showNotice('error', response.data.message);
                     }
@@ -448,8 +788,13 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        MDSPageManagement.showNotice('success', response.data.message);
-                        window.location.reload();
+                        // Show success modal and refresh page after user dismisses it
+                        const title = 'Bulk Action Complete';
+                        NotificationModal.show('success', title, response.data.message);
+                        // Refresh after a delay to allow user to read the message
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
                     } else {
                         MDSPageManagement.showNotice('error', response.data.message);
                     }
@@ -635,9 +980,14 @@
                 data: formData + '&action=mds_save_page_config&nonce=' + this.config.nonce + '&convert_implementation=1',
                 success: function(response) {
                     if (response.success) {
-                        MDSPageManagement.showNotice('success', response.data.message);
+                        // Show success modal and refresh page after user dismisses it
+                        const title = 'Configuration Saved';
+                        NotificationModal.show('success', title, response.data.message);
                         $('#mds-page-config-modal').dialog('close');
-                        window.location.reload();
+                        // Refresh after a delay to allow user to read the message
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
                     } else {
                         MDSPageManagement.showNotice('error', response.data.message);
                     }
@@ -658,44 +1008,147 @@
             }
         },
 
-        // Show progress indicator
+        // Show progress indicator with simulated progress
         showProgress: function(message, percentage = 0) {
-            if (!$('#mds-progress-indicator').length) {
-                $('body').append(`
-                    <div id="mds-progress-indicator" class="mds-modal">
-                        <div class="mds-modal-content">
-                            <div class="mds-modal-body">
-                                <div class="mds-loading">
-                                    <div class="mds-spinner"></div>
-                                    <span id="mds-progress-message">${message}</span>
-                                </div>
-                                <div class="mds-progress">
-                                    <div class="mds-progress-bar" id="mds-progress-bar" style="width: ${Math.max(percentage, 10)}%">
-                                        ${Math.round(percentage)}%
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `);
+            // Only reset progress tracking when starting a completely new operation (modal doesn't exist)
+            if (percentage === 0 && !$('#mds-progress-indicator').length) {
+                this.currentProgress = 0;
             }
             
-            const displayPercentage = Math.max(percentage, 10); // Ensure minimum width for visibility
+            if (!$('#mds-progress-indicator').length) {
+                const modal = $('<div>', {
+                    'class': 'mds-notification-modal',
+                    'id': 'mds-progress-indicator'
+                });
+
+                const overlay = $('<div>', {
+                    'class': 'mds-modal-overlay'
+                });
+
+                const content = $('<div>', {
+                    'class': 'mds-modal-content mds-progress-content'
+                });
+
+                const header = $('<div>', {
+                    'class': 'mds-modal-header'
+                }).append(
+                    $('<h3>').text('Processing...')
+                );
+
+                const body = $('<div>', {
+                    'class': 'mds-modal-body'
+                }).append(
+                    $('<div>', {
+                        'class': 'mds-progress-spinner'
+                    }).append(
+                        $('<div>', {
+                            'class': 'mds-spinner'
+                        })
+                    ),
+                    $('<div>', {
+                        'class': 'mds-progress'
+                    }).append(
+                        $('<div>', {
+                            'class': 'mds-progress-bar',
+                            'id': 'mds-progress-bar',
+                            'style': `width: ${Math.max(percentage, 10)}%`
+                        }).text(Math.round(percentage) + '%')
+                    ),
+                    $('<p>', {
+                        'class': 'mds-progress-message',
+                        'id': 'mds-progress-message'
+                    }).text(message)
+                );
+
+                content.append(header, body);
+                modal.append(overlay, content);
+                $('body').append(modal);
+            }
+            
+            // Use monotonic progress for display - never go backwards
+            const effectivePercentage = Math.max(percentage, this.currentProgress);
+            this.currentProgress = effectivePercentage;
+            
+            const displayPercentage = Math.max(effectivePercentage, 10);
             $('#mds-progress-message').text(message);
-            $('#mds-progress-bar').css('width', displayPercentage + '%').text(Math.round(percentage) + '%');
-            $('#mds-progress-indicator').show();
+            $('#mds-progress-bar').css('width', displayPercentage + '%').text(Math.round(effectivePercentage) + '%');
+            
+            const modal = $('#mds-progress-indicator');
+            modal.fadeIn(300);
+            modal.find('.mds-modal-content').addClass('mds-modal-show');
+            
+            // Start simulated progress only if we're truly at the beginning
+            if (percentage === 0 && this.currentProgress === 0) {
+                this.startSimulatedProgress();
+            }
         },
 
-        // Update progress
+        // Update progress (monotonic - never goes backwards)
         updateProgress: function(message, percentage) {
-            const displayPercentage = Math.max(percentage, 10); // Ensure minimum width for visibility
+            // Stop any running simulated progress immediately when real progress comes in
+            if (this.progressInterval) {
+                clearInterval(this.progressInterval);
+                this.progressInterval = null;
+            }
+            
+            // Ensure progress never goes backwards
+            const newProgress = Math.max(percentage, this.currentProgress);
+            this.currentProgress = newProgress;
+            
+            const displayPercentage = Math.max(newProgress, 10); // Ensure minimum width for visibility
             $('#mds-progress-message').text(message);
-            $('#mds-progress-bar').css('width', displayPercentage + '%').text(Math.round(percentage) + '%');
+            $('#mds-progress-bar').css('width', displayPercentage + '%').text(Math.round(newProgress) + '%');
+        },
+
+        // Start simulated progress animation
+        startSimulatedProgress: function() {
+            // Clear any existing intervals
+            if (this.progressInterval) {
+                clearInterval(this.progressInterval);
+            }
+            
+            let currentProgress = 10;
+            this.progressInterval = setInterval(() => {
+                // Check if progress has been taken over by real updates
+                if (!this.progressInterval) {
+                    return;
+                }
+                
+                // Simulate realistic progress increments
+                const increment = Math.random() * 3 + 1; // Reduced increment between 1-4%
+                currentProgress = Math.min(currentProgress + increment, 75); // Cap at 75% to leave room for real progress
+                
+                const $progressBar = $('#mds-progress-bar');
+                if ($progressBar.length) {
+                    $progressBar.css('width', currentProgress + '%').text(Math.round(currentProgress) + '%');
+                }
+                
+                // Stop if we've reached the cap
+                if (currentProgress >= 75) {
+                    clearInterval(this.progressInterval);
+                    this.progressInterval = null;
+                }
+            }, 300 + Math.random() * 200); // Slower timing between 300-500ms
         },
 
         // Hide progress indicator
         hideProgress: function() {
-            $('#mds-progress-indicator').hide();
+            // Clear any running progress intervals
+            if (this.progressInterval) {
+                clearInterval(this.progressInterval);
+                this.progressInterval = null;
+            }
+            
+            // Reset progress tracking
+            this.currentProgress = 0;
+            
+            const modal = $('#mds-progress-indicator');
+            if (modal.length) {
+                modal.find('.mds-modal-content').removeClass('mds-modal-show');
+                modal.fadeOut(300, function() {
+                    modal.remove();
+                });
+            }
         },
 
         // Scan for errors
@@ -1135,28 +1588,18 @@
 
         // Show notification
         showNotice: function(type, message) {
-            const noticeHtml = `
-                <div class="mds-notice ${type}">
-                    ${message}
-                    <button type="button" class="notice-dismiss" onclick="$(this).parent().fadeOut()">
-                        <span class="screen-reader-text">Dismiss this notice.</span>
-                    </button>
-                </div>
-            `;
-            
-            $('.wrap h1').after(noticeHtml);
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(function() {
-                $('.mds-notice').fadeOut();
-            }, 5000);
+            // Use the modal system instead of inline notices
+            const title = type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information';
+            NotificationModal.show(type, title, message);
         }
     };
 
     // Initialize when document is ready
     $(document).ready(function() {
-        if (typeof mds_page_management !== 'undefined') {
+        if (typeof mdsPageManagement !== 'undefined' && mdsPageManagement) {
             MDSPageManagement.init();
+        } else {
+            console.error('MDS Page Management: Localization object not found. Please ensure the page management interface is properly loaded.');
         }
     });
 

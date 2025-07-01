@@ -111,15 +111,72 @@ class BlockFields {
 	}
 
 	public static function display( $fields ): void {
+		// Debug logging
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( "Carbon Fields Block Display - Raw fields: " . wp_json_encode( $fields ) );
+			error_log( "Carbon Fields Block Display - MDS_PREFIX: " . MDS_PREFIX );
+		}
+		
 		$defaults = Shortcode::defaults();
 		$values   = array();
 
 		foreach ( $defaults as $key => $value ) {
-			if ( array_key_exists( MDS_PREFIX . $key, $fields ) ) {
-				$values[ $key ] = $fields[ MDS_PREFIX . $key ];
+			$field_key = MDS_PREFIX . $key;
+			if ( array_key_exists( $field_key, $fields ) ) {
+				$values[ $key ] = $fields[ $field_key ];
 			} else {
 				$values[ $key ] = $value;
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( "Carbon Fields Block Display - Using default for '{$key}' (looked for '{$field_key}')" );
+				}
 			}
+		}
+		
+		// Check for placeholder values and replace them with calculated dimensions
+		if ( $values['type'] === 'grid' && ( $values['width'] === '{width}' || $values['height'] === '{height}' ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( "Carbon Fields Block Display - Found placeholder values, calculating grid dimensions for ID: " . $values['id'] );
+			}
+			
+			// Calculate actual grid dimensions
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'mds_banners';
+			$grid = $wpdb->get_row( $wpdb->prepare(
+				"SELECT grid_width, grid_height, block_width, block_height FROM {$table_name} WHERE banner_id = %d",
+				$values['id']
+			) );
+			
+			if ( $grid ) {
+				$calculated_width = $grid->grid_width * $grid->block_width;
+				$calculated_height = $grid->grid_height * $grid->block_height;
+				
+				if ( $values['width'] === '{width}' ) {
+					$values['width'] = $calculated_width . 'px';
+				}
+				if ( $values['height'] === '{height}' ) {
+					$values['height'] = $calculated_height . 'px';
+				}
+				
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( "Carbon Fields Block Display - Calculated dimensions: {$calculated_width}px x {$calculated_height}px" );
+				}
+			} else {
+				// Fallback to defaults if calculation fails
+				if ( $values['width'] === '{width}' ) {
+					$values['width'] = '1000px';
+				}
+				if ( $values['height'] === '{height}' ) {
+					$values['height'] = '1000px';
+				}
+				
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( "Carbon Fields Block Display - Could not find grid data, using fallback dimensions" );
+				}
+			}
+		}
+		
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( "Carbon Fields Block Display - Final values: " . wp_json_encode( $values ) );
 		}
 
 		$values = Functions::maybe_set_dimensions( $values );

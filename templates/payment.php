@@ -28,6 +28,10 @@
 
 defined( 'ABSPATH' ) or exit;
 
+// Start output buffering immediately to allow for redirects
+ob_start();
+$ob_level = ob_get_level();
+
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Utility;
 
@@ -60,9 +64,7 @@ if ( $order_id ) {
 	}
 }
 
-// Start output buffering (allows for redirects)
-ob_start();
-$ob_level = ob_get_level();
+// Output buffering already started at top of file
 
 \MillionDollarScript\Classes\System\Utility::get_header();
 

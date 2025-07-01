@@ -401,7 +401,7 @@ class Ajax {
 								$block_id = $blocks[0];
 
 								$ALT_TEXT = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
-								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT );
+								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT ?? '' );
 
 								$url = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'url' );
 

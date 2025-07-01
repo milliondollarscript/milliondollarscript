@@ -58,15 +58,14 @@
             e.preventDefault();
             
             const $button = $(e.target);
-            const $progress = $('#mds-error-progress');
             const $results = $('#mds-error-results');
-            const $progressText = $('#mds-error-progress-text');
             
-            // Show progress
-            $progress.show();
+            // Show progress modal instead of inline notice
+            if (window.mdsPageManagement && window.mdsPageManagement.showProgress) {
+                window.mdsPageManagement.showProgress('Scanning for Page Errors', 'Analyzing pages for validation errors...');
+            }
             $results.hide();
             $button.prop('disabled', true);
-            $progressText.text('Scanning for page errors...');
             
             // Make API call to get all pages with errors
             $.ajax({
@@ -85,7 +84,9 @@
             }).fail(function(xhr) {
                 ErrorResolution.showError('Error scanning pages: ' + xhr.statusText);
             }).always(function() {
-                $progress.hide();
+                if (window.mdsPageManagement && window.mdsPageManagement.hideProgress) {
+                    window.mdsPageManagement.hideProgress();
+                }
                 $button.prop('disabled', false);
             });
         },
@@ -96,8 +97,12 @@
             const $fixAllButton = $('#mds-fix-all-errors');
             
             if (!errorPages || errorPages.length === 0) {
-                $errorList.html('<div class="mds-notice mds-notice-success"><p>No pages with errors found!</p></div>');
+                $errorList.html('<div class="mds-no-errors"><p>No pages with errors found!</p></div>');
                 $fixAllButton.hide();
+                // Show success modal instead of inline notice
+                if (window.mdsPageManagement && window.mdsPageManagement.showNotification) {
+                    window.mdsPageManagement.showNotification('success', 'Scan Complete', 'No pages with errors found! All pages appear to be functioning correctly.');
+                }
             } else {
                 let html = '';
                 let autoFixableCount = 0;
@@ -398,24 +403,31 @@
         },
 
         showNotice: function(message, type = 'info') {
-            const $notice = $(`
-                <div class="notice notice-${type} is-dismissible" style="margin: 10px 0;">
-                    <p>${message}</p>
-                    <button type="button" class="notice-dismiss">
-                        <span class="screen-reader-text">Dismiss this notice.</span>
-                    </button>
-                </div>
-            `);
-            
-            $('.wrap h1').after($notice);
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => $notice.fadeOut(), 5000);
-            
-            // Handle manual dismiss
-            $notice.on('click', '.notice-dismiss', function() {
-                $notice.fadeOut();
-            });
+            // Use modal system if available, otherwise fallback to inline notice
+            if (window.mdsPageManagement && window.mdsPageManagement.showNotification) {
+                const title = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Information';
+                window.mdsPageManagement.showNotification(type, title, message);
+            } else {
+                // Fallback to inline notice
+                const $notice = $(`
+                    <div class="notice notice-${type} is-dismissible" style="margin: 10px 0;">
+                        <p>${message}</p>
+                        <button type="button" class="notice-dismiss">
+                            <span class="screen-reader-text">Dismiss this notice.</span>
+                        </button>
+                    </div>
+                `);
+                
+                $('.wrap h1').after($notice);
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => $notice.fadeOut(), 5000);
+                
+                // Handle manual dismiss
+                $notice.on('click', '.notice-dismiss', function() {
+                    $notice.fadeOut();
+                });
+            }
         }
     };
 

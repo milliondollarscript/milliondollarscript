@@ -61,6 +61,16 @@ class MDSPageWordPressIntegration {
     }
     
     /**
+     * Static initialization method for Bootstrap
+     *
+     * @return void
+     */
+    public static function initializeStatic(): void {
+        $instance = self::getInstance();
+        $instance->initialize();
+    }
+    
+    /**
      * Initialize WordPress integration
      *
      * @return void

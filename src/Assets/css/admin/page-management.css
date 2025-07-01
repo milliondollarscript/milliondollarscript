@@ -1,0 +1,498 @@
+/*
+ * Million Dollar Script Two - Page Management Styles
+ *
+ * @author      Ryan Rhode
+ * @copyright   (C) 2025, Ryan Rhode
+ * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
+ */
+
+/* Modal Notification Styles */
+.mds-notification-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100050;
+    display: none;
+}
+
+.mds-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.mds-modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 500px;
+    margin: 5% auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.mds-modal-content.mds-modal-show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.mds-modal-header {
+    padding: 20px 20px 0;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mds-modal-header h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    line-height: 1.3;
+}
+
+.mds-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.mds-modal-close:hover {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.mds-modal-body {
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.mds-notification-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.mds-success-icon {
+    background: #46b450;
+}
+
+.mds-success-icon::before {
+    content: "✓";
+}
+
+.mds-error-icon {
+    background: #dc3232;
+}
+
+.mds-error-icon::before {
+    content: "✕";
+}
+
+.mds-warning-icon {
+    background: #ffb900;
+}
+
+.mds-warning-icon::before {
+    content: "⚠";
+}
+
+.mds-info-icon {
+    background: #00a0d2;
+}
+
+.mds-info-icon::before {
+    content: "i";
+}
+
+.mds-notification-content {
+    flex: 1;
+}
+
+.mds-notification-content p {
+    margin: 0 0 15px 0;
+    line-height: 1.5;
+}
+
+.mds-notification-details {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.mds-notification-details h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.mds-notification-details ul {
+    margin: 0;
+    padding-left: 20px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.mds-notification-details li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.mds-modal-footer {
+    padding: 0 20px 20px;
+    text-align: right;
+}
+
+/* Progress Modal Styles */
+.mds-progress-modal .mds-modal-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.mds-progress-content .mds-modal-body {
+    display: block;
+    text-align: center;
+}
+
+.mds-progress-spinner {
+    margin-bottom: 20px;
+}
+
+.mds-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #0073aa;
+    border-radius: 50%;
+    animation: mds-spin 1s linear infinite;
+}
+
+@keyframes mds-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.mds-progress-message {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Page Management Table Styles */
+.mds-page-type {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #e5e5e5;
+    color: #333;
+}
+
+.mds-page-type-grid {
+    background: #e7f3ff;
+    color: #0073aa;
+}
+
+.mds-page-type-order {
+    background: #fff2e1;
+    color: #cc6600;
+}
+
+.mds-page-type-write-ad {
+    background: #f0f8e7;
+    color: #5b9400;
+}
+
+.mds-page-type-payment {
+    background: #fef7f0;
+    color: #d63638;
+}
+
+.mds-implementation {
+    display: inline-block;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.mds-implementation-shortcode {
+    background: #e1f5fe;
+    color: #0277bd;
+}
+
+.mds-implementation-block {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.mds-implementation-unknown {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.mds-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.mds-status-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.mds-status-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.mds-status-inactive {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.mds-status-help-link {
+    color: #0073aa;
+    text-decoration: none;
+    margin-left: 5px;
+}
+
+.mds-status-help-link:hover {
+    color: #005177;
+}
+
+.mds-status-help-link .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+/* Action Buttons */
+.mds-action-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.mds-action-buttons .button {
+    padding: 2px 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    height: auto;
+    min-height: 24px;
+}
+
+.mds-action-buttons .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+.mds-view-details {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+.mds-view-details:hover {
+    background: #005177;
+    border-color: #005177;
+    color: #fff;
+}
+
+.mds-scan-page {
+    background: #00a32a;
+    color: #fff;
+    border-color: #00a32a;
+}
+
+.mds-scan-page:hover {
+    background: #008a20;
+    border-color: #008a20;
+    color: #fff;
+}
+
+.mds-repair-page {
+    background: #ff6900;
+    color: #fff;
+    border-color: #ff6900;
+}
+
+.mds-repair-page:hover {
+    background: #e65100;
+    border-color: #e65100;
+    color: #fff;
+}
+
+.mds-configure-page {
+    background: #6c757d;
+    color: #fff;
+    border-color: #6c757d;
+}
+
+.mds-configure-page:hover {
+    background: #5a6268;
+    border-color: #5a6268;
+    color: #fff;
+}
+
+/* Button Loading States */
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.button .mds-spinner {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+    vertical-align: middle;
+}
+
+/* Error Resolution Section */
+.mds-error-resolution {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.mds-error-resolution h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.mds-error-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.mds-error-controls .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.mds-error-controls .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 782px) {
+    .mds-modal-content {
+        width: 95%;
+        margin: 2% auto;
+        border-radius: 4px;
+    }
+    
+    .mds-modal-body {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .mds-action-buttons {
+        justify-content: center;
+    }
+    
+    .mds-error-controls {
+        flex-direction: column;
+    }
+    
+    .mds-error-controls .button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Accessibility */
+.mds-modal-content:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.mds-modal-close:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Animation improvements */
+.mds-notification-modal {
+    backdrop-filter: blur(2px);
+}
+
+.mds-modal-content {
+    will-change: transform, opacity;
+}
+
+/* Loading state */
+.loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.loading::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: mds-spin 1s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+/* Error state */
+.error {
+    text-align: center;
+    padding: 20px;
+    color: #dc3232;
+    background: #fef7f7;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin: 10px 0;
+}

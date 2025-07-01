@@ -103,12 +103,18 @@ class Bootstrap {
 			add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Data\Options', 'save' ] );
 		}
 
+		// Initialize metadata system and WordPress integration
+		add_action( 'init', [ '\MillionDollarScript\Classes\Data\MDSPageWordPressIntegration', 'initializeStatic' ] );
+
 		// Initialize Grid Image Switcher for theme mode automation
 		add_action( 'init', [ '\MillionDollarScript\Classes\Services\GridImageSwitcher', 'init' ] );
 
 		// Add Block
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Blocks\Block', 'register_style' ] );
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Blocks\Block', 'load' ] );
+		
+		// Initialize block fallback system to ensure Carbon Fields blocks work correctly
+		add_action( 'init', [ '\MillionDollarScript\Classes\Admin\MDSEnhancedPageCreator', 'initBlockFallback' ] );
 
 		// Add Emails page
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Email\Emails', 'register' ] );

@@ -77,6 +77,9 @@ class MDSPageManagementInterface {
         
         // Quick action AJAX handlers
         add_action( 'wp_ajax_mds_scan_all_pages', [ $this, 'handleScanAllPages' ] );
+        add_action( 'wp_ajax_mds_scan_all_pages_start', [ $this, 'handleScanAllPagesStart' ] );
+        add_action( 'wp_ajax_mds_scan_all_pages_batch', [ $this, 'handleScanAllPagesBatch' ] );
+        add_action( 'wp_ajax_mds_scan_all_pages_status', [ $this, 'handleScanAllPagesStatus' ] );
         add_action( 'wp_ajax_mds_repair_all_pages', [ $this, 'handleRepairAllPages' ] );
         add_action( 'wp_ajax_mds_scan_errors', [ $this, 'handleScanErrors' ] );
         add_action( 'wp_ajax_mds_fix_all_errors', [ $this, 'handleFixAllErrors' ] );
@@ -89,6 +92,9 @@ class MDSPageManagementInterface {
         
         // Handle form submissions
         add_action( 'admin_post_mds_manage_pages', [ $this, 'handleFormSubmission' ] );
+        
+        // Add diagnostic AJAX handler
+        add_action( 'wp_ajax_mds_diagnose_metadata_system', [ $this, 'handleDiagnoseMetadataSystem' ] );
         
         // Add screen options
         add_action( 'load-mds_page_mds-page-management', [ $this, 'addScreenOptions' ] );
@@ -176,6 +182,14 @@ class MDSPageManagementInterface {
             true
         );
         
+        wp_enqueue_script(
+            'mds-error-resolution',
+            MDS_BASE_URL . 'assets/js/admin/error-resolution.js',
+            [ 'mds-page-management' ],
+            MDS_VERSION,
+            true
+        );
+        
         wp_enqueue_style(
             'mds-page-management',
             MDS_BASE_URL . 'assets/css/admin/page-management.css',
@@ -183,22 +197,50 @@ class MDSPageManagementInterface {
             MDS_VERSION
         );
         
-        wp_localize_script( 'mds-page-management', 'mds_page_management', [
-            'ajax_url' => admin_url( 'admin-ajax.php' ),
+        wp_localize_script( 'mds-page-management', 'mdsPageManagement', [
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
             'nonce' => wp_create_nonce( 'mds_page_management_nonce' ),
-            'auto_refresh' => false, // Disable auto-refresh by default
+            'autoRefresh' => false,
             'strings' => [
-                'confirmBulkAction' => Language::get( 'Are you sure you want to perform this action on selected pages?' ),
-                'confirmDelete' => Language::get( 'Are you sure you want to delete this page? This action cannot be undone.' ),
-                'confirmRepair' => Language::get( 'This will attempt to repair the page. Continue?' ),
-                'scanning' => Language::get( 'Scanning page...' ),
-                'repairing' => Language::get( 'Repairing page...' ),
-                'updating' => Language::get( 'Updating configuration...' ),
-                'exporting' => Language::get( 'Exporting data...' ),
-                'error' => Language::get( 'An error occurred' ),
-                'success' => Language::get( 'Operation completed successfully' ),
-                'confirm_scan_all' => Language::get( 'Are you sure you want to scan all pages? This may take a while.' ),
-                'confirm_repair_all' => Language::get( 'Are you sure you want to repair all pages with issues?' )
+                'close' => Language::get( 'Close' ),
+                'ok' => Language::get( 'OK' ),
+                'details' => Language::get( 'Details' ),
+                'loading' => Language::get( 'Loading...' ),
+                'processing' => Language::get( 'Processing...' ),
+                'no_action_selected' => Language::get( 'No Action Selected' ),
+                'please_select_action' => Language::get( 'Please select an action to perform.' ),
+                'no_items_selected' => Language::get( 'No Items Selected' ),
+                'please_select_items' => Language::get( 'Please select one or more items to perform this action on.' ),
+                'confirm_delete_single' => Language::get( 'Are you sure you want to delete this page? This action cannot be undone.' ),
+                'confirm_delete_multiple' => Language::get( 'Are you sure you want to delete %d pages? This action cannot be undone.' ),
+                'processing_bulk_action' => Language::get( 'Processing Bulk Action' ),
+                'scanning_pages' => Language::get( 'Scanning pages' ),
+                'repairing_pages' => Language::get( 'Repairing pages' ),
+                'deleting_pages' => Language::get( 'Deleting pages' ),
+                'activating_pages' => Language::get( 'Activating pages' ),
+                'deactivating_pages' => Language::get( 'Deactivating pages' ),
+                'bulk_action_completed' => Language::get( 'Bulk Action Completed' ),
+                'bulk_action_completed_with_errors' => Language::get( 'Bulk Action Completed with Errors' ),
+                'bulk_action_failed' => Language::get( 'Bulk Action Failed' ),
+                'unknown_error' => Language::get( 'An unknown error occurred.' ),
+                'ajax_error' => Language::get( 'AJAX Error' ),
+                'page_details' => Language::get( 'Page Details' ),
+                'failed_to_load' => Language::get( 'Failed to load content.' ),
+                'scan_completed' => Language::get( 'Scan Completed' ),
+                'scan_failed' => Language::get( 'Scan Failed' ),
+                'scan_request_failed' => Language::get( 'Failed to send scan request.' ),
+                'repair_completed' => Language::get( 'Repair Completed' ),
+                'repair_failed' => Language::get( 'Repair Failed' ),
+                'repair_request_failed' => Language::get( 'Failed to send repair request.' ),
+                'page_configuration' => Language::get( 'Page Configuration' ),
+                'configuration_saved' => Language::get( 'Configuration Saved' ),
+                'configuration_failed' => Language::get( 'Configuration Failed' ),
+                'configuration_request_failed' => Language::get( 'Failed to send configuration request.' ),
+                'scanning_errors' => Language::get( 'Scanning for Errors' ),
+                'analyzing_page_errors' => Language::get( 'Analyzing page for errors...' ),
+                'page_error_analysis' => Language::get( 'Page Error Analysis' ),
+                'error_scan_failed' => Language::get( 'Error Scan Failed' ),
+                'error_scan_request_failed' => Language::get( 'Failed to send error scan request.' )
             ]
         ] );
     }
@@ -382,9 +424,7 @@ class MDSPageManagementInterface {
                 </div>
                 
                 <div id="mds-error-progress" style="display: none; margin-top: 15px;">
-                    <div class="mds-notice mds-notice-info">
-                        <p><span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> <span id="mds-error-progress-text">Scanning for errors...</span></p>
-                    </div>
+                    <!-- Progress now handled by modal system -->
                 </div>
             </div>
         </div>
@@ -1068,11 +1108,25 @@ class MDSPageManagementInterface {
                         break;
                         
                     case 'delete':
+                        $post = get_post( $page_id );
+                        if ( !$post ) {
+                            $error_count++;
+                            $errors[] = sprintf( Language::get( 'Post with ID %d does not exist' ), $page_id );
+                            break;
+                        }
+                        
+                        if ( !current_user_can( 'delete_post', $page_id ) ) {
+                            $error_count++;
+                            $errors[] = sprintf( Language::get( 'Insufficient permissions to delete post: %s (ID: %d)' ), $post->post_title, $page_id );
+                            break;
+                        }
+                        
                         if ( wp_delete_post( $page_id, true ) ) {
                             $this->metadata_manager->deleteMetadata( $page_id );
                             $success_count++;
                         } else {
                             $error_count++;
+                            $errors[] = sprintf( Language::get( 'Failed to delete post: %s (ID: %d)' ), $post->post_title, $page_id );
                         }
                         break;
                         
@@ -1662,6 +1716,234 @@ class MDSPageManagementInterface {
         } else {
             wp_send_json_error( $results['message'] );
         }
+    }
+
+    public function handleScanAllPagesStart(): void {
+        check_ajax_referer( 'mds_page_management_nonce', 'nonce' );
+        
+        if ( !current_user_can( 'manage_options' ) ) {
+            wp_die( Language::get( 'Insufficient permissions' ) );
+        }
+        
+        $posts = get_posts( [
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'fields' => 'ids'
+        ] );
+        
+        $total_pages = count( $posts );
+        $batch_size = 10; // Process 10 pages per batch
+        $total_batches = ceil( $total_pages / $batch_size );
+        
+        // Store scan progress in transient
+        $scan_id = 'mds_scan_' . wp_generate_uuid4();
+        $scan_data = [
+            'page_ids' => $posts,
+            'total_pages' => $total_pages,
+            'batch_size' => $batch_size,
+            'total_batches' => $total_batches,
+            'current_batch' => 0,
+            'processed_pages' => 0,
+            'found_pages' => 0,
+            'errors' => [],
+            'start_time' => current_time( 'timestamp' ),
+            'status' => 'running'
+        ];
+        
+        set_transient( $scan_id, $scan_data, 3600 ); // 1 hour expiry
+        
+        wp_send_json_success( [
+            'scan_id' => $scan_id,
+            'total_pages' => $total_pages,
+            'total_batches' => $total_batches,
+            'batch_size' => $batch_size
+        ] );
+    }
+
+    public function handleScanAllPagesBatch(): void {
+        check_ajax_referer( 'mds_page_management_nonce', 'nonce' );
+        
+        if ( !current_user_can( 'manage_options' ) ) {
+            wp_die( Language::get( 'Insufficient permissions' ) );
+        }
+        
+        $scan_id = sanitize_text_field( $_POST['scan_id'] ?? '' );
+        $batch_number = intval( $_POST['batch_number'] ?? 0 );
+        
+        if ( empty( $scan_id ) ) {
+            wp_send_json_error( Language::get( 'Invalid scan ID' ) );
+        }
+        
+        $scan_data = get_transient( $scan_id );
+        if ( !$scan_data ) {
+            wp_send_json_error( Language::get( 'Scan data not found or expired' ) );
+        }
+        
+        // Calculate batch pages
+        $start_index = $batch_number * $scan_data['batch_size'];
+        $batch_pages = array_slice( $scan_data['page_ids'], $start_index, $scan_data['batch_size'] );
+        
+        if ( empty( $batch_pages ) ) {
+            wp_send_json_error( Language::get( 'No pages to process in this batch' ) );
+        }
+        
+        // Process this batch
+        $batch_results = [];
+        $found_in_batch = 0;
+        
+        foreach ( $batch_pages as $page_id ) {
+            try {
+                $detection_result = $this->detection_engine->detectMDSPage( $page_id );
+                
+                if ( $detection_result && isset( $detection_result['is_mds_page'] ) && $detection_result['is_mds_page'] ) {
+                    $page_type = $detection_result['page_type'] ?? 'unknown';
+                    
+                    // Ensure page_type is always a string
+                    if ( is_array( $page_type ) ) {
+                        $page_type = is_string( $page_type[0] ?? null ) ? $page_type[0] : 'unknown';
+                        Logs::log( "Warning: page_type was array for page {$page_id}, using first element: {$page_type}", Logs::LEVEL_WARNING );
+                    } elseif ( !is_string( $page_type ) ) {
+                        $page_type = 'unknown';
+                        Logs::log( "Warning: page_type was not string for page {$page_id}, defaulting to 'unknown'", Logs::LEVEL_WARNING );
+                    }
+                    
+                    $creation_method = 'auto-detected';
+                    $additional_data = $detection_result;
+                    
+                    // Ensure database is ready before saving
+                    if ( !$this->metadata_manager->isDatabaseReady() ) {
+                        $init_result = $this->metadata_manager->initialize();
+                        if ( is_wp_error( $init_result ) ) {
+                            throw new Exception( 'Failed to initialize metadata database: ' . $init_result->get_error_message() );
+                        }
+                    }
+                    
+                    $metadata_result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $page_type, $creation_method, $additional_data );
+                    
+                    // Check if metadata creation was successful
+                    if ( is_wp_error( $metadata_result ) ) {
+                        $error_message = 'Failed to save metadata for page ' . $page_id . ': ' . $metadata_result->get_error_message();
+                        Logs::log( $error_message, Logs::LEVEL_ERROR );
+                        $scan_data['errors'][] = [
+                            'page_id' => $page_id,
+                            'error' => $error_message
+                        ];
+                        $batch_results[] = [
+                            'page_id' => $page_id,
+                            'found' => true,
+                            'saved' => false,
+                            'error' => $error_message,
+                            'confidence' => $detection_result['confidence'] ?? 0.0,
+                            'page_type' => $page_type
+                        ];
+                    } else {
+                        $found_in_batch++;
+                        $batch_results[] = [
+                            'page_id' => $page_id,
+                            'found' => true,
+                            'saved' => true,
+                            'confidence' => $detection_result['confidence'] ?? 0.0,
+                            'page_type' => $page_type
+                        ];
+                        
+                        // Log successful save for debugging
+                        Logs::log( "Successfully saved metadata for page {$page_id} with type '{$page_type}'", Logs::LEVEL_INFO );
+                    }
+                } else {
+                    $batch_results[] = [
+                        'page_id' => $page_id,
+                        'found' => false
+                    ];
+                }
+            } catch ( Exception $e ) {
+                $scan_data['errors'][] = [
+                    'page_id' => $page_id,
+                    'error' => $e->getMessage()
+                ];
+                $batch_results[] = [
+                    'page_id' => $page_id,
+                    'found' => false,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+        
+        // Update scan progress
+        $scan_data['current_batch'] = $batch_number + 1;
+        $scan_data['processed_pages'] += count( $batch_pages );
+        $scan_data['found_pages'] += $found_in_batch;
+        
+        // Check if scan is complete
+        $is_complete = $scan_data['current_batch'] >= $scan_data['total_batches'];
+        if ( $is_complete ) {
+            $scan_data['status'] = 'completed';
+            $scan_data['end_time'] = current_time( 'timestamp' );
+            
+            // Force database synchronization to ensure all writes are committed
+            global $wpdb;
+            $wpdb->flush();
+            
+            // Add delay to ensure database commits are fully processed
+            // This prevents race condition when page refreshes too quickly
+            if ( $found_in_batch > 0 || $scan_data['found_pages'] > 0 ) {
+                usleep( 500000 ); // 0.5 second delay when pages were found
+            }
+            
+            // Log completion for debugging
+            Logs::log( "Scan completed: found {$scan_data['found_pages']} MDS pages out of {$scan_data['total_pages']} total pages", Logs::LEVEL_INFO );
+            
+            // Validate that saved pages are actually in database
+            if ( $scan_data['found_pages'] > 0 ) {
+                $actual_count = $this->metadata_manager->getStatistics()['total_pages'] ?? 0;
+                if ( $actual_count !== $scan_data['found_pages'] ) {
+                    Logs::log( "Warning: Scan found {$scan_data['found_pages']} pages but database contains {$actual_count} metadata records", Logs::LEVEL_WARNING );
+                }
+            }
+        }
+        
+        set_transient( $scan_id, $scan_data, 3600 );
+        
+        wp_send_json_success( [
+            'batch_number' => $batch_number,
+            'processed_pages' => $scan_data['processed_pages'],
+            'total_pages' => $scan_data['total_pages'],
+            'found_pages' => $scan_data['found_pages'],
+            'found_in_batch' => $found_in_batch,
+            'is_complete' => $is_complete,
+            'batch_results' => $batch_results,
+            'progress_percentage' => round( ( $scan_data['processed_pages'] / $scan_data['total_pages'] ) * 100, 1 )
+        ] );
+    }
+
+    public function handleScanAllPagesStatus(): void {
+        check_ajax_referer( 'mds_page_management_nonce', 'nonce' );
+        
+        if ( !current_user_can( 'manage_options' ) ) {
+            wp_die( Language::get( 'Insufficient permissions' ) );
+        }
+        
+        $scan_id = sanitize_text_field( $_POST['scan_id'] ?? '' );
+        
+        if ( empty( $scan_id ) ) {
+            wp_send_json_error( Language::get( 'Invalid scan ID' ) );
+        }
+        
+        $scan_data = get_transient( $scan_id );
+        if ( !$scan_data ) {
+            wp_send_json_error( Language::get( 'Scan data not found or expired' ) );
+        }
+        
+        wp_send_json_success( [
+            'status' => $scan_data['status'],
+            'processed_pages' => $scan_data['processed_pages'],
+            'total_pages' => $scan_data['total_pages'],
+            'found_pages' => $scan_data['found_pages'],
+            'current_batch' => $scan_data['current_batch'],
+            'total_batches' => $scan_data['total_batches'],
+            'errors' => $scan_data['errors'],
+            'progress_percentage' => round( ( $scan_data['processed_pages'] / $scan_data['total_pages'] ) * 100, 1 )
+        ] );
     }
     
     /**
@@ -2553,6 +2835,72 @@ class MDSPageManagementInterface {
             'updated_count' => $updated_count,
             'errors' => $errors,
             'stats' => $this->getPageStatistics()
+        ] );
+    }
+
+    /**
+     * Handle diagnose metadata system AJAX request
+     *
+     * @return void
+     */
+    public function handleDiagnoseMetadataSystem(): void {
+        check_ajax_referer( 'mds_page_management_nonce', 'nonce' );
+        
+        if ( !current_user_can( 'manage_options' ) ) {
+            wp_die( Language::get( 'Insufficient permissions' ) );
+        }
+        
+        $diagnosis = [];
+        
+        // Check if database is ready
+        $db_ready = $this->metadata_manager->isDatabaseReady();
+        $diagnosis['database_ready'] = $db_ready;
+        
+        if ( !$db_ready ) {
+            // Attempt to initialize
+            $init_result = $this->metadata_manager->initialize();
+            $diagnosis['initialization_attempted'] = true;
+            $diagnosis['initialization_result'] = is_wp_error( $init_result ) ? $init_result->get_error_message() : 'success';
+            $diagnosis['database_ready_after_init'] = $this->metadata_manager->isDatabaseReady();
+        }
+        
+        // Get statistics
+        if ( $this->metadata_manager->isDatabaseReady() ) {
+            $stats = $this->metadata_manager->getStatistics();
+            $diagnosis['current_metadata_count'] = $stats['total_pages'] ?? 0;
+            $diagnosis['statistics'] = $stats;
+        }
+        
+        // Check WordPress database errors
+        global $wpdb;
+        $diagnosis['last_db_error'] = $wpdb->last_error ?: 'none';
+        
+        // Test a simple detection
+        $sample_pages = get_posts([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'numberposts' => 1,
+            'fields' => 'ids'
+        ]);
+        
+        if ( $sample_pages ) {
+            $test_page_id = $sample_pages[0];
+            try {
+                $detection_result = $this->detection_engine->detectMDSPage( $test_page_id );
+                $diagnosis['test_detection'] = [
+                    'page_id' => $test_page_id,
+                    'is_mds_page' => $detection_result['is_mds_page'] ?? false,
+                    'confidence' => $detection_result['confidence'] ?? 0.0,
+                    'page_type' => $detection_result['page_type'] ?? null
+                ];
+            } catch ( Exception $e ) {
+                $diagnosis['test_detection_error'] = $e->getMessage();
+            }
+        }
+        
+        wp_send_json_success( [
+            'diagnosis' => $diagnosis,
+            'timestamp' => current_time( 'mysql' )
         ] );
     }
 } 

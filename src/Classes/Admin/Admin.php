@@ -152,12 +152,16 @@ class Admin {
 			true
 		);
 
+		// Get page-specific configuration if editing an MDS page
+		$page_config = self::getCurrentPageConfiguration();
+
 		wp_localize_script( MDS_PREFIX . 'admin-block-js', 'MDS', [
 			'admin'                => admin_url( 'admin.php' ),
 			'mds_site_url'         => get_site_url(),
 			'ajaxurl'              => admin_url( 'admin-ajax.php' ),
 			'MDS_PREFIX'           => MDS_PREFIX,
 			'mds_admin_ajax_nonce' => wp_create_nonce( 'mds_admin_ajax_nonce' ),
+			'page_config'          => $page_config,
 		] );
 
 		wp_enqueue_script( MDS_PREFIX . 'admin-block-js' );
@@ -520,6 +524,141 @@ class Admin {
 			// Enqueue the registered script
 			wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
 		}
+	}
+
+	/**
+	 * Get current page configuration for block editor
+	 *
+	 * @return array Page configuration or null if not an MDS page
+	 */
+	private static function getCurrentPageConfiguration(): ?array {
+		global $post;
+		
+		// Only process when editing a page
+		if ( !$post || $post->post_type !== 'page' || !is_admin() ) {
+			return null;
+		}
+		
+		// Get current screen to verify we're in the editor
+		$screen = get_current_screen();
+		if ( !$screen || ( $screen->id !== 'page' && $screen->base !== 'post' ) ) {
+			return null;
+		}
+		
+		// Try to get page metadata first
+		$metadata_manager = \MillionDollarScript\Classes\Data\MDSPageMetadataManager::getInstance();
+		$metadata = $metadata_manager->getMetadata( $post->ID );
+		
+		if ( $metadata ) {
+			return [
+				'is_mds_page' => true,
+				'page_type' => $metadata->page_type,
+				'grid_id' => $metadata->grid_id,
+				'configuration' => $metadata->configuration,
+				'source' => 'metadata'
+			];
+		}
+		
+		// Fallback: Analyze page content directly
+		$detection_engine = new \MillionDollarScript\Classes\Data\MDSPageDetectionEngine();
+		$detection_result = $detection_engine->detectMDSPage( $post->ID );
+		
+		if ( $detection_result['is_mds_page'] ) {
+			// Extract configuration from detected patterns
+			$config = self::extractConfigurationFromDetection( $detection_result );
+			return [
+				'is_mds_page' => true,
+				'page_type' => $detection_result['page_type'],
+				'grid_id' => $config['grid_id'] ?? 1,
+				'configuration' => $config,
+				'source' => 'detection'
+			];
+		}
+		
+		// Parse MDS Configuration comments as final fallback
+		$comment_config = self::parseMDSConfigurationComments( $post->post_content );
+		if ( $comment_config ) {
+			return [
+				'is_mds_page' => true,
+				'page_type' => $comment_config['type'] ?? 'grid',
+				'grid_id' => $comment_config['id'] ?? 1,
+				'configuration' => $comment_config,
+				'source' => 'comments'
+			];
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extract configuration from detection engine results
+	 *
+	 * @param array $detection_result Detection engine results
+	 * @return array Configuration array
+	 */
+	private static function extractConfigurationFromDetection( array $detection_result ): array {
+		$config = [
+			'id' => 1,
+			'align' => 'center',
+			'width' => '1000px',
+			'height' => '1000px',
+			'type' => $detection_result['page_type']
+		];
+		
+		// Extract from patterns if available
+		if ( isset( $detection_result['patterns'] ) && is_array( $detection_result['patterns'] ) ) {
+			foreach ( $detection_result['patterns'] as $pattern ) {
+				if ( isset( $pattern['attributes'] ) && is_array( $pattern['attributes'] ) ) {
+					$attrs = $pattern['attributes'];
+					
+					// Map common attributes
+					if ( isset( $attrs['id'] ) ) $config['id'] = intval( $attrs['id'] );
+					if ( isset( $attrs['width'] ) ) $config['width'] = $attrs['width'];
+					if ( isset( $attrs['height'] ) ) $config['height'] = $attrs['height'];
+					if ( isset( $attrs['align'] ) ) $config['align'] = $attrs['align'];
+					if ( isset( $attrs['type'] ) ) $config['type'] = $attrs['type'];
+					
+					// Handle Carbon Fields attributes
+					if ( isset( $attrs['milliondollarscript_id'] ) ) $config['id'] = intval( $attrs['milliondollarscript_id'] );
+					if ( isset( $attrs['milliondollarscript_width'] ) ) $config['width'] = $attrs['milliondollarscript_width'];
+					if ( isset( $attrs['milliondollarscript_height'] ) ) $config['height'] = $attrs['milliondollarscript_height'];
+					if ( isset( $attrs['milliondollarscript_align'] ) ) $config['align'] = $attrs['milliondollarscript_align'];
+					if ( isset( $attrs['milliondollarscript_type'] ) ) $config['type'] = $attrs['milliondollarscript_type'];
+				}
+			}
+		}
+		
+		return $config;
+	}
+	
+	/**
+	 * Parse MDS Configuration comments from page content
+	 *
+	 * @param string $content Page content
+	 * @return array|null Configuration array or null if not found
+	 */
+	private static function parseMDSConfigurationComments( string $content ): ?array {
+		// Look for MDS Configuration comment pattern
+		$pattern = '/<!--\s*MDS Configuration:\s*([^-]+)-->/i';
+		if ( preg_match( $pattern, $content, $matches ) ) {
+			$config_text = trim( $matches[1] );
+			
+			// Parse key-value pairs
+			$config = [];
+			$lines = explode( ',', $config_text );
+			
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+				if ( strpos( $line, ':' ) !== false ) {
+					list( $key, $value ) = explode( ':', $line, 2 );
+					$config[trim( $key )] = trim( $value );
+				}
+			}
+			
+			return $config;
+		}
+		
+		return null;
 	}
 
 }

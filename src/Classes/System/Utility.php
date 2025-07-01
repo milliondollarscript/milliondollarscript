@@ -584,12 +584,24 @@ class Utility {
 		$config = $page_configs[ $page_name ];
 		
 		// Check if page already exists but wasn't found (maybe option is wrong)
-		$existing_page = get_page_by_title( $config['title'] );
-		if ( $existing_page ) {
+		$query = new \WP_Query([
+			'post_type' => 'page',
+			'post_status' => 'publish',
+			'title' => $config['title'],
+			'posts_per_page' => 1,
+			'no_found_rows' => true,
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+		]);
+
+		if ( $query->have_posts() ) {
+			$existing_page = $query->posts[0];
 			// Update the option with the correct page ID
 			Options::update_option( $config['option_name'], $existing_page->ID );
+			wp_reset_postdata();
 			return $existing_page->ID;
 		}
+		wp_reset_postdata();
 		
 		// Create the page
 		$page_data = [
