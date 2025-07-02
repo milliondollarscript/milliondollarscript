@@ -101,7 +101,8 @@ class MDSPageListTable extends WP_List_Table {
             'repair' => Language::get( 'Repair Pages' ),
             'activate' => Language::get( 'Activate' ),
             'deactivate' => Language::get( 'Deactivate' ),
-            'delete' => Language::get( 'Delete' )
+            'remove_from_list' => Language::get( 'Remove from MDS Management' ),
+            'delete' => Language::get( 'Delete Page' )
         ];
     }
     
@@ -261,7 +262,7 @@ class MDSPageListTable extends WP_List_Table {
     public function column_title( $item ): string {
         $title = esc_html( $item['title'] );
         
-        // Row actions - only keep Edit and View since Details, Scan, and Repair are available in Actions column
+        // Row actions - Edit, View, and Delete in title column
         $actions = [
             'edit' => sprintf(
                 '<a href="%s">%s</a>',
@@ -272,6 +273,11 @@ class MDSPageListTable extends WP_List_Table {
                 '<a href="%s" target="_blank">%s</a>',
                 esc_url( $item['post_url'] ),
                 esc_html( Language::get( 'View' ) )
+            ),
+            'delete' => sprintf(
+                '<a href="#" class="mds-delete-page submitdelete" data-page-id="%d" style="color: #b32d2e;">%s</a>',
+                intval( $item['ID'] ),
+                esc_html( Language::get( 'Delete' ) )
             )
         ];
         
@@ -460,6 +466,7 @@ class MDSPageListTable extends WP_List_Table {
     public function column_actions( $item ): string {
         $actions = [];
         
+        
         $actions[] = sprintf(
             '<button type="button" class="button button-small mds-view-details" data-page-id="%d" title="%s">
                 <span class="dashicons dashicons-visibility"></span>
@@ -474,6 +481,24 @@ class MDSPageListTable extends WP_List_Table {
             </button>',
             $item['ID'],
             esc_attr( Language::get( 'Scan Page' ) )
+        );
+        
+        // Add activate/deactivate toggle based on current status
+        $is_active = ( $item['status'] === 'active' );
+        $toggle_action = $is_active ? 'deactivate' : 'activate';
+        $toggle_title = $is_active ? Language::get( 'Deactivate Page' ) : Language::get( 'Activate Page' );
+        $toggle_icon = $is_active ? 'dashicons-hidden' : 'dashicons-visibility';
+        $toggle_class = $is_active ? 'mds-deactivate-page' : 'mds-activate-page';
+        
+        $actions[] = sprintf(
+            '<button type="button" class="button button-small %s" data-page-id="%d" data-action="%s" title="%s">
+                <span class="dashicons %s"></span>
+            </button>',
+            esc_attr( $toggle_class ),
+            $item['ID'],
+            esc_attr( $toggle_action ),
+            esc_attr( $toggle_title ),
+            esc_attr( $toggle_icon )
         );
         
         if ( in_array( $item['status'], [ 'needs_repair', 'validation_failed', 'missing_content' ] ) ) {

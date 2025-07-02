@@ -954,8 +954,7 @@ function confirmLink(theLink, theConfirmMsg) {
 		return false;
 	}
 
-	let is_confirmed = confirm(theConfirmMsg + "\n");
-	if (is_confirmed) {
+	const processLink = function() {
 		let link = theLink.href;
 		// Check if href is empty, null, or just a hash (#)
 		if (link == null || link === '' || link.endsWith('#')) {
@@ -972,6 +971,15 @@ function confirmLink(theLink, theConfirmMsg) {
 			link += '?is_js_confirmed=1';
 		}
 		window.location.href = link;
+	};
+
+	if (typeof MDSModalUtility !== 'undefined') {
+		MDSModalUtility.confirm(theConfirmMsg, processLink);
+	} else {
+		let is_confirmed = confirm(theConfirmMsg + "\n");
+		if (is_confirmed) {
+			processLink();
+		}
 	}
 
 	return false;

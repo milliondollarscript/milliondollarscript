@@ -148,6 +148,12 @@ class MDSPageMetadataRepository {
      * @return bool|WP_Error
      */
     public function save( MDSPageMetadata $metadata ) {
+        // Check if tables exist before attempting save
+        if ( !$this->tablesExist() ) {
+            error_log( "MDS Repository: Metadata tables do not exist, cannot save" );
+            return new WP_Error( 'tables_missing', 'Metadata tables do not exist' );
+        }
+        
         // Validate metadata
         $validation_errors = $metadata->validate();
         if ( !empty( $validation_errors ) ) {

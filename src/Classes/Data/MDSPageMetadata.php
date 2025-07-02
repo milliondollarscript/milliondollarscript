@@ -69,13 +69,26 @@ class MDSPageMetadata {
     public DateTime $updated_at;
     
     // Valid enum values
-    public const CREATION_METHODS = ['wizard', 'manual', 'auto_detected', 'imported', 'api'];
+    public const CREATION_METHODS = ['wizard', 'manual', 'auto-detected', 'imported', 'api', 'manual_scan'];
     public const CONTENT_TYPES = ['shortcode', 'block', 'mixed', 'custom'];
     public const STATUSES = ['active', 'inactive', 'orphaned', 'error'];
     
     public const PAGE_TYPES = [
+        // Core MDS page types
         'grid', 'order', 'write-ad', 'confirm-order', 'payment', 
-        'manage', 'thank-you', 'list', 'upload', 'no-orders'
+        'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats',
+        
+        // Extension page types
+        'creator', 'leaderboard', 'dashboard', 'analytics', 
+        'creator-platform-tabs', 'platform-leaderboard', 'top-pixel-owners',
+        'creator-dashboard', 'platform-stats', 'creator-profile',
+        'analytics-dashboard', 'click-tracking', 'revenue-stats',
+        'performance-metrics', 'conversion-tracking', 'payment-gateway',
+        'order-history', 'invoice-generator', 'subscription-manager',
+        'discount-codes', 'ad-builder', 'template-selector', 'media-gallery',
+        'banner-rotator', 'campaign-manager', 'user-dashboard', 
+        'profile-manager', 'notification-center', 'referral-system',
+        'loyalty-program'
     ];
     
     /**
@@ -176,28 +189,35 @@ class MDSPageMetadata {
         $errors = [];
         
         if ( empty( $this->post_id ) ) {
-            $errors[] = Language::get( 'Post ID is required' );
+            $error_msg = Language::get( 'Post ID is required' );
+            $errors[] = $error_msg;
         }
         
         if ( empty( $this->page_type ) || !in_array( $this->page_type, self::PAGE_TYPES ) ) {
-            $errors[] = Language::get( 'Valid page type is required' );
+            $error_msg = Language::get( 'Valid page type is required' );
+            $errors[] = $error_msg;
         }
         
         if ( empty( $this->creation_method ) || !in_array( $this->creation_method, self::CREATION_METHODS ) ) {
-            $errors[] = Language::get( 'Valid creation method is required' );
+            $error_msg = Language::get( 'Valid creation method is required' );
+            $errors[] = $error_msg;
         }
         
         if ( empty( $this->content_type ) || !in_array( $this->content_type, self::CONTENT_TYPES ) ) {
-            $errors[] = Language::get( 'Valid content type is required' );
+            $error_msg = Language::get( 'Valid content type is required' );
+            $errors[] = $error_msg;
         }
         
         if ( empty( $this->status ) || !in_array( $this->status, self::STATUSES ) ) {
-            $errors[] = Language::get( 'Valid status is required' );
+            $error_msg = Language::get( 'Valid status is required' );
+            $errors[] = $error_msg;
         }
         
         if ( $this->confidence_score < 0 || $this->confidence_score > 1 ) {
-            $errors[] = Language::get( 'Confidence score must be between 0 and 1' );
+            $error_msg = Language::get( 'Confidence score must be between 0 and 1' );
+            $errors[] = $error_msg;
         }
+        
         
         return $errors;
     }
@@ -265,6 +285,7 @@ class MDSPageMetadata {
             'auto_detected' => Language::get( 'Auto-Detected' ),
             'imported' => Language::get( 'Imported' ),
             'api' => Language::get( 'API' ),
+            'manual_scan' => Language::get( 'Manual Scan' ),
             default => ucfirst( str_replace( '_', ' ', $this->creation_method ) )
         };
     }

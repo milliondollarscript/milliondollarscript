@@ -44,7 +44,7 @@ class MDSPageManagementInterface {
     
     private MDSPageMetadataManager $metadata_manager;
     private MDSPageDetectionEngine $detection_engine;
-    private MDSPageListTable $list_table;
+    private ?MDSPageListTable $list_table = null;
     
     /**
      * Constructor
@@ -71,7 +71,11 @@ class MDSPageManagementInterface {
         add_action( 'wp_ajax_mds_bulk_page_action', [ $this, 'handleBulkPageAction' ] );
         add_action( 'wp_ajax_mds_update_page_config', [ $this, 'handleUpdatePageConfig' ] );
         add_action( 'wp_ajax_mds_scan_page', [ $this, 'handleScanPage' ] );
+        add_action( 'wp_ajax_mds_scan_single_page', [ $this, 'handleScanPage' ] );
         add_action( 'wp_ajax_mds_repair_page', [ $this, 'handleRepairPage' ] );
+        add_action( 'wp_ajax_mds_activate_page', [ $this, 'handleActivatePage' ] );
+        add_action( 'wp_ajax_mds_deactivate_page', [ $this, 'handleDeactivatePage' ] );
+        add_action( 'wp_ajax_mds_delete_page', [ $this, 'handleDeletePage' ] );
         add_action( 'wp_ajax_mds_get_page_details', [ $this, 'handleGetPageDetails' ] );
         add_action( 'wp_ajax_mds_export_page_data', [ $this, 'handleExportPageData' ] );
         
@@ -89,6 +93,7 @@ class MDSPageManagementInterface {
         add_action( 'wp_ajax_mds_get_page_config', [ $this, 'handleGetPageConfig' ] );
         add_action( 'wp_ajax_mds_save_page_config', [ $this, 'handleSavePageConfig' ] );
         add_action( 'wp_ajax_mds_reset_page_statuses', [ $this, 'handleResetPageStatuses' ] );
+        add_action( 'wp_ajax_mds_validate_all_pages', [ $this, 'handleValidateAllPages' ] );
         
         // Handle form submissions
         add_action( 'admin_post_mds_manage_pages', [ $this, 'handleFormSubmission' ] );
@@ -125,8 +130,16 @@ class MDSPageManagementInterface {
      * @return void
      */
     public function initializeListTable(): void {
-        $this->list_table = new MDSPageListTable();
-        $this->list_table->prepare_items();
+        try {
+            $this->list_table = new MDSPageListTable();
+            $this->list_table->prepare_items();
+        } catch ( \Exception $e ) {
+            Logs::log( 'list_table_init_error', 'Failed to initialize list table', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ] );
+            $this->list_table = null;
+        }
     }
     
     /**
@@ -176,25 +189,25 @@ class MDSPageManagementInterface {
         
         wp_enqueue_script(
             'mds-page-management',
-            MDS_BASE_URL . 'assets/js/admin/page-management.js',
+            MDS_BASE_URL . 'src/Assets/js/admin/page-management.min.js',
             [ 'jquery', 'wp-util', 'jquery-ui-dialog' ],
-            MDS_VERSION,
+            filemtime( MDS_BASE_PATH . 'src/Assets/js/admin/page-management.min.js' ),
             true
         );
         
         wp_enqueue_script(
             'mds-error-resolution',
-            MDS_BASE_URL . 'assets/js/admin/error-resolution.js',
+            MDS_BASE_URL . 'src/Assets/js/admin/error-resolution.min.js',
             [ 'mds-page-management' ],
-            MDS_VERSION,
+            filemtime( MDS_BASE_PATH . 'src/Assets/js/admin/error-resolution.min.js' ),
             true
         );
         
         wp_enqueue_style(
             'mds-page-management',
-            MDS_BASE_URL . 'assets/css/admin/page-management.css',
+            MDS_BASE_URL . 'src/Assets/css/admin/page-management.css',
             [ 'wp-jquery-ui-dialog' ],
-            MDS_VERSION
+            filemtime( MDS_BASE_PATH . 'src/Assets/css/admin/page-management.css' ),
         );
         
         wp_localize_script( 'mds-page-management', 'mdsPageManagement', [
@@ -240,7 +253,12 @@ class MDSPageManagementInterface {
                 'analyzing_page_errors' => Language::get( 'Analyzing page for errors...' ),
                 'page_error_analysis' => Language::get( 'Page Error Analysis' ),
                 'error_scan_failed' => Language::get( 'Error Scan Failed' ),
-                'error_scan_request_failed' => Language::get( 'Failed to send error scan request.' )
+                'error_scan_request_failed' => Language::get( 'Failed to send error scan request.' ),
+                'confirm_delete' => Language::get( 'Confirm Delete' ),
+                'cancel' => Language::get( 'Cancel' ),
+                'delete' => Language::get( 'Delete' ),
+                'action_completed' => Language::get( 'Action Completed' ),
+                'action_failed' => Language::get( 'Action Failed' )
             ]
         ] );
     }
@@ -365,7 +383,13 @@ class MDSPageManagementInterface {
             <!-- Page List Table -->
             <form method="post" id="mds-pages-form">
                 <?php wp_nonce_field( 'mds_page_management_nonce', 'mds_nonce' ); ?>
-                <?php $this->list_table->display(); ?>
+                <?php if ( $this->list_table ): ?>
+                    <?php $this->list_table->display(); ?>
+                <?php else: ?>
+                    <div class="notice notice-error">
+                        <p><?php echo esc_html( Language::get( 'List table initialization failed. Please refresh the page.' ) ); ?></p>
+                    </div>
+                <?php endif; ?>
             </form>
             
             <!-- Page Details Modal -->
@@ -1140,6 +1164,24 @@ class MDSPageManagementInterface {
                         $success_count++;
                         break;
                         
+                    case 'remove_from_list':
+                        $post = get_post( $page_id );
+                        if ( !$post ) {
+                            $error_count++;
+                            $errors[] = sprintf( Language::get( 'Post with ID %d does not exist' ), $page_id );
+                            break;
+                        }
+                        
+                        // Only remove metadata, keep the WordPress page
+                        $delete_result = $this->metadata_manager->deleteMetadata( $page_id );
+                        if ( is_wp_error( $delete_result ) ) {
+                            $error_count++;
+                            $errors[] = sprintf( Language::get( 'Failed to remove %s from MDS management: %s' ), $post->post_title, $delete_result->get_error_message() );
+                        } else {
+                            $success_count++;
+                        }
+                        break;
+                        
                     default:
                         $error_count++;
                         $errors[] = sprintf( Language::get( 'Unknown action: %s' ), $action );
@@ -1197,19 +1239,64 @@ class MDSPageManagementInterface {
         
         $repairs_made = [];
         
+        // Check and repair page type first (before content repairs)
+        $current_page_type = $metadata->page_type;
+        
+        try {
+            $detection_engine = new \MillionDollarScript\Classes\Data\MDSPageDetectionEngine();
+            $detection_result = $detection_engine->detectMDSPage( $page_id );
+            
+            if ( $detection_result['is_mds_page'] && $detection_result['page_type'] && 
+                 $detection_result['page_type'] !== $current_page_type &&
+                 $detection_result['confidence'] >= 0.7 ) { // Use same confidence threshold as detection
+                
+                // Update the page type in metadata
+                $update_result = $this->metadata_manager->updatePageType( $page_id, $detection_result['page_type'] );
+                
+                if ( is_wp_error( $update_result ) ) {
+                    Logs::log( "Failed to update page type for page {$page_id}: " . $update_result->get_error_message(), Logs::LEVEL_ERROR );
+                    $repairs_made[] = sprintf( 
+                        Language::get( 'Failed to correct page type: %s' ), 
+                        $update_result->get_error_message()
+                    );
+                    $page_type = $current_page_type; // Keep original type
+                } else {
+                    $repairs_made[] = sprintf( 
+                        Language::get( 'Corrected page type from "%s" to "%s"' ), 
+                        $current_page_type, 
+                        $detection_result['page_type'] 
+                    );
+                    // Use the corrected page type for subsequent repairs
+                    $page_type = $detection_result['page_type'];
+                    $metadata->page_type = $page_type; // Update local object
+                    
+                    Logs::log( "Successfully corrected page type for page {$page_id}: '{$current_page_type}' -> '{$detection_result['page_type']}'", Logs::LEVEL_INFO );
+                }
+            } else {
+                $page_type = $current_page_type;
+                Logs::log( "No page type correction needed for page {$page_id}", Logs::LEVEL_DEBUG );
+            }
+        } catch ( \Exception $e ) {
+            Logs::log( "Error during page type detection/repair for page {$page_id}: " . $e->getMessage(), Logs::LEVEL_ERROR );
+            $repairs_made[] = sprintf( 
+                Language::get( 'Page type detection failed: %s' ), 
+                $e->getMessage()
+            );
+            $page_type = $current_page_type; // Keep original type
+        }
+        
         // Check and repair content
         $content = $post->post_content;
-        $page_type = $metadata->getPageType();
         
         // Repair missing shortcodes
-        if ( !has_shortcode( $content, 'milliondollarscript' ) && $metadata->getContentType() === 'shortcode' ) {
+        if ( !has_shortcode( $content, 'milliondollarscript' ) && $metadata->content_type === 'shortcode' ) {
             $shortcode = sprintf( '[milliondollarscript type="%s"]', $page_type );
             $content = $shortcode . "\n\n" . $content;
             $repairs_made[] = Language::get( 'Added missing shortcode' );
         }
         
         // Repair missing blocks
-        if ( !has_blocks( $content ) && $metadata->getContentType() === 'block' ) {
+        if ( !has_blocks( $content ) && $metadata->content_type === 'block' ) {
             $block = sprintf( '<!-- wp:milliondollarscript/%s-block /-->', $page_type );
             $content = $block . "\n\n" . $content;
             $repairs_made[] = Language::get( 'Added missing block' );
@@ -1240,18 +1327,67 @@ class MDSPageManagementInterface {
      * @return void
      */
     public function handleBulkPageAction(): void {
-        check_ajax_referer( 'mds_page_management_nonce', 'nonce' );
-        
-        if ( !current_user_can( 'manage_options' ) ) {
-            wp_die( Language::get( 'Insufficient permissions' ) );
+        try {
+            if ( !check_ajax_referer( 'mds_page_management_nonce', 'nonce', false ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Security check failed. Please refresh the page and try again.' ),
+                    'code' => 'nonce_verification_failed'
+                ] );
+                return;
+            }
+            
+            if ( !current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Insufficient permissions' ),
+                    'code' => 'insufficient_permissions'
+                ] );
+                return;
+            }
+            
+            $action = sanitize_key( $_POST['action_type'] ?? '' );
+            $page_ids = array_map( 'intval', $_POST['page_ids'] ?? [] );
+            
+            if ( empty( $action ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'No action specified' ),
+                    'code' => 'missing_action'
+                ] );
+                return;
+            }
+            
+            if ( empty( $page_ids ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'No pages selected' ),
+                    'code' => 'missing_page_ids'
+                ] );
+                return;
+            }
+            
+            $allowed_actions = [ 'scan', 'repair', 'delete', 'activate', 'deactivate', 'remove_from_list' ];
+            if ( !in_array( $action, $allowed_actions, true ) ) {
+                wp_send_json_error( [
+                    'message' => sprintf( Language::get( 'Invalid action: %s' ), $action ),
+                    'code' => 'invalid_action'
+                ] );
+                return;
+            }
+            
+            $results = $this->executeBulkAction( $action, $page_ids );
+            
+            wp_send_json_success( $results );
+            
+        } catch ( \Exception $e ) {
+            Logs::log( 'bulk_action_error', 'Failed to process bulk action', [
+                'error' => $e->getMessage(),
+                'action' => $action ?? 'unknown',
+                'page_ids' => $page_ids ?? []
+            ] );
+            
+            wp_send_json_error( [
+                'message' => Language::get( 'An error occurred while processing the bulk action.' ),
+                'code' => 'execution_error'
+            ] );
         }
-        
-        $action = sanitize_key( $_POST['action_type'] ?? '' );
-        $page_ids = array_map( 'intval', $_POST['page_ids'] ?? [] );
-        
-        $results = $this->executeBulkAction( $action, $page_ids );
-        
-        wp_send_json_success( $results );
     }
     
     /**
@@ -1290,10 +1426,20 @@ class MDSPageManagementInterface {
      * @return void
      */
     public function handleScanPage(): void {
-        check_ajax_referer( 'mds_page_management_nonce', 'nonce' );
+        if ( !check_ajax_referer( 'mds_page_management_nonce', 'nonce', false ) ) {
+            wp_send_json_error( [
+                'message' => Language::get( 'Security check failed. Please refresh the page and try again.' ),
+                'code' => 'nonce_verification_failed'
+            ] );
+            return;
+        }
         
         if ( !current_user_can( 'manage_options' ) ) {
-            wp_die( Language::get( 'Insufficient permissions' ) );
+            wp_send_json_error( [
+                'message' => Language::get( 'Insufficient permissions' ),
+                'code' => 'insufficient_permissions'
+            ] );
+            return;
         }
         
         $page_id = intval( $_POST['page_id'] ?? 0 );
@@ -1320,9 +1466,17 @@ class MDSPageManagementInterface {
                 ] );
             }
         } else {
+            // Page is NOT an MDS page, but it's in our management list
+            // Offer to remove it from the list
+            $post = get_post( $page_id );
+            $post_title = $post ? $post->post_title : "Unknown Page";
+            
             wp_send_json_success( [
-                'message' => Language::get( 'Page is not an MDS page' ),
-                'result' => $result
+                'message' => sprintf( Language::get( 'Page "%s" is not an MDS page' ), $post_title ),
+                'result' => $result,
+                'offer_removal' => true,
+                'page_id' => $page_id,
+                'page_title' => $post_title
             ] );
         }
     }
@@ -1333,10 +1487,20 @@ class MDSPageManagementInterface {
      * @return void
      */
     public function handleRepairPage(): void {
-        check_ajax_referer( 'mds_page_management_nonce', 'nonce' );
+        if ( !check_ajax_referer( 'mds_page_management_nonce', 'nonce', false ) ) {
+            wp_send_json_error( [
+                'message' => Language::get( 'Security check failed. Please refresh the page and try again.' ),
+                'code' => 'nonce_verification_failed'
+            ] );
+            return;
+        }
         
         if ( !current_user_can( 'manage_options' ) ) {
-            wp_die( Language::get( 'Insufficient permissions' ) );
+            wp_send_json_error( [
+                'message' => Language::get( 'Insufficient permissions' ),
+                'code' => 'insufficient_permissions'
+            ] );
+            return;
         }
         
         $page_id = intval( $_POST['page_id'] ?? 0 );
@@ -1347,6 +1511,141 @@ class MDSPageManagementInterface {
             wp_send_json_success( $result );
         } else {
             wp_send_json_error( $result['message'] );
+        }
+    }
+    
+    /**
+     * Handle activate page AJAX request
+     *
+     * @return void
+     */
+    public function handleActivatePage(): void {
+        try {
+            if ( !check_ajax_referer( 'mds_page_management_nonce', 'nonce', false ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Security check failed. Please refresh the page and try again.' ),
+                    'code' => 'nonce_verification_failed'
+                ] );
+                return;
+            }
+            
+            if ( !current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Insufficient permissions' ),
+                    'code' => 'insufficient_permissions'
+                ] );
+                return;
+            }
+            
+            $page_id = intval( $_POST['page_id'] ?? 0 );
+            
+            if ( empty( $page_id ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'No page ID provided' ),
+                    'code' => 'missing_page_id'
+                ] );
+                return;
+            }
+            
+            $result = $this->executeBulkAction( 'activate', [ $page_id ] );
+            
+            wp_send_json_success( $result );
+            
+        } catch ( \Exception $e ) {
+            wp_send_json_error( [
+                'message' => Language::get( 'An error occurred while activating the page.' ),
+                'code' => 'execution_error'
+            ] );
+        }
+    }
+    
+    /**
+     * Handle deactivate page AJAX request
+     *
+     * @return void
+     */
+    public function handleDeactivatePage(): void {
+        try {
+            if ( !check_ajax_referer( 'mds_page_management_nonce', 'nonce', false ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Security check failed. Please refresh the page and try again.' ),
+                    'code' => 'nonce_verification_failed'
+                ] );
+                return;
+            }
+            
+            if ( !current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Insufficient permissions' ),
+                    'code' => 'insufficient_permissions'
+                ] );
+                return;
+            }
+            
+            $page_id = intval( $_POST['page_id'] ?? 0 );
+            
+            if ( empty( $page_id ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'No page ID provided' ),
+                    'code' => 'missing_page_id'
+                ] );
+                return;
+            }
+            
+            $result = $this->executeBulkAction( 'deactivate', [ $page_id ] );
+            
+            wp_send_json_success( $result );
+            
+        } catch ( \Exception $e ) {
+            wp_send_json_error( [
+                'message' => Language::get( 'An error occurred while deactivating the page.' ),
+                'code' => 'execution_error'
+            ] );
+        }
+    }
+    
+    /**
+     * Handle delete page AJAX request
+     *
+     * @return void
+     */
+    public function handleDeletePage(): void {
+        try {
+            if ( !check_ajax_referer( 'mds_page_management_nonce', 'nonce', false ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Security check failed. Please refresh the page and try again.' ),
+                    'code' => 'nonce_verification_failed'
+                ] );
+                return;
+            }
+            
+            if ( !current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Insufficient permissions' ),
+                    'code' => 'insufficient_permissions'
+                ] );
+                return;
+            }
+            
+            $page_id = intval( $_POST['page_id'] ?? 0 );
+            
+            if ( empty( $page_id ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'No page ID provided' ),
+                    'code' => 'missing_page_id'
+                ] );
+                return;
+            }
+            
+            $result = $this->executeBulkAction( 'delete', [ $page_id ] );
+            
+            wp_send_json_success( $result );
+            
+        } catch ( \Exception $e ) {
+            wp_send_json_error( [
+                'message' => Language::get( 'An error occurred while deleting the page.' ),
+                'code' => 'execution_error'
+            ] );
         }
     }
     
@@ -1813,13 +2112,27 @@ class MDSPageManagementInterface {
                     
                     // Ensure database is ready before saving
                     if ( !$this->metadata_manager->isDatabaseReady() ) {
+                        error_log( "MDS Scan: Database not ready for page {$page_id}, attempting to initialize..." );
                         $init_result = $this->metadata_manager->initialize();
                         if ( is_wp_error( $init_result ) ) {
+                            error_log( "MDS Scan: Database initialization failed for page {$page_id}: " . $init_result->get_error_message() );
                             throw new Exception( 'Failed to initialize metadata database: ' . $init_result->get_error_message() );
                         }
+                        error_log( "MDS Scan: Database initialization successful for page {$page_id}" );
                     }
                     
+                    // Log the save attempt
+                    error_log( "MDS Scan: Attempting to save metadata for page {$page_id} with type '{$page_type}' and method '{$creation_method}'" );
+                    error_log( "MDS Scan: Additional data for page {$page_id}: " . wp_json_encode( $additional_data ) );
+                    
                     $metadata_result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $page_type, $creation_method, $additional_data );
+                    
+                    // Log the save result
+                    if ( is_wp_error( $metadata_result ) ) {
+                        error_log( "MDS Scan: Metadata save FAILED for page {$page_id}: " . $metadata_result->get_error_message() );
+                    } else {
+                        error_log( "MDS Scan: Metadata save SUCCESS for page {$page_id}" );
+                    }
                     
                     // Check if metadata creation was successful
                     if ( is_wp_error( $metadata_result ) ) {
@@ -1839,6 +2152,11 @@ class MDSPageManagementInterface {
                         ];
                     } else {
                         $found_in_batch++;
+                        
+                        // Clear post cache to ensure the post is available immediately
+                        clean_post_cache( $page_id );
+                        wp_cache_delete( $page_id, 'posts' );
+                        
                         $batch_results[] = [
                             'page_id' => $page_id,
                             'found' => true,
@@ -1884,10 +2202,29 @@ class MDSPageManagementInterface {
             global $wpdb;
             $wpdb->flush();
             
-            // Add delay to ensure database commits are fully processed
+            // Add delay and cache clearing to ensure database commits are fully processed
             // This prevents race condition when page refreshes too quickly
             if ( $found_in_batch > 0 || $scan_data['found_pages'] > 0 ) {
-                usleep( 500000 ); // 0.5 second delay when pages were found
+                // Clear any WordPress caches that might prevent new pages from appearing
+                if ( function_exists( 'wp_cache_flush' ) ) {
+                    wp_cache_flush();
+                }
+                
+                // Clear object cache
+                if ( function_exists( 'wp_cache_flush_group' ) ) {
+                    wp_cache_flush_group( 'mds_pages' );
+                }
+                
+                // Clear page-related caches that might affect the management interface
+                wp_cache_delete( 'all_page_ids', 'posts' );
+                wp_cache_delete( 'get_pages', 'posts' );
+                
+                // Clear any persistent object cache
+                if ( function_exists( 'wp_cache_flush_runtime' ) ) {
+                    wp_cache_flush_runtime();
+                }
+                
+                usleep( 1500000 ); // 1.5 second delay when pages were found (increased for better reliability)
             }
             
             // Log completion for debugging
@@ -1958,29 +2295,15 @@ class MDSPageManagementInterface {
             wp_die( Language::get( 'Insufficient permissions' ) );
         }
         
-        // First run the compatibility page error scanning
-        $compatibility_errors = $this->runCompatibilityErrorScan();
-        
-        // Then get pages with metadata issues
-        $all_pages = $this->metadata_manager->getAllPages();
-        $pages_with_issues = array_filter( $all_pages, function( $metadata ) {
-            return in_array( $metadata->status, [ 'needs_repair', 'validation_failed', 'missing_content' ] );
-        } );
-        $page_ids = array_map( function( $metadata ) {
-            return $metadata->post_id;
-        }, $pages_with_issues );
-        
-        // Also scan for general page errors
+        // Use the same logic as handleFixAllErrors to avoid duplication
         $page_errors = $this->scanForPageErrors();
-        $auto_fixable_errors = array_filter( $page_errors, function( $error ) {
-            return $error['auto_fixable'];
-        } );
+        $compatibility_errors = $this->runCompatibilityErrorScan();
         
         $total_fixes = 0;
         $total_errors = 0;
         $fix_messages = [];
         
-        // Apply compatibility fixes first
+        // Apply compatibility fixes first (includes page type fixes)
         if ( !empty( $compatibility_errors['auto_fixable'] ) ) {
             foreach ( $compatibility_errors['auto_fixable'] as $error ) {
                 $fix_result = $this->applyCompatibilityFix( $error );
@@ -1991,14 +2314,18 @@ class MDSPageManagementInterface {
                 }
             }
             $fix_messages[] = sprintf( 
-                Language::get( 'Compatibility: %d fixes applied' ), 
+                Language::get( 'Compatibility fixes: %d applied' ), 
                 count( $compatibility_errors['auto_fixable'] ) 
             );
         }
         
-        // Apply page error fixes
-        if ( !empty( $auto_fixable_errors ) ) {
-            foreach ( $auto_fixable_errors as $error ) {
+        // Apply page content error fixes
+        $auto_fixable_page_errors = array_filter( $page_errors, function( $error ) {
+            return $error['auto_fixable'] ?? false;
+        } );
+        
+        if ( !empty( $auto_fixable_page_errors ) ) {
+            foreach ( $auto_fixable_page_errors as $error ) {
                 $fix_result = $this->applyErrorFix( $error );
                 if ( $fix_result['success'] ) {
                     $total_fixes++;
@@ -2007,19 +2334,28 @@ class MDSPageManagementInterface {
                 }
             }
             $fix_messages[] = sprintf( 
-                Language::get( 'Page errors: %d fixes applied' ), 
-                count( $auto_fixable_errors ) 
+                Language::get( 'Content fixes: %d applied' ), 
+                count( $auto_fixable_page_errors ) 
             );
         }
         
-        // Run standard repair on pages with issues
-        if ( !empty( $page_ids ) ) {
+        // Finally, run standard repair on any remaining pages with status issues
+        $all_pages = $this->metadata_manager->getAllPages();
+        $pages_with_issues = array_filter( $all_pages, function( $metadata ) {
+            return in_array( $metadata->status, [ 'needs_repair', 'validation_failed', 'missing_content' ] );
+        } );
+        
+        if ( !empty( $pages_with_issues ) ) {
+            $page_ids = array_map( function( $metadata ) {
+                return $metadata->post_id;
+            }, $pages_with_issues );
+            
             $results = $this->executeBulkAction( 'repair', $page_ids );
             if ( $results['success'] ) {
                 $total_fixes += $results['success_count'];
                 $total_errors += $results['error_count'];
                 $fix_messages[] = sprintf( 
-                    Language::get( 'Standard repairs: %d pages processed' ), 
+                    Language::get( 'Status repairs: %d pages processed' ), 
                     $results['success_count'] 
                 );
             }
@@ -2063,15 +2399,37 @@ class MDSPageManagementInterface {
             wp_die( Language::get( 'Insufficient permissions' ) );
         }
         
-        $errors = $this->scanForPageErrors();
-        
-        wp_send_json_success( [
-            'errors' => $errors,
-            'total_errors' => count( $errors ),
-            'auto_fixable' => count( array_filter( $errors, function( $error ) {
-                return $error['auto_fixable'];
-            } ) )
-        ] );
+        try {
+            Logs::log( 'Starting error scan process', Logs::LEVEL_INFO );
+            
+            // Get both page errors and compatibility errors
+            $page_errors = $this->scanForPageErrors();
+            Logs::log( 'Found ' . count( $page_errors ) . ' page content errors', Logs::LEVEL_INFO );
+            
+            $compatibility_errors = $this->runCompatibilityErrorScan();
+            Logs::log( 'Found ' . count( $compatibility_errors['auto_fixable'] ?? [] ) . ' compatibility errors', Logs::LEVEL_INFO );
+            
+            // Combine all errors into a single array
+            $all_errors = array_merge( $page_errors, $compatibility_errors['auto_fixable'] ?? [] );
+            
+            wp_send_json_success( [
+                'errors' => $all_errors,
+                'total_errors' => count( $all_errors ),
+                'auto_fixable' => count( array_filter( $all_errors, function( $error ) {
+                    return $error['auto_fixable'] ?? false;
+                } ) )
+            ] );
+        } catch ( \Exception $e ) {
+            Logs::log( 'Error scanning for page errors: ' . $e->getMessage(), Logs::LEVEL_ERROR );
+            wp_send_json_error( [
+                'message' => Language::get( 'Error scanning failed: ' ) . $e->getMessage(),
+                'debug_info' => [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
+            ] );
+        }
     }
     
     /**
@@ -2086,15 +2444,29 @@ class MDSPageManagementInterface {
             wp_die( Language::get( 'Insufficient permissions' ) );
         }
         
-        $errors = $this->scanForPageErrors();
-        $auto_fixable_errors = array_filter( $errors, function( $error ) {
-            return $error['auto_fixable'];
-        } );
+        // Get both page errors and compatibility errors
+        $page_errors = $this->scanForPageErrors();
+        $compatibility_errors = $this->runCompatibilityErrorScan();
         
         $fixed_count = 0;
         $failed_count = 0;
         
-        foreach ( $auto_fixable_errors as $error ) {
+        // Fix compatibility errors first (includes page type fixes)
+        foreach ( $compatibility_errors['auto_fixable'] ?? [] as $error ) {
+            $fix_result = $this->applyCompatibilityFix( $error );
+            if ( $fix_result['success'] ) {
+                $fixed_count++;
+            } else {
+                $failed_count++;
+            }
+        }
+        
+        // Then fix regular page errors
+        $auto_fixable_page_errors = array_filter( $page_errors, function( $error ) {
+            return $error['auto_fixable'] ?? false;
+        } );
+        
+        foreach ( $auto_fixable_page_errors as $error ) {
             $fix_result = $this->applyErrorFix( $error );
             if ( $fix_result['success'] ) {
                 $fixed_count++;
@@ -2147,6 +2519,7 @@ class MDSPageManagementInterface {
                 continue;
             }
             
+            // Check for content-based errors (missing shortcodes, blocks, etc.)
             $page_errors = $this->validatePage( $metadata, $post );
             if ( !empty( $page_errors ) ) {
                 $errors = array_merge( $errors, $page_errors );
@@ -2270,11 +2643,33 @@ class MDSPageManagementInterface {
                 break;
                 
             case 'incorrect_page_type':
-                $this->metadata_manager->updatePageType( $error['page_id'], $error['suggested_fix'] );
-                return [
-                    'success' => true,
-                    'message' => Language::get( 'Page type updated' )
-                ];
+                try {
+                    $page_type_to_set = $error['detected_type'] ?? $error['suggested_fix'];
+                    $result = $this->metadata_manager->updatePageType( $error['page_id'], $page_type_to_set );
+                    
+                    if ( is_wp_error( $result ) ) {
+                        Logs::log( 'Failed to update page type for page ' . $error['page_id'] . ': ' . $result->get_error_message(), Logs::LEVEL_ERROR );
+                        return [
+                            'success' => false,
+                            'message' => Language::get( 'Failed to update page type: ' ) . $result->get_error_message()
+                        ];
+                    }
+                    
+                    Logs::log( 'Successfully updated page type for page ' . $error['page_id'] . ' to ' . $page_type_to_set, Logs::LEVEL_INFO );
+                    return [
+                        'success' => true,
+                        'message' => sprintf( 
+                            Language::get( 'Page type updated to "%s"' ), 
+                            $page_type_to_set 
+                        )
+                    ];
+                } catch ( \Exception $e ) {
+                    Logs::log( 'Exception updating page type for page ' . $error['page_id'] . ': ' . $e->getMessage(), Logs::LEVEL_ERROR );
+                    return [
+                        'success' => false,
+                        'message' => Language::get( 'Error updating page type: ' ) . $e->getMessage()
+                    ];
+                }
                 
             default:
                 return [
@@ -2344,9 +2739,111 @@ class MDSPageManagementInterface {
             ];
         }
         
+        // Check for pages with incorrect page types
+        $pages_with_wrong_types = $this->checkForIncorrectPageTypes();
+        if ( !empty( $pages_with_wrong_types ) ) {
+            foreach ( $pages_with_wrong_types as $page_error ) {
+                $errors['auto_fixable'][] = [
+                    'type' => 'incorrect_page_type',
+                    'page_id' => $page_error['page_id'],
+                    'page_title' => $page_error['page_title'],
+                    'current_type' => $page_error['current_type'],
+                    'detected_type' => $page_error['detected_type'],
+                    'severity' => 'medium',
+                    'message' => Language::get( 'Incorrect page type detected' ),
+                    'description' => sprintf( 
+                        Language::get( 'Page "%s" is classified as "%s" but should be "%s"' ),
+                        $page_error['page_title'],
+                        $page_error['current_type'],
+                        $page_error['detected_type']
+                    ),
+                    'auto_fixable' => true
+                ];
+            }
+        }
+        
         $errors['total'] = count( $errors['auto_fixable'] ) + count( $errors['manual_fix'] );
         
         return $errors;
+    }
+    
+    /**
+     * Check for pages with incorrect page types
+     *
+     * @return array
+     */
+    private function checkForIncorrectPageTypes(): array {
+        $pages_with_wrong_types = [];
+        
+        try {
+            $detection_engine = new \MillionDollarScript\Classes\Data\MDSPageDetectionEngine();
+            
+            // Get all pages with metadata
+            $all_pages = $this->metadata_manager->getAllPages();
+            Logs::log( 'Checking page types for ' . count( $all_pages ) . ' pages with metadata', Logs::LEVEL_INFO );
+            
+            if ( empty( $all_pages ) ) {
+                Logs::log( 'No pages with metadata found for page type checking', Logs::LEVEL_WARNING );
+                return [];
+            }
+        } catch ( \Exception $e ) {
+            Logs::log( 'Error initializing page type checking: ' . $e->getMessage(), Logs::LEVEL_ERROR );
+            return [];
+        }
+        
+        foreach ( $all_pages as $metadata ) {
+            $page_id = $metadata->post_id;
+            $current_type = $metadata->page_type;
+            
+            // Skip if no current type set
+            if ( empty( $current_type ) ) {
+                Logs::log( "Skipping page {$page_id} - no current type set", Logs::LEVEL_DEBUG );
+                continue;
+            }
+            
+            try {
+                // Run detection on the page
+                $detection_result = $detection_engine->detectMDSPage( $page_id );
+                
+                Logs::log( "Page {$page_id}: current='{$current_type}', detected='{$detection_result['page_type']}', confidence={$detection_result['confidence']}", Logs::LEVEL_DEBUG );
+                
+                // Check if detected type differs from current type
+                if ( $detection_result['is_mds_page'] && 
+                     !empty( $detection_result['page_type'] ) && 
+                     $detection_result['page_type'] !== $current_type &&
+                     $detection_result['confidence'] >= 0.7 ) { // Only flag high-confidence mismatches
+                    
+                    $post = get_post( $page_id );
+                    if ( $post ) {
+                        $pages_with_wrong_types[] = [
+                            'page_id' => $page_id,
+                            'page_title' => $post->post_title,
+                            'current_type' => $current_type,
+                            'detected_type' => $detection_result['page_type'],
+                            'confidence' => $detection_result['confidence']
+                        ];
+                        
+                        Logs::log( "Found page type mismatch for page {$page_id} ('{$post->post_title}'): '{$current_type}' -> '{$detection_result['page_type']}'", Logs::LEVEL_INFO );
+                    }
+                } else {
+                    // Log why the page wasn't flagged as having type errors
+                    if ( !$detection_result['is_mds_page'] ) {
+                        Logs::log( "Page {$page_id} not detected as MDS page, skipping type check", Logs::LEVEL_DEBUG );
+                    } else if ( empty( $detection_result['page_type'] ) ) {
+                        Logs::log( "Page {$page_id} has no detected page type, skipping", Logs::LEVEL_DEBUG );
+                    } else if ( $detection_result['page_type'] === $current_type ) {
+                        Logs::log( "Page {$page_id} page type matches ('{$current_type}'), no error", Logs::LEVEL_DEBUG );
+                    } else if ( $detection_result['confidence'] < 0.7 ) {
+                        Logs::log( "Page {$page_id} page type mismatch but low confidence ({$detection_result['confidence']}) - not flagging", Logs::LEVEL_DEBUG );
+                    }
+                }
+            } catch ( \Exception $e ) {
+                Logs::log( "Error detecting page type for page {$page_id}: " . $e->getMessage(), Logs::LEVEL_ERROR );
+            }
+        }
+        
+        Logs::log( 'Found ' . count( $pages_with_wrong_types ) . ' pages with incorrect page types', Logs::LEVEL_INFO );
+        return $pages_with_wrong_types;
     }
     
     /**
@@ -2400,6 +2897,37 @@ class MDSPageManagementInterface {
                     return [
                         'success' => false,
                         'message' => Language::get( 'Failed to create missing metadata: ' ) . $e->getMessage()
+                    ];
+                }
+                
+            case 'incorrect_page_type':
+                try {
+                    $page_id = $error['page_id'] ?? 0;
+                    if ( !$page_id ) {
+                        return [
+                            'success' => false,
+                            'message' => Language::get( 'No page ID provided for page type correction' )
+                        ];
+                    }
+                    
+                    // Use existing repair functionality to fix page type
+                    $repair_result = $this->repairPage( $page_id );
+                    
+                    if ( $repair_result['success'] ) {
+                        return [
+                            'success' => true,
+                            'message' => $repair_result['message'] ?? Language::get( 'Page type corrected successfully' )
+                        ];
+                    } else {
+                        return [
+                            'success' => false,
+                            'message' => $repair_result['message'] ?? Language::get( 'Failed to correct page type' )
+                        ];
+                    }
+                } catch ( \Exception $e ) {
+                    return [
+                        'success' => false,
+                        'message' => sprintf( Language::get( 'Error correcting page type: %s' ), $e->getMessage() )
                     ];
                 }
                 
@@ -2902,5 +3430,109 @@ class MDSPageManagementInterface {
             'diagnosis' => $diagnosis,
             'timestamp' => current_time( 'mysql' )
         ] );
+    }
+    
+    /**
+     * Handle validate all pages AJAX request
+     * Scans all MDS pages to find those that are no longer MDS pages and offers removal
+     *
+     * @return void
+     */
+    public function handleValidateAllPages(): void {
+        try {
+            if ( !check_ajax_referer( 'mds_page_management_nonce', 'nonce', false ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Security check failed. Please refresh the page and try again.' ),
+                    'code' => 'nonce_verification_failed'
+                ] );
+                return;
+            }
+            
+            if ( !current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( [
+                    'message' => Language::get( 'Insufficient permissions' ),
+                    'code' => 'insufficient_permissions'
+                ] );
+                return;
+            }
+            
+            // Get all pages currently in MDS management
+            $managed_pages = $this->metadata_manager->getAllPages();
+            
+            $validation_results = [
+                'total_checked' => 0,
+                'still_valid' => 0,
+                'invalid_pages' => [],
+                'errors' => []
+            ];
+            
+            foreach ( $managed_pages as $metadata ) {
+                $validation_results['total_checked']++;
+                
+                try {
+                    // Check if page still exists
+                    $post = get_post( $metadata->post_id );
+                    if ( !$post ) {
+                        $validation_results['invalid_pages'][] = [
+                            'id' => $metadata->post_id,
+                            'title' => '(Post no longer exists)',
+                            'reason' => 'Post has been deleted from WordPress',
+                            'action' => 'remove_metadata'
+                        ];
+                        continue;
+                    }
+                    
+                    // Re-scan the page to see if it's still an MDS page
+                    $detection_result = $this->detection_engine->detectMDSPage( $metadata->post_id );
+                    
+                    if ( !$detection_result['is_mds_page'] || $detection_result['confidence'] < 0.3 ) {
+                        $validation_results['invalid_pages'][] = [
+                            'id' => $metadata->post_id,
+                            'title' => $post->post_title,
+                            'reason' => 'Page no longer contains MDS content (confidence: ' . round( $detection_result['confidence'] * 100, 1 ) . '%)',
+                            'action' => 'remove_from_management',
+                            'current_type' => $metadata->page_type,
+                            'detected_type' => $detection_result['page_type'] ?? 'none'
+                        ];
+                    } else {
+                        $validation_results['still_valid']++;
+                        
+                        // Update metadata if page type has changed
+                        if ( $detection_result['page_type'] !== $metadata->page_type ) {
+                            $this->metadata_manager->createOrUpdateMetadata(
+                                $metadata->post_id,
+                                $detection_result['page_type'],
+                                'validate_all_updated'
+                            );
+                        }
+                    }
+                    
+                } catch ( \Exception $e ) {
+                    $validation_results['errors'][] = [
+                        'page_id' => $metadata->post_id,
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
+            
+            $message = sprintf(
+                Language::get( 'Validation completed: %d pages checked, %d still valid, %d invalid pages found' ),
+                $validation_results['total_checked'],
+                $validation_results['still_valid'],
+                count( $validation_results['invalid_pages'] )
+            );
+            
+            wp_send_json_success( [
+                'message' => $message,
+                'results' => $validation_results,
+                'stats' => $this->getPageStatistics()
+            ] );
+            
+        } catch ( \Exception $e ) {
+            wp_send_json_error( [
+                'message' => Language::get( 'An error occurred during validation: ' ) . $e->getMessage(),
+                'code' => 'validation_error'
+            ] );
+        }
     }
 } 

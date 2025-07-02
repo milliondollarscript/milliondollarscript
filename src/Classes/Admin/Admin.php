@@ -478,9 +478,9 @@ class Admin {
 		if ( $current_screen && strpos( $current_screen->id, 'mds-compatibility' ) !== false ) {
 			wp_enqueue_script(
 				MDS_PREFIX . 'error-resolution',
-				MDS_BASE_URL . 'assets/js/admin/error-resolution.js',
+				MDS_BASE_URL . 'src/Assets/js/admin/error-resolution.js',
 				[ 'jquery', 'wp-api' ],
-				filemtime( MDS_BASE_PATH . 'assets/js/admin/error-resolution.js' ),
+				filemtime( MDS_BASE_PATH . 'src/Assets/js/admin/error-resolution.js' ),
 				true
 			);
 		}

@@ -116,6 +116,30 @@ class MDSPageMetadataManager {
      * @return MDSPageMetadata|WP_Error
      */
     public function createOrUpdateMetadata( int $post_id, string $page_type, string $creation_method = 'manual', array $additional_data = [] ) {
+        // Validate input parameters
+        if ( $post_id <= 0 ) {
+            return new WP_Error( 'invalid_post_id', 'Post ID must be greater than 0' );
+        }
+        
+        if ( empty( $page_type ) ) {
+            return new WP_Error( 'invalid_page_type', 'Page type cannot be empty' );
+        }
+        
+        // Check if the post actually exists
+        $post = get_post( $post_id );
+        if ( !$post ) {
+            return new WP_Error( 'post_not_found', "Post {$post_id} does not exist" );
+        }
+        
+        // Ensure database tables exist
+        if ( !$this->repository->tablesExist() ) {
+            $table_creation_result = $this->repository->createTables();
+            if ( is_wp_error( $table_creation_result ) ) {
+                error_log( "MDS Metadata: Failed to create database tables: " . $table_creation_result->get_error_message() );
+                return $table_creation_result;
+            }
+        }
+        
         // Check if metadata already exists
         $existing = $this->repository->findByPostId( $post_id );
         
@@ -136,9 +160,9 @@ class MDSPageMetadataManager {
             
             $result = $this->repository->save( $existing );
             if ( is_wp_error( $result ) ) {
+                error_log( "MDS Metadata: Repository save FAILED for existing metadata: " . $result->get_error_message() );
                 return $result;
             }
-            
             return $existing;
         } else {
             // Create new metadata
@@ -157,9 +181,9 @@ class MDSPageMetadataManager {
             
             $result = $this->repository->save( $metadata );
             if ( is_wp_error( $result ) ) {
+                error_log( "MDS Metadata: Repository save FAILED for new metadata: " . $result->get_error_message() );
                 return $result;
             }
-            
             return $metadata;
         }
     }
@@ -182,6 +206,42 @@ class MDSPageMetadataManager {
      */
     public function hasMetadata( int $post_id ): bool {
         return $this->getMetadata( $post_id ) !== null;
+    }
+    
+    /**
+     * Update page status
+     *
+     * @param int $post_id
+     * @param string $status Status to set ('active', 'inactive', 'orphaned', 'error')
+     * @return bool|WP_Error
+     */
+    public function updatePageStatus( int $post_id, string $status ) {
+        // Validate input parameters
+        if ( $post_id <= 0 ) {
+            return new WP_Error( 'invalid_post_id', 'Post ID must be greater than 0' );
+        }
+        
+        $valid_statuses = [ 'active', 'inactive', 'orphaned', 'error' ];
+        if ( !in_array( $status, $valid_statuses, true ) ) {
+            return new WP_Error( 'invalid_status', 'Status must be one of: ' . implode( ', ', $valid_statuses ) );
+        }
+        
+        // Get existing metadata
+        $metadata = $this->getMetadata( $post_id );
+        if ( !$metadata ) {
+            return new WP_Error( 'metadata_not_found', "No metadata found for post ID {$post_id}" );
+        }
+        
+        // Update status
+        $metadata->status = $status;
+        
+        // Save updated metadata
+        $result = $this->repository->save( $metadata );
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+        
+        return true;
     }
     
     /**
@@ -568,5 +628,24 @@ class MDSPageMetadataManager {
      */
     public function getTotalPagesWithMetadata(): int {
         return $this->repository->count();
+    }
+    
+    /**
+     * Update page type for existing metadata
+     *
+     * @param int $post_id
+     * @param string $page_type
+     * @return bool|WP_Error
+     */
+    public function updatePageType( int $post_id, string $page_type ) {
+        $metadata = $this->repository->findByPostId( $post_id );
+        if ( !$metadata ) {
+            return new WP_Error( 'metadata_not_found', Language::get( 'No metadata found for page' ) );
+        }
+        
+        $metadata->page_type = $page_type;
+        $metadata->touch(); // Update the last_validated timestamp
+        
+        return $this->repository->save( $metadata );
     }
 } 

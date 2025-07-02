@@ -1368,17 +1368,17 @@ class Options {
 			],
 			[
 				'title' => Language::get('Order Pixels'),
-				'content' => '[milliondollarscript view="order"]',
+				'content' => '[milliondollarscript type="order"]',
 				'option_name' => 'users-order-page',
 			],
 			[
 				'title' => Language::get('Your Pixels'),
-				'content' => '[milliondollarscript view="pixels"]',
+				'content' => '[milliondollarscript type="manage"]',
 				'option_name' => 'users-pixels-page',
 			],
 			[
 				'title' => Language::get('Checkout'),
-				'content' => '[milliondollarscript view="checkout"]',
+				'content' => '[milliondollarscript type="confirm-order"]',
 				'option_name' => 'users-confirm-order-page',
 			],
 		];

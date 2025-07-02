@@ -17,9 +17,10 @@
         },
 
         bindEvents: function() {
-            // Compatibility page error scanning
-            $('#mds-scan-errors').on('click', this.scanForErrors.bind(this));
-            $('#mds-fix-all-errors').on('click', this.fixAllErrors.bind(this));
+            // Bind to error resolution buttons (works on both compatibility page and page management)
+            $('#mds-scan-errors').on('click.error-resolution', this.scanForErrors.bind(this));
+            $('#mds-repair-all-issues').on('click.error-resolution', this.fixAllErrors.bind(this));
+            $('#mds-fix-all-errors').on('click.error-resolution', this.fixAllErrors.bind(this));
             
             // Modal events
             $(document).on('click', '#mds-modal-close, #mds-modal-cancel', this.closeModal.bind(this));
@@ -65,28 +66,85 @@
                 window.mdsPageManagement.showProgress('Scanning for Page Errors', 'Analyzing pages for validation errors...');
             }
             $results.hide();
+            
+            // Set button to loading state with spinning icon
+            this.setButtonLoading($button, true);
             $button.prop('disabled', true);
             
-            // Make API call to get all pages with errors
+            // Make AJAX call using WordPress admin-ajax.php
             $.ajax({
-                url: '/wp-json/mds/v1/pages',
-                method: 'GET',
-                data: { status: 'error' },
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', wpApiSettings.nonce);
+                url: window.ajaxurl || '/wp-admin/admin-ajax.php',
+                method: 'POST',
+                data: {
+                    action: 'mds_scan_errors',
+                    nonce: window.mdsPageManagement ? window.mdsPageManagement.nonce : ''
                 }
             }).done(function(response) {
                 if (response.success && response.data) {
                     ErrorResolution.displayErrorResults(response.data);
                 } else {
-                    ErrorResolution.showError('Failed to scan for errors: ' + (response.message || 'Unknown error'));
+                    // Use modal notification instead of inline error
+                    let errorMessage = 'Scan failed';
+                    let errorDetails = [];
+                    
+                    if (response.data) {
+                        if (typeof response.data === 'string') {
+                            errorMessage += ': ' + response.data;
+                        } else if (response.data.message) {
+                            errorMessage += ': ' + response.data.message;
+                            
+                            // Add debug information if available
+                            if (response.data.debug_info) {
+                                if (response.data.debug_info.error) {
+                                    errorDetails.push('Error: ' + response.data.debug_info.error);
+                                }
+                                if (response.data.debug_info.file && response.data.debug_info.line) {
+                                    errorDetails.push('Location: ' + response.data.debug_info.file + ':' + response.data.debug_info.line);
+                                }
+                            }
+                        } else if (response.data.error) {
+                            errorMessage += ': ' + response.data.error;
+                        } else {
+                            errorMessage += ': Unable to complete scan';
+                        }
+                    } else {
+                        errorMessage += ': No specific error information available';
+                    }
+                    
+                    // Use NotificationModal if available, otherwise fallback to showError
+                    if (window.NotificationModal) {
+                        window.NotificationModal.show('error', 'Scan Error', errorMessage, errorDetails.length > 0 ? errorDetails : null);
+                    } else {
+                        ErrorResolution.showError(errorMessage);
+                    }
                 }
-            }).fail(function(xhr) {
-                ErrorResolution.showError('Error scanning pages: ' + xhr.statusText);
+            }).fail(function(xhr, status, error) {
+                // Provide more detailed error information for AJAX failures
+                let errorMessage = 'Unable to connect to server';
+                let errorDetails = [];
+                
+                if (xhr.status) {
+                    errorDetails.push('HTTP Status: ' + xhr.status);
+                }
+                if (status && status !== 'error') {
+                    errorDetails.push('Status: ' + status);
+                }
+                if (error) {
+                    errorDetails.push('Error: ' + error);
+                }
+                
+                // Use NotificationModal if available, otherwise fallback to showError
+                if (window.NotificationModal) {
+                    window.NotificationModal.show('error', 'Connection Error', errorMessage, errorDetails.length > 0 ? errorDetails : null);
+                } else {
+                    ErrorResolution.showError(errorMessage);
+                }
             }).always(function() {
                 if (window.mdsPageManagement && window.mdsPageManagement.hideProgress) {
                     window.mdsPageManagement.hideProgress();
                 }
+                // Reset button to normal state
+                ErrorResolution.setButtonLoading($button, false);
                 $button.prop('disabled', false);
             });
         },
@@ -260,6 +318,9 @@
 
         applyFix: function(pageId, $button, closeModal = false) {
             const originalText = $button.text();
+            
+            // Set button to loading state with spinning icon
+            this.setButtonLoading($button, true);
             $button.prop('disabled', true).text('Applying fixes...');
             
             $.ajax({
@@ -297,6 +358,8 @@
             }).fail(function(xhr) {
                 ErrorResolution.showError('Error applying fixes: ' + xhr.statusText);
             }).always(function() {
+                // Reset button to normal state
+                ErrorResolution.setButtonLoading($button, false);
                 $button.prop('disabled', false).text(originalText);
             });
         },
@@ -315,6 +378,8 @@
                 return;
             }
             
+            // Set button to loading state with spinning icon
+            this.setButtonLoading($button, true);
             $button.prop('disabled', true).text('Fixing all errors...');
             
             // Fix errors one by one
@@ -323,6 +388,8 @@
 
         fixErrorsBatch: function(pageIds, index, $button) {
             if (index >= pageIds.length) {
+                // Reset button to normal state
+                this.setButtonLoading($button, false);
                 $button.prop('disabled', false).text('Fix All Auto-Fixable Errors');
                 this.showSuccess('Completed fixing all auto-fixable errors!');
                 // Rescan for remaining errors
@@ -427,6 +494,34 @@
                 $notice.on('click', '.notice-dismiss', function() {
                     $notice.fadeOut();
                 });
+            }
+        },
+
+        /**
+         * Set button loading state with spinning icon
+         *
+         * @param {jQuery} $button - The button element
+         * @param {boolean} loading - Whether to set loading state or restore normal state
+         */
+        setButtonLoading: function($button, loading) {
+            const $icon = $button.find('.dashicons');
+            
+            if (loading) {
+                // Store original icon class for restoration
+                if (!$icon.data('original-class')) {
+                    $icon.data('original-class', $icon.attr('class'));
+                }
+                // Change to spinning update icon
+                $icon.removeClass().addClass('dashicons dashicons-update-alt').css({
+                    'animation': 'rotation 2s infinite linear'
+                });
+            } else {
+                // Restore original icon
+                const originalClass = $icon.data('original-class');
+                if (originalClass) {
+                    $icon.removeClass().attr('class', originalClass).css('animation', '');
+                    $icon.removeData('original-class');
+                }
             }
         }
     };

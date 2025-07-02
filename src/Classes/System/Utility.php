@@ -563,7 +563,7 @@ class Utility {
 			'order' => [
 				'option_name' => 'users-order-page',
 				'title' => Language::get( 'Order Pixels' ),
-				'content' => '[milliondollarscript view="order"]'
+				'content' => '[milliondollarscript type="order"]'
 			],
 			'grid' => [
 				'option_name' => 'grid-page',
@@ -573,7 +573,7 @@ class Utility {
 			'manage' => [
 				'option_name' => 'users-manage-page',
 				'title' => Language::get( 'Manage Pixels' ),
-				'content' => '[milliondollarscript view="manage"]'
+				'content' => '[milliondollarscript type="manage"]'
 			]
 		];
 		

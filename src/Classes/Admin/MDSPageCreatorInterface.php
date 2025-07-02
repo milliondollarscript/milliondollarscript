@@ -106,17 +106,17 @@ class MDSPageCreatorInterface {
         
         wp_enqueue_script(
             'mds-page-creator',
-            MDS_BASE_URL . 'assets/js/admin/page-creator.js',
+            MDS_BASE_URL . 'src/Assets/js/admin/page-creator.min.js',
             [ 'jquery', 'wp-util' ],
-            MDS_VERSION,
+            filemtime( MDS_BASE_PATH . 'src/Assets/js/admin/page-creator.min.js' ),
             true
         );
         
         wp_enqueue_style(
             'mds-page-creator',
-            MDS_BASE_URL . 'assets/css/admin/page-creator.css',
+            MDS_BASE_URL . 'src/Assets/css/admin/page-creator.css',
             [],
-            MDS_VERSION
+            filemtime( MDS_BASE_PATH . 'src/Assets/css/admin/page-creator.css' ),
         );
         
         wp_localize_script( 'mds-page-creator', 'mdsPageCreator', [

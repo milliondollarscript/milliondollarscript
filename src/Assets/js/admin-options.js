@@ -38,10 +38,11 @@ jQuery(document).ready(function ($) {
 		// Revert radio selection temporarily
 		$('input[name="_mds_theme_mode"][value="' + currentTheme + '"]').prop('checked', true);
 		
-		if (confirm("Switch Theme Mode?\n\n" + 
-				   "You are switching from " + currentTheme + " to " + newTheme + " mode.\n" + 
-				   "Your current settings will be backed up.\n\n" + 
-				   "Continue?")) {
+		const confirmMessage = "You are switching from " + currentTheme + " to " + newTheme + " mode.\n" + 
+							   "Your current settings will be backed up.\n\n" + 
+							   "Continue?";
+		
+		const processThemeSwitch = function() {
 			// User confirmed, apply the change
 			radioElement.prop('checked', true);
 			originalThemeValue = newTheme;
@@ -53,6 +54,12 @@ jQuery(document).ready(function ($) {
 			setTimeout(function() {
 				$('#submit').trigger('click');
 			}, 100);
+		};
+		
+		if (typeof MDSModalUtility !== 'undefined') {
+			MDSModalUtility.showConfirmation('Switch Theme Mode?', confirmMessage, processThemeSwitch);
+		} else if (confirm("Switch Theme Mode?\n\n" + confirmMessage)) {
+			processThemeSwitch();
 		}
 	}
 	

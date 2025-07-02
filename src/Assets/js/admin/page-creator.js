@@ -439,10 +439,22 @@
                 confirmMessage = mdsPageCreator.strings.confirm_update;
             }
             
-            if (!confirm(confirmMessage)) {
+            if (typeof MDSModalUtility !== 'undefined') {
+                MDSModalUtility.confirm(confirmMessage, () => {
+                    this.processCreatePages(formData);
+                });
+                return;
+            } else if (!confirm(confirmMessage)) {
                 return;
             }
             
+            this.processCreatePages(formData);
+        },
+        
+        /**
+         * Process page creation after confirmation
+         */
+        processCreatePages: function(formData) {
             $('#mds-create-pages').prop('disabled', true).text(mdsPageCreator.strings.creating);
             
             const data = {

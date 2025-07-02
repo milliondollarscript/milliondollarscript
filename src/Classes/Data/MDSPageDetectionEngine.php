@@ -43,15 +43,15 @@ class MDSPageDetectionEngine {
     private array $page_type_patterns = [
         'grid' => [
             'shortcode_attrs' => ['type' => 'grid', 'display' => 'grid'],
-            'content_keywords' => ['pixel', 'grid', 'buy pixel', 'advertising space'],
-            'title_keywords' => ['grid', 'pixel', 'advertising'],
+            'content_keywords' => ['pixel', 'grid', 'buy pixel', 'advertising space', 'milliondollarscript', 'million dollar script', 'pixel grid', 'ad space', 'advertisement blocks', 'pixelgrid'],
+            'title_keywords' => ['grid', 'pixel', 'advertising', 'milliondollarscript'],
             'block_names' => ['milliondollarscript/grid-block', 'carbon-fields/million-dollar-script'],
             'css_classes' => ['mds-grid', 'pixel-grid', 'advertising-grid']
         ],
         'order' => [
             'shortcode_attrs' => ['type' => 'order', 'display' => 'order'],
-            'content_keywords' => ['order', 'purchase', 'buy', 'payment', 'checkout'],
-            'title_keywords' => ['order', 'purchase', 'buy'],
+            'content_keywords' => ['pixel order', 'order pixel', 'buy pixel', 'purchase pixel', 'milliondollarscript order'],
+            'title_keywords' => ['order pixel', 'purchase pixel', 'buy pixel'],
             'block_names' => ['milliondollarscript/order-block'],
             'css_classes' => ['mds-order', 'order-form', 'purchase-form']
         ],
@@ -71,15 +71,15 @@ class MDSPageDetectionEngine {
         ],
         'payment' => [
             'shortcode_attrs' => ['type' => 'payment', 'display' => 'payment'],
-            'content_keywords' => ['payment', 'pay', 'paypal', 'stripe', 'credit card'],
-            'title_keywords' => ['payment', 'pay', 'checkout'],
+            'content_keywords' => ['pixel payment', 'pay for pixel', 'milliondollarscript payment', 'advertising payment'],
+            'title_keywords' => ['pixel payment', 'pay pixel', 'advertising payment'],
             'block_names' => ['milliondollarscript/payment-block'],
             'css_classes' => ['mds-payment', 'payment-form', 'checkout-form']
         ],
         'manage' => [
             'shortcode_attrs' => ['type' => 'manage', 'display' => 'manage'],
-            'content_keywords' => ['manage', 'dashboard', 'account', 'my orders', 'my ads'],
-            'title_keywords' => ['manage', 'dashboard', 'account', 'my'],
+            'content_keywords' => ['manage pixel', 'manage ads', 'pixel dashboard', 'my pixel orders', 'milliondollarscript manage'],
+            'title_keywords' => ['manage pixel', 'pixel dashboard', 'manage ads'],
             'block_names' => ['milliondollarscript/manage-block'],
             'css_classes' => ['mds-manage', 'user-dashboard', 'account-management']
         ],
@@ -110,6 +110,13 @@ class MDSPageDetectionEngine {
             'title_keywords' => ['no orders', 'empty', 'none'],
             'block_names' => ['milliondollarscript/no-orders-block'],
             'css_classes' => ['mds-no-orders', 'empty-state', 'no-content']
+        ],
+        'stats' => [
+            'shortcode_attrs' => ['type' => 'stats', 'display' => 'stats'],
+            'content_keywords' => ['stats', 'statistics', 'sold pixels', 'available pixels', 'pixel count', 'stats box'],
+            'title_keywords' => ['stats', 'statistics', 'pixel count'],
+            'block_names' => ['milliondollarscript/stats-block'],
+            'css_classes' => ['mds-stats', 'stats-box', 'pixel-stats']
         ]
     ];
     
@@ -126,6 +133,17 @@ class MDSPageDetectionEngine {
         $post = get_post( $post_id );
         if ( !$post ) {
             return $this->createDetectionResult( false );
+        }
+        
+        // Check for WooCommerce page exclusions first
+        if ( $this->isWooCommercePage( $post_id, $post ) ) {
+            return $this->createDetectionResult( false, null, 0.0, 'excluded', [
+                [
+                    'type' => 'woocommerce_exclusion',
+                    'reason' => 'WooCommerce page detected',
+                    'page_title' => $post->post_title
+                ]
+            ] );
         }
         
         $detection_data = [
@@ -149,7 +167,7 @@ class MDSPageDetectionEngine {
             $content_result,
             $meta_result,
             $option_result
-        ] );
+        ], $post_id );
         
         return $combined_result;
     }
@@ -166,11 +184,23 @@ class MDSPageDetectionEngine {
         $confidence = 0.0;
         $page_type = null;
         
-        // Check for MDS shortcodes
+        // Check for MDS shortcodes with improved detection
+        $mds_shortcode_found = false;
+        
+        // Primary detection using has_shortcode (most reliable when working)
         if ( has_shortcode( $content, 'milliondollarscript' ) ) {
+            $mds_shortcode_found = true;
+        }
+        
+        // Fallback: Direct regex search for milliondollarscript shortcode
+        if ( !$mds_shortcode_found && preg_match( '/\[milliondollarscript[\s\]]/i', $content ) ) {
+            $mds_shortcode_found = true;
+        }
+        
+        if ( $mds_shortcode_found ) {
             $confidence += 0.8; // High confidence for MDS shortcode
             
-            // Extract shortcode attributes
+            // Extract shortcode attributes using WordPress function
             $pattern = get_shortcode_regex( [ 'milliondollarscript' ] );
             if ( preg_match_all( '/' . $pattern . '/s', $content, $matches ) ) {
                 foreach ( $matches[3] as $attrs ) {
@@ -178,14 +208,44 @@ class MDSPageDetectionEngine {
                     if ( $parsed_attrs ) {
                         $patterns[] = [
                             'type' => 'shortcode',
+                            'shortcode_name' => 'milliondollarscript',
                             'attributes' => $parsed_attrs
                         ];
                         
                         // Determine page type from attributes
                         $detected_type = $this->determinePageTypeFromShortcode( $parsed_attrs );
                         if ( $detected_type ) {
-                            $page_type = $detected_type;
-                            $confidence += 0.1;
+                            // Validate and map legacy page types
+                            $detected_type = $this->validateAndMapPageType( $detected_type );
+                            if ( $detected_type ) {
+                                $page_type = $detected_type;
+                                $confidence += 0.1;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Fallback: Manual regex extraction for edge cases
+                if ( preg_match_all( '/\[milliondollarscript([^\]]*)\]/i', $content, $manual_matches ) ) {
+                    foreach ( $manual_matches[1] as $attrs_string ) {
+                        $parsed_attrs = shortcode_parse_atts( trim( $attrs_string ) );
+                        $patterns[] = [
+                            'type' => 'shortcode',
+                            'shortcode_name' => 'milliondollarscript',
+                            'attributes' => $parsed_attrs ?: [],
+                            'raw_attributes' => trim( $attrs_string )
+                        ];
+                        
+                        if ( $parsed_attrs ) {
+                            $detected_type = $this->determinePageTypeFromShortcode( $parsed_attrs );
+                            if ( $detected_type && !$page_type ) {
+                                // Validate and map legacy page types
+                                $detected_type = $this->validateAndMapPageType( $detected_type );
+                                if ( $detected_type ) {
+                                    $page_type = $detected_type;
+                                    $confidence += 0.1;
+                                }
+                            }
                         }
                     }
                 }
@@ -228,22 +288,106 @@ class MDSPageDetectionEngine {
             }
         }
         
-        // Check for legacy shortcodes - Expanded list
-        $legacy_shortcodes = [ 
+        // Check for extension and legacy shortcodes - Comprehensive list
+        $extension_shortcodes = [
+            // Core MDS shortcodes
             'mds', 'million_dollar_script', 'pixel_grid', 'milliondollarscript',
-            'pixel_advertising', 'ad_grid', 'mds_grid', 'pixel_board'
+            'pixel_advertising', 'ad_grid', 'mds_grid', 'pixel_board',
+            'mds_display', 'pixel_display', 'advertisement_grid', 'mds_widget',
+            
+            // Creator Platforms extension
+            'mds_creator_platform_tabs', 'mds_platform_leaderboard', 'mds_top_pixel_owners',
+            'mds_creator_dashboard', 'mds_platform_stats', 'mds_creator_profile',
+            
+            // Analytics extensions  
+            'mds_analytics_dashboard', 'mds_click_tracking', 'mds_revenue_stats',
+            'mds_performance_metrics', 'mds_conversion_tracking',
+            
+            // Commerce extensions
+            'mds_payment_gateway', 'mds_order_history', 'mds_invoice_generator',
+            'mds_subscription_manager', 'mds_discount_codes',
+            
+            // Content extensions
+            'mds_ad_builder', 'mds_template_selector', 'mds_media_gallery',
+            'mds_banner_rotator', 'mds_campaign_manager',
+            
+            // User extensions
+            'mds_user_dashboard', 'mds_profile_manager', 'mds_notification_center',
+            'mds_referral_system', 'mds_loyalty_program'
         ];
-        foreach ( $legacy_shortcodes as $shortcode ) {
+        foreach ( $extension_shortcodes as $shortcode ) {
             if ( has_shortcode( $content, $shortcode ) ) {
                 $confidence += 0.7; // Increased confidence for legacy shortcodes
-                $patterns[] = [
-                    'type' => 'legacy_shortcode',
-                    'shortcode' => $shortcode
-                ];
                 
-                // Set generic page type for legacy shortcodes if not already set
-                if ( !$page_type ) {
-                    $page_type = 'grid'; // Default for legacy shortcodes
+                // Extract shortcode attributes for better page type detection
+                $pattern = get_shortcode_regex( [ $shortcode ] );
+                if ( preg_match_all( '/' . $pattern . '/s', $content, $matches ) ) {
+                    foreach ( $matches[3] as $attrs ) {
+                        $parsed_attrs = shortcode_parse_atts( $attrs );
+                        $patterns[] = [
+                            'type' => 'legacy_shortcode',
+                            'shortcode' => $shortcode,
+                            'attributes' => $parsed_attrs ?: []
+                        ];
+                        
+                        // Try to determine page type from legacy shortcode attributes
+                        if ( $parsed_attrs ) {
+                            $detected_type = $this->determinePageTypeFromShortcode( $parsed_attrs );
+                            if ( $detected_type && !$page_type ) {
+                                // Validate and map legacy page types
+                                $detected_type = $this->validateAndMapPageType( $detected_type );
+                                if ( $detected_type ) {
+                                    $page_type = $detected_type;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    $patterns[] = [
+                        'type' => 'legacy_shortcode',
+                        'shortcode' => $shortcode
+                    ];
+                }
+                
+                // Don't default to 'grid' - let content analysis determine the correct type
+                // This prevents incorrectly classifying all unknown shortcodes as 'grid'
+            }
+        }
+        
+        // Catch-all: Search for ANY mds_ prefixed shortcodes
+        if ( preg_match_all( '/\[mds_([a-zA-Z0-9_-]+)([^\]]*)\]/', $content, $catchall_matches, PREG_SET_ORDER ) ) {
+            foreach ( $catchall_matches as $match ) {
+                $shortcode_name = strtolower( $match[1] );
+                $attributes_string = trim( $match[2] ?? '' );
+                
+                // Only add if we haven't already detected this shortcode
+                $already_detected = false;
+                foreach ( $patterns as $pattern ) {
+                    if ( isset( $pattern['shortcode_name'] ) && 
+                         strpos( $pattern['shortcode_name'], $shortcode_name ) !== false ) {
+                        $already_detected = true;
+                        break;
+                    }
+                }
+                
+                if ( !$already_detected ) {
+                    $confidence += 0.6; // Medium confidence for unrecognized MDS shortcodes
+                    $parsed_attrs = [];
+                    if ( !empty( $attributes_string ) ) {
+                        $parsed_attrs = shortcode_parse_atts( $attributes_string );
+                    }
+                    
+                    $patterns[] = [
+                        'type' => 'mds_extension_shortcode',
+                        'shortcode_name' => 'mds_' . $shortcode_name,
+                        'attributes' => $parsed_attrs ?: [],
+                        'custom_type' => $this->extractPageTypeFromShortcodeName( $shortcode_name )
+                    ];
+                    
+                    // Set page type if not already set
+                    if ( !$page_type ) {
+                        $page_type = $this->extractPageTypeFromShortcodeName( $shortcode_name );
+                    }
                 }
             }
         }
@@ -268,6 +412,48 @@ class MDSPageDetectionEngine {
         $confidence = 0.0;
         $page_type = null;
         
+        // Check for Carbon Fields blocks in HTML comments (most common format)
+        // Updated regex to properly capture nested JSON objects
+        if ( preg_match_all( '/<!-- wp:carbon-fields\/million-dollar-script\s+({.*?})\s*(?:\/-->|-->)/', $content, $carbon_matches ) ) {
+            foreach ( $carbon_matches[1] as $json_attrs ) {
+                $block_attrs = json_decode( $json_attrs, true );
+                if ( $block_attrs ) {
+                    $confidence += 0.9; // Very high confidence for Carbon Fields blocks
+                    $detected_type = null;
+                    
+                    // Check multiple possible attribute names for type
+                    // First check in nested 'data' object (Carbon Fields format)
+                    if ( isset( $block_attrs['data']['milliondollarscript_type'] ) ) {
+                        $detected_type = $block_attrs['data']['milliondollarscript_type'];
+                    } elseif ( isset( $block_attrs['milliondollarscript_type'] ) ) {
+                        $detected_type = $block_attrs['milliondollarscript_type'];
+                    } elseif ( isset( $block_attrs['type'] ) ) {
+                        $detected_type = $block_attrs['type'];
+                    } elseif ( isset( $block_attrs['pageType'] ) ) {
+                        $detected_type = $block_attrs['pageType'];
+                    } elseif ( isset( $block_attrs['data']['type'] ) ) {
+                        $detected_type = $block_attrs['data']['type'];
+                    }
+                    
+                    $patterns[] = [
+                        'type' => 'carbon_fields_block',
+                        'block_name' => 'carbon-fields/million-dollar-script',
+                        'attributes' => $block_attrs
+                    ];
+                    
+                    if ( $detected_type ) {
+                        // Validate and map legacy page types
+                        $detected_type = $this->validateAndMapPageType( $detected_type );
+                        if ( $detected_type ) {
+                            $page_type = $detected_type;
+                            $confidence += 0.1;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Fallback: Parse WordPress blocks normally
         if ( has_blocks( $content ) ) {
             $blocks = parse_blocks( $content );
             $this->processBlocksRecursively( $blocks, $patterns, $confidence, $page_type );
@@ -287,8 +473,26 @@ class MDSPageDetectionEngine {
                 continue;
             }
             
-            // Check for MDS blocks
-            if ( strpos( $block['blockName'], 'milliondollarscript/' ) === 0 || $block['blockName'] === 'carbon-fields/million-dollar-script' ) {
+            // Check for MDS blocks - Enhanced detection patterns
+            $mds_block_patterns = [
+                'milliondollarscript/', 
+                'carbon-fields/million-dollar-script',
+                'mds/',
+                'pixel-grid/',
+                'mds-blocks/',
+                'million-dollar-script/',
+                'carbon-fields/mds-'
+            ];
+            
+            $is_mds_block = false;
+            foreach ( $mds_block_patterns as $pattern ) {
+                if ( strpos( $block['blockName'], $pattern ) === 0 || $block['blockName'] === $pattern ) {
+                    $is_mds_block = true;
+                    break;
+                }
+            }
+            
+            if ( $is_mds_block ) {
                 $confidence += 0.8; // High confidence for MDS blocks
                 $patterns[] = [
                     'type' => 'block',
@@ -299,8 +503,12 @@ class MDSPageDetectionEngine {
                 // Determine page type from block
                 $detected_type = $this->determinePageTypeFromBlock( $block );
                 if ( $detected_type ) {
-                    $page_type = $detected_type;
-                    $confidence += 0.1;
+                    // Validate and map legacy page types
+                    $detected_type = $this->validateAndMapPageType( $detected_type );
+                    if ( $detected_type ) {
+                        $page_type = $detected_type;
+                        $confidence += 0.1;
+                    }
                 }
             }
             
@@ -527,9 +735,10 @@ class MDSPageDetectionEngine {
      * Combine multiple detection results
      *
      * @param array $results
+     * @param int $post_id
      * @return array
      */
-    private function combineDetectionResults( array $results ): array {
+    private function combineDetectionResults( array $results, int $post_id ): array {
         $total_confidence = 0.0;
         $page_types = [];
         $all_patterns = [];
@@ -547,8 +756,14 @@ class MDSPageDetectionEngine {
             }
         }
         
-        // Determine final confidence (weighted average, capped at 1.0)
-        $final_confidence = min( $total_confidence / count( $results ), 1.0 );
+        // Determine final confidence (use maximum confidence from any detection method, not average)
+        $final_confidence = 0.0;
+        foreach ( $results as $result ) {
+            if ( $result['confidence'] > $final_confidence ) {
+                $final_confidence = $result['confidence'];
+            }
+        }
+        $final_confidence = min( $final_confidence, 1.0 );
         
         // Determine page type (most common, or highest confidence method)
         $final_page_type = null;
@@ -580,6 +795,24 @@ class MDSPageDetectionEngine {
         
         $is_mds_page = $final_confidence >= $this->min_confidence;
         
+        // Debug logging for detection results
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            $debug_info = [
+                'post_id' => $post_id,
+                'final_confidence' => $final_confidence,
+                'min_confidence' => $this->min_confidence,
+                'is_mds_page' => $is_mds_page,
+                'page_type' => $final_page_type,
+                'method_results' => array_map( function( $result ) {
+                    return [
+                        'method' => $result['method'] ?? 'unknown',
+                        'confidence' => $result['confidence'],
+                        'page_type' => $result['page_type']
+                    ];
+                }, $results )
+            ];
+        }
+        
         return $this->createDetectionResult(
             $is_mds_page,
             $final_page_type,
@@ -596,9 +829,25 @@ class MDSPageDetectionEngine {
      * @return string|null
      */
     private function determinePageTypeFromShortcode( array $attributes ): ?string {
-        // Check for explicit type attribute
+        // Check for explicit type attribute (preferred)
         if ( !empty( $attributes['type'] ) ) {
             return $attributes['type'];
+        }
+        
+        // Check for view attribute (legacy format - map to correct types)
+        if ( !empty( $attributes['view'] ) ) {
+            $view_value = $attributes['view'];
+            
+            // Map legacy view values to correct page types
+            $view_type_map = [
+                'order' => 'order',
+                'manage' => 'manage',
+                'pixels' => 'manage',  // "pixels" view should be "manage" type
+                'checkout' => 'confirm-order',  // "checkout" view should be "confirm-order" type
+                'grid' => 'grid',
+            ];
+            
+            return $view_type_map[$view_value] ?? $view_value;
         }
         
         // Check for display attribute
@@ -621,10 +870,38 @@ class MDSPageDetectionEngine {
      * @return string
      */
     private function extractPageTypeFromShortcodeName( string $shortcode_name ): string {
-        // Convert "platform_leaderboard" to "platform-leaderboard" for consistency
-        $type = str_replace( '_', '-', $shortcode_name );
+        // Map common extension shortcodes to meaningful page types
+        $shortcode_map = [
+            // Creator Platform extensions
+            'creator_platform_tabs' => 'creator',
+            'platform_leaderboard' => 'leaderboard',
+            'top_pixel_owners' => 'leaderboard',
+            'creator_dashboard' => 'dashboard',
+            'platform_stats' => 'stats',
+            
+            // Analytics extensions
+            'analytics_dashboard' => 'analytics',
+            'revenue_stats' => 'stats',
+            'performance_metrics' => 'analytics',
+            
+            // Commerce extensions
+            'payment_gateway' => 'payment',
+            'order_history' => 'manage',
+            'subscription_manager' => 'manage',
+            
+            // User extensions
+            'user_dashboard' => 'dashboard',
+            'profile_manager' => 'manage',
+            'notification_center' => 'manage'
+        ];
         
-        return $type;
+        // Check if we have a specific mapping
+        if ( isset( $shortcode_map[$shortcode_name] ) ) {
+            return $shortcode_map[$shortcode_name];
+        }
+        
+        // Fallback: Convert underscores to hyphens and return
+        return str_replace( '_', '-', $shortcode_name );
     }
     
     /**
@@ -640,14 +917,31 @@ class MDSPageDetectionEngine {
         if ( $block_name === 'carbon-fields/million-dollar-script' ) {
             // For Carbon Fields blocks, check the block attributes for type information
             $attrs = $block['attrs'] ?? [];
+            
+            // Check in nested 'data' object first (Carbon Fields format)
+            if ( !empty( $attrs['data']['milliondollarscript_type'] ) ) {
+                return $attrs['data']['milliondollarscript_type'];
+            }
+            if ( !empty( $attrs['data']['type'] ) ) {
+                return $attrs['data']['type'];
+            }
+            if ( !empty( $attrs['data']['pageType'] ) ) {
+                return $attrs['data']['pageType'];
+            }
+            
+            // Fallback to top-level attributes
             if ( !empty( $attrs['type'] ) ) {
                 return $attrs['type'];
             }
             if ( !empty( $attrs['pageType'] ) ) {
                 return $attrs['pageType'];
             }
-            // Default to 'grid' for Carbon Fields MDS blocks if no specific type is found
-            return 'grid';
+            if ( !empty( $attrs['milliondollarscript_type'] ) ) {
+                return $attrs['milliondollarscript_type'];
+            }
+            
+            // Return null instead of defaulting to 'grid' to allow other detection methods
+            return null;
         }
         
         // Extract type from block name
@@ -728,5 +1022,127 @@ class MDSPageDetectionEngine {
         }
         
         return $results;
+    }
+    
+    /**
+     * Check if a page is a WooCommerce page that should be excluded
+     *
+     * @param int $post_id
+     * @param \WP_Post $post
+     * @return bool
+     */
+    private function isWooCommercePage( int $post_id, \WP_Post $post ): bool {
+        // Only check if WooCommerce is active
+        if ( !function_exists( 'is_woocommerce' ) || !class_exists( 'WooCommerce' ) ) {
+            return false;
+        }
+        
+        // Check if it's a standard WooCommerce page by ID
+        $wc_page_ids = [
+            wc_get_page_id( 'cart' ),
+            wc_get_page_id( 'checkout' ),
+            wc_get_page_id( 'myaccount' ),
+            wc_get_page_id( 'shop' )
+        ];
+        
+        if ( in_array( $post_id, $wc_page_ids, true ) ) {
+            return true;
+        }
+        
+        // Check for WooCommerce shortcodes
+        $wc_shortcodes = [
+            'woocommerce_cart', 'woocommerce_checkout', 'woocommerce_my_account',
+            'woocommerce_order_tracking', 'shop_messages', 'woocommerce_checkout_order_review'
+        ];
+        
+        foreach ( $wc_shortcodes as $shortcode ) {
+            if ( has_shortcode( $post->post_content, $shortcode ) ) {
+                return true;
+            }
+        }
+        
+        // Check for WooCommerce blocks
+        if ( has_blocks( $post->post_content ) ) {
+            $blocks = parse_blocks( $post->post_content );
+            if ( $this->hasWooCommerceBlocks( $blocks ) ) {
+                return true;
+            }
+        }
+        
+        // Check page titles that clearly indicate WooCommerce pages
+        $wc_titles = [
+            'cart', 'checkout', 'my account', 'shop', 'store', 
+            'basket', 'shopping cart', 'order received', 'order tracking'
+        ];
+        
+        $title_lower = strtolower( $post->post_title );
+        foreach ( $wc_titles as $wc_title ) {
+            if ( $title_lower === $wc_title || strpos( $title_lower, $wc_title ) === 0 ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if blocks contain WooCommerce blocks
+     *
+     * @param array $blocks
+     * @return bool
+     */
+    private function hasWooCommerceBlocks( array $blocks ): bool {
+        foreach ( $blocks as $block ) {
+            if ( empty( $block['blockName'] ) ) {
+                continue;
+            }
+            
+            // Check for WooCommerce block patterns
+            if ( strpos( $block['blockName'], 'woocommerce/' ) === 0 ) {
+                return true;
+            }
+            
+            // Check inner blocks recursively
+            if ( isset( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+                if ( $this->hasWooCommerceBlocks( $block['innerBlocks'] ) ) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Validate and map legacy page types to current valid types
+     *
+     * @param string $page_type
+     * @return string|null Valid page type or null if invalid
+     */
+    private function validateAndMapPageType( string $page_type ): ?string {
+        // Valid page types (based on the patterns defined at the top of the class)
+        $valid_types = array_keys( $this->page_type_patterns );
+        
+        // If it's already valid, return it
+        if ( in_array( $page_type, $valid_types, true ) ) {
+            return $page_type;
+        }
+        
+        // Legacy page type mappings
+        $legacy_mappings = [
+            'users' => 'manage',           // Legacy "users" view should be "manage"
+            'checkout' => 'confirm-order', // Legacy "checkout" view should be "confirm-order"
+            'pixels' => 'manage',          // Legacy "pixels" view should be "manage"
+            'user_dashboard' => 'manage',  // Legacy user dashboard
+            'pixel_management' => 'manage' // Legacy pixel management
+        ];
+        
+        // Check if it's a mappable legacy type
+        if ( isset( $legacy_mappings[$page_type] ) ) {
+            return $legacy_mappings[$page_type];
+        }
+        
+        // If it's not valid and not mappable, return null
+        return null;
     }
 } 
