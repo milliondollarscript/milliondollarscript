@@ -288,33 +288,16 @@ class MDSPageDetectionEngine {
             }
         }
         
-        // Check for extension and legacy shortcodes - Comprehensive list
-        $extension_shortcodes = [
-            // Core MDS shortcodes
+        // Check for extension and legacy shortcodes
+        $core_shortcodes = [
+            // Core MDS shortcodes only
             'mds', 'million_dollar_script', 'pixel_grid', 'milliondollarscript',
             'pixel_advertising', 'ad_grid', 'mds_grid', 'pixel_board',
-            'mds_display', 'pixel_display', 'advertisement_grid', 'mds_widget',
-            
-            // Creator Platforms extension
-            'mds_creator_platform_tabs', 'mds_platform_leaderboard', 'mds_top_pixel_owners',
-            'mds_creator_dashboard', 'mds_platform_stats', 'mds_creator_profile',
-            
-            // Analytics extensions  
-            'mds_analytics_dashboard', 'mds_click_tracking', 'mds_revenue_stats',
-            'mds_performance_metrics', 'mds_conversion_tracking',
-            
-            // Commerce extensions
-            'mds_payment_gateway', 'mds_order_history', 'mds_invoice_generator',
-            'mds_subscription_manager', 'mds_discount_codes',
-            
-            // Content extensions
-            'mds_ad_builder', 'mds_template_selector', 'mds_media_gallery',
-            'mds_banner_rotator', 'mds_campaign_manager',
-            
-            // User extensions
-            'mds_user_dashboard', 'mds_profile_manager', 'mds_notification_center',
-            'mds_referral_system', 'mds_loyalty_program'
+            'mds_display', 'pixel_display', 'advertisement_grid', 'mds_widget'
         ];
+        
+        // Allow extensions to register their shortcodes for detection
+        $extension_shortcodes = apply_filters( 'mds_extension_shortcodes', $core_shortcodes );
         foreach ( $extension_shortcodes as $shortcode ) {
             if ( has_shortcode( $content, $shortcode ) ) {
                 $confidence += 0.7; // Increased confidence for legacy shortcodes
@@ -744,7 +727,8 @@ class MDSPageDetectionEngine {
         $all_patterns = [];
         $content_type = 'custom';
         
-        // Collect all results
+        // Collect all results with enhanced tracking
+        $page_type_sources = [];
         foreach ( $results as $result ) {
             if ( $result['confidence'] > 0 ) {
                 $total_confidence += $result['confidence'];
@@ -752,6 +736,13 @@ class MDSPageDetectionEngine {
                 
                 if ( $result['page_type'] ) {
                     $page_types[] = $result['page_type'];
+                    // Track the source and confidence of each page type detection
+                    $page_type_sources[] = [
+                        'type' => $result['page_type'],
+                        'method' => $result['method'],
+                        'confidence' => $result['confidence'],
+                        'patterns' => $result['patterns']
+                    ];
                 }
             }
         }
@@ -765,11 +756,10 @@ class MDSPageDetectionEngine {
         }
         $final_confidence = min( $final_confidence, 1.0 );
         
-        // Determine page type (most common, or highest confidence method)
+        // Determine page type with enhanced priority system (detection quality over core/extension bias)
         $final_page_type = null;
-        if ( !empty( $page_types ) ) {
-            $page_type_counts = array_count_values( $page_types );
-            $final_page_type = array_key_first( $page_type_counts );
+        if ( !empty( $page_type_sources ) ) {
+            $final_page_type = $this->determinePageTypeByQuality( $page_type_sources );
         }
         
         // Determine content type based on patterns
@@ -823,6 +813,136 @@ class MDSPageDetectionEngine {
     }
     
     /**
+     * Determine page type by detection quality and specificity
+     * Prioritizes explicit detection over implicit detection
+     *
+     * @param array $page_type_sources Array of page type detections with source info
+     * @return string|null
+     */
+    private function determinePageTypeByQuality( array $page_type_sources ): ?string {
+        // Define detection quality priorities (higher = better)
+        $method_priorities = [
+            'option_assignment' => 100, // Highest: Explicit page assignment
+            'meta' => 90,              // High: Stored metadata
+            'blocks' => 85,            // High: Block detection (primary content)
+            'shortcode' => 80,         // Medium-High: Shortcode detection
+            'content' => 10            // Lowest: Content keyword analysis
+        ];
+        
+        $core_page_types = ['grid', 'order', 'write-ad', 'confirm-order', 'payment', 'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats'];
+        
+        // CRITICAL: Grid block priority - if a grid block is detected, it must take precedence
+        // This ensures grid blocks always function correctly in mixed content scenarios
+        $grid_block_detected = false;
+        foreach ( $page_type_sources as $source ) {
+            if ( $source['method'] === 'blocks' && $source['type'] === 'grid' ) {
+                foreach ( $source['patterns'] as $pattern ) {
+                    if ( $pattern['type'] === 'block' && 
+                         isset( $pattern['block_name'] ) && 
+                         $pattern['block_name'] === 'carbon-fields/million-dollar-script' ) {
+                        $grid_block_detected = true;
+                        break 2; // Break out of both loops
+                    }
+                }
+            }
+        }
+        
+        // If grid block detected, return 'grid' immediately - this is non-negotiable
+        if ( $grid_block_detected ) {
+            return 'grid';
+        }
+        
+        // Score each detection by quality
+        $scored_detections = [];
+        foreach ( $page_type_sources as $source ) {
+            $method = $source['method'];
+            $type = $source['type'];
+            $confidence = $source['confidence'];
+            
+            // Calculate quality score: method priority + confidence + pattern specificity
+            $method_score = $method_priorities[$method] ?? 0;
+            $pattern_score = $this->calculatePatternSpecificity( $source['patterns'], $type );
+            
+            // Apply mixed content boost for core page types from blocks
+            $mixed_content_boost = 0;
+            if ( in_array( $type, $core_page_types ) && $method === 'blocks' ) {
+                // Check if there are extension shortcodes present (indicating mixed content)
+                $has_extension_shortcodes = false;
+                foreach ( $page_type_sources as $other_source ) {
+                    if ( $other_source['method'] === 'shortcode' && !in_array( $other_source['type'], $core_page_types ) ) {
+                        $has_extension_shortcodes = true;
+                        break;
+                    }
+                }
+                
+                if ( $has_extension_shortcodes ) {
+                    $mixed_content_boost = 50; // Strong boost for core block detection in mixed content
+                }
+            }
+            
+            $total_score = $method_score + ($confidence * 10) + $pattern_score + $mixed_content_boost;
+            
+            $scored_detections[] = [
+                'type' => $type,
+                'score' => $total_score,
+                'method' => $method,
+                'confidence' => $confidence,
+                'boost' => $mixed_content_boost
+            ];
+        }
+        
+        // Sort by score (highest first) and return the best detection
+        usort( $scored_detections, function( $a, $b ) {
+            return $b['score'] <=> $a['score'];
+        });
+        
+        return $scored_detections[0]['type'] ?? null;
+    }
+    
+    /**
+     * Calculate pattern specificity score for a page type
+     *
+     * @param array $patterns Detection patterns
+     * @param string $page_type Detected page type
+     * @return float Specificity score
+     */
+    private function calculatePatternSpecificity( array $patterns, string $page_type ): float {
+        $specificity_score = 0;
+        $core_page_types = ['grid', 'order', 'write-ad', 'confirm-order', 'payment', 'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats'];
+        
+        foreach ( $patterns as $pattern ) {
+            // Explicit shortcode type attributes are most specific
+            if ( $pattern['type'] === 'shortcode' && isset( $pattern['attributes']['type'] ) ) {
+                $specificity_score += 50;
+            }
+            // Grid blocks (Carbon Fields) are highly specific when they're the primary content
+            elseif ( $pattern['type'] === 'block' && isset( $pattern['block_name'] ) && 
+                     $pattern['block_name'] === 'carbon-fields/million-dollar-script' && 
+                     in_array( $page_type, $core_page_types ) ) {
+                $specificity_score += 45; // Higher than extension shortcodes for mixed content
+            }
+            // Shortcode name mappings are highly specific
+            elseif ( isset( $pattern['shortcode_name'] ) && strpos( $pattern['shortcode_name'], 'mds_' ) === 0 ) {
+                $specificity_score += 30;
+            }
+            // Block type attributes are specific
+            elseif ( $pattern['type'] === 'block' && isset( $pattern['attributes'] ) ) {
+                $specificity_score += 25;
+            }
+            // Legacy shortcodes are moderately specific
+            elseif ( $pattern['type'] === 'legacy_shortcode' ) {
+                $specificity_score += 15;
+            }
+            // Content keywords are least specific
+            elseif ( $pattern['type'] === 'content_keyword' || $pattern['type'] === 'title_keyword' ) {
+                $specificity_score += 1;
+            }
+        }
+        
+        return $specificity_score;
+    }
+    
+    /**
      * Determine page type from shortcode attributes
      *
      * @param array $attributes
@@ -870,30 +990,11 @@ class MDSPageDetectionEngine {
      * @return string
      */
     private function extractPageTypeFromShortcodeName( string $shortcode_name ): string {
-        // Map common extension shortcodes to meaningful page types
-        $shortcode_map = [
-            // Creator Platform extensions
-            'creator_platform_tabs' => 'creator',
-            'platform_leaderboard' => 'leaderboard',
-            'top_pixel_owners' => 'leaderboard',
-            'creator_dashboard' => 'dashboard',
-            'platform_stats' => 'stats',
-            
-            // Analytics extensions
-            'analytics_dashboard' => 'analytics',
-            'revenue_stats' => 'stats',
-            'performance_metrics' => 'analytics',
-            
-            // Commerce extensions
-            'payment_gateway' => 'payment',
-            'order_history' => 'manage',
-            'subscription_manager' => 'manage',
-            
-            // User extensions
-            'user_dashboard' => 'dashboard',
-            'profile_manager' => 'manage',
-            'notification_center' => 'manage'
-        ];
+        // Core shortcode mappings (extensions should use hooks to add their own)
+        $shortcode_map = [];
+        
+        // Allow extensions to register their shortcode mappings
+        $shortcode_map = apply_filters( 'mds_shortcode_page_type_map', $shortcode_map );
         
         // Check if we have a specific mapping
         if ( isset( $shortcode_map[$shortcode_name] ) ) {
@@ -940,8 +1041,9 @@ class MDSPageDetectionEngine {
                 return $attrs['milliondollarscript_type'];
             }
             
-            // Return null instead of defaulting to 'grid' to allow other detection methods
-            return null;
+            // Default to 'grid' for Carbon Fields MDS blocks when no type is specified
+            // This ensures grid blocks without attributes are properly detected as grid type
+            return 'grid';
         }
         
         // Extract type from block name

@@ -1171,8 +1171,9 @@ a.mds-button {
 .mds-container input[type='button']:hover,
 .mds-container input[type='submit']:hover,
 .mds-button:hover {
-	background-color: var(--mds-btn-secondary-text, #ffffff);
-	color: var(--mds-btn-secondary-bg, #91877D);
+	background-color: var(--mds-btn-primary-hover-bg, var(--mds-btn-secondary-text, #ffffff));
+	color: var(--mds-btn-primary-hover-text, var(--mds-btn-secondary-bg, #91877D));
+	border-color: var(--mds-btn-primary-bg, var(--mds-btn-secondary-bg, #91877D));
 }
 
 .mds-container input[type='button']:active,
@@ -1181,6 +1182,29 @@ a.mds-button {
 	background-color: var(--mds-btn-secondary-bg, #91877D);
 	color: var(--mds-btn-secondary-text, #ffffff);
 	filter: brightness(0.8);
+}
+
+/* Register Button Specific Styling */
+.wp-core-ui .button-register,
+.wp-core-ui input[type="submit"].button-register,
+.login .mds-register-link {
+	background-color: var(--mds-btn-secondary-bg, #91877D);
+	color: var(--mds-btn-secondary-text, #ffffff);
+	border: 1px solid var(--mds-border-color, #ddd);
+	text-decoration: none;
+	display: inline-block;
+	padding: 8px 16px;
+	border-radius: 4px;
+	transition: all 0.3s ease;
+}
+
+.wp-core-ui .button-register:hover,
+.wp-core-ui input[type="submit"].button-register:hover,
+.login .mds-register-link:hover {
+	background-color: var(--mds-btn-secondary-hover-bg, var(--mds-bg-tertiary, #f0f0f0));
+	color: var(--mds-btn-secondary-hover-text, var(--mds-text-primary, #333));
+	border-color: var(--mds-btn-primary-bg, var(--mds-btn-secondary-bg, #91877D));
+	text-decoration: none;
 }
 
 .mds-container input[type='button'].mds-confirm,
@@ -1374,6 +1398,7 @@ body:not(.login) #loginform label {
 
 .mds-register-link:hover {
 	background-color: var(--mds-btn-secondary-bg, #91877D);
+	color: var(--mds-btn-secondary-text, #ffffff);
 }
 
 .mds-pixel-content {

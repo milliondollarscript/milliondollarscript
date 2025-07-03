@@ -179,6 +179,37 @@ class Styles {
         $css .= "    border: none;\n";
         $css .= "}\n\n";
 
+        $css .= "#loginform input[type=\"submit\"]:hover,\n";
+        $css .= ".mds-register-link:hover,\n";
+        $css .= ".mds-container input[type='button']:hover,\n";
+        $css .= ".mds-container input[type='submit']:hover,\n";
+        $css .= ".mds-button:hover,\n";
+        $css .= "a.mds-button:hover {\n";
+        $css .= "    background-color: var(--mds-btn-primary-hover-bg, #005a87);\n";
+        $css .= "    color: var(--mds-btn-primary-text);\n";
+        $css .= "}\n\n";
+
+        $css .= "/* Register Button Specific Styling */\n";
+        $css .= ".wp-core-ui .button-register,\n";
+        $css .= ".wp-core-ui input[type=\"submit\"].button-register,\n";
+        $css .= ".login .mds-register-link {\n";
+        $css .= "    background-color: var(--mds-btn-secondary-bg);\n";
+        $css .= "    color: var(--mds-btn-secondary-text);\n";
+        $css .= "    border: 1px solid var(--mds-border-color);\n";
+        $css .= "    text-decoration: none;\n";
+        $css .= "    display: inline-block;\n";
+        $css .= "    padding: 8px 16px;\n";
+        $css .= "    border-radius: var(--mds-btn-border-radius);\n";
+        $css .= "}\n\n";
+
+        $css .= ".wp-core-ui .button-register:hover,\n";
+        $css .= ".wp-core-ui input[type=\"submit\"].button-register:hover,\n";
+        $css .= ".login .mds-register-link:hover {\n";
+        $css .= "    background-color: var(--mds-btn-secondary-hover-bg, var(--mds-bg-tertiary));\n";
+        $css .= "    color: var(--mds-btn-secondary-hover-text, var(--mds-text-primary));\n";
+        $css .= "    border-color: var(--mds-btn-primary-bg);\n";
+        $css .= "}\n\n";
+
         $css .= ".mds-button-secondary {\n";
         $css .= "    background-color: var(--mds-btn-secondary-bg);\n";
         $css .= "    color: var(--mds-btn-secondary-text);\n";

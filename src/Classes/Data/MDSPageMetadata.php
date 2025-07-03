@@ -74,22 +74,24 @@ class MDSPageMetadata {
     public const STATUSES = ['active', 'inactive', 'orphaned', 'error'];
     
     public const PAGE_TYPES = [
-        // Core MDS page types
+        // Core MDS page types only
         'grid', 'order', 'write-ad', 'confirm-order', 'payment', 
-        'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats',
-        
-        // Extension page types
-        'creator', 'leaderboard', 'dashboard', 'analytics', 
-        'creator-platform-tabs', 'platform-leaderboard', 'top-pixel-owners',
-        'creator-dashboard', 'platform-stats', 'creator-profile',
-        'analytics-dashboard', 'click-tracking', 'revenue-stats',
-        'performance-metrics', 'conversion-tracking', 'payment-gateway',
-        'order-history', 'invoice-generator', 'subscription-manager',
-        'discount-codes', 'ad-builder', 'template-selector', 'media-gallery',
-        'banner-rotator', 'campaign-manager', 'user-dashboard', 
-        'profile-manager', 'notification-center', 'referral-system',
-        'loyalty-program'
+        'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats'
     ];
+    
+    /**
+     * Get all valid page types including those registered by extensions
+     *
+     * @return array
+     */
+    public static function getValidPageTypes(): array {
+        $core_types = self::PAGE_TYPES;
+        
+        // Allow extensions to register additional page types
+        $extension_types = apply_filters( 'mds_extension_page_types', [] );
+        
+        return array_merge( $core_types, $extension_types );
+    }
     
     /**
      * Constructor
@@ -193,7 +195,7 @@ class MDSPageMetadata {
             $errors[] = $error_msg;
         }
         
-        if ( empty( $this->page_type ) || !in_array( $this->page_type, self::PAGE_TYPES ) ) {
+        if ( empty( $this->page_type ) || !in_array( $this->page_type, self::getValidPageTypes() ) ) {
             $error_msg = Language::get( 'Valid page type is required' );
             $errors[] = $error_msg;
         }

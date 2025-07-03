@@ -536,11 +536,6 @@ class FormFields {
 								// $dest       = get_tmp_img_name();
 								//
 								// if ( ! $filesystem->copy( $upload['file'], $dest ) ) {
-								// 	error_log( wp_sprintf(
-								// 		Language::get( 'Error copying file. From: %s To: %s' ),
-								// 		$upload['file'],
-								// 		$dest
-								// 	) );
 								// }
 
 								carbon_set_post_meta( $post_id, $field_name, $attach_id );

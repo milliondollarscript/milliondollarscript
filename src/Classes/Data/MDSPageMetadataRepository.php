@@ -212,14 +212,7 @@ class MDSPageMetadataRepository {
         
         if ( $result === false ) {
             $error_msg = $this->wpdb->last_error ?: Language::get( 'Database operation failed' );
-            // Log additional debugging information
             error_log( 'MDS Metadata Save Error: ' . $error_msg );
-            error_log( 'MDS Metadata Save Data: ' . print_r( $data, true ) );
-            if ( $metadata->id > 0 ) {
-                error_log( 'MDS Attempted UPDATE operation for metadata ID: ' . $metadata->id );
-            } else {
-                error_log( 'MDS Attempted INSERT operation for new metadata record' );
-            }
             return new WP_Error( 'db_error', $error_msg );
         }
         

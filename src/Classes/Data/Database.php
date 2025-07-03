@@ -286,7 +286,6 @@ class Database {
 			update_option( 'mds_db_version', $val );
 		} else {
 			// Do nothing for other keys, as the original table is gone.
-			// error_log('Deprecated set_config called for unknown key: ' . $key);
 		}
 	}
 

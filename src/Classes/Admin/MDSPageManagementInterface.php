@@ -2112,27 +2112,15 @@ class MDSPageManagementInterface {
                     
                     // Ensure database is ready before saving
                     if ( !$this->metadata_manager->isDatabaseReady() ) {
-                        error_log( "MDS Scan: Database not ready for page {$page_id}, attempting to initialize..." );
                         $init_result = $this->metadata_manager->initialize();
                         if ( is_wp_error( $init_result ) ) {
-                            error_log( "MDS Scan: Database initialization failed for page {$page_id}: " . $init_result->get_error_message() );
                             throw new Exception( 'Failed to initialize metadata database: ' . $init_result->get_error_message() );
                         }
-                        error_log( "MDS Scan: Database initialization successful for page {$page_id}" );
                     }
                     
-                    // Log the save attempt
-                    error_log( "MDS Scan: Attempting to save metadata for page {$page_id} with type '{$page_type}' and method '{$creation_method}'" );
-                    error_log( "MDS Scan: Additional data for page {$page_id}: " . wp_json_encode( $additional_data ) );
                     
                     $metadata_result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $page_type, $creation_method, $additional_data );
                     
-                    // Log the save result
-                    if ( is_wp_error( $metadata_result ) ) {
-                        error_log( "MDS Scan: Metadata save FAILED for page {$page_id}: " . $metadata_result->get_error_message() );
-                    } else {
-                        error_log( "MDS Scan: Metadata save SUCCESS for page {$page_id}" );
-                    }
                     
                     // Check if metadata creation was successful
                     if ( is_wp_error( $metadata_result ) ) {

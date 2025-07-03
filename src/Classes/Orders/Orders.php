@@ -1261,10 +1261,8 @@ class Orders {
 			//
 			// // Calculate the difference in days
 			// $diff_days = floor( ( $order_date_timestamp - $date_published_timestamp ) / DAY_IN_SECONDS );
-			// error_log('$diff_days: ' . var_export($diff_days, true));
 			//
 			// if ( $diff_days > $expire_days ) {
-			// 	error_log( 'expire1' );
 			self::expire_order( $row['order_id'] );
 			// }
 		}

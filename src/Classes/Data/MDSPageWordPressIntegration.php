@@ -30,6 +30,9 @@
 namespace MillionDollarScript\Classes\Data;
 
 use MillionDollarScript\Classes\Language\Language;
+use WP_REST_Request;
+use WP_REST_Response;
+use WP_Error;
 
 defined( 'ABSPATH' ) or exit;
 

@@ -266,6 +266,29 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching.' ) ),
 
+				// Export/Import Colors Section
+				Field::make( 'html', MDS_PREFIX . 'export-import-section', Language::get( 'Backup & Restore' ) )
+					->set_html( '
+						<h3>' . Language::get( 'Export & Import Color Settings' ) . '</h3>
+						<p>' . Language::get( 'Export your current color settings as a backup file or import settings from a previously saved file.' ) . '</p>
+						<div style="margin: 15px 0;">
+							<button type="button" id="mds_export_colors" class="button button-secondary" style="margin-right: 10px;">
+								<span class="dashicons dashicons-download" style="vertical-align: middle;"></span> ' . Language::get( 'Export Colors' ) . '
+							</button>
+							<button type="button" id="mds_reset_colors" class="button button-secondary" style="margin-right: 10px;">
+								<span class="dashicons dashicons-update" style="vertical-align: middle;"></span> ' . Language::get( 'Reset to Defaults' ) . '
+							</button>
+						</div>
+						<div style="margin: 15px 0;">
+							<label for="mds_import_file" style="display: block; margin-bottom: 5px; font-weight: bold;">' . Language::get( 'Import Colors:' ) . '</label>
+							<input type="file" id="mds_import_file" accept=".json" style="margin-right: 10px;">
+							<button type="button" id="mds_import_colors" class="button button-secondary" disabled>
+								<span class="dashicons dashicons-upload" style="vertical-align: middle;"></span> ' . Language::get( 'Import Colors' ) . '
+							</button>
+						</div>
+						<p style="font-style: italic; color: #666;">' . Language::get( 'Note: Import will replace all current color settings. Make sure to export your current settings first as a backup.' ) . '</p>
+					' ),
+
 				// ============================================================================
 				// BACKGROUND COLORS
 				// ============================================================================

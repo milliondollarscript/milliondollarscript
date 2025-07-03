@@ -697,12 +697,6 @@ class MDSEnhancedPageCreator {
     private function generatePageContent( array $template, array $configuration, string $page_type ): string {
         $content = $template['content'];
         
-        // Debug logging to track content generation
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "MDS Page Creator - Generating content for page type: {$page_type}" );
-            error_log( "MDS Page Creator - Template content: " . substr( $content, 0, 100 ) . "..." );
-            error_log( "MDS Page Creator - Configuration: " . wp_json_encode( $configuration ) );
-        }
         
         // Extract grid dimensions from grid_info if available
         if ( isset( $configuration['grid_info'] ) ) {
@@ -742,10 +736,6 @@ class MDSEnhancedPageCreator {
             $grid_id = $configuration['grid_id'] ?? 1;
             $align = $configuration['align'] ?? 'center';
             
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "MDS Page Creator - Adding stats above grid for page type: {$page_type}, grid_id: {$grid_id}" );
-                error_log( "MDS Page Creator - Current content before stats: " . substr( $content, 0, 150 ) . "..." );
-            }
             
             // Check for shortcode grid first (more specific pattern)
             if ( str_contains( $content, '[milliondollarscript type="grid"' ) ) {
@@ -753,23 +743,12 @@ class MDSEnhancedPageCreator {
                 $stats_shortcode = '[milliondollarscript type="stats" id="' . $grid_id . '" width="150px" height="60px" align="' . $align . '"]';
                 $content = $stats_shortcode . "\n\n" . $content;
                 
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "MDS Page Creator - Added shortcode stats: {$stats_shortcode}" );
-                }
             } elseif ( str_contains( $content, '"milliondollarscript_type":"grid"' ) ) {
                 // Gutenberg block implementation - ensure we're adding stats to a grid block
                 $stats_block = '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"stats","milliondollarscript_id":"' . $grid_id . '","milliondollarscript_width":"150px","milliondollarscript_height":"60px","milliondollarscript_align":"' . $align . '"}} /-->';
                 $content = $stats_block . "\n\n" . $content;
                 
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "MDS Page Creator - Added block stats: {$stats_block}" );
-                }
             } else {
-                // Debug: Log when stats are not added due to no matching grid content
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "MDS Page Creator - WARNING: include_stats_above=true but no grid content found to add stats to!" );
-                    error_log( "MDS Page Creator - Content was: " . $content );
-                }
             }
         }
         
@@ -793,18 +772,6 @@ class MDSEnhancedPageCreator {
         
         // Configuration is stored in page metadata, no need for HTML comments
         
-        // Final debug log to show complete generated content
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "MDS Page Creator - Final generated content for {$page_type}: " . substr( $content, 0, 300 ) . "..." );
-            
-            // Count blocks/shortcodes to detect duplicates
-            $grid_block_count = substr_count( $content, '"milliondollarscript_type":"grid"' );
-            $grid_shortcode_count = substr_count( $content, 'type="grid"' );
-            $stats_block_count = substr_count( $content, '"milliondollarscript_type":"stats"' );
-            $stats_shortcode_count = substr_count( $content, 'type="stats"' );
-            
-            error_log( "MDS Page Creator - Content analysis: grid_blocks={$grid_block_count}, grid_shortcodes={$grid_shortcode_count}, stats_blocks={$stats_block_count}, stats_shortcodes={$stats_shortcode_count}" );
-        }
         
         return $content;
     }
@@ -830,15 +797,6 @@ class MDSEnhancedPageCreator {
             return $content;
         }
         
-        // Debug logging
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "MDS Block Fallback - Processing content with Carbon Fields blocks" );
-            error_log( "MDS Block Fallback - Original content: " . substr( $content, 0, 300 ) . "..." );
-            
-            // Count existing blocks for debugging
-            $block_count = substr_count( $content, 'wp:carbon-fields/million-dollar-script' );
-            error_log( "MDS Block Fallback - Found {$block_count} Carbon Fields blocks to process" );
-        }
         
         // Pattern to match Carbon Fields blocks with attributes
         $pattern = '/<!-- wp:carbon-fields\/million-dollar-script\s+({[^}]+})\s*\/-->/';
@@ -848,18 +806,12 @@ class MDSEnhancedPageCreator {
             $attributes = json_decode( $attributes_json, true );
             
             if ( !$attributes ) {
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "MDS Block Fallback - Failed to parse attributes: " . $attributes_json );
-                }
                 return $matches[0]; // Return original if can't parse
             }
             
             // Extract shortcode parameters from Carbon Fields attributes
             $shortcode_atts = self::convertBlockAttributesToShortcode( $attributes );
             
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( "MDS Block Fallback - Converted attributes: " . wp_json_encode( $shortcode_atts ) );
-            }
             
             // Generate shortcode
             $shortcode = sprintf( 
@@ -878,9 +830,6 @@ class MDSEnhancedPageCreator {
         $content = preg_replace_callback( 
             '/<!-- wp:carbon-fields\/million-dollar-script\s*\/-->/',
             function( $matches ) {
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "MDS Block Fallback - Processing block without attributes" );
-                }
                 
                 // Get page metadata to determine the correct page type
                 $page_metadata = self::getCurrentPageMetadata();
@@ -916,23 +865,12 @@ class MDSEnhancedPageCreator {
                     $page_type
                 );
                 
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "MDS Block Fallback - Generated shortcode for type '{$page_type}': {$shortcode}" );
-                }
                 
                 return do_shortcode( $shortcode );
             },
             $content
         );
         
-        // Final debug logging for block fallback
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "MDS Block Fallback - Final processed content: " . substr( $content, 0, 300 ) . "..." );
-            
-            // Count shortcodes created
-            $shortcode_count = substr_count( $content, '[milliondollarscript' );
-            error_log( "MDS Block Fallback - Result contains {$shortcode_count} milliondollarscript shortcodes" );
-        }
         
         return $content;
     }
@@ -1094,11 +1032,6 @@ class MDSEnhancedPageCreator {
         // Generate the correct attributes for this page type
         $correct_attributes = $this->generateBlockAttributes( $page_type, $configuration, $grid_id, $align );
         
-        // Debug logging
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "MDS Block Processing - Page Type: {$page_type}, Attributes: " . wp_json_encode( $correct_attributes ) );
-            error_log( "MDS Block Processing - Original Content: " . substr( $content, 0, 200 ) . "..." );
-        }
         
         // Parse blocks using WordPress function if available
         if ( function_exists( 'parse_blocks' ) ) {
@@ -1128,17 +1061,11 @@ class MDSEnhancedPageCreator {
                     }
                     $modified = true;
                     
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( "MDS Block Processing - Updated block attributes from " . wp_json_encode( $old_attrs ) . " to " . wp_json_encode( $block['attrs'] ) );
-                    }
                 }
             }
             
             if ( $modified && function_exists( 'serialize_blocks' ) ) {
                 $new_content = serialize_blocks( $blocks );
-                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                    error_log( "MDS Block Processing - New Content: " . substr( $new_content, 0, 200 ) . "..." );
-                }
                 return $new_content;
             }
         }
@@ -1167,10 +1094,6 @@ class MDSEnhancedPageCreator {
             return '<!-- wp:carbon-fields/million-dollar-script ' . wp_json_encode( $correct_attributes ) . ' /-->';
         }, $content );
         
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "MDS Block Processing - Fallback regex replacement used" );
-            error_log( "MDS Block Processing - Pattern: {$pattern}" );
-        }
         
         return $new_content;
     }
