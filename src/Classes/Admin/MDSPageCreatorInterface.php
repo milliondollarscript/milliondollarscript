@@ -105,9 +105,17 @@ class MDSPageCreatorInterface {
         }
         
         wp_enqueue_script(
+            'mds-modal-utility',
+            MDS_BASE_URL . 'src/Assets/js/shared/modal-utility.js',
+            [ 'jquery' ],
+            filemtime( MDS_BASE_PATH . 'src/Assets/js/shared/modal-utility.js' ),
+            true
+        );
+        
+        wp_enqueue_script(
             'mds-page-creator',
             MDS_BASE_URL . 'src/Assets/js/admin/page-creator.min.js',
-            [ 'jquery', 'wp-util' ],
+            [ 'jquery', 'wp-util', 'jquery-ui-dialog', 'mds-modal-utility' ],
             filemtime( MDS_BASE_PATH . 'src/Assets/js/admin/page-creator.min.js' ),
             true
         );
@@ -115,7 +123,7 @@ class MDSPageCreatorInterface {
         wp_enqueue_style(
             'mds-page-creator',
             MDS_BASE_URL . 'src/Assets/css/admin/page-creator.css',
-            [],
+            [ 'wp-jquery-ui-dialog' ],
             filemtime( MDS_BASE_PATH . 'src/Assets/css/admin/page-creator.css' ),
         );
         
@@ -265,6 +273,7 @@ class MDSPageCreatorInterface {
                                     <select id="mds-grid-selector" name="selected_grid_id">
                                         <?php $this->renderGridOptions(); ?>
                                     </select>
+                                    <?php if ( $this->getEnabledGridCount() > 1 ): ?>
                                     <div class="mds-grid-sort-controls">
                                         <button type="button" id="mds-grid-sort-type-btn" class="button button-small" data-sort-by="id" title="<?php echo esc_attr( Language::get( 'Toggle sort by ID or Name' ) ); ?>">
                                             <span class="dashicons dashicons-sort"></span>
@@ -275,6 +284,7 @@ class MDSPageCreatorInterface {
                                             <span class="sort-direction-label"><?php echo esc_html( Language::get( 'ASC' ) ); ?></span>
                                         </button>
                                     </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             
@@ -359,6 +369,11 @@ class MDSPageCreatorInterface {
                 <div id="mds-preview-content">
                     <!-- Preview content loaded via AJAX -->
                 </div>
+                <div class="mds-preview-actions">
+                    <button type="button" id="mds-create-pages-bottom" class="button button-primary" disabled>
+                        <?php echo esc_html( Language::get( 'Create Pages' ) ); ?>
+                    </button>
+                </div>
             </div>
             
             <!-- Results Panel -->
@@ -392,6 +407,28 @@ class MDSPageCreatorInterface {
             </div>
         </div>
         <?php
+    }
+    
+    /**
+     * Get count of enabled grids
+     *
+     * @return int
+     */
+    private function getEnabledGridCount(): int {
+        global $wpdb;
+        
+        if ( !defined( 'MDS_DB_PREFIX' ) ) {
+            return 0;
+        }
+        
+        $sql = "SELECT COUNT(*) FROM " . MDS_DB_PREFIX . "banners WHERE enabled = 'Y'";
+        $count = $wpdb->get_var( $sql );
+        
+        if ( $wpdb->last_error ) {
+            return 0;
+        }
+        
+        return intval( $count );
     }
     
     /**
@@ -864,7 +901,7 @@ class MDSPageCreatorInterface {
                 .mds-grid-breakdown {
                     margin-top: 10px;
                     font-size: 12px;
-                    color: #666;
+                    color: #646970;
                 }
                 </style>
                 <?php

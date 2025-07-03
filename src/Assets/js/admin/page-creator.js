@@ -49,8 +49,8 @@
             // Preview button
             $('#mds-preview-creation').on('click', this.handlePreviewCreation.bind(this));
             
-            // Create pages button
-            $('#mds-create-pages').on('click', this.handleCreatePages.bind(this));
+            // Create pages buttons (both top and bottom)
+            $('#mds-create-pages, #mds-create-pages-bottom').on('click', this.handleCreatePages.bind(this));
             
             // Form submission
             $('#mds-page-creator-form').on('submit', this.handleFormSubmit.bind(this));
@@ -192,6 +192,10 @@
             e.preventDefault();
             
             const $btn = $(e.currentTarget);
+            if ($btn.length === 0) {
+                return; // Grid sort controls not present
+            }
+            
             const currentSortBy = $btn.data('sort-by');
             const newSortBy = currentSortBy === 'id' ? 'name' : 'id';
             
@@ -219,6 +223,10 @@
             e.preventDefault();
             
             const $btn = $(e.currentTarget);
+            if ($btn.length === 0) {
+                return; // Grid sort controls not present
+            }
+            
             const currentDirection = $btn.data('sort-direction');
             const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
             
@@ -251,8 +259,16 @@
          * Perform grid sort based on current button states
          */
         performGridSort: function() {
-            const sortBy = $('#mds-grid-sort-type-btn').data('sort-by');
-            const direction = $('#mds-grid-sort-direction-btn').data('sort-direction');
+            const $sortTypeBtn = $('#mds-grid-sort-type-btn');
+            const $sortDirectionBtn = $('#mds-grid-sort-direction-btn');
+            
+            // Check if sort controls exist
+            if ($sortTypeBtn.length === 0 || $sortDirectionBtn.length === 0) {
+                return; // Grid sort controls not present, skip sorting
+            }
+            
+            const sortBy = $sortTypeBtn.data('sort-by');
+            const direction = $sortDirectionBtn.data('sort-direction');
             this.sortGridOptions(sortBy, direction);
         },
         
@@ -409,7 +425,7 @@
                     if (response.success) {
                         this.config.previewData = response.data;
                         this.displayPreview(response.data);
-                        $('#mds-create-pages').prop('disabled', false);
+                        $('#mds-create-pages, #mds-create-pages-bottom').prop('disabled', false);
                     } else {
                         this.showError(response.data || 'Preview generation failed');
                     }
@@ -455,7 +471,7 @@
          * Process page creation after confirmation
          */
         processCreatePages: function(formData) {
-            $('#mds-create-pages').prop('disabled', true).text(mdsPageCreator.strings.creating);
+            $('#mds-create-pages, #mds-create-pages-bottom').prop('disabled', true).text(mdsPageCreator.strings.creating);
             
             const data = {
                 action: 'mds_creator_create_pages',  // Using alternative action name
@@ -476,7 +492,7 @@
                     this.showError('Network error creating pages: ' + error);
                 })
                 .always(() => {
-                    $('#mds-create-pages').prop('disabled', false).text('Create Pages');
+                    $('#mds-create-pages, #mds-create-pages-bottom').prop('disabled', false).text('Create Pages');
                 });
         },
         
@@ -641,6 +657,13 @@
             
             $('#mds-preview-content').html(html);
             $('#mds-preview-panel').show();
+            
+            // Scroll to preview panel
+            if ($('#mds-preview-panel').length > 0) {
+                $('html, body').animate({
+                    scrollTop: $('#mds-preview-panel').offset().top - 50
+                }, 600);
+            }
         },
         
         /**
@@ -795,28 +818,44 @@
          * Show error message
          */
         showError: function(message, callback) {
-            this.showModal('error', 'Error', message, callback);
+            if (typeof MDSModalUtility !== 'undefined') {
+                MDSModalUtility.error(message, callback);
+            } else {
+                this.showModal('error', 'Error', message, callback);
+            }
         },
         
         /**
          * Show success message
          */
         showSuccess: function(message, callback) {
-            this.showModal('success', 'Success', message, callback);
+            if (typeof MDSModalUtility !== 'undefined') {
+                MDSModalUtility.success(message, callback);
+            } else {
+                this.showModal('success', 'Success', message, callback);
+            }
         },
         
         /**
          * Show warning message
          */
         showWarning: function(message, callback) {
-            this.showModal('warning', 'Warning', message, callback);
+            if (typeof MDSModalUtility !== 'undefined') {
+                MDSModalUtility.warning(message, callback);
+            } else {
+                this.showModal('warning', 'Warning', message, callback);
+            }
         },
         
         /**
          * Show info message
          */
         showInfo: function(message, callback) {
-            this.showModal('info', 'Information', message, callback);
+            if (typeof MDSModalUtility !== 'undefined') {
+                MDSModalUtility.info(message, callback);
+            } else {
+                this.showModal('info', 'Information', message, callback);
+            }
         },
         
         /**

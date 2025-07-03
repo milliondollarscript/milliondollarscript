@@ -6,6 +6,12 @@
 /* Container and Layout */
 .mds-create-pages {
     max-width: 1200px;
+    color: #1d2327;
+    font-weight: normal;
+}
+
+.mds-create-pages * {
+    font-weight: inherit;
 }
 
 .mds-page-creator-container {
@@ -26,7 +32,7 @@
     border: 1px solid #e1e1e1;
     border-radius: 6px;
     background: #fafafa;
-    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, border-style 0.3s ease;
 }
 
 .mds-creator-step.active {
@@ -36,7 +42,9 @@
 }
 
 .mds-creator-step.inactive {
-    opacity: 0.7;
+    background: #f5f5f5;
+    border-style: dashed;
+    border-color: #ccc;
 }
 
 .mds-creator-step h2 {
@@ -48,7 +56,7 @@
 }
 
 .mds-creator-step .description {
-    color: #666;
+    color: #646970;
     font-style: italic;
     margin-bottom: 20px;
 }
@@ -90,6 +98,7 @@
 
 .mds-radio-card input[type="radio"]:checked + .mds-card-content {
     background: #f0f8ff;
+    border-radius: 6px;
 }
 
 .mds-implementation-option.selected .mds-radio-card {
@@ -100,6 +109,7 @@
 .mds-card-content {
     padding: 20px;
     padding-right: 50px; /* Space for radio button */
+    border-radius: 6px;
 }
 
 .mds-card-content h3 {
@@ -110,7 +120,7 @@
 
 .mds-card-content p {
     margin: 0 0 15px 0;
-    color: #666;
+    color: #646970;
 }
 
 .mds-pros-cons {
@@ -139,7 +149,7 @@
 
 .mds-pros li, .mds-cons li {
     margin-bottom: 3px;
-    color: #666;
+    color: #646970;
 }
 
 /* Grid Selection */
@@ -158,7 +168,7 @@
 }
 
 .mds-grid-selection .description {
-    color: #666;
+    color: #646970;
     font-style: italic;
     margin-bottom: 15px;
 }
@@ -352,6 +362,18 @@
     background: #f0f8ff;
 }
 
+/* Ensure radio cards maintain solid backgrounds regardless of step state */
+.mds-creator-step .mds-radio-card {
+    background: #fff;
+    opacity: 1;
+}
+
+.mds-creator-step .mds-create-mode-option.selected .mds-radio-card,
+.mds-creator-step .mds-implementation-option.selected .mds-radio-card {
+    background: #f0f8ff;
+    opacity: 1;
+}
+
 /* Page Configurations */
 #mds-page-configurations {
     margin-top: 20px;
@@ -407,7 +429,7 @@
 .mds-loading {
     text-align: center;
     padding: 40px;
-    color: #666;
+    color: #646970;
     font-style: italic;
     min-height: 100px;
     display: flex;
@@ -574,6 +596,13 @@
     margin-top: 10px;
 }
 
+.mds-preview-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e1e1e1;
+    text-align: center;
+}
+
 /* Results Sections */
 .mds-results-created {
     background: #d4edda;
@@ -633,7 +662,7 @@
 }
 
 .mds-quick-create p {
-    color: #666;
+    color: #646970;
     margin-bottom: 15px;
 }
 
@@ -728,15 +757,20 @@
     }
 }
 
-/* Modal Notification System */
-.mds-modal {
+/* Modal Notification System - Consistent with Page Management */
+.mds-modal, .mds-notification-modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: 999999;
-    display: flex;
+    display: none;
+    backdrop-filter: blur(2px);
+}
+
+.mds-modal.show, .mds-notification-modal.show {
+    display: flex !important;
     align-items: center;
     justify-content: center;
 }
@@ -747,8 +781,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.6);
 }
 
 .mds-modal-content {
@@ -761,6 +794,9 @@
     max-height: 80vh;
     overflow: hidden;
     animation: mdsModalSlideIn 0.3s ease-out;
+    will-change: transform, opacity;
+    font-weight: normal;
+    color: #1d2327;
 }
 
 @keyframes mdsModalSlideIn {
@@ -782,11 +818,12 @@
     border-bottom: 1px solid #ddd;
 }
 
-.mds-modal-header h4 {
+.mds-modal-header h4, .mds-modal-header h3 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
     color: #23282d;
+    line-height: 1.4;
 }
 
 .mds-modal-close {
@@ -795,7 +832,7 @@
     cursor: pointer;
     padding: 5px;
     border-radius: 4px;
-    color: #666;
+    color: #646970;
     transition: all 0.2s ease;
 }
 
@@ -815,6 +852,9 @@
     align-items: flex-start;
     padding: 20px;
     gap: 15px;
+    color: #1d2327;
+    font-weight: normal;
+    line-height: 1.5;
 }
 
 .mds-modal-icon {
@@ -851,11 +891,18 @@
     content: attr(data-icon);
 }
 
-.mds-modal-message {
+.mds-modal-message, .mds-notification-content {
     flex: 1;
     font-size: 14px;
     line-height: 1.5;
-    color: #23282d;
+    color: #1d2327;
+    font-weight: normal;
+}
+
+.mds-modal-message p, .mds-notification-content p {
+    margin: 0 0 1em 0;
+    color: #1d2327;
+    font-weight: normal;
 }
 
 .mds-modal-footer {

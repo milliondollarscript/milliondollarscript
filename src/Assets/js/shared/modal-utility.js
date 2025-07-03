@@ -124,7 +124,7 @@
             const modal = this.create(type, title, message, details, false);
             $('body').append(modal);
             
-            modal.fadeIn(300);
+            modal.addClass('show').fadeIn(300);
             modal.find('.mds-modal-content').addClass('mds-modal-show');
 
             // Close handlers
@@ -170,7 +170,7 @@
             
             $('body').append(modal);
             
-            modal.fadeIn(300);
+            modal.addClass('show').fadeIn(300);
             modal.find('.mds-modal-content').addClass('mds-modal-show');
 
             // Event handlers
@@ -211,7 +211,7 @@
                 $(document).off(`keydown.mds-modal-${modalId}`);
                 
                 modal.find('.mds-modal-content').removeClass('mds-modal-show');
-                modal.fadeOut(300, function() {
+                modal.removeClass('show').fadeOut(300, function() {
                     modal.remove();
                 });
             }
@@ -230,7 +230,7 @@
                 });
                 
                 modals.find('.mds-modal-content').removeClass('mds-modal-show');
-                modals.fadeOut(300, function() {
+                modals.removeClass('show').fadeOut(300, function() {
                     modals.remove();
                 });
             }

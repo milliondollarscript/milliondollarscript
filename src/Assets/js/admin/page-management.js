@@ -403,7 +403,7 @@
                     return;
                 }
 
-                const message = `Scanning pages ${(currentBatch * 10) + 1}-${Math.min((currentBatch + 1) * 10, total_pages)} of ${total_pages}...`;
+                const message = `Scanning pages...<br>(${(currentBatch * 10) + 1}-${Math.min((currentBatch + 1) * 10, total_pages)} of ${total_pages})`;
                 this.updateProgress(message, this.currentProgress);
 
                 $.ajax({
@@ -420,7 +420,7 @@
                             const data = response.data;
                             currentBatch++;
                             
-                            const realMessage = `Processed ${data.processed_pages} of ${data.total_pages} pages (${data.found_pages} MDS pages found)`;
+                            const realMessage = `Processed ${data.processed_pages} of ${data.total_pages} pages<br>(${data.found_pages} MDS pages found)`;
                             MDSPageManagement.updateProgress(realMessage, data.progress_percentage);
                             
                             if (data.is_complete) {
@@ -1274,7 +1274,7 @@
             this.currentProgress = effectivePercentage;
             
             const displayPercentage = Math.max(effectivePercentage, 10);
-            $('#mds-progress-message').text(message);
+            $('#mds-progress-message').html(message);
             $('#mds-progress-bar').css('width', displayPercentage + '%').text(Math.round(effectivePercentage) + '%');
             
             const modal = $('#mds-progress-indicator');
@@ -1300,7 +1300,7 @@
             this.currentProgress = newProgress;
             
             const displayPercentage = Math.max(newProgress, 10); // Ensure minimum width for visibility
-            $('#mds-progress-message').text(message);
+            $('#mds-progress-message').html(message);
             $('#mds-progress-bar').css('width', displayPercentage + '%').text(Math.round(newProgress) + '%');
         },
 
@@ -1500,10 +1500,12 @@
                 'Confirm Reset Page Statuses',
                 'Are you sure you want to reset all page statuses? This will re-validate all pages and update their statuses based on current validation rules.',
                 () => {
-                    const $button = $(e.target);
+                    const $button = $(e.target).closest('button');
                     const $errorProgress = $('#mds-error-progress');
                     const $progressText = $('#mds-error-progress-text');
                     
+                    // Add spinner to button
+                    this.setButtonLoading($button, true);
                     $button.prop('disabled', true);
                     $errorProgress.show();
                     $progressText.text('Resetting page statuses...');
@@ -1530,6 +1532,8 @@
                             MDSPageManagement.showNotice('error', 'An error occurred while resetting page statuses.');
                         },
                         complete: function() {
+                            // Reset button spinner
+                            MDSPageManagement.setButtonLoading($button, false);
                             $button.prop('disabled', false);
                             $errorProgress.hide();
                         }
@@ -2085,6 +2089,34 @@
             // Use the modal system instead of inline notices
             const title = type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information';
             NotificationModal.show(type, title, message);
+        },
+
+        /**
+         * Set button loading state with spinning icon
+         *
+         * @param {jQuery} $button - The button element
+         * @param {boolean} loading - Whether to set loading state or restore normal state
+         */
+        setButtonLoading: function($button, loading) {
+            const $icon = $button.find('.dashicons');
+            
+            if (loading) {
+                // Store original icon class for restoration
+                if (!$icon.data('original-class')) {
+                    $icon.data('original-class', $icon.attr('class'));
+                }
+                // Change to spinning update icon
+                $icon.removeClass().addClass('dashicons dashicons-update-alt').css({
+                    'animation': 'rotation 2s infinite linear'
+                });
+            } else {
+                // Restore original icon
+                const originalClass = $icon.data('original-class');
+                if (originalClass) {
+                    $icon.removeClass().attr('class', originalClass).css('animation', '');
+                    $icon.removeData('original-class');
+                }
+            }
         }
     };
 

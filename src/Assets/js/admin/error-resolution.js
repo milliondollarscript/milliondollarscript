@@ -58,7 +58,7 @@
         scanForErrors: function(e) {
             e.preventDefault();
             
-            const $button = $(e.target);
+            const $button = $(e.target).closest('button');
             const $results = $('#mds-error-results');
             
             // Show progress modal instead of inline notice
@@ -81,7 +81,9 @@
                 }
             }).done(function(response) {
                 if (response.success && response.data) {
-                    ErrorResolution.displayErrorResults(response.data);
+                    // Extract the errors array from the response data
+                    const errorPages = response.data.errors || response.data;
+                    ErrorResolution.displayErrorResults(errorPages);
                 } else {
                     // Use modal notification instead of inline error
                     let errorMessage = 'Scan failed';
@@ -154,7 +156,8 @@
             const $errorList = $('.mds-error-list');
             const $fixAllButton = $('#mds-fix-all-errors');
             
-            if (!errorPages || errorPages.length === 0) {
+            // Ensure errorPages is an array
+            if (!errorPages || !Array.isArray(errorPages) || errorPages.length === 0) {
                 $errorList.html('<div class="mds-no-errors"><p>No pages with errors found!</p></div>');
                 $fixAllButton.hide();
                 // Show success modal instead of inline notice
@@ -367,7 +370,7 @@
         fixAllErrors: function(e) {
             e.preventDefault();
             
-            const $button = $(e.target);
+            const $button = $(e.target).closest('button');
             const $errorItems = $('.mds-error-item.auto-fixable');
             const pageIds = $errorItems.map(function() {
                 return $(this).data('page-id');
@@ -506,6 +509,10 @@
         setButtonLoading: function($button, loading) {
             const $icon = $button.find('.dashicons');
             
+            if ($icon.length === 0) {
+                return;
+            }
+            
             if (loading) {
                 // Store original icon class for restoration
                 if (!$icon.data('original-class')) {
@@ -521,6 +528,16 @@
                 if (originalClass) {
                     $icon.removeClass().attr('class', originalClass).css('animation', '');
                     $icon.removeData('original-class');
+                } else {
+                    // Fallback: remove spinner and animation if no original class stored
+                    $icon.removeClass('dashicons-update-alt').css('animation', '');
+                    if (!$icon.hasClass('dashicons')) {
+                        $icon.addClass('dashicons');
+                    }
+                    // Add default icon if none present
+                    if (!$icon.attr('class').includes('dashicons-') || $icon.hasClass('dashicons-update-alt')) {
+                        $icon.addClass('dashicons-admin-tools');
+                    }
                 }
             }
         }
