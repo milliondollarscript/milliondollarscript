@@ -1,0 +1,350 @@
+/* Enhanced Extensions Page Styles - Marketing Psychology UI */
+.mds-extensions-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header Section */
+.mds-extensions-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mds-extensions-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+    opacity: 0.3;
+}
+
+.mds-extensions-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.5em;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+}
+
+.mds-extensions-subtitle {
+    font-size: 1.2em;
+    opacity: 0.95;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Discovery Banner */
+.mds-discovery-banner {
+    background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 30px;
+    color: white;
+    box-shadow: 0 8px 32px rgba(240, 147, 251, 0.3);
+}
+
+.mds-banner-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.mds-banner-text h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.8em;
+    font-weight: 700;
+}
+
+.mds-banner-text p {
+    margin: 0;
+    font-size: 1.1em;
+    opacity: 0.95;
+}
+
+.mds-banner-stats {
+    display: flex;
+    gap: 30px;
+}
+
+.mds-stat {
+    text-align: center;
+}
+
+.mds-stat-number {
+    display: block;
+    font-size: 2.2em;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.mds-stat-label {
+    font-size: 0.9em;
+    opacity: 0.9;
+    margin-top: 5px;
+}
+
+/* Extension Cards */
+.mds-extension-card {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 16px;
+    padding: 25px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.mds-extension-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.mds-extension-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.mds-extension-card:hover::before {
+    transform: scaleX(1);
+}
+
+.mds-extension-card.loading {
+    opacity: 0.7;
+    pointer-events: none;
+    position: relative;
+}
+
+.mds-extension-card.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Enhanced Buttons */
+.mds-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mds-btn:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.mds-btn:hover:before {
+    left: 100%;
+}
+
+.mds-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.mds-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.mds-btn-secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.mds-btn-secondary:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.mds-btn-active {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    cursor: default;
+}
+
+.mds-btn-small {
+    padding: 8px 16px;
+    font-size: 0.8em;
+}
+
+.mds-btn-icon {
+    font-size: 1.1em;
+}
+
+/* Animations */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Enhanced Notices */
+.mds-enhanced-notice {
+    border-left: 4px solid #667eea;
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, #ffffff 100%);
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.mds-notice-icon {
+    font-size: 1.2em;
+    margin-right: 8px;
+}
+
+/* Loading states for buttons */
+.mds-btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.mds-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Hover effects */
+.hover-effect {
+    transform: translateY(-2px) !important;
+}
+
+/* Pulse glow for featured items */
+.pulse-glow {
+    animation: pulse-glow 3s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    50% { box-shadow: 0 8px 25px rgba(102,126,234,0.3); }
+}
+
+/* Changelog styling */
+.mds-changelog {
+    background: #f8f9fa;
+    border-left: 3px solid #1a73e8;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.mds-no-updates {
+    color: #2e7d2e;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .mds-banner-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .mds-banner-stats {
+        justify-content: center;
+    }
+}
+
+/* Table compatibility for existing functionality */
+.mds-extensions-container {
+    margin-top: 20px;
+}
+
+.mds-update-available {
+    margin: 5px 0;
+}
+
+.mds-status-active {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.mds-status-inactive {
+    color: #d63638;
+}
+
+.mds-status-installed {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.mds-update-cell {
+    min-width: 200px;
+}
+
+.mds-action-cell {
+    min-width: 120px;
+}
+
+.mds-type-premium {
+    color: #d63638;
+    font-weight: bold;
+}
+
+.mds-type-free {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.description {
+    color: #666;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.mds-extension-name strong {
+    display: block;
+    margin-bottom: 4px;
+}

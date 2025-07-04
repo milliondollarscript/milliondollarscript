@@ -419,14 +419,39 @@ class Extensions {
         $nonce = wp_create_nonce( 'mds_extensions_nonce' );
         
         ?>
-        <div class="wrap" id="mds-extensions-page">
-            <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
+        <div class="wrap mds-extensions-page" id="mds-extensions-page">
+            <div class="mds-extensions-header">
+                <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
+                <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
+            </div>
             
             <?php if ($extension_server_error) : ?>
                 <div class="notice notice-warning">
                     <p><?php echo esc_html( Language::get('Could not connect to extension server: ') . $extension_server_error ); ?></p>
                     <p><?php echo esc_html( Language::get('You can only manage installed extensions at this time.') ); ?></p>
                 </div>
+            <?php endif; ?>
+            
+            <!-- Extension Discovery Banner -->
+            <?php if (!empty($available_extensions)) : ?>
+            <div class="mds-discovery-banner">
+                <div class="mds-banner-content">
+                    <div class="mds-banner-text">
+                        <h2><?php echo esc_html( Language::get('🚀 Unlock Your Potential') ); ?></h2>
+                        <p><?php echo esc_html( Language::get('Join thousands of successful marketers using MDS extensions to boost conversions and maximize revenue.') ); ?></p>
+                    </div>
+                    <div class="mds-banner-stats">
+                        <div class="mds-stat">
+                            <span class="mds-stat-number"><?php echo count($available_extensions); ?>+</span>
+                            <span class="mds-stat-label"><?php echo esc_html( Language::get('Extensions Available') ); ?></span>
+                        </div>
+                        <div class="mds-stat">
+                            <span class="mds-stat-number">50K+</span>
+                            <span class="mds-stat-label"><?php echo esc_html( Language::get('Active Users') ); ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <?php endif; ?>
             
             <!-- Available Extensions Section -->
@@ -617,10 +642,10 @@ class Extensions {
         // This is already called within the render method which checks if we're on the right page
         // No need for additional checks here
 
-        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-extensions.min.js';
-        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-extensions.min.js';
-        $style_path = MDS_BASE_PATH . 'src/Assets/css/admin-extensions.css';
-        $style_url = MDS_BASE_URL . 'src/Assets/css/admin-extensions.css';
+        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-extensions_enhanced.js';
+        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-extensions_enhanced.js';
+        $style_path = MDS_BASE_PATH . 'src/Assets/css/admin/extensions_enhanced.css';
+        $style_url = MDS_BASE_URL . 'src/Assets/css/admin/extensions_enhanced.css';
 
         $script_handle = 'mds-admin-extensions-js';
         $style_handle = 'mds-admin-extensions-css';
@@ -834,7 +859,7 @@ class Extensions {
         }
 
         try {
-            $extension_server_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+            $extension_server_url = Options::get_option('extension_server_url', 'http://localhost:3000');
             $license_key = Options::get_option('license_key', '');
             
             $api_url = rtrim($extension_server_url, '/') . '/api/extensions/' . urlencode($extension_id);
@@ -911,7 +936,7 @@ class Extensions {
         try {
             // Default to the service name and internal port for Docker environments.
             // The user can override this in MDS settings if their setup is different.
-            $extension_server_url = Options::get_option('extension_server_url', 'http://dev:3000');
+            $extension_server_url = Options::get_option('extension_server_url', 'http://localhost:3000');
             $license_key = Options::get_option('license_key', '');
 
             error_log('[MDS Extension Install] Extension ID: ' . $extension_id);
