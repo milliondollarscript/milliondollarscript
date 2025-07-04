@@ -7,6 +7,7 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\System\Logs;
+use MillionDollarScript\Classes\Admin\MDSEnhancedPageCreator;
 
 /**
  * Handles the plugin setup wizard.
@@ -495,52 +496,75 @@ class Wizard {
             wp_send_json_error( [ 'message' => Language::get( 'You do not have permission to create pages.' ) ], 403 );
         }
 
-        // Get page definitions from Utility class
-        $pages = Utility::get_pages();
+        try {
+            // Use the new enhanced page creator with default options
+            $page_creator = new MDSEnhancedPageCreator();
+            
+            // Create default selections for all essential pages
+            $default_selections = [
+                'implementation_type' => 'shortcode',
+                'page_types' => [
+                    'grid',
+                    'order', 
+                    'write-ad',
+                    'confirm-order',
+                    'payment',
+                    'manage',
+                    'thank-you',
+                    'list',
+                    'upload',
+                    'no-orders'
+                ],
+                'configurations' => [
+                    'grid' => ['align' => 'center', 'include_stats_above' => true],
+                    'order' => ['align' => 'center'],
+                    'write-ad' => ['align' => 'center'],
+                    'confirm-order' => ['align' => 'center'],
+                    'payment' => ['align' => 'center'],
+                    'manage' => ['align' => 'center'],
+                    'thank-you' => ['align' => 'center'],
+                    'list' => ['align' => 'center'],
+                    'upload' => ['align' => 'center'],
+                    'no-orders' => ['align' => 'center']
+                ],
+                'create_mode' => 'skip_existing',
+                'selected_grid_id' => 1
+            ];
+            
+            $result = $page_creator->createPages( $default_selections );
 
-        $created_pages = [];
-        $errors        = [];
-
-        // Create new pages in WP using the helper method.
-        foreach ( $pages as $page_type => $data ) {
-            // Check if page already exists by checking the Carbon Fields option
-            $existing_page_id = Options::get_option( $data['option'] );
-
-            if ( empty( $existing_page_id ) || ! get_post( $existing_page_id ) ) {
-                // Page doesn't exist or is invalid, try creating it
-                $result = Utility::create_mds_page( $page_type, $data );
-
-                if ( is_wp_error( $result ) ) {
-                    // Store error message for this specific page
-                    $errors[ $data['option'] ] = $result->get_error_message();
-                    continue; // Skip to next page on error
-                } elseif ( $result ) {
-                    // Page created successfully, store details in the required format
-                    $created_pages[ $data['option'] ] = [
-                        'id'        => $result,
-                        'title'     => $data['title'], // Use the title from the definition
-                        'permalink' => get_permalink( $result ),
-                    ];
-                }
+            if ( isset( $result['errors'] ) && !empty( $result['errors'] ) ) {
+                wp_send_json_error( [ 'message' => implode( '; ', $result['errors'] ) ], 500 );
             } else {
-                // Page already exists, add its details to the output
-                $existing_post = get_post( $existing_page_id );
-                if ( $existing_post ) {
-                    $created_pages[ $data['option'] ] = [
-                        'id'        => $existing_page_id,
-                        'title'     => get_the_title( $existing_page_id ),
-                        'permalink' => get_permalink( $existing_page_id ),
-                    ];
+                // Format the response for the wizard frontend
+                $created_pages = [];
+                
+                // Process created pages
+                if ( isset( $result['created_pages'] ) ) {
+                    foreach ( $result['created_pages'] as $page_info ) {
+                        $created_pages[$page_info['page_type']] = [
+                            'id'        => $page_info['page_id'],
+                            'title'     => $page_info['page_title'],
+                            'permalink' => $page_info['page_url'],
+                        ];
+                    }
                 }
-            }
-        }
+                
+                // Process updated pages (existing pages that were skipped)
+                if ( isset( $result['updated_pages'] ) ) {
+                    foreach ( $result['updated_pages'] as $page_info ) {
+                        $created_pages[$page_info['page_type']] = [
+                            'id'        => $page_info['page_id'],
+                            'title'     => $page_info['page_title'],
+                            'permalink' => $page_info['page_url'],
+                        ];
+                    }
+                }
 
-        if ( ! empty( $errors ) ) {
-            // Send back partial success with errors if some pages failed
-            wp_send_json_error( [ 'message' => Language::get( 'Some pages could not be created.' ), 'created' => $created_pages, 'errors' => $errors ], 500 );
-        } else {
-            // Send success with all created/existing page details
-            wp_send_json_success( $created_pages );
+                wp_send_json_success( $created_pages );
+            }
+        } catch ( \Exception $e ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Failed to create pages: ' ) . $e->getMessage() ], 500 );
         }
     }
     

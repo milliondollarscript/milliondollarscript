@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.12.129\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.12.139\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-06-27 04:48:54\n"
-"PO-Revision-Date: 2025-06-27 04:48:54\n"
-"X-Generator: Million Dollar Script Two 2.5.12.129\n"
+"POT-Creation-Date: 2025-07-04 16:58:19\n"
+"PO-Revision-Date: 2025-07-04 16:58:19\n"
+"X-Generator: Million Dollar Script Two 2.5.12.139\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -294,25 +294,16 @@ msgstr ""
 msgid "Never"
 msgstr ""
 
-msgid "Write Ad"
+msgid "Cancel"
 msgstr ""
 
-msgid "Confirm Now"
+msgid "Cancel, are you sure?"
 msgstr ""
 
 msgid "Pay Now"
 msgstr ""
 
-msgid "Continue"
-msgstr ""
-
-msgid "Order"
-msgstr ""
-
-msgid "Cancel"
-msgstr ""
-
-msgid "Cancel, are you sure?"
+msgid "Payment submitted and processing..."
 msgstr ""
 
 msgid "Expires in: %TIME%"
@@ -376,6 +367,18 @@ msgid "Cannot place pixels on order. You have reached the order limit for this g
 msgstr ""
 
 msgid "<span style=\"color: red;\">Cannot move the order - the space chosen is not empty!</span><br/>"
+msgstr ""
+
+msgid "Write Ad"
+msgstr ""
+
+msgid "Confirm Now"
+msgstr ""
+
+msgid "Order"
+msgstr ""
+
+msgid "Continue"
 msgstr ""
 
 msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</b>"
@@ -1284,7 +1287,7 @@ msgstr ""
 msgid "You do not have permission to create pages."
 msgstr ""
 
-msgid "Some pages could not be created."
+msgid "Failed to create pages: "
 msgstr ""
 
 msgid "You do not have permission to perform this action."
@@ -1314,37 +1317,133 @@ msgstr ""
 msgid "Troubleshooting"
 msgstr ""
 
-msgid "Are you sure you want to perform this action on selected pages?"
+msgid "Close"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Details"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+msgid "Processing..."
+msgstr ""
+
+msgid "No Action Selected"
+msgstr ""
+
+msgid "Please select an action to perform."
+msgstr ""
+
+msgid "No Items Selected"
+msgstr ""
+
+msgid "Please select one or more items to perform this action on."
 msgstr ""
 
 msgid "Are you sure you want to delete this page? This action cannot be undone."
 msgstr ""
 
-msgid "This will attempt to repair the page. Continue?"
+msgid "Are you sure you want to delete %d pages? This action cannot be undone."
 msgstr ""
 
-msgid "Scanning page..."
+msgid "Processing Bulk Action"
 msgstr ""
 
-msgid "Repairing page..."
+msgid "Scanning pages"
 msgstr ""
 
-msgid "Updating configuration..."
+msgid "Repairing pages"
 msgstr ""
 
-msgid "Exporting data..."
+msgid "Deleting pages"
 msgstr ""
 
-msgid "An error occurred"
+msgid "Activating pages"
 msgstr ""
 
-msgid "Operation completed successfully"
+msgid "Deactivating pages"
 msgstr ""
 
-msgid "Are you sure you want to scan all pages? This may take a while."
+msgid "Bulk Action Completed"
 msgstr ""
 
-msgid "Are you sure you want to repair all pages with issues?"
+msgid "Bulk Action Completed with Errors"
+msgstr ""
+
+msgid "Bulk Action Failed"
+msgstr ""
+
+msgid "An unknown error occurred."
+msgstr ""
+
+msgid "AJAX Error"
+msgstr ""
+
+msgid "Page Details"
+msgstr ""
+
+msgid "Failed to load content."
+msgstr ""
+
+msgid "Scan Completed"
+msgstr ""
+
+msgid "Scan Failed"
+msgstr ""
+
+msgid "Failed to send scan request."
+msgstr ""
+
+msgid "Repair Completed"
+msgstr ""
+
+msgid "Repair Failed"
+msgstr ""
+
+msgid "Failed to send repair request."
+msgstr ""
+
+msgid "Page Configuration"
+msgstr ""
+
+msgid "Configuration Saved"
+msgstr ""
+
+msgid "Configuration Failed"
+msgstr ""
+
+msgid "Failed to send configuration request."
+msgstr ""
+
+msgid "Scanning for Errors"
+msgstr ""
+
+msgid "Analyzing page for errors..."
+msgstr ""
+
+msgid "Page Error Analysis"
+msgstr ""
+
+msgid "Error Scan Failed"
+msgstr ""
+
+msgid "Failed to send error scan request."
+msgstr ""
+
+msgid "Confirm Delete"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Action Completed"
+msgstr ""
+
+msgid "Action Failed"
 msgstr ""
 
 msgid "Manage MDS Pages"
@@ -1410,10 +1509,7 @@ msgstr ""
 msgid "Clear Filters"
 msgstr ""
 
-msgid "Page Details"
-msgstr ""
-
-msgid "Page Configuration"
+msgid "List table initialization failed. Please refresh the page."
 msgstr ""
 
 msgid "Save Configuration"
@@ -1470,6 +1566,18 @@ msgstr ""
 msgid "No pages selected"
 msgstr ""
 
+msgid "Post with ID %d does not exist"
+msgstr ""
+
+msgid "Insufficient permissions to delete post: %s (ID: %d)"
+msgstr ""
+
+msgid "Failed to delete post: %s (ID: %d)"
+msgstr ""
+
+msgid "Failed to remove %s from MDS management: %s"
+msgstr ""
+
 msgid "Unknown action: %s"
 msgstr ""
 
@@ -1488,6 +1596,15 @@ msgstr ""
 msgid "No metadata found for page"
 msgstr ""
 
+msgid "Failed to correct page type: %s"
+msgstr ""
+
+msgid "Corrected page type from \"%s\" to \"%s\""
+msgstr ""
+
+msgid "Page type detection failed: %s"
+msgstr ""
+
 msgid "Added missing shortcode"
 msgstr ""
 
@@ -1497,13 +1614,37 @@ msgstr ""
 msgid "Updated page status"
 msgstr ""
 
+msgid "Security check failed. Please refresh the page and try again."
+msgstr ""
+
+msgid "No action specified"
+msgstr ""
+
+msgid "Invalid action: %s"
+msgstr ""
+
+msgid "An error occurred while processing the bulk action."
+msgstr ""
+
 msgid "Configuration updated successfully"
 msgstr ""
 
 msgid "Page scanned and metadata updated"
 msgstr ""
 
-msgid "Page is not an MDS page"
+msgid "Page \"%s\" is not an MDS page"
+msgstr ""
+
+msgid "No page ID provided"
+msgstr ""
+
+msgid "An error occurred while activating the page."
+msgstr ""
+
+msgid "An error occurred while deactivating the page."
+msgstr ""
+
+msgid "An error occurred while deleting the page."
 msgstr ""
 
 msgid "Page Information"
@@ -1581,19 +1722,31 @@ msgstr ""
 msgid "Scan completed: %d pages processed, %d MDS pages found"
 msgstr ""
 
-msgid "Compatibility: %d fixes applied"
+msgid "Invalid scan ID"
 msgstr ""
 
-msgid "Page errors: %d fixes applied"
+msgid "Scan data not found or expired"
 msgstr ""
 
-msgid "Standard repairs: %d pages processed"
+msgid "No pages to process in this batch"
+msgstr ""
+
+msgid "Compatibility fixes: %d applied"
+msgstr ""
+
+msgid "Content fixes: %d applied"
+msgstr ""
+
+msgid "Status repairs: %d pages processed"
 msgstr ""
 
 msgid "No issues found to repair. All pages appear to be functioning correctly."
 msgstr ""
 
 msgid "Repair completed: %d total fixes applied, %d errors encountered"
+msgstr ""
+
+msgid "Error scanning failed: "
 msgstr ""
 
 msgid "Error fixing completed: %d errors fixed, %d failed"
@@ -1614,7 +1767,13 @@ msgstr ""
 msgid "Error is not auto-fixable"
 msgstr ""
 
-msgid "Page type updated"
+msgid "Failed to update page type: "
+msgstr ""
+
+msgid "Page type updated to \"%s\""
+msgstr ""
+
+msgid "Error updating page type: "
 msgstr ""
 
 msgid "Unknown error type"
@@ -1635,6 +1794,12 @@ msgstr ""
 msgid "%d MDS pages are missing metadata records"
 msgstr ""
 
+msgid "Incorrect page type detected"
+msgstr ""
+
+msgid "Page \"%s\" is classified as \"%s\" but should be \"%s\""
+msgstr ""
+
 msgid "Migration completed: %d pages migrated"
 msgstr ""
 
@@ -1651,6 +1816,18 @@ msgid "No new metadata was created - pages may already have metadata"
 msgstr ""
 
 msgid "Failed to create missing metadata: "
+msgstr ""
+
+msgid "No page ID provided for page type correction"
+msgstr ""
+
+msgid "Page type corrected successfully"
+msgstr ""
+
+msgid "Failed to correct page type"
+msgstr ""
+
+msgid "Error correcting page type: %s"
 msgstr ""
 
 msgid "Unknown compatibility error type"
@@ -1686,6 +1863,12 @@ msgstr ""
 msgid "Page status reset completed: %d pages updated"
 msgstr ""
 
+msgid "Validation completed: %d pages checked, %d still valid, %d invalid pages found"
+msgstr ""
+
+msgid "An error occurred during validation: "
+msgstr ""
+
 msgid "Grid not found."
 msgstr ""
 
@@ -1699,6 +1882,9 @@ msgid "Generating preview..."
 msgstr ""
 
 msgid "Pages created successfully!"
+msgstr ""
+
+msgid "An error occurred"
 msgstr ""
 
 msgid "Are you sure you want to create these pages?"
@@ -1842,12 +2028,6 @@ msgstr ""
 msgid "Creation Results"
 msgstr ""
 
-msgid "Close"
-msgstr ""
-
-msgid "OK"
-msgstr ""
-
 msgid "Database configuration error"
 msgstr ""
 
@@ -1863,7 +2043,10 @@ msgstr ""
 msgid "Page for ordering pixels"
 msgstr ""
 
-msgid "Page for creating advertisements"
+msgid "Write Content"
+msgstr ""
+
+msgid "Page for creating content"
 msgstr ""
 
 msgid "Order confirmation and review page"
@@ -1872,13 +2055,16 @@ msgstr ""
 msgid "Payment processing page"
 msgstr ""
 
-msgid "Page for managing existing ads"
+msgid "Page for managing existing pixels"
 msgstr ""
 
 msgid "Thank you page after purchase"
 msgstr ""
 
-msgid "List of all advertisers"
+msgid "Pixel List"
+msgstr ""
+
+msgid "List of all pixel owners"
 msgstr ""
 
 msgid "File upload page"
@@ -1923,7 +2109,10 @@ msgstr ""
 msgid "Deactivate"
 msgstr ""
 
-msgid "Delete"
+msgid "Remove from MDS Management"
+msgstr ""
+
+msgid "Delete Page"
 msgstr ""
 
 msgid "Edit"
@@ -1951,6 +2140,12 @@ msgid "View Details"
 msgstr ""
 
 msgid "Scan Page"
+msgstr ""
+
+msgid "Deactivate Page"
+msgstr ""
+
+msgid "Activate Page"
 msgstr ""
 
 msgid "Repair Page"
@@ -2037,7 +2232,7 @@ msgstr ""
 msgid "Order Page Configuration"
 msgstr ""
 
-msgid "Write Advertisement Configuration"
+msgid "Write Content Configuration"
 msgstr ""
 
 msgid "Order Confirmation Configuration"
@@ -2046,13 +2241,13 @@ msgstr ""
 msgid "Payment Configuration"
 msgstr ""
 
-msgid "Manage Ads Configuration"
+msgid "Manage Pixels Configuration"
 msgstr ""
 
 msgid "Thank You Page Configuration"
 msgstr ""
 
-msgid "Advertiser List Configuration"
+msgid "Pixel List Configuration"
 msgstr ""
 
 msgid "File Upload Configuration"
@@ -2061,82 +2256,10 @@ msgstr ""
 msgid "No Orders Configuration"
 msgstr ""
 
+msgid "Statistics Box Configuration"
+msgstr ""
+
 msgid "Database operation failed"
-msgstr ""
-
-msgid "Pages"
-msgstr ""
-
-msgid "Clicking this button will create multiple pages for use with MDS."
-msgstr ""
-
-msgid "Delete Pages"
-msgstr ""
-
-msgid "Clicking this button will delete all pages created by MDS."
-msgstr ""
-
-msgid "MDS Pages"
-msgstr ""
-
-msgid "<h3>The following options will automatically use the pages created above. You can change them. These are the page id #</h3>"
-msgstr ""
-
-msgid "The grid page."
-msgstr ""
-
-msgid "Users Order Page"
-msgstr ""
-
-msgid "The order page for Users."
-msgstr ""
-
-msgid "Users Write Ad Page"
-msgstr ""
-
-msgid "The write ad page for Users."
-msgstr ""
-
-msgid "Users Confirm Order Page"
-msgstr ""
-
-msgid "The confirm order page for Users."
-msgstr ""
-
-msgid "Users Payment Page"
-msgstr ""
-
-msgid "The payment page for Users."
-msgstr ""
-
-msgid "Users Manage Page"
-msgstr ""
-
-msgid "The manage page for Users."
-msgstr ""
-
-msgid "Users Thank You Page"
-msgstr ""
-
-msgid "The thank you page for Users."
-msgstr ""
-
-msgid "Users List Page"
-msgstr ""
-
-msgid "The list page for Users."
-msgstr ""
-
-msgid "Users Upload Page"
-msgstr ""
-
-msgid "The upload page for Users."
-msgstr ""
-
-msgid "Users No Orders Page"
-msgstr ""
-
-msgid "The no orders page for Users."
 msgstr ""
 
 msgid "URLs & Redirects"
@@ -2272,6 +2395,30 @@ msgid "Dark Mode"
 msgstr ""
 
 msgid "Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching."
+msgstr ""
+
+msgid "Backup & Restore"
+msgstr ""
+
+msgid "Export & Import Color Settings"
+msgstr ""
+
+msgid "Export your current color settings as a backup file or import settings from a previously saved file."
+msgstr ""
+
+msgid "Export Colors"
+msgstr ""
+
+msgid "Reset to Defaults"
+msgstr ""
+
+msgid "Import Colors:"
+msgstr ""
+
+msgid "Import Colors"
+msgstr ""
+
+msgid "Note: Import will replace all current color settings. Make sure to export your current settings first as a backup."
 msgstr ""
 
 msgid "Main Background Colors"
@@ -3021,6 +3168,9 @@ msgstr ""
 msgid "API"
 msgstr ""
 
+msgid "Manual Scan"
+msgstr ""
+
 msgid "Mixed Content"
 msgstr ""
 
@@ -3493,6 +3643,9 @@ msgid "You are not logged in. Please log in or sign up for a new account. The pi
 msgstr ""
 
 msgid "The upload image file is empty."
+msgstr ""
+
+msgid "Order has been successfully cancelled."
 msgstr ""
 
 msgid "Manage your pixels"

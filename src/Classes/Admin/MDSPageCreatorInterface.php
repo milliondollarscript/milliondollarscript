@@ -493,8 +493,8 @@ class MDSPageCreatorInterface {
                 'required' => false
             ],
             'write-ad' => [
-                'label' => Language::get( 'Write Advertisement' ),
-                'description' => Language::get( 'Page for creating advertisements' ),
+                'label' => Language::get( 'Write Content' ),
+                'description' => Language::get( 'Page for creating content' ),
                 'icon' => 'dashicons-edit',
                 'required' => false
             ],
@@ -511,8 +511,8 @@ class MDSPageCreatorInterface {
                 'required' => false
             ],
             'manage' => [
-                'label' => Language::get( 'Manage Ads' ),
-                'description' => Language::get( 'Page for managing existing ads' ),
+                'label' => Language::get( 'Manage Pixels' ),
+                'description' => Language::get( 'Page for managing existing pixels' ),
                 'icon' => 'dashicons-admin-settings',
                 'required' => false
             ],
@@ -523,8 +523,8 @@ class MDSPageCreatorInterface {
                 'required' => false
             ],
             'list' => [
-                'label' => Language::get( 'Advertiser List' ),
-                'description' => Language::get( 'List of all advertisers' ),
+                'label' => Language::get( 'Pixel List' ),
+                'description' => Language::get( 'List of all pixel owners' ),
                 'icon' => 'dashicons-list-view',
                 'required' => false
             ],

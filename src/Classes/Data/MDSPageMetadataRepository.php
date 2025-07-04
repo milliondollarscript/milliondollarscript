@@ -262,6 +262,36 @@ class MDSPageMetadataRepository {
     }
     
     /**
+     * Find pages by type
+     *
+     * @param string $page_type
+     * @param string $status
+     * @return array
+     */
+    public function findByType( string $page_type, string $status = 'active' ): array {
+        return $this->findAll( [
+            'page_type' => $page_type,
+            'status' => $status
+        ] );
+    }
+    
+    /**
+     * Find first page by type
+     *
+     * @param string $page_type
+     * @param string $status
+     * @return MDSPageMetadata|null
+     */
+    public function findFirstByType( string $page_type, string $status = 'active' ): ?MDSPageMetadata {
+        $results = $this->findAll( [
+            'page_type' => $page_type,
+            'status' => $status
+        ], 1 );
+        
+        return !empty( $results ) ? $results[0] : null;
+    }
+    
+    /**
      * Find all metadata with optional filters
      *
      * @param array $filters

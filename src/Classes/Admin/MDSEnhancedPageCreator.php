@@ -59,9 +59,9 @@ class MDSEnhancedPageCreator {
                 'description' => 'Shortcode-based order form for pixel purchases'
             ],
             'write-ad' => [
-                'title' => 'Write Advertisement',
+                'title' => 'Write Content',
                 'content' => '[milliondollarscript type="write-ad" display="write-ad" align="{align}"]',
-                'description' => 'Shortcode-based advertisement creation form'
+                'description' => 'Shortcode-based content creation form'
             ],
             'confirm-order' => [
                 'title' => 'Order Confirmation',
@@ -74,9 +74,9 @@ class MDSEnhancedPageCreator {
                 'description' => 'Shortcode-based payment processing page'
             ],
             'manage' => [
-                'title' => 'Manage Ads',
+                'title' => 'Manage Pixels',
                 'content' => '[milliondollarscript type="manage" display="manage" align="{align}"]',
-                'description' => 'Shortcode-based ad management page'
+                'description' => 'Shortcode-based pixel management page'
             ],
             'thank-you' => [
                 'title' => 'Thank You',
@@ -106,57 +106,57 @@ class MDSEnhancedPageCreator {
         ],
         'block' => [
             'grid' => [
-                'title' => 'Pixel Grid (Gutenberg)',
+                'title' => 'Pixel Grid',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"grid","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"{width}","milliondollarscript_height":"{height}"}} /-->',
                 'description' => 'Modern Gutenberg block-based pixel grid'
             ],
             'order' => [
-                'title' => 'Order Pixels (Gutenberg)',
+                'title' => 'Order Pixels',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"order","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
                 'description' => 'Modern Gutenberg block-based order form'
             ],
             'write-ad' => [
-                'title' => 'Write Advertisement (Gutenberg)',
+                'title' => 'Write Content',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"write-ad","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
-                'description' => 'Modern Gutenberg block-based ad creation'
+                'description' => 'Modern Gutenberg block-based content creation'
             ],
             'confirm-order' => [
-                'title' => 'Order Confirmation (Gutenberg)',
+                'title' => 'Order Confirmation',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"confirm-order","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
                 'description' => 'Modern Gutenberg block-based confirmation page'
             ],
             'payment' => [
-                'title' => 'Payment Processing (Gutenberg)',
+                'title' => 'Payment Processing',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"payment","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
                 'description' => 'Modern Gutenberg block-based payment page'
             ],
             'manage' => [
-                'title' => 'Manage Ads (Gutenberg)',
+                'title' => 'Manage Pixels',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"manage","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
-                'description' => 'Modern Gutenberg block-based management page'
+                'description' => 'Modern Gutenberg block-based pixel management page'
             ],
             'thank-you' => [
-                'title' => 'Thank You (Gutenberg)',
+                'title' => 'Thank You',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"thank-you","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
                 'description' => 'Modern Gutenberg block-based thank you page'
             ],
             'list' => [
-                'title' => 'Advertiser List (Gutenberg)',
+                'title' => 'Advertiser List',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"list","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
                 'description' => 'Modern Gutenberg block-based list page'
             ],
             'upload' => [
-                'title' => 'File Upload (Gutenberg)',
+                'title' => 'File Upload',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"upload","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
                 'description' => 'Modern Gutenberg block-based upload page'
             ],
             'no-orders' => [
-                'title' => 'No Orders (Gutenberg)',
+                'title' => 'No Orders',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"no-orders","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"100%","milliondollarscript_height":"auto"}} /-->',
                 'description' => 'Modern Gutenberg block-based no orders page'
             ],
             'stats' => [
-                'title' => 'Stats Box (Gutenberg)',
+                'title' => 'Stats Box',
                 'content' => '<!-- wp:carbon-fields/million-dollar-script {"data":{"milliondollarscript_type":"stats","milliondollarscript_id":"{grid_id}","milliondollarscript_align":"{align}","milliondollarscript_width":"150px","milliondollarscript_height":"60px"}} /-->',
                 'description' => 'Modern Gutenberg block-based statistics display (150px × 60px)'
             ]
@@ -186,7 +186,7 @@ class MDSEnhancedPageCreator {
                 'type' => 'checkbox',
                 'label' => 'Include stats box above grid',
                 'description' => 'Adds a stats box (150px × 60px) above the pixel grid on the same page',
-                'default' => false
+                'default' => true
             ]
         ],
         'order' => [
@@ -391,8 +391,8 @@ class MDSEnhancedPageCreator {
                 'required' => true
             ],
             'write-ad' => [
-                'label' => 'Write Advertisement',
-                'description' => 'Form for creating advertisement content',
+                'label' => 'Write Content',
+                'description' => 'Form for creating content',
                 'icon' => 'edit',
                 'required' => true
             ],
@@ -409,8 +409,8 @@ class MDSEnhancedPageCreator {
                 'required' => false
             ],
             'manage' => [
-                'label' => 'Manage Ads',
-                'description' => 'User dashboard for managing advertisements',
+                'label' => 'Manage Pixels',
+                'description' => 'User dashboard for managing pixels',
                 'icon' => 'admin-users',
                 'required' => false
             ],
@@ -1425,8 +1425,13 @@ class MDSEnhancedPageCreator {
                 }
             }
             
+            // Get user-friendly label for the page type
+            $available_page_types = $this->getAvailablePageTypes();
+            $page_label = $available_page_types[$page_type]['label'] ?? ucfirst( str_replace( '-', ' ', $page_type ) );
+            
             $page_preview = [
                 'page_type' => $page_type,
+                'page_type_label' => $page_label,
                 'title' => $this->generatePageTitle( $page_type, $configurations[$page_type] ?? [] ),
                 'implementation_type' => $implementation_type,
                 'template_description' => $template['description'] ?? '',
@@ -1440,23 +1445,27 @@ class MDSEnhancedPageCreator {
             
             // Add warnings based on create_mode and existing pages
             if ( $existing_page_id ) {
+                // Get user-friendly label for the page type
+                $available_page_types = $this->getAvailablePageTypes();
+                $page_label = $available_page_types[$page_type]['label'] ?? ucfirst( str_replace( '-', ' ', $page_type ) );
+                
                 switch ( $create_mode ) {
                     case 'update_existing':
                         $preview['warnings'][] = sprintf(
                             Language::get( 'Page %s already exists and will be updated with new content' ),
-                            $page_type
+                            $page_label
                         );
                         break;
                     case 'skip_existing':
                         $preview['warnings'][] = sprintf(
                             Language::get( 'Page %s already exists and will be skipped' ),
-                            $page_type
+                            $page_label
                         );
                         break;
                     case 'create_new':
                         $preview['warnings'][] = sprintf(
                             Language::get( 'Page %s already exists but a new page will be created with a different name' ),
-                            $page_type
+                            $page_label
                         );
                         break;
                 }
@@ -1532,12 +1541,12 @@ class MDSEnhancedPageCreator {
         $titles = [
             'grid' => Language::get( 'Pixel Grid Configuration' ),
             'order' => Language::get( 'Order Page Configuration' ),
-            'write-ad' => Language::get( 'Write Advertisement Configuration' ),
+            'write-ad' => Language::get( 'Write Content Configuration' ),
             'confirm-order' => Language::get( 'Order Confirmation Configuration' ),
             'payment' => Language::get( 'Payment Configuration' ),
-            'manage' => Language::get( 'Manage Ads Configuration' ),
+            'manage' => Language::get( 'Manage Pixels Configuration' ),
             'thank-you' => Language::get( 'Thank You Page Configuration' ),
-            'list' => Language::get( 'Advertiser List Configuration' ),
+            'list' => Language::get( 'Pixel List Configuration' ),
             'upload' => Language::get( 'File Upload Configuration' ),
             'no-orders' => Language::get( 'No Orders Configuration' ),
             'stats' => Language::get( 'Statistics Box Configuration' )

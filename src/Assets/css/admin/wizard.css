@@ -444,6 +444,45 @@
     width: 200px;
 }
 
+/* Button spinners */
+.button.updating-message {
+    position: relative;
+    overflow: hidden;
+}
+
+.button.updating-message::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1;
+}
+
+.button.updating-message:not(.button-secondary)::before {
+    border-top-color: #fff;
+}
+
+.button.updating-message.button-secondary::before {
+    border-top-color: #2271b1;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.button.updating-message span,
+.button.updating-message .text {
+    opacity: 0.3;
+}
+
 /* Responsive Styles */
 @media screen and (max-width: 782px) {
     .step-indicator li {

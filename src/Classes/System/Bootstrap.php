@@ -194,8 +194,6 @@ class Bootstrap {
 		add_action( 'wp_ajax_mds_admin_ajax', [ Admin::class, 'ajax' ] );
 
 		add_action( 'wp_ajax_mds_update_language', [ '\MillionDollarScript\Classes\Admin\Admin', 'update_language' ] );
-		add_action( 'wp_ajax_mds_create_pages', [ '\MillionDollarScript\Classes\Admin\Admin', 'create_pages' ] );
-		add_action( 'wp_ajax_mds_delete_pages', [ '\MillionDollarScript\Classes\Admin\Admin', 'delete_pages' ] );
 
 		// AJAX handlers for Click Reports View Type preference
 		add_action( 'wp_ajax_mds_load_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'load_click_report_view_type' ] );

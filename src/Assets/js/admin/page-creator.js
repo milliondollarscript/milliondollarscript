@@ -615,7 +615,7 @@
             
             previewData.pages_to_create.forEach(page => {
                 html += '<tr>';
-                html += `<td><strong>${page.page_type}</strong></td>`;
+                html += `<td><strong>${page.page_type_label || page.page_type}</strong></td>`;
                 html += `<td>${page.title}</td>`;
                 html += `<td>${page.implementation_type}</td>`;
                 html += `<td>${page.status || (page.existing_page ? 'Will update existing' : 'Will create new')}</td>`;

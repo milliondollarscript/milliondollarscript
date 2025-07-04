@@ -32,6 +32,7 @@ use MillionDollarScript\Classes\Admin\Notices;
 
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Data\MDSPageMetadataManager;
 use MillionDollarScript\Classes\Forms;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
@@ -659,21 +660,33 @@ class Utility {
 			return $mds_page_ids;
 		}
 
-		$pagesArray = [
-			'grid-page',
-			'users-order-page',
-			'users-write-ad-page',
-			'users-confirm-order-page',
-			'users-payment-page',
-			'users-manage-page',
-			'users-thank-you-page',
-			'users-list-page',
-			'users-upload-page',
-			'users-no-orders-page',
+		$metadata_manager = MDSPageMetadataManager::getInstance();
+		$mds_page_ids = [];
+		
+		// Map old option names to new page types
+		$page_type_mapping = [
+			'grid-page' => 'grid',
+			'users-order-page' => 'order',
+			'users-write-ad-page' => 'write-ad',
+			'users-confirm-order-page' => 'confirm-order',
+			'users-payment-page' => 'payment',
+			'users-manage-page' => 'manage',
+			'users-thank-you-page' => 'thank-you',
+			'users-list-page' => 'list',
+			'users-upload-page' => 'upload',
+			'users-no-orders-page' => 'no-orders',
 		];
 
-		foreach ( $pagesArray as $page ) {
-			$mds_page_ids[ $page ] = Options::get_option( $page );
+		foreach ( $page_type_mapping as $option_name => $page_type ) {
+			// Try to get from new metadata system first
+			$metadata = $metadata_manager->getRepository()->findFirstByType( $page_type );
+			
+			if ( $metadata ) {
+				$mds_page_ids[ $option_name ] = $metadata->post_id;
+			} else {
+				// Fallback to old options system
+				$mds_page_ids[ $option_name ] = Options::get_option( $option_name );
+			}
 		}
 
 		return apply_filters( 'mds_page_ids', $mds_page_ids );
@@ -686,61 +699,74 @@ class Utility {
 			return $mds_pages;
 		}
 
-		$page_ids  = self::get_page_ids();
-		$mds_pages = [
-			'grid'          => [
-				'option'  => 'grid-page',
-				'title'   => Language::get( 'Grid' ),
-				'width'   => '1000px',
-				'height'  => '1000px',
-				'page_id' => $page_ids['grid-page'],
+		$metadata_manager = MDSPageMetadataManager::getInstance();
+		$page_ids = self::get_page_ids();
+		
+		// Define page configurations
+		$page_configs = [
+			'grid' => [
+				'option' => 'grid-page',
+				'title' => Language::get( 'Grid' ),
+				'width' => '1000px',
+				'height' => '1000px',
 			],
-			'order'         => [
-				'option'  => 'users-order-page',
-				'title'   => Language::get( 'Order Pixels' ),
-				'page_id' => $page_ids['users-order-page'],
+			'order' => [
+				'option' => 'users-order-page',
+				'title' => Language::get( 'Order Pixels' ),
 			],
-			'write-ad'      => [
-				'option'  => 'users-write-ad-page',
-				'title'   => Language::get( 'Write Your Ad' ),
-				'page_id' => $page_ids['users-write-ad-page'],
+			'write-ad' => [
+				'option' => 'users-write-ad-page',
+				'title' => Language::get( 'Write Your Ad' ),
 			],
 			'confirm-order' => [
-				'option'  => 'users-confirm-order-page',
-				'title'   => Language::get( 'Confirm Order' ),
-				'page_id' => $page_ids['users-confirm-order-page'],
+				'option' => 'users-confirm-order-page',
+				'title' => Language::get( 'Confirm Order' ),
 			],
-			'payment'       => [
-				'option'  => 'users-payment-page',
-				'title'   => Language::get( 'Payment' ),
-				'page_id' => $page_ids['users-payment-page'],
+			'payment' => [
+				'option' => 'users-payment-page',
+				'title' => Language::get( 'Payment' ),
 			],
-			'manage'        => [
-				'option'  => 'users-manage-page',
-				'title'   => Language::get( 'Manage Pixels' ),
-				'page_id' => $page_ids['users-manage-page'],
+			'manage' => [
+				'option' => 'users-manage-page',
+				'title' => Language::get( 'Manage Pixels' ),
 			],
-			'thank-you'     => [
-				'option'  => 'users-thank-you-page',
-				'title'   => Language::get( 'Thank-You!' ),
-				'page_id' => $page_ids['users-thank-you-page'],
+			'thank-you' => [
+				'option' => 'users-thank-you-page',
+				'title' => Language::get( 'Thank-You!' ),
 			],
-			'list'          => [
-				'option'  => 'users-list-page',
-				'title'   => Language::get( 'List' ),
-				'page_id' => $page_ids['users-list-page'],
+			'list' => [
+				'option' => 'users-list-page',
+				'title' => Language::get( 'List' ),
 			],
-			'upload'        => [
-				'option'  => 'users-upload-page',
-				'title'   => Language::get( 'Upload' ),
-				'page_id' => $page_ids['users-upload-page'],
+			'upload' => [
+				'option' => 'users-upload-page',
+				'title' => Language::get( 'Upload' ),
 			],
-			'no-orders'     => [
-				'option'  => 'users-no-orders-page',
-				'title'   => Language::get( 'No Orders' ),
-				'page_id' => $page_ids['users-no-orders-page'],
+			'no-orders' => [
+				'option' => 'users-no-orders-page',
+				'title' => Language::get( 'No Orders' ),
 			],
 		];
+
+		$mds_pages = [];
+		
+		foreach ( $page_configs as $page_type => $config ) {
+			// Try to get metadata from new system
+			$metadata = $metadata_manager->getRepository()->findFirstByType( $page_type );
+			
+			$page_data = $config;
+			$page_data['page_id'] = $page_ids[$config['option']];
+			
+			// If we have metadata, include additional data
+			if ( $metadata ) {
+				$page_data['metadata'] = $metadata;
+				$page_data['grid_id'] = $metadata->grid_id;
+				$page_data['configuration'] = $metadata->configuration;
+				$page_data['status'] = $metadata->status;
+			}
+			
+			$mds_pages[$page_type] = $page_data;
+		}
 
 		return apply_filters( 'mds_pages', $mds_pages );
 	}

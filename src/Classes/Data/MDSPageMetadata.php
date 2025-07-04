@@ -63,13 +63,15 @@ class MDSPageMetadata {
     public array $page_config = [];
     public array $display_settings = [];
     public array $integration_settings = [];
+    public ?int $grid_id = null;
+    public array $configuration = [];
     
     // Tracking
     public DateTime $created_at;
     public DateTime $updated_at;
     
     // Valid enum values
-    public const CREATION_METHODS = ['wizard', 'manual', 'auto-detected', 'imported', 'api', 'manual_scan'];
+    public const CREATION_METHODS = ['wizard', 'manual', 'auto_detected', 'imported', 'api', 'manual_scan'];
     public const CONTENT_TYPES = ['shortcode', 'block', 'mixed', 'custom'];
     public const STATUSES = ['active', 'inactive', 'orphaned', 'error'];
     
@@ -131,7 +133,11 @@ class MDSPageMetadata {
         $this->page_config = is_array( $data['page_config'] ?? null ) ? $data['page_config'] : [];
         $this->display_settings = is_array( $data['display_settings'] ?? null ) ? $data['display_settings'] : [];
         $this->integration_settings = is_array( $data['integration_settings'] ?? null ) ? $data['integration_settings'] : [];
+        $this->configuration = is_array( $data['configuration'] ?? null ) ? $data['configuration'] : [];
         $this->validation_errors = is_array( $data['validation_errors'] ?? null ) ? $data['validation_errors'] : null;
+        
+        // Handle grid_id
+        $this->grid_id = !empty( $data['grid_id'] ) ? intval( $data['grid_id'] ) : null;
         
         // Handle dates
         if ( !empty( $data['last_validated'] ) ) {
@@ -175,6 +181,8 @@ class MDSPageMetadata {
             'page_config' => $this->page_config,
             'display_settings' => $this->display_settings,
             'integration_settings' => $this->integration_settings,
+            'grid_id' => $this->grid_id,
+            'configuration' => $this->configuration,
             'last_validated' => $this->last_validated?->format( 'Y-m-d H:i:s' ),
             'validation_errors' => $this->validation_errors,
             'created_at' => $this->created_at->format( 'Y-m-d H:i:s' ),
@@ -263,7 +271,7 @@ class MDSPageMetadata {
         return match( $this->page_type ) {
             'grid' => Language::get( 'Grid' ),
             'order' => Language::get( 'Order Pixels' ),
-            'write-ad' => Language::get( 'Write Your Ad' ),
+            'write-ad' => Language::get( 'Write Content' ),
             'confirm-order' => Language::get( 'Confirm Order' ),
             'payment' => Language::get( 'Payment' ),
             'manage' => Language::get( 'Manage Pixels' ),

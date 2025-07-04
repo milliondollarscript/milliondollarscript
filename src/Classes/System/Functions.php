@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\System;
 
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Data\MDSPageMetadataManager;
 use MillionDollarScript\Classes\Email\Emails;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
@@ -181,6 +182,13 @@ class Functions {
 
 		if ( isset( $post ) && $post->ID == Options::get_option( 'users-order-page' ) ) {
 			$register_order_script = true;
+		} elseif ( isset( $post ) ) {
+			// Check new metadata system for order pages
+			$metadata_manager = MDSPageMetadataManager::getInstance();
+			$metadata = $metadata_manager->getMetadata( $post->ID );
+			if ( $metadata && $metadata->page_type === 'order' ) {
+				$register_order_script = true;
+			}
 		} else {
 			global $wp_query;
 			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
