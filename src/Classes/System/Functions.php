@@ -455,9 +455,17 @@ class Functions {
 			return true;
 		}
 
+		// Get current theme mode and apply theme classes for the pixel editing interface
+		$theme_mode = Options::get_option( 'theme_mode', 'light' );
+		$logged_in = is_user_logged_in() ? ' logged-in' : '';
+		$theme_classes = ' mds-theme-' . $theme_mode . ' mds-theme-active';
+
 		// Ad forms:
 		?>
-        <div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>
+		<div class="mds-container<?php echo $logged_in . $theme_classes; ?>">
+			<div class="outer">
+				<div class="inner">
+        		<div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>
 		<?php
 		// Display the global error message if it's set
 		global $mds_error;
@@ -568,6 +576,11 @@ class Functions {
 			$prams = load_ad_values( $ad_id );
 			display_ad_form( 1, 'user', $prams );
 		}
+		?>
+				</div>
+			</div>
+		</div>
+		<?php
 
 		require_once MDS_CORE_PATH . "html/footer.php";
 

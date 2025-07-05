@@ -28,6 +28,7 @@
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -35,8 +36,12 @@ defined( 'ABSPATH' ) or exit;
 
 $logged_in = is_user_logged_in() ? ' logged-in' : '';
 
+// Get current theme mode and apply theme classes
+$theme_mode = Options::get_option( 'theme_mode', 'light' );
+$theme_classes = ' mds-theme-' . $theme_mode . ' mds-theme-active';
+
 $header_container = '
-<div class="mds-container' . $logged_in . '">
+<div class="mds-container' . $logged_in . $theme_classes . '">
     <div class="outer">
         <div class="inner">
 ';

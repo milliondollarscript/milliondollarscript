@@ -76,7 +76,7 @@ class Styles {
  * when plugin options are saved.
  */
 ";
-        $file_content = $warning_comment . $css_content;
+        $file_content = "{$warning_comment}{$css_content}";
         $filepath = self::get_dynamic_css_filepath();
 
         return Filesystem::put_contents( $filepath, $file_content );
@@ -358,6 +358,10 @@ class Styles {
 
     /**
      * Enqueue dynamic CSS file after the core or login stylesheet.
+     * 
+     * Note: With the new page system using WordPress pages + shortcodes,
+     * we need to be more permissive about loading the dynamic CSS to ensure
+     * dark mode works properly across all MDS pages.
      */
     public static function enqueue_dynamic_styles(): void {
         if ( is_admin() ) {
@@ -365,12 +369,11 @@ class Styles {
         }
 
         global $pagenow;
-        $is_login_page = ( 'wp-login.php' === $pagenow );
-        $is_mds_page = Utility::is_mds_page();
-
-        if ( ! $is_login_page && ! $is_mds_page ) {
-            return;
-        }
+        $is_login_page = 'wp-login.php' === $pagenow;
+        
+        // Load CSS on all frontend pages to ensure dark mode works across WordPress pages with shortcodes
+        // This covers shortcode pages, direct MDS pages, and any other potential MDS content
+        // The CSS is small and only applies to elements with MDS classes anyway
 
         $css_filepath = self::get_dynamic_css_filepath();
 
@@ -400,7 +403,8 @@ class Styles {
         $theme_mode = Options::get_option( 'theme_mode', 'light' );
         
         $classes = [
-            'mds-theme-' . $theme_mode,
+            'mds-container',
+            "mds-theme-{$theme_mode}",
             'mds-theme-active'
         ];
         
@@ -445,7 +449,7 @@ class Styles {
         
         // Add theme class to admin for MDS pages
         if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'mds-' ) === 0 ) {
-            $classes .= ' mds-admin-theme-' . $theme_mode;
+            $classes .= " mds-admin-theme-{$theme_mode}";
         }
         
         return $classes;
