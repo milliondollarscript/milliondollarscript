@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.12.141
+Stable tag: 2.5.12.142
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -39,6 +39,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Feature: Add dark mode/light mode selection option.
 * Feature: Add dark mode/light mode grid image generation and switching.
 * Feature: Add page management and creation system.
+* Feature: Add mds_manage_order_header_after, mds_manage_order_content_after and mds_manage_pixels_page_footer actions to Manage Pixels page.
 
 = 2.5.11 =
 * Add WooCommerce refund integration.

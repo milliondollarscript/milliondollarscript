@@ -527,6 +527,10 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 					);
 
 					?>
+                    <?php
+                    // Allow extensions to add content to the order header (like platform info)
+                    do_action( 'mds_manage_order_header_after', $prams, $user_id );
+                    ?>
                     <div class="mds-status-container">
                         <div class='mds-status-indicator' title="<?php echo Language::get( "Status: " ) . esc_html( $pub_lang ) . ', ' . esc_html( $app_lang ) . ', ' . esc_html( $status_lang ); ?>"
                              style='background-color: <?php echo $status_color; ?>'></div>
@@ -541,6 +545,9 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 					<?php
 					// Action for adding custom order details
 					do_action( 'mds_order_details', $prams );
+					
+					// Allow extensions to add additional content to order details
+					do_action( 'mds_manage_order_content_after', $prams, $user_id );
 					?>
                 </div>
 				<?php

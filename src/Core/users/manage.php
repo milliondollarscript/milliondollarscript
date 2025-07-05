@@ -568,4 +568,9 @@ if ( $count > 0 ) {
 } else {
 	Language::out_replace( 'You have no pixels yet. Go <a href="%ORDER_URL%">here</a> to order pixels.', '%ORDER_URL%', Utility::get_page_url( 'order' ) );
 }
-require_once MDS_CORE_PATH . "html/footer.php";
+
+// Allow extensions to add scripts and additional content to the manage page
+do_action( 'mds_manage_pixels_page_footer', get_current_user_id(), $BID );
+?>
+
+<?php require_once MDS_CORE_PATH . "html/footer.php"; ?>
