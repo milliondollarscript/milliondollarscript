@@ -26,6 +26,14 @@
  */
 
 // Million Dollar Script Two JavaScript
+
+// Initialize MDS hooks system if not already present
+if (typeof window.MDS === 'undefined') {
+	window.MDS = {};
+}
+if (typeof window.MDS.hooks === 'undefined') {
+	window.MDS.hooks = {};
+}
  
 function add_ajax_loader(container) {
 	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
@@ -359,6 +367,15 @@ function add_tippy() {
 						// Update tooltip with the loaded content
 						instance.setContent(responseData);
 						instance._content = true;
+						
+						// Trigger custom event for extensions to modify tooltip content
+						if (window.MDS && window.MDS.hooks && window.MDS.hooks.afterTooltipContentLoaded) {
+							window.MDS.hooks.afterTooltipContentLoaded({
+								instance: instance,
+								data: data,
+								responseData: responseData
+							});
+						}
 					})
 					.fail(function (jqXHR, textStatus, errorThrown) {
 						// Handle AJAX failure
