@@ -816,7 +816,7 @@ Ads list page
 }
 
 .tippy-box[data-theme~='light'] .tippy-content a {
-	color: #66b3ff !important;
+	color: var(--mds-accessible-link, #0066cc) !important;
 	text-decoration: none !important;
 	transition: color 0.2s ease !important;
 }
@@ -829,7 +829,7 @@ Ads list page
 .tippy-box[data-theme~='light'] .tippy-content .mds-creator-profile-link {
 	display: inline-block !important;
 	background-color: rgba(255, 255, 255, 0.1) !important;
-	color: #66b3ff !important;
+	color: var(--mds-accessible-link, #0066cc) !important;
 	padding: 4px 8px !important;
 	border-radius: 4px !important;
 	border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -839,9 +839,9 @@ Ads list page
 }
 
 .tippy-box[data-theme~='light'] .tippy-content .mds-creator-profile-link:hover {
-	background-color: #66b3ff !important;
+	background-color: var(--mds-accessible-link, #0066cc) !important;
 	color: #333333 !important;
-	border-color: #66b3ff !important;
+	border-color: var(--mds-accessible-link, #0066cc) !important;
 	text-decoration: none !important;
 }
 
