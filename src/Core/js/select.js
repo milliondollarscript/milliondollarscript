@@ -498,9 +498,11 @@ function formSubmit(event) {
 					mds_update_package(jQuery(pixel_form));
 					pixel_form.submit();
 				}
-				submit_button1.disabled = false;
-				submit_button1.value = submit1_lang;
-				submitting = false;
+				// Keep button disabled and showing wait message during redirect
+				// The page will redirect after form submission
+				// submit_button1.disabled = false;
+				// submit_button1.value = submit1_lang;
+				// submitting = false;
 			}
 		}, 1000);
 	}
