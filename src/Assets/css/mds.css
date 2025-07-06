@@ -1381,25 +1381,35 @@ body:not(.login) #loginform label {
 }
 
 #loginform input[type="submit"] {
-	width: 100%;
+	width: 145px;
 	margin: 0;
 }
 
 .mds-register-btn-container {
 	margin: 0 0 0 10px;
+	display: inline-block;
+	width: 145px;
 }
 
 .mds-register-link {
-	line-height: normal;
-	color: var(--mds-btn-secondary-text,#fff);
+	background-color: var(--mds-btn-secondary-bg, #91877D);
+	color: var(--mds-btn-secondary-text, #ffffff);
 	text-align: center;
 	display: block;
 	margin: 0;
+	padding: 10px 20px;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	text-decoration: none;
+	font-size: 1.2rem;
+	box-sizing: border-box;
+	width: 100%;
 }
 
 .mds-register-link:hover {
-	background-color: var(--mds-btn-secondary-bg, #91877D);
-	color: var(--mds-btn-secondary-text, #ffffff);
+	background-color: var(--mds-bg-tertiary, #f0f0f0);
+	color: var(--mds-text-primary, #333);
+	border-color: var(--mds-btn-secondary-bg, #91877D);
 }
 
 .mds-pixel-content {
