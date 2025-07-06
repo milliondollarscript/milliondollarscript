@@ -1385,6 +1385,11 @@ body:not(.login) #loginform label {
 	margin: 0;
 }
 
+#loginform input[type="submit"]:hover {
+	background-color: var(--mds-bg-tertiary, #f0f0f0) !important;
+	color: var(--mds-text-primary, #333) !important;
+}
+
 .mds-register-btn-container {
 	margin: 0 0 0 10px;
 	display: inline-block;
@@ -1392,13 +1397,13 @@ body:not(.login) #loginform label {
 }
 
 .mds-register-link {
-	background-color: var(--mds-btn-secondary-bg, #91877D);
-	color: var(--mds-btn-secondary-text, #ffffff);
+	background-color: var(--mds-btn-primary-bg, #0073aa) !important;
+	color: var(--mds-btn-primary-text, #ffffff) !important;
 	text-align: center;
 	display: block;
 	margin: 0;
 	padding: 10px 20px;
-	border: 1px solid transparent;
+	border: none;
 	border-radius: 4px;
 	text-decoration: none;
 	font-size: 1.2rem;
@@ -1407,9 +1412,9 @@ body:not(.login) #loginform label {
 }
 
 .mds-register-link:hover {
-	background-color: var(--mds-bg-tertiary, #f0f0f0);
-	color: var(--mds-text-primary, #333);
-	border-color: var(--mds-btn-secondary-bg, #91877D);
+	background-color: var(--mds-bg-tertiary, #f0f0f0) !important;
+	color: var(--mds-text-primary, #333) !important;
+	border: none;
 }
 
 .mds-pixel-content {
