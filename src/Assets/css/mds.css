@@ -84,9 +84,6 @@ body.mds-container {
 	background-color: var(--mds-bg-primary, #ffffff);
 	color: var(--mds-text-primary, #000);
 	margin: 0;
-	font-size: 1rem;
-	font-weight: normal;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
 }
 
 body.mds-container.wp {
@@ -477,9 +474,7 @@ Ads list page
 	background-color: var(--mds-input-bg, #ffffff);
 	color: var(--mds-text-primary, #000);
 	box-shadow: 0 1px 3px var(--mds-shadow, rgba(0, 0, 0, 0.12)), 0 1px 2px var(--mds-shadow, rgba(0, 0, 0, 0.24));
-	font-family: Arial, sans-serif;
 	margin: 10px 0;
-	/*width: 100%;*/
 	box-sizing: border-box;
 }
 
@@ -557,51 +552,13 @@ Ads list page
 	width: 10px;
 }
 
-.mds-container h1, .mds-container h2, .mds-container h3, .mds-container h4, .mds-container h5, .mds-container h6 {
-	margin: 0.5em 0;
-	font-weight: bold;
-	line-height: 1.2;
-}
-
-.mds-container h1 {
-	font-size: 2.5em;
-}
-
-.mds-container h2 {
-	font-size: 2em;
-}
-
-.mds-container h3 {
-	font-size: 1.5em;
-}
-
-.mds-container h4 {
-	font-size: 1.2em;
-}
-
-.mds-container h5 {
-	font-size: 1em;
-}
-
-.mds-container h6 {
-	font-size: 0.9em;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-}
-
 .mds-container p {
-	font-size: 1rem;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-weight: normal;
 	color: var(--mds-text-primary, #000000);
 }
 
 .mds-container table,
 .mds-container tr,
 .mds-container td {
-	font-size: 1rem;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-weight: normal;
 	color: var(--mds-text-primary, #000000);
 }
 
@@ -610,9 +567,6 @@ Ads list page
 }
 
 .mds-container a {
-	font-size: 1rem;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-weight: normal;
 	color: var(--mds-accessible-link, #6699cc);
 }
 

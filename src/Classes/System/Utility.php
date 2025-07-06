@@ -33,6 +33,7 @@ use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Data\MDSPageMetadataManager;
+use MillionDollarScript\Classes\Data\MDSPageDetectionEngine;
 use MillionDollarScript\Classes\Forms;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
@@ -836,12 +837,38 @@ class Utility {
 			return true;
 		}
 
-		// Match endpoint URL patterns
+		// PRIMARY: Use DetectionEngine for comprehensive validation with confidence scoring
+		if ( is_singular() ) {
+			global $post;
+			if ( $post && $post->ID > 0 ) {
+				try {
+					$detection_engine = new MDSPageDetectionEngine();
+					$result = $detection_engine->detectMDSPage( $post->ID );
+					// DetectionEngine already applies confidence threshold (>=0.3) and returns is_mds_page boolean
+					if ( $result['is_mds_page'] ) {
+						return true;
+					}
+				} catch ( \Exception $e ) {
+					// Fallback to metadata check if detection engine fails
+					Logs::log( 'MDS: DetectionEngine failed in is_mds_page(): ' . $e->getMessage() );
+					try {
+						$metadata_manager = MDSPageMetadataManager::getInstance();
+						if ( $metadata_manager->hasMetadata( $post->ID ) ) {
+							return true;
+						}
+					} catch ( \Exception $e2 ) {
+						Logs::log( 'MDS: Metadata system also failed in is_mds_page(): ' . $e2->getMessage() );
+					}
+				}
+			}
+		}
+
+		// FALLBACK: Match endpoint URL patterns
 		if ( self::has_endpoint() ) {
 			return true;
 		}
 
-		// Match singular pages created via get_pages()
+		// FALLBACK: Match singular pages created via get_pages()
 		if ( is_singular() ) {
 			global $post;
 			$page_ids = self::get_page_ids();
