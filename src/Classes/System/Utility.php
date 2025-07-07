@@ -953,12 +953,12 @@ class Utility {
 	}
 
 	public static function get_clicks_for_today( $BID, $user_id = 0 ) {
+		global $wpdb;
 
 		$date = current_time( 'Y-m-d' );
 
-		$sql = "SELECT *, SUM(clicks) AS clk FROM `" . MDS_DB_PREFIX . "clicks` where banner_id='" . intval( $BID ) . "' AND `date`='$date' GROUP BY banner_id, block_id, user_id, date";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
+		$sql = $wpdb->prepare( "SELECT *, SUM(clicks) AS clk FROM `" . MDS_DB_PREFIX . "clicks` WHERE banner_id = %d AND `date` = %s GROUP BY banner_id, block_id, user_id, date", intval( $BID ), $date );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
 		if ( $row == null ) {
 			return 0;
@@ -975,11 +975,10 @@ class Utility {
 	 * @return int|mixed|void
 	 */
 	public static function get_clicks_for_banner( string $BID = '' ) {
+		global $wpdb;
 
-		$sql = "SELECT *, SUM(clicks) AS clk FROM `" . MDS_DB_PREFIX . "clicks` where banner_id='" . intval( $BID ) . "'  GROUP BY banner_id, block_id, user_id, date";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-
-		$row = mysqli_fetch_array( $result );
+		$sql = $wpdb->prepare( "SELECT *, SUM(clicks) AS clk FROM `" . MDS_DB_PREFIX . "clicks` WHERE banner_id = %d GROUP BY banner_id, block_id, user_id, date", intval( $BID ) );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
 		if ( $row == null ) {
 			return 0;
