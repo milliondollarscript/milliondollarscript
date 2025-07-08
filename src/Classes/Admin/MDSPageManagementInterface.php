@@ -1243,7 +1243,7 @@ class MDSPageManagementInterface {
         $current_page_type = $metadata->page_type;
         
         try {
-            $detection_engine = new \MillionDollarScript\Classes\Data\MDSPageDetectionEngine();
+            $detection_engine = new MDSPageDetectionEngine();
             $detection_result = $detection_engine->detectMDSPage( $page_id );
             
             if ( $detection_result['is_mds_page'] && $detection_result['page_type'] && 
@@ -2114,13 +2114,11 @@ class MDSPageManagementInterface {
                     if ( !$this->metadata_manager->isDatabaseReady() ) {
                         $init_result = $this->metadata_manager->initialize();
                         if ( is_wp_error( $init_result ) ) {
-                            throw new Exception( 'Failed to initialize metadata database: ' . $init_result->get_error_message() );
+                            throw new \Exception( 'Failed to initialize metadata database: ' . $init_result->get_error_message() );
                         }
                     }
                     
-                    
                     $metadata_result = $this->metadata_manager->createOrUpdateMetadata( $page_id, $page_type, $creation_method, $additional_data );
-                    
                     
                     // Check if metadata creation was successful
                     if ( is_wp_error( $metadata_result ) ) {
@@ -2162,7 +2160,7 @@ class MDSPageManagementInterface {
                         'found' => false
                     ];
                 }
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $scan_data['errors'][] = [
                     'page_id' => $page_id,
                     'error' => $e->getMessage()
@@ -2764,7 +2762,7 @@ class MDSPageManagementInterface {
         $pages_with_wrong_types = [];
         
         try {
-            $detection_engine = new \MillionDollarScript\Classes\Data\MDSPageDetectionEngine();
+            $detection_engine = new MDSPageDetectionEngine();
             
             // Get all pages with metadata
             $all_pages = $this->metadata_manager->getAllPages();
@@ -3409,7 +3407,7 @@ class MDSPageManagementInterface {
                     'confidence' => $detection_result['confidence'] ?? 0.0,
                     'page_type' => $detection_result['page_type'] ?? null
                 ];
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $diagnosis['test_detection_error'] = $e->getMessage();
             }
         }

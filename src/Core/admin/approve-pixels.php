@@ -112,7 +112,6 @@ if ( ! is_numeric( $BID ) ) {
 }
 
 $bid_sql = ( $BID > 0 ) ? " AND T1.banner_id = " . intval( $BID ) : '';
-$bid_update_sql = ( $BID > 0 ) ? " AND banner_id = " . intval( $BID ) : '';
 // Handle actions only if an order_id is provided
 if ( isset( $_POST['order_id'] ) ) {
 	$order_id = intval( $_POST['order_id'] );
@@ -143,18 +142,36 @@ if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] == 'approve' ) {
 	}
 	check_admin_referer( 'mds-approve-order_' . $order_id );
 
-	$wpdb->query( $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "blocks
-		SET approved = 'Y'
-		WHERE order_id = %d {$bid_update_sql}",
-		$order_id
-	) );
-	$wpdb->query( $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "orders
-		SET approved = 'Y'
-		WHERE order_id = %d {$bid_update_sql}",
-		$order_id
-	) );
+	if ( $BID > 0 ) {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "blocks
+			SET approved = 'Y'
+			WHERE order_id = %d AND banner_id = %d",
+			$order_id, $BID
+		) );
+	} else {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "blocks
+			SET approved = 'Y'
+			WHERE order_id = %d",
+			$order_id
+		) );
+	}
+	if ( $BID > 0 ) {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "orders
+			SET approved = 'Y'
+			WHERE order_id = %d AND banner_id = %d",
+			$order_id, $BID
+		) );
+	} else {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "orders
+			SET approved = 'Y'
+			WHERE order_id = %d",
+			$order_id
+		) );
+	}
 
 	// Optional: Process grid images immediately if checked
 	if ( isset( $_GET['do_it_now'] ) && $_GET['do_it_now'] === 'true' ) {
@@ -172,18 +189,36 @@ if ( ( ( isset( $_POST['action'] ) && $_POST['action'] == 'approve' ) || ( isset
 
 		foreach ( $_POST['orders'] as $order_id ) {
 			$order_id = intval( $order_id );
-			$wpdb->query( $wpdb->prepare(
-				"UPDATE " . MDS_DB_PREFIX . "blocks
-				SET approved = 'Y'
-				WHERE order_id = %d {$bid_update_sql}",
-				$order_id
-			) );
-			$wpdb->query( $wpdb->prepare(
-				"UPDATE " . MDS_DB_PREFIX . "orders
-				SET approved = 'Y'
-				WHERE order_id = %d {$bid_update_sql}",
-				$order_id
-			) );
+			if ( $BID > 0 ) {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "blocks
+					SET approved = 'Y'
+					WHERE order_id = %d AND banner_id = %d",
+					$order_id, $BID
+				) );
+			} else {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "blocks
+					SET approved = 'Y'
+					WHERE order_id = %d",
+					$order_id
+				) );
+			}
+			if ( $BID > 0 ) {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "orders
+					SET approved = 'Y'
+					WHERE order_id = %d AND banner_id = %d",
+					$order_id, $BID
+				) );
+			} else {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "orders
+					SET approved = 'Y'
+					WHERE order_id = %d",
+					$order_id
+				) );
+			}
 		}
 		// Optional: Process grid images immediately if checked
 		if ( isset( $_POST['do_it_now'] ) && $_POST['do_it_now'] === 'true' ) {
@@ -201,18 +236,36 @@ if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] == 'disapprove' ) {
 	}
 	check_admin_referer( 'mds-disapprove-order_' . $order_id );
 
-	$wpdb->query( $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "blocks
-		SET approved = 'N'
-		WHERE order_id = %d {$bid_update_sql}",
-		$order_id
-	) );
-	$wpdb->query( $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "orders
-		SET approved = 'N'
-		WHERE order_id = %d {$bid_update_sql}",
-		$order_id
-	) );
+	if ( $BID > 0 ) {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "blocks
+			SET approved = 'N'
+			WHERE order_id = %d AND banner_id = %d",
+			$order_id, $BID
+		) );
+	} else {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "blocks
+			SET approved = 'N'
+			WHERE order_id = %d",
+			$order_id
+		) );
+	}
+	if ( $BID > 0 ) {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "orders
+			SET approved = 'N'
+			WHERE order_id = %d AND banner_id = %d",
+			$order_id, $BID
+		) );
+	} else {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . MDS_DB_PREFIX . "orders
+			SET approved = 'N'
+			WHERE order_id = %d",
+			$order_id
+		) );
+	}
 
 	// Optional: Process grid images immediately if checked
 	if ( isset( $_GET['do_it_now'] ) && $_GET['do_it_now'] === 'true' ) {
@@ -230,18 +283,36 @@ if ( ( ( isset( $_POST['action'] ) && $_POST['action'] == 'disapprove' ) || ( is
 
 		foreach ( $_POST['orders'] as $order_id ) {
 			$order_id = intval( $order_id );
-			$wpdb->query( $wpdb->prepare(
-				"UPDATE " . MDS_DB_PREFIX . "blocks
-				SET approved = 'N'
-				WHERE order_id = %d {$bid_update_sql}",
-				$order_id
-			) );
-			$wpdb->query( $wpdb->prepare(
-				"UPDATE " . MDS_DB_PREFIX . "orders
-				SET approved = 'N'
-				WHERE order_id = %d {$bid_update_sql}",
-				$order_id
-			) );
+			if ( $BID > 0 ) {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "blocks
+					SET approved = 'N'
+					WHERE order_id = %d AND banner_id = %d",
+					$order_id, $BID
+				) );
+			} else {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "blocks
+					SET approved = 'N'
+					WHERE order_id = %d",
+					$order_id
+				) );
+			}
+			if ( $BID > 0 ) {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "orders
+					SET approved = 'N'
+					WHERE order_id = %d AND banner_id = %d",
+					$order_id, $BID
+				) );
+			} else {
+				$wpdb->query( $wpdb->prepare(
+					"UPDATE " . MDS_DB_PREFIX . "orders
+					SET approved = 'N'
+					WHERE order_id = %d",
+					$order_id
+				) );
+			}
 		}
 		// Optional: Process grid images immediately if checked
 		if ( isset( $_POST['do_it_now'] ) && $_POST['do_it_now'] === 'true' ) {

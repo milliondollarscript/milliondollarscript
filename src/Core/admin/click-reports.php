@@ -35,11 +35,14 @@ if ( $ADVANCED_CLICK_COUNT != 'YES' ) {
 	die ( "Advanced click tracking not enabled. You will need to enable advanced click tracking in the Main Config" );
 }
 
-global $f2;
+global $f2, $wpdb;
 $BID = $f2->bid();
 
-$sql = "Select * from " . MDS_DB_PREFIX . "banners ";
-$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners";
+$res = $wpdb->get_results( $sql );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 ?>
 
     <h3>Click Reports</h3>
@@ -56,11 +59,10 @@ $res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql 
         <label for="grid-select" style="font-weight:500;">Select grid:</label>
         <select name="BID" id="grid-select" onchange="this.form.submit()" style="margin-left:8px;margin-right:8px;padding:3px 26px 3px 6px;font-size:1em;">
             <?php
-            mysqli_data_seek($res, 0); // Reset pointer in case used
-            while ( $row = mysqli_fetch_array( $res ) ) {
-                $sel = ( $row['banner_id'] == $BID && $BID != 'all' ) ? 'selected' : '';
+            foreach ( $res as $row ) {
+                $sel = ( $row->banner_id == $BID && $BID != 'all' ) ? 'selected' : '';
             ?>
-                <option <?php echo $sel; ?> value="<?php echo intval($row['banner_id']); ?>"><?php echo esc_html($row['name']); ?></option>
+                <option <?php echo $sel; ?> value="<?php echo intval($row->banner_id); ?>"><?php echo esc_html($row->name); ?></option>
             <?php } ?>
         </select>
     </form>
@@ -79,34 +81,43 @@ if (!empty($_REQUEST['to_date'])) {
 }
 
 // Query clicks per date and block
-$sql_clicks = "SELECT date, block_id, SUM(clicks) AS clicks FROM " . MDS_DB_PREFIX . "clicks WHERE banner_id = " . intval($BID) . " AND date >= '{$from}' AND date <= '{$to}' GROUP BY date, block_id";
-$res_clicks = mysqli_query( $GLOBALS['connection'], $sql_clicks ) or die( mds_sql_error( $sql_clicks ) );
+$sql_clicks = $wpdb->prepare( "SELECT date, block_id, SUM(clicks) AS clicks FROM " . MDS_DB_PREFIX . "clicks WHERE banner_id = %d AND date >= %s AND date <= %s GROUP BY date, block_id", $BID, $from, $to );
+$res_clicks = $wpdb->get_results( $sql_clicks );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 $clicks_by_date_block = [];
 $all_block_ids = [];
-while ( $row = mysqli_fetch_assoc( $res_clicks ) ) {
-    $date = $row['date'];
-    $block_id = $row['block_id'];
-    $clicks_by_date_block[$date][$block_id] = intval($row['clicks']);
+foreach ( $res_clicks as $row ) {
+    $date = $row->date;
+    $block_id = $row->block_id;
+    $clicks_by_date_block[$date][$block_id] = intval($row->clicks);
     $all_block_ids[$block_id] = true;
 }
 // Query views per date and block
-$sql_views = "SELECT date, block_id, SUM(views) AS views FROM " . MDS_DB_PREFIX . "views WHERE banner_id = " . intval($BID) . " AND date >= '{$from}' AND date <= '{$to}' GROUP BY date, block_id";
-$res_views = mysqli_query( $GLOBALS['connection'], $sql_views ) or die( mds_sql_error( $sql_views ) );
+$sql_views = $wpdb->prepare( "SELECT date, block_id, SUM(views) AS views FROM " . MDS_DB_PREFIX . "views WHERE banner_id = %d AND date >= %s AND date <= %s GROUP BY date, block_id", $BID, $from, $to );
+$res_views = $wpdb->get_results( $sql_views );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 $views_by_date_block = [];
-while ( $row = mysqli_fetch_assoc( $res_views ) ) {
-    $date = $row['date'];
-    $block_id = $row['block_id'];
-    $views_by_date_block[$date][$block_id] = intval($row['views']);
+foreach ( $res_views as $row ) {
+    $date = $row->date;
+    $block_id = $row->block_id;
+    $views_by_date_block[$date][$block_id] = intval($row->views);
     $all_block_ids[$block_id] = true;
 }
 // Get order_id for each block_id
 $block_ids_list = implode(',', array_map('intval', array_keys($all_block_ids)));
 $orders_by_block = [];
 if ($block_ids_list) {
-    $sql_blocks = "SELECT block_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id IN ($block_ids_list) AND banner_id = " . intval($BID);
-    $res_blocks = mysqli_query( $GLOBALS['connection'], $sql_blocks ) or die( mds_sql_error( $sql_blocks ) );
-    while ( $row = mysqli_fetch_assoc( $res_blocks ) ) {
-        $orders_by_block[$row['block_id']] = $row['order_id'];
+    $sql_blocks = $wpdb->prepare( "SELECT block_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id IN ($block_ids_list) AND banner_id = %d", $BID );
+    $res_blocks = $wpdb->get_results( $sql_blocks );
+    if ( $wpdb->last_error ) {
+        die( 'Database error: ' . $wpdb->last_error );
+    }
+    foreach ( $res_blocks as $row ) {
+        $orders_by_block[$row->block_id] = $row->order_id;
     }
 }
 // Merge all dates
@@ -272,10 +283,12 @@ $BID = isset($_REQUEST['BID']) ? intval($_REQUEST['BID']) : 0;
 if ( $BID <= 0 ) {
     // If no valid BID from request, try to get the first banner ID from the DB
     $sql_first_banner = "SELECT banner_id FROM " . MDS_DB_PREFIX . "banners ORDER BY banner_id ASC LIMIT 1";
-    $res_first_banner = mysqli_query($GLOBALS['connection'], $sql_first_banner);
-    if ($res_first_banner && mysqli_num_rows($res_first_banner) > 0) {
-        $first_banner_row = mysqli_fetch_assoc($res_first_banner);
-        $BID = intval($first_banner_row['banner_id']);
+    $first_banner_row = $wpdb->get_row( $sql_first_banner );
+    if ( $wpdb->last_error ) {
+        die( 'Database error: ' . $wpdb->last_error );
+    }
+    if ( $first_banner_row ) {
+        $BID = intval($first_banner_row->banner_id);
     } else {
         // No banners found in the database at all.
         echo '<div class="error"><p>Error: No banners found in the system. Please create a banner first.</p></div>';
@@ -298,11 +311,14 @@ $selected_user  = isset($_GET['user']) && $_GET['user'] !== '' ? trim($_GET['use
 $filtered_blocks = [];
 foreach ($orders_by_block as $block_id => $order_id) {
     // Fetch user_id for this block
-    $sql = "SELECT user_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = " . intval($block_id) . " LIMIT 1";
-    $res = mysqli_query($GLOBALS['connection'], $sql);
+    $sql = $wpdb->prepare( "SELECT user_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d LIMIT 1", $block_id );
+    $block_row = $wpdb->get_row( $sql );
+    if ( $wpdb->last_error ) {
+        die( 'Database error: ' . $wpdb->last_error );
+    }
     $user_id = '';
-    if ($row = mysqli_fetch_assoc($res)) {
-        $user_id = $row['user_id'];
+    if ( $block_row ) {
+        $user_id = $block_row->user_id;
     }
     // Apply block filter
     if ($selected_block && $block_id != $selected_block) continue;

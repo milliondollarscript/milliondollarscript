@@ -40,7 +40,7 @@ mds_wp_login_check();
 //	return;
 //}
 
-global $BID, $f2;
+global $BID, $f2, $wpdb;
 $BID = $f2->bid();
 
 if ( ! empty( $_REQUEST['order_id'] ) ) {
@@ -50,11 +50,15 @@ if ( ! empty( $_REQUEST['order_id'] ) ) {
 	$order_id = Orders::get_current_order_id();
 }
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . intval( $order_id ) . " AND user_id=" . get_current_user_id();
-$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+$sql = $wpdb->prepare(
+	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d",
+	intval( $order_id ),
+	get_current_user_id()
+);
+$order_row = $wpdb->get_row( $sql, ARRAY_A );
 
 // Handle when no order id is found.
-if ( mysqli_num_rows( $order_result ) == 0 ) {
+if ( ! $order_row ) {
 	if ( wp_doing_ajax() ) {
 		Orders::no_orders();
 		wp_die();
@@ -63,7 +67,10 @@ if ( mysqli_num_rows( $order_result ) == 0 ) {
 	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
-$order_row = mysqli_fetch_array( $order_result );
+// Check for database errors
+if ( $wpdb->last_error ) {
+	wp_die( esc_html( $wpdb->last_error ) );
+}
 
 // Process confirmation
 if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {

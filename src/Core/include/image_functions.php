@@ -169,11 +169,16 @@ function process_image( $BID ) {
 }
 
 function get_grid_shortcode( $BID ) {
+	global $wpdb;
 	$BID = intval( $BID );
 
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id='" . $BID . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	$b_row = mysqli_fetch_array( $result );
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d";
+	$prepared_sql = $wpdb->prepare( $sql, $BID );
+	$b_row = $wpdb->get_row( $prepared_sql, ARRAY_A );
+
+	if ( empty( $b_row ) ) {
+		return '';
+	}
 
 	if ( ! $b_row['block_width'] ) {
 		$b_row['block_width'] = 10;

@@ -815,10 +815,16 @@ class Orders {
 			}
 
 		} else {
-			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . $order_id . "'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-			if ( mysqli_num_rows( $result ) > 0 ) {
-
+			global $wpdb;
+			$result = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id = %d AND order_id = %d",
+					get_current_user_id(),
+					$order_id
+				)
+			);
+			
+			if ( $result ) {
 				// If the cancelled order is in progress then reset the progress.
 				if ( self::is_order_in_progress( $order_id ) ) {
 					self::reset_progress();
@@ -841,10 +847,15 @@ class Orders {
 		if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == self::get_current_order_id() ) {
 			// convert the temp order to an order.
 
-			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( self::get_current_order_id() ) . "' ";
-			$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+			$order_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+					intval( self::get_current_order_id() )
+				),
+				ARRAY_A
+			);
 
-			if ( mysqli_num_rows( $order_result ) == 0 ) {
+			if ( ! $order_row ) {
 				// no order id found...
 				if ( wp_doing_ajax() ) {
 					self::no_orders();
@@ -852,20 +863,8 @@ class Orders {
 				}
 
 				Utility::redirect( Utility::get_page_url( 'no-orders' ) );
-			} else if ( $order_row = mysqli_fetch_array( $order_result ) ) {
-
-				$_REQUEST['order_id'] = self::reserve_pixels_for_temp_order( $order_row );
 			} else {
-
-				Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
-				Language::out_replace(
-					'<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>',
-					'%ORDER_PAGE%',
-					Utility::get_page_url( 'order' )
-				);
-
-				require_once MDS_CORE_PATH . "html/footer.php";
-				die();
+				$_REQUEST['order_id'] = self::reserve_pixels_for_temp_order( $order_row );
 			}
 		}
 
@@ -912,9 +911,13 @@ class Orders {
         <div>
             <b><?php Language::out( "Grid" ); ?>:</b>
 			<?php
-			$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $order['banner_id'] );
-			$b_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$b_row = mysqli_fetch_array( $b_result );
+			$b_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d",
+					intval( $order['banner_id'] )
+				),
+				ARRAY_A
+			);
 
 			if ( $b_row ) {
 				echo $b_row['name'];
@@ -985,7 +988,7 @@ class Orders {
 						if ( $current_step != 0 ) {
 							echo Language::get( 'In progress' ) . '<br>';
 						}
-						$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
+						$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'], 'mds_cancel_nonce' => wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] ) ];
 						$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
 						echo "<input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . $cancel_url . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
 						break;
@@ -997,7 +1000,7 @@ class Orders {
 							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
 							echo "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $pay_url . "\"' />";
 							// Cancel button
-							$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
+							$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'], 'mds_cancel_nonce' => wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] ) ];
 							$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
 							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . $cancel_url . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
 						} else if ( self::has_payment( $order['order_id'] ) ) {
@@ -1080,7 +1083,8 @@ class Orders {
 				$temp_var = '&order_id=' . $order['order_id'];
 				echo Language::get( 'In progress' ) . '<br>';
 				echo "<a href='" . Utility::get_page_url( 'order' ) . "?BID={$order['banner_id']}{$temp_var}'>" . Language::get( 'Confirm now' ) . "</a>";
-				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes{$temp_var}" ) . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
+				$cancel_nonce = wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] );
+				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes{$temp_var}&mds_cancel_nonce=" . $cancel_nonce ) . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
 			}
 			?>
         </div>
@@ -1343,15 +1347,17 @@ class Orders {
 				$sql .= " AND DATE_SUB('$now',INTERVAL " . $MINUTES_RENEW . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL";
 			}
 
-			$result = @mysqli_query( $GLOBALS['connection'], $sql );
+			$results = $wpdb->get_results( $sql, ARRAY_A );
 
-			while ( $row = @mysqli_fetch_array( $result ) ) {
-				// $order_date = strtotime( $row['order_date'] );
-				// $order_date = date( 'Y-m-d H:i:s', $order_date );
-				// $diff       = strtotime( $order_date ) - strtotime( $now );
-				// if ( $diff > intval( $MINUTES_RENEW ) ) {
-				self::cancel_order( $row['order_id'] );
-				// }
+			if ( $results ) {
+				foreach ( $results as $row ) {
+					// $order_date = strtotime( $row['order_date'] );
+					// $order_date = date( 'Y-m-d H:i:s', $order_date );
+					// $diff       = strtotime( $order_date ) - strtotime( $now );
+					// if ( $diff > intval( $MINUTES_RENEW ) ) {
+					self::cancel_order( $row['order_id'] );
+					// }
+				}
 			}
 		}
 
@@ -1377,18 +1383,24 @@ class Orders {
 	}
 
 	public static function delete_temp_order( $sid, $delete_ad = true ) {
+		global $wpdb;
 
-		$sid = mysqli_real_escape_string( $GLOBALS['connection'], $sid );
-
-		$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . $sid . "' ";
-		$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$order_row = mysqli_fetch_array( $order_result );
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %s",
+				$sid
+			),
+			ARRAY_A
+		);
 
 		//$sql = "DELETE FROM blocks WHERE session_id='".$sid."' ";
 		//mysqli_query($GLOBALS['connection'], $sql) ;
 
-		$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . $sid . "' ";
-		mysqli_query( $GLOBALS['connection'], $sql );
+		$wpdb->delete(
+			MDS_DB_PREFIX . "orders",
+			array( 'order_id' => $sid ),
+			array( '%s' )
+		);
 
 		if ( $delete_ad && isset( $order_row['ad_id'] ) ) {
 			wp_delete_post( $order_row['ad_id'] );
@@ -1414,9 +1426,14 @@ class Orders {
 	public static function complete_order( int $user_id, int $order_id, bool $send_email = true ): void {
 		self::confirm_order( $user_id, $order_id, false );
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$order_row = mysqli_fetch_array( $result );
+		global $wpdb;
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
 		if ( $order_row['status'] != 'completed' ) {
 			$now = current_time( 'mysql' );
@@ -1479,9 +1496,13 @@ class Orders {
 
 			// mark pixels as sold.
 
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$order_row = mysqli_fetch_array( $result );
+			$order_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+					intval( $order_id )
+				),
+				ARRAY_A
+			);
 
 			if ( strpos( $order_row['blocks'], "," ) !== false ) {
 				$blocks = explode( ",", $order_row['blocks'] );
@@ -1489,8 +1510,13 @@ class Orders {
 				$blocks = array( 0 => $order_row['blocks'] );
 			}
 			foreach ( $blocks as $key => $val ) {
-				$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='sold' where block_id='" . intval( $val ) . "' and banner_id=" . intval( $order_row['banner_id'] );
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->update(
+					MDS_DB_PREFIX . "blocks",
+					array( 'status' => 'sold' ),
+					array( 'block_id' => intval( $val ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+					array( '%s' ),
+					array( '%d', '%d' )
+				);
 			}
 
 			$user_info = get_userdata( intval( $user_id ) );
@@ -1583,9 +1609,13 @@ class Orders {
 	public static function confirm_order( int $user_id, int $order_id, bool $send_email = true ): void {
 		global $wpdb;
 
-		$sql = "SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$row = mysqli_fetch_array( $result );
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 WHERE t1.user_id=t2.ID AND order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
 		if ( $row['status'] != 'confirmed' && $row['status'] != 'completed' ) {
 			$user_info = get_userdata( $row['ID'] );
@@ -1598,11 +1628,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='confirmed', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'confirmed', 'date_stamp' => $now ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'ordered' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['banner_id'] ) ),
+				array( '%s' ),
+				array( '%d', '%d' )
+			);
 
 			if ( $row['days_expire'] == 0 ) {
 				$row['days_expire'] = Language::get( 'Never' );
@@ -1675,12 +1715,16 @@ class Orders {
 
 	public static function pend_order( $order_id ) {
 		global $wpdb;
-		$sql = "SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id='" . intval( $order_id ) . "' ";
+		
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 WHERE t1.user_id=t2.ID AND order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$row = mysqli_fetch_array( $result );
-
-		if ( $row['status'] != 'pending' && $row['status'] != 'completed' ) {
+		if ( $row && $row['status'] != 'pending' && $row['status'] != 'completed' ) {
 			$user_info = get_userdata( $row['ID'] );
 
 			// Update mds-pixel post status
@@ -1691,11 +1735,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='pending', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'pending', 'date_stamp' => $now ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'ordered' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['banner_id'] ) ),
+				array( '%s' ),
+				array( '%d', '%d' )
+			);
 
 			if ( $row['days_expire'] == 0 ) {
 				$row['days_expire'] = Language::get( 'Never' );
@@ -1765,15 +1819,16 @@ class Orders {
 
 	public static function expire_order( $order_id ) {
 		global $wpdb;
-		$sql = "SELECT *, t1.banner_id as BID, t1.user_id as UID, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND  order_id='" . intval( $order_id ) . "' ";
-		//echo "$sql<br>";
-		//days_expire
+		
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *, t1.banner_id as BID, t1.user_id as UID, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 WHERE t1.user_id=t2.ID AND order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
-		//func_mail_error($sql." expire order");
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
-
-		if ( ( $row['status'] != 'expired' ) || ( $row['status'] != 'pending' ) ) {
+		if ( $row && ( $row['status'] != 'expired' ) || ( $row['status'] != 'pending' ) ) {
 			$user_info = get_userdata( $row['ID'] );
 
 			// Update mds-pixel post status
@@ -1784,13 +1839,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='expired', date_stamp='$now', `approved`='N', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "' ";
-			//echo "$sql<br>";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'expired', 'date_stamp' => $now, 'approved' => 'N', 'order_in_progress' => 'N' ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s', '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['BID'] ) . "'";
-			//echo "$sql<br>";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (expire order)" );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'ordered', 'approved' => 'N' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['BID'] ) ),
+				array( '%s', '%s' ),
+				array( '%d', '%d' )
+			);
 
 			if ( $row['status'] == 'new' ) {
 				// do not send email
@@ -1863,12 +1926,17 @@ class Orders {
 	}
 
 	public static function delete_order( $order_id ): void {
+		global $wpdb;
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$order_row = mysqli_fetch_array( $result );
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
-		if ( $order_row['status'] != 'deleted' ) {
+		if ( $order_row && $order_row['status'] != 'deleted' ) {
 
 			// Update mds-pixel post status
 			wp_update_post( [
@@ -1878,15 +1946,22 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='deleted', date_stamp='$now', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'deleted', 'date_stamp' => $now, 'order_in_progress' => 'N' ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s', '%s' ),
+				array( '%d' )
+			);
 
 			// DELETE BLOCKS
 
 			if ( $order_row['blocks'] != '' ) {
-
-				$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks where order_id='" . intval( $order_id ) . "' and banner_id=" . intval( $order_row['banner_id'] );
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->delete(
+					MDS_DB_PREFIX . "blocks",
+					array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+					array( '%d', '%d' )
+				);
 			}
 
 			// DELETE ADS
@@ -1894,12 +1969,45 @@ class Orders {
 		}
 	}
 
-	public static function cancel_order( $order_id ) {
+	public static function cancel_order( $order_id, $bypass_auth = false ) {
+		// Input validation
+		$order_id = intval( $order_id );
+		if ( $order_id <= 0 ) {
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Invalid order ID in cancel_order - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() );
+			return false;
+		}
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
-		//echo $sql."<br>";
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				$order_id
+			),
+			ARRAY_A
+		);
+		
+		if ( ! $row ) {
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order not found in cancel_order - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() );
+			return false;
+		}
+
+		// Authorization checks (unless bypassed by admin operations)
+		if ( ! $bypass_auth ) {
+			$current_user_id = get_current_user_id();
+			
+			// Check if user is logged in
+			if ( ! $current_user_id ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized cancel_order attempt by non-logged user - Order ID: ' . $order_id );
+				return false;
+			}
+			
+			// Check if user owns the order or is admin
+			if ( $row['user_id'] != $current_user_id && ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized cancel_order attempt - Order ID: ' . $order_id . ' - Order Owner: ' . $row['user_id'] . ' - Current User: ' . $current_user_id );
+				return false;
+			}
+		}
+
 		if ( $row['status'] != 'cancelled' ) {
 
 			// Update mds-pixel post status
@@ -1910,11 +2018,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `status`='cancelled', date_stamp='$now', approved='N', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'cancelled', 'date_stamp' => $now, 'approved' => 'N', 'order_in_progress' => 'N' ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s', '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET `status`='cancelled', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' AND banner_id='" . intval( $row['banner_id'] ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (cancel order) " );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'cancelled', 'approved' => 'N' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['banner_id'] ) ),
+				array( '%s', '%s' ),
+				array( '%d', '%d' )
+			);
 		}
 
 		// process the grid, if auto_publish is on
@@ -1924,23 +2042,38 @@ class Orders {
 			publish_image( $row['banner_id'] );
 			process_map( $row['banner_id'] );
 		}
+		
+		// Log successful cancellation
+		$context = $bypass_auth ? 'admin bypass' : 'user action';
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled successfully - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() . ' - Context: ' . $context );
+		
+		return true;
 	}
 
 	public static function process_paid_renew_orders() {
 		//Complete: Only expired orders that have status as 'renew_paid'
+		global $wpdb;
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='renew_paid' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		while ( $row = mysqli_fetch_array( $result ) ) {
+		$results = $wpdb->get_results(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='renew_paid'",
+			ARRAY_A
+		);
+		
+		foreach ( $results as $row ) {
 			// if expired
 			self::complete_renew_order( $row['order_id'] );
 		}
 	}
 
 	public static function complete_renew_order( $order_id ) {
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' and status='renew_paid' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$order_row = mysqli_fetch_array( $result );
+		global $wpdb;
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND status = 'renew_paid'",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
 		if ( $order_row['status'] != 'completed' ) {
 

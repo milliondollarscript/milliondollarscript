@@ -156,10 +156,11 @@ function display_package_options_table( $banner_id, string $selected = '', bool 
  * @return array|void
  */
 function get_package( $package_id ) {
+	global $wpdb;
 
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "packages where package_id='" . intval( $package_id ) . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	$row = mysqli_fetch_array( $result );
+	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "packages WHERE package_id = %d";
+	$prepared_sql = $wpdb->prepare( $sql, intval( $package_id ) );
+	$row = $wpdb->get_row( $prepared_sql, ARRAY_A );
 
 	if ( empty( $row ) ) {
 		return;
@@ -184,21 +185,26 @@ function get_package( $package_id ) {
  * @return bool|void
  */
 function can_user_get_package( $user_id, $package_id ) {
+	global $wpdb;
 
-	$sql = "SELECT max_orders, banner_id FROM " . MDS_DB_PREFIX . "packages WHERE package_id='" . intval( $package_id ) . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	$p_row = mysqli_fetch_array( $result );
+	$sql = "SELECT max_orders, banner_id FROM " . MDS_DB_PREFIX . "packages WHERE package_id = %d";
+	$prepared_sql = $wpdb->prepare( $sql, intval( $package_id ) );
+	$p_row = $wpdb->get_row( $prepared_sql, ARRAY_A );
+
+	if ( empty( $p_row ) ) {
+		return false;
+	}
+
 	if ( $p_row['max_orders'] == 0 ) {
 		return true;
 	}
 
 	// count the orders the user made for this package
-	$sql = "SELECT count(*) AS order_count, banner_id FROM " . MDS_DB_PREFIX . "orders WHERE status <> 'deleted' AND status <> 'new' AND package_id='" . intval( $package_id ) . "' AND user_id='" . intval( $user_id ) . "' GROUP BY user_id, banner_id LIMIT 1";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
-	$u_row = mysqli_fetch_array( $result );
+	$sql = "SELECT count(*) AS order_count, banner_id FROM " . MDS_DB_PREFIX . "orders WHERE status <> 'deleted' AND status <> 'new' AND package_id = %d AND user_id = %d GROUP BY user_id, banner_id LIMIT 1";
+	$prepared_sql = $wpdb->prepare( $sql, intval( $package_id ), intval( $user_id ) );
+	$u_row = $wpdb->get_row( $prepared_sql, ARRAY_A );
 
-	if ( $u_row['order_count'] < $p_row['max_orders'] ) {
-
+	if ( empty( $u_row ) || $u_row['order_count'] < $p_row['max_orders'] ) {
 		return true;
 	} else {
 		return false;

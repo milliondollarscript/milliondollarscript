@@ -283,12 +283,46 @@ class MDSPageMetadataRepository {
      * @return MDSPageMetadata|null
      */
     public function findFirstByType( string $page_type, string $status = 'active' ): ?MDSPageMetadata {
-        $results = $this->findAll( [
-            'page_type' => $page_type,
-            'status' => $status
-        ], 1 );
+        // Check if tables exist before querying
+        if ( !$this->tablesExist() ) {
+            return null;
+        }
         
-        return !empty( $results ) ? $results[0] : null;
+        try {
+            $results = $this->findAll( [
+                'page_type' => $page_type,
+                'status' => $status
+            ], 1 );
+            
+            $metadata = !empty( $results ) ? $results[0] : null;
+            
+            // If we found metadata but with active status, verify the post still exists
+            if ( $metadata && $status === 'active' ) {
+                $post_status = get_post_status( $metadata->post_id );
+                if ( $post_status === false ) {
+                    // Post doesn't exist anymore, try to find any metadata for this type regardless of status
+                    $backup_results = $this->findAll( [
+                        'page_type' => $page_type
+                    ], 1 );
+                    
+                    if ( !empty( $backup_results ) ) {
+                        $backup_metadata = $backup_results[0];
+                        $backup_post_status = get_post_status( $backup_metadata->post_id );
+                        if ( $backup_post_status !== false ) {
+                            return $backup_metadata;
+                        }
+                    }
+                    
+                    // No valid metadata found
+                    return null;
+                }
+            }
+            
+            return $metadata;
+        } catch ( \Exception $e ) {
+            error_log( 'MDS Repository findFirstByType error: ' . $e->getMessage() );
+            return null;
+        }
     }
     
     /**

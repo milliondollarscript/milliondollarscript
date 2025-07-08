@@ -65,9 +65,15 @@ class Blocks {
 			'data'  => []
 		];
 
-		$sql = "SELECT status, user_id, ad_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=" . intval( $clicked_block ) . " AND banner_id=" . intval( $BID );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$blocksrow = mysqli_fetch_array( $result );
+		global $wpdb;
+		$blocksrow = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT status, user_id, ad_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+				intval( $clicked_block ),
+				intval( $BID )
+			),
+			ARRAY_A
+		);
 
 		$orderid = Orders::get_current_order_in_progress();
 
@@ -78,9 +84,15 @@ class Blocks {
 			}
 
 			// put block on order
-			$sql = "SELECT blocks,status,ad_id,order_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id=" . get_current_user_id() . " AND order_id=" . $orderid . " AND banner_id=" . intval( $BID ) . " AND status!='deleted'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-			$ordersrow = mysqli_fetch_array( $result );
+			$ordersrow = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT blocks,status,ad_id,order_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id = %d AND order_id = %d AND banner_id = %d AND status != 'deleted'",
+					get_current_user_id(),
+					$orderid,
+					intval( $BID )
+				),
+				ARRAY_A
+			);
 			if ( isset( $ordersrow ) && $ordersrow['blocks'] != '' ) {
 				$blocks = explode( ",", $ordersrow['blocks'] );
 				array_walk( $blocks, 'intval' );
@@ -166,10 +178,14 @@ class Blocks {
 			$existing_blocks = false;
 			if ( count( $new_blocks ) > 1 ) {
 				// single block is already handled, only handle multiple here
-				$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != " . $orderid . " AND block_id IN(" . $order_blocks . ") AND banner_id=" . intval( $BID );
-				$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-				$num_rows = mysqli_num_rows( $result );
-				if ( $num_rows > 0 ) {
+				$results = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != %d AND block_id IN(" . $order_blocks . ") AND banner_id = %d",
+						$orderid,
+						intval( $BID )
+					)
+				);
+				if ( count( $results ) > 0 ) {
 					$return_val = [
 						"error" => "true",
 						"type"  => "advertiser_sel_sold_error",
@@ -201,10 +217,14 @@ class Blocks {
 
 				// One last check to make sure we aren't replacing existing blocks from other orders
 				if ( ! empty( $order_blocks ) || $order_blocks == '0' ) {
-					$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != " . $orderid . " AND block_id IN(" . $order_blocks . ") AND banner_id=" . intval( $BID );
-					$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-					$num_rows = mysqli_num_rows( $result );
-					if ( $num_rows > 0 ) {
+					$results = $wpdb->get_results(
+						$wpdb->prepare(
+							"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != %d AND block_id IN(" . $order_blocks . ") AND banner_id = %d",
+							$orderid,
+							intval( $BID )
+						)
+					);
+					if ( count( $results ) > 0 ) {
 						return [
 							"error" => "true",
 							"type"  => "advertiser_sel_sold_error",
@@ -233,15 +253,15 @@ class Blocks {
 					"REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved, order_in_progress) VALUES (%d, %d, %s, 'new', NOW(), %f, %d, %d, %s, %d, %s, %d, %s, %s)",
 					$user_id,
 					$orderid,
-					mysqli_real_escape_string( $GLOBALS['connection'], $order_blocks ),
+					$order_blocks,
 					floatval( $price ),
 					intval( $quantity ),
 					intval( $BID ),
-					mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ),
+					Currency::get_default_currency(),
 					intval( $banner_data['DAYS_EXPIRE'] ),
 					$now,
 					$adid,
-					mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ),
+					$banner_data['AUTO_APPROVE'],
 					'Y'
 				);
 
@@ -259,8 +279,15 @@ class Blocks {
 					]
 				];
 
-				$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=" . get_current_user_id() . " AND (status='reserved' OR order_id='" . $order_id . "') AND banner_id='" . intval( $BID ) . "' ";
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				// Clean up reserved blocks and blocks for this specific order only
+				$wpdb->query(
+					$wpdb->prepare(
+						"DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id = %d AND (status = 'reserved' OR (order_id = %d AND status != 'sold')) AND banner_id = %d",
+						get_current_user_id(),
+						$order_id,
+						intval( $BID )
+					)
+				);
 
 				$cell = 0;
 
@@ -273,8 +300,28 @@ class Blocks {
 							$price = get_zone_price( $BID, $y, $x );
 
 							// reserve block
-							$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "blocks` ( `block_id` , `user_id` , `status` , `x` , `y` , `image_data` , `url` , `alt_text`, `approved`, `banner_id`, `ad_id`, `currency`, `price`, `order_id`, `click_count`, `view_count`) VALUES (" . intval( $cell ) . ",  " . get_current_user_id() . " , 'reserved' , " . intval( $x ) . " , " . intval( $y ) . " , '' , '' , '', '" . mysqli_real_escape_string( $GLOBALS['connection'], $banner_data['AUTO_APPROVE'] ) . "', " . intval( $BID ) . ", " . $adid . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "', " . floatval( $price ) . ", " . intval( $order_id ) . ", 0, 0)";
-							mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+							$wpdb->replace(
+								MDS_DB_PREFIX . "blocks",
+								array(
+									'block_id' => intval( $cell ),
+									'user_id' => get_current_user_id(),
+									'status' => 'reserved',
+									'x' => intval( $x ),
+									'y' => intval( $y ),
+									'image_data' => '',
+									'url' => '',
+									'alt_text' => '',
+									'approved' => $banner_data['AUTO_APPROVE'],
+									'banner_id' => intval( $BID ),
+									'ad_id' => $adid,
+									'currency' => Currency::get_default_currency(),
+									'price' => floatval( $price ),
+									'order_id' => intval( $order_id ),
+									'click_count' => 0,
+									'view_count' => 0
+								),
+								array( '%d', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%f', '%d', '%d', '%d' )
+							);
 
 							$total += $price;
 						}
@@ -283,11 +330,21 @@ class Blocks {
 				}
 
 				// update price
-				$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET price='" . floatval( $total ) . "' WHERE order_id='" . intval( $order_id ) . "'";
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->update(
+					MDS_DB_PREFIX . "orders",
+					array( 'price' => floatval( $total ) ),
+					array( 'order_id' => intval( $order_id ) ),
+					array( '%f' ),
+					array( '%d' )
+				);
 
-				$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET original_order_id='" . intval( $order_id ) . "' WHERE order_id='" . intval( $order_id ) . "'";
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->update(
+					MDS_DB_PREFIX . "orders",
+					array( 'original_order_id' => intval( $order_id ) ),
+					array( 'order_id' => intval( $order_id ) ),
+					array( '%d' ),
+					array( '%d' )
+				);
 
 				// check that we have ad_id, if not then create an ad for this order.
 				if ( $adid == 0 ) {
@@ -365,20 +422,34 @@ class Blocks {
 	}
 
 	public static function get_blocks_min_max( $block_id, $banner_id ) {
+		global $wpdb;
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks where block_id=" . intval( $block_id ) . " and banner_id=" . intval( $banner_id );
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+				intval( $block_id ),
+				intval( $banner_id )
+			),
+			ARRAY_A
+		);
 
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
+		if ( ! $row ) {
+			return null;
+		}
 
-		$sql = "select * from " . MDS_DB_PREFIX . "blocks where order_id=" . intval( $row['order_id'] );
-		$result3 = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$block_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE order_id = %d",
+				intval( $row['order_id'] )
+			),
+			ARRAY_A
+		);
 
 		// find high x, y & low x, y
 		// low x,y is the top corner, high x,y is the bottom corner
 
 		$high_x = $high_y = $low_x = $low_y = "";
-		while ( $block_row = mysqli_fetch_array( $result3 ) ) {
+		foreach ( $block_rows as $block_row ) {
 
 			if ( $high_x == '' ) {
 				$high_x = $block_row['x'];
@@ -423,9 +494,15 @@ class Blocks {
 		}
 
 		#load block_from
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks where block_id=" . intval( $block_from ) . " AND banner_id=" . intval( $banner_id );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$source_block = mysqli_fetch_array( $result );
+		global $wpdb;
+		$source_block = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+				intval( $block_from ),
+				intval( $banner_id )
+			),
+			ARRAY_A
+		);
 
 		// get the position and check range, do not move if out of range
 
@@ -448,23 +525,50 @@ class Blocks {
 			return false;
 		}
 
-		$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "blocks` ( `block_id` , `user_id` , `status` , `x` , `y` , `image_data` , `url` , `alt_text`, `file_name`, `mime_type`,  `approved`, `published`, `banner_id`, `currency`, `price`, `order_id`, `click_count`, `view_count`, `ad_id`) VALUES (" . intval( $block_to ) . ",  " . intval( $source_block['user_id'] ) . " , '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['status'] ) . "' , " . intval( $x ) . " , " . intval( $y ) . " , '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['image_data'] ) . "' , '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['url'] ) . "' , '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['alt_text'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['file_name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['mime_type'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['approved'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['published'] ) . "', " . intval( $banner_id ) . ", '" . mysqli_real_escape_string( $GLOBALS['connection'], $source_block['currency'] ) . "', " . floatval( $source_block['price'] ) . ", " . intval( $source_block['order_id'] ) . ", " . intval( $source_block['click_count'] ) . ", " . intval( $source_block['view_count'] ) . ", " . intval( $source_block['ad_id'] ) . ")";
+		$wpdb->replace(
+			MDS_DB_PREFIX . "blocks",
+			array(
+				'block_id' => intval( $block_to ),
+				'user_id' => intval( $source_block['user_id'] ),
+				'status' => $source_block['status'],
+				'x' => intval( $x ),
+				'y' => intval( $y ),
+				'image_data' => $source_block['image_data'],
+				'url' => $source_block['url'],
+				'alt_text' => $source_block['alt_text'],
+				'file_name' => $source_block['file_name'],
+				'mime_type' => $source_block['mime_type'],
+				'approved' => $source_block['approved'],
+				'published' => $source_block['published'],
+				'banner_id' => intval( $banner_id ),
+				'currency' => $source_block['currency'],
+				'price' => floatval( $source_block['price'] ),
+				'order_id' => intval( $source_block['order_id'] ),
+				'click_count' => intval( $source_block['click_count'] ),
+				'view_count' => intval( $source_block['view_count'] ),
+				'ad_id' => intval( $source_block['ad_id'] )
+			),
+			array( '%d', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%f', '%d', '%d', '%d', '%d' )
+		);
 
-		global $f2;
-		$f2->debug( "Moved Block - " . $sql );
 
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
 
 		# delete 'from' block
-		$sql = "DELETE from " . MDS_DB_PREFIX . "blocks WHERE block_id='" . intval( $block_from ) . "' AND banner_id='" . intval( $banner_id ) . "' ";
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-
-		$f2->debug( "Deleted block_from - " . $sql );
+		$wpdb->delete(
+			MDS_DB_PREFIX . "blocks",
+			array( 'block_id' => intval( $block_from ), 'banner_id' => intval( $banner_id ) ),
+			array( '%d', '%d' )
+		);
 
 		// Update the order record
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $source_block['order_id'] ) . "' AND banner_id='" . intval( $banner_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$order_row  = mysqli_fetch_array( $result );
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND banner_id = %d",
+				intval( $source_block['order_id'] ),
+				intval( $banner_id )
+			),
+			ARRAY_A
+		);
 		$blocks     = array();
 		$new_blocks = array();
 		$blocks     = explode( ',', $order_row['blocks'] );
@@ -477,11 +581,14 @@ class Blocks {
 
 		$sql_blocks = implode( ',', $new_blocks );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET blocks='" . $sql_blocks . "' WHERE order_id=" . intval( $source_block['order_id'] );
 		# update the customer's order
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-
-		$f2->debug( "Updated order - " . $sql );
+		$wpdb->update(
+			MDS_DB_PREFIX . "orders",
+			array( 'blocks' => $sql_blocks ),
+			array( 'order_id' => intval( $source_block['order_id'] ) ),
+			array( '%s' ),
+			array( '%d' )
+		);
 
 		return true;
 	}
@@ -528,36 +635,48 @@ class Blocks {
 	}
 
 	public static function unreserve_block( $block_id, $banner_id ) {
-		$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "blocks` WHERE `block_id`='" . intval( $block_id ) . "' AND `banner_id`='" . intval( $banner_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		global $wpdb;
 
-		while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
+		$banner_id = intval( $banner_id );
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+				intval( $block_id ),
+				$banner_id
+			),
+			ARRAY_A
+		);
+
+		if ( $row ) {
 			if ( $row['status'] == 'reserved' ) {
-				$sql = "DELETE FROM `" . MDS_DB_PREFIX . "blocks` WHERE `status`='reserved' AND `block_id`='" . intval( $block_id ) . "' AND `banner_id`='" . $row['banner_id'] . "'";
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (cancel order) " );
+				$wpdb->delete(
+					MDS_DB_PREFIX . "blocks",
+					array( 'status' => 'reserved', 'block_id' => intval( $block_id ), 'banner_id' => $row['banner_id'] ),
+					array( '%s', '%d', '%d' )
+				);
 			}
-		}
 
-		// process the grid, if auto_publish is on
-		$b_row = load_banner_row( $row['banner_id'] );
-		if ( $b_row['auto_publish'] == 'Y' ) {
-			process_image( $row['banner_id'] );
-			publish_image( $row['banner_id'] );
-			process_map( $row['banner_id'] );
+			// process the grid, if auto_publish is on
+			$b_row = load_banner_row( $banner_id );
+			if ( $b_row['auto_publish'] == 'Y' ) {
+				process_image( $banner_id );
+				publish_image( $banner_id );
+				process_map( $banner_id );
+			}
 		}
 	}
 
 	public static function is_block_free( $block_id, $banner_id ) {
-
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks where block_id='" . intval( $block_id ) . "' AND banner_id='" . intval( $banner_id ) . "' ";
-		//echo "$sql<br>";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		if ( mysqli_num_rows( $result ) == 0 ) {
-
-			return true;
-		} else {
-
-			return false;
-		}
+		global $wpdb;
+		$result = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+				intval( $block_id ),
+				intval( $banner_id )
+			)
+		);
+		
+		return $result == 0;
 	}
 }

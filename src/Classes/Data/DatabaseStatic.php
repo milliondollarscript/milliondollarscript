@@ -84,7 +84,7 @@ class DatabaseStatic {
 	public static function table_exists( $table_name ): bool {
 		global $wpdb;
 
-		$result = $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" );
+		$result = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) );
 
 		if ( $result != $table_name ) {
 			return false;
@@ -100,25 +100,45 @@ class DatabaseStatic {
 
 		//	Note: DO NOT update logo
 
-		$val = esc_sql( MDS_CORE_URL );
-		$sql = "UPDATE `config` SET `val` = '$val' WHERE `config`.`key` = 'BASE_HTTP_PATH'; ";
-		$wpdb->query( $sql );
+		$wpdb->update(
+			'config',
+			array( 'val' => MDS_CORE_URL ),
+			array( 'key' => 'BASE_HTTP_PATH' ),
+			array( '%s' ),
+			array( '%s' )
+		);
 
-		$val = esc_sql( untrailingslashit( realpath( MDS_CORE_PATH ) ) );
-		$sql = "UPDATE `config` SET `val` = '$val' WHERE `config`.`key` = 'BASE_PATH'; ";
-		$wpdb->query( $sql );
+		$wpdb->update(
+			'config',
+			array( 'val' => untrailingslashit( realpath( MDS_CORE_PATH ) ) ),
+			array( 'key' => 'BASE_PATH' ),
+			array( '%s' ),
+			array( '%s' )
+		);
 
-		$val = esc_sql( trailingslashit( realpath( MDS_CORE_PATH . 'admin' ) ) );
-		$sql = "UPDATE `config` SET `val` = '$val' WHERE `config`.`key` = 'SERVER_PATH_TO_ADMIN'; ";
-		$wpdb->query( $sql );
+		$wpdb->update(
+			'config',
+			array( 'val' => trailingslashit( realpath( MDS_CORE_PATH . 'admin' ) ) ),
+			array( 'key' => 'SERVER_PATH_TO_ADMIN' ),
+			array( '%s' ),
+			array( '%s' )
+		);
 
-		$val = esc_sql( Utility::get_upload_path() );
-		$sql = "UPDATE `config` SET `val` = '$val' WHERE `config`.`key` = 'UPLOAD_PATH'; ";
-		$wpdb->query( $sql );
+		$wpdb->update(
+			'config',
+			array( 'val' => Utility::get_upload_path() ),
+			array( 'key' => 'UPLOAD_PATH' ),
+			array( '%s' ),
+			array( '%s' )
+		);
 
-		$val = esc_sql( Utility::get_upload_url() );
-		$sql = "UPDATE `config` SET `val` = '$val' WHERE `config`.`key` = 'UPLOAD_HTTP_PATH'; ";
-		$wpdb->query( $sql );
+		$wpdb->update(
+			'config',
+			array( 'val' => Utility::get_upload_url() ),
+			array( 'key' => 'UPLOAD_HTTP_PATH' ),
+			array( '%s' ),
+			array( '%s' )
+		);
 
 		update_option( '_' . MDS_DB_PREFIX . 'path', MDS_CORE_PATH );
 	}

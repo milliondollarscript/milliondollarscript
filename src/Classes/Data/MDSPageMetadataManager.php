@@ -56,12 +56,32 @@ class MDSPageMetadataManager {
      * Get singleton instance
      *
      * @return self
+     * @throws \Exception if initialization fails
      */
     public static function getInstance(): self {
         if ( self::$instance === null ) {
-            self::$instance = new self();
+            try {
+                self::$instance = new self();
+            } catch ( \Exception $e ) {
+                error_log( 'MDS Metadata Manager: Failed to create instance: ' . $e->getMessage() );
+                throw new \Exception( 'Metadata system initialization failed: ' . $e->getMessage() );
+            }
         }
         return self::$instance;
+    }
+    
+    /**
+     * Safely get singleton instance without throwing exceptions
+     *
+     * @return self|null
+     */
+    public static function getInstanceSafely(): ?self {
+        try {
+            return self::getInstance();
+        } catch ( \Exception $e ) {
+            error_log( 'MDS Metadata Manager: Safe getInstance failed: ' . $e->getMessage() );
+            return null;
+        }
     }
     
     /**
@@ -281,7 +301,12 @@ class MDSPageMetadataManager {
      * @return bool
      */
     public function isDatabaseReady(): bool {
-        return $this->repository->tablesExist();
+        try {
+            return $this->repository->tablesExist();
+        } catch ( \Exception $e ) {
+            error_log( 'MDS Metadata Manager: Error checking database readiness: ' . $e->getMessage() );
+            return false;
+        }
     }
     
     /**

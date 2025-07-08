@@ -45,16 +45,29 @@ global $wpdb;
 
 $oid = 0;
 if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
+	// Verify admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass complete attempt - User: ' . get_current_user_id() );
+		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	// Verify CSRF nonce
+	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass complete - User: ' . get_current_user_id() );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
 
 	foreach ( $_REQUEST['orders'] as $oid ) {
+		$oid = intval( $oid );
+		if ( $oid <= 0 ) continue; // Skip invalid order IDs
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $oid );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		$order_row = mysqli_fetch_array( $result );
+		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $oid );
+		$order_row = $wpdb->get_row( $sql, ARRAY_A );
 
-		if ( $order_row['status'] != 'completed' ) {
+		if ( $order_row && $order_row['status'] != 'completed' ) {
 			Orders::complete_order( $order_row['user_id'], $oid, false );
 			Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order completed by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
 		}
 	}
 
@@ -64,13 +77,31 @@ if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
+	// Verify admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order complete attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
 
-	$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $_REQUEST['order_id'] );
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-	$order_row = mysqli_fetch_array( $result );
+	// Verify CSRF nonce
+	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php complete - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
 
-	Orders::complete_order( $_REQUEST['user_id'], $_REQUEST['order_id'] );
-	Payment::debit_transaction( $_REQUEST['order_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+	$order_id = intval( $_REQUEST['order_id'] );
+	if ( $order_id <= 0 ) {
+		wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+	}
+
+	$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
+	$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+	if ( $order_row ) {
+		Orders::complete_order( $order_row['user_id'], $order_id );
+		Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order completed by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
+	}
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -78,7 +109,25 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' )
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' ) {
-	Orders::cancel_order( $_REQUEST['order_id'] );
+	// Verify admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order cancel attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	// Verify CSRF nonce
+	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php cancel - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	$order_id = intval( $_REQUEST['order_id'] );
+	if ( $order_id <= 0 ) {
+		wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+	}
+
+	Orders::cancel_order( $order_id, true ); // true = bypass user authorization for admin operations
+	\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -86,7 +135,26 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' ) {
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'unreserve' ) {
-	Blocks::unreserve_block( $_REQUEST['block_id'], $_REQUEST['banner_id'] );
+	// Verify admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized unreserve attempt - User: ' . get_current_user_id() . ' - Block ID: ' . ( $_REQUEST['block_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	// Verify CSRF nonce
+	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php unreserve - User: ' . get_current_user_id() );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	$block_id = intval( $_REQUEST['block_id'] );
+	$banner_id = intval( $_REQUEST['banner_id'] );
+	if ( $block_id <= 0 || $banner_id <= 0 ) {
+		wp_die( esc_html__( 'Invalid block or banner ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+	}
+
+	Blocks::unreserve_block( $block_id, $banner_id );
+	\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Block unreserved by admin - Block ID: ' . $block_id . ' - Banner ID: ' . $banner_id . ' - Admin User: ' . get_current_user_id() );
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -94,10 +162,24 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'unreserve' 
 }
 
 if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
-	foreach ( $_REQUEST['orders'] as $oid ) {
+	// Verify admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass cancel attempt - User: ' . get_current_user_id() );
+		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
 
-		//echo "$order_id ";
+	// Verify CSRF nonce
+	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass cancel - User: ' . get_current_user_id() );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	foreach ( $_REQUEST['orders'] as $oid ) {
+		$oid = intval( $oid );
+		if ( $oid <= 0 ) continue; // Skip invalid order IDs
+
 		Orders::cancel_order( $oid );
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
 	}
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
@@ -106,8 +188,25 @@ if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
+	// Verify admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order delete attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
 
-	Orders::delete_order( $_REQUEST['order_id'] );
+	// Verify CSRF nonce
+	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php delete - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	$order_id = intval( $_REQUEST['order_id'] );
+	if ( $order_id <= 0 ) {
+		wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+	}
+
+	Orders::delete_order( $order_id );
+	\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order deleted by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
 		return;
@@ -115,9 +214,24 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 }
 
 if ( isset( $_REQUEST['mass_delete'] ) && $_REQUEST['mass_delete'] != '' ) {
+	// Verify admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass delete attempt - User: ' . get_current_user_id() );
+		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
+	// Verify CSRF nonce
+	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass delete - User: ' . get_current_user_id() );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
 
 	foreach ( $_REQUEST['orders'] as $oid ) {
+		$oid = intval( $oid );
+		if ( $oid <= 0 ) continue; // Skip invalid order IDs
+
 		Orders::delete_order( $oid );
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order deleted by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
 	}
 
 	if ( ! isset( $_REQUEST['page'] ) ) {
@@ -646,9 +760,8 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                             #<?php echo intval( $row['ad_id'] ); ?></a><?php } ?></td>
                     <td><?php
 
-						$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . $row['banner_id'];
-						$b_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-						$b_row = mysqli_fetch_array( $b_result );
+						$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d", $row['banner_id'] );
+						$b_row = $wpdb->get_row( $sql, ARRAY_A );
 
 						if ( $b_row ) {
 							echo esc_html( $b_row['name'] );
@@ -690,8 +803,11 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                    value="Cancel"
                                    onclick="if (!confirmLink(this, 'Unreserve block <?php echo intval( $row['block_id'] ); ?>, are you sure?')) return false;"
                                    data-link="<?php echo esc_url(
-								       admin_url(
-									       'admin.php?page=mds-orders&mds-action=unreserve&user_id=' . intval( $row['ID'] ) . '&block_id=' . intval( $row['block_id'] ) . '&banner_id=' . intval( $row['banner_id'] ) . '&order_id=' . intval( $row['order_id'] ) . $date_link . $q_string . '&show=' . $show
+								       wp_nonce_url(
+									       admin_url(
+										       'admin.php?page=mds-orders&mds-action=unreserve&user_id=' . intval( $row['ID'] ) . '&block_id=' . intval( $row['block_id'] ) . '&banner_id=' . intval( $row['banner_id'] ) . '&order_id=' . intval( $row['order_id'] ) . $date_link . $q_string . '&show=' . $show
+									       ),
+									       'mds_admin_orders'
 								       )
 							       ); ?>">
 						<?php } else {
@@ -702,8 +818,11 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                        value="Complete"
                                        onclick="if (!confirmLink(this, 'Payment from <?php echo esc_attr( $row['user_nicename'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) return false;"
                                        data-link="<?php echo esc_url(
-									       admin_url(
-										       'admin.php?page=mds-orders&mds-action=complete&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
+									       wp_nonce_url(
+										       admin_url(
+											       'admin.php?page=mds-orders&mds-action=complete&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
+										       ),
+										       'mds_admin_orders'
 									       )
 								       ); ?>">
 								<?php
@@ -715,8 +834,11 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                        value="Delete"
                                        onclick="if (!confirmLink(this, 'Delete the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) return false;"
                                        data-link="<?php echo esc_url(
-									       admin_url(
-										       'admin.php?page=mds-orders&mds-action=delete&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
+									       wp_nonce_url(
+										       admin_url(
+											       'admin.php?page=mds-orders&mds-action=delete&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
+										       ),
+										       'mds_admin_orders'
 									       )
 								       ); ?>">
 								<?php
@@ -729,8 +851,11 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                        value="Cancel"
                                        onclick="if (!confirmLink(this, 'Cancel the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) return false;"
                                        data-link="<?php echo esc_url(
-									       admin_url(
-										       'admin.php?page=mds-orders&mds-action=cancel&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
+									       wp_nonce_url(
+										       admin_url(
+											       'admin.php?page=mds-orders&mds-action=cancel&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
+										       ),
+										       'mds_admin_orders'
 									       )
 								       ); ?>">
 								<?php

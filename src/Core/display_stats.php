@@ -30,14 +30,16 @@ use MillionDollarScript\Classes\Data\Config;use MillionDollarScript\Classes\Lang
 
 defined( 'ABSPATH' ) or exit;
 
-global $f2;
+global $f2, $wpdb;
 $BID = $f2->bid();
 
 $banner_data = load_banner_constants( $BID );
 
-$sql = "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='sold' and banner_id='$BID' ";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$row = mysqli_fetch_array( $result );
+$sql = $wpdb->prepare( "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='sold' and banner_id=%s", $BID );
+$row = $wpdb->get_row( $sql, ARRAY_A );
+if ( $wpdb->last_error ) {
+	mds_secure_sql_die( $sql, 'display_stats sold blocks count' );
+}
 
 $STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
 
@@ -47,9 +49,11 @@ if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 	$sold = $row['COUNT'] * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 }
 
-$sql = "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='nfs' and banner_id='$BID' ";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$row = mysqli_fetch_array( $result );
+$sql = $wpdb->prepare( "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='nfs' and banner_id=%s", $BID );
+$row = $wpdb->get_row( $sql, ARRAY_A );
+if ( $wpdb->last_error ) {
+	mds_secure_sql_die( $sql, 'display_stats nfs blocks count' );
+}
 
 $STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
 

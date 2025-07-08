@@ -52,9 +52,16 @@ if ( ! mds_check_permission( "mds_manage_pixels" ) ) {
 	exit;
 }
 
-// Handle order cancellation requests
+// Handle order cancellation requests with CSRF protection
 $cancellation_message = '';
 if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] === 'yes' && isset( $_REQUEST['order_id'] ) ) {
+	// Verify CSRF nonce first
+	if ( ! isset( $_REQUEST['mds_cancel_nonce'] ) || ! wp_verify_nonce( $_REQUEST['mds_cancel_nonce'], 'mds_cancel_order_' . intval( $_REQUEST['order_id'] ) ) ) {
+		// Log security violation attempt
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in manage.php order cancellation - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+	}
+
 	$order_id = intval( $_REQUEST['order_id'] );
 	$user_id = get_current_user_id();
 	
@@ -62,17 +69,22 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] === 'yes' && isset( $_R
 		// Verify that the order belongs to the current user
 		$order = Orders::get_order( $order_id );
 		if ( $order && $order->user_id == $user_id ) {
-			// Check if this was confirmed via JavaScript (security measure)
+			// Check if this was confirmed via JavaScript (additional security measure)
 			if ( isset( $_REQUEST['is_js_confirmed'] ) && $_REQUEST['is_js_confirmed'] === '1' ) {
 				// Cancel the order
 				Orders::cancel_order( $order_id );
 				$cancellation_message = Language::get( 'Order has been successfully cancelled.' );
+				
+				// Log successful cancellation for security auditing
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancellation completed - User: ' . get_current_user_id() . ' - Order ID: ' . $order_id );
 			} else {
 				// Missing JavaScript confirmation - security concern
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancellation attempted without JS confirmation - User: ' . get_current_user_id() . ' - Order ID: ' . $order_id );
 				wp_die( esc_html__( 'Invalid request. Please use the cancel button.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 400 ] );
 			}
 		} else {
 			// Order doesn't exist or doesn't belong to user
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order cancellation attempt - User: ' . get_current_user_id() . ' - Order ID: ' . $order_id );
 			wp_die( esc_html__( 'Order not found or access denied.', 'milliondollarscript' ), esc_html__( 'Error', 'milliondollarscript' ), [ 'response' => 404 ] );
 		}
 	}
@@ -182,10 +194,26 @@ if ( ! empty( $_REQUEST['block_id'] ) || ( isset( $_REQUEST['block_id'] ) && $_R
 		$_REQUEST['aid']              = "";
 		$ad_id                        = insert_ad_data( $blk_row['order_id'] );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET ad_id='" . intval( $ad_id ) . "' WHERE order_id='" . intval( $blk_row['order_id'] ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET ad_id='" . intval( $ad_id ) . "' WHERE order_id='" . intval( $blk_row['order_id'] ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		$wpdb->update(
+			MDS_DB_PREFIX . 'orders',
+			[ 'ad_id' => intval( $ad_id ) ],
+			[ 'order_id' => intval( $blk_row['order_id'] ) ],
+			[ '%d' ],
+			[ '%d' ]
+		);
+		if ( $wpdb->last_error ) {
+			wp_die( esc_html( $wpdb->last_error ) );
+		}
+		$wpdb->update(
+			MDS_DB_PREFIX . 'blocks',
+			[ 'ad_id' => intval( $ad_id ) ],
+			[ 'order_id' => intval( $blk_row['order_id'] ) ],
+			[ '%d' ],
+			[ '%d' ]
+		);
+		if ( $wpdb->last_error ) {
+			wp_die( esc_html( $wpdb->last_error ) );
+		}
 
 		$_REQUEST['aid'] = $ad_id;
 	} else {
@@ -364,30 +392,49 @@ if ( $count > 0 ) {
 
 	// inform the user about the approval status of the images.
 
-	$sql = "select * from " . MDS_DB_PREFIX . "orders where user_id='" . get_current_user_id() . "' AND status='completed' and  approved='N' and banner_id='" . intval( $BID ) . "' ";
-	$result4 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+	$sql = $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='completed' AND approved='N' AND banner_id=%d",
+		get_current_user_id(),
+		intval( $BID )
+	);
+	$result4 = $wpdb->get_results( $sql );
+	if ( $wpdb->last_error ) {
+		wp_die( esc_html( $wpdb->last_error ) );
+	}
 
-	if ( mysqli_num_rows( $result4 ) > 0 ) {
+	if ( count( $result4 ) > 0 ) {
 		?>
         <div class="mds-error-message"><?php Language::out( 'Note: Your pixels are waiting for approval. They will be scheduled to go live once they are approved.' ); ?></div>
 		<?php
 	} else {
 
-		$sql = "select * from " . MDS_DB_PREFIX . "orders where user_id='" . get_current_user_id() . "' AND status='completed' and  approved='Y' and published='Y' and banner_id='" . intval( $BID ) . "' ";
-		//echo $sql;
-		$result4 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='completed' AND approved='Y' AND published='Y' AND banner_id=%d",
+			get_current_user_id(),
+			intval( $BID )
+		);
+		$result4 = $wpdb->get_results( $sql );
+		if ( $wpdb->last_error ) {
+			wp_die( esc_html( $wpdb->last_error ) );
+		}
 
-		if ( mysqli_num_rows( $result4 ) > 0 ) {
+		if ( count( $result4 ) > 0 ) {
 			?>
             <div class="mds-success-message"><?php Language::out( 'Note: Your pixels are now published and live!' ); ?></div>
 			<?php
 		} else {
 
-			$sql = "select * from " . MDS_DB_PREFIX . "orders where user_id='" . get_current_user_id() . "' AND status='completed' and  approved='Y' and published='N' and banner_id='" . intval( $BID ) . "' ";
+			$sql = $wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='completed' AND approved='Y' AND published='N' AND banner_id=%d",
+				get_current_user_id(),
+				intval( $BID )
+			);
+			$result4 = $wpdb->get_results( $sql );
+			if ( $wpdb->last_error ) {
+				wp_die( esc_html( $wpdb->last_error ) );
+			}
 
-			$result4 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-
-			if ( mysqli_num_rows( $result4 ) > 0 ) {
+			if ( count( $result4 ) > 0 ) {
 				?>
                 <div class="mds-caution-message"><?php Language::out( 'Your pixels are now approved! They are now waiting for the webmaster to publish them on to the public grid.' ); ?></div>
 				<?php

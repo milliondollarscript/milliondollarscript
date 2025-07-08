@@ -89,13 +89,8 @@ class Database {
 	 * @return void
 	 */
 	public function connect(): void {
-		if ( isset( $GLOBALS['connection'] ) ) {
-			return;
-		}
-
-		require_once __DIR__ . '/Mdsdb.php';
-		$conn                  = new Mdsdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
-		$GLOBALS['connection'] = $conn->get_dbh();
+		// No longer needed - WordPress handles database connections via global $wpdb
+		// This method is kept for backward compatibility but does nothing
 	}
 
 	public function __wakeup() {

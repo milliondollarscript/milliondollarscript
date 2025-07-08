@@ -30,13 +30,13 @@ use MillionDollarScript\Classes\Payment\Currency;
 
 defined( 'ABSPATH' ) or exit;
 
-global $BID, $f2, $banner_data;
+global $BID, $f2, $banner_data, $wpdb;
 $BID         = $f2->bid();
 $banner_data = load_banner_constants( $BID );
 
 function validate_input() {
 
-	global $BID, $banner_data;
+	global $BID, $banner_data, $wpdb;
 
 	$error = "";
 	if ( trim( $_REQUEST['row_from'] ) == '' ) {
@@ -79,10 +79,29 @@ function validate_input() {
 						$and_price = "and price_id <>" . intval( $_REQUEST['price_id'] );
 					}
 
-					$sql = "SELECT * FROM " . MDS_DB_PREFIX . "prices where row_from <= " . intval( $_REQUEST['row_to'] ) . " AND row_to >=" . intval( $_REQUEST['row_from'] ) . " AND col_from <= " . intval( $_REQUEST['col_to'] ) . " AND col_to >=" . intval( $_REQUEST['col_from'] ) . " $and_price AND banner_id=" . intval( $BID );
-					$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+					if ( $and_price ) {
+						$sql = $wpdb->prepare(
+							"SELECT * FROM " . MDS_DB_PREFIX . "prices WHERE row_from <= %d AND row_to >= %d AND col_from <= %d AND col_to >= %d AND banner_id = %d AND price_id <> %d",
+							intval( $_REQUEST['row_to'] ),
+							intval( $_REQUEST['row_from'] ),
+							intval( $_REQUEST['col_to'] ),
+							intval( $_REQUEST['col_from'] ),
+							intval( $BID ),
+							intval( $_REQUEST['price_id'] )
+						);
+					} else {
+						$sql = $wpdb->prepare(
+							"SELECT * FROM " . MDS_DB_PREFIX . "prices WHERE row_from <= %d AND row_to >= %d AND col_from <= %d AND col_to >= %d AND banner_id = %d",
+							intval( $_REQUEST['row_to'] ),
+							intval( $_REQUEST['row_from'] ),
+							intval( $_REQUEST['col_to'] ),
+							intval( $_REQUEST['col_from'] ),
+							intval( $BID )
+						);
+					}
+					$result = $wpdb->get_results( $sql, ARRAY_A );
 
-					if ( mysqli_num_rows( $result ) > 0 ) {
+					if ( count( $result ) > 0 ) {
 						$error .= "<b> - Cannot create: Price zones cannot overlap other price zones!</b><br>";
 					}
 				}
@@ -108,8 +127,8 @@ function validate_input() {
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
-	$sql = "DELETE FROM " . MDS_DB_PREFIX . "prices WHERE price_id='" . intval( $_REQUEST['price_id'] ) . "' ";
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	$sql = $wpdb->prepare( "DELETE FROM " . MDS_DB_PREFIX . "prices WHERE price_id = %d", intval( $_REQUEST['price_id'] ) );
+	$wpdb->query( $sql );
 }
 
 if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
@@ -125,8 +144,27 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 		$_REQUEST['block_id_from'] = ( $_REQUEST['row_from'] - 1 ) * $banner_data['G_WIDTH'];
 		$_REQUEST['block_id_to']   = ( ( ( $_REQUEST['row_to'] ) * $banner_data['G_WIDTH'] ) - 1 );
 
-		$sql = "REPLACE INTO " . MDS_DB_PREFIX . "prices(price_id, banner_id, row_from, row_to, col_from, col_to, block_id_from, block_id_to, price, currency, color) VALUES ('" . intval( $_REQUEST['price_id'] ) . "', '" . intval( $BID ) . "', '" . intval( $_REQUEST['row_from'] ) . "', '" . intval( $_REQUEST['row_to'] ) . "', '" . intval( $_REQUEST['col_from'] ) . "', '" . intval( $_REQUEST['col_to'] ) . "', '" . intval( $_REQUEST['block_id_from'] ) . "', '" . intval( $_REQUEST['block_id_to'] ) . "', '" . floatval( $_REQUEST['price'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['currency'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['color'] ) . "') ";
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		// Use WordPress prepared statement for secure query
+		$result = $wpdb->query( $wpdb->prepare(
+			"REPLACE INTO " . MDS_DB_PREFIX . "prices 
+			(price_id, banner_id, row_from, row_to, col_from, col_to, block_id_from, block_id_to, price, currency, color) 
+			VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %f, %s, %s)",
+			intval( $_REQUEST['price_id'] ),
+			intval( $BID ),
+			intval( $_REQUEST['row_from'] ),
+			intval( $_REQUEST['row_to'] ),
+			intval( $_REQUEST['col_from'] ),
+			intval( $_REQUEST['col_to'] ),
+			intval( $_REQUEST['block_id_from'] ),
+			intval( $_REQUEST['block_id_to'] ),
+			floatval( $_REQUEST['price'] ),
+			sanitize_text_field( $_REQUEST['currency'] ),
+			sanitize_text_field( $_REQUEST['color'] )
+		) );
+		
+		if ( $result === false ) {
+			wp_die( 'Database error occurred while saving price zone.' );
+		}
 
 		$_REQUEST['new']        = '';
 		$_REQUEST['mds-action'] = '';
@@ -150,8 +188,8 @@ if ( isset( $_REQUEST['action'] ) ) {
     <b>Price Zones:</b> Here you can add different price zones to the grid. This feature allows you to make some regions of the grid more expensive than others.<br/><i>Careful: Packages disregard Price Zones, i.e. if a grid has packages, the Price Zones will be ignored for that grid.</i></p>
 <hr>
 <?php
-$sql = "Select * from " . MDS_DB_PREFIX . "banners ";
-$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners";
+$res = $wpdb->get_results( $sql, ARRAY_A );
 ?>
 <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 	<?php wp_nonce_field( 'mds-admin' ); ?>
@@ -161,7 +199,7 @@ $res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql 
         Select grid:
         <select name="BID" onchange="this.form.submit()">
 			<?php
-			while ( $row = mysqli_fetch_array( $res ) ) {
+			foreach ( $res as $row ) {
 
 				if ( ( $row['banner_id'] == $BID ) && ( $BID != 'all' ) ) {
 					$sel = 'selected';
@@ -190,9 +228,9 @@ if ( $BID != '' ) {
     Listing rows that are marked as custom price.<br>
 	<?php
 
-	$sql = "select * FROM " . MDS_DB_PREFIX . "prices  where banner_id=" . intval( $BID );
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-	if ( mysqli_num_rows( $result ) > 0 ) {
+	$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "prices WHERE banner_id = %d", intval( $BID ) );
+	$result = $wpdb->get_results( $sql, ARRAY_A );
+	if ( count( $result ) > 0 ) {
 		?>
 
         <table width="800" cellSpacing="1" cellPadding="3" bgColor="#d9d9d9" border="0">
@@ -209,7 +247,7 @@ if ( $BID != '' ) {
             </tr>
 
 			<?php
-			while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
+			foreach ( $result as $row ) {
 				?>
 
                 <tr bgcolor="#ffffff">
@@ -251,9 +289,8 @@ if ( $BID != '' ) {
 	if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'edit' ) {
 		echo "<h4>Edit Price Zone:</h4>";
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "prices WHERE `price_id`='" . intval( $_REQUEST['price_id'] ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
+		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "prices WHERE price_id = %d", intval( $_REQUEST['price_id'] ) );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
 		if ( ! isset( $error ) || $error == '' ) {
 			$_REQUEST['color']    = $row['color'];

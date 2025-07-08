@@ -66,11 +66,14 @@ if ( empty( $order_id ) ) {
 	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
-$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $order_id ) . "' ";
-$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+global $wpdb;
+$order_result = $wpdb->get_results( $wpdb->prepare( "select * from " . MDS_DB_PREFIX . "orders where order_id=%s", $order_id ) );
+if ( $wpdb->last_error ) {
+	mds_sql_error( $wpdb->last_error );
+}
 
 // check if we have pixels...
-if ( mysqli_num_rows( $order_result ) == 0 ) {
+if ( count( $order_result ) == 0 ) {
 	if ( wp_doing_ajax() ) {
 		Orders::no_orders();
 		wp_die();
@@ -79,7 +82,7 @@ if ( mysqli_num_rows( $order_result ) == 0 ) {
 	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
-$order_row = mysqli_fetch_array( $order_result );
+$order_row = (array) $order_result[0];
 
 // get the banner ID
 global $BID;
@@ -184,10 +187,10 @@ if ( ! is_user_logged_in() ) {
 
 		if ( can_user_get_package( get_current_user_id(), $_REQUEST['pack'] ) ) {
 
-			$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$row      = mysqli_fetch_array( $result );
-			$quantity = $row['quantity'];
+			$quantity = $wpdb->get_var( $wpdb->prepare( "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", Orders::get_current_order_id() ) );
+			if ( $wpdb->last_error ) {
+				mds_sql_error( $wpdb->last_error );
+			}
 
 			$block_count = $quantity / ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 
@@ -198,8 +201,21 @@ if ( ! is_user_logged_in() ) {
 			// convert & round off
 			$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . mysqli_real_escape_string( $GLOBALS['connection'], Orders::get_current_order_id() ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				[
+					'package_id' => intval( $_REQUEST['pack'] ),
+					'price' => floatval( $total ),
+					'days_expire' => intval( $pack['days_expire'] ),
+					'currency' => Currency::get_default_currency()
+				],
+				[ 'order_id' => Orders::get_current_order_id() ],
+				[ '%d', '%f', '%d', '%s' ],
+				[ '%s' ]
+			);
+			if ( $wpdb->last_error ) {
+				mds_sql_error( $wpdb->last_error );
+			}
 
 			$order_row['price']       = $total;
 			$order_row['pack']        = $_REQUEST['pack'];
@@ -229,6 +245,7 @@ if ( ! is_user_logged_in() ) {
 		} else {
 			Steps::update_step( 'payment' );
 			$params['mds-action'] = 'confirm';
+			$params['_wpnonce'] = wp_create_nonce( 'mds-confirm-action' );
 
 			// go to payment
 			$page_url = Utility::get_page_url( 'payment' );
@@ -263,9 +280,10 @@ if ( ! is_user_logged_in() ) {
 		<?php
 		if ( $cannot_get_package ) {
 
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "packages where package_id='" . intval( $selected_pack ) . "'";
-			$p_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-			$p_row     = mysqli_fetch_array( $p_result );
+			$p_row = $wpdb->get_row( $wpdb->prepare( "SELECT * from " . MDS_DB_PREFIX . "packages where package_id=%d", intval( $selected_pack ) ), ARRAY_A );
+			if ( $wpdb->last_error ) {
+				mds_sql_error( $wpdb->last_error );
+			}
 			$p_max_ord = $p_row['max_orders'];
 
 			Language::out_replace( '<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href="%MANAGE_URL%">Manage Pixels</a>.</p>', [
@@ -313,7 +331,7 @@ if ( ! is_user_logged_in() ) {
 					?>
                     <input type='button' class='mds-button mds-confirm'
                            value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
-                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment', [ 'mds-action' => 'confirm', 'order_id' => $order_row['order_id'], 'BID' => $BID ] ) ); ?>'">
+                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment', [ 'mds-action' => 'confirm', 'order_id' => $order_row['order_id'], 'BID' => $BID, '_wpnonce' => wp_create_nonce( 'mds-confirm-action' ) ] ) ); ?>'">
 					<?php
 				}
 				?>

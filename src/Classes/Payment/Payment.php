@@ -63,11 +63,11 @@ class Payment {
 						] );
 					} else {
 
-						$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id . " AND user_id=" . get_current_user_id();
-						$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
-						$row = mysqli_fetch_array( $result );
+						global $wpdb;
+						$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d", $order_id, get_current_user_id() );
+						$row = $wpdb->get_row( $sql, ARRAY_A );
 
-						if ( count( $row ) == 0 ) {
+						if ( empty( $row ) ) {
 							Orders::no_orders();
 
 							return;
@@ -162,9 +162,9 @@ class Payment {
 			}
 		} else {
 			if ( ! empty( $order_id ) && str_contains( $checkout_url, '%' ) ) {
-				$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
-				$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
-				$row = mysqli_fetch_array( $result );
+				global $wpdb;
+				$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
+				$row = $wpdb->get_row( $sql, ARRAY_A );
 
 				$checkout_url = str_replace(
 					[ '%AMOUNT%', '%CURRENCY%', '%QUANTITY%', '%ORDERID', '%USERID%', '%GRID%', '%PIXELID%' ],
@@ -232,9 +232,9 @@ class Payment {
 						] );
 					}
 				} else {
-					$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
-					$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
-					$row = mysqli_fetch_array( $result );
+					global $wpdb;
+					$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
+					$row = $wpdb->get_row( $sql, ARRAY_A );
 
 					Orders::complete_order( $row['user_id'], $order_id );
 					Payment::debit_transaction( $order_id, $row['price'], $row['currency'], '', 'order', 'MDS' );
@@ -291,40 +291,74 @@ class Payment {
 	}
 
 	public static function credit_transaction( $order_id, $amount, $currency, $txn_id, $reason, $origin ) {
+		global $wpdb;
 
 		$type = "CREDIT";
-
 		$date = current_time( 'mysql' );
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "transactions where txn_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $txn_id ) . "' and `type`='CREDIT' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		if ( mysqli_num_rows( $result ) != 0 ) {
+		// Check if there already is a credit for this txn_id
+		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "transactions WHERE txn_id = %s AND type = 'CREDIT'", $txn_id );
+		$existing_credit = $wpdb->get_row( $sql );
+		
+		if ( $existing_credit ) {
 			return; // there already is a credit for this txn_id
 		}
 
-		// check to make sure that there is a debit for this transaction
-
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "transactions where txn_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $txn_id ) . "' and `type`='DEBIT' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		if ( mysqli_num_rows( $result ) > 0 ) {
-
-			$sql = "INSERT INTO " . MDS_DB_PREFIX . "transactions (`txn_id`, `date`, `order_id`, `type`, `amount`, `currency`, `reason`, `origin`) VALUES('" . mysqli_real_escape_string( $GLOBALS['connection'], $txn_id ) . "', '$date', '" . intval( $order_id ) . "', '$type', '" . floatval( $amount ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $currency ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $reason ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $origin ) . "')";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mds_sql_error( $sql ) );
+		// Check to make sure that there is a debit for this transaction
+		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "transactions WHERE txn_id = %s AND type = 'DEBIT'", $txn_id );
+		$existing_debit = $wpdb->get_row( $sql );
+		
+		if ( $existing_debit ) {
+			$wpdb->insert(
+				MDS_DB_PREFIX . 'transactions',
+				array(
+					'txn_id'   => $txn_id,
+					'date'     => $date,
+					'order_id' => intval( $order_id ),
+					'type'     => $type,
+					'amount'   => floatval( $amount ),
+					'currency' => $currency,
+					'reason'   => $reason,
+					'origin'   => $origin
+				),
+				array( '%s', '%s', '%d', '%s', '%f', '%s', '%s', '%s' )
+			);
+			
+			if ( $wpdb->last_error ) {
+				wp_die( 'Database error: ' . $wpdb->last_error );
+			}
 		}
 	}
 
 	public static function debit_transaction( $order_id, $amount, $currency, $txn_id, $reason, $origin ) {
+		global $wpdb;
 
 		$type = "DEBIT";
 		$date = current_time( 'mysql' );
-		// check to make sure that there is no debit for this transaction already
-
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "transactions where txn_id='" . mysqli_real_escape_string( $GLOBALS['connection'], $txn_id ) . "' and `type`='DEBIT' AND order_id=" . intval( $order_id );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		if ( mysqli_fetch_array( $result ) == 0 ) {
-			$sql = "INSERT INTO " . MDS_DB_PREFIX . "transactions (`txn_id`, `date`, `order_id`, `type`, `amount`, `currency`, `reason`, `origin`) VALUES('" . mysqli_real_escape_string( $GLOBALS['connection'], $txn_id ) . "', '$date', '" . intval( $order_id ) . "', '$type', '" . floatval( $amount ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $currency ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $reason ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $origin ) . "')";
-
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+		
+		// Check to make sure that there is no debit for this transaction already
+		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "transactions WHERE txn_id = %s AND type = 'DEBIT' AND order_id = %d", $txn_id, intval( $order_id ) );
+		$existing_debit = $wpdb->get_row( $sql );
+		
+		if ( ! $existing_debit ) {
+			$wpdb->insert(
+				MDS_DB_PREFIX . 'transactions',
+				array(
+					'txn_id'   => $txn_id,
+					'date'     => $date,
+					'order_id' => intval( $order_id ),
+					'type'     => $type,
+					'amount'   => floatval( $amount ),
+					'currency' => $currency,
+					'reason'   => $reason,
+					'origin'   => $origin
+				),
+				array( '%s', '%s', '%d', '%s', '%f', '%s', '%s', '%s' )
+			);
+			
+			if ( $wpdb->last_error ) {
+				wp_die( 'Database error: ' . $wpdb->last_error );
+			}
 		}
 	}
 }

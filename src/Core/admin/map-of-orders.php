@@ -34,7 +34,7 @@ if ( isset( $_POST['action'] ) && $_POST['action'] == 'mds_admin_form_submission
 
 ini_set( 'max_execution_time', 10000 );
 
-global $f2;
+global $f2, $wpdb;
 $BID = $f2->bid();
 
 $banner_data = load_banner_constants( $BID );
@@ -44,8 +44,11 @@ $banner_data = load_banner_constants( $BID );
     Red blocks are on order (Status can be: 'reserved', 'ordered', 'sold'), Green blocks are currently selected (Status can be: 'new')
 <?php
 
-$sql = "Select * from " . MDS_DB_PREFIX . "banners ";
-$res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners";
+$res = $wpdb->get_results( $sql );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 ?>
 
     <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -55,14 +58,14 @@ $res = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql 
 
         Select grid: <select name="BID" onchange="this.form.submit()">
 			<?php
-			while ( $row = mysqli_fetch_array( $res ) ) {
+			foreach ( $res as $row ) {
 
-				if ( ( $row['banner_id'] == $BID ) && ( $BID != 'all' ) ) {
+				if ( ( $row->banner_id == $BID ) && ( $BID != 'all' ) ) {
 					$sel = 'selected';
 				} else {
 					$sel = '';
 				}
-				echo '<option ' . $sel . ' value=' . $row['banner_id'] . '>' . $row['name'] . '</option>';
+				echo '<option ' . $sel . ' value=' . $row->banner_id . '>' . $row->name . '</option>';
 			}
 			?>
         </select>

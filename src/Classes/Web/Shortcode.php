@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\Web;
 
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Functions;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
@@ -86,7 +87,14 @@ class Shortcode {
 		);
 
 		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'confirm' ) {
-			update_user_meta( get_current_user_id(), 'mds_confirm', true );
+			// Verify nonce for CSRF protection
+			if ( isset( $_REQUEST['_wpnonce'] ) && wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-confirm-action' ) ) {
+				update_user_meta( get_current_user_id(), 'mds_confirm', true );
+			} else {
+				// Log CSRF attempt
+				Logs::log( 'MDS Security: CSRF attempt detected in shortcode confirm action by user ' . get_current_user_id() );
+				wp_die( 'Please refresh the page and try again.', 'Error', ['response' => 403] );
+			}
 		}
 
 		// Add inline function call to each MDS iframe in the AJAX response

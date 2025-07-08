@@ -28,12 +28,30 @@
 
 defined( 'ABSPATH' ) or exit;
 
+// Admin capability check
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die( 'Unauthorized access.' );
+}
+
 header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
 header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" ); // Date in the past
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks where block_id='" . intval( $_REQUEST['block_id'] ) . "' ";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error($sql) );
-$row = mysqli_fetch_array( $result, MYSQLI_ASSOC );
+// Validate and sanitize input
+$block_id = isset( $_REQUEST['block_id'] ) ? intval( $_REQUEST['block_id'] ) : 0;
+if ( $block_id <= 0 ) {
+	wp_die( 'Invalid block ID.' );
+}
+
+global $wpdb;
+$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'blocks';
+$row = $wpdb->get_row( $wpdb->prepare( 
+	"SELECT * FROM $table_name WHERE block_id = %d", 
+	$block_id 
+), ARRAY_A );
+
+if ( ! $row ) {
+	wp_die( 'Block not found.' );
+}
 
 if ( $row['image_data'] == '' ) {
 	#$file_name = "block.png";

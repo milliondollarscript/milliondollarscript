@@ -197,15 +197,14 @@ class Ajax {
 	}
 
 	public static function show_stats(): void {
-		global $f2;
+		global $f2, $wpdb;
 
 		$BID = $f2->bid();
 
 		$banner_data = load_banner_constants( $BID );
 
-		$sql = "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='sold' and banner_id='$BID' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		$row = mysqli_fetch_array( $result );
+		$sql = $wpdb->prepare( "SELECT COUNT(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks WHERE status='sold' AND banner_id=%d", $BID );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
 		$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
 
@@ -215,9 +214,8 @@ class Ajax {
 			$sold = $row['COUNT'] * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
 		}
 
-		$sql = "select count(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks where status='nfs' and banner_id='$BID' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		$row = mysqli_fetch_array( $result );
+		$sql = $wpdb->prepare( "SELECT COUNT(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks WHERE status='nfs' AND banner_id=%d", $BID );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
 		$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
 
@@ -301,14 +299,16 @@ class Ajax {
 	}
 
 	public static function store_view( $data ): void {
+		global $wpdb;
+		
 		$ADVANCED_VIEW_COUNT = Config::get( 'ADVANCED_VIEW_COUNT' );
 		if ( $ADVANCED_VIEW_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
 			$date = current_time( 'Y-m-d' );
-			$sql  = "UPDATE " . MDS_DB_PREFIX . "views set views = views + 1 where banner_id='" . intval( $data['bid'] ) . "' AND `date`='$date' AND `block_id`=" . intval( $data['block_id'] );
-			mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-			$x = @mysqli_affected_rows( $GLOBALS['connection'] );
+			$sql  = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "views SET views = views + 1 WHERE banner_id = %d AND `date` = %s AND `block_id` = %d", intval( $data['bid'] ), $date, intval( $data['block_id'] ) );
+			$wpdb->query( $sql );
+			$x = $wpdb->rows_affected;
 
 			$mds_pixel_post = get_post( $_POST['aid'] );
 
@@ -319,14 +319,23 @@ class Ajax {
 				update_user_meta( $user_id, MDS_PREFIX . 'view_count', $update_click_count );
 
 				if ( ! $x ) {
-					$sql = "INSERT INTO `" . MDS_DB_PREFIX . "views` (`banner_id`, `date`, `views`, `block_id`, `user_id`) VALUES(" . intval( $data['bid'] ) . ", '$date', 1, " . intval( $data['block_id'] ) . ", " . intval( $user_id ) . ")";
-					@mysqli_query( $GLOBALS['connection'], $sql );
+					$wpdb->insert(
+						MDS_DB_PREFIX . 'views',
+						array(
+							'banner_id' => intval( $data['bid'] ),
+							'date'      => $date,
+							'views'     => 1,
+							'block_id'  => intval( $data['block_id'] ),
+							'user_id'   => intval( $user_id )
+						),
+						array( '%d', '%s', '%d', '%d', '%d' )
+					);
 				}
 			}
 		}
 
-		$sql = "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `view_count` = `view_count` + 1 where `block_id`=" . intval( $data['block_id'] ) . " AND `banner_id`=" . intval( $data['bid'] );
-		mysqli_query( $GLOBALS['connection'], $sql );
+		$sql = $wpdb->prepare( "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `view_count` = `view_count` + 1 WHERE `block_id` = %d AND `banner_id` = %d", intval( $data['block_id'] ), intval( $data['bid'] ) );
+		$wpdb->query( $sql );
 	}
 
 	public static function store_click( $data ): void {
@@ -352,17 +361,27 @@ class Ajax {
 			update_user_meta( $user_id, MDS_PREFIX . 'click_count', $update_click_count );
 
 			if ( ! $x ) {
-				$sql = "INSERT INTO `" . MDS_DB_PREFIX . "clicks` (`banner_id`, `date`, `clicks`, `block_id`, `user_id`) VALUES(" . intval( $data['bid'] ) . ", '$date', 1, " . intval( $data['block_id'] ) . ", " . intval( $row['user_id'] ) . ") ";
-				@mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+				$wpdb->insert(
+					MDS_DB_PREFIX . 'clicks',
+					array(
+						'banner_id' => intval( $data['bid'] ),
+						'date'      => $date,
+						'clicks'    => 1,
+						'block_id'  => intval( $data['block_id'] ),
+						'user_id'   => intval( $row['user_id'] )
+					),
+					array( '%d', '%s', '%d', '%d', '%d' )
+				);
 			}
 		}
 
-		$sql = "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `click_count` = `click_count` + 1 where `block_id`=" . intval( $data['block_id'] ) . " AND banner_id=" . intval( $data['bid'] );
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		$sql = $wpdb->prepare( "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `click_count` = `click_count` + 1 WHERE `block_id` = %d AND banner_id = %d", intval( $data['block_id'] ), intval( $data['bid'] ) );
+		$wpdb->query( $sql );
 	}
 
 	public static function show_list(): void {
 		require_once MDS_CORE_PATH . 'include/ads.inc.php';
+		global $wpdb;
 
 		?>
         <div class="mds-container list-container">
@@ -374,17 +393,17 @@ class Ajax {
                 </div>
 				<?php
 				$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners ORDER BY banner_id";
-				$banners = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-				while ( $banner = mysqli_fetch_array( $banners ) ) {
+				$banners = $wpdb->get_results( $sql, ARRAY_A );
+				foreach ( $banners as $banner ) {
 					?>
                     <div class="table-row header">
                         <div class="list-heading" style="width:100%;"><?php echo esc_html( $banner['name'] ); ?></div>
                     </div>
 					<?php
 					//TODO: add option to order by other columns
-					$sql = "SELECT *, MAX(order_date) as max_date, sum(quantity) AS pixels FROM " . MDS_DB_PREFIX . "orders where status='completed' AND approved='Y' AND published='Y' AND banner_id='" . intval( $banner['banner_id'] ) . "' GROUP BY user_id, banner_id, order_id order by pixels desc ";
-					$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-					while ( $row = mysqli_fetch_array( $result ) ) {
+					$sql = $wpdb->prepare( "SELECT *, MAX(order_date) as max_date, sum(quantity) AS pixels FROM " . MDS_DB_PREFIX . "orders WHERE status='completed' AND approved='Y' AND published='Y' AND banner_id=%d GROUP BY user_id, banner_id, order_id ORDER BY pixels DESC", intval( $banner['banner_id'] ) );
+					$results = $wpdb->get_results( $sql, ARRAY_A );
+					foreach ( $results as $row ) {
 						?>
                         <div class="table-row">
                             <div class="list-cell">

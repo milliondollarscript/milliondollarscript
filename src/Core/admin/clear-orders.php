@@ -39,14 +39,31 @@ if (isset($_GET['cleared']) && $_GET['cleared'] == '1') {
     Notices::add_notice(Language::get("Orders cleared successfully!"), 'success');
 }
 
-// Handle direct requests (not through admin-post.php)
-// This needs to check for direct submission vs admin-post.php submission
+// Handle direct requests (not through admin-post.php) with CSRF protection
+// This legacy handler is maintained for backward compatibility but secured
 if (isset($_REQUEST['clear_orders']) && $_REQUEST['clear_orders'] == 'true' && !isset($_REQUEST['action'])) {
+    // Verify CSRF nonce for security
+    if (!isset($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], 'mds-admin')) {
+        // Log security violation attempt
+        \MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in clear-orders.php direct handler - User: ' . get_current_user_id() );
+        wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+    }
+    
+    // Verify admin capabilities
+    if ( ! current_user_can( 'manage_options' ) ) {
+        // Log unauthorized access attempt
+        \MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized clear orders attempt - User: ' . get_current_user_id() );
+        wp_die( esc_html__( 'Insufficient permissions.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+    }
+    
     // Buffer output to prevent "headers already sent" errors
     ob_start();
     Utility::clear_orders();
     $done = Language::get("Done!");
     ob_end_flush();
+    
+    // Log successful operation for security auditing
+    \MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Clear orders operation completed via direct handler - User: ' . get_current_user_id() );
 }
 
 // Register handler for admin-post.php submissions

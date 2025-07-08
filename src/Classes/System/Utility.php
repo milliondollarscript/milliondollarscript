@@ -506,51 +506,120 @@ class Utility {
 	 * @return string|null
 	 */
 	public static function get_page_url( string $page_name, array $args = [] ): ?string {
-		$pages = self::get_pages();
+		// Defensive check for empty page name
+		if ( empty( $page_name ) ) {
+			Logs::log( "MDS: Empty page name provided to get_page_url()" );
+			return null;
+		}
+		
 		$url = false;
 		
+		// Try to get pages configuration with error handling
+		try {
+			$pages = self::get_pages();
+		} catch ( \Exception $e ) {
+			Logs::log( "MDS: Error getting pages configuration: " . $e->getMessage() );
+			$pages = [];
+		}
+		
+		// Check if page exists in configuration
+		if ( empty( $pages ) || ! isset( $pages[ $page_name ] ) ) {
+			Logs::log( "MDS: Unknown page type '{$page_name}' requested or pages configuration unavailable" );
+			
+			// Even if pages config is unavailable, try direct fallback to endpoint
+			$url = self::get_endpoint_url( $page_name );
+			if ( $url && ! empty( $args ) ) {
+				$url = add_query_arg( $args, $url );
+			}
+			return $url;
+		}
+		
+		$page_config = $pages[ $page_name ];
+		
 		// Try to get page-based URL first
-		if ( isset( $pages[ $page_name ] ) && ! empty( $pages[ $page_name ]['page_id'] ) ) {
-			$page_id = $pages[ $page_name ]['page_id'];
-			// Validate that the page actually exists
-			if ( get_post_status( $page_id ) !== false ) {
-				$url = get_permalink( $page_id );
+		if ( ! empty( $page_config['page_id'] ) && is_numeric( $page_config['page_id'] ) ) {
+			$page_id = intval( $page_config['page_id'] );
+			
+			// Robust page validation
+			$post_status = get_post_status( $page_id );
+			if ( $post_status !== false && in_array( $post_status, ['publish', 'private'] ) ) {
+				$permalink = get_permalink( $page_id );
+				if ( $permalink && $permalink !== home_url( '/' ) ) {
+					$url = $permalink;
+				} else {
+					Logs::log( "MDS: Page ID {$page_id} for '{$page_name}' has invalid permalink" );
+				}
 			} else {
-				Logs::log( "MDS: Page ID {$page_id} for '{$page_name}' does not exist or is invalid" );
+				Logs::log( "MDS: Page ID {$page_id} for '{$page_name}' does not exist or is not published (status: {$post_status})" );
 			}
 		} else {
-			$page_id = isset( $pages[ $page_name ]['page_id'] ) ? $pages[ $page_name ]['page_id'] : 'not set';
-			Logs::log( "MDS: No valid page found for '{$page_name}', page_id: {$page_id}" );
+			// Only log for critical pages that should exist
+			$critical_pages = [ 'order', 'grid', 'manage', 'payment', 'write-ad', 'confirm-order' ];
+			if ( in_array( $page_name, $critical_pages ) ) {
+				Logs::log( "MDS: No valid page ID found for critical page '{$page_name}'" );
+			}
 		}
 		
 		// If page-based URL failed and this is a critical page, try to auto-create it
 		if ( empty( $url ) && in_array( $page_name, [ 'order', 'grid', 'manage' ] ) ) {
-			$created_page_id = self::ensure_page_exists( $page_name );
-			if ( $created_page_id ) {
-				$url = get_permalink( $created_page_id );
-				// Clear the cached pages to reflect the new page
-				global $mds_pages;
-				$mds_pages = null;
+			try {
+				$created_page_id = self::ensure_page_exists( $page_name );
+				if ( $created_page_id && is_numeric( $created_page_id ) ) {
+					$permalink = get_permalink( $created_page_id );
+					if ( $permalink && $permalink !== home_url( '/' ) ) {
+						$url = $permalink;
+						// Clear the cached pages to reflect the new page
+						global $mds_pages, $mds_page_ids;
+						$mds_pages = null;
+						$mds_page_ids = null;
+					}
+				}
+			} catch ( \Exception $e ) {
+				Logs::log( "MDS: Error auto-creating page for '{$page_name}': " . $e->getMessage() );
 			}
 		}
 		
 		// Fallback to endpoint URL if page-based URL still failed
 		if ( empty( $url ) ) {
-			$endpoint = Options::get_option( 'endpoint', 'milliondollarscript' );
-			if ( get_option( 'permalink_structure' ) ) {
-				$url = trailingslashit( home_url( "/{$endpoint}/{$page_name}" ) );
-			} else {
-				$url = add_query_arg( $endpoint, $page_name, home_url( '/' ) );
+			$url = self::get_endpoint_url( $page_name );
+			
+			// Log endpoint usage appropriately
+			if ( ! empty( $page_config['exists'] ) ) {
+				Logs::log( "MDS: Falling back to endpoint URL for '{$page_name}' despite having page configuration" );
 			}
-			Logs::log( "MDS: Using endpoint-based URL for '{$page_name}': {$url}" );
 		}
 		
-		// append additional args if provided
-		if ( $args && ! empty( $url ) ) {
+		// Append additional args if provided and URL is valid
+		if ( ! empty( $args ) && ! empty( $url ) ) {
 			$url = add_query_arg( $args, $url );
 		}
 		
-		return $url;
+		return $url ?: null;
+	}
+	
+	/**
+	 * Generate endpoint-based URL for a page type
+	 *
+	 * @param string $page_name
+	 * @return string|null
+	 */
+	private static function get_endpoint_url( string $page_name ): ?string {
+		try {
+			$endpoint = Options::get_option( 'endpoint', 'milliondollarscript' );
+			
+			if ( empty( $endpoint ) ) {
+				$endpoint = 'milliondollarscript';
+			}
+			
+			if ( get_option( 'permalink_structure' ) ) {
+				return trailingslashit( home_url( "/{$endpoint}/{$page_name}" ) );
+			} else {
+				return add_query_arg( $endpoint, $page_name, home_url( '/' ) );
+			}
+		} catch ( \Exception $e ) {
+			Logs::log( "MDS: Error generating endpoint URL for '{$page_name}': " . $e->getMessage() );
+			return null;
+		}
 	}
 
 	/**
@@ -623,6 +692,31 @@ class Utility {
 		// Save the page ID in options
 		Options::update_option( $config['option_name'], $page_id );
 		
+		// Create MDS page metadata for the new page
+		try {
+			$metadata_manager = MDSPageMetadataManager::getInstance();
+			$metadata_data = [
+				'page_type' => $page_name,
+				'creation_method' => 'auto',
+				'creation_source' => 'ensure_page_exists',
+				'mds_version' => MDS_VERSION,
+				'content_type' => 'shortcode',
+				'status' => 'active',
+				'confidence_score' => 1.0,
+				'shortcode_attributes' => [
+					'type' => $page_name
+				]
+			];
+			
+			$metadata_result = $metadata_manager->createOrUpdateMetadata( $page_id, $page_name, 'auto', $metadata_data );
+			
+			if ( is_wp_error( $metadata_result ) ) {
+				Logs::log( 'MDS: Failed to create metadata for auto-created page ' . $page_name . ': ' . $metadata_result->get_error_message() );
+			}
+		} catch ( \Exception $e ) {
+			Logs::log( 'MDS: Exception creating metadata for auto-created page ' . $page_name . ': ' . $e->getMessage() );
+		}
+		
 		Logs::log( 'MDS: Auto-created missing page for ' . $page_name . ' with ID: ' . $page_id );
 		
 		return $page_id;
@@ -661,7 +755,6 @@ class Utility {
 			return $mds_page_ids;
 		}
 
-		$metadata_manager = MDSPageMetadataManager::getInstance();
 		$mds_page_ids = [];
 		
 		// Map old option names to new page types
@@ -678,16 +771,63 @@ class Utility {
 			'users-no-orders-page' => 'no-orders',
 		];
 
+		// Check if metadata system is available and initialized
+		$metadata_manager = MDSPageMetadataManager::getInstanceSafely();
+		$metadata_available = $metadata_manager && $metadata_manager->isDatabaseReady();
+
 		foreach ( $page_type_mapping as $option_name => $page_type ) {
-			// Try to get from new metadata system first
-			$metadata = $metadata_manager->getRepository()->findFirstByType( $page_type );
+			$page_id = null;
 			
-			if ( $metadata ) {
-				$mds_page_ids[ $option_name ] = $metadata->post_id;
-			} else {
-				// Fallback to old options system
-				$mds_page_ids[ $option_name ] = Options::get_option( $option_name );
+			// Try to get from new metadata system first (if available)
+			if ( $metadata_available ) {
+				try {
+					$metadata = $metadata_manager->getRepository()->findFirstByType( $page_type );
+					
+					if ( $metadata && $metadata->post_id ) {
+						// More robust page validation - check multiple states
+						$post_status = get_post_status( $metadata->post_id );
+						if ( $post_status !== false && in_array( $post_status, ['publish', 'private', 'draft'] ) ) {
+							$page_id = $metadata->post_id;
+						} else if ( $post_status === false ) {
+							// Only remove metadata if post truly doesn't exist (not just unpublished)
+							$post = get_post( $metadata->post_id );
+							if ( ! $post ) {
+								$metadata_manager->getRepository()->deleteById( $metadata->id );
+								Logs::log( "MDS: Removed invalid metadata for page type '{$page_type}' with non-existent post ID {$metadata->post_id}" );
+							}
+						}
+					}
+				} catch ( \Exception $e ) {
+					Logs::log( "MDS: Error accessing metadata for page type '{$page_type}': " . $e->getMessage() );
+				}
 			}
+			
+			// If no valid page from metadata, try old options system
+			if ( ! $page_id ) {
+				try {
+					$option_page_id = Options::get_option( $option_name );
+					if ( $option_page_id ) {
+						$post_status = get_post_status( $option_page_id );
+						if ( $post_status !== false && in_array( $post_status, ['publish', 'private', 'draft'] ) ) {
+							$page_id = $option_page_id;
+							
+							// If metadata system is available, try to create metadata entry for this page
+							if ( $metadata_available && $page_id ) {
+								try {
+									$metadata_manager->createOrUpdateMetadata( $page_id, $page_type, 'migrated_from_options' );
+								} catch ( \Exception $e ) {
+									Logs::log( "MDS: Failed to create metadata for migrated page ID {$page_id}: " . $e->getMessage() );
+								}
+							}
+						}
+					}
+				} catch ( \Exception $e ) {
+					Logs::log( "MDS: Error accessing option '{$option_name}': " . $e->getMessage() );
+				}
+			}
+			
+			// Set the page ID (or null if not found)
+			$mds_page_ids[ $option_name ] = $page_id;
 		}
 
 		return apply_filters( 'mds_page_ids', $mds_page_ids );
@@ -700,8 +840,17 @@ class Utility {
 			return $mds_pages;
 		}
 
-		$metadata_manager = MDSPageMetadataManager::getInstance();
-		$page_ids = self::get_page_ids();
+		// Get page IDs with error handling
+		try {
+			$page_ids = self::get_page_ids();
+		} catch ( \Exception $e ) {
+			Logs::log( "MDS: Error getting page IDs in get_pages(): " . $e->getMessage() );
+			$page_ids = [];
+		}
+		
+		// Check if metadata system is available
+		$metadata_manager = MDSPageMetadataManager::getInstanceSafely();
+		$metadata_available = $metadata_manager && $metadata_manager->isDatabaseReady();
 		
 		// Define page configurations
 		$page_configs = [
@@ -752,18 +901,30 @@ class Utility {
 		$mds_pages = [];
 		
 		foreach ( $page_configs as $page_type => $config ) {
-			// Try to get metadata from new system
-			$metadata = $metadata_manager->getRepository()->findFirstByType( $page_type );
-			
 			$page_data = $config;
-			$page_data['page_id'] = $page_ids[$config['option']];
 			
-			// If we have metadata, include additional data
-			if ( $metadata ) {
-				$page_data['metadata'] = $metadata;
-				$page_data['grid_id'] = $metadata->grid_id;
-				$page_data['configuration'] = $metadata->configuration;
-				$page_data['status'] = $metadata->status;
+			// Get page ID from the validated page_ids array
+			$page_id = isset( $page_ids[$config['option']] ) ? $page_ids[$config['option']] : null;
+			$page_data['page_id'] = $page_id;
+			$page_data['exists'] = ! empty( $page_id );
+			
+			// Try to get metadata from new system (if available)
+			if ( $metadata_available && $metadata_manager ) {
+				try {
+					$metadata = $metadata_manager->getRepository()->findFirstByType( $page_type );
+					
+					// If we have metadata, include additional data
+					if ( $metadata ) {
+						$page_data['metadata'] = $metadata;
+						$page_data['grid_id'] = $metadata->grid_id ?? null;
+						$page_data['configuration'] = $metadata->page_config ?? [];
+						$page_data['status'] = $metadata->status ?? 'unknown';
+						$page_data['confidence_score'] = $metadata->confidence_score ?? null;
+						$page_data['creation_method'] = $metadata->creation_method ?? 'unknown';
+					}
+				} catch ( \Exception $e ) {
+					Logs::log( "MDS: Error accessing metadata for page type '{$page_type}': " . $e->getMessage() );
+				}
 			}
 			
 			$mds_pages[$page_type] = $page_data;
@@ -1614,7 +1775,7 @@ class Utility {
 
 		// Create MDS page metadata
 		try {
-			$metadata_manager = \MillionDollarScript\Classes\Data\MDSPageMetadataManager::getInstance();
+			$metadata_manager = MDSPageMetadataManager::getInstance();
 			
 			$metadata_data = [
 				'page_type' => $page_type,
@@ -1646,7 +1807,7 @@ class Utility {
 				]
 			];
 			
-			$metadata_result = $metadata_manager->createMetadata( $page_id, $metadata_data );
+			$metadata_result = $metadata_manager->createOrUpdateMetadata( $page_id, $page_type, 'wizard', $metadata_data );
 			
 			if ( is_wp_error( $metadata_result ) ) {
 				// Log the error but don't fail page creation
@@ -1688,4 +1849,71 @@ class Utility {
                strpos($extension_server_url, 'host.docker.internal') !== false ||
                strpos($extension_server_url, 'http://') === 0;
     }
+
+	/**
+	 * Get diagnostic information about page management system
+	 * 
+	 * @return array
+	 */
+	public static function get_page_diagnostics(): array {
+		$diagnostics = [
+			'timestamp' => current_time('mysql'),
+			'metadata_system' => [
+				'available' => false,
+				'database_ready' => false,
+				'error' => null
+			],
+			'pages' => [],
+			'page_ids' => [],
+			'errors' => []
+		];
+
+		// Check metadata system
+		try {
+			$metadata_manager = MDSPageMetadataManager::getInstanceSafely();
+			if ( $metadata_manager ) {
+				$diagnostics['metadata_system']['available'] = true;
+				$diagnostics['metadata_system']['database_ready'] = $metadata_manager->isDatabaseReady();
+			}
+		} catch ( \Exception $e ) {
+			$diagnostics['metadata_system']['error'] = $e->getMessage();
+		}
+
+		// Get page IDs
+		try {
+			$diagnostics['page_ids'] = self::get_page_ids();
+		} catch ( \Exception $e ) {
+			$diagnostics['errors'][] = 'Error getting page IDs: ' . $e->getMessage();
+		}
+
+		// Get pages configuration
+		try {
+			$diagnostics['pages'] = self::get_pages();
+		} catch ( \Exception $e ) {
+			$diagnostics['errors'][] = 'Error getting pages configuration: ' . $e->getMessage();
+		}
+
+		// Test URL generation for critical pages
+		$critical_pages = ['grid', 'order', 'manage', 'payment'];
+		$diagnostics['url_tests'] = [];
+		
+		foreach ( $critical_pages as $page_type ) {
+			try {
+				$url = self::get_page_url( $page_type );
+				$diagnostics['url_tests'][$page_type] = [
+					'url' => $url,
+					'success' => !empty($url),
+					'error' => empty($url) ? 'URL generation failed' : null
+				];
+			} catch ( \Exception $e ) {
+				$diagnostics['url_tests'][$page_type] = [
+					'url' => null,
+					'success' => false,
+					'error' => $e->getMessage()
+				];
+			}
+		}
+
+		return $diagnostics;
+	}
 }

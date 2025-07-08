@@ -714,29 +714,32 @@ function upload_changed_pixels(
 			throw new \Exception('Cannot read uploaded file: ' . $files['tmp_name']);
 		}
 
-		$uploaddir  = Utility::get_upload_path() . "images/";
-		$filename   = sanitize_file_name( $files['name'] );
-		$file_parts = pathinfo( $filename );
-
-		// Check if the 'extension' key exists
-		if ( isset( $file_parts['extension'] ) ) {
-			$ext = $f2->filter( strtolower( $file_parts['extension'] ) );
-		} else {
-			$ext = '';
+		// Use comprehensive FileValidator for security
+		$validation_result = \MillionDollarScript\Classes\System\FileValidator::validate_image_upload( $files );
+		if ( ! $validation_result['valid'] ) {
+			// Log security violation attempt
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: File upload validation failed in ads.inc.php - ' . $validation_result['error'] . ' - User: ' . get_current_user_id() . ' - File: ' . ( $files['name'] ?? 'unknown' ) );
+			throw new \Exception( "<b>" . Language::get( 'File upload failed.' ) . "</b><br />" . esc_html( $validation_result['error'] ) );
 		}
 
-		$mime_type          = mime_content_type( $files['tmp_name'] );
-		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
-		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-			throw new \Exception("<b>" . Language::get( 'File type not supported.' ) . "</b><br />");
+		// Generate secure filename and get upload directory
+		$uploaddir = Utility::get_upload_path() . "images/";
+		$secure_filename = \MillionDollarScript\Classes\System\FileValidator::generate_secure_filename( $files['name'], "tmp_" . $order_id . "_" );
+		$uploadfile = $uploaddir . $secure_filename;
+
+		// Ensure upload directory exists and is secure
+		if ( ! file_exists( $uploaddir ) ) {
+			wp_mkdir_p( $uploaddir );
 		}
 
-		$uploadfile = $uploaddir . "tmp_" . $order_id . ".$ext";
-
-		// move the file
+		// Move uploaded file using WordPress-compliant methods
 		if ( ! move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
-			throw new \Exception(Language::get( 'Possible file upload attack or server error during file move.' ));
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: File move failed in ads.inc.php - User: ' . get_current_user_id() . ' - Target: ' . $uploadfile );
+			throw new \Exception( Language::get( 'Possible file upload attack or server error during file move.' ) );
 		}
+
+		// Log successful upload for security auditing
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Secure file upload completed in ads.inc.php - User: ' . get_current_user_id() . ' - File: ' . $secure_filename );
 
 		// convert to png
 		try {
