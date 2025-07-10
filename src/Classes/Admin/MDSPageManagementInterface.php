@@ -2527,37 +2527,60 @@ class MDSPageManagementInterface {
         $content = $post->post_content;
         $page_type = $metadata->page_type;
         
-        // Check for missing shortcodes only if expected
-        if ( $metadata->content_type === 'shortcode' && !has_shortcode( $content, 'milliondollarscript' ) && !has_shortcode( $content, 'mds' ) ) {
+        // Check if this is a migrated page to apply graceful validation
+        $is_migrated = $this->isMigratedPage( $metadata );
+        
+        // Check if this page has custom shortcodes that make it valid
+        $has_custom_mds_shortcodes = $this->hasCustomMDSShortcodes( $content );
+        
+        // Check for missing shortcodes only if expected AND if the page doesn't have custom shortcodes
+        if ( $metadata->content_type === 'shortcode' && 
+             !has_shortcode( $content, 'milliondollarscript' ) && 
+             !has_shortcode( $content, 'mds' ) && 
+             !$has_custom_mds_shortcodes ) {
+            
             // Only flag as error if this page type actually needs a shortcode
             if ( $this->pageTypeNeedsShortcode( $page_type ) ) {
-                $errors[] = [
-                    'page_id' => $metadata->post_id,
-                    'page_title' => $post->post_title,
-                    'type' => 'missing_shortcode',
-                    'severity' => 'high',
-                    'message' => Language::get( 'Missing MDS shortcode' ),
-                    'description' => Language::get( 'This page should contain an MDS shortcode but none was found' ),
-                    'auto_fixable' => true,
-                    'suggested_fix' => sprintf( '[milliondollarscript type="%s"]', $page_type )
-                ];
+                // For migrated pages, check for legacy shortcodes
+                if ( $is_migrated && $this->hasLegacyMDSContent( $content ) ) {
+                    // Skip this error for migrated pages with legacy content
+                } else {
+                    $errors[] = [
+                        'page_id' => $metadata->post_id,
+                        'page_title' => $post->post_title,
+                        'type' => 'missing_shortcode',
+                        'severity' => $is_migrated ? 'medium' : 'high',
+                        'message' => Language::get( 'Missing MDS shortcode' ),
+                        'description' => Language::get( 'This page should contain an MDS shortcode but none was found' ),
+                        'auto_fixable' => true,
+                        'suggested_fix' => sprintf( '[milliondollarscript type="%s"]', $page_type )
+                    ];
+                }
             }
         }
         
-        // Check for missing blocks only if expected
-        if ( $metadata->content_type === 'block' && !has_blocks( $content ) ) {
+        // Check for missing blocks only if expected AND if the page doesn't have custom shortcodes
+        if ( $metadata->content_type === 'block' && 
+             !has_blocks( $content ) && 
+             !$has_custom_mds_shortcodes ) {
+            
             // Only flag as error if this page type actually needs a block
             if ( $this->pageTypeNeedsBlock( $page_type ) ) {
-                $errors[] = [
-                    'page_id' => $metadata->post_id,
-                    'page_title' => $post->post_title,
-                    'type' => 'missing_block',
-                    'severity' => 'high',
-                    'message' => Language::get( 'Missing MDS block' ),
-                    'description' => Language::get( 'This page should contain an MDS block but none was found' ),
-                    'auto_fixable' => true,
-                    'suggested_fix' => sprintf( '<!-- wp:milliondollarscript/%s-block /-->', $page_type )
-                ];
+                // For migrated pages, be more forgiving
+                if ( $is_migrated && $this->hasLegacyMDSContent( $content ) ) {
+                    // Skip this error for migrated pages with legacy content
+                } else {
+                    $errors[] = [
+                        'page_id' => $metadata->post_id,
+                        'page_title' => $post->post_title,
+                        'type' => 'missing_block',
+                        'severity' => $is_migrated ? 'medium' : 'high',
+                        'message' => Language::get( 'Missing MDS block' ),
+                        'description' => Language::get( 'This page should contain an MDS block but none was found' ),
+                        'auto_fixable' => true,
+                        'suggested_fix' => sprintf( '<!-- wp:milliondollarscript/%s-block /-->', $page_type )
+                    ];
+                }
             }
         }
         
@@ -2566,6 +2589,15 @@ class MDSPageManagementInterface {
         
         // Note: Removed minimal content validation as MDS pages often just contain shortcodes
         // that load content via AJAX, so having only a shortcode is perfectly normal
+        
+        // Allow extensions to add custom validation errors or filter existing ones
+        $errors = apply_filters( 'mds_page_validation_errors', $errors, $metadata, $post );
+        
+        // Allow extensions to override validation for specific page types
+        $skip_validation = apply_filters( 'mds_skip_page_validation', false, $page_type, $metadata, $post );
+        if ( $skip_validation ) {
+            return [];
+        }
         
         return $errors;
     }
@@ -2577,9 +2609,13 @@ class MDSPageManagementInterface {
      * @return bool
      */
     private function pageTypeNeedsShortcode( string $page_type ): bool {
-        // Page types that definitely need shortcodes to function
+        // Core page types that definitely need shortcodes to function
         $shortcode_required = [ 'grid', 'order', 'payment', 'manage' ];
-        return in_array( $page_type, $shortcode_required );
+        $core_page_types = ['grid', 'order', 'write-ad', 'confirm-order', 'payment', 'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats'];
+        
+        // Only core page types have strict shortcode requirements
+        // Custom page types (extensions) can have their own validation logic
+        return in_array( $page_type, $shortcode_required ) && in_array( $page_type, $core_page_types );
     }
     
     /**
@@ -2589,11 +2625,89 @@ class MDSPageManagementInterface {
      * @return bool
      */
     private function pageTypeNeedsBlock( string $page_type ): bool {
-        // Similar to shortcode requirements
+        // Core page types that definitely need blocks to function
         $block_required = [ 'grid', 'order', 'payment', 'manage' ];
-        return in_array( $page_type, $block_required );
+        $core_page_types = ['grid', 'order', 'write-ad', 'confirm-order', 'payment', 'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats'];
+        
+        // Only core page types have strict block requirements
+        // Custom page types (extensions) can have their own validation logic
+        return in_array( $page_type, $block_required ) && in_array( $page_type, $core_page_types );
     }
     
+    /**
+     * Check if a page was migrated from an older version
+     *
+     * @param object $metadata
+     * @return bool
+     */
+    private function isMigratedPage( $metadata ): bool {
+        $page_config = $metadata->page_config ?? [];
+        return isset( $page_config['migrated_from_option'] ) && $page_config['migrated_from_option'] === true;
+    }
+    
+    /**
+     * Check if content contains legacy MDS content patterns
+     *
+     * @param string $content
+     * @return bool
+     */
+    private function hasLegacyMDSContent( string $content ): bool {
+        $legacy_patterns = [
+            'mds-',
+            'milliondollarscript',
+            'million-dollar-script',
+            'pixel-grid',
+            'data-mds-',
+            'mds_',
+            'million_dollar_script'
+        ];
+        
+        foreach ( $legacy_patterns as $pattern ) {
+            if ( stripos( $content, $pattern ) !== false ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if content contains custom MDS shortcodes
+     *
+     * @param string $content
+     * @return bool
+     */
+    private function hasCustomMDSShortcodes( string $content ): bool {
+        // Check for custom MDS shortcodes (mds_*) - Enhanced pattern matching
+        $custom_mds_patterns = [
+            '/\[mds_([a-zA-Z0-9_-]+)([^\]]*)\]/',          // Standard mds_ shortcodes
+            '/\[MDS_([a-zA-Z0-9_-]+)([^\]]*)\]/',          // Uppercase variants
+            '/\[milliondollar_([a-zA-Z0-9_-]+)([^\]]*)\]/', // Extended forms
+            '/\[million_dollar_([a-zA-Z0-9_-]+)([^\]]*)\]/', // Alternative forms
+        ];
+        
+        foreach ( $custom_mds_patterns as $pattern ) {
+            if ( preg_match( $pattern, $content ) ) {
+                return true;
+            }
+        }
+        
+        // Check for extension shortcodes registered through filters
+        $extension_shortcodes = apply_filters( 'mds_extension_shortcodes', [] );
+        foreach ( $extension_shortcodes as $shortcode ) {
+            if ( has_shortcode( $content, $shortcode ) ) {
+                return true;
+            }
+        }
+        
+        // Allow extensions to register their own custom shortcode validation
+        $custom_validation_result = apply_filters( 'mds_has_custom_shortcodes', false, $content );
+        if ( $custom_validation_result ) {
+            return true;
+        }
+        
+        return false;
+    }
     
     /**
      * Apply a fix for a specific error

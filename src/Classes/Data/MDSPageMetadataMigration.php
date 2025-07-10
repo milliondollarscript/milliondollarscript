@@ -145,6 +145,9 @@ class MDSPageMetadataMigration {
         // Determine creation method based on available information
         $creation_method = $this->inferCreationMethod( $post, $content_analysis );
         
+        // Determine appropriate status based on content analysis
+        $status = $this->determineMigrationStatus( $content_analysis, $page_type, $post );
+        
         // Build metadata
         $metadata_data = [
             'page_type' => $page_type,
@@ -152,21 +155,30 @@ class MDSPageMetadataMigration {
             'creation_source' => 'migration_v' . MDS_VERSION,
             'mds_version' => MDS_VERSION,
             'content_type' => $content_analysis['content_type'],
-            'status' => 'active',
+            'status' => $status,
             'confidence_score' => $content_analysis['confidence'],
             'shortcode_attributes' => $content_analysis['shortcode_attributes'],
             'block_attributes' => $content_analysis['block_attributes'],
             'detected_patterns' => $content_analysis['patterns'],
             'page_config' => [
                 'option_key' => $page_data['option'],
-                'migrated_from_option' => true
+                'migrated_from_option' => true,
+                'migration_version' => MDS_VERSION,
+                'migration_timestamp' => current_time( 'timestamp' ),
+                'pre_migration_status' => $post->post_status
             ],
             'display_settings' => $content_analysis['display_settings'],
-            'integration_settings' => $this->getThemeIntegrationSettings( $page_id )
+            'integration_settings' => $this->getThemeIntegrationSettings( $page_id ),
+            'validation_errors' => [] // Initialize empty to prevent false positives
         ];
         
         // Create metadata
-        $result = $this->metadata_manager->createMetadata( $page_id, $metadata_data );
+        $result = $this->metadata_manager->createOrUpdateMetadata( 
+            $page_id, 
+            $metadata_data['page_type'], 
+            $metadata_data['creation_method'], 
+            $metadata_data 
+        );
         
         if ( is_wp_error( $result ) ) {
             return $result;
@@ -283,7 +295,49 @@ class MDSPageMetadataMigration {
             }
         }
         
+        // For migrated pages, ensure minimum confidence for legacy content
+        if ( $analysis['content_type'] === 'custom' && $analysis['confidence'] < 0.8 ) {
+            // If we have any MDS patterns, boost confidence for migration
+            if ( !empty( $analysis['patterns'] ) ) {
+                $analysis['confidence'] = 0.8;
+            }
+        }
+        
         return $analysis;
+    }
+    
+    /**
+     * Determine appropriate status for migrated page based on content analysis
+     *
+     * @param array $content_analysis
+     * @param string $page_type
+     * @param WP_Post $post
+     * @return string
+     */
+    private function determineMigrationStatus( array $content_analysis, string $page_type, WP_Post $post ): string {
+        // If the WordPress post is not published, mark as inactive
+        if ( $post->post_status !== 'publish' ) {
+            return 'inactive';
+        }
+        
+        // High confidence content should be marked as active
+        if ( $content_analysis['confidence'] >= 0.8 ) {
+            return 'active';
+        }
+        
+        // If we found shortcodes or blocks, mark as active
+        if ( in_array( $content_analysis['content_type'], ['shortcode', 'block', 'mixed'] ) ) {
+            return 'active';
+        }
+        
+        // If we have MDS patterns, mark as active with lower confidence
+        if ( !empty( $content_analysis['patterns'] ) ) {
+            return 'active';
+        }
+        
+        // For legacy pages without clear MDS content, mark as active but flagged for review
+        // This prevents false positives during migration
+        return 'active';
     }
     
     /**

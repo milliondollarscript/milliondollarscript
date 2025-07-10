@@ -381,7 +381,7 @@ class MDSPageMetadataManager {
                 // Mark as scanned
                 update_post_meta( $page->ID, '_mds_scanned', time() );
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $results['errors'][] = sprintf(
                     Language::get( 'Error scanning page %d: %s' ),
                     $page->ID,
@@ -419,23 +419,37 @@ class MDSPageMetadataManager {
                     $metadata->status = 'orphaned';
                     $results['orphaned']++;
                 } else {
-                    // Validate the page content
+                    // Validate the page content with migration-aware logic
                     $validation_errors = $this->validatePageContent( $metadata );
                     
                     if ( empty( $validation_errors ) ) {
                         $metadata->status = 'active';
                         $results['valid']++;
                     } else {
-                        $metadata->status = 'error';
-                        $metadata->validation_errors = $validation_errors;
-                        $results['invalid']++;
+                        // Check if this is a migrated page and apply graceful validation
+                        if ( $this->isMigratedPage( $metadata ) ) {
+                            $graceful_errors = $this->applyGracefulValidation( $metadata, $validation_errors );
+                            if ( empty( $graceful_errors ) ) {
+                                $metadata->status = 'active';
+                                $metadata->validation_errors = [];
+                                $results['valid']++;
+                            } else {
+                                $metadata->status = 'error';
+                                $metadata->validation_errors = $graceful_errors;
+                                $results['invalid']++;
+                            }
+                        } else {
+                            $metadata->status = 'error';
+                            $metadata->validation_errors = $validation_errors;
+                            $results['invalid']++;
+                        }
                     }
                 }
                 
                 $metadata->markValidated( $metadata->validation_errors );
                 $this->repository->save( $metadata );
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $results['errors'][] = sprintf(
                     Language::get( 'Error validating page %d: %s' ),
                     $metadata->post_id,
@@ -589,21 +603,7 @@ class MDSPageMetadataManager {
         
         // Check if page still contains MDS content
         $content = $post->post_content;
-        $has_mds_content = false;
-        
-        if ( has_shortcode( $content, 'milliondollarscript' ) ) {
-            $has_mds_content = true;
-        }
-        
-        if ( has_blocks( $content ) ) {
-            $blocks = parse_blocks( $content );
-            foreach ( $blocks as $block ) {
-                if ( $block['blockName'] === 'milliondollarscript/mds-block' ) {
-                    $has_mds_content = true;
-                    break;
-                }
-            }
-        }
+        $has_mds_content = $this->hasMDSContent( $content );
         
         if ( !$has_mds_content ) {
             $errors[] = Language::get( 'Page no longer contains MDS content' );
@@ -613,6 +613,134 @@ class MDSPageMetadataManager {
         $errors = array_merge( $errors, $this->validatePageTypeRequirements( $metadata ) );
         
         return $errors;
+    }
+    
+    /**
+     * Check if content contains MDS-related content
+     *
+     * @param string $content
+     * @return bool
+     */
+    private function hasMDSContent( string $content ): bool {
+        // Check for various MDS shortcodes
+        $shortcode_patterns = ['milliondollarscript', 'mds', 'million_dollar_script'];
+        foreach ( $shortcode_patterns as $shortcode ) {
+            if ( has_shortcode( $content, $shortcode ) ) {
+                return true;
+            }
+        }
+        
+        // Check for MDS blocks
+        if ( has_blocks( $content ) ) {
+            $blocks = parse_blocks( $content );
+            $mds_blocks = [
+                'milliondollarscript/mds-block',
+                'mds/grid-block',
+                'mds/order-block',
+                'mds/stats-block',
+                'milliondollarscript/grid',
+                'milliondollarscript/display'
+            ];
+            
+            foreach ( $blocks as $block ) {
+                if ( in_array( $block['blockName'], $mds_blocks ) ) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check for MDS-related patterns in content
+        $patterns = [
+            'mds-shortcode-container',
+            'milliondollarscript-grid',
+            'mds-pixel-grid',
+            'million-dollar-script',
+            'data-mds-params',
+            'mds-grid-container'
+        ];
+        
+        foreach ( $patterns as $pattern ) {
+            if ( strpos( $content, $pattern ) !== false ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if a page was migrated from an older version
+     *
+     * @param MDSPageMetadata $metadata
+     * @return bool
+     */
+    private function isMigratedPage( MDSPageMetadata $metadata ): bool {
+        $page_config = $metadata->page_config ?? [];
+        return isset( $page_config['migrated_from_option'] ) && $page_config['migrated_from_option'] === true;
+    }
+    
+    /**
+     * Apply graceful validation for migrated pages
+     *
+     * @param MDSPageMetadata $metadata
+     * @param array $validation_errors
+     * @return array Filtered validation errors
+     */
+    private function applyGracefulValidation( MDSPageMetadata $metadata, array $validation_errors ): array {
+        $filtered_errors = [];
+        $post = get_post( $metadata->post_id );
+        
+        if ( !$post ) {
+            return $validation_errors; // Can't be graceful if post doesn't exist
+        }
+        
+        foreach ( $validation_errors as $error ) {
+            $should_keep_error = true;
+            
+            // Be more forgiving for "no MDS content" errors on migrated pages
+            if ( $error === Language::get( 'Page no longer contains MDS content' ) ) {
+                // For migrated pages, check if they have any MDS-related patterns
+                $content = $post->post_content;
+                $has_legacy_patterns = false;
+                
+                // Check for legacy MDS patterns that might not be caught by strict validation
+                $legacy_patterns = [
+                    'mds-',
+                    'milliondollarscript',
+                    'million-dollar-script',
+                    'pixel-grid',
+                    'data-mds-',
+                    'mds_'
+                ];
+                
+                foreach ( $legacy_patterns as $pattern ) {
+                    if ( stripos( $content, $pattern ) !== false ) {
+                        $has_legacy_patterns = true;
+                        break;
+                    }
+                }
+                
+                // If we found legacy patterns, don't flag as error
+                if ( $has_legacy_patterns ) {
+                    $should_keep_error = false;
+                }
+                
+                // Also check if the page has the expected option reference
+                $page_config = $metadata->page_config ?? [];
+                if ( isset( $page_config['option_key'] ) ) {
+                    $option_value = get_option( '_mds_' . $page_config['option_key'] );
+                    if ( $option_value == $metadata->post_id ) {
+                        $should_keep_error = false; // Still referenced by option
+                    }
+                }
+            }
+            
+            if ( $should_keep_error ) {
+                $filtered_errors[] = $error;
+            }
+        }
+        
+        return $filtered_errors;
     }
     
     /**
@@ -669,6 +797,26 @@ class MDSPageMetadataManager {
         }
         
         $metadata->page_type = $page_type;
+        $metadata->touch(); // Update the last_validated timestamp
+        
+        return $this->repository->save( $metadata );
+    }
+    
+    /**
+     * Update page configuration for existing metadata
+     *
+     * @param int $post_id
+     * @param array $config
+     * @return bool|WP_Error
+     */
+    public function updatePageConfiguration( int $post_id, array $config ) {
+        $metadata = $this->repository->findByPostId( $post_id );
+        if ( !$metadata ) {
+            return new WP_Error( 'metadata_not_found', Language::get( 'No metadata found for page' ) );
+        }
+        
+        // Merge new configuration with existing
+        $metadata->page_config = array_merge( $metadata->page_config, $config );
         $metadata->touch(); // Update the last_validated timestamp
         
         return $this->repository->save( $metadata );

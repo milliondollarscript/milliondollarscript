@@ -36,6 +36,13 @@ defined( 'ABSPATH' ) or exit;
 
 /**
  * Engine for detecting MDS pages automatically
+ * 
+ * Extension Support:
+ * - Use 'mds_extension_shortcodes' filter to register custom shortcodes for detection
+ * - Use 'mds_shortcode_page_type_map' filter to map shortcode names to page types
+ * - Use 'mds_has_custom_shortcodes' filter in validation to mark pages as valid
+ * - Use 'mds_skip_page_validation' filter to bypass validation for custom page types
+ * - Use 'mds_page_validation_errors' filter to add or modify validation errors
  */
 class MDSPageDetectionEngine {
     
@@ -852,6 +859,20 @@ class MDSPageDetectionEngine {
             return 'grid';
         }
         
+        // Enhanced mixed content detection: check if we have both core and custom content
+        $has_core_content = false;
+        $has_custom_content = false;
+        $custom_shortcode_types = [];
+        
+        foreach ( $page_type_sources as $source ) {
+            if ( in_array( $source['type'], $core_page_types ) ) {
+                $has_core_content = true;
+            } else {
+                $has_custom_content = true;
+                $custom_shortcode_types[] = $source['type'];
+            }
+        }
+        
         // Score each detection by quality
         $scored_detections = [];
         foreach ( $page_type_sources as $source ) {
@@ -866,28 +887,41 @@ class MDSPageDetectionEngine {
             // Apply mixed content boost for core page types from blocks
             $mixed_content_boost = 0;
             if ( in_array( $type, $core_page_types ) && $method === 'blocks' ) {
-                // Check if there are extension shortcodes present (indicating mixed content)
-                $has_extension_shortcodes = false;
-                foreach ( $page_type_sources as $other_source ) {
-                    if ( $other_source['method'] === 'shortcode' && !in_array( $other_source['type'], $core_page_types ) ) {
-                        $has_extension_shortcodes = true;
-                        break;
-                    }
-                }
-                
-                if ( $has_extension_shortcodes ) {
+                if ( $has_custom_content ) {
                     $mixed_content_boost = 50; // Strong boost for core block detection in mixed content
                 }
             }
             
-            $total_score = $method_score + ($confidence * 10) + $pattern_score + $mixed_content_boost;
+            // NEW: Apply boost for custom shortcodes when they are the primary content
+            // This ensures custom shortcodes get proper recognition when they're the main page content
+            $custom_shortcode_boost = 0;
+            if ( !in_array( $type, $core_page_types ) && $method === 'shortcode' ) {
+                // Check if this is a high-confidence custom shortcode detection
+                foreach ( $source['patterns'] as $pattern ) {
+                    if ( $pattern['type'] === 'shortcode' && 
+                         isset( $pattern['shortcode_name'] ) && 
+                         strpos( $pattern['shortcode_name'], 'mds_' ) === 0 ) {
+                        $custom_shortcode_boost = 40; // Good boost for custom MDS shortcodes
+                        break;
+                    }
+                }
+                
+                // Additional boost if there's no conflicting core content
+                if ( !$has_core_content ) {
+                    $custom_shortcode_boost += 30;
+                }
+            }
+            
+            $total_score = $method_score + ($confidence * 10) + $pattern_score + $mixed_content_boost + $custom_shortcode_boost;
             
             $scored_detections[] = [
                 'type' => $type,
                 'score' => $total_score,
                 'method' => $method,
                 'confidence' => $confidence,
-                'boost' => $mixed_content_boost
+                'boost' => $mixed_content_boost + $custom_shortcode_boost,
+                'is_core' => in_array( $type, $core_page_types ),
+                'is_custom' => !in_array( $type, $core_page_types )
             ];
         }
         
@@ -909,6 +943,7 @@ class MDSPageDetectionEngine {
     private function calculatePatternSpecificity( array $patterns, string $page_type ): float {
         $specificity_score = 0;
         $core_page_types = ['grid', 'order', 'write-ad', 'confirm-order', 'payment', 'manage', 'thank-you', 'list', 'upload', 'no-orders', 'stats'];
+        $is_custom_type = !in_array( $page_type, $core_page_types );
         
         foreach ( $patterns as $pattern ) {
             // Explicit shortcode type attributes are most specific
@@ -921,6 +956,19 @@ class MDSPageDetectionEngine {
                      in_array( $page_type, $core_page_types ) ) {
                 $specificity_score += 45; // Higher than extension shortcodes for mixed content
             }
+            // Custom MDS shortcodes are highly specific when they match the detected type
+            elseif ( $pattern['type'] === 'shortcode' && isset( $pattern['shortcode_name'] ) && 
+                     strpos( $pattern['shortcode_name'], 'mds_' ) === 0 && $is_custom_type ) {
+                // Extract the shortcode type from the name (e.g., "mds_platform_leaderboard" -> "platform-leaderboard")
+                $shortcode_type = str_replace( 'mds_', '', $pattern['shortcode_name'] );
+                $shortcode_type = str_replace( '_', '-', $shortcode_type );
+                
+                if ( $shortcode_type === $page_type ) {
+                    $specificity_score += 55; // Very high specificity for exact matches
+                } else {
+                    $specificity_score += 35; // High specificity for custom MDS shortcodes
+                }
+            }
             // Shortcode name mappings are highly specific
             elseif ( isset( $pattern['shortcode_name'] ) && strpos( $pattern['shortcode_name'], 'mds_' ) === 0 ) {
                 $specificity_score += 30;
@@ -932,6 +980,10 @@ class MDSPageDetectionEngine {
             // Legacy shortcodes are moderately specific
             elseif ( $pattern['type'] === 'legacy_shortcode' ) {
                 $specificity_score += 15;
+            }
+            // Extension shortcodes from registered extensions
+            elseif ( $pattern['type'] === 'mds_extension_shortcode' && $is_custom_type ) {
+                $specificity_score += 40; // Good specificity for extension shortcodes
             }
             // Content keywords are least specific
             elseif ( $pattern['type'] === 'content_keyword' || $pattern['type'] === 'title_keyword' ) {

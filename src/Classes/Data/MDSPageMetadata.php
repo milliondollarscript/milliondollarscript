@@ -58,6 +58,7 @@ class MDSPageMetadata {
     public float $confidence_score = 1.0;
     public ?DateTime $last_validated = null;
     public ?array $validation_errors = null;
+    public bool $auto_scan = false;
     
     // Configuration
     public array $page_config = [];
@@ -125,6 +126,7 @@ class MDSPageMetadata {
         $this->content_type = sanitize_key( $data['content_type'] ?? 'shortcode' );
         $this->status = sanitize_key( $data['status'] ?? 'active' );
         $this->confidence_score = floatval( $data['confidence_score'] ?? 1.0 );
+        $this->auto_scan = boolval( $data['auto_scan'] ?? false );
         
         // Handle arrays
         $this->shortcode_attributes = is_array( $data['shortcode_attributes'] ?? null ) ? $data['shortcode_attributes'] : [];
@@ -175,6 +177,7 @@ class MDSPageMetadata {
             'content_type' => $this->content_type,
             'status' => $this->status,
             'confidence_score' => $this->confidence_score,
+            'auto_scan' => $this->auto_scan,
             'shortcode_attributes' => $this->shortcode_attributes,
             'block_attributes' => $this->block_attributes,
             'detected_patterns' => $this->detected_patterns,
