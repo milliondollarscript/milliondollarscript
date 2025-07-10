@@ -206,7 +206,7 @@ class Ajax {
 		$sql = $wpdb->prepare( "SELECT COUNT(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks WHERE status='sold' AND banner_id=%d", $BID );
 		$row = $wpdb->get_row( $sql, ARRAY_A );
 
-		$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+		$STATS_DISPLAY_MODE = Options::get_option( 'stats-display-mode' );
 
 		if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 			$sold = $row['COUNT'];
@@ -217,7 +217,7 @@ class Ajax {
 		$sql = $wpdb->prepare( "SELECT COUNT(*) AS COUNT FROM " . MDS_DB_PREFIX . "blocks WHERE status='nfs' AND banner_id=%d", $BID );
 		$row = $wpdb->get_row( $sql, ARRAY_A );
 
-		$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+		$STATS_DISPLAY_MODE = Options::get_option( 'stats-display-mode' );
 
 		if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 			$nfs       = $row['COUNT'];
@@ -301,7 +301,7 @@ class Ajax {
 	public static function store_view( $data ): void {
 		global $wpdb;
 		
-		$ADVANCED_VIEW_COUNT = Config::get( 'ADVANCED_VIEW_COUNT' );
+		$ADVANCED_VIEW_COUNT = Options::get_option( 'advanced-view-count' );
 		if ( $ADVANCED_VIEW_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
@@ -339,7 +339,7 @@ class Ajax {
 	}
 
 	public static function store_click( $data ): void {
-		$ADVANCED_CLICK_COUNT = Config::get( 'ADVANCED_CLICK_COUNT' );
+		$ADVANCED_CLICK_COUNT = Options::get_option( 'advanced-click-count' );
 		if ( $ADVANCED_CLICK_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 

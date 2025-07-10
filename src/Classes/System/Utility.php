@@ -411,7 +411,7 @@ class Utility {
 	}
 
 	public static function get_file_extension(): string {
-		$OUTPUT_JPEG = Config::get( 'OUTPUT_JPEG' );
+		$OUTPUT_JPEG = Options::get_option( 'output-jpeg' );
 
 		$ext = '';
 		if ( $OUTPUT_JPEG == 'Y' ) {

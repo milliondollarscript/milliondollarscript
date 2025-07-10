@@ -1201,6 +1201,11 @@ class Options {
 	 * @return mixed
 	 */
 	public static function get_option( $name, $default = null, bool $carbon_fields = true, string $container_id = 'options' ): mixed {
+		// If no explicit default provided, try to get it from field configuration
+		if ( $default === null ) {
+			$default = self::get_field_default_value( $name );
+		}
+		
 		if ( $carbon_fields && function_exists( 'carbon_get_theme_option' ) ) {
 			$option = carbon_get_theme_option( MDS_PREFIX . $name );
 			if ( ! empty( $option ) || $option === false ) {
@@ -1224,6 +1229,38 @@ class Options {
 		}
 
 		return $val;
+	}
+
+	/**
+	 * Extract default value for a field from the Carbon Fields configuration
+	 *
+	 * @param string $field_name The field name to find default for
+	 * @return mixed|null The default value or null if not found
+	 */
+	private static function get_field_default_value( string $field_name ) {
+		// Check if $tabs is initialized before accessing it
+		if ( ! isset( self::$tabs ) || empty( self::$tabs ) ) {
+			return null;
+		}
+		
+		foreach ( self::$tabs as $tab_fields ) {
+			if ( ! is_array( $tab_fields ) ) {
+				continue;
+			}
+			
+			foreach ( $tab_fields as $field ) {
+				if ( ! is_array( $field ) ) {
+					continue;
+				}
+				
+				// Look for fields with matching name
+				if ( isset( $field['name'] ) && $field['name'] === $field_name ) {
+					return $field['default'] ?? null;
+				}
+			}
+		}
+		
+		return null;
 	}
 
 	/**

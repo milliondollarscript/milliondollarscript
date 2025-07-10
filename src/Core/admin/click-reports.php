@@ -26,11 +26,11 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
-$ADVANCED_CLICK_COUNT = Config::get( 'ADVANCED_CLICK_COUNT' );
+$ADVANCED_CLICK_COUNT = Options::get_option( 'advanced-click-count' );
 if ( $ADVANCED_CLICK_COUNT != 'YES' ) {
 	die ( "Advanced click tracking not enabled. You will need to enable advanced click tracking in the Main Config" );
 }

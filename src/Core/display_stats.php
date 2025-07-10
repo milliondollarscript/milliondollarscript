@@ -26,7 +26,8 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -41,7 +42,7 @@ if ( $wpdb->last_error ) {
 	mds_secure_sql_die( $sql, 'display_stats sold blocks count' );
 }
 
-$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+$STATS_DISPLAY_MODE = Options::get_option( 'stats-display-mode' );
 
 if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 	$sold = $row['COUNT'];
@@ -55,7 +56,7 @@ if ( $wpdb->last_error ) {
 	mds_secure_sql_die( $sql, 'display_stats nfs blocks count' );
 }
 
-$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+$STATS_DISPLAY_MODE = Options::get_option( 'stats-display-mode' );
 
 if ( $STATS_DISPLAY_MODE == 'BLOCKS' ) {
 	$nfs       = $row['COUNT'];

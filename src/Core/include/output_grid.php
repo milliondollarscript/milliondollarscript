@@ -1,6 +1,5 @@
 <?php
 
-use MillionDollarScript\Classes\Data\Config;
 use Imagine\Image\Box;
 use Imagine\Image\Point;
 use MillionDollarScript\Classes\Data\Options;
@@ -781,12 +780,12 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	$mime    = "png";
 	$options = array( 'png_compression_level' => 9 );
 
-	$OUTPUT_JPEG = Config::get( 'OUTPUT_JPEG' );
+	$OUTPUT_JPEG = Options::get_option( 'output-jpeg' );
 
 	if ( $OUTPUT_JPEG == 'Y' ) {
 		$ext     = "jpg";
 		$mime    = "jpeg";
-		$options = array( 'jpeg_quality' => Config::get( 'JPEG_QUALITY' ) );
+		$options = array( 'jpeg_quality' => Options::get_option( 'jpeg-quality' ) );
 	} else if ( $OUTPUT_JPEG == 'N' ) {
 		// defaults to png, set above
 	} else if ( $OUTPUT_JPEG == 'GIF' ) {
@@ -797,7 +796,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// output
 	if ( $show ) {
-		if ( Config::get( 'INTERLACE_SWITCH' ) == 'YES' ) {
+		if ( Options::get_option( 'interlace-switch' ) == 'YES' ) {
 			$map->interlace( Imagine\Image\ImageInterface::INTERLACE_LINE );
 		}
 

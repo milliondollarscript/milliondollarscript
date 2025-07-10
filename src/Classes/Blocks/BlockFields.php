@@ -196,7 +196,7 @@ class BlockFields {
 			$BID         = $f2->bid();
 			$banner_data = load_banner_constants( $BID );
 
-			$tooltips = \MillionDollarScript\Classes\Data\Config::get( 'ENABLE_MOUSEOVER' );
+			$tooltips = \MillionDollarScript\Classes\Data\Options::get_option( 'enable-mouseover' );
 
 			?>
 			<script>
@@ -227,9 +227,9 @@ class BlockFields {
 												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 												time: '<?php echo time(); ?>',
 												MDS_CORE_URL: '<?php echo MDS_CORE_URL;?>',
-												REDIRECT_SWITCH: '<?php echo \MillionDollarScript\Classes\Data\Config::get( 'REDIRECT_SWITCH' ); ?>',
-												REDIRECT_URL: '<?php echo \MillionDollarScript\Classes\Data\Config::get( 'REDIRECT_URL' ); ?>',
-												ENABLE_MOUSEOVER: '<?php echo \MillionDollarScript\Classes\Data\Config::get( 'ENABLE_MOUSEOVER' ); ?>',
+												REDIRECT_SWITCH: '<?php echo \MillionDollarScript\Classes\Data\Options::get_option( 'redirect-switch' ); ?>',
+												REDIRECT_URL: '<?php echo \MillionDollarScript\Classes\Data\Options::get_option( 'redirect-url' ); ?>',
+												ENABLE_MOUSEOVER: '<?php echo \MillionDollarScript\Classes\Data\Options::get_option( 'enable-mouseover' ); ?>',
 												BID: parseInt('<?php echo $BID; ?>', 10),
 												MDS_PREFIX: '<?php echo MDS_PREFIX; ?>',
 											};

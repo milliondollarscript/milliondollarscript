@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Utility;
 
@@ -59,7 +59,7 @@ function publish_image( $BID ): void {
 	}
 
 	// Output the tile image
-	if ( Config::get( 'DISPLAY_PIXEL_BACKGROUND' ) == "YES" ) {
+	if ( Options::get_option( 'display-pixel-background' ) == "YES" ) {
 		$b_row = load_banner_row( $BID );
 
 		if ( $b_row['tile'] == '' ) {

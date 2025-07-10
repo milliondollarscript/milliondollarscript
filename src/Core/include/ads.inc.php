@@ -660,7 +660,7 @@ function disapprove_modified_order( $order_id, $BID ) {
 	);
 
 	// send pixel change notification
-	if ( Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
+	if ( Options::get_option( 'email-admin-publish-notify' ) == 'YES' ) {
 		Emails::send_published_pixels_notification( $order->user_id, $order_id );
 	}
 }

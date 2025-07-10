@@ -973,12 +973,12 @@ class Orders {
 			<?php
 			if ( isset( $order['status'] ) ) {
 				$temp_var = '';
-				if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 					$temp_var = '&order_id=' . $order['order_id'];
 				}
 
 				$steps    = Steps::get_steps();
-				$USE_AJAX = Config::get( 'USE_AJAX' );
+				$USE_AJAX = Options::get_option( 'use-ajax' );
 
 				switch ( $order['status'] ) {
 					case "new":
@@ -1046,7 +1046,7 @@ class Orders {
 					case "expired":
 						$time_expired = strtotime( $order['date_stamp'] );
 
-						$time_when_cancel = $time_expired + ( Config::get( 'MINUTES_RENEW' ) * 60 );
+						$time_when_cancel = $time_expired + ( Options::get_option( 'minutes-renew' ) * 60 );
 
 						$total_minutes = ( $time_when_cancel - time() ) / 60;
 
@@ -1116,7 +1116,7 @@ class Orders {
 				}
 			}
 		} else {
-			require_once MDS_CORE_PATH . 'users/' . ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ? 'order-pixels.php' : 'select.php' );
+			require_once MDS_CORE_PATH . 'users/' . ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ? 'order-pixels.php' : 'select.php' );
 		}
 	}
 
@@ -1285,7 +1285,7 @@ class Orders {
 		unset( $affected_BIDs );
 
 		// unconfirmed Orders
-		$MINUTES_UNCONFIRMED = Config::get( 'MINUTES_UNCONFIRMED' );
+		$MINUTES_UNCONFIRMED = Options::get_option( 'minutes-unconfirmed' );
 		if ( $MINUTES_UNCONFIRMED != 0 ) {
 
 			$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`=%s", 'new' );
@@ -1316,7 +1316,7 @@ class Orders {
 		}
 
 		// unpaid Orders
-		$MINUTES_CONFIRMED = Config::get( 'MINUTES_CONFIRMED' );
+		$MINUTES_CONFIRMED = Options::get_option( 'minutes-confirmed' );
 		if ( $MINUTES_CONFIRMED != 0 ) {
 
 			$additional_condition = "";
@@ -1339,7 +1339,7 @@ class Orders {
 		}
 
 		// EXPIRED Orders -> Cancel
-		$MINUTES_RENEW = intval( Config::get( 'MINUTES_RENEW' ) );
+		$MINUTES_RENEW = intval( Options::get_option( 'minutes-renew' ) );
 		if ( $MINUTES_RENEW != 0 ) {
 
 			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`='expired'";
@@ -1362,7 +1362,7 @@ class Orders {
 		}
 
 		// Cancelled Orders -> Delete
-		$MINUTES_CANCEL = intval( Config::get( 'MINUTES_CANCEL' ) );
+		$MINUTES_CANCEL = intval( Options::get_option( 'minutes-cancel' ) );
 		if ( $MINUTES_CANCEL != 0 ) {
 
 			$MINUTES_CANCEL = intval( $MINUTES_CANCEL );
@@ -1678,7 +1678,7 @@ class Orders {
 					$row['quantity'],
 					$block_count,
 					$row['days_expire'],
-					Config::get( 'MINUTES_CONFIRMED' ),
+					Options::get_option( 'minutes-confirmed' ),
 					$price,
 					get_bloginfo( 'admin_email' ),
 					get_site_url(),
@@ -2231,7 +2231,7 @@ class Orders {
             <div class="mds-order-details-section">
                 <b><?php Language::out( 'Quantity:' ); ?></b>
 				<?php
-				$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+				$STATS_DISPLAY_MODE = Options::get_option( 'stats-display-mode' );
 				if ( $STATS_DISPLAY_MODE == "PIXELS" ) {
 					echo intval( $order_row['quantity'] );
 					echo " " . Language::get( 'pixels' );
@@ -2608,13 +2608,13 @@ class Orders {
 		$buttons = '';
 		$steps = Steps::get_steps();
 		$current_step = $order['current_step'];
-		$USE_AJAX = Config::get( 'USE_AJAX' );
+		$USE_AJAX = Options::get_option( 'use-ajax' );
 
 		// Determine which button to show based on current step
 		if ( $steps[ $current_step ] == Steps::STEP_UPLOAD ) {
 			$args = [ 'BID' => $order['banner_id'] ];
 			$page_name = 'upload';
-			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 				$page_name = 'order';
 				$args['order_id'] = $order['order_id'];
 			}
@@ -2622,14 +2622,14 @@ class Orders {
 			$buttons .= "<input class='mds-button mds-upload' type='button' value='" . esc_attr( Language::get( 'Upload' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
 		} else if ( $steps[ $current_step ] == Steps::STEP_WRITE_AD ) {
 			$args = [ 'BID' => $order['banner_id'] ];
-			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 				$args['order_id'] = $order['order_id'];
 			}
 			$url = esc_url( Utility::get_page_url( 'write-ad', $args ) );
 			$buttons .= "<input class='mds-button mds-write' type='button' value='" . esc_attr( Language::get( 'Write Ad' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
 		} else if ( $steps[ $current_step ] == Steps::STEP_CONFIRM_ORDER ) {
 			$args = [ 'BID' => $order['banner_id'] ];
-			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 				$args['order_id'] = $order['order_id'];
 			}
 			$url = esc_url( Utility::get_page_url( 'confirm-order', $args ) );
@@ -2644,7 +2644,7 @@ class Orders {
 		} else if ( $current_step == 0 ) {
 			// Initial step - show appropriate start button
 			$args = [ 'BID' => $order['banner_id'] ];
-			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 				$text = Language::get( 'Upload' );
 				$page_name = 'upload';
 				$args['order_id'] = $order['order_id'];
@@ -2656,7 +2656,7 @@ class Orders {
 			$buttons .= "<input class='mds-button mds-upload' type='button' value='" . esc_attr( $text ) . "' onclick='window.location=\"" . $url . "\"' />";
 		} else {
 			$args = [ 'BID' => $order['banner_id'] ];
-			if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 				$args['order_id'] = $order['order_id'];
 			}
 			$url = esc_url( Utility::get_page_url( 'order', $args ) );

@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
@@ -44,7 +44,7 @@ global $f2, $BID;
 
 $BID = $f2->bid();
 
-$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
+$advanced_order = Options::get_option( 'use-ajax' ) == 'YES';
 
 if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 
@@ -68,7 +68,7 @@ if ( ! isset( $_REQUEST['manage-pixels'] ) ) {
 
 	$row = $order_result[0];
 
-	if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+	if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 		Orders::update_temp_order_timestamp();
 	}
 

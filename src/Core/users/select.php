@@ -55,7 +55,7 @@ if ( ! is_numeric( $BID ) ) {
 
 $banner_data = load_banner_constants( $BID );
 
-$USE_AJAX = \MillionDollarScript\Classes\Data\Config::get( 'USE_AJAX' );
+$USE_AJAX = Options::get_option( 'use-ajax' );
 
 $order_id = Orders::get_current_order_id();
 

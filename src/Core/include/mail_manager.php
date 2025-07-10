@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Email\Mail;
 
 defined( 'ABSPATH' ) or exit;
@@ -124,12 +124,12 @@ function process_mail_queue( $send_count = 1 ) {
 			$and_mail_id = " AND mail_id=" . intval( $mail_id ) . " ";
 		}
 
-		$EMAILS_MAX_RETRY = Config::get( 'EMAILS_MAX_RETRY' );
+		$EMAILS_MAX_RETRY = Options::get_option( 'emails-max-retry' );
 		if ( $EMAILS_MAX_RETRY == '' ) {
 			$EMAILS_MAX_RETRY = 5;
 		}
 
-		$EMAILS_ERROR_WAIT = Config::get( 'EMAILS_ERROR_WAIT' );
+		$EMAILS_ERROR_WAIT = Options::get_option( 'emails-error-wait' );
 		if ( $EMAILS_ERROR_WAIT == '' ) {
 			$EMAILS_ERROR_WAIT = 10;
 		}
@@ -158,10 +158,10 @@ function process_mail_queue( $send_count = 1 ) {
 
 		// delete old stuff
 
-		$EMAILS_DAYS_KEEP = Config::get( 'EMAILS_DAYS_KEEP' );
+		$EMAILS_DAYS_KEEP = Options::get_option( 'emails-days-keep' );
 
 		if ( $EMAILS_DAYS_KEEP == 'EMAILS_DAYS_KEEP' ) {
-			Config::set( '0', 'EMAILS_DAYS_KEEP' );
+			Options::set_option( 'emails-days-keep', '0' );
 		}
 
 		if ( $EMAILS_DAYS_KEEP > 0 ) {

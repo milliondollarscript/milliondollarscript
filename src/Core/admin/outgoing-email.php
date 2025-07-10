@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Functions;
 
 defined( 'ABSPATH' ) or exit;
@@ -144,7 +144,7 @@ if ( isset( $_REQUEST['mds-action'] ) ) {
 	}
 }
 
-$EMAILS_PER_BATCH = Config::get( 'EMAILS_PER_BATCH' );
+$EMAILS_PER_BATCH = Options::get_option( 'emails-per-batch' );
 if ( $EMAILS_PER_BATCH == '' ) {
 	$EMAILS_PER_BATCH = 10;
 }

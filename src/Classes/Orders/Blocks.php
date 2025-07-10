@@ -30,6 +30,7 @@
 namespace MillionDollarScript\Classes\Orders;
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\System\Utility;
@@ -125,7 +126,7 @@ class Blocks {
 							}
 						} elseif ( ! empty( $size ) ) {
 							// Select logic
-							$invert = Config::get( 'INVERT_PIXELS' ) === 'yes';
+							$invert = Options::get_option( 'invert-pixels' ) === 'yes';
 							if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
 								// deselect
 								unset( $blocks2[ $block ] );

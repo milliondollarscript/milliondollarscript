@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
@@ -75,7 +75,7 @@ if ( $wpdb->last_error ) {
 // Process confirmation
 if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
 	// move temp order to confirmed order
-	$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
+	$advanced_order = Options::get_option( 'use-ajax' ) == 'YES';
 
 	if ( ! $advanced_order ) {
 		$order_id = Orders::reserve_pixels_for_temp_order( $order_row );

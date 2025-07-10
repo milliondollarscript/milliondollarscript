@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\Forms;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
@@ -97,7 +97,7 @@ if ( isset( $_REQUEST['banner_change'] ) && $_REQUEST['banner_change'] != '' ) {
 	return;
 }
 
-$USE_AJAX = Config::get( 'USE_AJAX' );
+$USE_AJAX = Options::get_option( 'use-ajax' );
 
 $banner_data = load_banner_constants( $BID );
 

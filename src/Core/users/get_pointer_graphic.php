@@ -26,7 +26,6 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Logs;
@@ -95,12 +94,12 @@ try {
 	$ext         = "png";
 	$mime        = "png";
 	$options     = array( 'png_compression_level' => 9 );
-	$output_jpeg = Config::get( 'OUTPUT_JPEG' );
+	$output_jpeg = Options::get_option( 'output-jpeg' );
 	switch ( $output_jpeg ) {
 		case 'Y':
 			$ext     = "jpg";
 			$mime    = "jpeg";
-			$options = array( 'jpeg_quality' => Config::get( 'JPEG_QUALITY' ) );
+			$options = array( 'jpeg_quality' => Options::get_option( 'jpeg-quality' ) );
 			break;
 		case 'GIF':
 			$ext     = "gif";
