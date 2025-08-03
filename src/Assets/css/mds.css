@@ -918,49 +918,53 @@ Ads list page
 
 #mds-selection-size-slider {
 	width: 90%;
-	height: 8px;
-	border-radius: 4px;
-	background: var(--mds-bg-tertiary, #ddd);
+	height: 10px;
+	border-radius: 999px;
+	background: linear-gradient(90deg, var(--mds-border-color, #bbb), var(--mds-bg-tertiary, #d0d5db));
 	outline: none;
-	opacity: 0.8;
-	transition: opacity 0.3s;
+	opacity: 1;
+	transition: box-shadow 0.2s, background-color 0.2s, opacity 0.2s;
 	-webkit-appearance: none;
 	appearance: none;
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--mds-text-primary, #000) 20%, transparent);
 }
 
-#mds-selection-size-slider:hover {
+#mds-selection-size-slider:hover,
+#mds-selection-size-slider:focus {
 	opacity: 1;
+	box-shadow: 0 0 0 3px color-mix(in oklab, var(--mds-accessible-link, #0066cc) 30%, transparent);
 }
 
 /* Webkit/Chrome styling */
 #mds-selection-size-slider::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
-	width: 20px;
-	height: 20px;
+	width: 22px;
+	height: 22px;
 	border-radius: 50%;
-	background: var(--mds-primary-color, #91877D);
+	background: var(--mds-primary-color, #d32f2f);
 	cursor: pointer;
-	border: 2px solid var(--mds-bg-primary, #fff);
-	box-shadow: 0 2px 4px var(--mds-shadow, rgba(0, 0, 0, 0.2));
+	border: 3px solid var(--mds-card-bg, #fff);
+	box-shadow: 0 2px 6px var(--mds-shadow, rgba(0, 0, 0, 0.35));
 }
 
 /* Firefox styling */
 #mds-selection-size-slider::-moz-range-thumb {
-	width: 20px;
-	height: 20px;
+	width: 22px;
+	height: 22px;
 	border-radius: 50%;
-	background: var(--mds-primary-color, #91877D);
+	background: var(--mds-primary-color, #d32f2f);
 	cursor: pointer;
-	border: 2px solid var(--mds-bg-primary, #fff);
-	box-shadow: 0 2px 4px var(--mds-shadow, rgba(0, 0, 0, 0.2));
+	border: 3px solid var(--mds-card-bg, #fff);
+	box-shadow: 0 2px 6px var(--mds-shadow, rgba(0, 0, 0, 0.35));
 }
 
 #mds-selection-size-slider::-moz-range-track {
-	height: 8px;
-	border-radius: 4px;
-	background: var(--mds-bg-tertiary, #ddd);
+	height: 10px;
+	border-radius: 999px;
+	background: linear-gradient(90deg, var(--mds-border-color, #bbb), var(--mds-bg-tertiary, #d0d5db));
 	border: none;
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--mds-text-primary, #000) 20%, transparent);
 }
 
 #mds-selection-size-value {
