@@ -708,8 +708,8 @@ class Options {
 
 				// Light Mode - Tooltip Background
 				Field::make( 'color', MDS_PREFIX . 'light_tooltip_background', Language::get( 'Light Mode - Tooltip Background' ) )
-					->set_default_value( '#333333' )
-					->set_palette( [ '#333333', '#444444', '#555555', '#222222' ] )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#f5f5f5', '#efefef', '#e9ecef' ] )
 					->set_help_text( Language::get( 'Background color for tooltips, popups, informational overlays, and help elements in light mode.' ) )
 					->set_conditional_logic( [
 						'relation' => 'AND',
@@ -1742,7 +1742,7 @@ class Options {
 			'--mds-tooltip-bg' => [
 				'option' => $prefix . 'tooltip_background',
 				'key' => 'tooltip_bg',
-				'fallback' => $theme === 'dark' ? '#101216' : '#333333'
+				'fallback' => $theme === 'dark' ? '#101216' : '#ffffff'
 			],
 			
 			// Component variables
@@ -1834,7 +1834,7 @@ class Options {
 				'text_primary' => '#333333',
 				'text_secondary' => '#666666',
 				'border_primary' => '#dddddd',
-				'tooltip_bg' => '#333333',
+				'tooltip_bg' => '#ffffff',
 				
 				// Components
 				'menu_bg' => '#F4F2F1',
