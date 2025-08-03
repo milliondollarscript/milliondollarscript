@@ -35,6 +35,55 @@ use MillionDollarScript\Classes\System\Logs;
 defined( 'ABSPATH' ) or exit;
 
 /**
+ * Normalize Imagine save() options to ensure Imagick receives a valid integer 'quality'.
+ *
+ * Rules:
+ * - Always return an array.
+ * - For JPEG (jpg/jpeg):
+ *     - Compute $q from 'jpeg_quality' if numeric, else from 'quality' if numeric, else default 90.
+ *     - Set both 'jpeg_quality' and 'quality' to the integer $q.
+ * - For PNG:
+ *     - Preserve 'png_compression_level' if present.
+ *     - Still provide integer 'quality' (Imagick may call setImageCompressionQuality).
+ * - For GIF or others:
+ *     - Preserve existing flags (e.g., 'flatten' => false) but ensure integer 'quality'.
+ *
+ * @param string $ext File extension without dot, e.g. 'jpg','png','gif'
+ * @param array|null $options Options passed to Imagine->save/show
+ * @param int $default Default quality to use when unspecified or invalid
+ * @return array Normalized options
+ */
+function mds_normalize_imagine_save_options(string $ext, ?array $options, int $default = 90): array {
+    $opts = is_array($options) ? $options : [];
+
+    $normalizedExt = strtolower($ext);
+    if ($normalizedExt === 'jpeg') {
+        $normalizedExt = 'jpg';
+    }
+
+    if ($normalizedExt === 'jpg') {
+        $q = $default;
+        if (isset($opts['jpeg_quality']) && is_numeric($opts['jpeg_quality'])) {
+            $q = (int)$opts['jpeg_quality'];
+        } elseif (isset($opts['quality']) && is_numeric($opts['quality'])) {
+            $q = (int)$opts['quality'];
+        }
+        $opts['jpeg_quality'] = $q;
+        $opts['quality'] = $q;
+    } else {
+        // PNG/GIF/others: ensure a sane integer 'quality'
+        if (!isset($opts['quality']) || !is_numeric($opts['quality'])) {
+            $opts['quality'] = $default;
+        } else {
+            $opts['quality'] = (int)$opts['quality'];
+        }
+        // Leave format-specific keys intact (e.g., 'png_compression_level', 'flatten')
+    }
+
+    return $opts;
+}
+
+/**
  * Applies opacity to a GD image resource by modifying its alpha channel.
  *
  * @param \GdImage $image The image resource to modify.
@@ -794,6 +843,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		$options = array( 'flatten' => false );
 	}
 
+	// Normalize once centrally
+	$options = mds_normalize_imagine_save_options($ext, $options, 90);
+
 	// output
 	if ( $show ) {
 		if ( Options::get_option( 'interlace-switch' ) == 'YES' ) {
@@ -808,6 +860,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		if ( ! touch( $filename ) ) {
 			$progress .= "<b>Warning:</b> The script does not have permission write to " . $filename . " or the directory does not exist<br>";
 		}
+
+		// Final guard using the shared helper
+		$options = mds_normalize_imagine_save_options($ext, $options, 90);
+
 		$map->save( $filename, $options );
 		$progress .= "<br>Saved as " . $filename . "<br>";
 	}
