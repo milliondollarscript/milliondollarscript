@@ -2496,20 +2496,34 @@ class Orders {
 				return $can_get_package;
 			}
 		} else {
-
+			
 			// check against the banner. (Banner has no packages)
 			if ( ( $banner_data['G_MAX_ORDERS'] > 0 ) ) {
-
-				$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders where `banner_id`='" . intval( $BID ) . "' and status <> 'deleted' and status <> 'new' AND user_id='" . intval( $user_id ) . "'";
-
-				$result = mysqli_query( $GLOBALS['connection'], $sql ) or Logs::log("MDS Debug: DB Error: " . mysqli_error( $GLOBALS['connection'] ) . " SQL: " . $sql); // Log DB errors
-				$count = $result ? mysqli_num_rows( $result ) : 0; // Handle potential query failure
-
-				if ( $count >= $banner_data['G_MAX_ORDERS'] ) {
-					return false;
-				} else {
-					return true;
+				
+				global $wpdb;
+				// Count user orders for this banner that are not deleted or new
+				$sql = $wpdb->prepare(
+					"SELECT COUNT(order_id)
+					   FROM " . MDS_DB_PREFIX . "orders
+					  WHERE banner_id = %d
+					    AND status NOT IN ('deleted','new')
+					    AND user_id = %d",
+					intval( $BID ),
+					intval( $user_id )
+				);
+				
+				$count = (int) $wpdb->get_var( $sql );
+				
+				// Log DB error if present (without breaking the flow)
+				if ( ! empty( $wpdb->last_error ) ) {
+					\MillionDollarScript\Classes\System\Logs::log( 'MDS DB Error in can_user_order: ' . $wpdb->last_error . ' SQL: ' . $sql );
 				}
+				
+				if ( $count >= intval( $banner_data['G_MAX_ORDERS'] ) ) {
+					return false;
+				}
+				
+				return true;
 			} else {
 				// can make unlimited orders
 				return true;

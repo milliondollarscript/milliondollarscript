@@ -517,9 +517,10 @@ function reset_pixels() {
 		type: "POST",
 		url: MDS_OBJECT.UPDATE_ORDER,
 		data: {
-			reset: true,
+			reset: "true",
 			action: "reset",
 			_wpnonce: MDS_OBJECT.NONCE,
+			BID: MDS_OBJECT.BID,
 		},
 		success: function (data) {
 			if (data.success === true && data.data && data.data.type === "removed") {
@@ -894,6 +895,9 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 			data: {
 				_wpnonce: MDS_OBJECT.NONCE,
 				erasing: data.erasing,
+				block_id: data.clicked_block,
+				selection_size: parseInt(jQuery("#mds-selection-size-value").val(), 10) || 1,
+				BID: MDS_OBJECT.BID,
 			},
 			success: function (response) {
 				if (
