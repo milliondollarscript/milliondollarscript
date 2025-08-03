@@ -50,52 +50,52 @@ class MDSEnhancedPageCreator {
         'shortcode' => [
             'grid' => [
                 'title' => 'Pixel Grid',
-                'content' => '[milliondollarscript type="grid" display="grid" id="{grid_id}" width="{width}" height="{height}" align="{align}"]',
+                'content' => '[milliondollarscript type="grid" id="{grid_id}" width="{width}" height="{height}" align="{align}"]',
                 'description' => 'Classic shortcode-based pixel grid display'
             ],
             'order' => [
                 'title' => 'Order Pixels',
-                'content' => '[milliondollarscript type="order" display="order" id="{grid_id}" align="{align}"]',
+                'content' => '[milliondollarscript type="order" id="{grid_id}" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based order form for pixel purchases'
             ],
             'write-ad' => [
                 'title' => 'Write Content',
-                'content' => '[milliondollarscript type="write-ad" display="write-ad" align="{align}"]',
+                'content' => '[milliondollarscript type="write-ad" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based content creation form'
             ],
             'confirm-order' => [
                 'title' => 'Order Confirmation',
-                'content' => '[milliondollarscript type="confirm-order" display="confirm-order" align="{align}"]',
+                'content' => '[milliondollarscript type="confirm-order" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based order confirmation page'
             ],
             'payment' => [
                 'title' => 'Payment Processing',
-                'content' => '[milliondollarscript type="payment" display="payment" align="{align}"]',
+                'content' => '[milliondollarscript type="payment" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based payment processing page'
             ],
             'manage' => [
                 'title' => 'Manage Pixels',
-                'content' => '[milliondollarscript type="manage" display="manage" align="{align}"]',
+                'content' => '[milliondollarscript type="manage" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based pixel management page'
             ],
             'thank-you' => [
                 'title' => 'Thank You',
-                'content' => '[milliondollarscript type="thank-you" display="thank-you" align="{align}"]',
+                'content' => '[milliondollarscript type="thank-you" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based thank you page'
             ],
             'list' => [
                 'title' => 'Advertiser List',
-                'content' => '[milliondollarscript type="list" display="list" align="{align}"]',
+                'content' => '[milliondollarscript type="list" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based advertiser list page'
             ],
             'upload' => [
                 'title' => 'File Upload',
-                'content' => '[milliondollarscript type="upload" display="upload" align="{align}"]',
+                'content' => '[milliondollarscript type="upload" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based file upload page'
             ],
             'no-orders' => [
                 'title' => 'No Orders',
-                'content' => '[milliondollarscript type="no-orders" display="no-orders" align="{align}"]',
+                'content' => '[milliondollarscript type="no-orders" width="100%" height="auto" align="{align}"]',
                 'description' => 'Shortcode-based no orders page'
             ],
             'stats' => [
@@ -385,7 +385,7 @@ class MDSEnhancedPageCreator {
                 'required' => true
             ],
             'order' => [
-                'label' => 'Order Page',
+                'label' => 'Order Pixels',
                 'description' => 'Purchase form for buying pixels and placing ads',
                 'icon' => 'cart',
                 'required' => true
@@ -1205,6 +1205,10 @@ class MDSEnhancedPageCreator {
     private function generatePageTitle( string $page_type, array $configuration ): string {
         $page_types = $this->getAvailablePageTypes();
         $base_title = $page_types[$page_type]['label'] ?? ucfirst( str_replace( '-', ' ', $page_type ) );
+        // Ensure specific friendly title for order
+        if ($page_type === 'order') {
+            $base_title = 'Order Pixels';
+        }
         
         // Customize title based on configuration
         if ( !empty( $configuration['custom_title'] ) ) {
@@ -1540,7 +1544,7 @@ class MDSEnhancedPageCreator {
     private function getPageTypeTitle( string $page_type ): string {
         $titles = [
             'grid' => Language::get( 'Pixel Grid Configuration' ),
-            'order' => Language::get( 'Order Page Configuration' ),
+            'order' => Language::get( 'Order Pixels Configuration' ),
             'write-ad' => Language::get( 'Write Content Configuration' ),
             'confirm-order' => Language::get( 'Order Confirmation Configuration' ),
             'payment' => Language::get( 'Payment Configuration' ),

@@ -43,8 +43,11 @@ class Shortcode {
 		return array(
 			'id'     => 1,
 			'align'  => 'center',
-			'width'  => 0,
-			'height' => 0,
+			// - Most shortcodes: width="100%" height="auto"
+			// - Stats: width="150px" height="60px" (handled below if type is 'stats')
+			// - Grid: will be resolved from DB (maybe_set_dimensions) or wizard, fallback 1000px x 1000px
+			'width'  => '100%',
+			'height' => 'auto',
 			'lang'   => 'EN',
 			'type'   => 'grid',
 		);
