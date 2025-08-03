@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.13.2
+Stable tag: 2.5.13.6
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -21,6 +21,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 = 2.5.13 =
 * Refactor: Migrate database interactions to $wpdb for improved security and performance.
+* Fix: Update shortcode defaults and titles.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
