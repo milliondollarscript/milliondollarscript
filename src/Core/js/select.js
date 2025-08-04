@@ -471,6 +471,7 @@ function show_pointer(offset) {
 }
 
 function formSubmit(event) {
+	// Prevent default to handle form submission manually
 	event.preventDefault();
 	event.stopPropagation();
 
@@ -496,6 +497,9 @@ function formSubmit(event) {
 						selectedPixelsInput.value = selectedBlocks.join(",");
 					}
 					mds_update_package(jQuery(pixel_form));
+					
+					// Submit the form programmatically
+					// This will trigger the mds_form_submission function in Forms.php
 					pixel_form.submit();
 				}
 				// Keep button disabled and showing wait message during redirect

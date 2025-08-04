@@ -356,8 +356,6 @@ class Forms {
 				// Check if a file was just uploaded
 				$upload_processed = isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '';
 				
-				require_once MDS_CORE_PATH . 'users/upload.php';
-
 				global $f2;
 				$BID         = $f2->bid();
 				$banner_data = load_banner_constants( $BID );
@@ -374,9 +372,20 @@ class Forms {
 				$params['order_id']        = $order_id;
 				$params['selection_size']  = $selection_size;
 				
-				// Don't exit early after successful upload - let the normal flow continue
-				// The upload.php needs to process and show the "Write Your Ad" button
-
+				// If a file was uploaded, process it and redirect back to the upload page
+				if ( $upload_processed ) {
+					// Process the file upload
+					$upload_result = self::process_order_pixels_upload();
+					
+					// Add upload result to parameters
+					if ( ! $upload_result['success'] ) {
+						$params['upload_error'] = urlencode( $upload_result['error'] );
+					} else {
+						$params['upload_success'] = '1';
+					}
+				}
+				
+				// Always redirect to the upload page
 				break;
 			case 'write-ad':
 				require_once MDS_CORE_PATH . 'users/write_ad.php';
@@ -734,18 +743,16 @@ class Forms {
 				$params['BID'] = intval( $_REQUEST['BID'] );
 			}
 		}
-		$params['page'] = 'mds-' . $mds_dest;
-
-		// Construct the redirect URL
-		$redirect_url = admin_url( 'admin.php?page=mds-' . $mds_dest );
+		// For admin form submissions, we should redirect to admin pages, not frontend pages
+		$page_url = admin_url( 'admin.php?page=mds-' . $mds_dest );
 
 		// Add any parameters to the redirect URL
 		if ( ! empty( $params ) ) {
-			$redirect_url = add_query_arg( $params, $redirect_url );
+			$page_url = add_query_arg( $params, $page_url );
 		}
 
 		// Redirect the user
-		wp_safe_redirect( $redirect_url );
+		wp_safe_redirect( $page_url );
 		exit;
 
 	}
