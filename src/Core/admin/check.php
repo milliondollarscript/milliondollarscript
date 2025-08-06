@@ -31,19 +31,20 @@ use MillionDollarScript\Classes\Language\Language;
 defined( 'ABSPATH' ) or exit;
 
 // select all the blocks...
+global $wpdb;
 
 $sql    = "SELECT order_id, block_id, banner_id FROM " . MDS_DB_PREFIX . "blocks WHERE status <> 'nfs'"; // nfs blocks do not have an order.
-$result = mysqli_query( $GLOBALS['connection'], $sql );
+$result = $wpdb->get_results( $sql, ARRAY_A );
 
-while ( $row = mysqli_fetch_array( $result ) ) {
+foreach ( $result as $row ) {
 
 	$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE banner_id='" . intval( $row['banner_id'] ) . "' AND  order_id='" . intval( $row['order_id'] ) . "'";
-	$result2 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	if ( mysqli_num_rows( $result2 ) == 0 ) { // there is no order matching
+	$result2 = $wpdb->get_results( $sql, ARRAY_A );
+	if ( count( $result2 ) == 0 ) { // there is no order matching
 		// delete the blocks.
 		echo "Deleting block #" . $row['block_id'] . "<br>";
 		$sql = "DELETE from " . MDS_DB_PREFIX . "blocks WHERE block_id='" . intval( $row['block_id'] ) . "' AND banner_id='" . intval( $row['banner_id'] ) . "' ";
-		mysqli_query( $GLOBALS['connection'], $sql );
+		$wpdb->query( $sql );
 	}
 }
 Language::out( "Check Completed." );

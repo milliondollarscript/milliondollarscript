@@ -1234,8 +1234,8 @@ class Orders {
 		// $session_duration = intval( ini_get( "session.gc_maxlifetime" ) );
 		//
 		// $sql = "SELECT order_id, order_date FROM `" . MDS_DB_PREFIX . "orders` WHERE `status`='new' AND DATE_SUB('$now', INTERVAL $session_duration SECOND) >= order_date";
-		// $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		// while ( $row = @mysqli_fetch_array( $result ) ) {
+		// $result = $wpdb->get_results( $sql, ARRAY_A );
+		// foreach ( $result as $row ) {
 		// 	delete_temp_order( $row['order_id'] );
 		// }
 
@@ -1394,7 +1394,7 @@ class Orders {
 		);
 
 		//$sql = "DELETE FROM blocks WHERE session_id='".$sid."' ";
-		//mysqli_query($GLOBALS['connection'], $sql) ;
+		//$wpdb->query($sql) ;
 
 		$wpdb->delete(
 			MDS_DB_PREFIX . "orders",
@@ -2085,22 +2085,36 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='completed', date_published=NULL, date_stamp='$now' WHERE order_id=" . intval( $order_id );
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'completed', 'date_published' => null, 'date_stamp' => $now ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', null, '%s' ),
+				array( '%d' )
+			);
 
 			// update pixel's order_id
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET order_id='" . intval( $order_row['order_id'] ) . "' WHERE order_id='" . intval( $order_row['original_order_id'] ) . "' AND banner_id='" . intval( $order_row['banner_id'] ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'order_id' => intval( $order_row['order_id'] ) ),
+				array( 'order_id' => intval( $order_row['original_order_id'] ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+				array( '%d' ),
+				array( '%d', '%d' )
+			);
 
 			// update ads' order id
 			carbon_set_post_meta( $order_row['ad_id'], 'order', intval( $order_row['order_id'] ) );
 
 			// mark pixels as sold.
 
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$order_row = mysqli_fetch_array( $result );
+			$order_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+					intval( $order_id )
+				),
+				ARRAY_A
+			);
 
 			if ( strpos( $order_row['blocks'], "," ) !== false ) {
 				$blocks = explode( ",", $order_row['blocks'] );
@@ -2108,8 +2122,13 @@ class Orders {
 				$blocks = array( 0 => $order_row['blocks'] );
 			}
 			foreach ( $blocks as $key => $val ) {
-				$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='sold' where block_id='" . intval( $val ) . "' and banner_id=" . intval( $order_row['banner_id'] );
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->update(
+					MDS_DB_PREFIX . "blocks",
+					array( 'status' => 'sold' ),
+					array( 'block_id' => intval( $val ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+					array( '%s' ),
+					array( '%d', '%d' )
+				);
 			}
 
 			$user_info = get_userdata( intval( $order_row['user_id'] ) );
@@ -2428,18 +2447,30 @@ class Orders {
 
 		// get the order
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks where block_id=" . intval( $block_from ) . " AND banner_id=" . intval( $banner_id );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$source_block = mysqli_fetch_array( $result );
+		global $wpdb;
+		$source_block = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+				intval( $block_from ),
+				intval( $banner_id )
+			),
+			ARRAY_A
+		);
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks WHERE order_id=" . intval( $source_block['order_id'] ) . " AND banner_id=" . intval( $banner_id );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$result = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE order_id = %d AND banner_id = %d",
+				intval( $source_block['order_id'] ),
+				intval( $banner_id )
+			),
+			ARRAY_A
+		);
 
 		$banner_data = load_banner_constants( $banner_id );
 
 		$grid_width = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
 
-		while ( $block_row = mysqli_fetch_array( $result ) ) { // check each block to make sure we can move it.
+		while ( $block_row = array_shift( $result ) ) { // check each block to make sure we can move it.
 
 			$block_to = ( ( $block_row['x'] + $dx ) / $banner_data['BLK_WIDTH'] ) + ( ( ( $block_row['y'] + $dy ) / $banner_data['BLK_HEIGHT'] ) * ( $grid_width / $banner_data['BLK_WIDTH'] ) );
 
@@ -2450,9 +2481,10 @@ class Orders {
 			}
 		}
 
-		mysqli_data_seek( $result, 0 );
+		// Reset array pointer to beginning
+		reset( $result );
 
-		while ( $block_row = mysqli_fetch_array( $result ) ) {
+		while ( $block_row = array_shift( $result ) ) {
 
 			$block_from = ( ( $block_row['x'] ) / $banner_data['BLK_WIDTH'] ) + ( ( $block_row['y'] / $banner_data['BLK_HEIGHT'] ) * ( $grid_width / $banner_data['BLK_WIDTH'] ) );
 			$block_to   = ( ( $block_row['x'] + $dx ) / $banner_data['BLK_WIDTH'] ) + ( ( ( $block_row['y'] + $dy ) / $banner_data['BLK_HEIGHT'] ) * ( $grid_width / $banner_data['BLK_WIDTH'] ) );

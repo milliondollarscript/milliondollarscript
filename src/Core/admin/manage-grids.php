@@ -309,12 +309,15 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 			// DELETE ADS
 			// TODO: delete mds-pixels
 			// $sql = "select * FROM " . MDS_DB_PREFIX . "ads where banner_id='" . $BID . "' ";
-			// $res2 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-			// while ( $row2 = mysqli_fetch_array( $res2 ) ) {
+			// $res2 = $wpdb->get_results( $sql );
+			// foreach ( $res2 as $row2 ) {
 			//
 			// 	delete_ads_files( $row2['ad_id'] );
-			// 	$sql = "DELETE from " . MDS_DB_PREFIX . "ads where ad_id='" . intval( $row2['ad_id'] ) . "' ";
-			// 	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			// 	$wpdb->delete(
+			// 	    MDS_DB_PREFIX . "ads",
+			// 	    array( 'ad_id' => intval( $row2['ad_id'] ) ),
+			// 	    array( '%d' )
+			// 	);
 			// }
 
 			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".jpg" );

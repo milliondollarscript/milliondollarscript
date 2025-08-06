@@ -47,11 +47,17 @@ if ( ! empty( $_REQUEST['order_id'] ) ) {
 
 if ( $order_id ) {
 	global $wpdb;
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . intval( $order_id ) . " AND user_id=" . get_current_user_id();
-	$order_result = mysqli_query( $GLOBALS['connection'], $sql );
+	$order_result = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
+			intval( $order_id ),
+			get_current_user_id()
+		),
+		ARRAY_A
+	);
 	
-	if ( mysqli_num_rows( $order_result ) > 0 ) {
-		$order_row = mysqli_fetch_array( $order_result );
+	if ( count( $order_result ) > 0 ) {
+		$order_row = $order_result[0];
 		
 		// Check for duplicate payment before any output
 		if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) || $order_row['status'] == 'confirmed' ) {

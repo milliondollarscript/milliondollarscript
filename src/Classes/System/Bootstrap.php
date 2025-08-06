@@ -78,6 +78,106 @@ class Bootstrap {
 		// Register setup wizard redirect
 		add_action( 'admin_init', [ '\MillionDollarScript\Classes\Pages\Wizard', 'maybe_redirect_to_wizard' ] );
 		
+		// Handle background image delete action before any output
+		add_action( 'admin_init', function() {
+			if ( isset( $_GET['page'] ) && $_GET['page'] === 'mds-backgrounds' &&
+				 isset( $_GET['mds-action'] ) && $_GET['mds-action'] === 'delete' &&
+				 isset( $_GET['BID'] ) ) {
+				
+				$BID = intval( $_GET['BID'] );
+				
+				// Verify nonce
+				if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'mds_delete_background_' . $BID ) ) {
+					wp_die( 'Security check failed.' );
+				}
+
+				if ( ! current_user_can( 'manage_options' ) ) {
+					wp_die( 'Sorry, you are not allowed to perform this action.' );
+				}
+
+				$params = ['page' => 'mds-backgrounds', 'BID' => $BID];
+
+				if ( $BID > 0 ) {
+					// Use the correct upload path from Utility class
+					$upload_path = \MillionDollarScript\Classes\System\Utility::get_upload_path();
+					if ( $upload_path ) {
+						$upload_path = $upload_path . 'grids/';
+						$files_to_delete = glob( $upload_path . "background{$BID}.*" );
+						$deleted = false;
+						$found = false;
+
+						if ( $files_to_delete ) {
+							$found = true;
+							foreach ( $files_to_delete as $file_to_delete ) {
+								if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
+									$deleted = true;
+								} else {
+									$params['delete_error'] = 'failed_unlink';
+									break;
+								}
+							}
+						}
+
+						// Also check legacy paths for backward compatibility
+						if ( ! $found ) {
+							// Check old mds path
+							$legacy_path1 = WP_CONTENT_DIR . '/uploads/mds/grids/';
+							if ( is_dir( $legacy_path1 ) ) {
+								$legacy_files = glob( $legacy_path1 . "background{$BID}.*" );
+								if ( $legacy_files ) {
+									$found = true;
+									foreach ( $legacy_files as $file_to_delete ) {
+										if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
+											$deleted = true;
+										} else {
+											$params['delete_error'] = 'failed_unlink';
+											break;
+										}
+									}
+								}
+							}
+						}
+
+						if ( ! $found ) {
+							// Check direct wp_upload_dir path
+							$upload_dir = wp_upload_dir();
+							$legacy_path2 = $upload_dir['basedir'] . '/mds/grids/';
+							if ( is_dir( $legacy_path2 ) ) {
+								$legacy_files = glob( $legacy_path2 . "background{$BID}.*" );
+								if ( $legacy_files ) {
+									$found = true;
+									foreach ( $legacy_files as $file_to_delete ) {
+										if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
+											$deleted = true;
+										} else {
+											$params['delete_error'] = 'failed_unlink';
+											break;
+										}
+									}
+								}
+							}
+						}
+					} else {
+						$params['delete_error'] = 'upload_path_not_found';
+					}
+
+					if ( $found && $deleted && ! isset( $params['delete_error'] ) ) {
+						$params['delete_success'] = 'true';
+						delete_option( 'mds_background_opacity_' . $BID );
+					} else if ( ! $found ) {
+						$params['delete_error'] = 'not_found';
+					}
+				} else {
+					$params['delete_error'] = 'invalid_bid';
+				}
+
+				// Redirect back
+				$redirect_url = remove_query_arg( array( 'mds-action', '_wpnonce' ), admin_url( 'admin.php' ) );
+				wp_safe_redirect( add_query_arg( $params, $redirect_url ) );
+				exit;
+			}
+		} );
+		
 		// Register AJAX handlers for the wizard
 		add_action( 'wp_ajax_mds_wizard_create_pages', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_create_pages' ] );
 		add_action( 'wp_ajax_mds_wizard_save_settings', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_save_settings' ] );

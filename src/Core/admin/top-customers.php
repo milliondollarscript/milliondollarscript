@@ -28,11 +28,11 @@
 
 defined( 'ABSPATH' ) or exit;
 
-global $f2;
+global $f2, $wpdb;
 $BID = $f2->bid();
 
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners ";
-$res = mysqli_query( $GLOBALS['connection'], $sql );
+$res = $wpdb->get_results( $sql, ARRAY_A );
 ?>
     <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 	    <?php wp_nonce_field( 'mds-admin' ); ?>

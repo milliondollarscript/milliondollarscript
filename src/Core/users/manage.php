@@ -230,8 +230,13 @@ if ( ! empty( $_REQUEST['block_id'] ) || ( isset( $_REQUEST['block_id'] ) && $_R
 
 		// bug in previous versions resulted in saving the ad's user_id with a session_id
 		// fix user_id here
-		// $sql = "UPDATE " . MDS_DB_PREFIX . "ads SET user_id='" . intval( $blk_row['user_id'] ) . "' WHERE order_id='" . intval( $blk_row['order_id'] ) . "' AND user_id <> '" . get_current_user_id() . "' limit 1 ";
-		// mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		// $wpdb->update(
+		//     MDS_DB_PREFIX . "ads",
+		//     array( 'user_id' => intval( $blk_row['user_id'] ) ),
+		//     array( 'order_id' => intval( $blk_row['order_id'] ), 'user_id' => get_current_user_id() ),
+		//     array( '%d' ),
+		//     array( '%d', '%d' )
+		// );
 	}
 }
 

@@ -28,17 +28,18 @@
 
 defined( 'ABSPATH' ) or exit;
 
-global $f2;
+global $f2, $wpdb;
 
 $BID = $f2->bid();
 
 $sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $BID );
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-$b_row = mysqli_fetch_array( $result );
+$b_row = $wpdb->get_row( $sql, ARRAY_A );
 
 $sql = "select block_id, status, user_id, url, alt_text FROM " . MDS_DB_PREFIX . "blocks where  status='sold' AND banner_id=" . intval( $BID );
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-while ( $row = mysqli_fetch_array( $result ) ) {
+$result = $wpdb->get_results( $sql, ARRAY_A );
+$blocks = array();
+$owners = array();
+foreach ( $result as $row ) {
 	$blocks[ $row['block_id'] ] = $row['status'];
 	$owners[ $row['block_id'] ] = $row['user_id'];
 }

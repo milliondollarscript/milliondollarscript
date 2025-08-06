@@ -220,7 +220,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 		$order    = " `ad_date` ";
 		$order_by = 'ad_date';
 	} else {
-		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order_by ) . "` ";
+		$order = " `" . esc_sql( $order_by ) . "` ";
 	}
 
 	if ( ! is_numeric( $user_id ) ) {
@@ -426,7 +426,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 		$order    = " `ad_date` ";
 		$order_by = 'ad_date';
 	} else {
-		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order_by ) . "` ";
+		$order = " `" . esc_sql( $order_by ) . "` ";
 	}
 
 	if ( ! is_numeric( $user_id ) ) {

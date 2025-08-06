@@ -224,16 +224,16 @@ Language::out_replace(
 <?php
 /*
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name` ";
-$res = mysqli_query( $GLOBALS['connection'], $sql );
+$res = $wpdb->get_results( $sql );
 
-if ( mysqli_num_rows( $res ) > 1 ) {
+if ( count( $res ) > 1 ) {
 	?>
     <div class="fancy-heading"><?php Language::out( 'Available Grids' ); ?></div>
     <div class="mds-select-intro">
 		<?php
 		Language::out_replace(
 			'%GRID_COUNT%',
-			mysqli_num_rows( $res ),
+			count( $res ),
 			'<p>There are <b>%GRID_COUNT%</b> different grids served by this website! Select the image which you would like to publish your pixels to:</p>'
 		);
 		?>
