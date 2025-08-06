@@ -119,6 +119,13 @@ if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) || $order_row['
 	// while preserving the current confirmed order for payment processing
 	Orders::reset_order_progress();
 	
+	// For advanced mode (use-ajax == YES), ensure order status is set to pending when reaching payment screen
+	// This ensures consistency with simple mode behavior
+	$advanced_order = Options::get_option( 'use-ajax' ) == 'YES';
+	if ( $advanced_order && $order_row['status'] == 'confirmed' ) {
+		Orders::pend_order( $order_id );
+	}
+	
 	\MillionDollarScript\Classes\Payment\Payment::handle_checkout( $order_id );
 } else {
 	if ( isset( $_REQUEST['renew'] ) && $_REQUEST['renew'] === 'true' ) {

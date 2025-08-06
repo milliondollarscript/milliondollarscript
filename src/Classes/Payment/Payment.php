@@ -152,12 +152,9 @@ class Payment {
 				}
 
 			} else {
-				if ( Utility::has_endpoint_or_ajax() ) {
-					self::default_message( $order_id );
-
-					return;
-				}
-
+				// For non-WooCommerce scenarios, always call default_message() to handle order completion
+				// This ensures proper redirect to thank-you page regardless of request type
+				self::default_message( $order_id );
 				return;
 			}
 		} else {
@@ -238,17 +235,12 @@ class Payment {
 
 					Orders::complete_order( $row['user_id'], $order_id );
 					Payment::debit_transaction( $order_id, $row['price'], $row['currency'], '', 'order', 'MDS' );
-					$message = Language::get( 'Your order has been successfully completed. Thank you for your purchase!' );
-					Utility::output_message( [
-						'success' => true,
-						'message' => $message,
-					] );
 				}
 			}
 
 			// Only output if the URL has the endpoint in it or is an AJAX request.
 			if ( Utility::has_endpoint_or_ajax() ) {
-				$message = Language::get( 'Your order has been successfully submitted and is now being processed. Thank you for your purchase!' );
+				$message = Language::get( 'Your order has been successfully completed. Thank you for your purchase!' );
 				Utility::output_message( [
 					'success' => true,
 					'message' => $message,
@@ -260,7 +252,7 @@ class Payment {
 
 			// Only output if the URL has the endpoint in it or is an AJAX request.
 			if ( Utility::has_endpoint_or_ajax() ) {
-				$message = Language::get( 'Your order has been received and is pending approval. Please wait for confirmation from our team.' );
+				$message = Language::get( 'Your order has been received and is pending approval. Your order will be published as soon as the payment is cleared.' );
 				Utility::output_message( [
 					'success' => true,
 					'message' => $message,
@@ -269,6 +261,12 @@ class Payment {
 		}
 
 		$thank_you_page = Options::get_option( 'thank-you-page' );
+		
+		// Use default thank-you page URL if no custom page is configured
+		if ( empty( $thank_you_page ) ) {
+			$thank_you_page = Utility::get_page_url( 'thank-you' );
+		}
+		
 		if ( ! empty( $thank_you_page ) ) {
 			if ( wp_doing_ajax() ) {
 				wp_send_json_success( [
