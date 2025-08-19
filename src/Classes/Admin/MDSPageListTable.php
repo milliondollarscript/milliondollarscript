@@ -487,7 +487,7 @@ class MDSPageListTable extends WP_List_Table {
         $is_active = ( $item['status'] === 'active' );
         $toggle_action = $is_active ? 'deactivate' : 'activate';
         $toggle_title = $is_active ? Language::get( 'Deactivate Page' ) : Language::get( 'Activate Page' );
-        $toggle_icon = $is_active ? 'dashicons-hidden' : 'dashicons-visibility';
+        $toggle_icon = $is_active ? 'dashicons-no' : 'dashicons-yes-alt';
         $toggle_class = $is_active ? 'mds-deactivate-page' : 'mds-activate-page';
         
         $actions[] = sprintf(

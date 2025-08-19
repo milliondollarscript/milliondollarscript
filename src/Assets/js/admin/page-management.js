@@ -339,6 +339,45 @@
             return this.operationState.isRunning;
         },
 
+        validateAllPages: function(e) {
+            e.preventDefault();
+            
+            if (!this.startOperation('Validate All Pages')) {
+                return;
+            }
+            
+            this.showProgress('Validating all pages...', 0);
+
+            $.ajax({
+                url: this.config.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'mds_validate_pages_ajax',
+                    nonce: this.config.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        MDSPageManagement.hideProgress();
+                        const results = response.data;
+                        const message = `Validation completed: ${results.validated} pages checked, ${results.valid} valid, ${results.invalid} invalid, ${results.orphaned} orphaned.`;
+                        NotificationModal.show('success', 'Validation Complete', message, null, function() {
+                            window.location.reload();
+                        });
+                    } else {
+                        MDSPageManagement.hideProgress();
+                        MDSPageManagement.showNotice('error', response.data.message || 'An error occurred during validation.');
+                    }
+                },
+                error: function() {
+                    MDSPageManagement.hideProgress();
+                    MDSPageManagement.showNotice('error', 'An error occurred while validating pages.');
+                },
+                complete: function () {
+                    MDSPageManagement.endOperation();
+                }
+            });
+        },
+
         // Scan all pages with chunked processing
         scanAllPages: function(e) {
             e.preventDefault();
