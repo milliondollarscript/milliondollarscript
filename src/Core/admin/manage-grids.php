@@ -576,6 +576,7 @@ function backup_single_grid_images( int $banner_id, string $theme_mode ): bool {
 
 if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 
+	global $wpdb;
 	$error = validate_input();
 
 	if ( $error != '' ) {
