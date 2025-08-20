@@ -327,8 +327,9 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 			// Check if WooCommerce integration is enabled
 			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
 				$product = WooCommerceFunctions::get_product();
-
-				WooCommerceFunctions::delete_variation( $product, $BID );
+				if ( $product ) {
+					WooCommerceFunctions::delete_variation( $product, $BID );
+				}
 			}
 
 		} else {
@@ -682,26 +683,11 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 		// WooCommerce integration
 		// Check if WooCommerce is active and integration is enabled
 		if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
-			// Get product from CarbonFields
-			$product_option = Options::get_option( 'product', null, true );
-
-			// Product id
-			$product_id = $product_option[0]['id'];
-
-			// WC Product
-			$product = wc_get_product( $product_id );
-
-			WooCommerceFunctions::update_attributes( $product );
-			//
-			// if ( $new ) {
-			// 	// Add attributes to product
-			// 	\MillionDollarScript\Classes\System\Functions::add_variation( $product, $BID );
-			// } else {
-			// 	// Update attributes on product
-			// 	\MillionDollarScript\Classes\System\Functions::update_variation( $product, $BID );
-			// }
-
-			$product->save();
+			$product = WooCommerceFunctions::get_product();
+			if ( $product ) {
+				WooCommerceFunctions::update_attributes( $product );
+				$product->save();
+			}
 		}
 	}
 

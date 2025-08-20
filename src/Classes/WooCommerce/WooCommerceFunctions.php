@@ -111,7 +111,7 @@ class WooCommerceFunctions {
 					$wc_query->the_post();
 
 					$product_id = get_the_ID();
-					$product    = wc_get_product( $product_id );
+					$product    = \wc_get_product( $product_id );
 
 					if ( $product === false || $product === null ) {
 						return null;
@@ -146,6 +146,9 @@ class WooCommerceFunctions {
 	 * @return void
 	 */
 	public static function delete_variation( \WC_Product_Variable|\WC_Product $product, int $grid_id ): void {
+		if ( ! self::is_wc_active() ) {
+			return;
+		}
 		$variations = $product->get_available_variations();
 
 		$cache_key = '';
@@ -157,7 +160,7 @@ class WooCommerceFunctions {
 				$variation_product = wp_cache_get( $cache_key );
 				if ( false === $variation_product ) {
 					// Store cache
-					$variation_product = wc_get_product( $variation['variation_id'] );
+					$variation_product = \wc_get_product( $variation['variation_id'] );
 					wp_cache_set( $cache_key, $variation_product );
 				}
 
@@ -189,7 +192,7 @@ class WooCommerceFunctions {
 		foreach ( $variations as $variation ) {
 			if ( isset( $variation['attributes']['attribute_grid'] ) && $variation['attributes']['attribute_grid'] == $grid_id ) {
 				// Get the variation product object
-				$variation_product = wc_get_product( $variation['variation_id'] );
+				$variation_product = \wc_get_product( $variation['variation_id'] );
 
 				return $variation_product->get_id();
 			}
@@ -269,7 +272,7 @@ class WooCommerceFunctions {
 				$variation->save();
 			} else {
 				// If an existing variation was found, update it with the new data.
-				$variation = wc_get_product( $variation_id );
+				$variation = \wc_get_product( $variation_id );
 
 				// Fetch current price directly from DB for accuracy
 				$current_price = $wpdb->get_var(
@@ -301,6 +304,9 @@ class WooCommerceFunctions {
 	 * @return array
 	 */
 	public static function get_attribute_data( int $grid_id = null ): array {
+		if ( ! self::is_wc_active() ) {
+			return [];
+		}
 
 		global $wpdb;
 
@@ -388,6 +394,9 @@ class WooCommerceFunctions {
 	 * @return bool|int
 	 */
 	public static function get_product_id(): bool|int {
+		if ( ! self::is_wc_active() ) {
+			return 0;
+		}
 		global $wp_query;
 		wp_reset_postdata();
 
@@ -440,7 +449,10 @@ class WooCommerceFunctions {
 	/**
 	 * Create a product for MDS to use.
 	 */
-	public static function create_product(): \WC_Product_Variable {
+	public static function create_product(): ?\WC_Product_Variable {
+		if ( ! self::is_wc_active() ) {
+			return null;
+		}
 
 		$product = new \WC_Product_Variable();
 		$product->set_name( Language::get( 'Pixels' ) );
@@ -468,7 +480,7 @@ class WooCommerceFunctions {
 			$product_id = WooCommerceFunctions::get_product_id();
 
 			if ( $product_id ) {
-				$product = wc_get_product( $product_id );
+				$product = \wc_get_product( $product_id );
 
 				// Update WC Product attributes/variations ONLY if enabled and product is valid
 				WooCommerceFunctions::update_attributes( $product );
@@ -518,17 +530,26 @@ class WooCommerceFunctions {
 	/**
 	 * Get product from options.
 	 *
-	 * @return false|\WC_Product_Variable|null
+	 * @return false|\WC_Product|\WC_Product_Variable|null
 	 */
 	public static function get_product() {
+		if ( ! self::is_wc_active() ) {
+			return null;
+		}
+
 		// Get product from CarbonFields
 		$product_option = Options::get_option( 'product', null, true );
+
+		// Check if the product option is valid before accessing it.
+		if ( empty( $product_option[0]['id'] ) ) {
+			return self::create_and_assign_default_product();
+		}
 
 		// Product id
 		$product_id = $product_option[0]['id'];
 
 		// WC Product
-		return wc_get_product( $product_id );
+		return \wc_get_product( $product_id );
 	}
 
 
@@ -539,10 +560,14 @@ class WooCommerceFunctions {
 	 * @return \WC_Product|false The product object or false on failure.
 	 */
 	public static function create_and_assign_default_product() {
+		if ( ! self::is_wc_active() ) {
+			return false;
+		}
+
 		// Check if a product is already assigned
 		$product_option = Options::get_option( 'product', null, true );
 		$product_id = !empty($product_option[0]['id']) ? intval($product_option[0]['id']) : 0;
-		$product = $product_id ? wc_get_product($product_id) : false;
+		$product = $product_id ? \wc_get_product($product_id) : false;
 
 		if ($product instanceof \WC_Product && $product->exists()) {
 			// Product already exists and is assigned
@@ -551,6 +576,12 @@ class WooCommerceFunctions {
 
 		// If no valid product assigned, create a new one
 		$new_product = self::create_product();
+
+		if ( ! $new_product ) {
+			Logs::log( Language::get( 'MDS Wizard: Failed to create default WooCommerce product because WooCommerce is not active or another error occurred.' ) );
+			return false;
+		}
+
 		$new_product_id = $new_product->get_id();
 
 		if ( ! $new_product_id || is_wp_error($new_product_id) ) {
@@ -664,13 +695,16 @@ class WooCommerceFunctions {
 	 * @return bool
 	 */
 	public static function check_quantity( $id ): bool {
+		if ( ! self::is_wc_active() ) {
+			return true;
+		}
 
 		if ( ! self::is_mds_order( $id ) ) {
 			// No MDS product so don't check quantity
 			return true;
 		}
 
-		$order = wc_get_order( $id );
+		$order = \wc_get_order( $id );
 
 		$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
 
@@ -724,7 +758,7 @@ class WooCommerceFunctions {
 	 */
 	public static function is_mds_order( $id ): bool {
 
-		$order = wc_get_order( $id );
+		$order = \wc_get_order( $id );
 
 		// Check if there is an MDS item in the order
 		foreach ( $order->get_items() as $item ) {
@@ -768,6 +802,9 @@ class WooCommerceFunctions {
 	 * @return bool
 	 */
 	public static function valid_mds_order(): bool {
+		if ( ! self::is_wc_active() ) {
+			return false;
+		}
 		global $wpdb;
 
 		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
@@ -874,6 +911,9 @@ class WooCommerceFunctions {
 	 * Reset the MDS order id for the given MDS order id.
 	 */
 	public static function remove_item_from_cart( $user_id, $mds_order_id ): void {
+		if ( ! self::is_wc_active() ) {
+			return;
+		}
 		// Get the user's cart data
 		$cart_data = get_user_meta( $user_id, '_woocommerce_persistent_cart_' . get_current_blog_id(), true );
 

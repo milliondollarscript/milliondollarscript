@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.13.14\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.13.18\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-08-05 23:30:22\n"
-"PO-Revision-Date: 2025-08-05 23:30:22\n"
-"X-Generator: Million Dollar Script Two 2.5.13.14\n"
+"POT-Creation-Date: 2025-08-19 21:39:40\n"
+"PO-Revision-Date: 2025-08-19 21:39:40\n"
+"X-Generator: Million Dollar Script Two 2.5.13.18\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -895,18 +895,6 @@ msgid "Error scanning failed: "
 msgstr ""
 
 msgid "Error fixing completed: %d errors fixed, %d failed"
-msgstr ""
-
-msgid "Missing MDS shortcode"
-msgstr ""
-
-msgid "This page should contain an MDS shortcode but none was found"
-msgstr ""
-
-msgid "Missing MDS block"
-msgstr ""
-
-msgid "This page should contain an MDS block but none was found"
 msgstr ""
 
 msgid "Error is not auto-fixable"
@@ -1932,6 +1920,30 @@ msgstr ""
 msgid "Error validating page %d: %s"
 msgstr ""
 
+msgid "Missing MDS shortcode"
+msgstr ""
+
+msgid "This page should contain an MDS shortcode but none was found"
+msgstr ""
+
+msgid "Missing MDS block"
+msgstr ""
+
+msgid "This page should contain an MDS block but none was found"
+msgstr ""
+
+msgid "This page is registered as type \"%s\" but appears to be type \"%s\"."
+msgstr ""
+
+msgid "Not an MDS page"
+msgstr ""
+
+msgid "This page does not appear to be an MDS page, but it is in the MDS page list."
+msgstr ""
+
+msgid "Remove this page from the MDS page list."
+msgstr ""
+
 msgid "There are %d orphaned MDS pages in your database. <a href=\"%s\">Clean them up</a>."
 msgstr ""
 
@@ -2304,6 +2316,72 @@ msgstr ""
 msgid "Could not open log file for reading."
 msgstr ""
 
+msgid "Pixels Awaiting Approval"
+msgstr ""
+
+msgid "Approved Pixels"
+msgstr ""
+
+msgid "Here you can approve or disapprove pixels that have been ordered by your users."
+msgstr ""
+
+msgid "Change Grid"
+msgstr ""
+
+msgid "Select bulk action"
+msgstr ""
+
+msgid "Bulk Actions"
+msgstr ""
+
+msgid "Approve"
+msgstr ""
+
+msgid "Disapprove"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "%s items"
+msgstr ""
+
+msgid "Select All"
+msgstr ""
+
+msgid "Order ID"
+msgstr ""
+
+msgid "Ad ID"
+msgstr ""
+
+msgid "Order Date"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Block Count"
+msgstr ""
+
+msgid "Block Coordinates"
+msgstr ""
+
+msgid "Image"
+msgstr ""
+
+msgid "Payment Status"
+msgstr ""
+
+msgid "Select %s"
+msgstr ""
+
+msgid "No Image"
+msgstr ""
+
+msgid "No orders found matching your criteria."
+msgstr ""
+
 msgid "Million Dollar Script Changelog"
 msgstr ""
 
@@ -2571,9 +2649,6 @@ msgstr ""
 msgid "Could not write to file: "
 msgstr ""
 
-msgid "Order ID"
-msgstr ""
-
 msgid "Grid ID"
 msgstr ""
 
@@ -2584,9 +2659,6 @@ msgid "Text to display in the popup that shows when the block is interacted with
 msgstr ""
 
 msgid "The URL to link to."
-msgstr ""
-
-msgid "Image"
 msgstr ""
 
 msgid "The %FIELD% field is required."
@@ -3099,6 +3171,9 @@ msgstr ""
 msgid "Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab."
 msgstr ""
 
+msgid "MDS Wizard: Failed to create default WooCommerce product because WooCommerce is not active or another error occurred."
+msgstr ""
+
 msgid "MDS: Corresponding MDS Order %MDS_ORDER_ID% pixels automatically cancelled due to full WooCommerce refund."
 msgstr ""
 
@@ -3121,9 +3196,6 @@ msgid "Sorry, cannot select this block of pixels because it is not for sale!"
 msgstr ""
 
 msgid "<h3>Your order was completed.</h3>"
-msgstr ""
-
-msgid "Order Date"
 msgstr ""
 
 msgid "In progress"
@@ -3706,60 +3778,6 @@ msgid "Help"
 msgstr ""
 
 msgid "The path to your uploads directory: %UPLOAD_PATH%"
-msgstr ""
-
-msgid "Pixels Awaiting Approval"
-msgstr ""
-
-msgid "Approved Pixels"
-msgstr ""
-
-msgid "Change Grid"
-msgstr ""
-
-msgid "Select bulk action"
-msgstr ""
-
-msgid "Bulk Actions"
-msgstr ""
-
-msgid "Approve"
-msgstr ""
-
-msgid "Disapprove"
-msgstr ""
-
-msgid "Apply"
-msgstr ""
-
-msgid "%s items"
-msgstr ""
-
-msgid "Select All"
-msgstr ""
-
-msgid "Ad ID"
-msgstr ""
-
-msgid "Username"
-msgstr ""
-
-msgid "Block Count"
-msgstr ""
-
-msgid "Block Coordinates"
-msgstr ""
-
-msgid "Payment Status"
-msgstr ""
-
-msgid "Select %s"
-msgstr ""
-
-msgid "No Image"
-msgstr ""
-
-msgid "No orders found matching your criteria."
 msgstr ""
 
 msgid "Orders cleared successfully!"
