@@ -38,6 +38,8 @@ use MillionDollarScript\Classes\WooCommerce\WooCommerce;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceOptions;
 use MillionDollarScript\Classes\Admin\Notices;
+use MillionDollarScript\Classes\Pages\ApprovePixels;
+use MillionDollarScript\Classes\Pages\NFS;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -306,8 +308,8 @@ class Bootstrap {
 		// Load Block Editor JS
 		add_action( 'enqueue_block_editor_assets', [ '\MillionDollarScript\Classes\Admin\Admin', 'block_editor_scripts' ] );
 
-		// Add NFS page
-		add_action( 'init', [ '\MillionDollarScript\Classes\Pages\NFS', 'init' ], 10 );
+		// Add Approve Pixels page
+		add_action( 'init', [ $this, 'init_admin_pages' ] );
 
 		// Initialize MDS Page Metadata System
 		add_action( 'init', [ $this, 'init_metadata_system' ], 5 );
@@ -414,6 +416,11 @@ class Bootstrap {
 		// phpcs:disable
 		return $this;
 		// phpcs:enable
+	}
+
+	public function init_admin_pages(): void {
+		new NFS();
+		new ApprovePixels();
 	}
 
 	/**

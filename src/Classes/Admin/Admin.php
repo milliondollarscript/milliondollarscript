@@ -195,10 +195,14 @@ class Admin {
 	public static function menu(): void {
 		global $mds_menus;
 
-		$handle = \add_submenu_page( 'milliondollarscript', 'Million Dollar Script Admin', 'Admin', 'manage_options', 'milliondollarscript_admin', [
-			__CLASS__,
-			'html'
-		], 2 );
+		$handle = \add_submenu_page(
+			'milliondollarscript', 'Million Dollar Script Admin', 'Admin', 'manage_options', 'milliondollarscript_admin',
+			[
+				__CLASS__,
+				'html'
+			],
+			2
+		);
 
 		// Add styles for admin page
 		add_action( 'admin_print_styles-' . $handle, [ __CLASS__, 'styles' ] );
@@ -208,7 +212,6 @@ class Admin {
 
 		$mds_menus = [
 			'hidden' => [
-				'approve-pixels',
 				'check',
 				'edit-template',
 				'map-iframe',
@@ -234,8 +237,6 @@ class Admin {
 				'Map of Orders',
 				'Transaction Log',
 				'Clear Orders',
-				'Approve Pixels',
-				'Disapprove Pixels',
 				'Process Pixels',
 				'List',
 				'Top Customers',

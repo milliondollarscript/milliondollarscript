@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.13.16
+Stable tag: 2.5.13.17
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -27,6 +27,8 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Chore: Update language file.
 * Fix: Page validation cron job incorrectly marking pages as "error".
 * Fix: "Validate All Pages" button not working.
+* Fix: Creating and updating grids not working.
+* Fix: Approve pixels not working.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
