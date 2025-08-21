@@ -562,7 +562,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 	return $count;
 }
 
-function insert_ad_data( $order_id = 0, $admin = false ) {
+function insert_ad_data( $order_id = 0, $admin = false, $image_data = '' ) {
 	global $wpdb;
 
 	$sql          = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE order_id=%d";
@@ -618,10 +618,134 @@ function insert_ad_data( $order_id = 0, $admin = false ) {
 			$text          = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' );
 			$url           = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' );
 			$attachment_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'image' );
-			$image         = get_attached_file( $attachment_id );
+			$image_file         = get_attached_file( $attachment_id );
+
+			// If we have image data, process and slice it
+			if ( ! empty( $image_data ) ) {
+				$imagine = new \Imagine\Gd\Imagine();
+				$image   = $imagine->load( $image_data );
+
+				// Get the dimensions of the selected area
+				$size = Utility::get_pixel_image_size( $order_id );
+
+				// Get the banner data
+				$banner_data = load_banner_constants( $order_row['banner_id'] );
+
+				// Get the block dimensions
+				$blkW = $banner_data['BLK_WIDTH'];
+				$blkH = $banner_data['BLK_HEIGHT'];
+
+				$target_selection_pixel_width = $size['x'];
+				$target_selection_pixel_height = $size['y'];
+
+				$actualWidth = $image->getSize()->getWidth();
+				$actualHeight = $image->getSize()->getHeight();
+
+				$MDS_RESIZE = Options::get_option( 'resize', 'YES' );
+
+				if ( $MDS_RESIZE == 'YES' ) {
+					// Global resize is ON: Resize (thumbnail) the uploaded image to fit the selection's pixel area.
+					// Validate that target dimensions are positive before attempting resize.
+					if ($target_selection_pixel_width > 0 && $target_selection_pixel_height > 0) {
+						try {
+							$resize_box = new Box( $target_selection_pixel_width, $target_selection_pixel_height );
+							$image = $image->resize($resize_box);
+						} catch (\Exception $e) {
+							throw new \Exception('Failed to thumbnail image to fit selection: ' . $e->getMessage());
+						}
+					}
+				} else {
+					// Global resize is OFF: Validate that the uploaded image isn't larger than the selection's pixel area.
+					// If it is, an error is thrown. Otherwise, the original uploaded image (possibly already converted to PNG) is used.
+					if ( $actualWidth > $target_selection_pixel_width || $actualHeight > $target_selection_pixel_height ) {
+						$error_message = Language::get_replace(
+							'Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels.',
+							[ '%ACTUAL_W%', '%ACTUAL_H%', '%TARGET_W%', '%TARGET_H%' ],
+							[ $actualWidth, $actualHeight, $target_selection_pixel_width, $target_selection_pixel_height ]
+						);
+						throw new \Exception($error_message);
+					}
+				}
+
+				// Precompute block dimensions for performance
+				if ( $MDS_RESIZE == 'YES' && $size['x'] <= $target_selection_pixel_width && $size['y'] <= $target_selection_pixel_height) {
+					$ratio_diff_x = $size['x'] / $target_selection_pixel_width;
+					$ratio_diff_y = $size['y'] / $target_selection_pixel_height;
+					$blkW         = $banner_data['BLK_WIDTH'] * $ratio_diff_x;
+					$blkH         = $banner_data['BLK_HEIGHT'] * $ratio_diff_y;
+				} else {
+					$blkW         = $banner_data['BLK_WIDTH'];
+					$blkH         = $banner_data['BLK_HEIGHT'];
+				}
+
+				// Get the block offsets
+				$block_offsets = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT block_id, x, y FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d AND banner_id=%d",
+						$order_id,
+						$order_row['banner_id']
+					),
+					ARRAY_A
+				);
+
+				$low_x = $low_y = 0;
+				if ( ! empty( $block_offsets ) ) {
+					$low_x = $high_x = $block_offsets[0]['x'];
+					$low_y = $high_y = $block_offsets[0]['y'];
+					foreach ( $block_offsets as $block_row_offset ) {
+						if ( $block_row_offset['x'] > $high_x ) {
+							$high_x  = $block_row_offset['x'];
+						}
+						if ( $block_row_offset['x'] < $low_x ) {
+							$low_x   = $block_row_offset['x'];
+						}
+						if ( $block_row_offset['y'] > $high_y ) {
+							$high_y  = $block_row_offset['y'];
+						}
+						if ( $block_row_offset['y'] < $low_y ) {
+							$low_y   = $block_row_offset['y'];
+						}
+					}
+				}
+
+				// Create a map of block_id to x,y coordinates
+				$block_map = [];
+				foreach ( $block_offsets as $block_offset ) {
+					$block_map[ $block_offset['block_id'] ] = [
+						'x' => $block_offset['x'],
+						'y' => $block_offset['y'],
+					];
+				}
+
+				$block_size   = new Box( $blkW, $blkH );
+
+				// Iterate over the selected blocks and slice the image
+				$blocks_str = $wpdb->get_var( $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id ) );
+				$selected_blocks = !empty($blocks_str) ? explode( ',', $blocks_str ) : [];
+				foreach ( $selected_blocks as $block_id ) {
+					// Get the x,y coordinates for this block
+					$x = $block_map[ $block_id ]['x'] - $low_x;
+					$y = $block_map[ $block_id ]['y'] - $low_y;
+
+					// Crop the image to get the portion for this block
+					$block_image = $image->copy()->crop( new Point( $x, $y ), $block_size );
+
+					// Encode the block image data
+					$encoded_image_data = base64_encode( $block_image->get( 'png' ) );
+
+					// Update the image_data for this block
+					$wpdb->update(
+						MDS_DB_PREFIX . 'blocks',
+						[ 'image_data' => $encoded_image_data ],
+						[ 'block_id' => $block_id, 'banner_id' => $order_row['banner_id'] ],
+						[ '%s' ],
+						[ '%d', '%d' ]
+					);
+				}
+			}
 
 			$sql          = "UPDATE " . MDS_DB_PREFIX . "blocks SET file_name=%s, url=%s, alt_text=%s, ad_id=%d WHERE FIND_IN_SET(block_id, %s) AND banner_id=%d;";
-			$prepared_sql = $wpdb->prepare( $sql, $image, $url, $text, $ad_id, $blocks, $order_row['banner_id'] );
+			$prepared_sql = $wpdb->prepare( $sql, $image_file, $url, $text, $ad_id, $blocks, $order_row['banner_id'] );
 			$wpdb->query( $prepared_sql );
 
 			// Update the last modification time

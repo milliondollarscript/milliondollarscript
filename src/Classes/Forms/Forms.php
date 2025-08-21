@@ -273,6 +273,7 @@ class Forms {
 		
 		// Success - file is now available in both secure and standard locations
 		$result['success'] = true;
+		$result['file_path'] = $standard_file_path;
 		return $result;
 	}
 
@@ -282,6 +283,7 @@ class Forms {
 	 * @return void
 	 */
 	public static function mds_form_submission(): void {
+		require_once MDS_CORE_PATH . 'include/ads.inc.php';
 		Functions::verify_nonce( 'mds-form' );
 
 		if ( ! isset( $_POST['mds_dest'] ) || ! is_user_logged_in() ) {
@@ -314,6 +316,9 @@ class Forms {
 						$params['upload_error'] = urlencode( $upload_result['error'] );
 					} else {
 						$params['upload_success'] = '1';
+						$order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+						$image_data = file_get_contents( $upload_result['file_path'] );
+						\insert_ad_data( $order_id, false, $image_data );
 					}
 					
 					// Redirect to order page to display results
@@ -382,6 +387,9 @@ class Forms {
 						$params['upload_error'] = urlencode( $upload_result['error'] );
 					} else {
 						$params['upload_success'] = '1';
+						$order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+						$image_data = file_get_contents( $upload_result['file_path'] );
+						\insert_ad_data( $order_id, false, $image_data );
 					}
 				}
 				

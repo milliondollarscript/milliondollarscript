@@ -803,6 +803,23 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Choose how users select pixels in the grid.' ) ),
 
+				// Show Uploaded Image in Advanced Mode
+				Field::make( 'radio', MDS_PREFIX . 'show_uploaded_image_in_advanced_mode', Language::get( 'Show Uploaded Image in Advanced Mode' ) )
+					->set_default_value( 'yes' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'use-ajax',
+							'compare' => '=',
+							'value'   => 'YES',
+						],
+					] )
+					->set_help_text( Language::get( 'If Yes, the uploaded image and its dimensions will be shown in advanced mode. If No, only the image within the grid will be visible.' ) ),
+
 				// Resize uploaded pixels automatically
 				Field::make( 'radio', MDS_PREFIX . 'resize', Language::get( 'Resize Uploaded Pixels Automatically' ) )
 					->set_default_value( 'YES' )

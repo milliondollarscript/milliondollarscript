@@ -93,7 +93,8 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 		}
 		
 		$order_id      = Orders::get_current_order_id();
-		$ad_id         = insert_ad_data( $order_id );
+		$image_data    = file_get_contents( $_FILES['graphic']['tmp_name'] );
+		$ad_id         = insert_ad_data( $order_id, false, $image_data );
 		$sql_completed = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND ad_id=%d", get_current_user_id(), intval( $ad_id ) );
 		$row           = $wpdb->get_row( $sql_completed, ARRAY_A );
 		if ( $row ) {
@@ -103,15 +104,6 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 				$pixels                    = $size['x'] * $size['y'];
 				$_REQUEST['change_pixels'] = true;
 
-				// Capture the return value from upload_changed_pixels
-				$upload_result = upload_changed_pixels( $order_id, $BID, $size, $banner_data, 'graphic' );
-
-				// Check if the upload was successful (returned true)
-				if ( $upload_result !== true ) {
-					// If not successful, set the global error message
-					global $mds_error;
-					$mds_error = $upload_result;
-				}
 			}
 		}
 	}
@@ -329,23 +321,25 @@ if ( ! empty( $image ) ) {
     <div class="fancy-heading"><?php Language::out( 'Your Uploaded Pixels' ); ?></div>
     <p>
 		<?php
-		echo "<img class='mds_pointer_graphic' style=\"border:0;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ) . "' alt=\"\" /><br />";
+		if ( Options::get_option( 'show_uploaded_image_in_advanced_mode', 'yes' ) == 'yes' ) {
+			echo "<img class='mds_pointer_graphic' style=\"border:0;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ) . "' alt=\"\" /><br />";
 
-		if ( empty( $size ) ) {
-			$tmp_size = getimagesize( $tmp_image_file );
-			$size     = array( "x" => $tmp_size[0], "y" => $tmp_size[1] );
-			unset( $tmp_size );
+			if ( empty( $size ) ) {
+				$tmp_size = getimagesize( $tmp_image_file );
+				$size     = array( "x" => $tmp_size[0], "y" => $tmp_size[1] );
+				unset( $tmp_size );
+			}
+
+			Language::out_replace(
+				'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.',
+				[ '%WIDTH%', '%HEIGHT%' ],
+				[ $size['x'], $size['y'] ]
+			);
+
+			?>
+			<br/>
+			<?php
 		}
-
-		Language::out_replace(
-			'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.',
-			[ '%WIDTH%', '%HEIGHT%' ],
-			[ $size['x'], $size['y'] ]
-		);
-
-		?>
-        <br/>
-		<?php
 
 		if ( empty( $reqsize ) ) {
 			$reqsize = [

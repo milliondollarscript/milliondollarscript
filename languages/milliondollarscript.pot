@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.13.18\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.13.19\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-08-19 21:39:40\n"
-"PO-Revision-Date: 2025-08-19 21:39:40\n"
-"X-Generator: Million Dollar Script Two 2.5.13.18\n"
+"POT-Creation-Date: 2025-08-20 19:16:42\n"
+"PO-Revision-Date: 2025-08-20 19:16:42\n"
+"X-Generator: Million Dollar Script Two 2.5.13.19\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1564,6 +1564,12 @@ msgid "Invert Pixels"
 msgstr ""
 
 msgid "If checked, reverses the order pixels are displayed within the grid container."
+msgstr ""
+
+msgid "Show Uploaded Image in Advanced Mode"
+msgstr ""
+
+msgid "If Yes, the uploaded image and its dimensions will be shown in advanced mode. If No, only the image within the grid will be visible."
 msgstr ""
 
 msgid "Stats Display Mode"
@@ -3348,6 +3354,9 @@ msgstr ""
 msgid "Status: "
 msgstr ""
 
+msgid "Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels."
+msgstr ""
+
 msgid "Invalid file key specified: %KEY%"
 msgstr ""
 
@@ -3364,9 +3373,6 @@ msgid "Possible file upload attack or server error during file move."
 msgstr ""
 
 msgid "Could not read image dimensions after conversion. File might be corrupted."
-msgstr ""
-
-msgid "Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels."
 msgstr ""
 
 msgid "Image processing failed: %ERROR%"

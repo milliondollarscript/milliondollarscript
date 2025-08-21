@@ -109,6 +109,10 @@ class FileValidator {
      * @return bool True if magic numbers are valid
      */
     private static function validate_magic_numbers( $filepath, $extension ): bool {
+        if ( $extension === 'jpg' ) {
+            $extension = 'jpeg';
+        }
+
         $handle = fopen( $filepath, 'rb' );
         if ( ! $handle ) {
             return false;
