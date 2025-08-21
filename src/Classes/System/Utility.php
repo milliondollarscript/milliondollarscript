@@ -1610,7 +1610,7 @@ class Utility {
 			echo '<option value="0">' . esc_html__( 'No grids found', 'milliondollarscript' ) . '</option>';
 		} else {
 			// Add an option for 'All Grids' or similar if needed, depending on context
-			// echo '<option value="0">' . esc_html__('All Grids', 'milliondollarscript') . '</option>';
+			echo '<option value="0">' . esc_html__('All Grids', 'milliondollarscript') . '</option>';
 			foreach ( $grids as $grid ) {
 				$selected = selected( $current_bid, $grid->banner_id, false );
 				echo '<option value="' . esc_attr( $grid->banner_id ) . '"' . $selected . '>' . esc_html( $grid->name ) . ' (ID: ' . esc_html( $grid->banner_id ) . ')</option>';

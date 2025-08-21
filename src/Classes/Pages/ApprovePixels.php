@@ -275,7 +275,11 @@ class ApprovePixels {
         }
 
         $where_approved = ( $Y_or_N == 'Y' ) ? 'Y' : 'N';
-        $sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.status = 'completed' AND T1.status != 'denied' AND T1.banner_id = %d", $where_approved, $BID );
+        if ($BID == 0) {
+            $sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.status = 'completed' AND T1.status != 'denied'", $where_approved );
+        } else {
+            $sql_where      = $wpdb->prepare( "WHERE T1.approved = %s AND T1.status = 'completed' AND T1.status != 'denied' AND T1.banner_id = %d", $where_approved, $BID );
+        }
 
         $total_orders = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT T1.order_id) FROM " . MDS_DB_PREFIX . "orders T1 {$sql_where}" );
 
