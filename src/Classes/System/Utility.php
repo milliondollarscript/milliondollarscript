@@ -1092,22 +1092,53 @@ class Utility {
 
 		$block_width  = $banner_data['BLK_WIDTH'];
 		$block_height = $banner_data['BLK_HEIGHT'];
+		$max_blocks   = $banner_data['G_MAX_BLOCKS'] ?? 0;
 
 		$size[0] = $x;
 		$size[1] = $y;
 
+		// First, round up to the nearest full block size
 		$mod = ( $x % $block_width );
-
 		if ( $mod > 0 ) {
-			// width does not fit
 			$size[0] = $x + ( $block_width - $mod );
 		}
 
 		$mod = ( $y % $block_height );
-
 		if ( $mod > 0 ) {
-			// height does not fit
 			$size[1] = $y + ( $block_height - $mod );
+		}
+
+		// If max_blocks is set, check if we need to resize
+		if ( $max_blocks > 0 ) {
+			$num_blocks_x = $size[0] / $block_width;
+			$num_blocks_y = $size[1] / $block_height;
+			$total_blocks = $num_blocks_x * $num_blocks_y;
+
+			if ( $total_blocks > $max_blocks ) {
+				// Image is too large, scale it down maintaining aspect ratio.
+				$aspect_ratio = $x / $y;
+
+				$new_blocks_y = floor( sqrt( $max_blocks / $aspect_ratio ) );
+				$new_blocks_y = $new_blocks_y > 0 ? $new_blocks_y : 1;
+				
+				$new_blocks_x = floor( $max_blocks / $new_blocks_y );
+				$new_blocks_x = $new_blocks_x > 0 ? $new_blocks_x : 1;
+
+				// Recalculate to ensure it's under the max
+				while ( ($new_blocks_x * $new_blocks_y) > $max_blocks) {
+					if ($aspect_ratio > 1) { // wider
+						$new_blocks_x--;
+					} else { // taller or square
+						$new_blocks_y--;
+					}
+				}
+				
+				$new_blocks_x = $new_blocks_x > 0 ? $new_blocks_x : 1;
+				$new_blocks_y = $new_blocks_y > 0 ? $new_blocks_y : 1;
+
+				$size[0] = $new_blocks_x * $block_width;
+				$size[1] = $new_blocks_y * $block_height;
+			}
 		}
 
 		return $size;

@@ -247,6 +247,17 @@ if ( ! empty( $tmp_image_file ) ) {
 		$reqsize = Utility::get_required_size( $size[0], $size[1], $banner_data );
 	}
 
+	// Check if the image was resized and inform the user
+	if ( $reqsize[0] != $size[0] || $reqsize[1] != $size[1] ) {
+		echo '<b style="color: #ff8c00;">';
+		Language::out_replace(
+			'Your image was automatically resized to %WIDTH%x%HEIGHT% to fit the grid constraints.',
+			[ '%WIDTH%', '%HEIGHT%' ],
+			[ $reqsize[0], $reqsize[1] ]
+		);
+		echo '</b><br />';
+	}
+
 	if ( empty( $pixel_count ) ) {
 		$pixel_count = $reqsize[0] * $reqsize[1];
 	}
