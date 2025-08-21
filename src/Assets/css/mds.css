@@ -744,20 +744,20 @@ Ads list page
 
 /* Enhanced Tippy Tooltip Styling */
 .tippy-box[data-theme~='light'] {
-	background-color: var(--mds-tooltip-bg, #333333) !important;
-	color: var(--mds-text-primary, #ffffff) !important;
+	background-color: var(--mds-bg-primary, #ffffff) !important;
+	color: var(--mds-text-primary, #000000) !important;
 	border: 1px solid var(--mds-border-color, #dee2e6) !important;
 	border-radius: 8px !important;
 	box-shadow: 0 4px 12px var(--mds-shadow, rgba(0, 0, 0, 0.15)) !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content {
-	color: #ffffff !important;
+	color: var(--mds-text-primary, #000000) !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content p {
 	margin: 0 0 8px 0 !important;
-	color: #ffffff !important;
+	color: var(--mds-text-primary, #000000) !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content p:last-child {
@@ -765,7 +765,7 @@ Ads list page
 }
 
 .tippy-box[data-theme~='light'] .tippy-content strong {
-	color: #ffffff !important;
+	color: var(--mds-text-primary, #000000) !important;
 	font-weight: bold !important;
 }
 
@@ -776,17 +776,17 @@ Ads list page
 }
 
 .tippy-box[data-theme~='light'] .tippy-content a:hover {
-	color: #99ccff !important;
+	color: var(--mds-primary-color, #ff0000) !important;
 	text-decoration: underline !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content .mds-creator-profile-link {
 	display: inline-block !important;
-	background-color: rgba(255, 255, 255, 0.1) !important;
+	background-color: var(--mds-bg-tertiary, #e9ecef) !important;
 	color: var(--mds-accessible-link, #0066cc) !important;
 	padding: 4px 8px !important;
 	border-radius: 4px !important;
-	border: 1px solid rgba(255, 255, 255, 0.2) !important;
+	border: 1px solid var(--mds-border-color, #dee2e6) !important;
 	font-size: 0.85rem !important;
 	margin-top: 4px !important;
 	transition: all 0.2s ease !important;
@@ -794,29 +794,29 @@ Ads list page
 
 .tippy-box[data-theme~='light'] .tippy-content .mds-creator-profile-link:hover {
 	background-color: var(--mds-accessible-link, #0066cc) !important;
-	color: #333333 !important;
+	color: var(--mds-bg-primary, #ffffff) !important;
 	border-color: var(--mds-accessible-link, #0066cc) !important;
 	text-decoration: none !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-arrow {
-	color: var(--mds-tooltip-bg, #333333) !important;
+	color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='top'] > .tippy-arrow::before {
-	border-top-color: var(--mds-tooltip-bg, #333333) !important;
+	border-top-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='bottom'] > .tippy-arrow::before {
-	border-bottom-color: var(--mds-tooltip-bg, #333333) !important;
+	border-bottom-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='left'] > .tippy-arrow::before {
-	border-left-color: var(--mds-tooltip-bg, #333333) !important;
+	border-left-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='right'] > .tippy-arrow::before {
-	border-right-color: var(--mds-tooltip-bg, #333333) !important;
+	border-right-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .mds-order-explain {
