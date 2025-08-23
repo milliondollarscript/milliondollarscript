@@ -292,7 +292,8 @@ class ApprovePixels {
 				FB.alt_text AS title,
 				TR.type AS pstatus,
 				BC.block_coords,
-				T1.ad_id
+				T1.ad_id,
+       			(SELECT name FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = T1.banner_id) as banner_name
 			 FROM " . MDS_DB_PREFIX . "orders T1
 			 LEFT JOIN (SELECT order_id, COUNT(*) as block_count FROM " . MDS_DB_PREFIX . "blocks GROUP BY order_id) T2
 			 ON T1.order_id = T2.order_id
@@ -367,6 +368,7 @@ class ApprovePixels {
                                 <tr>
                                     <th scope="col" id="cb" class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-1"><?php Language::out( 'Select All' ); ?></label><input id="cb-select-all-1" type="checkbox"></th>
                                     <th scope="col" id="actions" class="manage-column column-actions"><?php echo Language::get( 'Actions' ); ?></th>
+                                    <th scope="col" id="grid_id" class="manage-column column-grid_id"><?php echo Language::get( 'Grid ID' ); ?></th>
                                     <th scope="col" id="order_id" class="manage-column column-order_id"><?php echo Language::get( 'Order ID' ); ?></th>
                                     <th scope="col" id="ad_id" class="manage-column column-ad_id"><?php echo Language::get( 'Ad ID' ); ?></th>
                                     <th scope="col" id="order_date" class="manage-column column-order_date"><?php echo Language::get( 'Order Date' ); ?></th>
@@ -384,6 +386,7 @@ class ApprovePixels {
                                  <tr>
                                     <th scope="col" class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-2"><?php Language::out( 'Select All' ); ?></label><input id="cb-select-all-2" type="checkbox"></th>
                                     <th scope="col" class="manage-column column-actions"><?php echo Language::get( 'Actions' ); ?></th>
+                                    <th scope="col" class="manage-column column-grid_id"><?php echo Language::get( 'Grid ID' ); ?></th>
                                     <th scope="col" class="manage-column column-order_id"><?php echo Language::get( 'Order ID' ); ?></th>
                                     <th scope="col" class="manage-column column-ad_id"><?php echo Language::get( 'Ad ID' ); ?></th>
                                     <th scope="col" class="manage-column column-order_date"><?php echo Language::get( 'Order Date' ); ?></th>
@@ -455,6 +458,11 @@ class ApprovePixels {
                                                 ?>
                                                 <a href="<?php echo esc_url( $deny_url ); ?>" class="button button-small mds-admin-action-deny">Deny</a>
                                             </td>
+                                            <td>
+                                                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids&mds-action=edit&BID=' . $row['banner_id'] ) ); ?>" title="<?php echo esc_attr( $row['banner_name'] ); ?>">
+                                                    <?php echo esc_html( $row['banner_id'] ); ?>
+                                                </a>
+                                            </td>
                                             <td><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $order_id ) ); ?>"><?php echo $order_id; ?></a></td>
                                             <td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . intval($row['ad_id']) . '&action=edit' ) ); ?>"><?php echo esc_html( $row['ad_id'] ?? '' ); ?></a></td>
                                             <td><?php echo esc_html( $row['order_date'] ); ?></td>
@@ -489,7 +497,7 @@ class ApprovePixels {
                                 } else {
                                     ?>
                                     <tr>
-                                        <td colspan="12"><?php echo Language::get( 'No orders found matching your criteria.' ); ?></td>
+                                        <td colspan="13"><?php echo Language::get( 'No orders found matching your criteria.' ); ?></td>
                                     </tr>
                                     <?php
                                 }
