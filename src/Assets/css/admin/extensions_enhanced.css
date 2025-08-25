@@ -348,3 +348,64 @@
     display: block;
     margin-bottom: 4px;
 }
+
+/* Align section headings with WP Admin aesthetic */
+.mds-extensions-container h1,
+.mds-extensions-container h2 {
+    color: #1d2327;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+/* Inline update text style moved from PHP inline styles */
+.mds-update-available-text {
+    color: #d63638;
+    font-size: 12px;
+    font-style: italic;
+}
+/* Disabled Active badge styling for consistent appearance with server-rendered state */
+.mds-ext-active[disabled],
+.mds-ext-active[disabled="disabled"] {
+    opacity: 0.7;
+    cursor: default;
+}
+/* Heading color overrides for WP admin consistency */
+.mds-extensions-page .mds-extensions-header h1 {
+    color: #1d2327;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.mds-extensions-page .mds-extensions-header .mds-extensions-subtitle {
+    color: #3c434a;
+}
+
+.mds-extensions-page .mds-discovery-banner h2 {
+    color: #1d2327;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.mds-extensions-page .mds-discovery-banner p {
+    color: #3c434a;
+}
+.mds-extensions-page .mds-extensions-header h1 { color: #1d2327; font-weight: 600; margin-bottom: 12px; }
+.mds-extensions-page .mds-extensions-header .mds-extensions-subtitle { color: #3c434a; }
+.mds-extensions-page .mds-discovery-banner .mds-banner-text h2 { color: #1d2327; font-weight: 600; margin-bottom: 12px; }
+.mds-extensions-page .mds-discovery-banner .mds-banner-text p { color: #3c434a; }
+
+/* Accessible header and banner overrides (placed after prior heading rules) */
+.mds-extensions-page .mds-extensions-header { background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%); }
+.mds-extensions-page .mds-extensions-header h1 { color: #ffffff; font-weight: 700; margin-bottom: 8px; }
+.mds-extensions-page .mds-extensions-header .mds-extensions-subtitle { color: #e5e7eb; }
+.mds-extensions-page .mds-discovery-banner { background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%); }
+.mds-extensions-page .mds-discovery-banner .mds-banner-text h2 { color: #ffffff; font-weight: 700; margin-bottom: 8px; }
+.mds-extensions-page .mds-discovery-banner .mds-banner-text p { color: #e5e7eb; }
+.mds-extensions-page .mds-discovery-banner a,
+.mds-extensions-page .mds-extensions-header a { color: #ffffff; text-decoration: underline; }
+
+/* Full-width CTA styling (used on main admin page) */
+.mds-cta-full { display: block; width: 100%; padding: 16px 20px; border-radius: 6px; background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%); color: #fff; }
+.mds-cta-full h2 { margin: 0 0 6px; color: #fff; }
+.mds-cta-full p { margin: 0 0 8px; color: #e5e7eb; }
+.mds-cta-full .button.button-primary { background: #16a34a; border-color: #16a34a; }

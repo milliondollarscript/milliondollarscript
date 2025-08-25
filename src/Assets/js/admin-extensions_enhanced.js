@@ -14,7 +14,7 @@ jQuery(document).ready(function ($) {
 		const noticeClass = type === "error" ? "notice-error" : "notice-success";
 		const icon = type === "error" ? "❌" : "✅";
 		const noticeHtml = `
-            <div class="notice ${noticeClass} is-dismissible mds-enhanced-notice" style="display: none;">
+            <div class="notice ${noticeClass} is-dismissible mds-enhanced-notice">
                 <p><span class="mds-notice-icon">${icon}</span> ${message}</p>
                 <button type="button" class="notice-dismiss">
                     <span class="screen-reader-text">Dismiss this notice.</span>
@@ -25,11 +25,10 @@ jQuery(document).ready(function ($) {
 		// Remove existing notices of the same type
 		$(`.notice.${noticeClass}`).remove();
 
-		// Add notice after the header
-		$(".mds-extensions-header, .wrap > h1").first().after(noticeHtml);
-		
-		// Animate in
-		$(`.notice.${noticeClass}`).slideDown(300);
+		// Add notice after the header and animate in without inline styles
+		const $notice = $(noticeHtml);
+		$(".mds-extensions-header, .wrap > h1").first().after($notice);
+		$notice.hide().slideDown(300);
 
 		// Auto-hide success notices
 		if (autoHide && type === "success") {
@@ -227,17 +226,12 @@ jQuery(document).ready(function ($) {
 			dataType: "json",
 			success: function (response) {
 				if (response.success) {
-					showNotice("success", "🎉 Extension is now active and ready to use!");
+					showNotice("success", "🎉 Extension is now active and ready to use!", false);
 					
-					// Update button state
-					$button.removeClass('mds-btn-secondary mds-activate-extension')
-						.addClass('mds-btn-active')
-						.html('<span class="mds-btn-icon">✓</span> Active')
-						.prop('disabled', true);
+					// Update button state to match server-rendered active badge
+					const $active = $('<span class="button button-secondary mds-ext-active" disabled="disabled">Active</span>');
+					$button.replaceWith($active);
 					
-					if (response.data.reload !== false) {
-						setTimeout(() => window.location.reload(), 2000);
-					}
 				} else {
 					showNotice("error", response.data.message || "Failed to activate extension.");
 					resetButton($button);
@@ -335,55 +329,4 @@ jQuery(document).ready(function ($) {
 	}
 
 	console.log('🚀 MDS Extensions enhanced interface loaded successfully!');
-});
-
-// Add custom CSS for enhanced interactions
-jQuery(document).ready(function($) {
-	const enhancedStyles = `
-		<style>
-		.mds-enhanced-notice {
-			border-left: 4px solid #1a73e8;
-			background: linear-gradient(90deg, #e8f0fe 0%, #ffffff 100%);
-		}
-		
-		.mds-notice-icon {
-			font-size: 1.2em;
-			margin-right: 8px;
-		}
-		
-		.mds-btn-loading {
-			position: relative;
-			color: transparent !important;
-		}
-		
-		.mds-spinner {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			width: 16px;
-			height: 16px;
-			border: 2px solid #ffffff;
-			border-top: 2px solid transparent;
-			border-radius: 50%;
-			animation: spin 1s linear infinite;
-		}
-		
-		.mds-changelog {
-			background: #f8f9fa;
-			border-left: 3px solid #1a73e8;
-			padding: 8px 12px;
-			margin: 8px 0;
-			border-radius: 4px;
-			font-size: 0.9em;
-		}
-		
-		.mds-no-updates {
-			color: #2e7d2e;
-			font-weight: 500;
-		}
-		</style>
-	`;
-	
-	$('head').append(enhancedStyles);
 });

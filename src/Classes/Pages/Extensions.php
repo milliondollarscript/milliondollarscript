@@ -65,20 +65,28 @@ class Extensions {
      * Registers the Extensions submenu item.
      */
     public static function menu(): void {
-        $hook_suffix = add_menu_page(
+        // Guard against accidental double-registration (duplicate submenu entries)
+        static $registered = false;
+        if ($registered) {
+            return;
+        }
+
+        $hook_suffix = add_submenu_page(
+            'milliondollarscript',
             Language::get('Million Dollar Script Extensions'),
-            Language::get('MDS Extensions'),
+            Language::get('Extensions'),
             'manage_options',
             'mds-extensions',
             [__CLASS__, 'render'],
-            'dashicons-admin-plugins',
             30
         );
 
-        // Enqueue scripts and styles only on the extensions page
         if ( $hook_suffix ) {
+            $registered = true;
             add_action( "admin_print_styles-$hook_suffix", [ self::class, 'enqueue_assets' ] );
         }
+        // Late hook to normalize/deduplicate submenu entries
+        add_action( 'admin_menu', [ self::class, 'dedupe_submenu' ], 999 );
     }
     
     /**
@@ -494,20 +502,20 @@ class Extensions {
                                 <td class="mds-action-cell">
                                 <?php if ($extension['is_installed']) : ?>
                                     <?php if ($extension['is_active']) : ?>
-                                        <span class="button button-secondary mds-ext-active" disabled="disabled" style="opacity: 0.7; cursor: default;">
+                                        <span class="button button-secondary mds-ext-active" disabled="disabled">
                                             <?php echo esc_html( Language::get('Active') ); ?>
                                         </span>
                                     <?php else : ?>
-                                        <button class="button button-secondary mds-activate-extension" 
+                                        <button class="button button-secondary mds-activate-extension"
                                                 data-nonce="<?php echo esc_attr( $nonce ); ?>"
                                                 data-extension-slug="<?php echo esc_attr( $extension['slug'] ); ?>">
                                             <?php echo esc_html( Language::get('Activate') ); ?>
                                         </button>
                                     <?php endif; ?>
                                 <?php else : ?>
-                                    <button class="button button-primary mds-install-extension" 
-                                            data-nonce="<?php echo esc_attr( $nonce ); ?>" 
-                                            data-extension-id="<?php echo esc_attr( $extension['id'] ); /* UUID from server */ ?>" 
+                                    <button class="button button-primary mds-install-extension"
+                                            data-nonce="<?php echo esc_attr( $nonce ); ?>"
+                                            data-extension-id="<?php echo esc_attr( $extension['id'] ); /* UUID from server */ ?>"
                                             data-extension-slug="<?php echo esc_attr( $extension['slug'] ); /* Slug derived/from server */ ?>">
                                         <?php echo esc_html( Language::get('Install') ); ?>
                                     </button>
@@ -577,60 +585,6 @@ class Extensions {
                 <?php endif; ?>
             </div>
             
-            <style>
-                .mds-extensions-container {
-                    margin-top: 20px;
-                }
-                .mds-update-available {
-                    margin: 5px 0;
-                }
-                .mds-changelog {
-                    background: #f9f9f9;
-                    border-left: 4px solid #2271b1;
-                    padding: 5px 10px;
-                    margin: 5px 0;
-                    font-size: 13px;
-                }
-                .mds-status-active {
-                    color: #00a32a;
-                    font-weight: bold;
-                }
-                .mds-status-inactive {
-                    color: #d63638;
-                }
-                .mds-status-installed {
-                    color: #00a32a;
-                    font-weight: bold;
-                }
-                .mds-update-cell {
-                    min-width: 200px;
-                }
-                .mds-action-cell {
-                    min-width: 120px;
-                }
-                .mds-type-premium {
-                    color: #d63638;
-                    font-weight: bold;
-                }
-                .mds-type-free {
-                    color: #00a32a;
-                    font-weight: bold;
-                }
-                .mds-update-available-text {
-                    color: #d63638;
-                    font-size: 12px;
-                    font-style: italic;
-                }
-                .description {
-                    color: #666;
-                    font-size: 13px;
-                    font-style: italic;
-                }
-                .mds-extension-name strong {
-                    display: block;
-                    margin-bottom: 4px;
-                }
-            </style>
         </div>
         <?php
     }
@@ -678,7 +632,47 @@ class Extensions {
             );
         }
     }
+    
+    /**
+     * Normalize/deduplicate the Million Dollar Script submenu to ensure only one "MDS Extensions" entry.
+     */
+    public static function dedupe_submenu(): void {
+        global $submenu;
+        $parent = 'milliondollarscript';
+        if (!isset($submenu[$parent]) || !is_array($submenu[$parent])) {
+            return;
+        }
+        $filtered = [];
+        $seenMdsExt = false;
+        foreach ($submenu[$parent] as $item) {
+            $slug = isset($item[2]) ? (string) $item[2] : '';
+            // Prefer index 3 (page title) per WP structure; fall back to index 0 (menu title)
+            $rawTitle = '';
+            if (isset($item[3]) && is_string($item[3])) {
+                $rawTitle = $item[3];
+            } elseif (isset($item[0]) && is_string($item[0])) {
+                $rawTitle = $item[0];
+            }
+            $title = strtolower(trim(wp_strip_all_tags($rawTitle)));
 
+            if ($slug === 'mds-extensions') {
+                if ($seenMdsExt) {
+                    // Drop any additional entries with the exact slug
+                    continue;
+                }
+                $seenMdsExt = true;
+                $filtered[] = $item;
+                continue;
+            }
+            // If another entry uses the same label "MDS Extensions" or "Extensions" but a different slug, drop it
+            if ($slug !== 'mds-extensions' && ($title === 'mds extensions' || $title === 'extensions')) {
+                continue;
+            }
+            $filtered[] = $item;
+        }
+        $submenu[$parent] = $filtered;
+    }
+    
     /**
      * Fetch available extensions from the extension server
      * 

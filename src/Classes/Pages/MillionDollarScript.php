@@ -108,6 +108,13 @@ class MillionDollarScript {
             </div>
 
 			<div class="milliondollarscript-dashboard-container">
+
+				<div class="mds-cta mds-cta-extensions mds-cta-full">
+					<h2>Discover Extensions</h2>
+					<p>Supercharge Million Dollar Script with powerful add-ons for analytics, automation, and more.</p>
+					<p><a class="button button-primary" href="<?php echo esc_url( admin_url('admin.php?page=mds-extensions') ); ?>">Explore Extensions</a></p>
+				</div>
+
 				<div class="milliondollarscript-description milliondollarscript-section">
 					<p><?php Language::out( 'Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience.' ); ?></p>
 					<p><?php Language::out( 'Visit the <a target="_blank" href="https://milliondollarscript.com/million-dollar-script-wordpress-plugin/">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation.' ); ?></p>
