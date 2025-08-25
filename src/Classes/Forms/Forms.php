@@ -463,6 +463,74 @@ class Forms {
 		}
 	}
 
+	public static function complete_orders(): void {
+		global $wpdb;
+
+		if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass complete attempt - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass complete - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			foreach ( $_REQUEST['orders'] as $oid ) {
+				$oid = intval( $oid );
+				if ( $oid <= 0 ) continue; // Skip invalid order IDs
+
+				$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $oid );
+				$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+				if ( $order_row && $order_row['status'] != 'completed' ) {
+					\MillionDollarScript\Classes\Orders\Orders::complete_order( $order_row['user_id'], $oid, false );
+					\MillionDollarScript\Classes\Payment\Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+					\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order completed by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
+				}
+			}
+		}
+
+		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order complete attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php complete - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			$order_id = intval( $_REQUEST['order_id'] );
+			if ( $order_id <= 0 ) {
+				wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+			}
+
+			$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
+			$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+			if ( $order_row ) {
+				\MillionDollarScript\Classes\Orders\Orders::complete_order( $order_row['user_id'], $order_id );
+				\MillionDollarScript\Classes\Payment\Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order completed by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
+			}
+		}
+
+		// Redirect back to the orders page
+		$redirect_url = admin_url( 'admin.php?page=mds-orders-waiting' );
+		if ( isset( $_REQUEST['show'] ) ) {
+			$redirect_url = admin_url( 'admin.php?page=mds-orders-' . sanitize_key( $_REQUEST['show'] ) );
+		}
+		wp_safe_redirect( $redirect_url );
+		exit;
+	}
+
 	/**
 	 * Handle specific admin forms based on the form_id parameter.
 	 *
@@ -602,6 +670,12 @@ class Forms {
 				break;
 			case 'orders-waiting':
 				require_once MDS_CORE_PATH . 'admin/orders-waiting.php';
+				break;
+			case 'complete-orders':
+				self::complete_orders();
+				break;
+			case 'cancel-orders':
+				self::cancel_orders();
 				break;
 			case 'packages':
 				// Ensure the specific package action nonce is valid
@@ -763,6 +837,75 @@ class Forms {
 		wp_safe_redirect( $page_url );
 		exit;
 
+	}
+
+	public static function cancel_orders(): void {
+		global $wpdb;
+
+		// Handle individual order cancellation
+		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' && isset( $_REQUEST['order_id'] ) ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized individual cancel attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php individual cancel - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			$order_id = intval( $_REQUEST['order_id'] );
+			if ( $order_id <= 0 ) {
+				wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+			}
+
+			$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
+			$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+			if ( $order_row ) {
+				\MillionDollarScript\Classes\Orders\Orders::cancel_order( $order_id, true );
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order cancelled by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
+			}
+		}
+		// Handle mass order cancellation
+		else if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass cancel attempt - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass cancel - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			foreach ( $_REQUEST['orders'] as $oid ) {
+				$oid = intval( $oid );
+				if ( $oid <= 0 ) {
+					continue; // Skip invalid order IDs
+				}
+
+				$sql       = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $oid );
+				$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+				if ( $order_row && $order_row['status'] != 'cancelled' ) {
+					\MillionDollarScript\Classes\Orders\Orders::cancel_order( $oid, true );
+					\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
+				}
+			}
+		}
+
+		// Redirect back to the orders page
+		$redirect_url = admin_url( 'admin.php?page=mds-orders-cancelled' );
+		if ( isset( $_REQUEST['show'] ) ) {
+			$redirect_url = admin_url( 'admin.php?page=mds-orders-' . sanitize_key( $_REQUEST['show'] ) );
+		}
+		wp_safe_redirect( $redirect_url );
+		exit;
 	}
 
 	public static function display_banner_selecton_form( $BID, $order_id, $res, $mds_dest ): void {

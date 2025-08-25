@@ -83,7 +83,7 @@ class Refunds {
 		try {
 			// Ensure the Orders class is available
 			if ( class_exists( '\MillionDollarScript\Classes\Orders\Orders' ) ) {
-				\MillionDollarScript\Classes\Orders\Orders::cancel_order( $mds_order_id );
+				\MillionDollarScript\Classes\Orders\Orders::cancel_order( $mds_order_id, true );
 
 				// Add a system note (not visible to customer, not added by user)
 				// Arguments: note, is_customer_note, added_by_user

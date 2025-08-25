@@ -1355,7 +1355,7 @@ class Orders {
 					// $order_date = date( 'Y-m-d H:i:s', $order_date );
 					// $diff       = strtotime( $order_date ) - strtotime( $now );
 					// if ( $diff > intval( $MINUTES_RENEW ) ) {
-					self::cancel_order( $row['order_id'] );
+					self::cancel_order( $row['order_id'], true );
 					// }
 				}
 			}
@@ -1969,11 +1969,12 @@ class Orders {
 		}
 	}
 
-	public static function cancel_order( $order_id, $bypass_auth = false ) {
+	public static function cancel_order( int $order_id, bool $bypass_auth = false ): bool {
 		// Input validation
 		$order_id = intval( $order_id );
 		if ( $order_id <= 0 ) {
 			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Invalid order ID in cancel_order - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() );
+
 			return false;
 		}
 
@@ -1985,16 +1986,17 @@ class Orders {
 			),
 			ARRAY_A
 		);
-		
+
 		if ( ! $row ) {
 			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order not found in cancel_order - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() );
+
 			return false;
 		}
 
 		// Authorization checks (unless bypassed by admin operations)
 		if ( ! $bypass_auth ) {
 			$current_user_id = get_current_user_id();
-			
+
 			// Check if user is logged in
 			if ( ! $current_user_id ) {
 				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized cancel_order attempt by non-logged user - Order ID: ' . $order_id );

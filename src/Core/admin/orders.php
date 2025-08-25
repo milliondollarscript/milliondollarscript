@@ -27,217 +27,12 @@
  */
 
 use MillionDollarScript\Classes\Forms\FormFields;
-use MillionDollarScript\Classes\Orders\Blocks;
-use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Currency;
-use MillionDollarScript\Classes\Payment\Payment;
 use MillionDollarScript\Classes\System\Functions;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( ! empty( $_POST['search'] ) ) {
-	return;
-}
-
-@set_time_limit( 180 );
-
 global $wpdb;
-
-$oid = 0;
-if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
-	// Verify admin capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass complete attempt - User: ' . get_current_user_id() );
-		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	// Verify CSRF nonce
-	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass complete - User: ' . get_current_user_id() );
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	foreach ( $_REQUEST['orders'] as $oid ) {
-		$oid = intval( $oid );
-		if ( $oid <= 0 ) continue; // Skip invalid order IDs
-
-		$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $oid );
-		$order_row = $wpdb->get_row( $sql, ARRAY_A );
-
-		if ( $order_row && $order_row['status'] != 'completed' ) {
-			Orders::complete_order( $order_row['user_id'], $oid, false );
-			Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
-			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order completed by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
-		}
-	}
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
-	// Verify admin capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order complete attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
-		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	// Verify CSRF nonce
-	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php complete - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	$order_id = intval( $_REQUEST['order_id'] );
-	if ( $order_id <= 0 ) {
-		wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
-	}
-
-	$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
-	$order_row = $wpdb->get_row( $sql, ARRAY_A );
-
-	if ( $order_row ) {
-		Orders::complete_order( $order_row['user_id'], $order_id );
-		Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order completed by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
-	}
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' ) {
-	// Verify admin capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order cancel attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
-		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	// Verify CSRF nonce
-	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php cancel - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	$order_id = intval( $_REQUEST['order_id'] );
-	if ( $order_id <= 0 ) {
-		wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
-	}
-
-	Orders::cancel_order( $order_id, true ); // true = bypass user authorization for admin operations
-	\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'unreserve' ) {
-	// Verify admin capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized unreserve attempt - User: ' . get_current_user_id() . ' - Block ID: ' . ( $_REQUEST['block_id'] ?? 'unknown' ) );
-		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	// Verify CSRF nonce
-	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php unreserve - User: ' . get_current_user_id() );
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	$block_id = intval( $_REQUEST['block_id'] );
-	$banner_id = intval( $_REQUEST['banner_id'] );
-	if ( $block_id <= 0 || $banner_id <= 0 ) {
-		wp_die( esc_html__( 'Invalid block or banner ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
-	}
-
-	Blocks::unreserve_block( $block_id, $banner_id );
-	\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Block unreserved by admin - Block ID: ' . $block_id . ' - Banner ID: ' . $banner_id . ' - Admin User: ' . get_current_user_id() );
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
-	// Verify admin capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass cancel attempt - User: ' . get_current_user_id() );
-		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	// Verify CSRF nonce
-	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass cancel - User: ' . get_current_user_id() );
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	foreach ( $_REQUEST['orders'] as $oid ) {
-		$oid = intval( $oid );
-		if ( $oid <= 0 ) continue; // Skip invalid order IDs
-
-		Orders::cancel_order( $oid );
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
-	}
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
-	// Verify admin capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order delete attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
-		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	// Verify CSRF nonce
-	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php delete - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	$order_id = intval( $_REQUEST['order_id'] );
-	if ( $order_id <= 0 ) {
-		wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
-	}
-
-	Orders::delete_order( $order_id );
-	\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order deleted by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mass_delete'] ) && $_REQUEST['mass_delete'] != '' ) {
-	// Verify admin capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass delete attempt - User: ' . get_current_user_id() );
-		wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	// Verify CSRF nonce
-	if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds_admin_orders' ) ) {
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass delete - User: ' . get_current_user_id() );
-		wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
-	}
-
-	foreach ( $_REQUEST['orders'] as $oid ) {
-		$oid = intval( $oid );
-		if ( $oid <= 0 ) continue; // Skip invalid order IDs
-
-		Orders::delete_order( $oid );
-		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order deleted by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
-	}
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
 
 $q_aday     = isset( $_REQUEST['q_aday'] ) ? intval( $_REQUEST['q_aday'] ) : 0;
 $q_amon     = isset( $_REQUEST['q_amon'] ) ? intval( $_REQUEST['q_amon'] ) : 0;
@@ -366,182 +161,96 @@ $paginated_results = $wpdb->get_results( $sql, ARRAY_A );
                     <label>
                         <select name="q_aday">
                             <option></option>
-                            <option <?php if ( $q_aday == '1' ) {
-								echo ' selected ';
-							} ?> >1
+                            <option <?php if ( $q_aday == '1' ) { echo ' selected '; } ?> >1
                             </option>
-                            <option <?php if ( $q_aday == '2' ) {
-								echo ' selected ';
-							} ?> >2
+                            <option <?php if ( $q_aday == '2' ) { echo ' selected '; } ?> >2
                             </option>
-                            <option <?php if ( $q_aday == '3' ) {
-								echo ' selected ';
-							} ?> >3
+                            <option <?php if ( $q_aday == '3' ) { echo ' selected '; } ?> >3
                             </option>
-                            <option <?php if ( $q_aday == '4' ) {
-								echo ' selected ';
-							} ?> >4
+                            <option <?php if ( $q_aday == '4' ) { echo ' selected '; } ?> >4
                             </option>
-                            <option <?php if ( $q_aday == '5' ) {
-								echo ' selected ';
-							} ?> >5
+                            <option <?php if ( $q_aday == '5' ) { echo ' selected '; } ?> >5
                             </option>
-                            <option <?php if ( $q_aday == '6' ) {
-								echo ' selected ';
-							} ?> >6
+                            <option <?php if ( $q_aday == '6' ) { echo ' selected '; } ?> >6
                             </option>
-                            <option <?php if ( $q_aday == '7' ) {
-								echo ' selected ';
-							} ?>>7
+                            <option <?php if ( $q_aday == '7' ) { echo ' selected '; } ?>>7
                             </option>
-                            <option <?php if ( $q_aday == '8' ) {
-								echo ' selected ';
-							} ?>>8
+                            <option <?php if ( $q_aday == '8' ) { echo ' selected '; } ?>>8
                             </option>
-                            <option <?php if ( $q_aday == '9' ) {
-								echo ' selected ';
-							} ?> >9
+                            <option <?php if ( $q_aday == '9' ) { echo ' selected '; } ?> >9
                             </option>
-                            <option <?php if ( $q_aday == '25' ) {
-								echo ' selected ';
-							} ?> >25
+                            <option <?php if ( $q_aday == '25' ) { echo ' selected '; } ?> >25
                             </option>
-                            <option <?php if ( $q_aday == '26' ) {
-								echo ' selected ';
-							} ?> >26
+                            <option <?php if ( $q_aday == '26' ) { echo ' selected '; } ?> >26
                             </option>
-                            <option <?php if ( $q_aday == '10' ) {
-								echo ' selected ';
-							} ?> >10
+                            <option <?php if ( $q_aday == '10' ) { echo ' selected '; } ?> >10
                             </option>
-                            <option <?php if ( $q_aday == '11' ) {
-								echo ' selected ';
-							} ?> > 11
+                            <option <?php if ( $q_aday == '11' ) { echo ' selected '; } ?> > 11
                             </option>
-                            <option <?php if ( $q_aday == '12' ) {
-								echo ' selected ';
-							} ?> >12
+                            <option <?php if ( $q_aday == '12' ) { echo ' selected '; } ?> >12
                             </option>
-                            <option <?php if ( $q_aday == '13' ) {
-								echo ' selected ';
-							} ?> >13
+                            <option <?php if ( $q_aday == '13' ) { echo ' selected '; } ?> >13
                             </option>
-                            <option <?php if ( $q_aday == '14' ) {
-								echo ' selected ';
-							} ?> >14
+                            <option <?php if ( $q_aday == '14' ) { echo ' selected '; } ?> >14
                             </option>
-                            <option <?php if ( $q_aday == '15' ) {
-								echo ' selected ';
-							} ?> >15
+                            <option <?php if ( $q_aday == '15' ) { echo ' selected '; } ?> >15
                             </option>
-                            <option <?php if ( $q_aday == '16' ) {
-								echo ' selected ';
-							} ?> >16
+                            <option <?php if ( $q_aday == '16' ) { echo ' selected '; } ?> >16
                             </option>
-                            <option <?php if ( $q_aday == '17' ) {
-								echo ' selected ';
-							} ?> >17
+                            <option <?php if ( $q_aday == '17' ) { echo ' selected '; } ?> >17
                             </option>
-                            <option <?php if ( $q_aday == '18' ) {
-								echo ' selected ';
-							} ?> >18
+                            <option <?php if ( $q_aday == '18' ) { echo ' selected '; } ?> >18
                             </option>
-                            <option <?php if ( $q_aday == '19' ) {
-								echo ' selected ';
-							} ?> >19
+                            <option <?php if ( $q_aday == '19' ) { echo ' selected '; } ?> >19
                             </option>
-                            <option <?php if ( $q_aday == '20' ) {
-								echo ' selected ';
-							} ?> >20
+                            <option <?php if ( $q_aday == '20' ) { echo ' selected '; } ?> >20
                             </option>
-                            <option <?php if ( $q_aday == '21' ) {
-								echo ' selected ';
-							} ?> >21
+                            <option <?php if ( $q_aday == '21' ) { echo ' selected '; } ?> >21
                             </option>
-                            <option <?php if ( $q_aday == '22' ) {
-								echo ' selected ';
-							} ?> >22
+                            <option <?php if ( $q_aday == '22' ) { echo ' selected '; } ?> >22
                             </option>
-                            <option <?php if ( $q_aday == '23' ) {
-								echo ' selected ';
-							} ?> >23
+                            <option <?php if ( $q_aday == '23' ) { echo ' selected '; } ?> >23
                             </option>
-                            <option <?php if ( $q_aday == '24' ) {
-								echo ' selected ';
-							} ?> >24
+                            <option <?php if ( $q_aday == '24' ) { echo ' selected '; } ?> >24
                             </option>
-                            <option <?php if ( $q_aday == '27' ) {
-								echo ' selected ';
-							} ?> >27
+                            <option <?php if ( $q_aday == '27' ) { echo ' selected '; } ?> >27
                             </option>
-                            <option <?php if ( $q_aday == '28' ) {
-								echo ' selected ';
-							} ?> >28
+                            <option <?php if ( $q_aday == '28' ) { echo ' selected '; } ?> >28
                             </option>
-                            <option <?php if ( $q_aday == '29' ) {
-								echo ' selected ';
-							} ?> >29
+                            <option <?php if ( $q_aday == '29' ) { echo ' selected '; } ?> >29
                             </option>
-                            <option <?php if ( $q_aday == '30' ) {
-								echo ' selected ';
-							} ?> >30
+                            <option <?php if ( $q_aday == '30' ) { echo ' selected '; } ?> >30
                             </option>
-                            <option <?php if ( $q_aday == '31' ) {
-								echo ' selected ';
-							} ?> >31
+                            <option <?php if ( $q_aday == '31' ) { echo ' selected '; } ?> >31
                             </option>
                         </select>
                     </label>
                     <label>
                         <select name="q_amon">
                             <option></option>
-                            <option <?php if ( $q_amon == '1' ) {
-								echo ' selected ';
-							} ?> value="1">Jan
+                            <option <?php if ( $q_amon == '1' ) { echo ' selected '; } ?> value="1">Jan
                             </option>
-                            <option <?php if ( $q_amon == '2' ) {
-								echo ' selected ';
-							} ?> value="2">Feb
+                            <option <?php if ( $q_amon == '2' ) { echo ' selected '; } ?> value="2">Feb
                             </option>
-                            <option <?php if ( $q_amon == '3' ) {
-								echo ' selected ';
-							} ?> value="3">Mar
+                            <option <?php if ( $q_amon == '3' ) { echo ' selected '; } ?> value="3">Mar
                             </option>
-                            <option <?php if ( $q_amon == '4' ) {
-								echo ' selected ';
-							} ?> value="4">Apr
+                            <option <?php if ( $q_amon == '4' ) { echo ' selected '; } ?> value="4">Apr
                             </option>
-                            <option <?php if ( $q_amon == '5' ) {
-								echo ' selected ';
-							} ?> value="5">May
+                            <option <?php if ( $q_amon == '5' ) { echo ' selected '; } ?> value="5">May
                             </option>
-                            <option <?php if ( $q_amon == '6' ) {
-								echo ' selected ';
-							} ?> value="6">Jun
+                            <option <?php if ( $q_amon == '6' ) { echo ' selected '; } ?> value="6">Jun
                             </option>
-                            <option <?php if ( $q_amon == '7' ) {
-								echo ' selected ';
-							} ?> value="7">Jul
+                            <option <?php if ( $q_amon == '7' ) { echo ' selected '; } ?> value="7">Jul
                             </option>
-                            <option <?php if ( $q_amon == '8' ) {
-								echo ' selected ';
-							} ?> value="8">Aug
+                            <option <?php if ( $q_amon == '8' ) { echo ' selected '; } ?> value="8">Aug
                             </option>
-                            <option <?php if ( $q_amon == '9' ) {
-								echo ' selected ';
-							} ?> value="9">Sep
+                            <option <?php if ( $q_amon == '9' ) { echo ' selected '; } ?> value="9">Sep
                             </option>
-                            <option <?php if ( $q_amon == '10' ) {
-								echo ' selected ';
-							} ?> value="10">Oct
+                            <option <?php if ( $q_amon == '10' ) { echo ' selected '; } ?> value="10">Oct
                             </option>
-                            <option <?php if ( $q_amon == '11' ) {
-								echo ' selected ';
-							} ?> value="11">Nov
+                            <option <?php if ( $q_amon == '11' ) { echo ' selected '; } ?> value="11">Nov
                             </option>
-                            <option <?php if ( $q_amon == '12' ) {
-								echo ' selected ';
-							} ?> value="12">Dec
+                            <option <?php if ( $q_amon == '12' ) { echo ' selected '; } ?> value="12">Dec
                             </option>
                         </select>
                     </label>
@@ -596,10 +305,12 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 
 ?>
 
-<form style="margin: 0;" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name="form1">
+<form style="margin: 0;" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="mass_action_form">
 	<?php wp_nonce_field( 'mds-admin' ); ?>
+    <input type="hidden" name="mds-action" id="mds-action" value=""/>
+    <input type="hidden" name="order_id" id="order_id" value=""/>
     <input type="hidden" name="action" value="mds_admin_form_submission"/>
-    <input type="hidden" name="mds_dest" value="orders"/>
+    <input type="hidden" name="mds_dest" id="mds_dest_input" value="complete-orders"/>
     <input type="hidden" name="offset" value="<?php echo $offset; ?>"/>
     <input type="hidden" name="q_name" value="<?php echo esc_attr( $q_name ); ?>">
     <input type="hidden" name="q_username" value="<?php echo esc_attr( $q_username ); ?>">
@@ -637,19 +348,19 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                             <input type="submit" value='Complete'
                                    onclick="return confirm('Complete for all selected, are you sure?')"
                                    name='mass_complete'>
-							<?php
+						<?php
 						}
 						if ( $show != 'CA' ) {
 							?>
                             | <input type="submit" value='Cancel' name='mass_cancel'
-                                     onclick="return confirm('Cancel for all selected, are you sure?')">
-							<?php
+                                     onclick="document.getElementById('mds_dest_input').value = 'cancel-orders'; return confirm('Cancel for all selected, are you sure?')">
+						<?php
 						}
 						if ( $show == 'CA' ) {
 							?>
                             | <input type="submit" value='Delete' name='mass_delete'
                                      onclick="return confirm('Delete for all selected, are you sure?')">
-							<?php
+						<?php
 						}
 					} ?>
                 </td>
@@ -785,12 +496,12 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 						) );
 
 						// If we found a WC order ID and WooCommerce is active and function exists
-						if ( $wc_order_id && function_exists( 'wc_get_order' ) ) {
-							$wc_order = wc_get_order( $wc_order_id );
-							if ( $wc_order && $wc_order->get_status() === 'refunded' ) {
-								$is_wc_refunded = true;
-							}
+					if ( $wc_order_id && function_exists( 'wc_get_order' ) ) {
+						$wc_order = wc_get_order( $wc_order_id );
+						if ( $wc_order && $wc_order->get_status() === 'refunded' ) {
+							$is_wc_refunded = true;
 						}
+					}
 
 						if ( $is_wc_refunded ) {
 							echo "(Refunded)";
@@ -803,62 +514,60 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                    value="Cancel"
                                    onclick="if (!confirmLink(this, 'Unreserve block <?php echo intval( $row['block_id'] ); ?>, are you sure?')) return false;"
                                    data-link="<?php echo esc_url(
-								       wp_nonce_url(
-									       admin_url(
-										       'admin.php?page=mds-orders&mds-action=unreserve&user_id=' . intval( $row['ID'] ) . '&block_id=' . intval( $row['block_id'] ) . '&banner_id=' . intval( $row['banner_id'] ) . '&order_id=' . intval( $row['order_id'] ) . $date_link . $q_string . '&show=' . $show
-									       ),
-									       'mds_admin_orders'
-								       )
-							       ); ?>">
-						<?php } else {
+									   wp_nonce_url(
+											   admin_url(
+													   'admin.php?page=mds-orders&mds-action=unreserve&user_id=' . intval( $row['ID'] ) . '&block_id=' . intval( $row['block_id'] ) . '&banner_id=' . intval( $row['banner_id'] ) . '&order_id=' . intval( $row['order_id'] ) . $date_link . $q_string . '&show=' . $show
+											   )
+									   )
+							   );
+							   ?>">
+						<?php
+						}
+						else {
 							if ( ( $row['status'] != 'completed' ) && ( $row['status'] != 'deleted' ) && ! $is_wc_refunded ) {
 								?>
                                 <input type="button"
                                        style="font-size: 9px;"
                                        value="Complete"
-                                       onclick="if (!confirmLink(this, 'Payment from <?php echo esc_attr( $row['user_nicename'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) return false;"
-                                       data-link="<?php echo esc_url(
-									       wp_nonce_url(
-										       admin_url(
-											       'admin.php?page=mds-orders&mds-action=complete&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
-										       ),
-										       'mds_admin_orders'
-									       )
-								       ); ?>">
-								<?php
+                                       onclick="
+                                            if (confirm('Payment from <?php echo esc_attr( $row['user_nicename'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) {
+                                                document.getElementById('mds-action').value = 'complete';
+                                                document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
+                                                document.getElementById('mass_action_form').submit();
+                                            }
+                                       ">
+							<?php
 							}
 							if ( $row['status'] == 'cancelled' ) {
 								?>
                                 <input type="button"
                                        style="font-size: 9px;"
                                        value="Delete"
-                                       onclick="if (!confirmLink(this, 'Delete the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) return false;"
-                                       data-link="<?php echo esc_url(
-									       wp_nonce_url(
-										       admin_url(
-											       'admin.php?page=mds-orders&mds-action=delete&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
-										       ),
-										       'mds_admin_orders'
-									       )
-								       ); ?>">
-								<?php
-							} else if ( $row['status'] == 'deleted' ) {
+                                       onclick="
+                                            if (confirm('Delete the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) {
+                                                document.getElementById('mds-action').value = 'delete';
+                                                document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
+                                                document.getElementById('mass_action_form').submit();
+                                            }
+                                       ">
+						<?php
+							}
+							else if ( $row['status'] == 'deleted' ) {
 
 							} else {
 								?>
                                 <input type="button"
                                        style="font-size: 9px;"
                                        value="Cancel"
-                                       onclick="if (!confirmLink(this, 'Cancel the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) return false;"
-                                       data-link="<?php echo esc_url(
-									       wp_nonce_url(
-										       admin_url(
-											       'admin.php?page=mds-orders&mds-action=cancel&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
-										       ),
-										       'mds_admin_orders'
-									       )
-								       ); ?>">
-								<?php
+                                       onclick="
+                                            if (confirm('Cancel the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) {
+                                                document.getElementById('mds-action').value = 'cancel';
+                                                document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
+                                                document.getElementById('mds_dest_input').value = 'cancel-orders';
+                                                document.getElementById('mass_action_form').submit();
+                                            }
+                                       ">
+						<?php
 							}
 						}
 						?>

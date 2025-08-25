@@ -72,7 +72,7 @@ if ( isset( $_REQUEST['cancel'] ) && $_REQUEST['cancel'] === 'yes' && isset( $_R
 			// Check if this was confirmed via JavaScript (additional security measure)
 			if ( isset( $_REQUEST['is_js_confirmed'] ) && $_REQUEST['is_js_confirmed'] === '1' ) {
 				// Cancel the order
-				Orders::cancel_order( $order_id );
+				Orders::cancel_order( $order_id, false );
 				$cancellation_message = Language::get( 'Order has been successfully cancelled.' );
 				
 				// Log successful cancellation for security auditing
