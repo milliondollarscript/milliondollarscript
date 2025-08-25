@@ -84,9 +84,6 @@ body.mds-container {
 	background-color: var(--mds-bg-primary, #ffffff);
 	color: var(--mds-text-primary, #000);
 	margin: 0;
-	font-size: 1rem;
-	font-weight: normal;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
 }
 
 body.mds-container.wp {
@@ -485,9 +482,7 @@ Ads list page
 	background-color: var(--mds-input-bg, #ffffff);
 	color: var(--mds-text-primary, #000);
 	box-shadow: 0 1px 3px var(--mds-shadow, rgba(0, 0, 0, 0.12)), 0 1px 2px var(--mds-shadow, rgba(0, 0, 0, 0.24));
-	font-family: Arial, sans-serif;
 	margin: 10px 0;
-	/*width: 100%;*/
 	box-sizing: border-box;
 }
 
@@ -565,51 +560,13 @@ Ads list page
 	width: 10px;
 }
 
-.mds-container h1, .mds-container h2, .mds-container h3, .mds-container h4, .mds-container h5, .mds-container h6 {
-	margin: 0.5em 0;
-	font-weight: bold;
-	line-height: 1.2;
-}
-
-.mds-container h1 {
-	font-size: 2.5em;
-}
-
-.mds-container h2 {
-	font-size: 2em;
-}
-
-.mds-container h3 {
-	font-size: 1.5em;
-}
-
-.mds-container h4 {
-	font-size: 1.2em;
-}
-
-.mds-container h5 {
-	font-size: 1em;
-}
-
-.mds-container h6 {
-	font-size: 0.9em;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-}
-
 .mds-container p {
-	font-size: 1rem;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-weight: normal;
 	color: var(--mds-text-primary, #000000);
 }
 
 .mds-container table,
 .mds-container tr,
 .mds-container td {
-	font-size: 1rem;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-weight: normal;
 	color: var(--mds-text-primary, #000000);
 }
 
@@ -618,9 +575,6 @@ Ads list page
 }
 
 .mds-container a {
-	font-size: 1rem;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
-	font-weight: normal;
 	color: var(--mds-accessible-link, #6699cc);
 }
 
@@ -787,30 +741,31 @@ Ads list page
 }
 
 .tippy-content {
-	min-width: 49px;
-	min-height: 43px;
+	min-width: 33px;
+	min-height: 31px;
+	margin: 12px 16px !important;
+	padding: 0;
+	font-family: Arial, sans-serif !important;
+	font-size: 0.9rem !important;
+	line-height: 1.4 !important;
 }
 
 /* Enhanced Tippy Tooltip Styling */
 .tippy-box[data-theme~='light'] {
-	background-color: var(--mds-tooltip-bg, #333333) !important;
-	color: var(--mds-text-primary, #ffffff) !important;
+	background-color: var(--mds-bg-primary, #ffffff) !important;
+	color: var(--mds-text-primary, #000000) !important;
 	border: 1px solid var(--mds-border-color, #dee2e6) !important;
 	border-radius: 8px !important;
 	box-shadow: 0 4px 12px var(--mds-shadow, rgba(0, 0, 0, 0.15)) !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content {
-	padding: 12px 16px !important;
-	font-family: Arial, sans-serif !important;
-	font-size: 0.9rem !important;
-	line-height: 1.4 !important;
-	color: #ffffff !important;
+	color: var(--mds-text-primary, #000000) !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content p {
 	margin: 0 0 8px 0 !important;
-	color: #ffffff !important;
+	color: var(--mds-text-primary, #000000) !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content p:last-child {
@@ -818,58 +773,58 @@ Ads list page
 }
 
 .tippy-box[data-theme~='light'] .tippy-content strong {
-	color: #ffffff !important;
+	color: var(--mds-text-primary, #000000) !important;
 	font-weight: bold !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content a {
-	color: #66b3ff !important;
+	color: var(--mds-accessible-link, #0066cc) !important;
 	text-decoration: none !important;
 	transition: color 0.2s ease !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content a:hover {
-	color: #99ccff !important;
+	color: var(--mds-primary-color, #ff0000) !important;
 	text-decoration: underline !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content .mds-creator-profile-link {
 	display: inline-block !important;
-	background-color: rgba(255, 255, 255, 0.1) !important;
-	color: #66b3ff !important;
+	background-color: var(--mds-bg-tertiary, #e9ecef) !important;
+	color: var(--mds-accessible-link, #0066cc) !important;
 	padding: 4px 8px !important;
 	border-radius: 4px !important;
-	border: 1px solid rgba(255, 255, 255, 0.2) !important;
+	border: 1px solid var(--mds-border-color, #dee2e6) !important;
 	font-size: 0.85rem !important;
 	margin-top: 4px !important;
 	transition: all 0.2s ease !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-content .mds-creator-profile-link:hover {
-	background-color: #66b3ff !important;
-	color: #333333 !important;
-	border-color: #66b3ff !important;
+	background-color: var(--mds-accessible-link, #0066cc) !important;
+	color: var(--mds-bg-primary, #ffffff) !important;
+	border-color: var(--mds-accessible-link, #0066cc) !important;
 	text-decoration: none !important;
 }
 
 .tippy-box[data-theme~='light'] .tippy-arrow {
-	color: var(--mds-tooltip-bg, #333333) !important;
+	color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='top'] > .tippy-arrow::before {
-	border-top-color: var(--mds-tooltip-bg, #333333) !important;
+	border-top-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='bottom'] > .tippy-arrow::before {
-	border-bottom-color: var(--mds-tooltip-bg, #333333) !important;
+	border-bottom-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='left'] > .tippy-arrow::before {
-	border-left-color: var(--mds-tooltip-bg, #333333) !important;
+	border-left-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .tippy-box[data-theme~='light'][data-placement^='right'] > .tippy-arrow::before {
-	border-right-color: var(--mds-tooltip-bg, #333333) !important;
+	border-right-color: var(--mds-bg-primary, #ffffff) !important;
 }
 
 .mds-order-explain {
@@ -971,49 +926,53 @@ Ads list page
 
 #mds-selection-size-slider {
 	width: 90%;
-	height: 8px;
-	border-radius: 4px;
-	background: var(--mds-bg-tertiary, #ddd);
+	height: 10px;
+	border-radius: 999px;
+	background: linear-gradient(90deg, var(--mds-border-color, #bbb), var(--mds-bg-tertiary, #d0d5db));
 	outline: none;
-	opacity: 0.8;
-	transition: opacity 0.3s;
+	opacity: 1;
+	transition: box-shadow 0.2s, background-color 0.2s, opacity 0.2s;
 	-webkit-appearance: none;
 	appearance: none;
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--mds-text-primary, #000) 20%, transparent);
 }
 
-#mds-selection-size-slider:hover {
+#mds-selection-size-slider:hover,
+#mds-selection-size-slider:focus {
 	opacity: 1;
+	box-shadow: 0 0 0 3px color-mix(in oklab, var(--mds-accessible-link, #0066cc) 30%, transparent);
 }
 
 /* Webkit/Chrome styling */
 #mds-selection-size-slider::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
-	width: 20px;
-	height: 20px;
+	width: 22px;
+	height: 22px;
 	border-radius: 50%;
-	background: var(--mds-primary-color, #91877D);
+	background: var(--mds-primary-color, #d32f2f);
 	cursor: pointer;
-	border: 2px solid var(--mds-bg-primary, #fff);
-	box-shadow: 0 2px 4px var(--mds-shadow, rgba(0, 0, 0, 0.2));
+	border: 3px solid var(--mds-card-bg, #fff);
+	box-shadow: 0 2px 6px var(--mds-shadow, rgba(0, 0, 0, 0.35));
 }
 
 /* Firefox styling */
 #mds-selection-size-slider::-moz-range-thumb {
-	width: 20px;
-	height: 20px;
+	width: 22px;
+	height: 22px;
 	border-radius: 50%;
-	background: var(--mds-primary-color, #91877D);
+	background: var(--mds-primary-color, #d32f2f);
 	cursor: pointer;
-	border: 2px solid var(--mds-bg-primary, #fff);
-	box-shadow: 0 2px 4px var(--mds-shadow, rgba(0, 0, 0, 0.2));
+	border: 3px solid var(--mds-card-bg, #fff);
+	box-shadow: 0 2px 6px var(--mds-shadow, rgba(0, 0, 0, 0.35));
 }
 
 #mds-selection-size-slider::-moz-range-track {
-	height: 8px;
-	border-radius: 4px;
-	background: var(--mds-bg-tertiary, #ddd);
+	height: 10px;
+	border-radius: 999px;
+	background: linear-gradient(90deg, var(--mds-border-color, #bbb), var(--mds-bg-tertiary, #d0d5db));
 	border: none;
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--mds-text-primary, #000) 20%, transparent);
 }
 
 #mds-selection-size-value {
@@ -1179,8 +1138,9 @@ a.mds-button {
 .mds-container input[type='button']:hover,
 .mds-container input[type='submit']:hover,
 .mds-button:hover {
-	background-color: var(--mds-btn-secondary-text, #ffffff);
-	color: var(--mds-btn-secondary-bg, #91877D);
+	background-color: var(--mds-btn-primary-hover-bg, var(--mds-btn-secondary-text, #ffffff));
+	color: var(--mds-btn-primary-hover-text, var(--mds-btn-secondary-bg, #91877D));
+	border-color: var(--mds-btn-primary-bg, var(--mds-btn-secondary-bg, #91877D));
 }
 
 .mds-container input[type='button']:active,
@@ -1189,6 +1149,29 @@ a.mds-button {
 	background-color: var(--mds-btn-secondary-bg, #91877D);
 	color: var(--mds-btn-secondary-text, #ffffff);
 	filter: brightness(0.8);
+}
+
+/* Register Button Specific Styling */
+.wp-core-ui .button-register,
+.wp-core-ui input[type="submit"].button-register,
+.login .mds-register-link {
+	background-color: var(--mds-btn-secondary-bg, #91877D);
+	color: var(--mds-btn-secondary-text, #ffffff);
+	border: 1px solid var(--mds-border-color, #ddd);
+	text-decoration: none;
+	display: inline-block;
+	padding: 8px 16px;
+	border-radius: 4px;
+	transition: all 0.3s ease;
+}
+
+.wp-core-ui .button-register:hover,
+.wp-core-ui input[type="submit"].button-register:hover,
+.login .mds-register-link:hover {
+	background-color: var(--mds-btn-secondary-hover-bg, var(--mds-bg-tertiary, #f0f0f0));
+	color: var(--mds-btn-secondary-hover-text, var(--mds-text-primary, #333));
+	border-color: var(--mds-btn-primary-bg, var(--mds-btn-secondary-bg, #91877D));
+	text-decoration: none;
 }
 
 .mds-container input[type='button'].mds-confirm,
@@ -1332,11 +1315,11 @@ a.mds-button {
 #loginform {
 	background-color: var(--mds-card-bg, #ffffff);
 	color: var(--mds-text-primary, #000);
-	padding: 20px;
+	padding: 10px;
 	border-radius: 5px;
 	box-shadow: 0px 0px 10px var(--mds-shadow, rgba(0, 0, 0, 0.1));
 	width: 100%;
-	max-width: 400px;
+	max-width: 320px;
 }
 
 #loginform p {
@@ -1364,24 +1347,40 @@ body:not(.login) #loginform label {
 }
 
 #loginform input[type="submit"] {
-	width: 100%;
+	width: 145px;
 	margin: 0;
+}
+
+#loginform input[type="submit"]:hover {
+	background-color: var(--mds-bg-tertiary, #f0f0f0) !important;
+	color: var(--mds-text-primary, #333) !important;
 }
 
 .mds-register-btn-container {
 	margin: 0 0 0 10px;
+	display: inline-block;
+	width: 145px;
 }
 
 .mds-register-link {
-	line-height: normal;
-	color: var(--mds-btn-secondary-text,#fff);
+	background-color: var(--mds-btn-primary-bg, #0073aa) !important;
+	color: var(--mds-btn-primary-text, #ffffff) !important;
 	text-align: center;
 	display: block;
 	margin: 0;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 4px;
+	text-decoration: none;
+	font-size: 1.2rem;
+	box-sizing: border-box;
+	width: 100%;
 }
 
 .mds-register-link:hover {
-	background-color: var(--mds-btn-secondary-bg, #91877D);
+	background-color: var(--mds-bg-tertiary, #f0f0f0) !important;
+	color: var(--mds-text-primary, #333) !important;
+	border: none;
 }
 
 .mds-pixel-content {
@@ -1748,7 +1747,7 @@ body:not(.login) #loginform label {
 .mds-package-options-row > div:nth-child(2) {
 	flex: 0 1 auto;
 	min-width: 55px;
-	max-width: 150px;
+	max-width: 200px;
 	padding-left: 6px;
 	padding-right: 6px;
 	text-align: center;

@@ -29,6 +29,7 @@
 namespace MillionDollarScript\Classes\Orders;
 
 use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -49,7 +50,7 @@ class Steps {
 	 * @return array The steps in the order process.
 	 */
 	public static function get_steps( $numeric_keys = true ): array {
-		$USE_AJAX = Config::get( 'USE_AJAX' );
+		$USE_AJAX = Options::get_option( 'use-ajax' );
 
 		$steps = [
 			1 => $USE_AJAX == 'SIMPLE' ? self::STEP_UPLOAD : self::STEP_ORDER_PIXELS,

@@ -41,6 +41,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -222,7 +223,7 @@ function list_ads( $offset = 0, $user_id = '' ) {
 		$order    = " `ad_date` ";
 		$order_by = 'ad_date';
 	} else {
-		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order_by ) . "` ";
+		$order = " `" . esc_sql( $order_by ) . "` ";
 	}
 
 	if ( ! is_numeric( $user_id ) ) {
@@ -428,14 +429,14 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 		$order    = " `ad_date` ";
 		$order_by = 'ad_date';
 	} else {
-		$order = " `" . mysqli_real_escape_string( $GLOBALS['connection'], $order_by ) . "` ";
+		$order = " `" . esc_sql( $order_by ) . "` ";
 	}
 
 	if ( ! is_numeric( $user_id ) ) {
 		$user_id = get_current_user_id();
 	}
 
-	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND `status` != 'deleted' ORDER BY %s %s", $BID, $user_id, $order, $ord );
+	$sql    = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id > 0 AND banner_id=%d AND user_id=%d AND `status` NOT IN ('deleted', 'cancelled') ORDER BY %s %s", $BID, $user_id, $order, $ord );
 	$result = $wpdb->get_results( $sql, ARRAY_A );
 
 	$count = count( $result );
@@ -473,8 +474,20 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
                     <div>
 						<?php
 						$order_status = Orders::get_completion_status( $prams['order_id'], $user_id );
-						if ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) {
-
+						if ( $prams['status'] == 'confirmed' && !Orders::has_payment( $prams['order_id'] ) && ( Orders::is_order_in_progress( $prams['order_id'] ) || WooCommerceFunctions::is_wc_active() ) ) {
+							// Show Pay Now button for confirmed orders that haven't been paid yet
+							$pay_args = [ 'order_id' => $prams['order_id'], 'BID' => $prams['banner_id'] ];
+							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
+							?>
+                            <input class="mds-button mds-pay" type="button"
+                                   value="<?php esc_attr_e( Language::get( 'Pay Now' ) ); ?>"
+                                   onclick="window.location='<?php echo $pay_url; ?>'">
+							<?php
+						} else if ( $prams['status'] == 'new' && ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) ) {
+							// Show appropriate action buttons for new orders based on current step
+							echo Orders::get_header_action_buttons( $prams );
+						} else if ( $prams['status'] != 'confirmed' && $prams['status'] != 'new' && ( ! $order_locking || ( $prams['status'] == 'denied' && $order_status ) ) ) {
+							// Show Edit button for other non-confirmed orders (expired, denied, etc.)
 							?>
                             <input class="mds-button mds-edit-button" type="button"
                                    value="<?php esc_attr_e( Language::get( 'Edit' ) ); ?>"
@@ -517,6 +530,10 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 					);
 
 					?>
+                    <?php
+                    // Allow extensions to add content to the order header (like platform info)
+                    do_action( 'mds_manage_order_header_after', $prams, $user_id );
+                    ?>
                     <div class="mds-status-container">
                         <div class='mds-status-indicator' title="<?php echo Language::get( "Status: " ) . esc_html( $pub_lang ) . ', ' . esc_html( $app_lang ) . ', ' . esc_html( $status_lang ); ?>"
                              style='background-color: <?php echo $status_color; ?>'></div>
@@ -531,6 +548,9 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 					<?php
 					// Action for adding custom order details
 					do_action( 'mds_order_details', $prams );
+					
+					// Allow extensions to add additional content to order details
+					do_action( 'mds_manage_order_content_after', $prams, $user_id );
 					?>
                 </div>
 				<?php
@@ -545,7 +565,7 @@ function manage_list_ads( $offset = 0, $user_id = '' ) {
 	return $count;
 }
 
-function insert_ad_data( $order_id = 0, $admin = false ) {
+function insert_ad_data( $order_id = 0, $admin = false, $image_data = '' ) {
 	global $wpdb;
 
 	$sql          = "SELECT ad_id FROM `" . MDS_DB_PREFIX . "orders` WHERE order_id=%d";
@@ -601,10 +621,134 @@ function insert_ad_data( $order_id = 0, $admin = false ) {
 			$text          = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' );
 			$url           = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' );
 			$attachment_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'image' );
-			$image         = get_attached_file( $attachment_id );
+			$image_file         = get_attached_file( $attachment_id );
+
+			// If we have image data, process and slice it
+			if ( ! empty( $image_data ) ) {
+				$imagine = new \Imagine\Gd\Imagine();
+				$image   = $imagine->load( $image_data );
+
+				// Get the dimensions of the selected area
+				$size = Utility::get_pixel_image_size( $order_id );
+
+				// Get the banner data
+				$banner_data = load_banner_constants( $order_row['banner_id'] );
+
+				// Get the block dimensions
+				$blkW = $banner_data['BLK_WIDTH'];
+				$blkH = $banner_data['BLK_HEIGHT'];
+
+				$target_selection_pixel_width = $size['x'];
+				$target_selection_pixel_height = $size['y'];
+
+				$actualWidth = $image->getSize()->getWidth();
+				$actualHeight = $image->getSize()->getHeight();
+
+				$MDS_RESIZE = Options::get_option( 'resize', 'YES' );
+
+				if ( $MDS_RESIZE == 'YES' ) {
+					// Global resize is ON: Resize (thumbnail) the uploaded image to fit the selection's pixel area.
+					// Validate that target dimensions are positive before attempting resize.
+					if ($target_selection_pixel_width > 0 && $target_selection_pixel_height > 0) {
+						try {
+							$resize_box = new Box( $target_selection_pixel_width, $target_selection_pixel_height );
+							$image = $image->resize($resize_box);
+						} catch (\Exception $e) {
+							throw new \Exception('Failed to thumbnail image to fit selection: ' . $e->getMessage());
+						}
+					}
+				} else {
+					// Global resize is OFF: Validate that the uploaded image isn't larger than the selection's pixel area.
+					// If it is, an error is thrown. Otherwise, the original uploaded image (possibly already converted to PNG) is used.
+					if ( $actualWidth > $target_selection_pixel_width || $actualHeight > $target_selection_pixel_height ) {
+						$error_message = Language::get_replace(
+							'Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels.',
+							[ '%ACTUAL_W%', '%ACTUAL_H%', '%TARGET_W%', '%TARGET_H%' ],
+							[ $actualWidth, $actualHeight, $target_selection_pixel_width, $target_selection_pixel_height ]
+						);
+						throw new \Exception($error_message);
+					}
+				}
+
+				// Precompute block dimensions for performance
+				if ( $MDS_RESIZE == 'YES' && $size['x'] <= $target_selection_pixel_width && $size['y'] <= $target_selection_pixel_height) {
+					$ratio_diff_x = $size['x'] / $target_selection_pixel_width;
+					$ratio_diff_y = $size['y'] / $target_selection_pixel_height;
+					$blkW         = $banner_data['BLK_WIDTH'] * $ratio_diff_x;
+					$blkH         = $banner_data['BLK_HEIGHT'] * $ratio_diff_y;
+				} else {
+					$blkW         = $banner_data['BLK_WIDTH'];
+					$blkH         = $banner_data['BLK_HEIGHT'];
+				}
+
+				// Get the block offsets
+				$block_offsets = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT block_id, x, y FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d AND banner_id=%d",
+						$order_id,
+						$order_row['banner_id']
+					),
+					ARRAY_A
+				);
+
+				$low_x = $low_y = 0;
+				if ( ! empty( $block_offsets ) ) {
+					$low_x = $high_x = $block_offsets[0]['x'];
+					$low_y = $high_y = $block_offsets[0]['y'];
+					foreach ( $block_offsets as $block_row_offset ) {
+						if ( $block_row_offset['x'] > $high_x ) {
+							$high_x  = $block_row_offset['x'];
+						}
+						if ( $block_row_offset['x'] < $low_x ) {
+							$low_x   = $block_row_offset['x'];
+						}
+						if ( $block_row_offset['y'] > $high_y ) {
+							$high_y  = $block_row_offset['y'];
+						}
+						if ( $block_row_offset['y'] < $low_y ) {
+							$low_y   = $block_row_offset['y'];
+						}
+					}
+				}
+
+				// Create a map of block_id to x,y coordinates
+				$block_map = [];
+				foreach ( $block_offsets as $block_offset ) {
+					$block_map[ $block_offset['block_id'] ] = [
+						'x' => $block_offset['x'],
+						'y' => $block_offset['y'],
+					];
+				}
+
+				$block_size   = new Box( $blkW, $blkH );
+
+				// Iterate over the selected blocks and slice the image
+				$blocks_str = $wpdb->get_var( $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id ) );
+				$selected_blocks = !empty($blocks_str) ? explode( ',', $blocks_str ) : [];
+				foreach ( $selected_blocks as $block_id ) {
+					// Get the x,y coordinates for this block
+					$x = $block_map[ $block_id ]['x'] - $low_x;
+					$y = $block_map[ $block_id ]['y'] - $low_y;
+
+					// Crop the image to get the portion for this block
+					$block_image = $image->copy()->crop( new Point( $x, $y ), $block_size );
+
+					// Encode the block image data
+					$encoded_image_data = base64_encode( $block_image->get( 'png' ) );
+
+					// Update the image_data for this block
+					$wpdb->update(
+						MDS_DB_PREFIX . 'blocks',
+						[ 'image_data' => $encoded_image_data ],
+						[ 'block_id' => $block_id, 'banner_id' => $order_row['banner_id'] ],
+						[ '%s' ],
+						[ '%d', '%d' ]
+					);
+				}
+			}
 
 			$sql          = "UPDATE " . MDS_DB_PREFIX . "blocks SET file_name=%s, url=%s, alt_text=%s, ad_id=%d WHERE FIND_IN_SET(block_id, %s) AND banner_id=%d;";
-			$prepared_sql = $wpdb->prepare( $sql, $image, $url, $text, $ad_id, $blocks, $order_row['banner_id'] );
+			$prepared_sql = $wpdb->prepare( $sql, $image_file, $url, $text, $ad_id, $blocks, $order_row['banner_id'] );
 			$wpdb->query( $prepared_sql );
 
 			// Update the last modification time
@@ -643,7 +787,7 @@ function disapprove_modified_order( $order_id, $BID ) {
 	);
 
 	// send pixel change notification
-	if ( Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
+	if ( Options::get_option( 'email-admin-publish-notify' ) == 'YES' ) {
 		Emails::send_published_pixels_notification( $order->user_id, $order_id );
 	}
 }
@@ -697,29 +841,32 @@ function upload_changed_pixels(
 			throw new \Exception('Cannot read uploaded file: ' . $files['tmp_name']);
 		}
 
-		$uploaddir  = Utility::get_upload_path() . "images/";
-		$filename   = sanitize_file_name( $files['name'] );
-		$file_parts = pathinfo( $filename );
-
-		// Check if the 'extension' key exists
-		if ( isset( $file_parts['extension'] ) ) {
-			$ext = $f2->filter( strtolower( $file_parts['extension'] ) );
-		} else {
-			$ext = '';
+		// Use comprehensive FileValidator for security
+		$validation_result = \MillionDollarScript\Classes\System\FileValidator::validate_image_upload( $files );
+		if ( ! $validation_result['valid'] ) {
+			// Log security violation attempt
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: File upload validation failed in ads.inc.php - ' . $validation_result['error'] . ' - User: ' . get_current_user_id() . ' - File: ' . ( $files['name'] ?? 'unknown' ) );
+			throw new \Exception( "<b>" . Language::get( 'File upload failed.' ) . "</b><br />" . esc_html( $validation_result['error'] ) );
 		}
 
-		$mime_type          = mime_content_type( $files['tmp_name'] );
-		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
-		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-			throw new \Exception("<b>" . Language::get( 'File type not supported.' ) . "</b><br />");
+		// Generate secure filename and get upload directory
+		$uploaddir = Utility::get_upload_path() . "images/";
+		$secure_filename = \MillionDollarScript\Classes\System\FileValidator::generate_secure_filename( $files['name'], "tmp_" . $order_id . "_" );
+		$uploadfile = $uploaddir . $secure_filename;
+
+		// Ensure upload directory exists and is secure
+		if ( ! file_exists( $uploaddir ) ) {
+			wp_mkdir_p( $uploaddir );
 		}
 
-		$uploadfile = $uploaddir . "tmp_" . $order_id . ".$ext";
-
-		// move the file
+		// Move uploaded file using WordPress-compliant methods
 		if ( ! move_uploaded_file( $files['tmp_name'], $uploadfile ) ) {
-			throw new \Exception(Language::get( 'Possible file upload attack or server error during file move.' ));
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: File move failed in ads.inc.php - User: ' . get_current_user_id() . ' - Target: ' . $uploadfile );
+			throw new \Exception( Language::get( 'Possible file upload attack or server error during file move.' ) );
 		}
+
+		// Log successful upload for security auditing
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Secure file upload completed in ads.inc.php - User: ' . get_current_user_id() . ' - File: ' . $secure_filename );
 
 		// convert to png
 		try {

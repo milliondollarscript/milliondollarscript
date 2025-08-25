@@ -26,7 +26,6 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
 
@@ -140,7 +139,7 @@ class Mds_Ajax {
 			$BID         = $f2->bid();
 			$banner_data = load_banner_constants( $BID );
 
-			$tooltips = Config::get( 'ENABLE_MOUSEOVER' );
+			$tooltips = Options::get_option( 'enable-mouseover' );
 
 			?>
             <script>
@@ -172,9 +171,9 @@ class Mds_Ajax {
 												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 												time: '<?php echo esc_js( time() ); ?>',
 												MDS_CORE_URL: '<?php echo esc_js( MDS_CORE_URL );?>',
-												REDIRECT_SWITCH: '<?php echo esc_js( Config::get( 'REDIRECT_SWITCH' ) ); ?>',
-												REDIRECT_URL: '<?php echo esc_js( Config::get( 'REDIRECT_URL' ) ); ?>',
-												ENABLE_MOUSEOVER: '<?php echo esc_js( Config::get( 'ENABLE_MOUSEOVER' ) ); ?>',
+												REDIRECT_SWITCH: '<?php echo esc_js( Options::get_option( 'redirect-switch' ) ); ?>',
+												REDIRECT_URL: '<?php echo esc_js( Options::get_option( 'redirect-url' ) ); ?>',
+												ENABLE_MOUSEOVER: '<?php echo esc_js( Options::get_option( 'enable-mouseover' ) ); ?>',
 												BID: parseInt('<?php echo $BID; ?>', 10),
 												link_target: '<?php echo esc_js( Options::get_option( 'link-target' ) ); ?>'
 											};

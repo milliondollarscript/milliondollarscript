@@ -59,17 +59,60 @@ if ( $mdsdb == null ) {
 }
 
 /**
- * Returns SQL error output for debug purposes.
+ * Handles SQL errors securely - logs details but only shows generic message to users.
  *
  * @param $sql
  *
  * @return string
  */
 function mds_sql_error( $sql ): string {
-	Logs::log( $sql );
-	Logs::log( mysqli_error( $GLOBALS['connection'] ) );
+	global $wpdb;
+	
+	// Log detailed error information for administrators (secure)
+	Logs::log( 'MDS SQL Error - Query: ' . $sql );
+	Logs::log( 'MDS SQL Error - MySQL Error: ' . $wpdb->last_error );
+	Logs::log( 'MDS SQL Error - User: ' . get_current_user_id() . ' - IP: ' . ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
 
-	return "<br />SQL:[" . htmlspecialchars( $sql, ENT_QUOTES ) . "]<br />ERROR:[" . htmlspecialchars( mysqli_error( $GLOBALS['connection'] ), ENT_QUOTES ) . "]<br />";
+	// Return generic error message to prevent information disclosure
+	// Only show detailed errors to administrators in debug mode
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG && current_user_can( 'manage_options' ) ) {
+		return "<br />Database error occurred. Check the error logs for details.<br /><em>Debug Info (Admin Only): " . htmlspecialchars( $wpdb->last_error, ENT_QUOTES ) . "</em><br />";
+	}
+	
+	return "<br />A database error occurred. Please try again later or contact support if the problem persists.<br />";
+}
+
+/**
+ * Secure error handling for database operations - logs details but shows generic error to users.
+ * Use this instead of die(mds_sql_error()) or die(mysqli_error()) patterns.
+ *
+ * @param string $sql The SQL query that failed
+ * @param string $context Additional context for logging (optional)
+ * @param bool $wp_die Whether to use wp_die() instead of regular die()
+ */
+function mds_secure_sql_die( string $sql, string $context = '', bool $wp_die = false ): void {
+	global $wpdb;
+	
+	// Log detailed error information for administrators (secure)
+	$error_message = $wpdb->last_error;
+	Logs::log( 'MDS SQL Error - Query: ' . $sql );
+	Logs::log( 'MDS SQL Error - MySQL Error: ' . $error_message );
+	Logs::log( 'MDS SQL Error - Context: ' . $context );
+	Logs::log( 'MDS SQL Error - User: ' . get_current_user_id() . ' - IP: ' . ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
+	
+	// Show generic error message to prevent information disclosure
+	$user_message = 'A database error occurred. Please try again later or contact support if the problem persists.';
+	
+	// Only show detailed errors to administrators in debug mode
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG && current_user_can( 'manage_options' ) ) {
+		$user_message .= ' <em>Debug Info (Admin Only): ' . htmlspecialchars( $error_message, ENT_QUOTES ) . '</em>';
+	}
+	
+	if ( $wp_die ) {
+		wp_die( esc_html( $user_message ), esc_html( 'Database Error' ), [ 'response' => 500 ] );
+	} else {
+		die( $user_message );
+	}
 }
 
 /**
@@ -79,8 +122,8 @@ function mds_sql_error( $sql ): string {
  * @param bool $exit
  */
 function mds_sql_log_die( $sql, $exit = true ) {
-	global $f2;
-	$f2->write_log( 'SQL error: ' . mysqli_error( $GLOBALS['connection'] ) );
+	global $f2, $wpdb;
+	$f2->write_log( 'SQL error: ' . $wpdb->last_error );
 	$f2->write_log( '$sql: ' . $sql );
 
 	if ( $exit ) {

@@ -55,86 +55,6 @@ class Admin {
 		wp_die();
 	}
 
-	/**
-	 * Creates pages for MDS.
-	 *
-	 * @return void
-	 */
-	public static function create_pages(): void {
-		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
-
-		// Get page definitions
-		$pages = Utility::get_pages();
-
-		$output = [];
-		$errors = [];
-
-		// Create new pages in WP using the helper method.
-		foreach ( $pages as $page_type => $data ) {
-			// Check if the page already exists by checking the _option
-			// Note: We check the raw option like this method originally did.
-			$existing_page_id = get_option( '_' . MDS_PREFIX . $data['option'], false );
-			
-			if ( ! $existing_page_id || ! get_post( $existing_page_id ) ) {
-				// Page doesn't exist or isn't valid, try creating it
-				$result = Utility::create_mds_page( $page_type, $data );
-
-				if ( is_wp_error( $result ) ) {
-					// Store error message for this specific page
-					$errors[ $data['option'] ] = $result->get_error_message();
-				} elseif ( $result ) {
-					// Store the newly created page ID
-					$output[ $data['option'] ] = $result;
-				}
-			} else {
-				// Page already exists, add its ID to the output
-				$output[ $data['option'] ] = $existing_page_id;
-			}
-		}
-
-		// Handle response - send success if no errors, otherwise send error
-		if ( ! empty( $errors ) ) {
-			$error_message = Language::get( 'Some pages could not be created.' ) . ' ' . implode( '; ', $errors );
-			wp_send_json_error( [ 'message' => $error_message, 'created' => $output ], 500 );
-		} else {
-			// Send only the option => id map on success, as originally done
-			wp_send_json( $output ); 
-		}
-	}
-
-	/**
-	 * Deletes pages created by MDS.
-	 *
-	 * @return void
-	 */
-	public static function delete_pages(): void {
-		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
-
-		$pages = Utility::get_pages();
-
-		$output = [];
-
-		foreach ( $pages as $page => $data ) {
-			$page_id = $data['page_id'];
-			if ( $page_id !== false ) {
-
-				// Delete the post from WP if it's modified time is older or equal to the stored time option.
-				$modified_time          = strtotime( get_post_modified_time( 'Y-m-d H:i:s', false, $page_id ) );
-				$original_modified_time = strtotime( get_post_meta( $page_id, '_modified_time', true ) );
-
-				if ( $modified_time == $original_modified_time ) {
-					wp_delete_post( $page_id );
-
-					// Delete the options for this page.
-					delete_option( '_' . MDS_PREFIX . $data['option'] );
-
-					$output[ $data['option'] ] = '';
-				}
-			}
-		}
-
-		wp_send_json( $output );
-	}
 
 	public static function block_editor_scripts(): void {
 		wp_register_script(
@@ -152,12 +72,16 @@ class Admin {
 			true
 		);
 
+		// Get page-specific configuration if editing an MDS page
+		$page_config = self::getCurrentPageConfiguration();
+
 		wp_localize_script( MDS_PREFIX . 'admin-block-js', 'MDS', [
 			'admin'                => admin_url( 'admin.php' ),
 			'mds_site_url'         => get_site_url(),
 			'ajaxurl'              => admin_url( 'admin-ajax.php' ),
 			'MDS_PREFIX'           => MDS_PREFIX,
 			'mds_admin_ajax_nonce' => wp_create_nonce( 'mds_admin_ajax_nonce' ),
+			'page_config'          => $page_config,
 		] );
 
 		wp_enqueue_script( MDS_PREFIX . 'admin-block-js' );
@@ -271,10 +195,14 @@ class Admin {
 	public static function menu(): void {
 		global $mds_menus;
 
-		$handle = \add_submenu_page( 'milliondollarscript', 'Million Dollar Script Admin', 'Admin', 'manage_options', 'milliondollarscript_admin', [
-			__CLASS__,
-			'html'
-		], 2 );
+		$handle = \add_submenu_page(
+			'milliondollarscript', 'Million Dollar Script Admin', 'Admin', 'manage_options', 'milliondollarscript_admin',
+			[
+				__CLASS__,
+				'html'
+			],
+			2
+		);
 
 		// Add styles for admin page
 		add_action( 'admin_print_styles-' . $handle, [ __CLASS__, 'styles' ] );
@@ -284,7 +212,6 @@ class Admin {
 
 		$mds_menus = [
 			'hidden' => [
-				'approve-pixels',
 				'check',
 				'edit-template',
 				'map-iframe',
@@ -310,8 +237,6 @@ class Admin {
 				'Map of Orders',
 				'Transaction Log',
 				'Clear Orders',
-				'Approve Pixels',
-				'Disapprove Pixels',
 				'Process Pixels',
 				'List',
 				'Top Customers',
@@ -468,6 +393,18 @@ class Admin {
 		);
 
 		wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
+		
+		// Enqueue error resolution script on compatibility page
+		$current_screen = get_current_screen();
+		if ( $current_screen && strpos( $current_screen->id, 'mds-compatibility' ) !== false ) {
+			wp_enqueue_script(
+				MDS_PREFIX . 'error-resolution',
+				MDS_BASE_URL . 'src/Assets/js/admin/error-resolution.js',
+				[ 'jquery', 'wp-api' ],
+				filemtime( MDS_BASE_PATH . 'src/Assets/js/admin/error-resolution.js' ),
+				true
+			);
+		}
 	}
 
 	public static function admin_pixels(): void {
@@ -482,6 +419,167 @@ class Admin {
 				true
 			);
 		}
+	}
+
+	/**
+	 * Enqueue admin scripts for MDS admin pages.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_admin_scripts(): void {
+		if ( is_admin() ) {
+			// Use the existing registered script from Admin::scripts()
+			wp_enqueue_script( 'hoverIntent' );
+			
+			// Register the script if not already registered
+			if ( ! wp_script_is( MDS_PREFIX . 'admin-core-js', 'registered' ) ) {
+				wp_register_script(
+					MDS_PREFIX . 'admin-core-js',
+					MDS_CORE_URL . 'admin/js/admin.min.js',
+					[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form', 'hoverIntent' ],
+					filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
+					true
+				);
+			}
+			
+			// Enqueue the registered script
+			wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
+		}
+	}
+
+	/**
+	 * Get current page configuration for block editor
+	 *
+	 * @return array Page configuration or null if not an MDS page
+	 */
+	private static function getCurrentPageConfiguration(): ?array {
+		global $post;
+		
+		// Only process when editing a page
+		if ( !$post || $post->post_type !== 'page' || !is_admin() ) {
+			return null;
+		}
+		
+		// Get current screen to verify we're in the editor
+		$screen = get_current_screen();
+		if ( !$screen || ( $screen->id !== 'page' && $screen->base !== 'post' ) ) {
+			return null;
+		}
+		
+		// Try to get page metadata first
+		$metadata_manager = \MillionDollarScript\Classes\Data\MDSPageMetadataManager::getInstance();
+		$metadata = $metadata_manager->getMetadata( $post->ID );
+		
+		if ( $metadata ) {
+			return [
+				'is_mds_page' => true,
+				'page_type' => $metadata->page_type,
+				'grid_id' => $metadata->grid_id,
+				'configuration' => $metadata->configuration,
+				'source' => 'metadata'
+			];
+		}
+		
+		// Fallback: Analyze page content directly
+		$detection_engine = new \MillionDollarScript\Classes\Data\MDSPageDetectionEngine();
+		$detection_result = $detection_engine->detectMDSPage( $post->ID );
+		
+		if ( $detection_result['is_mds_page'] ) {
+			// Extract configuration from detected patterns
+			$config = self::extractConfigurationFromDetection( $detection_result );
+			return [
+				'is_mds_page' => true,
+				'page_type' => $detection_result['page_type'],
+				'grid_id' => $config['grid_id'] ?? 1,
+				'configuration' => $config,
+				'source' => 'detection'
+			];
+		}
+		
+		// Parse MDS Configuration comments as final fallback
+		$comment_config = self::parseMDSConfigurationComments( $post->post_content );
+		if ( $comment_config ) {
+			return [
+				'is_mds_page' => true,
+				'page_type' => $comment_config['type'] ?? 'grid',
+				'grid_id' => $comment_config['id'] ?? 1,
+				'configuration' => $comment_config,
+				'source' => 'comments'
+			];
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extract configuration from detection engine results
+	 *
+	 * @param array $detection_result Detection engine results
+	 * @return array Configuration array
+	 */
+	private static function extractConfigurationFromDetection( array $detection_result ): array {
+		$config = [
+			'id' => 1,
+			'align' => 'center',
+			'width' => '1000px',
+			'height' => '1000px',
+			'type' => $detection_result['page_type']
+		];
+		
+		// Extract from patterns if available
+		if ( isset( $detection_result['patterns'] ) && is_array( $detection_result['patterns'] ) ) {
+			foreach ( $detection_result['patterns'] as $pattern ) {
+				if ( isset( $pattern['attributes'] ) && is_array( $pattern['attributes'] ) ) {
+					$attrs = $pattern['attributes'];
+					
+					// Map common attributes
+					if ( isset( $attrs['id'] ) ) $config['id'] = intval( $attrs['id'] );
+					if ( isset( $attrs['width'] ) ) $config['width'] = $attrs['width'];
+					if ( isset( $attrs['height'] ) ) $config['height'] = $attrs['height'];
+					if ( isset( $attrs['align'] ) ) $config['align'] = $attrs['align'];
+					if ( isset( $attrs['type'] ) ) $config['type'] = $attrs['type'];
+					
+					// Handle Carbon Fields attributes
+					if ( isset( $attrs['milliondollarscript_id'] ) ) $config['id'] = intval( $attrs['milliondollarscript_id'] );
+					if ( isset( $attrs['milliondollarscript_width'] ) ) $config['width'] = $attrs['milliondollarscript_width'];
+					if ( isset( $attrs['milliondollarscript_height'] ) ) $config['height'] = $attrs['milliondollarscript_height'];
+					if ( isset( $attrs['milliondollarscript_align'] ) ) $config['align'] = $attrs['milliondollarscript_align'];
+					if ( isset( $attrs['milliondollarscript_type'] ) ) $config['type'] = $attrs['milliondollarscript_type'];
+				}
+			}
+		}
+		
+		return $config;
+	}
+	
+	/**
+	 * Parse MDS Configuration comments from page content
+	 *
+	 * @param string $content Page content
+	 * @return array|null Configuration array or null if not found
+	 */
+	private static function parseMDSConfigurationComments( string $content ): ?array {
+		// Look for MDS Configuration comment pattern
+		$pattern = '/<!--\s*MDS Configuration:\s*([^-]+)-->/i';
+		if ( preg_match( $pattern, $content, $matches ) ) {
+			$config_text = trim( $matches[1] );
+			
+			// Parse key-value pairs
+			$config = [];
+			$lines = explode( ',', $config_text );
+			
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+				if ( strpos( $line, ':' ) !== false ) {
+					list( $key, $value ) = explode( ':', $line, 2 );
+					$config[trim( $key )] = trim( $value );
+				}
+			}
+			
+			return $config;
+		}
+		
+		return null;
 	}
 
 }

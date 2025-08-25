@@ -30,6 +30,11 @@ use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
+// Admin capability check
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die( 'Unauthorized access.' );
+}
+
 global $f2;
 $BID = $f2->bid();
 
@@ -38,28 +43,53 @@ $banner_data = load_banner_constants( $BID );
 $imagine = new Imagine\Gd\Imagine();
 
 // get the order id
+global $wpdb;
+$row = null;
+
 if ( isset( $_REQUEST['block_id'] ) && $_REQUEST['block_id'] != '' ) {
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=" . intval( $_REQUEST['block_id'] ) . " AND banner_id=" . $BID;
+	$block_id = intval( $_REQUEST['block_id'] );
+	if ( $block_id <= 0 ) {
+		wp_die( 'Invalid block ID.' );
+	}
+	
+	$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'blocks';
+	$row = $wpdb->get_row( $wpdb->prepare( 
+		"SELECT * FROM $table_name WHERE block_id = %d AND banner_id = %d", 
+		$block_id, $BID 
+	), ARRAY_A );
 } else if ( isset( $_REQUEST['aid'] ) && $_REQUEST['aid'] != '' ) {
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "ads WHERE ad_id=" . intval( $_REQUEST['aid'] );
+	$aid = intval( $_REQUEST['aid'] );
+	if ( $aid <= 0 ) {
+		wp_die( 'Invalid ad ID.' );
+	}
+	
+	$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'ads';
+	$row = $wpdb->get_row( $wpdb->prepare( 
+		"SELECT * FROM $table_name WHERE ad_id = %d", 
+		$aid 
+	), ARRAY_A );
 }
 
-if ( ! isset( $sql ) ) {
-	Logs::log( "No block_id or aid found in request for SQL query!" );
-	exit;
+if ( ! $row ) {
+	Logs::log( "No block_id or aid found in request, or record not found!" );
+	wp_die( 'Record not found.' );
 }
-
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$row = mysqli_fetch_array( $result );
 
 // load all the blocks wot
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=" . intval( $row['order_id'] );
-$result3 = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'blocks';
+$block_results = $wpdb->get_results( $wpdb->prepare( 
+	"SELECT * FROM $table_name WHERE order_id = %d", 
+	intval( $row['order_id'] ) 
+), ARRAY_A );
+
+if ( ! $block_results ) {
+	wp_die( 'No blocks found for this order.' );
+}
 
 $blocks = array();
 
 $i = 0;
-while ( $block_row = mysqli_fetch_array( $result3 ) ) {
+foreach ( $block_results as $block_row ) {
 
 	$high_x = ! isset( $high_x ) ? $block_row['x'] : $high_x;
 	$high_y = ! isset( $high_y ) ? $block_row['y'] : $high_y;

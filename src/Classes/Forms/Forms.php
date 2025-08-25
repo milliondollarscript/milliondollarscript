@@ -112,40 +112,21 @@ class Forms {
 			return $result;
 		}
 		
-		// File validation
+		// Comprehensive security validation
+		$validation = \MillionDollarScript\Classes\System\FileValidator::validate_image_upload( $_FILES['graphic'] );
+		
+		if ( ! $validation['valid'] ) {
+			$result['error'] = $validation['error'];
+			
+			// Log security violation attempt
+			Logs::log( 'MDS Security: Invalid upload attempt by user ' . get_current_user_id() . ': ' . $validation['error'] );
+			
+			return $result;
+		}
+		
+		// Get safe file extension for processing
 		$file_parts = pathinfo( $_FILES['graphic']['name'] );
-		$ext = $f2->filter( strtolower( $file_parts['extension'] ) );
-		
-		// Validate file extension
-		$allowed_extensions = [ 'png', 'jpg', 'jpeg', 'gif' ];
-		if ( ! in_array( $ext, $allowed_extensions ) ) {
-			$result['error'] = Language::get( 'Invalid file extension. Please upload a JPG, PNG, or GIF file.' );
-			return $result;
-		}
-		
-		// Validate MIME type
-		$mime_type = mime_content_type( $_FILES['graphic']['tmp_name'] );
-		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
-		
-		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-			$result['error'] = Language::get_replace( 
-				'Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF.', 
-				'%MIME_TYPE%', 
-				$mime_type 
-			);
-			return $result;
-		}
-		
-		// Check file size (additional safety check)
-		$max_file_size = wp_max_upload_size();
-		if ( $_FILES['graphic']['size'] > $max_file_size ) {
-			$result['error'] = Language::get_replace(
-				'File size too large. Maximum allowed size is %MAX_SIZE%.',
-				'%MAX_SIZE%',
-				size_format( $max_file_size )
-			);
-			return $result;
-		}
+		$ext = strtolower( $file_parts['extension'] );
 		
 		// Clean up old temp files (24 hours)
 		if ( $dh = opendir( $uploaddir ) ) {
@@ -170,8 +151,10 @@ class Forms {
 			closedir( $dh );
 		}
 		
-		// Upload file
-		$uploadfile = $uploaddir . "tmp_" . Orders::get_current_order_id() . ".$ext";
+		// Generate secure filename and use secure upload directory
+		$secure_filename = \MillionDollarScript\Classes\System\FileValidator::generate_secure_filename( $_FILES['graphic']['name'], 'tmp_' . Orders::get_current_order_id() . '_' );
+		$secure_uploaddir = \MillionDollarScript\Classes\System\FileValidator::get_secure_upload_path( 'images' );
+		$uploadfile = $secure_uploaddir . $secure_filename;
 		
 		if ( ! move_uploaded_file( $_FILES['graphic']['tmp_name'], $uploadfile ) ) {
 			$result['error'] = Language::get( 'Upload failed: Could not process the uploaded file. Please try again.' );
@@ -269,8 +252,28 @@ class Forms {
 			}
 		}
 		
-		// Success
+		// After all security validations pass, copy the file to the expected standard location
+		// This ensures compatibility with existing code that expects files in the standard images directory
+		$standard_upload_dir = Utility::get_upload_path() . "images/";
+		$standard_filename = 'tmp_' . Orders::get_current_order_id() . '.png';
+		$standard_file_path = $standard_upload_dir . $standard_filename;
+		
+		// Ensure the standard directory exists
+		if ( ! file_exists( $standard_upload_dir ) ) {
+			wp_mkdir_p( $standard_upload_dir );
+		}
+		
+		// Copy the validated file to the standard location expected by the rest of the system
+		if ( ! copy( $uploadfile, $standard_file_path ) ) {
+			$result['error'] = Language::get( 'Failed to prepare uploaded file for processing. Please try again.' );
+			// Clean up the secure file
+			unlink( $uploadfile );
+			return $result;
+		}
+		
+		// Success - file is now available in both secure and standard locations
 		$result['success'] = true;
+		$result['file_path'] = $standard_file_path;
 		return $result;
 	}
 
@@ -280,6 +283,7 @@ class Forms {
 	 * @return void
 	 */
 	public static function mds_form_submission(): void {
+		require_once MDS_CORE_PATH . 'include/ads.inc.php';
 		Functions::verify_nonce( 'mds-form' );
 
 		if ( ! isset( $_POST['mds_dest'] ) || ! is_user_logged_in() ) {
@@ -312,6 +316,9 @@ class Forms {
 						$params['upload_error'] = urlencode( $upload_result['error'] );
 					} else {
 						$params['upload_success'] = '1';
+						$order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+						$image_data = file_get_contents( $upload_result['file_path'] );
+						\insert_ad_data( $order_id, false, $image_data );
 					}
 					
 					// Redirect to order page to display results
@@ -351,9 +358,9 @@ class Forms {
 				$params['aid']        = intval( $_REQUEST['aid'] );
 				break;
 			case 'upload':
-
-				require_once MDS_CORE_PATH . 'users/upload.php';
-
+				// Check if a file was just uploaded
+				$upload_processed = isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '';
+				
 				global $f2;
 				$BID         = $f2->bid();
 				$banner_data = load_banner_constants( $BID );
@@ -369,7 +376,24 @@ class Forms {
 				$params['package']         = $package;
 				$params['order_id']        = $order_id;
 				$params['selection_size']  = $selection_size;
-
+				
+				// If a file was uploaded, process it and redirect back to the upload page
+				if ( $upload_processed ) {
+					// Process the file upload
+					$upload_result = self::process_order_pixels_upload();
+					
+					// Add upload result to parameters
+					if ( ! $upload_result['success'] ) {
+						$params['upload_error'] = urlencode( $upload_result['error'] );
+					} else {
+						$params['upload_success'] = '1';
+						$order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+						$image_data = file_get_contents( $upload_result['file_path'] );
+						\insert_ad_data( $order_id, false, $image_data );
+					}
+				}
+				
+				// Always redirect to the upload page
 				break;
 			case 'write-ad':
 				require_once MDS_CORE_PATH . 'users/write_ad.php';
@@ -437,6 +461,74 @@ class Forms {
 			wp_safe_redirect( $page_url );
 			exit;
 		}
+	}
+
+	public static function complete_orders(): void {
+		global $wpdb;
+
+		if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass complete attempt - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass complete - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			foreach ( $_REQUEST['orders'] as $oid ) {
+				$oid = intval( $oid );
+				if ( $oid <= 0 ) continue; // Skip invalid order IDs
+
+				$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $oid );
+				$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+				if ( $order_row && $order_row['status'] != 'completed' ) {
+					\MillionDollarScript\Classes\Orders\Orders::complete_order( $order_row['user_id'], $oid, false );
+					\MillionDollarScript\Classes\Payment\Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+					\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order completed by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
+				}
+			}
+		}
+
+		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized order complete attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php complete - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			$order_id = intval( $_REQUEST['order_id'] );
+			if ( $order_id <= 0 ) {
+				wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+			}
+
+			$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
+			$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+			if ( $order_row ) {
+				\MillionDollarScript\Classes\Orders\Orders::complete_order( $order_row['user_id'], $order_id );
+				\MillionDollarScript\Classes\Payment\Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order completed by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
+			}
+		}
+
+		// Redirect back to the orders page
+		$redirect_url = admin_url( 'admin.php?page=mds-orders-waiting' );
+		if ( isset( $_REQUEST['show'] ) ) {
+			$redirect_url = admin_url( 'admin.php?page=mds-orders-' . sanitize_key( $_REQUEST['show'] ) );
+		}
+		wp_safe_redirect( $redirect_url );
+		exit;
 	}
 
 	/**
@@ -578,6 +670,12 @@ class Forms {
 				break;
 			case 'orders-waiting':
 				require_once MDS_CORE_PATH . 'admin/orders-waiting.php';
+				break;
+			case 'complete-orders':
+				self::complete_orders();
+				break;
+			case 'cancel-orders':
+				self::cancel_orders();
 				break;
 			case 'packages':
 				// Ensure the specific package action nonce is valid
@@ -727,20 +825,87 @@ class Forms {
 				$params['BID'] = intval( $_REQUEST['BID'] );
 			}
 		}
-		$params['page'] = 'mds-' . $mds_dest;
-
-		// Construct the redirect URL
-		$redirect_url = admin_url( 'admin.php?page=mds-' . $mds_dest );
+		// For admin form submissions, we should redirect to admin pages, not frontend pages
+		$page_url = admin_url( 'admin.php?page=mds-' . $mds_dest );
 
 		// Add any parameters to the redirect URL
 		if ( ! empty( $params ) ) {
-			$redirect_url = add_query_arg( $params, $redirect_url );
+			$page_url = add_query_arg( $params, $page_url );
 		}
 
 		// Redirect the user
-		wp_safe_redirect( $redirect_url );
+		wp_safe_redirect( $page_url );
 		exit;
 
+	}
+
+	public static function cancel_orders(): void {
+		global $wpdb;
+
+		// Handle individual order cancellation
+		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' && isset( $_REQUEST['order_id'] ) ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized individual cancel attempt - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php individual cancel - User: ' . get_current_user_id() . ' - Order ID: ' . ( $_REQUEST['order_id'] ?? 'unknown' ) );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			$order_id = intval( $_REQUEST['order_id'] );
+			if ( $order_id <= 0 ) {
+				wp_die( esc_html__( 'Invalid order ID.', 'milliondollarscript' ), esc_html__( 'Invalid Request', 'milliondollarscript' ), [ 'response' => 400 ] );
+			}
+
+			$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id );
+			$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+			if ( $order_row ) {
+				\MillionDollarScript\Classes\Orders\Orders::cancel_order( $order_id, true );
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Individual order cancelled by admin - Order ID: ' . $order_id . ' - Admin User: ' . get_current_user_id() );
+			}
+		}
+		// Handle mass order cancellation
+		else if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
+			// Verify admin capabilities
+			if ( ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized mass cancel attempt - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Insufficient permissions for this operation.', 'milliondollarscript' ), esc_html__( 'Access Denied', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			// Verify CSRF nonce
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'mds-admin' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: CSRF attempt blocked in orders.php mass cancel - User: ' . get_current_user_id() );
+				wp_die( esc_html__( 'Security check failed. Please try again.', 'milliondollarscript' ), esc_html__( 'Security Error', 'milliondollarscript' ), [ 'response' => 403 ] );
+			}
+
+			foreach ( $_REQUEST['orders'] as $oid ) {
+				$oid = intval( $oid );
+				if ( $oid <= 0 ) {
+					continue; // Skip invalid order IDs
+				}
+
+				$sql       = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $oid );
+				$order_row = $wpdb->get_row( $sql, ARRAY_A );
+
+				if ( $order_row && $order_row['status'] != 'cancelled' ) {
+					\MillionDollarScript\Classes\Orders\Orders::cancel_order( $oid, true );
+					\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled by admin - Order ID: ' . $oid . ' - Admin User: ' . get_current_user_id() );
+				}
+			}
+		}
+
+		// Redirect back to the orders page
+		$redirect_url = admin_url( 'admin.php?page=mds-orders-cancelled' );
+		if ( isset( $_REQUEST['show'] ) ) {
+			$redirect_url = admin_url( 'admin.php?page=mds-orders-' . sanitize_key( $_REQUEST['show'] ) );
+		}
+		wp_safe_redirect( $redirect_url );
+		exit;
 	}
 
 	public static function display_banner_selecton_form( $BID, $order_id, $res, $mds_dest ): void {

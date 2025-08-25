@@ -26,88 +26,125 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Functions;
 
 defined( 'ABSPATH' ) or exit;
 
 ini_set( 'max_execution_time', 500 );
 
+global $wpdb;
+
 if ( isset( $_REQUEST['mds-action'] ) ) {
 	if ( $_REQUEST['mds-action'] == 'delall' ) {
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		while ( $row = mysqli_fetch_array( $result ) ) {
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue";
+		$result = $wpdb->get_results( $sql );
+		if ( $wpdb->last_error ) {
+			die( 'Database error: ' . $wpdb->last_error );
+		}
+		foreach ( $result as $row ) {
 
-			if ( $row['att1_name'] != '' ) {
-				unlink( $row['att1_name'] );
+			if ( $row->att1_name != '' ) {
+				unlink( $row->att1_name );
 			}
 
-			if ( $row['att2_name'] != '' ) {
-				unlink( $row['att2_name'] );
+			if ( $row->att2_name != '' ) {
+				unlink( $row->att2_name );
 			}
 
-			if ( $row['att3_name'] != '' ) {
-				unlink( $row['att3_name'] );
+			if ( $row->att3_name != '' ) {
+				unlink( $row->att3_name );
 			}
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "mail_queue where mail_id='" . intval( $row['mail_id'] ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+			$wpdb->delete( 
+				MDS_DB_PREFIX . 'mail_queue', 
+				array( 'mail_id' => intval( $row->mail_id ) ), 
+				array( '%d' ) 
+			);
+			if ( $wpdb->last_error ) {
+				die( 'Database error: ' . $wpdb->last_error );
+			}
 		}
 	}
 	if ( $_REQUEST['mds-action'] == 'delsent' ) {
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "mail_queue where `status`='sent' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		while ( $row = mysqli_fetch_array( $result ) ) {
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue WHERE status = 'sent'";
+		$result = $wpdb->get_results( $sql );
+		if ( $wpdb->last_error ) {
+			die( 'Database error: ' . $wpdb->last_error );
+		}
+		foreach ( $result as $row ) {
 
-			if ( $row['att1_name'] != '' ) {
-				unlink( $row['att1_name'] );
+			if ( $row->att1_name != '' ) {
+				unlink( $row->att1_name );
 			}
 
-			if ( $row['att2_name'] != '' ) {
-				unlink( $row['att2_name'] );
+			if ( $row->att2_name != '' ) {
+				unlink( $row->att2_name );
 			}
 
-			if ( $row['att3_name'] != '' ) {
-				unlink( $row['att3_name'] );
+			if ( $row->att3_name != '' ) {
+				unlink( $row->att3_name );
 			}
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "mail_queue where mail_id='" . intval( $row['mail_id'] ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+			$wpdb->delete( 
+				MDS_DB_PREFIX . 'mail_queue', 
+				array( 'mail_id' => intval( $row->mail_id ) ), 
+				array( '%d' ) 
+			);
+			if ( $wpdb->last_error ) {
+				die( 'Database error: ' . $wpdb->last_error );
+			}
 		}
 	}
 	if ( $_REQUEST['mds-action'] == 'delerror' ) {
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "mail_queue where `status`='error' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		while ( $row = mysqli_fetch_array( $result ) ) {
+		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue WHERE status = 'error'";
+		$result = $wpdb->get_results( $sql );
+		if ( $wpdb->last_error ) {
+			die( 'Database error: ' . $wpdb->last_error );
+		}
+		foreach ( $result as $row ) {
 
-			if ( $row['att1_name'] != '' ) {
-				unlink( $row['att1_name'] );
+			if ( $row->att1_name != '' ) {
+				unlink( $row->att1_name );
 			}
 
-			if ( $row['att2_name'] != '' ) {
-				unlink( $row['att2_name'] );
+			if ( $row->att2_name != '' ) {
+				unlink( $row->att2_name );
 			}
 
-			if ( $row['att3_name'] != '' ) {
-				unlink( $row['att3_name'] );
+			if ( $row->att3_name != '' ) {
+				unlink( $row->att3_name );
 			}
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "mail_queue where mail_id='" . intval( $row['mail_id'] ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+			$wpdb->delete( 
+				MDS_DB_PREFIX . 'mail_queue', 
+				array( 'mail_id' => intval( $row->mail_id ) ), 
+				array( '%d' ) 
+			);
+			if ( $wpdb->last_error ) {
+				die( 'Database error: ' . $wpdb->last_error );
+			}
 		}
 	}
 	if ( $_REQUEST['mds-action'] == 'resend' ) {
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "mail_queue SET status='queued' WHERE mail_id=" . intval( $_REQUEST['mail_id'] );
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		$wpdb->update( 
+			MDS_DB_PREFIX . 'mail_queue', 
+			array( 'status' => 'queued' ), 
+			array( 'mail_id' => intval( $_REQUEST['mail_id'] ) ), 
+			array( '%s' ), 
+			array( '%d' ) 
+		);
+		if ( $wpdb->last_error ) {
+			die( 'Database error: ' . $wpdb->last_error );
+		}
 
 		process_mail_queue( 1, $_REQUEST['mail_id'] );
 	}
 }
 
-$EMAILS_PER_BATCH = Config::get( 'EMAILS_PER_BATCH' );
+$EMAILS_PER_BATCH = Options::get_option( 'emails-per-batch' );
 if ( $EMAILS_PER_BATCH == '' ) {
 	$EMAILS_PER_BATCH = 10;
 }
@@ -140,25 +177,29 @@ $additional_params = [
 	'search'    => $search
 ];
 
-$sql = "select count(*) as c from " . MDS_DB_PREFIX . "mail_queue  ";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$row   = mysqli_fetch_array( $result );
-$total = $row['c'];
+$sql = "SELECT COUNT(*) as c FROM " . MDS_DB_PREFIX . "mail_queue";
+$total = $wpdb->get_var( $sql );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 
-$sql = "select count(*) as c from " . MDS_DB_PREFIX . "mail_queue where status='queued'  ";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$row    = mysqli_fetch_array( $result );
-$queued = $row['c'];
+$sql = "SELECT COUNT(*) as c FROM " . MDS_DB_PREFIX . "mail_queue WHERE status = 'queued'";
+$queued = $wpdb->get_var( $sql );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 
-$sql    = "select count(*) as c from " . MDS_DB_PREFIX . "mail_queue where status='sent'  ";
-$result = mysqli_query( $GLOBALS['connection'], $sql );
-$row    = mysqli_fetch_array( $result );
-$sent   = $row['c'];
+$sql = "SELECT COUNT(*) as c FROM " . MDS_DB_PREFIX . "mail_queue WHERE status = 'sent'";
+$sent = $wpdb->get_var( $sql );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 
-$sql    = "select count(*) as c from " . MDS_DB_PREFIX . "mail_queue where status='error'  ";
-$result = mysqli_query( $GLOBALS['connection'], $sql );
-$row    = mysqli_fetch_array( $result );
-$error  = $row['c'];
+$sql = "SELECT COUNT(*) as c FROM " . MDS_DB_PREFIX . "mail_queue WHERE status = 'error'";
+$error = $wpdb->get_var( $sql );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
 
 ?>
 <?php echo $total; ?> Total Email(s) |
@@ -300,40 +341,69 @@ $error  = $row['c'];
         </table>
     </div>
 <?php
-$where_sql = "";
+$where_conditions = array();
+$where_values = array();
+$where_formats = array();
+
 if ( $q_to_add != '' ) {
-	$where_sql .= " AND `to_address` like '%" . mysqli_real_escape_string( $GLOBALS['connection'], $q_to_add ) . "%' ";
+	$where_conditions[] = "to_address LIKE %s";
+	$where_values[] = '%' . $wpdb->esc_like( $q_to_add ) . '%';
+	$where_formats[] = '%s';
 }
 
 if ( $q_to_name != '' ) {
-	$where_sql .= " AND `to_name` like '%" . mysqli_real_escape_string( $GLOBALS['connection'], $q_to_name ) . "%' ";
+	$where_conditions[] = "to_name LIKE %s";
+	$where_values[] = '%' . $wpdb->esc_like( $q_to_name ) . '%';
+	$where_formats[] = '%s';
 }
 
 if ( $q_msg != '' ) {
-	$where_sql .= " AND `message` like '%" . mysqli_real_escape_string( $GLOBALS['connection'], $q_msg ) . "%' ";
+	$where_conditions[] = "message LIKE %s";
+	$where_values[] = '%' . $wpdb->esc_like( $q_msg ) . '%';
+	$where_formats[] = '%s';
 }
 
 if ( $q_subj != '' ) {
-	$where_sql .= " AND `subject` like '%" . mysqli_real_escape_string( $GLOBALS['connection'], $q_subj ) . "%' ";
+	$where_conditions[] = "subject LIKE %s";
+	$where_values[] = '%' . $wpdb->esc_like( $q_subj ) . '%';
+	$where_formats[] = '%s';
 }
 
 if ( ! empty( $q_type ) ) {
-	$where_sql .= " AND `template_id` like '" . mysqli_real_escape_string( $GLOBALS['connection'], $q_type ) . "' ";
+	$where_conditions[] = "template_id = %s";
+	$where_values[] = $q_type;
+	$where_formats[] = '%s';
 }
 
 if ( $q_status != '' ) {
-	$where_sql .= " AND `status`='" . mysqli_real_escape_string( $GLOBALS['connection'], $q_status ) . "' ";
+	$where_conditions[] = "status = %s";
+	$where_values[] = $q_status;
+	$where_formats[] = '%s';
 }
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue where 1=1 $where_sql order by mail_date DESC";
+$where_sql = '';
+if ( ! empty( $where_conditions ) ) {
+	$where_sql = ' WHERE ' . implode( ' AND ', $where_conditions );
+}
 
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-$count = mysqli_num_rows( $result );
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue" . $where_sql . " ORDER BY mail_date DESC";
+
+if ( ! empty( $where_values ) ) {
+	$sql = $wpdb->prepare( $sql, $where_values );
+}
+
+$result = $wpdb->get_results( $sql );
+if ( $wpdb->last_error ) {
+	die( 'Database error: ' . $wpdb->last_error );
+}
+$count = count( $result );
 
 $records_per_page = 40;
 $offset           = isset( $_REQUEST['offset'] ) ? intval( $_REQUEST['offset'] ) : 0;
+
+// Apply pagination by slicing the results array
 if ( $count > $records_per_page ) {
-	mysqli_data_seek( $result, $offset );
+	$result = array_slice( $result, $offset, $records_per_page );
 }
 if ( $count > $records_per_page ) {
 	$pages    = ceil( $count / $records_per_page );
@@ -368,34 +438,34 @@ if ( $count > $records_per_page ) {
 			<?php
 
 			$i = 0;
-			while ( ( $row = mysqli_fetch_array( $result ) ) && ( $i < $records_per_page ) ) {
-
+			foreach ( $result as $row ) {
+				if ( $i >= $records_per_page ) break;
 				$i ++;
 
 				?>
 
                 <tr>
-                    <td><?php echo get_date_from_gmt( $row['mail_date'] ); ?></td>
-                    <td><?php echo $row['template_id']; ?></td>
-                    <td><?php echo $row['to_address']; ?></td>
-                    <td><?php echo $row['to_name']; ?></td>
-                    <td><?php echo $row['from_address']; ?></td>
-                    <td><?php echo $row['from_name']; ?></td>
-                    <td><?php echo substr( $row['subject'], 0, 7 ); ?><a
-                                href="<?php echo esc_url( admin_url( 'admin.php?page=mds-show-email' ) ); ?>&amp;mail_id=<?php echo intval( $row['mail_id'] ); ?>">...</a>
+                    <td><?php echo get_date_from_gmt( $row->mail_date ); ?></td>
+                    <td><?php echo $row->template_id; ?></td>
+                    <td><?php echo $row->to_address; ?></td>
+                    <td><?php echo $row->to_name; ?></td>
+                    <td><?php echo $row->from_address; ?></td>
+                    <td><?php echo $row->from_name; ?></td>
+                    <td><?php echo substr( $row->subject, 0, 7 ); ?><a
+                                href="<?php echo esc_url( admin_url( 'admin.php?page=mds-show-email' ) ); ?>&amp;mail_id=<?php echo intval( $row->mail_id ); ?>">...</a>
                     </td>
-                    <td><?php echo substr( $row['message'], 0, 7 ); ?><a
-                                href="<?php echo esc_url( admin_url( 'admin.php?page=mds-show-email' ) ); ?>&amp;mail_id=<?php echo intval( $row['mail_id'] ); ?>">...</a>
+                    <td><?php echo substr( $row->message, 0, 7 ); ?><a
+                                href="<?php echo esc_url( admin_url( 'admin.php?page=mds-show-email' ) ); ?>&amp;mail_id=<?php echo intval( $row->mail_id ); ?>">...</a>
                     </td>
-                    <td><?php echo substr( $row['html_message'], 0, 7 ); ?><a
-                                href="<?php echo esc_url( admin_url( 'admin.php?page=mds-show-email' ) ); ?>&amp;mail_id=<?php echo intval( $row['mail_id'] ); ?>">...</a></td>
-                    <td><?php echo $row['attachments']; ?></td>
-                    <td><span style="color: <?php if ( $row['status'] == 'sent' ) {
+                    <td><?php echo substr( $row->html_message, 0, 7 ); ?><a
+                                href="<?php echo esc_url( admin_url( 'admin.php?page=mds-show-email' ) ); ?>&amp;mail_id=<?php echo intval( $row->mail_id ); ?>">...</a></td>
+                    <td><?php echo $row->attachments; ?></td>
+                    <td><span style="color: <?php if ( $row->status == 'sent' ) {
 							echo 'green';
-						} ?>; "><?php echo $row['status']; ?></td>
-                    <td><?php echo $row['error_msg']; ?></td>
-                    <td><?php echo $row['retry_count']; ?></td>
-                    <td><a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-outgoing-email&mds-action=resend&mail_id=' . $row['mail_id'] . $q_string ) ); ?>'>Resend</a></td>
+						} ?>; "><?php echo $row->status; ?></td>
+                    <td><?php echo $row->error_msg; ?></td>
+                    <td><?php echo $row->retry_count; ?></td>
+                    <td><a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-outgoing-email&mds-action=resend&mail_id=' . $row->mail_id . $q_string ) ); ?>'>Resend</a></td>
                 </tr>
 
 				<?php

@@ -50,17 +50,21 @@ function load_price_zones( $banner_id ) {
 
 	$banner_data = load_banner_constants( $banner_id );
 
-	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "prices` where `banner_id`='" . intval( $banner_id ) . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+	global $wpdb;
+	$sql = $wpdb->prepare(
+		"SELECT * FROM `" . MDS_DB_PREFIX . "prices` where `banner_id`=%d",
+		intval( $banner_id )
+	);
+	$result = $wpdb->get_results( $sql );
 	$key = 1;
-	while ( $row = mysqli_fetch_array( $result ) ) {
-		$price_table[ $key ]['row_from'] = $row['row_from'] * $banner_data['BLK_HEIGHT'];
-		$price_table[ $key ]['row_to']   = $row['row_to'] * $banner_data['BLK_HEIGHT'];
-		$price_table[ $key ]['col_from'] = $row['col_from'] * $banner_data['BLK_WIDTH'];
-		$price_table[ $key ]['col_to']   = $row['col_to'] * $banner_data['BLK_WIDTH'];
-		$price_table[ $key ]['color']    = $row['color'];
-		$price_table[ $key ]['price']    = $row['price'];
-		$price_table[ $key ]['currency'] = $row['currency'];
+	foreach ( $result as $row ) {
+		$price_table[ $key ]['row_from'] = $row->row_from * $banner_data['BLK_HEIGHT'];
+		$price_table[ $key ]['row_to']   = $row->row_to * $banner_data['BLK_HEIGHT'];
+		$price_table[ $key ]['col_from'] = $row->col_from * $banner_data['BLK_WIDTH'];
+		$price_table[ $key ]['col_to']   = $row->col_to * $banner_data['BLK_WIDTH'];
+		$price_table[ $key ]['color']    = $row->color;
+		$price_table[ $key ]['price']    = $row->price;
+		$price_table[ $key ]['currency'] = $row->currency;
 		$key ++;
 	}
 
@@ -99,12 +103,16 @@ function get_block_price( $banner_id, $block_id ) {
 
 	// get co-ords of the block
 
-	$sql = "SELECT `x`, `y` FROM `" . MDS_DB_PREFIX . "blocks` WHERE `block_id`='" . intval( $block_id ) . "' AND `banner_id`='" . intval( $banner_id ) . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	$block_row = mysqli_fetch_array( $result );
+	global $wpdb;
+	$sql = $wpdb->prepare(
+		"SELECT `x`, `y` FROM `" . MDS_DB_PREFIX . "blocks` WHERE `block_id`=%d AND `banner_id`=%d",
+		intval( $block_id ),
+		intval( $banner_id )
+	);
+	$block_row = $wpdb->get_row( $sql );
 
-	$row = $block_row['x'];
-	$col = $block_row['y'];
+	$row = $block_row->x;
+	$col = $block_row->y;
 
 	$banner_data = load_banner_constants( $banner_id );
 
@@ -140,17 +148,24 @@ function get_zone_price( $banner_id, $row, $col ) {
 	}
 
 	// If not found then get the default price per block for the grid
-	$sql = "SELECT `price_per_block` AS `price`, `currency` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`='" . intval( $banner_id ) . "' ";
-	$result2 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	$block_row = mysqli_fetch_array( $result2 );
+	global $wpdb;
+	$sql = $wpdb->prepare(
+		"SELECT `price_per_block` AS `price`, `currency` FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`=%d",
+		intval( $banner_id )
+	);
+	$block_row = $wpdb->get_row( $sql );
 
-	return Currency::convert_to_default_currency( $block_row['currency'], $block_row['price'] );
+	return Currency::convert_to_default_currency( $block_row->currency, $block_row->price );
 }
 
 function show_price_area( $banner_id ) {
 
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "prices where banner_id='" . intval( $banner_id ) . "'";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+	global $wpdb;
+	$sql = $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "prices where banner_id=%d",
+		intval( $banner_id )
+	);
+	$result = $wpdb->get_results( $sql );
 
 	?>
 
@@ -158,17 +173,17 @@ function show_price_area( $banner_id ) {
 
 		<?php
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$row['row_from'] = $row['row_from'] - 1;
-			$row['row_to']   = $row['row_to'] - 1;
+		foreach ( $result as $row ) {
+			$row_from = $row->row_from - 1;
+			$row_to   = $row->row_to - 1;
 
-			$row['col_from'] = $row['col_from'] - 1;
-			$row['col_to']   = $row['col_to'] - 1;
+			$col_from = $row->col_from - 1;
+			$col_to   = $row->col_to - 1;
 
 			// the x and y coordinates of the upper left and lower right corner
 			?>
 
-            <area shape="RECT" coords="<?php echo $row['col_from'] * 10; ?>,<?php echo $row['row_from'] * 10; ?>,<?php echo ( $row['col_to'] * 10 ) + 10; ?>,<?php echo ( $row['row_to'] * 10 ) + 10; ?>" href="" title="<?php echo htmlspecialchars( $row['price'] ); ?>" alt="<?php echo htmlspecialchars( $row['price'] ); ?>" onclick="return false; " target="_blank"/>
+            <area shape="RECT" coords="<?php echo $col_from * 10; ?>,<?php echo $row_from * 10; ?>,<?php echo ( $col_to * 10 ) + 10; ?>,<?php echo ( $row_to * 10 ) + 10; ?>" href="" title="<?php echo htmlspecialchars( $row->price ); ?>" alt="<?php echo htmlspecialchars( $row->price ); ?>" onclick="return false; " target="_blank"/>
 
 			<?php
 		}
@@ -186,10 +201,14 @@ function display_price_table( $banner_id ) {
 		return;
 	}
 
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "prices where banner_id='" . intval( $banner_id ) . "' order by row_from";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+	global $wpdb;
+	$sql = $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "prices where banner_id=%d order by row_from",
+		intval( $banner_id )
+	);
+	$result = $wpdb->get_results( $sql );
 
-	if ( mysqli_num_rows( $result ) > 0 ) {
+	if ( count( $result ) > 0 ) {
 		?>
         <div class='fancy-heading'><?php Language::out( 'Price Table' ); ?></div>
         <p>
@@ -210,31 +229,31 @@ function display_price_table( $banner_id ) {
             </tr>
 
 			<?php
-			while ( $row = mysqli_fetch_array( $result ) ) {
+			foreach ( $result as $row ) {
 				?>
                 <tr bgcolor="#ffffff">
-                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php if ( $row['price'] == 0 ) {
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php if ( $row->price == 0 ) {
 								Language::out( 'free' );
 							} else {
-								echo Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'], true );
+								echo Currency::convert_to_default_currency_formatted( $row->currency, $row->price, true );
 							} ?></span></td>
-                    <td bgcolor="<?php if ( $row['color'] == 'yellow' ) {
+                    <td bgcolor="<?php if ( $row->color == 'yellow' ) {
 						echo '#FFFF00';
-					} else if ( $row['color'] == 'cyan' ) {
+					} else if ( $row->color == 'cyan' ) {
 						echo '#00FFFF';
-					} else if ( $row['color'] == 'magenta' ) {
+					} else if ( $row->color == 'magenta' ) {
 						echo '#FF00FF';
 					} ?>"><span style="font-family: Aria,serif; font-size: x-small; "><?php
 
-							echo $row['color'];
+							echo $row->color;
 
 							?>
 
                         </span></td>
-                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['row_from']; ?></span></td>
-                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['row_to']; ?></span></td>
-                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['col_from']; ?></span></td>
-                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row['col_to']; ?></span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row->row_from; ?></span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row->row_to; ?></span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row->col_from; ?></span></td>
+                    <td><span style="font-family: Aria,serif; font-size: x-small; "><?php echo $row->col_to; ?></span></td>
 
                 </tr>
 				<?php

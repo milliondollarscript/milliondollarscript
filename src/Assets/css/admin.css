@@ -742,3 +742,74 @@ div.milliondollarscript-fire {
 	border: 1px solid var(--mds-border-color, #ccc);
 }
 /* --- END MDS ADMIN CLASSES --- */
+
+/* Style for block coordinates cell */
+.column-block_coords {
+    box-sizing: border-box; /* Include padding in width */
+    padding-right: 15px; /* Add spacing */
+    word-wrap: break-word; /* Legacy */
+}
+
+/* Style for the content wrapper inside the block coordinates cell */
+.block-coords-wrapper {
+    max-width: 150px;
+    overflow-x: auto;
+    white-space: nowrap;
+    word-wrap: break-word; /* Fallback */
+}
+
+/* Style for URL and Title columns */
+.column-url input[type="text"],
+.column-title input[type="text"] {
+     width: 95%; /* Make inputs take most of cell width */
+     box-sizing: border-box; /* Include padding/border in width */
+}
+.column-url, .column-title {
+    min-width: 150px; /* Give columns minimum width */
+}
+
+/* Add some margin to action buttons */
+.column-actions form {
+    margin: 0 5px 5px 0; /* Adjust margins slightly */
+    display: inline-block; /* Keep buttons side-by-side */
+}
+td.column-image img {
+    max-width: 50px;
+    max-height: 50px;
+    width: auto;
+    height: auto;
+    display: block; /* Prevents extra space below image */
+}
+
+/* Make table full width and handle layout */
+table.wp-list-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* Allow long text to wrap in specific columns */
+table.wp-list-table .column-url,
+table.wp-list-table .column-title,
+table.wp-list-table .column-block_coords td /* Target the cell directly for block coords */
+{
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    /* Consider adding max-width if needed */
+}
+
+/* Override external max-width for the main content wrapper on this page */
+.admin-content {
+    max-width: none !important; /* Use !important to ensure override */
+}
+
+.nav-tab-wrapper .nav-tab {
+    font-size: 14px;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tab-wrapper .nav-tab-active {
+    border-bottom-color: #0073aa;
+    font-weight: 600;
+}

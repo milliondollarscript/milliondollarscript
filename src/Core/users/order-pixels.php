@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\Forms;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
@@ -97,7 +97,7 @@ if ( isset( $_REQUEST['banner_change'] ) && $_REQUEST['banner_change'] != '' ) {
 	return;
 }
 
-$USE_AJAX = Config::get( 'USE_AJAX' );
+$USE_AJAX = Options::get_option( 'use-ajax' );
 
 $banner_data = load_banner_constants( $BID );
 
@@ -245,6 +245,17 @@ if ( ! empty( $tmp_image_file ) ) {
 
 	if ( empty( $reqsize ) ) {
 		$reqsize = Utility::get_required_size( $size[0], $size[1], $banner_data );
+	}
+
+	// Check if the image was resized and inform the user
+	if ( $reqsize[0] != $size[0] || $reqsize[1] != $size[1] ) {
+		echo '<b style="color: #ff8c00;">';
+		Language::out_replace(
+			'Your image was automatically resized to %WIDTH%x%HEIGHT% to fit the grid constraints.',
+			[ '%WIDTH%', '%HEIGHT%' ],
+			[ $reqsize[0], $reqsize[1] ]
+		);
+		echo '</b><br />';
 	}
 
 	if ( empty( $pixel_count ) ) {

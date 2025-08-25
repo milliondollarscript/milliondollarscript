@@ -36,12 +36,7 @@ defined( 'ABSPATH' ) or exit;
 global $f2, $wpdb;
 $BID = $f2->bid();
 
-$bid_sql = " AND banner_id=$BID ";
-
-if ( ( $BID == 'all' ) || ( $BID == '' ) ) {
-	$BID     = '';
-	$bid_sql = "  ";
-}
+// Note: Banner ID filtering removed as it was unused in queries
 
 /*
 // Old refund logic - Replaced by WooCommerce integration
@@ -88,13 +83,12 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'refund' ) {
 </p>
 <?php
 
-// calculate the balance
-$sql = "SELECT SUM(amount) as mysum, type, currency from " . MDS_DB_PREFIX . "transactions group by type, currency";
-
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+// Calculate the balance using $wpdb
+$sql = "SELECT SUM(amount) as mysum, type, currency FROM " . MDS_DB_PREFIX . "transactions GROUP BY type, currency";
+$results = $wpdb->get_results( $sql, ARRAY_A );
 $debits = $credits = 0;
-while ( $row = mysqli_fetch_array( $result ) ) {
 
+foreach ( $results as $row ) {
 	if ( $row['type'] == 'CREDIT' ) {
 		$credits = $credits + Currency::convert_to_default_currency( $row['currency'], $row['mysum'] );
 	}
@@ -272,20 +266,30 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
     </tr>
 
 	<?php
-	$from_date = intval( $_REQUEST['from_year'] ) . "-" . intval( $_REQUEST['from_month'] ) . "-" . intval( $_REQUEST['from_day'] ) . " 00:00:00";
-	$to_date   = intval( $_REQUEST['to_year'] ) . "-" . intval( $_REQUEST['to_month'] ) . "-" . intval( $_REQUEST['to_day'] ) . " 23:59:59";
+	// Sanitize and construct date range
+	$from_year  = intval( $_REQUEST['from_year'] );
+	$from_month = intval( $_REQUEST['from_month'] );
+	$from_day   = intval( $_REQUEST['from_day'] );
+	$to_year    = intval( $_REQUEST['to_year'] );
+	$to_month   = intval( $_REQUEST['to_month'] );
+	$to_day     = intval( $_REQUEST['to_day'] );
+	
+	$from_date = sprintf('%04d-%02d-%02d 00:00:00', $from_year, $from_month, $from_day);
+	$to_date   = sprintf('%04d-%02d-%02d 23:59:59', $to_year, $to_month, $to_day);
 
-	$where_date = " (`date` >= STR_TO_DATE('$from_date', '%Y-%m-%d') AND `date` <= STR_TO_DATE('$to_date', '%Y-%m-%d') ) ";
-
-	$sql = "SELECT t.*, o.*, u.*, pm.post_id as wc_order_id 
-	        FROM " . MDS_DB_PREFIX . "transactions t 
-	        JOIN " . MDS_DB_PREFIX . "orders o ON t.order_id = o.order_id 
-	        JOIN " . $wpdb->prefix . "users u ON o.user_id = u.ID 
-	        LEFT JOIN " . $wpdb->prefix . "postmeta pm ON t.order_id = pm.meta_value AND pm.meta_key = 'mds_order_id' 
-	        WHERE $where_date 
-	        ORDER BY t.date DESC";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-	while ( $row = mysqli_fetch_array( $result ) ) {
+	// Use WordPress prepared statement for secure query
+	$sql = $wpdb->prepare(
+		"SELECT t.*, o.*, u.*, pm.post_id as wc_order_id 
+		 FROM " . MDS_DB_PREFIX . "transactions t 
+		 JOIN " . MDS_DB_PREFIX . "orders o ON t.order_id = o.order_id 
+		 JOIN " . $wpdb->prefix . "users u ON o.user_id = u.ID 
+		 LEFT JOIN " . $wpdb->prefix . "postmeta pm ON t.order_id = pm.meta_value AND pm.meta_key = 'mds_order_id' 
+		 WHERE t.date >= %s AND t.date <= %s 
+		 ORDER BY t.date DESC",
+		$from_date, $to_date
+	);
+	$results = $wpdb->get_results( $sql, ARRAY_A );
+	foreach ( $results as $row ) {
 		$user_info      = get_userdata( $row['ID'] );
 		$wc_order_id    = $row['wc_order_id'] ?? null;
 		$show_refund_link = false;

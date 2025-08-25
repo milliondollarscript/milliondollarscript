@@ -76,7 +76,7 @@ class Styles {
  * when plugin options are saved.
  */
 ";
-        $file_content = $warning_comment . $css_content;
+        $file_content = "{$warning_comment}{$css_content}";
         $filepath = self::get_dynamic_css_filepath();
 
         return Filesystem::put_contents( $filepath, $file_content );
@@ -177,6 +177,37 @@ class Styles {
         $css .= "    color: var(--mds-btn-primary-text);\n";
         $css .= "    border-radius: var(--mds-btn-border-radius);\n";
         $css .= "    border: none;\n";
+        $css .= "}\n\n";
+
+        $css .= "#loginform input[type=\"submit\"]:hover,\n";
+        $css .= ".mds-register-link:hover,\n";
+        $css .= ".mds-container input[type='button']:hover,\n";
+        $css .= ".mds-container input[type='submit']:hover,\n";
+        $css .= ".mds-button:hover,\n";
+        $css .= "a.mds-button:hover {\n";
+        $css .= "    background-color: var(--mds-btn-primary-hover-bg, #005a87);\n";
+        $css .= "    color: var(--mds-btn-primary-text);\n";
+        $css .= "}\n\n";
+
+        $css .= "/* Register Button Specific Styling */\n";
+        $css .= ".wp-core-ui .button-register,\n";
+        $css .= ".wp-core-ui input[type=\"submit\"].button-register,\n";
+        $css .= ".login .mds-register-link {\n";
+        $css .= "    background-color: var(--mds-btn-secondary-bg);\n";
+        $css .= "    color: var(--mds-btn-secondary-text);\n";
+        $css .= "    border: 1px solid var(--mds-border-color);\n";
+        $css .= "    text-decoration: none;\n";
+        $css .= "    display: inline-block;\n";
+        $css .= "    padding: 8px 16px;\n";
+        $css .= "    border-radius: var(--mds-btn-border-radius);\n";
+        $css .= "}\n\n";
+
+        $css .= ".wp-core-ui .button-register:hover,\n";
+        $css .= ".wp-core-ui input[type=\"submit\"].button-register:hover,\n";
+        $css .= ".login .mds-register-link:hover {\n";
+        $css .= "    background-color: var(--mds-btn-secondary-hover-bg, var(--mds-bg-tertiary));\n";
+        $css .= "    color: var(--mds-btn-secondary-hover-text, var(--mds-text-primary));\n";
+        $css .= "    border-color: var(--mds-btn-primary-bg);\n";
         $css .= "}\n\n";
 
         $css .= ".mds-button-secondary {\n";
@@ -327,6 +358,10 @@ class Styles {
 
     /**
      * Enqueue dynamic CSS file after the core or login stylesheet.
+     * 
+     * Note: With the new page system using WordPress pages + shortcodes,
+     * we need to be more permissive about loading the dynamic CSS to ensure
+     * dark mode works properly across all MDS pages.
      */
     public static function enqueue_dynamic_styles(): void {
         if ( is_admin() ) {
@@ -334,12 +369,11 @@ class Styles {
         }
 
         global $pagenow;
-        $is_login_page = ( 'wp-login.php' === $pagenow );
-        $is_mds_page = Utility::is_mds_page();
-
-        if ( ! $is_login_page && ! $is_mds_page ) {
-            return;
-        }
+        $is_login_page = 'wp-login.php' === $pagenow;
+        
+        // Load CSS on all frontend pages to ensure dark mode works across WordPress pages with shortcodes
+        // This covers shortcode pages, direct MDS pages, and any other potential MDS content
+        // The CSS is small and only applies to elements with MDS classes anyway
 
         $css_filepath = self::get_dynamic_css_filepath();
 
@@ -369,7 +403,8 @@ class Styles {
         $theme_mode = Options::get_option( 'theme_mode', 'light' );
         
         $classes = [
-            'mds-theme-' . $theme_mode,
+            'mds-container',
+            "mds-theme-{$theme_mode}",
             'mds-theme-active'
         ];
         
@@ -414,7 +449,7 @@ class Styles {
         
         // Add theme class to admin for MDS pages
         if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'mds-' ) === 0 ) {
-            $classes .= ' mds-admin-theme-' . $theme_mode;
+            $classes .= " mds-admin-theme-{$theme_mode}";
         }
         
         return $classes;

@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -192,8 +192,8 @@ class functions2 {
 	}
 
 	function write_log( $text ) {
-		if ( Config::get( 'DEBUG' ) ) {
-			$output_file = fopen( Config::get( 'MDS_LOG_FILE' ), 'a' );
+		if ( Options::get_option( 'debug' ) ) {
+			$output_file = fopen( Options::get_option( 'mds-log-file' ), 'a' );
 			fwrite( $output_file, $text . "\n" );
 			fclose( $output_file );
 		}
@@ -203,9 +203,9 @@ class functions2 {
 	function debug( $line = "null", $label = "debug" ): void {
 
 		// log file
-		if ( Config::get( 'MDS_LOG' ) && file_exists( Config::get( 'MDS_LOG_FILE' ) ) ) {
+		if ( Options::get_option( 'mds-log' ) && file_exists( Options::get_option( 'mds-log-file' ) ) ) {
 			$entry_line = "[" . date( 'r' ) . "]	" . $line . "\r\n";
-			$log_fp     = fopen( Config::get( 'MDS_LOG_FILE' ), "a" );
+			$log_fp     = fopen( Options::get_option( 'mds-log-file' ), "a" );
 			fputs( $log_fp, $entry_line );
 			fclose( $log_fp );
 		}

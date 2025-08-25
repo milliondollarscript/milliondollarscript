@@ -471,6 +471,7 @@ function show_pointer(offset) {
 }
 
 function formSubmit(event) {
+	// Prevent default to handle form submission manually
 	event.preventDefault();
 	event.stopPropagation();
 
@@ -496,11 +497,16 @@ function formSubmit(event) {
 						selectedPixelsInput.value = selectedBlocks.join(",");
 					}
 					mds_update_package(jQuery(pixel_form));
+					
+					// Submit the form programmatically
+					// This will trigger the mds_form_submission function in Forms.php
 					pixel_form.submit();
 				}
-				submit_button1.disabled = false;
-				submit_button1.value = submit1_lang;
-				submitting = false;
+				// Keep button disabled and showing wait message during redirect
+				// The page will redirect after form submission
+				// submit_button1.disabled = false;
+				// submit_button1.value = submit1_lang;
+				// submitting = false;
 			}
 		}, 1000);
 	}
@@ -515,9 +521,10 @@ function reset_pixels() {
 		type: "POST",
 		url: MDS_OBJECT.UPDATE_ORDER,
 		data: {
-			reset: true,
+			reset: "true",
 			action: "reset",
 			_wpnonce: MDS_OBJECT.NONCE,
+			BID: MDS_OBJECT.BID,
 		},
 		success: function (data) {
 			if (data.success === true && data.data && data.data.type === "removed") {
@@ -892,6 +899,9 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 			data: {
 				_wpnonce: MDS_OBJECT.NONCE,
 				erasing: data.erasing,
+				block_id: data.clicked_block,
+				selection_size: parseInt(jQuery("#mds-selection-size-value").val(), 10) || 1,
+				BID: MDS_OBJECT.BID,
 			},
 			success: function (response) {
 				if (

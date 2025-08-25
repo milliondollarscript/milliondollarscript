@@ -196,9 +196,11 @@ class FormFields {
 		// Check for any pixel post for the current order id.
 		if ( empty( $post_id ) ) {
 			$order_id = Orders::get_current_order_id();
-			$post     = self::get_pixel_from_order_id( $order_id );
-			if ( $post != null ) {
-				$post_id = $post->ID;
+			if ( $order_id !== null ) {
+				$post = self::get_pixel_from_order_id( $order_id );
+				if ( $post != null ) {
+					$post_id = $post->ID;
+				}
 			}
 		}
 
@@ -375,27 +377,44 @@ class FormFields {
 				}
 			} else {
 
-				// First check if the user has a new mds-pixel post.
-				$user_posts = get_posts( array(
-					'author'      => $current_user->ID,
-					'post_status' => 'new',
-					'post_type'   => self::$post_type
-				) );
+				// First check if the current order already has an associated ad_id to prevent duplicate posts
+				$current_order_id = Orders::get_current_order_id();
+				$existing_ad_id = null;
+				if ( $current_order_id ) {
+					$existing_ad_id = Orders::get_ad_id_from_order_id( $current_order_id );
+				}
 
-				if ( ! empty( $user_posts ) ) {
-					// The user already has a new post of the given post type, so an order must be in progress
-					$post_id = $user_posts[0]->ID;
+				if ( $existing_ad_id && get_post( $existing_ad_id ) ) {
+					// The current order already has an associated post, use it to prevent duplicates
+					$post_id = $existing_ad_id;
+					
+					// Verify the current user owns this post for security
+					if ( get_current_user_id() != get_post_field( 'post_author', $post_id ) ) {
+						return new WP_Error( 'unauthorized', Language::get( 'Sorry, you are not allowed to access this page.' ) );
+					}
 				} else {
-					// Insert a new mds-pixel post
-					$post_data = [
-						'post_title'  => $post_title,
+					// No existing post for this order, check if the user has a new mds-pixel post
+					$user_posts = get_posts( array(
+						'author'      => $current_user->ID,
 						'post_status' => 'new',
 						'post_type'   => self::$post_type
-					];
-					if ( !empty($post_name) ) {
-						$post_data['post_name'] = $post_name;
+					) );
+
+					if ( ! empty( $user_posts ) ) {
+						// The user already has a new post of the given post type, so an order must be in progress
+						$post_id = $user_posts[0]->ID;
+					} else {
+						// Insert a new mds-pixel post
+						$post_data = [
+							'post_title'  => $post_title,
+							'post_status' => 'new',
+							'post_type'   => self::$post_type
+						];
+						if ( !empty($post_name) ) {
+							$post_data['post_name'] = $post_name;
+						}
+						$post_id = wp_insert_post( $post_data );
 					}
-					$post_id = wp_insert_post( $post_data );
 				}
 			}
 
@@ -518,14 +537,18 @@ class FormFields {
 								// $dest       = get_tmp_img_name();
 								//
 								// if ( ! $filesystem->copy( $upload['file'], $dest ) ) {
-								// 	error_log( wp_sprintf(
-								// 		Language::get( 'Error copying file. From: %s To: %s' ),
-								// 		$upload['file'],
-								// 		$dest
-								// 	) );
 								// }
 
 								carbon_set_post_meta( $post_id, $field_name, $attach_id );
+								
+								// Trigger grid regeneration when image is updated
+								$grid_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'grid' );
+								if ( $grid_id ) {
+									// Process and regenerate the grid image with the new pixel image
+									process_image( $grid_id );
+									publish_image( $grid_id );
+									process_map( $grid_id );
+								}
 							} else {
 								// The upload failed, add an error message
 								$errors[ $field_name ] = $upload['error'];

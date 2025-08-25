@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.12.121
+Stable tag: 2.5.13.24
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -18,6 +18,24 @@ Million Dollar Script enables you to sell pixel-based advertising space on your 
 Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.com/million-dollar-script-wordpress-plugin/) page on the website for additional documentation.
 
 == Changelog ==
+
+= 2.5.13 =
+* Refactor: Migrate database interactions to $wpdb for improved security and performance.
+* Fix: Update shortcode defaults and titles.
+* Fix: Correct light mode tooltip background defaults.
+* Fix: Backgrounds not working correctly.
+* Chore: Update language file.
+* Fix: Page validation cron job incorrectly marking pages as "error".
+* Fix: "Validate All Pages" button not working.
+* Fix: Creating and updating grids not working.
+* Fix: Approve pixels not working.
+* Fix: Deleting grids causing an error.
+* Feature: Add option to hide uploaded image and dimensions in advanced mode.
+* Fix: jpg files not uploading.
+* Fix: Uploaded image not respecting max_blocks setting in simple mode.
+* Fix: Tooltip text not visible in light theme.
+* Feature: Add All Grids to select box to admin Pixel Approval screens.
+* Fix: Mass complete and cancel of orders not working.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
@@ -33,14 +51,14 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Fixed uploading a new pixel image that was smaller than the original didn't resize properly when auto-resize is on.
 * Fix: Approve pixels.
 * Fix: WooCommerce and permission conditional logic checks on Carbon Fields.
-* Fix: Allow selecting first block.
-* Fix: File upload in simple pixel selection method.
 * Feature: Add mds_popup_custom_replacements filter for custom popup template replacements.
 * Fix: Fixed Max Image Size option in popup template.
-* Add: Free and premium extension system.
 * Feature: Add mds_pixel_area_data_values filter for extensions to add additional data.
 * Feature: Add dark mode/light mode selection option.
 * Feature: Add dark mode/light mode grid image generation and switching.
+* Feature: Add page management and creation system.
+* Feature: Add mds_manage_order_header_after, mds_manage_order_content_after and mds_manage_pixels_page_footer actions to Manage Pixels page.
+* Feature: Add JavaScript hooks system with afterTooltipContentLoaded hook for extensions to customize tooltip content.
 
 = 2.5.11 =
 * Add WooCommerce refund integration.
@@ -75,6 +93,8 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Refactor: Updated logging system to use Options API and hardcoded filename, removing Config dependency.
 * Feature: Added AJAX-powered controls to the Logs page for enabling/disabling logging and clearing the log without page reloads.
 * Feature: Implemented live log updates (optional toggle) and log entry consolidation (showing latest timestamp and count) on the Logs page.
+* Fix: Allow selecting first block.
+* Fix: File upload in simple pixel selection method.
 
 = 2.5.10 =
 * Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.

@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -47,7 +47,7 @@ function render_map_area( $fh, $data, $b_row ) {
 		$y2 = $data['y1'];
 	}
 
-	if ( Config::get('ENABLE_CLOAKING') == 'YES' ) {
+	if ( Options::get_option('enable-cloaking') == 'YES' ) {
 		$url = $data['url'];
 	} else {
 		// build click URL with query args
@@ -58,7 +58,7 @@ function render_map_area( $fh, $data, $b_row ) {
 	}
 
 	$ALT_TEXT = "";
-	$ENABLE_MOUSEOVER = Config::get('ENABLE_MOUSEOVER');
+	$ENABLE_MOUSEOVER = Options::get_option('enable-mouseover');
 	if ( $ENABLE_MOUSEOVER == 'YES' || $ENABLE_MOUSEOVER == 'POPUP' ) {
 		if ( $data['ad_id'] > 0 ) {
 			$ALT_TEXT = $data['alt_text'] . '<img src="' . MDS_CORE_URL . 'images/periods.gif" border="0">';

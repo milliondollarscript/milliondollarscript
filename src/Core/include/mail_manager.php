@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Email\Mail;
 
 defined( 'ABSPATH' ) or exit;
@@ -37,6 +37,7 @@ function q_mail_error( $s ) {
 }
 
 function queue_mail( $to_address, $to_name, $from_address, $from_name, $subject, $message, $html_message, $template_id, $att = false ) {
+	global $wpdb;
 
 	$to_address   = substr( trim( $to_address ), 0, 128 );
 	$to_name      = substr( trim( $to_name ), 0, 128 );
@@ -50,11 +51,32 @@ function queue_mail( $to_address, $to_name, $from_address, $from_name, $subject,
 
 	$now = current_time( 'mysql' );
 
-	$sql = "INSERT INTO " . MDS_DB_PREFIX . "mail_queue (mail_date, to_address, to_name, from_address, from_name, subject, message, html_message, attachments, status, error_msg, retry_count, template_id, date_stamp) VALUES('$now', '" . mysqli_real_escape_string( $GLOBALS['connection'], $to_address ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $to_name ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $from_address ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $from_name ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $subject ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $message ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $html_message ) . "', '$attachments', 'queued', '', 0, '" . intval( $template_id ) . "', '$now')"; // 2006 copyr1ght jam1t softwar3
+	$data = array(
+		'mail_date'    => $now,
+		'to_address'   => $to_address,
+		'to_name'      => $to_name,
+		'from_address' => $from_address,
+		'from_name'    => $from_name,
+		'subject'      => $subject,
+		'message'      => $message,
+		'html_message' => $html_message,
+		'attachments'  => $attachments,
+		'status'       => 'queued',
+		'error_msg'    => '',
+		'retry_count'  => 0,
+		'template_id'  => intval( $template_id ),
+		'date_stamp'   => $now
+	);
 
-	mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
+	$formats = array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s' );
 
-	$mail_id = mysqli_insert_id( $GLOBALS['connection'] );
+	$result = $wpdb->insert( MDS_DB_PREFIX . 'mail_queue', $data, $formats );
+
+	if ( false === $result ) {
+		q_mail_error( $wpdb->last_error );
+	}
+
+	$mail_id = $wpdb->insert_id;
 
 	return $mail_id;
 }
@@ -93,6 +115,7 @@ function process_mail_queue( $send_count = 1 ) {
 	}
 
 	if ( $unix_time > $last_mail_queue_run + 5 ) { // did 5 seconds elapse since last run?
+		global $wpdb;
 
 		$and_mail_id = "";
 		if ( func_num_args() > 1 ) {
@@ -101,19 +124,28 @@ function process_mail_queue( $send_count = 1 ) {
 			$and_mail_id = " AND mail_id=" . intval( $mail_id ) . " ";
 		}
 
-		$EMAILS_MAX_RETRY = Config::get( 'EMAILS_MAX_RETRY' );
+		$EMAILS_MAX_RETRY = Options::get_option( 'emails-max-retry' );
 		if ( $EMAILS_MAX_RETRY == '' ) {
 			$EMAILS_MAX_RETRY = 5;
 		}
 
-		$EMAILS_ERROR_WAIT = Config::get( 'EMAILS_ERROR_WAIT' );
+		$EMAILS_ERROR_WAIT = Options::get_option( 'emails-error-wait' );
 		if ( $EMAILS_ERROR_WAIT == '' ) {
 			$EMAILS_ERROR_WAIT = 10;
 		}
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "mail_queue where (status='queued' OR status='error') AND retry_count <= " . intval( $EMAILS_MAX_RETRY ) . " $and_mail_id order by mail_date DESC";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or q_mail_error( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		while ( ( $row = mysqli_fetch_array( $result ) ) && ( $send_count > 0 ) ) {
+		$sql = $wpdb->prepare(
+			"SELECT * from " . MDS_DB_PREFIX . "mail_queue where (status='queued' OR status='error') AND retry_count <= %d $and_mail_id order by mail_date DESC",
+			intval( $EMAILS_MAX_RETRY )
+		);
+		$results = $wpdb->get_results( $sql, ARRAY_A );
+		if ( $wpdb->last_error ) {
+			q_mail_error( $wpdb->last_error . $sql );
+		}
+		foreach ( $results as $row ) {
+			if ( $send_count <= 0 ) {
+				break;
+			}
 			$time_stamp = strtotime( $row['date_stamp'] );
 			$now        = current_time( 'timestamp' );
 			$wait       = $EMAILS_ERROR_WAIT * 60;
@@ -126,21 +158,28 @@ function process_mail_queue( $send_count = 1 ) {
 
 		// delete old stuff
 
-		$EMAILS_DAYS_KEEP = Config::get( 'EMAILS_DAYS_KEEP' );
+		$EMAILS_DAYS_KEEP = Options::get_option( 'emails-days-keep' );
 
 		if ( $EMAILS_DAYS_KEEP == 'EMAILS_DAYS_KEEP' ) {
-			Config::set( '0', 'EMAILS_DAYS_KEEP' );
+			Options::set_option( 'emails-days-keep', '0' );
 		}
 
 		if ( $EMAILS_DAYS_KEEP > 0 ) {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "SELECT mail_id, att1_name, att2_name, att3_name from " . MDS_DB_PREFIX . "mail_queue where status='sent' AND DATE_SUB('$now',INTERVAL " . intval( $EMAILS_DAYS_KEEP ) . " DAY) >= date_stamp  ";
+			$sql = $wpdb->prepare(
+				"SELECT mail_id, att1_name, att2_name, att3_name from " . MDS_DB_PREFIX . "mail_queue where status='sent' AND DATE_SUB(%s,INTERVAL %d DAY) >= date_stamp",
+				$now,
+				intval( $EMAILS_DAYS_KEEP )
+			);
 
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+			$results = $wpdb->get_results( $sql, ARRAY_A );
+			if ( $wpdb->last_error ) {
+				mds_secure_sql_die( $sql, 'process_mail_queue cleanup' );
+			}
 
-			while ( $row = mysqli_fetch_array( $result ) ) {
+			foreach ( $results as $row ) {
 
 				if ( $row['att1_name'] != '' ) {
 					unlink( $row['att1_name'] );
@@ -154,8 +193,14 @@ function process_mail_queue( $send_count = 1 ) {
 					unlink( $row['att3_name'] );
 				}
 
-				$sql = "DELETE FROM " . MDS_DB_PREFIX . "mail_queue where mail_id='" . intval( $row['mail_id'] ) . "' ";
-				mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+				$delete_result = $wpdb->delete(
+					MDS_DB_PREFIX . 'mail_queue',
+					array( 'mail_id' => intval( $row['mail_id'] ) ),
+					array( '%d' )
+				);
+				if ( false === $delete_result ) {
+					mds_secure_sql_die( 'DELETE FROM ' . MDS_DB_PREFIX . 'mail_queue WHERE mail_id=' . intval( $row['mail_id'] ), 'process_mail_queue delete' );
+				}
 			}
 		}
 	}

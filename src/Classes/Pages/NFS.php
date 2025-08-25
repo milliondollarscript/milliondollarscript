@@ -209,8 +209,6 @@ class NFS {
 			$data = $default_nfs_block->get( "png", array( 'png_compression_level' => 9 ) );
 		}
 
-		//$sql = "delete from blocks where status='nfs' AND banner_id=$BID ";
-		//mysqli_query($GLOBALS['connection'], $sql) or die (mysqli_error($GLOBALS['connection']).$sql);
 
 		if ( $addingnfs ) {
 			$addnfs = json_decode( html_entity_decode( stripslashes( $_POST['addnfs'] ) ) );
@@ -336,8 +334,19 @@ class NFS {
 				}
 
 				if ( $removingnfs && in_array( $cell, $remnfs ) ) {
-					$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE status='nfs' AND banner_id={$BID} AND block_id={$cell}";
-					$wpdb->query( $sql );
+					$wpdb->delete(
+						MDS_DB_PREFIX . 'blocks',
+						[
+							'status' => 'nfs',
+							'banner_id' => $BID,
+							'block_id' => $cell
+						],
+						[
+							'%s',
+							'%d',
+							'%d'
+						]
+					);
 				}
 				$x = $x + $banner_data['BLK_WIDTH'];
 				$cell ++;

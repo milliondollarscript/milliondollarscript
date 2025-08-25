@@ -279,8 +279,8 @@ function check_selection_main(): void {
 	//$zero_point = new Imagine\Image\Point( 0, 0 );
 
 	$block_info = $cb_array = array();
-	for ( $y = 0; $y < ( $size->getHeight() ); $y += $banner_data['BLK_HEIGHT'] ) {
-		for ( $x = 0; $x < ( $size->getWidth() ); $x += $banner_data['BLK_WIDTH'] ) {
+	for ( $y = 0; $y < ( $new_size[1] ); $y += $banner_data['BLK_HEIGHT'] ) {
+		for ( $x = 0; $x < ( $new_size[0] ); $x += $banner_data['BLK_WIDTH'] ) {
 
 			$map_x = $x + $_REQUEST['map_x'];
 			$map_y = $y + $_REQUEST['map_y'];

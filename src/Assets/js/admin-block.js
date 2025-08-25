@@ -61,6 +61,73 @@ jQuery(document).ready(function ($) {
 	// Track the current AJAX request so we can abort it if a new one is made
 	let currentAjax = null;
 
+	// Initialize page configuration if available
+	function initializePageConfiguration() {
+		if (MDS.page_config && MDS.page_config.is_mds_page) {
+			console.log('MDS: Initializing page configuration from', MDS.page_config.source);
+			
+			const config = MDS.page_config.configuration;
+			
+			// Use setTimeout to ensure Carbon Fields have been rendered
+			setTimeout(function() {
+				// Set field values based on page configuration
+				if (config.id) {
+					const $idField = $('input[name="' + MDS.MDS_PREFIX + 'id"]');
+					if ($idField.length && !$idField.val()) {
+						$idField.val(config.id);
+					}
+				}
+				
+				if (config.type) {
+					const $typeField = $('select[name="' + MDS.MDS_PREFIX + 'type"]');
+					if ($typeField.length && !$typeField.val()) {
+						$typeField.val(config.type);
+					}
+				}
+				
+				if (config.width) {
+					const $widthField = $('input[name="' + MDS.MDS_PREFIX + 'width"]');
+					if ($widthField.length && !$widthField.val()) {
+						$widthField.val(config.width);
+					}
+				}
+				
+				if (config.height) {
+					const $heightField = $('input[name="' + MDS.MDS_PREFIX + 'height"]');
+					if ($heightField.length && !$heightField.val()) {
+						$heightField.val(config.height);
+					}
+				}
+				
+				if (config.align) {
+					const $alignField = $('select[name="' + MDS.MDS_PREFIX + 'align"]');
+					if ($alignField.length && !$alignField.val()) {
+						$alignField.val(config.align);
+					}
+				}
+				
+				console.log('MDS: Page configuration initialized');
+			}, 500);
+		}
+	}
+	
+	// Initialize configuration when the page loads
+	initializePageConfiguration();
+	
+	// Also initialize when new blocks are added (for block editor)
+	if (wp && wp.data) {
+		let blockCount = 0;
+		
+		wp.data.subscribe(function() {
+			const blocks = wp.data.select('core/block-editor').getBlocks();
+			if (blocks.length > blockCount) {
+				blockCount = blocks.length;
+				// New block added, re-initialize if it's an MDS block
+				setTimeout(initializePageConfiguration, 100);
+			}
+		});
+	}
+
 	// Add a new field to lock the width/height. Should it be one field for both width/height or one lock each?
 	function update_fields() {
 		const $fields = $changed.closest(".cf-block__fields");
@@ -71,11 +138,14 @@ jQuery(document).ready(function ($) {
 		);
 		const $type = $fields.find($('select[name="' + MDS.MDS_PREFIX + 'type"]'));
 
+		// Use page metadata as fallback defaults if available
+		const pageConfig = (MDS.page_config && MDS.page_config.configuration) ? MDS.page_config.configuration : {};
+
 		let payload = {
-			id: $id.val(),
-			type: $type.val(),
-			width: $width.val(),
-			height: $height.val(),
+			id: $id.val() || pageConfig.id || '1',
+			type: $type.val() || pageConfig.type || 'grid',
+			width: $width.val() || pageConfig.width || '1000px',
+			height: $height.val() || pageConfig.height || '1000px',
 		};
 
 		const block = wp.data.select("core/block-editor").getSelectedBlock();

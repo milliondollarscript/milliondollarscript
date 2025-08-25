@@ -160,7 +160,7 @@ jQuery(document).ready(function ($) {
 
 	// Clear Log Button
 	$clearLogButton.on("click", function () {
-		if (confirm(mdsLogsData.text.confirm_clear)) {
+		const processClearLog = function() {
 			showSpinner();
 			$.post(
 				mdsLogsData.ajax_url,
@@ -187,6 +187,12 @@ jQuery(document).ready(function ($) {
 				hideSpinner();
 				showNotice(mdsLogsData.text.error_occurred, "error");
 			});
+		};
+		
+		if (typeof MDSModalUtility !== 'undefined') {
+			MDSModalUtility.confirm(mdsLogsData.text.confirm_clear, processClearLog);
+		} else if (confirm(mdsLogsData.text.confirm_clear)) {
+			processClearLog();
 		}
 	});
 

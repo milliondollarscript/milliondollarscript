@@ -1,6 +1,5 @@
 <?php
 
-use MillionDollarScript\Classes\Data\Config;
 use Imagine\Image\Box;
 use Imagine\Image\Point;
 use MillionDollarScript\Classes\Data\Options;
@@ -34,6 +33,55 @@ use MillionDollarScript\Classes\System\Logs;
  */
 
 defined( 'ABSPATH' ) or exit;
+
+/**
+ * Normalize Imagine save() options to ensure Imagick receives a valid integer 'quality'.
+ *
+ * Rules:
+ * - Always return an array.
+ * - For JPEG (jpg/jpeg):
+ *     - Compute $q from 'jpeg_quality' if numeric, else from 'quality' if numeric, else default 90.
+ *     - Set both 'jpeg_quality' and 'quality' to the integer $q.
+ * - For PNG:
+ *     - Preserve 'png_compression_level' if present.
+ *     - Still provide integer 'quality' (Imagick may call setImageCompressionQuality).
+ * - For GIF or others:
+ *     - Preserve existing flags (e.g., 'flatten' => false) but ensure integer 'quality'.
+ *
+ * @param string $ext File extension without dot, e.g. 'jpg','png','gif'
+ * @param array|null $options Options passed to Imagine->save/show
+ * @param int $default Default quality to use when unspecified or invalid
+ * @return array Normalized options
+ */
+function mds_normalize_imagine_save_options(string $ext, ?array $options, int $default = 90): array {
+    $opts = is_array($options) ? $options : [];
+
+    $normalizedExt = strtolower($ext);
+    if ($normalizedExt === 'jpeg') {
+        $normalizedExt = 'jpg';
+    }
+
+    if ($normalizedExt === 'jpg') {
+        $q = $default;
+        if (isset($opts['jpeg_quality']) && is_numeric($opts['jpeg_quality'])) {
+            $q = (int)$opts['jpeg_quality'];
+        } elseif (isset($opts['quality']) && is_numeric($opts['quality'])) {
+            $q = (int)$opts['quality'];
+        }
+        $opts['jpeg_quality'] = $q;
+        $opts['quality'] = $q;
+    } else {
+        // PNG/GIF/others: ensure a sane integer 'quality'
+        if (!isset($opts['quality']) || !is_numeric($opts['quality'])) {
+            $opts['quality'] = $default;
+        } else {
+            $opts['quality'] = (int)$opts['quality'];
+        }
+        // Leave format-specific keys intact (e.g., 'png_compression_level', 'flatten')
+    }
+
+    return $opts;
+}
 
 /**
  * Applies opacity to a GD image resource by modifying its alpha channel.
@@ -134,6 +182,8 @@ function mds_apply_opacity_gd(\GdImage &$image, int $opacity): bool {
  * @return string Progress output.
  */
 function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false, $ordering = false ) {
+	global $wpdb;
+	
 	if ( ! is_numeric( $BID ) ) {
 		return false;
 	}
@@ -339,17 +389,24 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 
 	// preload nfs blocks
 	if ( isset( $default_nfs_block ) ) {
-		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND banner_id='" . intval( $BID ) . "' " . $and_user;
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		global $wpdb;
+		$sql = $wpdb->prepare(
+			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND banner_id=%d" . $and_user,
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
 		// nfs covered images
 		if ( isset( $banner_data['NFS_COVERED'] ) == 'Y' ) {
-			$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id='" . intval( $BID ) . "'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+			$sql = $wpdb->prepare(
+				"SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id=%d",
+				intval( $BID )
+			);
+			$result = $wpdb->get_results( $sql );
 
-			while ( $row = mysqli_fetch_array( $result ) ) {
+			foreach ( $result as $row ) {
 
-				$data = $row['image_data'];
+				$data = $row->image_data;
 
 				// get block image output
 				if ( strlen( $data ) != 0 ) {
@@ -359,30 +416,36 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 				}
 				$block->resize( $block_size );
 
-				$blocks[ $row['block_id'] ] = 'nfs';
-				$nfs[ $row['block_id'] ]    = $block;
+				$blocks[ $row->block_id ] = 'nfs';
+				$nfs[ $row->block_id ]    = $block;
 			}
 		} else {
-			while ( $row = mysqli_fetch_array( $result ) ) {
-				$blocks[ $row['block_id'] ] = 'nfs';
-				$nfs[ $row['block_id'] ]    = $default_nfs_block;
+			foreach ( $result as $row ) {
+				$blocks[ $row->block_id ] = 'nfs';
+				$nfs[ $row->block_id ]    = $default_nfs_block;
 			}
 		}
 	}
 
 	// preload nfs_front blocks (nfs blocks appearing in front of the background)
 	if ( isset( $default_nfs_front_block ) ) {
-		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND banner_id='" . intval( $BID ) . "' " . $and_user;
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND banner_id=%d" . $and_user,
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
 		// nfs covered images
 		if ( isset( $banner_data['NFS_COVERED'] ) && $banner_data['NFS_COVERED'] == 'Y' ) {
-			$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id='" . intval( $BID ) . "'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+			$sql = $wpdb->prepare(
+				"SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='nfs' AND image_data <> '' AND banner_id=%d",
+				intval( $BID )
+			);
+			$result = $wpdb->get_results( $sql );
 
-			while ( $row = mysqli_fetch_array( $result ) ) {
+			foreach ( $result as $row ) {
 
-				$data = $row['image_data'];
+				$data = $row->image_data;
 
 				// get block image output
 				if ( strlen( $data ) != 0 ) {
@@ -392,65 +455,80 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 				}
 				$block->resize( $block_size );
 
-				$blocks[ $row['block_id'] ] = 'nfs_front';
-				$nfs[ $row['block_id'] ]    = $block;
+				$blocks[ $row->block_id ] = 'nfs_front';
+				$nfs[ $row->block_id ]    = $block;
 			}
 		} else {
-			while ( $row = mysqli_fetch_array( $result ) ) {
-				$blocks[ $row['block_id'] ] = 'nfs_front';
-				$nfs[ $row['block_id'] ]    = $default_nfs_front_block;
+			foreach ( $result as $row ) {
+				$blocks[ $row->block_id ] = 'nfs_front';
+				$nfs[ $row->block_id ]    = $default_nfs_front_block;
 			}
 		}
 	}
 
 	// preload ordered blocks
 	if ( isset( $default_ordered_block ) ) {
-		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='ordered' AND banner_id='" . intval( $BID ) . "' " . $and_user;
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='ordered' AND banner_id=%d" . $and_user,
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$blocks[ $row['block_id'] ] = 'ordered';
+		foreach ( $result as $row ) {
+			$blocks[ $row->block_id ] = 'ordered';
 		}
 	}
 
 	// preload reserved blocks
 	if ( isset( $default_reserved_block ) ) {
-		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='reserved' AND banner_id='" . intval( $BID ) . "' " . $and_not_user;
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='reserved' AND banner_id=%d" . $and_not_user,
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$blocks[ $row['block_id'] ] = 'reserved';
+		foreach ( $result as $row ) {
+			$blocks[ $row->block_id ] = 'reserved';
 		}
 	}
 
 	// preload selected blocks
 	if ( isset( $default_selected_block ) ) {
-		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='onorder' AND banner_id='" . intval( $BID ) . "' " . $and_user;
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='onorder' AND banner_id=%d" . $and_user,
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$blocks[ $row['block_id'] ] = 'selected';
+		foreach ( $result as $row ) {
+			$blocks[ $row->block_id ] = 'selected';
 		}
 	}
 
 	// preload sold blocks
 	if ( isset( $default_sold_block ) ) {
-		$sql = "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='sold' AND banner_id='" . intval( $BID ) . "' " . $and_user;
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='sold' AND banner_id=%d" . $and_user,
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
-			$blocks[ $row['block_id'] ] = 'sold';
+		foreach ( $result as $row ) {
+			$blocks[ $row->block_id ] = 'sold';
 		}
 	}
 
 	// preload orders
 	if ( isset( $show_orders ) ) {
-		$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE approved='Y' AND `status`='sold' AND image_data <> '' AND banner_id='" . intval( $BID ) . "' " . $and_user;
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE approved='Y' AND `status`='sold' AND image_data <> '' AND banner_id=%d" . $and_user,
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
+		foreach ( $result as $row ) {
 
-			$data = $row['image_data'];
+			$data = $row->image_data;
 
 			// get block image output
 			if ( strlen( $data ) != 0 ) {
@@ -469,19 +547,23 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 					$block = $blank;
 				}
 			}
-			$blocks[ $row['block_id'] ] = 'order';
-			$orders[ $row['block_id'] ] = $block;
+			$blocks[ $row->block_id ] = 'order';
+			$orders[ $row->block_id ] = $block;
 		}
 	}
 
 	// Show user's blocks
 	if ( isset( $user ) ) {
-		$sql = "SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `user_id`='" . intval( $user ) . "' AND image_data <> '' AND banner_id='" . intval( $BID ) . "' AND `status` <> 'deleted' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$sql = $wpdb->prepare(
+			"SELECT block_id,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE `user_id`=%d AND image_data <> '' AND banner_id=%d AND `status` NOT IN ('deleted', 'cancelled')",
+			intval( $user ),
+			intval( $BID )
+		);
+		$result = $wpdb->get_results( $sql );
 
-		while ( $row = mysqli_fetch_array( $result ) ) {
+		foreach ( $result as $row ) {
 
-			$data = $row['image_data'];
+			$data = $row->image_data;
 
 			// get block image output
 			if ( strlen( $data ) != 0 ) {
@@ -498,8 +580,8 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 				$blank->paste($block, new Point(0, 0));
 				$block = $blank;
 			}
-			$blocks[ $row['block_id'] ] = 'user';
-			$users[ $row['block_id'] ]  = $block;
+			$blocks[ $row->block_id ] = 'user';
+			$users[ $row->block_id ]  = $block;
 		}
 	}
 
@@ -770,12 +852,12 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	$mime    = "png";
 	$options = array( 'png_compression_level' => 9 );
 
-	$OUTPUT_JPEG = Config::get( 'OUTPUT_JPEG' );
+	$OUTPUT_JPEG = Options::get_option( 'output-jpeg' );
 
 	if ( $OUTPUT_JPEG == 'Y' ) {
 		$ext     = "jpg";
 		$mime    = "jpeg";
-		$options = array( 'jpeg_quality' => Config::get( 'JPEG_QUALITY' ) );
+		$options = array( 'jpeg_quality' => Options::get_option( 'jpeg-quality' ) );
 	} else if ( $OUTPUT_JPEG == 'N' ) {
 		// defaults to png, set above
 	} else if ( $OUTPUT_JPEG == 'GIF' ) {
@@ -784,9 +866,12 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		$options = array( 'flatten' => false );
 	}
 
+	// Normalize once centrally
+	$options = mds_normalize_imagine_save_options($ext, $options, 90);
+
 	// output
 	if ( $show ) {
-		if ( Config::get( 'INTERLACE_SWITCH' ) == 'YES' ) {
+		if ( Options::get_option( 'interlace-switch' ) == 'YES' ) {
 			$map->interlace( Imagine\Image\ImageInterface::INTERLACE_LINE );
 		}
 
@@ -798,6 +883,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		if ( ! touch( $filename ) ) {
 			$progress .= "<b>Warning:</b> The script does not have permission write to " . $filename . " or the directory does not exist<br>";
 		}
+
+		// Final guard using the shared helper
+		$options = mds_normalize_imagine_save_options($ext, $options, 90);
+
 		$map->save( $filename, $options );
 		$progress .= "<br>Saved as " . $filename . "<br>";
 	}

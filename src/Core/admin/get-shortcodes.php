@@ -43,8 +43,9 @@ defined( 'ABSPATH' ) or exit;
 
     </tr>
 	<?php
-	$result = mysqli_query( $GLOBALS['connection'], "select * FROM " . MDS_DB_PREFIX . "banners" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
+	global $wpdb;
+	$result = $wpdb->get_results( "select * FROM " . MDS_DB_PREFIX . "banners", ARRAY_A );
+	foreach ( $result as $row ) {
 
 		?>
 

@@ -28,9 +28,49 @@
 
 defined( 'ABSPATH' ) or exit;
 
-// Start output buffering (allows for redirects)
+// Start output buffering immediately to allow for redirects
 ob_start();
 $ob_level = ob_get_level();
+
+use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Utility;
+
+// Check for duplicate payment BEFORE any output to allow clean redirects
+mds_wp_login_check();
+
+if ( ! empty( $_REQUEST['order_id'] ) ) {
+	$order_id = intval( $_REQUEST['order_id'] );
+	Orders::set_current_order_id( $order_id );
+} else {
+	$order_id = Orders::get_current_order_id();
+}
+
+if ( $order_id ) {
+	global $wpdb;
+	$order_result = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
+			intval( $order_id ),
+			get_current_user_id()
+		),
+		ARRAY_A
+	);
+	
+	if ( count( $order_result ) > 0 ) {
+		$order_row = $order_result[0];
+		
+		// Check for duplicate payment before any output
+		if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) || $order_row['status'] == 'confirmed' ) {
+			if ( Orders::has_payment( $order_id ) ) {
+				// Payment already exists - redirect immediately before any output
+				Utility::redirect( Utility::get_page_url( 'manage', [ 'payment_error' => 'already_paid' ] ) );
+				exit;
+			}
+		}
+	}
+}
+
+// Output buffering already started at top of file
 
 \MillionDollarScript\Classes\System\Utility::get_header();
 

@@ -57,28 +57,44 @@ $reqsize     = [];
 $pixel_count = 0;
 $block_size  = 0;
 if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
-	$uploadok = false;
-	if ( is_uploaded_file( $_FILES['graphic']['tmp_name'] ) ) {
-		// Notice how to grab MIME type.
-		$mime_type = mime_content_type( $_FILES['graphic']['tmp_name'] );
-
-		// If you want to allow certain files
-		$allowed_file_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
-		if ( ! in_array( $mime_type, $allowed_file_types ) ) {
-			global $mds_error;
-			$mds_error = Language::get( 'File type not supported.' );
-
-			return;
-		} else {
-			$uploadok = true;
-		}
+	// Use comprehensive security validation
+	$validation = \MillionDollarScript\Classes\System\FileValidator::validate_image_upload( $_FILES['graphic'] );
+	
+	if ( ! $validation['valid'] ) {
+		global $mds_error;
+		$mds_error = Language::get( 'File upload error: ' ) . $validation['error'];
+		
+		// Log security violation attempt
+		error_log( 'MDS Security: Invalid upload attempt by user ' . get_current_user_id() . ': ' . $validation['error'] );
+		
+		// Don't return early - let the page display with error message
 	}
 
-	if ( $uploadok ) {
-		global $wpdb;
-
+	// File passed all security validations, proceed with upload processing
+	global $wpdb;
+	
+	// Only proceed with file processing if validation passed
+	if ( $validation['valid'] ) {
+		// After all security validations pass, ensure the file is copied to the expected standard location
+		// This ensures compatibility with existing code that expects files in the standard images directory
+		$standard_upload_dir = Utility::get_upload_path() . "images/";
+		$standard_filename = 'tmp_' . Orders::get_current_order_id() . '.png';
+		$standard_file_path = $standard_upload_dir . $standard_filename;
+		
+		// Ensure the standard directory exists
+		if ( ! file_exists( $standard_upload_dir ) ) {
+			wp_mkdir_p( $standard_upload_dir );
+		}
+		
+		// Copy the validated uploaded file to the standard location expected by the rest of the system
+		if ( ! copy( $_FILES['graphic']['tmp_name'], $standard_file_path ) ) {
+			global $mds_error;
+			$mds_error = Language::get( 'Failed to prepare uploaded file for processing. Please try again.' );
+		}
+		
 		$order_id      = Orders::get_current_order_id();
-		$ad_id         = insert_ad_data( $order_id );
+		$image_data    = file_get_contents( $_FILES['graphic']['tmp_name'] );
+		$ad_id         = insert_ad_data( $order_id, false, $image_data );
 		$sql_completed = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND ad_id=%d", get_current_user_id(), intval( $ad_id ) );
 		$row           = $wpdb->get_row( $sql_completed, ARRAY_A );
 		if ( $row ) {
@@ -88,15 +104,6 @@ if ( isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '' ) {
 				$pixels                    = $size['x'] * $size['y'];
 				$_REQUEST['change_pixels'] = true;
 
-				// Capture the return value from upload_changed_pixels
-				$upload_result = upload_changed_pixels( $order_id, $BID, $size, $banner_data, 'graphic' );
-
-				// Check if the upload was successful (returned true)
-				if ( $upload_result !== true ) {
-					// If not successful, set the global error message
-					global $mds_error;
-					$mds_error = $upload_result;
-				}
 			}
 		}
 	}
@@ -112,7 +119,7 @@ if ( $tmp_image_file && file_exists( $tmp_image_file ) ) {
 			global $mds_error;
 			$mds_error = Language::get( "There was an error with the image file." );
 
-			return;
+			// Don't return early - let the page display with error message
 		}
 	}
 }
@@ -136,10 +143,11 @@ if ( $has_packages && ! empty( $package_id ) ) {
 	// check to make sure this advertiser can order this package
 	if ( can_user_get_package( get_current_user_id(), $package_id ) ) {
 
-		$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . $order_id . "'";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		$row      = mysqli_fetch_array( $result );
-		$quantity = $row['quantity'];
+		$sql = $wpdb->prepare( "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id );
+		$quantity = $wpdb->get_var( $sql );
+		if ( $wpdb->last_error ) {
+			wp_die( esc_html( $wpdb->last_error ) );
+		}
 
 		$block_count = $quantity / ( $banner_data['block_width'] * $banner_data['block_height'] );
 
@@ -150,9 +158,21 @@ if ( $has_packages && ! empty( $package_id ) ) {
 		// convert & round off
 		$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . $package_id . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( $order_id ) . "'";
-
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		$wpdb->update(
+			MDS_DB_PREFIX . 'orders',
+			[
+				'package_id' => $package_id,
+				'price' => floatval( $total ),
+				'days_expire' => intval( $pack['days_expire'] ),
+				'currency' => Currency::get_default_currency()
+			],
+			[ 'order_id' => intval( $order_id ) ],
+			[ '%d', '%f', '%d', '%s' ],
+			[ '%d' ]
+		);
+		if ( $wpdb->last_error ) {
+			wp_die( esc_html( $wpdb->last_error ) );
+		}
 	} else {
 		$selected_pack       = $package_id;
 		$_REQUEST['package'] = '';
@@ -160,9 +180,8 @@ if ( $has_packages && ! empty( $package_id ) ) {
 	}
 }
 
-if ( isset( $_POST['mds_dest'] ) && isset( $_FILES ) ) {
-	return;
-}
+// After processing file upload successfully, we don't need to return early
+// The page should continue to show the uploaded image and "Write Your Ad" button
 
 require_once MDS_CORE_PATH . "html/header.php";
 
@@ -173,8 +192,16 @@ $current_user_id = get_current_user_id();
 $order_id        = intval( $order_id );
 $BID             = intval( $BID );
 
-$sql = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND order_id=%d AND banner_id=%d", $current_user_id, $order_id, $BID );
+// Use the same logic as order.php - check for reserved blocks for this user and banner
+// Then also check with order_id as a fallback
+$sql = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND status='reserved' AND banner_id=%d", $current_user_id, $BID );
 $res = $wpdb->get_results( $sql );
+
+// If no reserved blocks found, try checking by order_id
+if ( empty( $res ) ) {
+	$sql = $wpdb->prepare( "SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND order_id=%d AND banner_id=%d", $current_user_id, $order_id, $BID );
+	$res = $wpdb->get_results( $sql );
+}
 
 $count             = count( $res );
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
@@ -189,16 +216,16 @@ Language::out_replace(
 <?php
 /*
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name` ";
-$res = mysqli_query( $GLOBALS['connection'], $sql );
+$res = $wpdb->get_results( $sql );
 
-if ( mysqli_num_rows( $res ) > 1 ) {
+if ( count( $res ) > 1 ) {
 	?>
     <div class="fancy-heading"><?php Language::out( 'Available Grids' ); ?></div>
     <div class="mds-select-intro">
 		<?php
 		Language::out_replace(
 			'%GRID_COUNT%',
-			mysqli_num_rows( $res ),
+			count( $res ),
 			'<p>There are <b>%GRID_COUNT%</b> different grids served by this website! Select the image which you would like to publish your pixels to:</p>'
 		);
 		?>
@@ -228,21 +255,31 @@ if ( isset( $order_exists ) && $order_exists ) {
 // 	display_price_table( $BID );
 // }
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( Orders::get_current_order_id() ) . "' AND banner_id='$BID'";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$order_row = mysqli_fetch_array( $result );
+$sql = $wpdb->prepare(
+	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND banner_id=%d",
+	intval( Orders::get_current_order_id() ),
+	intval( $BID )
+);
+$order_row = $wpdb->get_row( $sql, ARRAY_A );
+if ( $wpdb->last_error ) {
+	wp_die( esc_html( $wpdb->last_error ) );
+}
 
-if ( $result->num_rows == 0 ) {
+if ( ! $order_row ) {
 	// Check for any new orders
 	$order_row = Orders::find_new_order();
-	if ( $order_row == null ) {
+	if ( $order_row == null || $not_enough_blocks ) {
 
-		// Nothing found
-		Language::out_replace(
-			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
-			[ '%ORDER_URL%', '%BID%' ],
-			[ Utility::get_page_url( 'order' ), $BID ]
-		);
+		// Nothing found or not enough blocks
+		if ( $not_enough_blocks ) {
+			Functions::not_enough_blocks( Orders::get_current_order_id(), $banner_data['G_MIN_BLOCKS'] );
+		} else {
+			Language::out_replace(
+				'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
+				[ '%ORDER_URL%', '%BID%' ],
+				[ Utility::get_page_url( 'order' ), $BID ]
+			);
+		}
 
 		return;
 	}
@@ -284,23 +321,25 @@ if ( ! empty( $image ) ) {
     <div class="fancy-heading"><?php Language::out( 'Your Uploaded Pixels' ); ?></div>
     <p>
 		<?php
-		echo "<img class='mds_pointer_graphic' style=\"border:0;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ) . "' alt=\"\" /><br />";
+		if ( Options::get_option( 'show_uploaded_image_in_advanced_mode', 'yes' ) == 'yes' ) {
+			echo "<img class='mds_pointer_graphic' style=\"border:0;\" src='" . esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ) . "' alt=\"\" /><br />";
 
-		if ( empty( $size ) ) {
-			$tmp_size = getimagesize( $tmp_image_file );
-			$size     = array( "x" => $tmp_size[0], "y" => $tmp_size[1] );
-			unset( $tmp_size );
+			if ( empty( $size ) ) {
+				$tmp_size = getimagesize( $tmp_image_file );
+				$size     = array( "x" => $tmp_size[0], "y" => $tmp_size[1] );
+				unset( $tmp_size );
+			}
+
+			Language::out_replace(
+				'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.',
+				[ '%WIDTH%', '%HEIGHT%' ],
+				[ $size['x'], $size['y'] ]
+			);
+
+			?>
+			<br/>
+			<?php
 		}
-
-		Language::out_replace(
-			'The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.',
-			[ '%WIDTH%', '%HEIGHT%' ],
-			[ $size['x'], $size['y'] ]
-		);
-
-		?>
-        <br/>
-		<?php
 
 		if ( empty( $reqsize ) ) {
 			$reqsize = [
@@ -379,14 +418,16 @@ if ( ! empty( $image ) ) {
 	// Check for any new orders
 	$order_row = Orders::find_new_order();
 
-	if ( $order_row == null || ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) ) {
-		Language::out_replace(
-			'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
-			[ '%ORDER_URL%', '%BID%' ],
-			[ Utility::get_page_url( 'order' ), $BID ]
-		);
-	} else if ( $order_row['status'] != 'new' && $not_enough_blocks ) {
-		Functions::not_enough_blocks( $mds_order_id, $banner_data['G_MIN_BLOCKS'] );
+	if ( $order_row == null || ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) || $not_enough_blocks ) {
+		if ( $not_enough_blocks ) {
+			Functions::not_enough_blocks( $mds_order_id, $banner_data['G_MIN_BLOCKS'] );
+		} else {
+			Language::out_replace(
+				'<p>You have no pixels selected on order! Please <a href="%ORDER_URL%?BID=%BID%">select some pixels here</a>.</p>',
+				[ '%ORDER_URL%', '%BID%' ],
+				[ Utility::get_page_url( 'order' ), $BID ]
+			);
+		}
 	} else {
 		if ( isset( $image ) ) {
 

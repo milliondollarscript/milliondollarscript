@@ -30,12 +30,40 @@ defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
-global $f2;
+global $f2, $wpdb;
 $BID = $f2->bid();
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks where banner_id='$BID' AND block_id='" . intval( $_REQUEST['block_id'] ) . "' ";
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-$row = mysqli_fetch_array( $result, MYSQLI_ASSOC );
+// Validate and sanitize input
+$block_id = intval( $_REQUEST['block_id'] ?? 0 );
+if ( $block_id <= 0 ) {
+	http_response_code( 400 );
+	exit( 'Invalid block ID' );
+}
+
+// Use prepared statement with $wpdb
+$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id = %s AND block_id = %d";
+$row = $wpdb->get_row( $wpdb->prepare( $sql, $BID, $block_id ), ARRAY_A );
+
+// Check if block exists
+if ( empty( $row ) ) {
+	http_response_code( 404 );
+	exit( 'Block not found' );
+}
+
+// Additional security check: verify user has permission to view this block
+// Check if user owns this block or if it's a public block
+$current_user_id = get_current_user_id();
+if ( $current_user_id > 0 && $row['status'] === 'sold' ) {
+	// Check if current user is the owner of this block
+	$order_sql = "SELECT user_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d";
+	$order_user_id = $wpdb->get_var( $wpdb->prepare( $order_sql, $row['order_id'] ) );
+	
+	// Allow access if user owns the block or if user is admin
+	if ( $order_user_id != $current_user_id && !current_user_can( 'manage_options' ) ) {
+		http_response_code( 403 );
+		exit( 'Access denied' );
+	}
+}
 
 if ( $row['status'] == "sold" ) {
 

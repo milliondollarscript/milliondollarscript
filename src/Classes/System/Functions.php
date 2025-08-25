@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\System;
 
 use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Data\MDSPageMetadataManager;
 use MillionDollarScript\Classes\Email\Emails;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
@@ -58,10 +59,10 @@ class Functions {
 			// 'winHeight'        => intval( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ),
 			'time'             => esc_js( time() ),
 			'MDS_CORE_URL'     => esc_js( MDS_CORE_URL ),
-			'REDIRECT_SWITCH'  => esc_js( Config::get( 'REDIRECT_SWITCH' ) ),
-			'REDIRECT_URL'     => esc_js( Config::get( 'REDIRECT_URL' ) ),
-			'ENABLE_MOUSEOVER' => esc_js( Config::get( 'ENABLE_MOUSEOVER' ) ),
-			'TOOLTIP_TRIGGER'  => esc_js( Config::get( 'TOOLTIP_TRIGGER' ) ),
+			'REDIRECT_SWITCH'  => esc_js( Options::get_option( 'redirect-switch' ) ),
+			'REDIRECT_URL'     => esc_js( Options::get_option( 'redirect-url' ) ),
+			'ENABLE_MOUSEOVER' => esc_js( Options::get_option( 'enable-mouseover' ) ),
+			'TOOLTIP_TRIGGER'  => esc_js( Options::get_option( 'tooltip-trigger' ) ),
 			'MAX_POPUP_SIZE'   => esc_js( Options::get_option( 'max-popup-size' ) ),
 			// 'BID'              => intval( $BID ),
 			'link_target'      => esc_js( Options::get_option( 'link-target' ) ),
@@ -87,22 +88,11 @@ class Functions {
 		$table_name = MDS_DB_PREFIX . 'orders';
 		$user_id    = get_current_user_id();
 
-		$order_id = Orders::get_current_order_id();
-
-		if ( ! empty( $order_id ) ) {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND order_id = %d",
-				$user_id,
-				$order_id
-			);
-		} else {
-			$status = 'new';
-			$sql    = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
-				$user_id,
-				$status
-			);
-		}
+		// Only use orders with 'new' status and order_in_progress = 'Y' to ensure clean slate
+		$sql = $wpdb->prepare(
+			"SELECT * FROM $table_name WHERE user_id = %d AND status = 'new' AND order_in_progress = 'Y' ORDER BY order_id DESC LIMIT 1",
+			$user_id
+		);
 		$order_result = $wpdb->get_row( $sql );
 		$order_row    = $order_result ? (array) $order_result : [];
 
@@ -128,7 +118,7 @@ class Functions {
 		return [
 			'NONCE'                => wp_create_nonce( 'mds-select' ),
 			'UPDATE_ORDER'         => esc_url( Utility::get_page_url( 'update-order' ) ),
-			'USE_AJAX'             => Config::get( 'USE_AJAX' ),
+			'USE_AJAX'             => Options::get_option( 'use-ajax' ),
 			'block_str'            => $block_str,
 			'grid_width'           => intval( $banner_data['G_WIDTH'] ),
 			'grid_height'          => intval( $banner_data['G_HEIGHT'] ),
@@ -145,7 +135,7 @@ class Functions {
 			'not_adjacent'         => Language::get( 'You must select a block adjacent to another one.' ),
 			'no_blocks_selected'   => Language::get( 'You have no blocks selected.' ),
 			'MDS_CORE_URL'         => esc_url( MDS_CORE_URL ),
-			'INVERT_PIXELS'        => Config::get( 'INVERT_PIXELS' ),
+			'INVERT_PIXELS'        => Options::get_option( 'invert-pixels' ),
 			'WAIT'                 => Language::get( 'Please Wait! Reserving Pixels...' ),
 		];
 	}
@@ -160,7 +150,7 @@ class Functions {
 
 		wp_register_style( 'mds', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
 
-		self::$tooltips = Config::get( 'ENABLE_MOUSEOVER' );
+		self::$tooltips = Options::get_option( 'enable-mouseover' );
 		if ( self::$tooltips == 'POPUP' ) {
 			wp_register_script( 'popper', MDS_CORE_URL . 'js/third-party/popper.min.js', [], filemtime( MDS_CORE_PATH . 'js/third-party/popper.min.js' ), true );
 			wp_register_script( 'tippy', MDS_CORE_URL . 'js/third-party/tippy-bundle.umd.min.js', [ 'popper' ], filemtime( MDS_CORE_PATH . 'js/third-party/tippy-bundle.umd.min.js' ), true );
@@ -192,6 +182,13 @@ class Functions {
 
 		if ( isset( $post ) && $post->ID == Options::get_option( 'users-order-page' ) ) {
 			$register_order_script = true;
+		} elseif ( isset( $post ) ) {
+			// Check new metadata system for order pages
+			$metadata_manager = MDSPageMetadataManager::getInstance();
+			$metadata = $metadata_manager->getMetadata( $post->ID );
+			if ( $metadata && $metadata->page_type === 'order' ) {
+				$register_order_script = true;
+			}
 		} else {
 			global $wp_query;
 			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
@@ -205,13 +202,13 @@ class Functions {
 
 		if ( $register_order_script ) {
 			// select.js
-			if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'YES' ) {
+			if ( is_user_logged_in() && Options::get_option( 'use-ajax' ) == 'YES' ) {
 				$order_script  = 'select';
 				$data_function = self::get_select_data();
 			}
 
 			// order.js
-			if ( is_user_logged_in() && Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+			if ( is_user_logged_in() && Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 				$order_script  = 'order';
 				$data_function = Orders::get_order_data();
 			}
@@ -239,7 +236,7 @@ class Functions {
 
 		wp_enqueue_style( 'mds' );
 
-		self::$tooltips = Config::get( 'ENABLE_MOUSEOVER' );
+		self::$tooltips = Options::get_option( 'enable-mouseover' );
 		if ( self::$tooltips == 'POPUP' ) {
 			wp_enqueue_script( 'popper' );
 			wp_enqueue_script( 'tippy' );
@@ -458,9 +455,17 @@ class Functions {
 			return true;
 		}
 
+		// Get current theme mode and apply theme classes for the pixel editing interface
+		$theme_mode = Options::get_option( 'theme_mode', 'light' );
+		$logged_in = is_user_logged_in() ? ' logged-in' : '';
+		$theme_classes = ' mds-theme-' . $theme_mode . ' mds-theme-active';
+
 		// Ad forms:
 		?>
-        <div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>
+		<div class="mds-container<?php echo $logged_in . $theme_classes; ?>">
+			<div class="outer">
+				<div class="inner">
+        		<div class="fancy-heading"><?php Language::out( 'Edit your Ad / Change your pixels' ); ?></div>
 		<?php
 		// Display the global error message if it's set
 		global $mds_error;
@@ -564,13 +569,18 @@ class Functions {
 			}
 
 			// send pixel change notification
-			if ( Config::get( 'EMAIL_ADMIN_PUBLISH_NOTIFY' ) == 'YES' ) {
+			if ( Options::get_option( 'email-admin-publish-notify' ) == 'YES' ) {
 				Emails::send_published_pixels_notification( $user_id, $prams['order_id'] );
 			}
 		} else {
 			$prams = load_ad_values( $ad_id );
 			display_ad_form( 1, 'user', $prams );
 		}
+		?>
+				</div>
+			</div>
+		</div>
+		<?php
 
 		require_once MDS_CORE_PATH . "html/footer.php";
 

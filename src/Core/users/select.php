@@ -55,17 +55,17 @@ if ( ! is_numeric( $BID ) ) {
 
 $banner_data = load_banner_constants( $BID );
 
-$USE_AJAX = \MillionDollarScript\Classes\Data\Config::get( 'USE_AJAX' );
+$USE_AJAX = Options::get_option( 'use-ajax' );
 
 $order_id = Orders::get_current_order_id();
 
+global $wpdb;
+
 if ( ! empty( $order_id ) ) {
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . intval( $order_id ) . "'";
+	$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND order_id=%d", get_current_user_id(), intval( $order_id ) ), ARRAY_A );
 } else {
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND status='new'";
+	$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id=%d AND status='new'", get_current_user_id() ), ARRAY_A );
 }
-$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$order_row = mysqli_fetch_array( $order_result );
 
 if ( $order_row != null ) {
 
@@ -80,10 +80,14 @@ if ( $order_row != null ) {
 		Orders::reset_progress();
 
 		// delete the old order and associated blocks
-		$sql = "delete from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $order_row['order_id'] );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$sql = "delete from " . MDS_DB_PREFIX . "blocks where order_id=" . intval( $order_row['order_id'] );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+		$wpdb->delete( MDS_DB_PREFIX . "orders", [ 'order_id' => intval( $order_row['order_id'] ) ], [ '%d' ] );
+		if ( $wpdb->last_error ) {
+			mds_sql_error( $wpdb->last_error );
+		}
+		$wpdb->delete( MDS_DB_PREFIX . "blocks", [ 'order_id' => intval( $order_row['order_id'] ) ], [ '%d' ] );
+		if ( $wpdb->last_error ) {
+			mds_sql_error( $wpdb->last_error );
+		}
 	} else if ( ( empty( Orders::get_current_order_id() ) ) || ( $USE_AJAX == 'YES' ) ) {
 		// save the order id to session
 		Orders::set_current_order_id( $order_row['order_id'] );
@@ -177,10 +181,9 @@ $order_blocks = array_map( function ( $block_id ) use ( $BID ) {
 
 Language::out( '<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>' );
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name`";
-$res = mysqli_query( $GLOBALS['connection'], $sql );
+$res = $wpdb->get_results( "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name`" );
 
-if ( mysqli_num_rows( $res ) > 1 ) {
+if ( count( $res ) > 1 ) {
 	?>
     <div class="fancy-heading"><?php Language::out( 'Available Grids' ); ?></div>
     <div class="mds-select-intro">
@@ -188,7 +191,7 @@ if ( mysqli_num_rows( $res ) > 1 ) {
 		Language::out_replace(
 			'There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:',
 			'%GRID_COUNT%',
-			mysqli_num_rows( $res )
+			count( $res )
 		);
 		?>
     </div>

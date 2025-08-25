@@ -46,9 +46,12 @@ if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' && !isset($_REQU
 		// Process all selected banners
 		if ( isset($_REQUEST['banner_list']) && is_array($_REQUEST['banner_list']) && $_REQUEST['banner_list'][0] == 'all' ) {
 			// Process all banners
-			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			while ( $row = mysqli_fetch_array( $result ) ) {
+			global $wpdb;
+			$results = $wpdb->get_results(
+				"SELECT * FROM " . MDS_DB_PREFIX . "banners",
+				ARRAY_A
+			);
+			foreach ( $results as $row ) {
 				$BID = $row['banner_id'];
 				$processing_output .= process_image( $row['banner_id'] );
 				publish_image( $row['banner_id'] );
@@ -108,10 +111,12 @@ if ( ! is_writable( $BANNER_PATH ) ) {
 	echo "<b>Warning:</b> The script does not have permission write to " . $BANNER_PATH . " or the directory does not exist<br>";
 }
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders where approved='N' and status='completed' ";
-$r = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-$result = mysqli_fetch_array( $r );
-$c      = mysqli_num_rows( $r );
+global $wpdb;
+$unapproved_orders = $wpdb->get_results(
+	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE approved = 'N' AND status = 'completed'",
+	ARRAY_A
+);
+$c = count( $unapproved_orders );
 
 if ( $c > 0 ) {
 	echo "<h3>Note: There are/is $c pixel ads waiting to be approved. <a href='" . esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ) . "'>Approve pixel ads here.</a></h3>";
@@ -131,10 +136,13 @@ if ( $c > 0 ) {
         <option value="all" selected>Process All</option>
 		<?php
 
-		$sql = "Select * from " . MDS_DB_PREFIX . "banners";
-		$res = mysqli_query( $GLOBALS['connection'], $sql );
+		global $wpdb;
+		$banners = $wpdb->get_results(
+			"SELECT * FROM " . MDS_DB_PREFIX . "banners",
+			ARRAY_A
+		);
 
-		while ( $row = mysqli_fetch_array( $res ) ) {
+		foreach ( $banners as $row ) {
 			echo '<option value="' . $row['banner_id'] . '">#' . $row['banner_id'] . ' - ' . $row["name"] . '</option>' . "\n";
 		}
 		?>

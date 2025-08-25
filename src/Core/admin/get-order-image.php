@@ -28,6 +28,11 @@
 
 defined( 'ABSPATH' ) or exit;
 
+// Admin capability check
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die( 'Unauthorized access.' );
+}
+
 global $f2;
 $BID = $f2->bid();
 
@@ -38,12 +43,28 @@ $imagine = new Imagine\Gd\Imagine();
 // get the order id
 $order_id = 0;
 if ( isset( $_REQUEST['block_id'] ) && $_REQUEST['block_id'] != '' ) {
-	$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id='" . intval( $_REQUEST['block_id'] ) . "' AND banner_id='" . $BID . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-	$row      = mysqli_fetch_array( $result );
+	$block_id = intval( $_REQUEST['block_id'] );
+	if ( $block_id <= 0 ) {
+		wp_die( 'Invalid block ID.' );
+	}
+	
+	global $wpdb;
+	$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'blocks';
+	$row = $wpdb->get_row( $wpdb->prepare( 
+		"SELECT order_id FROM $table_name WHERE block_id = %d AND banner_id = %d", 
+		$block_id, $BID 
+	), ARRAY_A );
+	
+	if ( ! $row ) {
+		wp_die( 'Block not found.' );
+	}
+	
 	$order_id = $row['order_id'];
 } else if ( isset( $_REQUEST['aid'] ) && $_REQUEST['aid'] != '' ) {
 	$post_id  = intval( $_REQUEST['aid'] );
+	if ( $post_id <= 0 ) {
+		wp_die( 'Invalid ad ID.' );
+	}
 	$order_id = carbon_get_post_meta( $post_id, MDS_PREFIX . 'order' );
 }
 
@@ -52,13 +73,24 @@ if ( $order_id == 0 ) {
 }
 
 // load all the blocks for the order
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE order_id='" . intval( $order_id ) . "' ";
-$result3 = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+if ( ! isset( $wpdb ) ) {
+	global $wpdb;
+}
+
+$table_name = $wpdb->prefix . MDS_DB_PREFIX . 'blocks';
+$block_results = $wpdb->get_results( $wpdb->prepare( 
+	"SELECT * FROM $table_name WHERE order_id = %d", 
+	intval( $order_id ) 
+), ARRAY_A );
+
+if ( ! $block_results ) {
+	wp_die( 'No blocks found for this order.' );
+}
 
 $blocks = array();
 
 $i = 0;
-while ( $block_row = mysqli_fetch_array( $result3 ) ) {
+foreach ( $block_results as $block_row ) {
 
 	if ( isset( $high_x ) && $high_x == '' ) {
 		$high_x = $block_row['x'];

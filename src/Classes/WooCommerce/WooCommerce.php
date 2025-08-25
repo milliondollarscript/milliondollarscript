@@ -176,6 +176,7 @@ class WooCommerce {
 		$user_id = get_current_user_id();
 
 		if ( ! empty( Orders::get_current_order_id() ) ) {
+			global $wpdb;
 			$order = wc_get_order( $order_id );
 
 			$mds_order = Orders::get_order( $mds_order_id );
@@ -187,14 +188,17 @@ class WooCommerce {
 				if ( Options::get_option( 'auto-approve', 'no' ) == 'yes' ) {
 					// Complete the order
 
-					$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . $order_id;
-					$result = mysqli_query( $GLOBALS['connection'], $sql ) or mds_sql_error( $GLOBALS['connection'] );
-					$row = mysqli_fetch_array( $result );
+					$row = $wpdb->get_row( $wpdb->prepare(
+						"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+						$mds_order_id
+					), ARRAY_A );
 
-					Orders::complete_order( $user_id, $mds_order_id );
+					if ( $row ) {
+						Orders::complete_order( $user_id, $mds_order_id );
 
-					$transaction_id = $order->get_transaction_id();
-					Payment::debit_transaction( $mds_order_id, $row['price'], $row['currency'], $transaction_id, 'order', 'WC' );
+						$transaction_id = $order->get_transaction_id();
+						Payment::debit_transaction( $mds_order_id, $row['price'], $row['currency'], $transaction_id, 'order', 'WC' );
+					}
 
 				} else {
 					// Confirm the order

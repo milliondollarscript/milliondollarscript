@@ -104,8 +104,23 @@ class _2_5_7 {
 				$meta_key = MDS_PREFIX . 'current_order_id';
 				$order_id = get_user_meta( $user->ID, $meta_key, true );
 				if ( ! empty( $order_id ) ) {
-					$sql = "UPDATE `" . MDS_DB_PREFIX . "orders` SET `order_in_progress`='Y', `current_step`=1 WHERE `order_id`=" . $order_id;
-					$wpdb->query( $sql );
+					$result = $wpdb->update(
+						MDS_DB_PREFIX . 'orders',
+						array(
+							'order_in_progress' => 'Y',
+							'current_step' => 1,
+						),
+						array( 'order_id' => $order_id ),
+						array(
+							'%s',    // order_in_progress
+							'%d'     // current_step
+						),
+						array( '%d' )
+					);
+					
+					if ( $result === false ) {
+						error_log( 'MDS Upgrade 2.5.7: Failed to update order ' . $order_id . ' - ' . $wpdb->last_error );
+					}
 				}
 			}
 		}

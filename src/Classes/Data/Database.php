@@ -52,6 +52,7 @@ class Database {
 			'blocks',
 			'clicks',
 			'config',
+			'email_disable_tokens',
 			'mail_queue',
 			'orders',
 			'packages',
@@ -88,13 +89,8 @@ class Database {
 	 * @return void
 	 */
 	public function connect(): void {
-		if ( isset( $GLOBALS['connection'] ) ) {
-			return;
-		}
-
-		require_once __DIR__ . '/Mdsdb.php';
-		$conn                  = new Mdsdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
-		$GLOBALS['connection'] = $conn->get_dbh();
+		// No longer needed - WordPress handles database connections via global $wpdb
+		// This method is kept for backward compatibility but does nothing
 	}
 
 	public function __wakeup() {
@@ -252,22 +248,20 @@ class Database {
 	 * @return string
 	 */
 	public function up_dbver( string $version = '0' ): string {
-		global $wpdb;
-
 		if ( version_compare( $version, '0', '>' ) ) {
 			$val = $version;
 		} else {
 			$val = MDS_DB_VERSION;
 		}
 
-		\update_option(MDS_PREFIX . 'db-version', $val);
+		// Use WordPress options instead of deprecated config table
+		update_option( 'mds_db_version', $val );
 
 		if ( $val == $version ) {
 			return $version;
 		}
 
-		$val = \get_option(MDS_PREFIX . 'db-version', MDS_DB_VERSION);
-
+		$val = get_option( 'mds_db_version', MDS_DB_VERSION );
 		return $val;
 	}
 
@@ -287,7 +281,6 @@ class Database {
 			update_option( 'mds_db_version', $val );
 		} else {
 			// Do nothing for other keys, as the original table is gone.
-			// error_log('Deprecated set_config called for unknown key: ' . $key);
 		}
 	}
 

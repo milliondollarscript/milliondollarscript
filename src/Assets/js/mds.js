@@ -26,6 +26,14 @@
  */
 
 // Million Dollar Script Two JavaScript
+
+// Initialize MDS hooks system if not already present
+if (typeof window.MDS === 'undefined') {
+	window.MDS = {};
+}
+if (typeof window.MDS.hooks === 'undefined') {
+	window.MDS.hooks = {};
+}
  
 function add_ajax_loader(container) {
 	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
@@ -359,6 +367,15 @@ function add_tippy() {
 						// Update tooltip with the loaded content
 						instance.setContent(responseData);
 						instance._content = true;
+						
+						// Trigger custom event for extensions to modify tooltip content
+						if (window.MDS && window.MDS.hooks && window.MDS.hooks.afterTooltipContentLoaded) {
+							window.MDS.hooks.afterTooltipContentLoaded({
+								instance: instance,
+								data: data,
+								responseData: responseData
+							});
+						}
 					})
 					.fail(function (jqXHR, textStatus, errorThrown) {
 						// Handle AJAX failure
@@ -950,13 +967,37 @@ function mdsToggleMenu() {
 
 function confirmLink(theLink, theConfirmMsg) {
 	if (theConfirmMsg === "") {
-		return true;
+		window.location.href = theLink.href;
+		return false;
 	}
 
-	const is_confirmed = confirm(theConfirmMsg + "\n");
-	if (is_confirmed) {
-		theLink.href += "&is_js_confirmed=1";
+	const processLink = function() {
+		let link = theLink.href;
+		// Check if href is empty, null, or just a hash (#)
+		if (link == null || link === '' || link.endsWith('#')) {
+			link = jQuery(theLink).data('link');
+		}
+		if (link == null || link === '') {
+			return true;
+		}
+
+		// Properly append query parameter
+		if (link.includes('?')) {
+			link += '&is_js_confirmed=1';
+		} else {
+			link += '?is_js_confirmed=1';
+		}
+		window.location.href = link;
+	};
+
+	if (typeof MDSModalUtility !== 'undefined') {
+		MDSModalUtility.confirm(theConfirmMsg, processLink);
+	} else {
+		let is_confirmed = confirm(theConfirmMsg + "\n");
+		if (is_confirmed) {
+			processLink();
+		}
 	}
 
-	return is_confirmed;
+	return false;
 }

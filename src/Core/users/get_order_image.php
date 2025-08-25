@@ -29,6 +29,8 @@
 use MillionDollarScript\Classes\System\Utility;
 use Imagine\Gd\Imagine;
 use Imagine\Image\Box;
+
+global $wpdb;
 use MillionDollarScript\Classes\Data\Options;
 
 defined( 'ABSPATH' ) or exit;
@@ -46,33 +48,63 @@ $imagine = new Imagine();
 $order_id = null;
 if ( isset( $_REQUEST['block_id'] ) && $_REQUEST['block_id'] != '' ) {
 	global $wpdb;
-	$sql          = "SELECT order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=%d AND banner_id=%d";
-	$prepared_sql = $wpdb->prepare( $sql, intval( $_REQUEST['block_id'] ), $BID );
+	$block_id = intval( $_REQUEST['block_id'] );
+	if ( $block_id <= 0 ) {
+		http_response_code( 400 );
+		exit( 'Invalid block ID' );
+	}
+	
+	$sql          = "SELECT order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id=%d AND banner_id=%s";
+	$prepared_sql = $wpdb->prepare( $sql, $block_id, $BID );
 	$order_id     = $wpdb->get_var( $prepared_sql );
 } else if ( isset( $_REQUEST['aid'] ) && $_REQUEST['aid'] != '' ) {
 	$ad_id     = intval( $_REQUEST['aid'] );
+	if ( $ad_id <= 0 ) {
+		http_response_code( 400 );
+		exit( 'Invalid ad ID' );
+	}
+	
 	$mds_pixel = get_post( $ad_id );
 	if ( ! empty( $mds_pixel ) ) {
 		$order_id = \carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
 	}
 } else {
-	exit;
+	http_response_code( 400 );
+	exit( 'Missing required parameters' );
 }
 
 if ( empty( $order_id ) ) {
-	exit;
+	http_response_code( 404 );
+	exit( 'Order not found' );
+}
+
+// Security check: verify user has permission to view this order
+$current_user_id = get_current_user_id();
+if ( $current_user_id > 0 ) {
+	$order_user_id = $wpdb->get_var( $wpdb->prepare( "SELECT user_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", $order_id ) );
+	
+	// Allow access if user owns the order or if user is admin
+	if ( $order_user_id != $current_user_id && !current_user_can( 'manage_options' ) ) {
+		http_response_code( 403 );
+		exit( 'Access denied' );
+	}
 }
 
 $size = Utility::get_pixel_image_size( $order_id );
 
 // load all the blocks wot
-$sql = "SELECT block_id,x,y,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE order_id='" . intval( $order_id ) . "' ";
-$result3 = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+$sql = "SELECT block_id,x,y,image_data FROM " . MDS_DB_PREFIX . "blocks WHERE order_id = %d";
+$block_results = $wpdb->get_results( $wpdb->prepare( $sql, intval( $order_id ) ), ARRAY_A );
+
+if ( empty( $block_results ) ) {
+	http_response_code( 404 );
+	exit( 'No blocks found for this order' );
+}
 
 $blocks = array();
 
 $i = 0;
-while ( $block_row = mysqli_fetch_array( $result3 ) ) {
+foreach ( $block_results as $block_row ) {
 
 	$high_x = ! isset( $high_x ) ? $block_row['x'] : $high_x;
 	$high_y = ! isset( $high_y ) ? $block_row['y'] : $high_y;

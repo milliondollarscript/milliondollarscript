@@ -64,73 +64,6 @@ class Options {
 		}
 
 		self::$tabs = [
-			Language::get( 'Pages' ) => [
-
-				// Create Pages
-				Field::make( 'html', MDS_PREFIX . 'create-pages', Language::get( 'Create Pages' ) )
-					/* eslint-disable-next-line */
-					->set_html( '<div class="button button-primary" id="mds_create_pages" style="margin-top: 10px;">' . Language::get( 'Create Pages' ) . '</div/>' )
-					->set_help_text( Language::get( 'Clicking this button will create multiple pages for use with MDS.' ) ),
-
-				// Delete Pages
-				Field::make( 'html', MDS_PREFIX . 'delete-pages', Language::get( 'Delete Pages' ) )
-					->set_html( '<div class="button button-primary" id="mds_delete_pages" style="margin-top: 10px;">' . Language::get( 'Delete Pages' ) . '</div/>' )
-					->set_help_text( Language::get( 'Clicking this button will delete all pages created by MDS.' ) ),
-
-				// MDS Pages
-				Field::make( 'html', MDS_PREFIX . 'mds_pages', Language::get( 'MDS Pages' ) )
-					->set_html( Language::get( '<h3>The following options will automatically use the pages created above. You can change them. These are the page id #</h3>' ) ),
-
-				// Grid Page
-				Field::make( 'text', MDS_PREFIX . 'grid-page', Language::get( 'Grid Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The grid page.' ) ),
-
-				// Users Order Page
-				Field::make( 'text', MDS_PREFIX . 'users-order-page', Language::get( 'Users Order Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The order page for Users.' ) ),
-
-				// Users Write Ad Page
-				Field::make( 'text', MDS_PREFIX . 'users-write-ad-page', Language::get( 'Users Write Ad Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The write ad page for Users.' ) ),
-
-				// Users Confirm Order Page
-				Field::make( 'text', MDS_PREFIX . 'users-confirm-order-page', Language::get( 'Users Confirm Order Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The confirm order page for Users.' ) ),
-
-				// Users Payment Page
-				Field::make( 'text', MDS_PREFIX . 'users-payment-page', Language::get( 'Users Payment Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The payment page for Users.' ) ),
-
-				// Users Manage Page
-				Field::make( 'text', MDS_PREFIX . 'users-manage-page', Language::get( 'Users Manage Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The manage page for Users.' ) ),
-
-				// Users Thank-You Page
-				Field::make( 'text', MDS_PREFIX . 'users-thank-you-page', Language::get( 'Users Thank You Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The thank you page for Users.' ) ),
-
-				// Users List Page
-				Field::make( 'text', MDS_PREFIX . 'users-list-page', Language::get( 'Users List Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The list page for Users.' ) ),
-
-				// Users Upload Page
-				Field::make( 'text', MDS_PREFIX . 'users-upload-page', Language::get( 'Users Upload Page' ) )
-					->set_attribute( 'type', 'number' )
-				     ->set_help_text( Language::get( 'The upload page for Users.' ) ),
-
-				// Users No Orders Page
-				Field::make( 'text', MDS_PREFIX . 'users-no-orders-page', Language::get( 'Users No Orders Page' ) )
-					->set_attribute( 'type', 'number' )
-					->set_help_text( Language::get( 'The no orders page for Users.' ) ),
-			],
 
 			Language::get( 'URLs & Redirects' ) => [
 
@@ -265,6 +198,29 @@ class Options {
 						'dark'  => Language::get( 'Dark Mode' ),
 					] )
 					->set_help_text( Language::get( 'Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching.' ) ),
+
+				// Export/Import Colors Section
+				Field::make( 'html', MDS_PREFIX . 'export-import-section', Language::get( 'Backup & Restore' ) )
+					->set_html( '
+						<h3>' . Language::get( 'Export & Import Color Settings' ) . '</h3>
+						<p>' . Language::get( 'Export your current color settings as a backup file or import settings from a previously saved file.' ) . '</p>
+						<div style="margin: 15px 0;">
+							<button type="button" id="mds_export_colors" class="button button-secondary" style="margin-right: 10px;">
+								<span class="dashicons dashicons-download" style="vertical-align: middle;"></span> ' . Language::get( 'Export Colors' ) . '
+							</button>
+							<button type="button" id="mds_reset_colors" class="button button-secondary" style="margin-right: 10px;">
+								<span class="dashicons dashicons-update" style="vertical-align: middle;"></span> ' . Language::get( 'Reset to Defaults' ) . '
+							</button>
+						</div>
+						<div style="margin: 15px 0;">
+							<label for="mds_import_file" style="display: block; margin-bottom: 5px; font-weight: bold;">' . Language::get( 'Import Colors:' ) . '</label>
+							<input type="file" id="mds_import_file" accept=".json" style="margin-right: 10px;">
+							<button type="button" id="mds_import_colors" class="button button-secondary" disabled>
+								<span class="dashicons dashicons-upload" style="vertical-align: middle;"></span> ' . Language::get( 'Import Colors' ) . '
+							</button>
+						</div>
+						<p style="font-style: italic; color: #666;">' . Language::get( 'Note: Import will replace all current color settings. Make sure to export your current settings first as a backup.' ) . '</p>
+					' ),
 
 				// ============================================================================
 				// BACKGROUND COLORS
@@ -752,8 +708,8 @@ class Options {
 
 				// Light Mode - Tooltip Background
 				Field::make( 'color', MDS_PREFIX . 'light_tooltip_background', Language::get( 'Light Mode - Tooltip Background' ) )
-					->set_default_value( '#333333' )
-					->set_palette( [ '#333333', '#444444', '#555555', '#222222' ] )
+					->set_default_value( '#ffffff' )
+					->set_palette( [ '#ffffff', '#f5f5f5', '#efefef', '#e9ecef' ] )
 					->set_help_text( Language::get( 'Background color for tooltips, popups, informational overlays, and help elements in light mode.' ) )
 					->set_conditional_logic( [
 						'relation' => 'AND',
@@ -846,6 +802,23 @@ class Options {
 						'YES'    => Language::get( 'Advanced (Select blocks → Upload image)', true ),
 					] )
 					->set_help_text( Language::get( 'Choose how users select pixels in the grid.' ) ),
+
+				// Show Uploaded Image in Advanced Mode
+				Field::make( 'radio', MDS_PREFIX . 'show_uploaded_image_in_advanced_mode', Language::get( 'Show Uploaded Image in Advanced Mode' ) )
+					->set_default_value( 'yes' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'use-ajax',
+							'compare' => '=',
+							'value'   => 'YES',
+						],
+					] )
+					->set_help_text( Language::get( 'If Yes, the uploaded image and its dimensions will be shown in advanced mode. If No, only the image within the grid will be visible.' ) ),
 
 				// Resize uploaded pixels automatically
 				Field::make( 'radio', MDS_PREFIX . 'resize', Language::get( 'Resize Uploaded Pixels Automatically' ) )
@@ -1255,6 +1228,11 @@ class Options {
 	 * @return mixed
 	 */
 	public static function get_option( $name, $default = null, bool $carbon_fields = true, string $container_id = 'options' ): mixed {
+		// If no explicit default provided, try to get it from field configuration
+		if ( $default === null ) {
+			$default = self::get_field_default_value( $name );
+		}
+		
 		if ( $carbon_fields && function_exists( 'carbon_get_theme_option' ) ) {
 			$option = carbon_get_theme_option( MDS_PREFIX . $name );
 			if ( ! empty( $option ) || $option === false ) {
@@ -1278,6 +1256,38 @@ class Options {
 		}
 
 		return $val;
+	}
+
+	/**
+	 * Extract default value for a field from the Carbon Fields configuration
+	 *
+	 * @param string $field_name The field name to find default for
+	 * @return mixed|null The default value or null if not found
+	 */
+	private static function get_field_default_value( string $field_name ) {
+		// Check if $tabs is initialized before accessing it
+		if ( ! isset( self::$tabs ) || empty( self::$tabs ) ) {
+			return null;
+		}
+		
+		foreach ( self::$tabs as $tab_fields ) {
+			if ( ! is_array( $tab_fields ) ) {
+				continue;
+			}
+			
+			foreach ( $tab_fields as $field ) {
+				if ( ! is_array( $field ) ) {
+					continue;
+				}
+				
+				// Look for fields with matching name
+				if ( isset( $field['name'] ) && $field['name'] === $field_name ) {
+					return $field['default'] ?? null;
+				}
+			}
+		}
+		
+		return null;
 	}
 
 	/**
@@ -1378,17 +1388,17 @@ class Options {
 			],
 			[
 				'title' => Language::get('Order Pixels'),
-				'content' => '[milliondollarscript view="order"]',
+				'content' => '[milliondollarscript type="order"]',
 				'option_name' => 'users-order-page',
 			],
 			[
 				'title' => Language::get('Your Pixels'),
-				'content' => '[milliondollarscript view="pixels"]',
+				'content' => '[milliondollarscript type="manage"]',
 				'option_name' => 'users-pixels-page',
 			],
 			[
 				'title' => Language::get('Checkout'),
-				'content' => '[milliondollarscript view="checkout"]',
+				'content' => '[milliondollarscript type="confirm-order"]',
 				'option_name' => 'users-confirm-order-page',
 			],
 		];
@@ -1759,7 +1769,7 @@ class Options {
 			'--mds-tooltip-bg' => [
 				'option' => $prefix . 'tooltip_background',
 				'key' => 'tooltip_bg',
-				'fallback' => $theme === 'dark' ? '#101216' : '#333333'
+				'fallback' => $theme === 'dark' ? '#101216' : '#ffffff'
 			],
 			
 			// Component variables
@@ -1851,7 +1861,7 @@ class Options {
 				'text_primary' => '#333333',
 				'text_secondary' => '#666666',
 				'border_primary' => '#dddddd',
-				'tooltip_bg' => '#333333',
+				'tooltip_bg' => '#ffffff',
 				
 				// Components
 				'menu_bg' => '#F4F2F1',

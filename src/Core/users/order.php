@@ -55,10 +55,10 @@ if ( $has_packages && $_REQUEST['pack'] != '' ) {
 	// check to make sure this advertiser can order this package
 	if ( can_user_get_package( get_current_user_id(), $_REQUEST['pack'] ) ) {
 
-		$sql = "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( $_REQUEST['order_id'] ) . "'";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		$row      = mysqli_fetch_array( $result );
-		$quantity = $row['quantity'];
+		$quantity = $wpdb->get_var( $wpdb->prepare( "SELECT quantity FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", intval( $_REQUEST['order_id'] ) ) );
+		if ( $wpdb->last_error ) {
+			mds_sql_error( $wpdb->last_error );
+		}
 
 		$block_count = $quantity / ( $banner_data['block_width'] * $banner_data['block_height'] );
 
@@ -69,9 +69,21 @@ if ( $has_packages && $_REQUEST['pack'] != '' ) {
 		// convert & round off
 		$total = Currency::convert_to_default_currency( $pack['currency'], $total );
 
-		$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET package_id='" . intval( $_REQUEST['pack'] ) . "', price='" . floatval( $total ) . "',  days_expire='" . intval( $pack['days_expire'] ) . "', currency='" . mysqli_real_escape_string( $GLOBALS['connection'], Currency::get_default_currency() ) . "' WHERE order_id='" . intval( Orders::get_current_order_id() ) . "'";
-
-		mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+		$wpdb->update(
+			MDS_DB_PREFIX . "orders",
+			[
+				'package_id' => intval( $_REQUEST['pack'] ),
+				'price' => floatval( $total ),
+				'days_expire' => intval( $pack['days_expire'] ),
+				'currency' => Currency::get_default_currency()
+			],
+			[ 'order_id' => intval( Orders::get_current_order_id() ) ],
+			[ '%d', '%f', '%d', '%s' ],
+			[ '%d' ]
+		);
+		if ( $wpdb->last_error ) {
+			mds_sql_error( $wpdb->last_error );
+		}
 	} else {
 		$selected_pack      = $_REQUEST['pack'];
 		$_REQUEST['pack']   = '';
@@ -104,10 +116,10 @@ Language::out_replace(
 	],
 );
 
-$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( Orders::get_current_order_id() ) . "' and banner_id='$BID'";
-
-$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-$order_row = mysqli_fetch_array( $result );
+$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT * from " . MDS_DB_PREFIX . "orders where order_id=%d and banner_id=%d", intval( Orders::get_current_order_id() ), $BID ), ARRAY_A );
+if ( $wpdb->last_error ) {
+	mds_sql_error( $wpdb->last_error );
+}
 
 function display_edit_order_button( $order_id ) {
 	global $BID;
@@ -171,9 +183,10 @@ if ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $o
 		<?php
 		if ( $cannot_get_package ) {
 
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "packages where package_id='" . intval( $selected_pack ) . "'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-			$row = mysqli_fetch_array( $result );
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * from " . MDS_DB_PREFIX . "packages where package_id=%d", intval( $selected_pack ) ), ARRAY_A );
+			if ( $wpdb->last_error ) {
+				mds_sql_error( $wpdb->last_error );
+			}
 
 			Language::out_replace(
 				'<p><span style="color:red">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href="%MANAGE_URL%">Manage Pixels</a>.</p>',

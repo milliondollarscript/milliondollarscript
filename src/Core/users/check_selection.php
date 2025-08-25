@@ -71,6 +71,9 @@ function check_selection_main(): void {
 	$image     = $imagine->open( $upload_image_file );
 	$size      = $image->getSize();
 
+	// Get the required size, which may be constrained by max_blocks
+	$reqsize = Utility::get_required_size($size->getWidth(), $size->getHeight(), $banner_data);
+
 	// Get client coordinates and pointer dimensions from request
 	$client_x = intval($_REQUEST['map_x']);
 	$client_y = intval($_REQUEST['map_y']);
@@ -82,9 +85,9 @@ function check_selection_main(): void {
 	// Calculate blocks covered by the pointer
 	$cb_array = array();
 	
-	// Get pointer dimensions from uploaded image size
-	$pointer_width_px = $size->getWidth();
-	$pointer_height_px = $size->getHeight();
+	// Get pointer dimensions from the *required* (potentially resized) image size
+	$pointer_width_px = $reqsize[0];
+	$pointer_height_px = $reqsize[1];
 	
 	// Calculate how many blocks the pointer spans horizontally and vertically
 	$pointer_width_blocks = ceil($pointer_width_px / $banner_data['BLK_WIDTH']);

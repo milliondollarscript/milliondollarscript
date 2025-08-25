@@ -111,16 +111,53 @@ class BlockFields {
 	}
 
 	public static function display( $fields ): void {
+		
 		$defaults = Shortcode::defaults();
 		$values   = array();
 
 		foreach ( $defaults as $key => $value ) {
-			if ( array_key_exists( MDS_PREFIX . $key, $fields ) ) {
-				$values[ $key ] = $fields[ MDS_PREFIX . $key ];
+			$field_key = MDS_PREFIX . $key;
+			if ( array_key_exists( $field_key, $fields ) ) {
+				$values[ $key ] = $fields[ $field_key ];
 			} else {
 				$values[ $key ] = $value;
 			}
 		}
+		
+		// Check for placeholder values and replace them with calculated dimensions
+		if ( $values['type'] === 'grid' && ( $values['width'] === '{width}' || $values['height'] === '{height}' ) ) {
+			
+			// Calculate actual grid dimensions
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'mds_banners';
+			$grid = $wpdb->get_row( $wpdb->prepare(
+				"SELECT grid_width, grid_height, block_width, block_height FROM {$table_name} WHERE banner_id = %d",
+				$values['id']
+			) );
+			
+			if ( $grid ) {
+				$calculated_width = $grid->grid_width * $grid->block_width;
+				$calculated_height = $grid->grid_height * $grid->block_height;
+				
+				if ( $values['width'] === '{width}' ) {
+					$values['width'] = $calculated_width . 'px';
+				}
+				if ( $values['height'] === '{height}' ) {
+					$values['height'] = $calculated_height . 'px';
+				}
+				
+			} else {
+				// Fallback to defaults if calculation fails
+				if ( $values['width'] === '{width}' ) {
+					$values['width'] = '1000px';
+				}
+				if ( $values['height'] === '{height}' ) {
+					$values['height'] = '1000px';
+				}
+				
+			}
+		}
+		
 
 		$values = Functions::maybe_set_dimensions( $values );
 
@@ -159,7 +196,7 @@ class BlockFields {
 			$BID         = $f2->bid();
 			$banner_data = load_banner_constants( $BID );
 
-			$tooltips = \MillionDollarScript\Classes\Data\Config::get( 'ENABLE_MOUSEOVER' );
+			$tooltips = \MillionDollarScript\Classes\Data\Options::get_option( 'enable-mouseover' );
 
 			?>
 			<script>
@@ -190,9 +227,9 @@ class BlockFields {
 												winHeight: parseInt('<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>', 10),
 												time: '<?php echo time(); ?>',
 												MDS_CORE_URL: '<?php echo MDS_CORE_URL;?>',
-												REDIRECT_SWITCH: '<?php echo \MillionDollarScript\Classes\Data\Config::get( 'REDIRECT_SWITCH' ); ?>',
-												REDIRECT_URL: '<?php echo \MillionDollarScript\Classes\Data\Config::get( 'REDIRECT_URL' ); ?>',
-												ENABLE_MOUSEOVER: '<?php echo \MillionDollarScript\Classes\Data\Config::get( 'ENABLE_MOUSEOVER' ); ?>',
+												REDIRECT_SWITCH: '<?php echo \MillionDollarScript\Classes\Data\Options::get_option( 'redirect-switch' ); ?>',
+												REDIRECT_URL: '<?php echo \MillionDollarScript\Classes\Data\Options::get_option( 'redirect-url' ); ?>',
+												ENABLE_MOUSEOVER: '<?php echo \MillionDollarScript\Classes\Data\Options::get_option( 'enable-mouseover' ); ?>',
 												BID: parseInt('<?php echo $BID; ?>', 10),
 												MDS_PREFIX: '<?php echo MDS_PREFIX; ?>',
 											};

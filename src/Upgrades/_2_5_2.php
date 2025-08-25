@@ -126,19 +126,27 @@ class _2_5_2 {
 				$wpdb->query( $sql );
 			}
 
-			// Add nfs_covered column to banners table
-			$sql           = "SELECT COUNT(*) FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key` = 'TOOLTIP_TRIGGER';";
-			$existingCount = $wpdb->get_var( $sql );
+			// Add TOOLTIP_TRIGGER config option
+			$existingCount = $wpdb->get_var( $wpdb->prepare(
+				"SELECT COUNT(*) FROM `" . MDS_DB_PREFIX . "config` WHERE `config_key` = %s",
+				'TOOLTIP_TRIGGER'
+			) );
 			if ( $existingCount == 0 ) {
-				$sql = "INSERT INTO `" . MDS_DB_PREFIX . "config` (
-					`config_key`,
-					`val`
-			)
-	        VALUES(
-					'TOOLTIP_TRIGGER',
-					'click'
-			)";
-				$wpdb->query( $sql );
+				$result = $wpdb->insert(
+					MDS_DB_PREFIX . 'config',
+					array(
+						'config_key' => 'TOOLTIP_TRIGGER',
+						'val' => 'click'
+					),
+					array(
+						'%s',
+						'%s'
+					)
+				);
+				
+				if ( $result === false ) {
+					error_log( 'MDS Upgrade 2.5.2: Failed to insert TOOLTIP_TRIGGER config - ' . $wpdb->last_error );
+				}
 			}
 
 			// Convert Rank to Privileged Users

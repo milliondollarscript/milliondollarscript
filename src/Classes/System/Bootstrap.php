@@ -38,6 +38,8 @@ use MillionDollarScript\Classes\WooCommerce\WooCommerce;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceOptions;
 use MillionDollarScript\Classes\Admin\Notices;
+use MillionDollarScript\Classes\Pages\ApprovePixels;
+use MillionDollarScript\Classes\Pages\NFS;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -84,6 +86,106 @@ class Bootstrap {
 		// Register setup wizard redirect
 		add_action( 'admin_init', [ '\MillionDollarScript\Classes\Pages\Wizard', 'maybe_redirect_to_wizard' ] );
 		
+		// Handle background image delete action before any output
+		add_action( 'admin_init', function() {
+			if ( isset( $_GET['page'] ) && $_GET['page'] === 'mds-backgrounds' &&
+				 isset( $_GET['mds-action'] ) && $_GET['mds-action'] === 'delete' &&
+				 isset( $_GET['BID'] ) ) {
+				
+				$BID = intval( $_GET['BID'] );
+				
+				// Verify nonce
+				if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'mds_delete_background_' . $BID ) ) {
+					wp_die( 'Security check failed.' );
+				}
+
+				if ( ! current_user_can( 'manage_options' ) ) {
+					wp_die( 'Sorry, you are not allowed to perform this action.' );
+				}
+
+				$params = ['page' => 'mds-backgrounds', 'BID' => $BID];
+
+				if ( $BID > 0 ) {
+					// Use the correct upload path from Utility class
+					$upload_path = \MillionDollarScript\Classes\System\Utility::get_upload_path();
+					if ( $upload_path ) {
+						$upload_path = $upload_path . 'grids/';
+						$files_to_delete = glob( $upload_path . "background{$BID}.*" );
+						$deleted = false;
+						$found = false;
+
+						if ( $files_to_delete ) {
+							$found = true;
+							foreach ( $files_to_delete as $file_to_delete ) {
+								if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
+									$deleted = true;
+								} else {
+									$params['delete_error'] = 'failed_unlink';
+									break;
+								}
+							}
+						}
+
+						// Also check legacy paths for backward compatibility
+						if ( ! $found ) {
+							// Check old mds path
+							$legacy_path1 = WP_CONTENT_DIR . '/uploads/mds/grids/';
+							if ( is_dir( $legacy_path1 ) ) {
+								$legacy_files = glob( $legacy_path1 . "background{$BID}.*" );
+								if ( $legacy_files ) {
+									$found = true;
+									foreach ( $legacy_files as $file_to_delete ) {
+										if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
+											$deleted = true;
+										} else {
+											$params['delete_error'] = 'failed_unlink';
+											break;
+										}
+									}
+								}
+							}
+						}
+
+						if ( ! $found ) {
+							// Check direct wp_upload_dir path
+							$upload_dir = wp_upload_dir();
+							$legacy_path2 = $upload_dir['basedir'] . '/mds/grids/';
+							if ( is_dir( $legacy_path2 ) ) {
+								$legacy_files = glob( $legacy_path2 . "background{$BID}.*" );
+								if ( $legacy_files ) {
+									$found = true;
+									foreach ( $legacy_files as $file_to_delete ) {
+										if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
+											$deleted = true;
+										} else {
+											$params['delete_error'] = 'failed_unlink';
+											break;
+										}
+									}
+								}
+							}
+						}
+					} else {
+						$params['delete_error'] = 'upload_path_not_found';
+					}
+
+					if ( $found && $deleted && ! isset( $params['delete_error'] ) ) {
+						$params['delete_success'] = 'true';
+						delete_option( 'mds_background_opacity_' . $BID );
+					} else if ( ! $found ) {
+						$params['delete_error'] = 'not_found';
+					}
+				} else {
+					$params['delete_error'] = 'invalid_bid';
+				}
+
+				// Redirect back
+				$redirect_url = remove_query_arg( array( 'mds-action', '_wpnonce' ), admin_url( 'admin.php' ) );
+				wp_safe_redirect( add_query_arg( $params, $redirect_url ) );
+				exit;
+			}
+		} );
+		
 		// Register AJAX handlers for the wizard
 		add_action( 'wp_ajax_mds_wizard_create_pages', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_create_pages' ] );
 		add_action( 'wp_ajax_mds_wizard_save_settings', [ '\MillionDollarScript\Classes\Pages\Wizard', 'ajax_save_settings' ] );
@@ -117,12 +219,18 @@ class Bootstrap {
 			add_filter( 'carbon_fields_before_field_save', [ '\MillionDollarScript\Classes\Data\Options', 'save' ] );
 		}
 
+		// Initialize metadata system and WordPress integration
+		add_action( 'init', [ '\MillionDollarScript\Classes\Data\MDSPageWordPressIntegration', 'initializeStatic' ] );
+
 		// Initialize Grid Image Switcher for theme mode automation
 		add_action( 'init', [ '\MillionDollarScript\Classes\Services\GridImageSwitcher', 'init' ] );
 
 		// Add Block
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Blocks\Block', 'register_style' ] );
-		add_action( 'after_setup_theme', [ '\MillionDollarScript\Classes\Blocks\Block', 'load' ] );
+		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Blocks\Block', 'load' ] );
+		
+		// Initialize block fallback system to ensure Carbon Fields blocks work correctly
+		add_action( 'init', [ '\MillionDollarScript\Classes\Admin\MDSEnhancedPageCreator', 'initBlockFallback' ] );
 
 		// Add Emails page
 		add_action( 'carbon_fields_register_fields', [ '\MillionDollarScript\Classes\Email\Emails', 'register' ] );
@@ -202,18 +310,29 @@ class Bootstrap {
 		add_action( 'wp_ajax_mds_admin_ajax', [ Admin::class, 'ajax' ] );
 
 		add_action( 'wp_ajax_mds_update_language', [ '\MillionDollarScript\Classes\Admin\Admin', 'update_language' ] );
-		add_action( 'wp_ajax_mds_create_pages', [ '\MillionDollarScript\Classes\Admin\Admin', 'create_pages' ] );
-		add_action( 'wp_ajax_mds_delete_pages', [ '\MillionDollarScript\Classes\Admin\Admin', 'delete_pages' ] );
 
 		// AJAX handlers for Click Reports View Type preference
 		add_action( 'wp_ajax_mds_load_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'load_click_report_view_type' ] );
 		add_action( 'wp_ajax_mds_save_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'save_click_report_view_type' ] );
 
+		// Disable admin email
+		add_action( 'wp_ajax_mds_disable_admin_email', [ 'MillionDollarScript\Classes\Email\Mail', 'handle_disable_admin_email' ] );
+		add_action( 'wp_ajax_nopriv_mds_disable_admin_email', [ 'MillionDollarScript\Classes\Email\Mail', 'handle_disable_admin_email' ] );
+
 		// Load Block Editor JS
 		add_action( 'enqueue_block_editor_assets', [ '\MillionDollarScript\Classes\Admin\Admin', 'block_editor_scripts' ] );
 
-		// Add NFS page
-		add_action( 'init', [ '\MillionDollarScript\Classes\Pages\NFS', 'init' ], 10 );
+		// Add Approve Pixels page
+		add_action( 'init', [ $this, 'init_admin_pages' ] );
+
+		// Initialize MDS Page Metadata System
+		add_action( 'init', [ $this, 'init_metadata_system' ], 5 );
+
+		// Initialize MDS Backward Compatibility System
+		add_action( 'init', [ $this, 'init_backward_compatibility_system' ], 6 );
+
+		// Initialize MDS Page Management Interface
+		add_action( 'init', [ $this, 'init_page_management_interface' ], 7 );
 
 		// Add Extensions page
 		add_action( 'init', [ '\MillionDollarScript\Classes\Pages\Extensions', 'init' ], 10 );
@@ -234,6 +353,12 @@ class Bootstrap {
 		$admin_page = is_admin() && isset( $_REQUEST['page'] );
 		if ( $admin_page ) {
 			$current_page = $_REQUEST['page'];
+			
+			// Load admin.js on all MDS admin pages for confirmLink functionality
+			if ( str_starts_with( $current_page, 'mds-' ) ) {
+				add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\Admin\Admin', 'enqueue_admin_scripts' ] );
+			}
+			
 			if ( $current_page == 'mds-top-customers' ) {
 				add_action( 'admin_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
 			} else if ( $current_page == 'milliondollarscript_options' ) {
@@ -308,5 +433,71 @@ class Bootstrap {
 		// phpcs:disable
 		return $this;
 		// phpcs:enable
+	}
+
+	public function init_admin_pages(): void {
+		new NFS();
+		new ApprovePixels();
+	}
+
+	/**
+	 * Initialize the MDS Page Metadata System
+	 *
+	 * @return void
+	 */
+	public function init_metadata_system(): void {
+		try {
+			$metadata_manager = \MillionDollarScript\Classes\Data\MDSPageMetadataManager::getInstance();
+			$result = $metadata_manager->initialize();
+			
+			if ( is_wp_error( $result ) ) {
+				Logs::log( 'MDS Metadata System initialization failed: ' . $result->get_error_message() );
+			}
+			
+			// Initialize WordPress integration (includes post state hooks)
+			$wp_integration = \MillionDollarScript\Classes\Data\MDSPageWordPressIntegration::getInstance();
+			$wp_integration->initialize();
+		} catch ( \Exception $e ) {
+			Logs::log( 'MDS Metadata System initialization exception: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Initialize the MDS Backward Compatibility System
+	 *
+	 * @return void
+	 */
+	public function init_backward_compatibility_system(): void {
+		try {
+			// Initialize backward compatibility manager
+			$compatibility_manager = \MillionDollarScript\Classes\Data\MDSBackwardCompatibilityManager::getInstance();
+			
+			// Initialize legacy shortcode handler
+			$legacy_handler = \MillionDollarScript\Classes\Data\MDSLegacyShortcodeHandler::getInstance();
+		} catch ( \Exception $e ) {
+			Logs::log( 'MDS Backward Compatibility System initialization exception: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Initialize the MDS Page Management Interface
+	 *
+	 * @return void
+	 */
+	public function init_page_management_interface(): void {
+		try {
+			// Only initialize in admin
+			if ( ! is_admin() ) {
+				return;
+			}
+			
+			// Initialize page management interface
+			new \MillionDollarScript\Classes\Admin\MDSPageManagementInterface();
+			
+			// Initialize page creator interface
+			new \MillionDollarScript\Classes\Admin\MDSPageCreatorInterface();
+		} catch ( \Exception $e ) {
+			Logs::log( 'MDS Page Management Interface initialization exception: ' . $e->getMessage() );
+		}
 	}
 }

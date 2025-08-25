@@ -256,6 +256,30 @@ class Users {
 			.login .wp-core-ui .button-primary:hover {
 				background: #005a87 !important;
 				border-color: #005a87 !important;
+			}
+			.login #nav a,
+			.login #backtoblog a,
+			.login .mds-register-link {
+				color: ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+			}
+			.login #nav a:hover,
+			.login #backtoblog a:hover,
+			.login .mds-register-link:hover {
+				color: #005a87 !important;
+			}
+			.login .wp-core-ui .button-secondary,
+			.login .wp-core-ui .button-register,
+			.login .wp-core-ui input[type="submit"].button-register {
+				background: ' . esc_attr( $dark_secondary_bg ) . ' !important;
+				border-color: ' . esc_attr( $dark_border_color ) . ' !important;
+				color: ' . esc_attr( $dark_text_primary ) . ' !important;
+			}
+			.login .wp-core-ui .button-secondary:hover,
+			.login .wp-core-ui .button-register:hover,
+			.login .wp-core-ui input[type="submit"].button-register:hover {
+				background: ' . esc_attr( $dark_tertiary_bg ) . ' !important;
+				border-color: ' . esc_attr( $dark_button_primary_bg ) . ' !important;
+				color: ' . esc_attr( $dark_text_primary ) . ' !important;
 			}';
 		}
 		

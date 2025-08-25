@@ -28,9 +28,9 @@
 
 defined( 'ABSPATH' ) or exit;
 
+global $wpdb;
 $sql    = "SELECT * FROM " . MDS_DB_PREFIX . "mail_queue where mail_id=" . intval( $_REQUEST['mail_id'] );
-$result = mysqli_query( $GLOBALS['connection'], $sql );
-$row    = mysqli_fetch_array( $result );
+$row    = $wpdb->get_row( $sql, ARRAY_A );
 ?>
 
 <table border="1" id="table1" width="600">

@@ -32,57 +32,6 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-// --- BEGIN NEW DELETE HANDLING ---
-if ( isset( $_GET['mds-action'] ) && $_GET['mds-action'] === 'delete' && isset( $_GET['BID'] ) ) {
-	$BID = intval( $_GET['BID'] );
-	// Verify nonce 
-	if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'mds_delete_background_' . $BID ) ) {
-		wp_die( Language::get( 'Security check failed.' ) );
-	}
-
-	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_die( Language::get( 'Sorry, you are not allowed to perform this action.' ) );
-	}
-
-	$params = ['page' => 'mds-backgrounds', 'BID' => $BID]; // Params for redirect
-
-	if ($BID > 0) {
-		$upload_path = Utility::get_upload_path() . "grids/";
-		$files_to_delete = glob($upload_path . "background{$BID}.*");
-		$deleted = false;
-		$found = false;
-
-		if ($files_to_delete) {
-			$found = true;
-			foreach ($files_to_delete as $file_to_delete) {
-				if ( is_writable( $file_to_delete ) && unlink( $file_to_delete ) ) {
-					$deleted = true; // Mark as deleted if at least one succeeds
-				} else {
-					$params['delete_error'] = 'failed_unlink';
-					// Log the error for debugging
-					Logs::log("MDS Error: Failed to unlink background file: " . $file_to_delete);
-					break; // Stop if one fails
-				}
-			}
-		}
-
-		if ($found && $deleted && !isset($params['delete_error'])) {
-			$params['delete_success'] = 'true';
-			// Also delete the opacity option when image is deleted
-			delete_option( 'mds_background_opacity_' . $BID );
-		} else if (!$found) {
-			$params['delete_error'] = 'not_found';
-		}
-		// If delete failed but file was found, 'failed_unlink' is already set
-	} else {
-		$params['delete_error'] = 'invalid_bid';
-	}
-
-	// Redirect back to the same page without the action param, but with feedback
-	wp_safe_redirect( add_query_arg( $params, admin_url( 'admin.php' ) ) );
-	exit;
-}
-// --- END NEW DELETE HANDLING ---
 
 ini_set( 'max_execution_time', 6000 );
 
@@ -162,8 +111,9 @@ Language::out( 'Allows you to specify an image to blend in with your grid in the
 <h3><?php Language::out_replace( 'Remember to process your Grid Image(s) <a href="%PROCESS_PIXELS_URL%">here</a>', '%PROCESS_PIXELS_URL%', esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ) ); ?></h3>
 <hr/>
 <?php
+global $wpdb;
 $sql = "Select * from " . MDS_DB_PREFIX . "banners ";
-$res = mysqli_query( $GLOBALS['connection'], $sql );
+$res = $wpdb->get_results( $sql, ARRAY_A );
 ?>
 
 <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -173,7 +123,7 @@ $res = mysqli_query( $GLOBALS['connection'], $sql );
 
 	<?php Language::out( 'Select grid:' ); ?> <select name="BID" onchange="this.form.submit()">
 		<?php
-		while ( $row = mysqli_fetch_array( $res ) ) {
+		foreach ( $res as $row ) {
 
 			if ( ( $row['banner_id'] == $BID ) && ( $BID != 'all' ) ) {
 				$sel = 'selected';

@@ -218,7 +218,7 @@ class Orders {
 
 		return $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT `order_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `user_id` = %d AND `order_in_progress` = 'Y' ORDER BY `order_id` DESC LIMIT 1",
+				"SELECT `order_id` FROM `" . MDS_DB_PREFIX . "orders` WHERE `user_id` = %d AND `order_in_progress` = 'Y' AND `status` = 'new' ORDER BY `order_id` DESC LIMIT 1",
 				$user_id
 			)
 		);
@@ -279,12 +279,88 @@ class Orders {
 			$user_id = get_current_user_id();
 		}
 
+		// Get the current order in progress before resetting
+		$current_order_id = self::get_current_order_in_progress( $user_id );
+		
+		// Clear data ONLY from 'new' orders to preserve confirmed orders waiting for payment
+		global $wpdb;
+		
+		// Only get 'new' status orders - preserve confirmed orders for payment
+		$new_user_orders = $wpdb->get_col( $wpdb->prepare(
+			"SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id = %d AND status = 'new'",
+			$user_id
+		));
+		
+		if ( ! empty( $new_user_orders ) ) {
+			$order_ids_placeholder = implode( ',', array_fill( 0, count( $new_user_orders ), '%d' ) );
+			
+			// Clear block reservations ONLY for new orders
+			$wpdb->query( $wpdb->prepare(
+				"UPDATE " . MDS_DB_PREFIX . "blocks SET status = 'pending', order_id = NULL WHERE order_id IN ($order_ids_placeholder)",
+				...$new_user_orders
+			));
+			
+			// Get ad_ids from NEW orders only
+			$ad_ids = $wpdb->get_col( $wpdb->prepare(
+				"SELECT ad_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id IN ($order_ids_placeholder) AND ad_id IS NOT NULL",
+				...$new_user_orders
+			));
+			
+			// Clear block selections ONLY from new orders
+			$wpdb->update(
+				MDS_DB_PREFIX . 'orders',
+				array( 'blocks' => '', 'block_info' => '', 'order_in_progress' => 'N', 'ad_id' => null ),
+				array( 'user_id' => $user_id, 'status' => 'new' ),
+				array( '%s', '%s', '%s', null ),
+				array( '%d', '%s' )
+			);
+			
+			// Delete mds-pixel posts ONLY associated with NEW orders
+			if ( ! empty( $ad_ids ) ) {
+				foreach ( $ad_ids as $ad_id ) {
+					if ( $ad_id && get_post( $ad_id ) ) {
+						wp_delete_post( $ad_id, true ); // Force delete
+					}
+				}
+			}
+		}
+		
+		// Set any confirmed orders to not in progress, but preserve their data
+		$wpdb->update(
+			MDS_DB_PREFIX . 'orders',
+			array( 'order_in_progress' => 'N' ),
+			array( 'user_id' => $user_id, 'status' => 'confirmed' ),
+			array( '%s' ),
+			array( '%d', '%s' )
+		);
+		
+		// Also delete any other "new" status mds-pixel posts for this user that might not be associated with orders
+		$user_new_posts = get_posts( array(
+			'author'      => $user_id,
+			'post_status' => 'new',
+			'post_type'   => 'mds-pixel',
+			'numberposts' => -1
+		) );
+		
+		foreach ( $user_new_posts as $post ) {
+			wp_delete_post( $post->ID, true );
+		}
+
 		if ( WooCommerceFunctions::is_wc_active() ) {
 			WooCommerceFunctions::remove_item_from_cart( $user_id, self::get_current_order_id() );
 			WooCommerceFunctions::reset_session_variables( $user_id );
 		} else {
 			self::reset_progress( $user_id );
 			delete_user_meta( $user_id, 'mds_confirm' );
+		}
+		
+		// Clear the current order ID from session to force fresh start
+		if ( WooCommerceFunctions::is_wc_active() ) {
+			// Clear the order ID from WooCommerce session
+			if ( WC()->session && is_object( WC()->session ) ) {
+				WC()->session->__unset( 'mds_order_id' );
+				WC()->session->save_data();
+			}
 		}
 	}
 
@@ -384,6 +460,13 @@ class Orders {
 		if ( is_null( $banner_id ) ) {
 			global $f2;
 			$banner_id = $f2->bid();
+		}
+
+		// Only reset if there's no current order in progress
+		// This prevents clearing valid order data during the normal flow
+		$existing_order = self::get_current_order_in_progress( $user_id );
+		if ( empty( $existing_order ) ) {
+			self::reset_order_progress( $user_id );
 		}
 
 		$now = current_time( 'mysql' );
@@ -638,7 +721,9 @@ class Orders {
 	 */
 	public static function find_new_order(): array|null {
 		global $wpdb;
-		$sql       = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='new' AND user_id=%d", get_current_user_id() );
+		
+		// First check for any new orders in progress - these take priority
+		$sql       = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='new' AND user_id=%d ORDER BY order_id DESC LIMIT 1", get_current_user_id() );
 		$order_row = $wpdb->get_row( $sql, ARRAY_A );
 		if ( $wpdb->num_rows > 0 ) {
 
@@ -730,10 +815,16 @@ class Orders {
 			}
 
 		} else {
-			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id='" . get_current_user_id() . "' AND order_id='" . $order_id . "'";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-			if ( mysqli_num_rows( $result ) > 0 ) {
-
+			global $wpdb;
+			$result = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE user_id = %d AND order_id = %d",
+					get_current_user_id(),
+					$order_id
+				)
+			);
+			
+			if ( $result ) {
 				// If the cancelled order is in progress then reset the progress.
 				if ( self::is_order_in_progress( $order_id ) ) {
 					self::reset_progress();
@@ -756,10 +847,15 @@ class Orders {
 		if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] == self::get_current_order_id() ) {
 			// convert the temp order to an order.
 
-			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . intval( self::get_current_order_id() ) . "' ";
-			$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+			$order_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+					intval( self::get_current_order_id() )
+				),
+				ARRAY_A
+			);
 
-			if ( mysqli_num_rows( $order_result ) == 0 ) {
+			if ( ! $order_row ) {
 				// no order id found...
 				if ( wp_doing_ajax() ) {
 					self::no_orders();
@@ -767,20 +863,8 @@ class Orders {
 				}
 
 				Utility::redirect( Utility::get_page_url( 'no-orders' ) );
-			} else if ( $order_row = mysqli_fetch_array( $order_result ) ) {
-
-				$_REQUEST['order_id'] = self::reserve_pixels_for_temp_order( $order_row );
 			} else {
-
-				Language::out( '<h1>Pixel Reservation Not Yet Completed...</h1>' );
-				Language::out_replace(
-					'<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href="%ORDER_PAGE%">here</a> and try again.</p>',
-					'%ORDER_PAGE%',
-					Utility::get_page_url( 'order' )
-				);
-
-				require_once MDS_CORE_PATH . "html/footer.php";
-				die();
+				$_REQUEST['order_id'] = self::reserve_pixels_for_temp_order( $order_row );
 			}
 		}
 
@@ -827,9 +911,13 @@ class Orders {
         <div>
             <b><?php Language::out( "Grid" ); ?>:</b>
 			<?php
-			$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . intval( $order['banner_id'] );
-			$b_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$b_row = mysqli_fetch_array( $b_result );
+			$b_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d",
+					intval( $order['banner_id'] )
+				),
+				ARRAY_A
+			);
 
 			if ( $b_row ) {
 				echo $b_row['name'];
@@ -885,80 +973,39 @@ class Orders {
 			<?php
 			if ( isset( $order['status'] ) ) {
 				$temp_var = '';
-				if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
+				if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
 					$temp_var = '&order_id=' . $order['order_id'];
 				}
 
 				$steps    = Steps::get_steps();
-				$USE_AJAX = Config::get( 'USE_AJAX' );
+				$USE_AJAX = Options::get_option( 'use-ajax' );
 
 				switch ( $order['status'] ) {
 					case "new":
+						// Action buttons are now shown in the accordion header
+						// Only show status and cancel button in the content area
 						$current_step = Steps::get_current_step( $order['order_id'] );
 						if ( $current_step != 0 ) {
 							echo Language::get( 'In progress' ) . '<br>';
-							if ( $steps[ $current_step ] == Steps::STEP_UPLOAD ) {
-								$args = [ 'BID' => $order['banner_id'] ];
-								// Default page name
-								$page_name = 'upload';
-								if ( $USE_AJAX == 'SIMPLE' ) {
-									$page_name = 'order';
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-upload' href='" . esc_url( Utility::get_page_url( $page_name, $args ) ) . "'>" . Language::get( 'Upload' ) . "</a>";
-							} else if ( $steps[ $current_step ] == Steps::STEP_WRITE_AD ) {
-								$args = [ 'BID' => $order['banner_id'] ];
-								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-write' href='" . esc_url( Utility::get_page_url( 'write-ad', $args ) ) . "'>" . Language::get( 'Write Ad' ) . "</a>";
-							} else if ( $steps[ $current_step ] == Steps::STEP_CONFIRM_ORDER ) {
-								$args = [ 'BID' => $order['banner_id'] ];
-								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-confirm' href='" . esc_url( Utility::get_page_url( 'confirm-order', $args ) ) . "'>" . Language::get( 'Confirm Now' ) . "</a>";
-							} else if ( $steps[ $current_step ] == Steps::STEP_PAYMENT ) {
-								$args = [
-									'order_id' => $order['order_id'],
-									'BID'      => $order['banner_id'],
-								];
-								echo "<a class='mds-button mds-pay' href='" . esc_url( Utility::get_page_url( 'payment', $args ) ) . "'>" . Language::get( 'Pay Now' ) . "</a>";
-							} else {
-								$args = [ 'BID' => $order['banner_id'] ];
-								if ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ) {
-									$args['order_id'] = $order['order_id'];
-								}
-								echo "<a class='mds-button mds-continue' href='" . esc_url( Utility::get_page_url( 'order', $args ) ) . "'>" . Language::get( 'Continue' ) . "</a>";
-							}
-						} else {
-							$args = [ 'BID' => $order['banner_id'] ];
-							if ( $USE_AJAX == 'SIMPLE' ) {
-								$text = Language::get( 'Upload' );
-								$page_name = 'upload';
-								// Add order_id only if USE_AJAX is SIMPLE, based on original $temp_var logic
-								$args['order_id'] = $order['order_id'];
-							} else {
-								$text = Language::get( 'Order' );
-								$page_name = 'order';
-							}
-							echo "<a class='mds-button mds-upload' href='" . esc_url( Utility::get_page_url( $page_name, $args ) ) . "'>" . $text . "</a>";
 						}
-						$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
+						$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'], 'mds_cancel_nonce' => wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] ) ];
 						$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
-						echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . $cancel_url . "\"' >";
+						echo "<input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . $cancel_url . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
 						break;
 					case "confirmed":
-						if ( self::is_order_in_progress( $order['order_id'] ) || ( WooCommerceFunctions::is_wc_active() ) ) {
+						if ( !self::has_payment( $order['order_id'] ) && ( self::is_order_in_progress( $order['order_id'] ) || ( WooCommerceFunctions::is_wc_active() ) ) ) {
 							update_user_meta( get_current_user_id(), 'mds_confirm', true );
-							// Pay Now button
+							// Pay Now button - only show if payment hasn't been made yet
 							$pay_args = [ 'order_id' => $order['order_id'], 'BID' => $order['banner_id'] ];
 							$pay_url = esc_url( Utility::get_page_url( 'payment', $pay_args ) );
-							echo "<a class='mds-button mds-pay' href='" . $pay_url . "'>" . Language::get( 'Pay Now' ) . "</a>";
+							echo "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $pay_url . "\"' />";
 							// Cancel button
-							$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'] ];
+							$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'], 'mds_cancel_nonce' => wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] ) ];
 							$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
-							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")) return false; window.location=\"" . $cancel_url . "\"' >";
+							echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . $cancel_url . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
+						} else if ( self::has_payment( $order['order_id'] ) ) {
+							// Payment already made - show payment processing status
+							echo Language::get( 'Payment submitted and processing...' );
 						}
 						break;
 					case "completed":
@@ -999,7 +1046,7 @@ class Orders {
 					case "expired":
 						$time_expired = strtotime( $order['date_stamp'] );
 
-						$time_when_cancel = $time_expired + ( Config::get( 'MINUTES_RENEW' ) * 60 );
+						$time_when_cancel = $time_expired + ( Options::get_option( 'minutes-renew' ) * 60 );
 
 						$total_minutes = ( $time_when_cancel - time() ) / 60;
 
@@ -1036,7 +1083,8 @@ class Orders {
 				$temp_var = '&order_id=' . $order['order_id'];
 				echo Language::get( 'In progress' ) . '<br>';
 				echo "<a href='" . Utility::get_page_url( 'order' ) . "?BID={$order['banner_id']}{$temp_var}'>" . Language::get( 'Confirm now' ) . "</a>";
-				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' onclick='if (!confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "}\")) return false; window.location=\"" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes{$temp_var}" ) . "\"' >";
+				$cancel_nonce = wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] );
+				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes{$temp_var}&mds_cancel_nonce=" . $cancel_nonce ) . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
 			}
 			?>
         </div>
@@ -1068,7 +1116,7 @@ class Orders {
 				}
 			}
 		} else {
-			require_once MDS_CORE_PATH . 'users/' . ( Config::get( 'USE_AJAX' ) == 'SIMPLE' ? 'order-pixels.php' : 'select.php' );
+			require_once MDS_CORE_PATH . 'users/' . ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ? 'order-pixels.php' : 'select.php' );
 		}
 	}
 
@@ -1087,21 +1135,11 @@ class Orders {
 		$user_id    = get_current_user_id();
 		$status     = 'new';
 
-		$order_id = self::get_current_order_id();
-
-		if ( ! empty( $order_id ) ) {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND order_id = %d",
-				$user_id,
-				$order_id
-			);
-		} else {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM $table_name WHERE user_id = %d AND status = %s",
-				$user_id,
-				$status
-			);
-		}
+		// Only use orders with 'new' status and order_in_progress = 'Y' to ensure clean slate
+		$sql = $wpdb->prepare(
+			"SELECT * FROM $table_name WHERE user_id = %d AND status = 'new' AND order_in_progress = 'Y' ORDER BY order_id DESC LIMIT 1",
+			$user_id
+		);
 		$order_result = $wpdb->get_row( $sql );
 		$order_row    = $order_result ? (array) $order_result : [];
 
@@ -1196,8 +1234,8 @@ class Orders {
 		// $session_duration = intval( ini_get( "session.gc_maxlifetime" ) );
 		//
 		// $sql = "SELECT order_id, order_date FROM `" . MDS_DB_PREFIX . "orders` WHERE `status`='new' AND DATE_SUB('$now', INTERVAL $session_duration SECOND) >= order_date";
-		// $result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		// while ( $row = @mysqli_fetch_array( $result ) ) {
+		// $result = $wpdb->get_results( $sql, ARRAY_A );
+		// foreach ( $result as $row ) {
 		// 	delete_temp_order( $row['order_id'] );
 		// }
 
@@ -1227,10 +1265,8 @@ class Orders {
 			//
 			// // Calculate the difference in days
 			// $diff_days = floor( ( $order_date_timestamp - $date_published_timestamp ) / DAY_IN_SECONDS );
-			// error_log('$diff_days: ' . var_export($diff_days, true));
 			//
 			// if ( $diff_days > $expire_days ) {
-			// 	error_log( 'expire1' );
 			self::expire_order( $row['order_id'] );
 			// }
 		}
@@ -1249,7 +1285,7 @@ class Orders {
 		unset( $affected_BIDs );
 
 		// unconfirmed Orders
-		$MINUTES_UNCONFIRMED = Config::get( 'MINUTES_UNCONFIRMED' );
+		$MINUTES_UNCONFIRMED = Options::get_option( 'minutes-unconfirmed' );
 		if ( $MINUTES_UNCONFIRMED != 0 ) {
 
 			$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`=%s", 'new' );
@@ -1280,7 +1316,7 @@ class Orders {
 		}
 
 		// unpaid Orders
-		$MINUTES_CONFIRMED = Config::get( 'MINUTES_CONFIRMED' );
+		$MINUTES_CONFIRMED = Options::get_option( 'minutes-confirmed' );
 		if ( $MINUTES_CONFIRMED != 0 ) {
 
 			$additional_condition = "";
@@ -1303,7 +1339,7 @@ class Orders {
 		}
 
 		// EXPIRED Orders -> Cancel
-		$MINUTES_RENEW = intval( Config::get( 'MINUTES_RENEW' ) );
+		$MINUTES_RENEW = intval( Options::get_option( 'minutes-renew' ) );
 		if ( $MINUTES_RENEW != 0 ) {
 
 			$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE `status`='expired'";
@@ -1311,20 +1347,22 @@ class Orders {
 				$sql .= " AND DATE_SUB('$now',INTERVAL " . $MINUTES_RENEW . " MINUTE) >= date_stamp AND date_stamp IS NOT NULL";
 			}
 
-			$result = @mysqli_query( $GLOBALS['connection'], $sql );
+			$results = $wpdb->get_results( $sql, ARRAY_A );
 
-			while ( $row = @mysqli_fetch_array( $result ) ) {
-				// $order_date = strtotime( $row['order_date'] );
-				// $order_date = date( 'Y-m-d H:i:s', $order_date );
-				// $diff       = strtotime( $order_date ) - strtotime( $now );
-				// if ( $diff > intval( $MINUTES_RENEW ) ) {
-				self::cancel_order( $row['order_id'] );
-				// }
+			if ( $results ) {
+				foreach ( $results as $row ) {
+					// $order_date = strtotime( $row['order_date'] );
+					// $order_date = date( 'Y-m-d H:i:s', $order_date );
+					// $diff       = strtotime( $order_date ) - strtotime( $now );
+					// if ( $diff > intval( $MINUTES_RENEW ) ) {
+					self::cancel_order( $row['order_id'], true );
+					// }
+				}
 			}
 		}
 
 		// Cancelled Orders -> Delete
-		$MINUTES_CANCEL = intval( Config::get( 'MINUTES_CANCEL' ) );
+		$MINUTES_CANCEL = intval( Options::get_option( 'minutes-cancel' ) );
 		if ( $MINUTES_CANCEL != 0 ) {
 
 			$MINUTES_CANCEL = intval( $MINUTES_CANCEL );
@@ -1345,18 +1383,24 @@ class Orders {
 	}
 
 	public static function delete_temp_order( $sid, $delete_ad = true ) {
+		global $wpdb;
 
-		$sid = mysqli_real_escape_string( $GLOBALS['connection'], $sid );
-
-		$sql = "select * from " . MDS_DB_PREFIX . "orders where order_id='" . $sid . "' ";
-		$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$order_row = mysqli_fetch_array( $order_result );
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %s",
+				$sid
+			),
+			ARRAY_A
+		);
 
 		//$sql = "DELETE FROM blocks WHERE session_id='".$sid."' ";
-		//mysqli_query($GLOBALS['connection'], $sql) ;
+		//$wpdb->query($sql) ;
 
-		$sql = "DELETE FROM " . MDS_DB_PREFIX . "orders WHERE order_id='" . $sid . "' ";
-		mysqli_query( $GLOBALS['connection'], $sql );
+		$wpdb->delete(
+			MDS_DB_PREFIX . "orders",
+			array( 'order_id' => $sid ),
+			array( '%s' )
+		);
 
 		if ( $delete_ad && isset( $order_row['ad_id'] ) ) {
 			wp_delete_post( $order_row['ad_id'] );
@@ -1382,9 +1426,14 @@ class Orders {
 	public static function complete_order( int $user_id, int $order_id, bool $send_email = true ): void {
 		self::confirm_order( $user_id, $order_id, false );
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$order_row = mysqli_fetch_array( $result );
+		global $wpdb;
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
 		if ( $order_row['status'] != 'completed' ) {
 			$now = current_time( 'mysql' );
@@ -1447,9 +1496,13 @@ class Orders {
 
 			// mark pixels as sold.
 
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$order_row = mysqli_fetch_array( $result );
+			$order_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+					intval( $order_id )
+				),
+				ARRAY_A
+			);
 
 			if ( strpos( $order_row['blocks'], "," ) !== false ) {
 				$blocks = explode( ",", $order_row['blocks'] );
@@ -1457,8 +1510,13 @@ class Orders {
 				$blocks = array( 0 => $order_row['blocks'] );
 			}
 			foreach ( $blocks as $key => $val ) {
-				$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='sold' where block_id='" . intval( $val ) . "' and banner_id=" . intval( $order_row['banner_id'] );
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->update(
+					MDS_DB_PREFIX . "blocks",
+					array( 'status' => 'sold' ),
+					array( 'block_id' => intval( $val ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+					array( '%s' ),
+					array( '%d', '%d' )
+				);
 			}
 
 			$user_info = get_userdata( intval( $user_id ) );
@@ -1551,9 +1609,13 @@ class Orders {
 	public static function confirm_order( int $user_id, int $order_id, bool $send_email = true ): void {
 		global $wpdb;
 
-		$sql = "SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$row = mysqli_fetch_array( $result );
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 WHERE t1.user_id=t2.ID AND order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
 		if ( $row['status'] != 'confirmed' && $row['status'] != 'completed' ) {
 			$user_info = get_userdata( $row['ID'] );
@@ -1566,11 +1628,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='confirmed', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'confirmed', 'date_stamp' => $now ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'ordered' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['banner_id'] ) ),
+				array( '%s' ),
+				array( '%d', '%d' )
+			);
 
 			if ( $row['days_expire'] == 0 ) {
 				$row['days_expire'] = Language::get( 'Never' );
@@ -1606,7 +1678,7 @@ class Orders {
 					$row['quantity'],
 					$block_count,
 					$row['days_expire'],
-					Config::get( 'MINUTES_CONFIRMED' ),
+					Options::get_option( 'minutes-confirmed' ),
 					$price,
 					get_bloginfo( 'admin_email' ),
 					get_site_url(),
@@ -1643,12 +1715,16 @@ class Orders {
 
 	public static function pend_order( $order_id ) {
 		global $wpdb;
-		$sql = "SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND order_id='" . intval( $order_id ) . "' ";
+		
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *, t1.blocks as BLK, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 WHERE t1.user_id=t2.ID AND order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$row = mysqli_fetch_array( $result );
-
-		if ( $row['status'] != 'pending' && $row['status'] != 'completed' ) {
+		if ( $row && $row['status'] != 'pending' && $row['status'] != 'completed' ) {
 			$user_info = get_userdata( $row['ID'] );
 
 			// Update mds-pixel post status
@@ -1659,11 +1735,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='pending', date_stamp='$now' WHERE order_id='" . intval( $order_id ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'pending', 'date_stamp' => $now ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['banner_id'] ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'ordered' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['banner_id'] ) ),
+				array( '%s' ),
+				array( '%d', '%d' )
+			);
 
 			if ( $row['days_expire'] == 0 ) {
 				$row['days_expire'] = Language::get( 'Never' );
@@ -1733,15 +1819,16 @@ class Orders {
 
 	public static function expire_order( $order_id ) {
 		global $wpdb;
-		$sql = "SELECT *, t1.banner_id as BID, t1.user_id as UID, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 where t1.user_id=t2.ID AND  order_id='" . intval( $order_id ) . "' ";
-		//echo "$sql<br>";
-		//days_expire
+		
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *, t1.banner_id as BID, t1.user_id as UID, t1.ad_id as AID FROM " . MDS_DB_PREFIX . "orders as t1, " . $wpdb->prefix . "users as t2 WHERE t1.user_id=t2.ID AND order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
-		//func_mail_error($sql." expire order");
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
-
-		if ( ( $row['status'] != 'expired' ) || ( $row['status'] != 'pending' ) ) {
+		if ( $row && ( $row['status'] != 'expired' ) || ( $row['status'] != 'pending' ) ) {
 			$user_info = get_userdata( $row['ID'] );
 
 			// Update mds-pixel post status
@@ -1752,13 +1839,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='expired', date_stamp='$now', `approved`='N', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "' ";
-			//echo "$sql<br>";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'expired', 'date_stamp' => $now, 'approved' => 'N', 'order_in_progress' => 'N' ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s', '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='ordered', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' and banner_id='" . intval( $row['BID'] ) . "'";
-			//echo "$sql<br>";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (expire order)" );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'ordered', 'approved' => 'N' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['BID'] ) ),
+				array( '%s', '%s' ),
+				array( '%d', '%d' )
+			);
 
 			if ( $row['status'] == 'new' ) {
 				// do not send email
@@ -1831,12 +1926,17 @@ class Orders {
 	}
 
 	public static function delete_order( $order_id ): void {
+		global $wpdb;
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$order_row = mysqli_fetch_array( $result );
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
-		if ( $order_row['status'] != 'deleted' ) {
+		if ( $order_row && $order_row['status'] != 'deleted' ) {
 
 			// Update mds-pixel post status
 			wp_update_post( [
@@ -1846,15 +1946,22 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='deleted', date_stamp='$now', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'deleted', 'date_stamp' => $now, 'order_in_progress' => 'N' ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s', '%s' ),
+				array( '%d' )
+			);
 
 			// DELETE BLOCKS
 
 			if ( $order_row['blocks'] != '' ) {
-
-				$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks where order_id='" . intval( $order_id ) . "' and banner_id=" . intval( $order_row['banner_id'] );
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->delete(
+					MDS_DB_PREFIX . "blocks",
+					array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+					array( '%d', '%d' )
+				);
 			}
 
 			// DELETE ADS
@@ -1862,12 +1969,47 @@ class Orders {
 		}
 	}
 
-	public static function cancel_order( $order_id ) {
+	public static function cancel_order( int $order_id, bool $bypass_auth = false ): bool {
+		// Input validation
+		$order_id = intval( $order_id );
+		if ( $order_id <= 0 ) {
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Invalid order ID in cancel_order - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() );
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
-		//echo $sql."<br>";
+			return false;
+		}
+
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				$order_id
+			),
+			ARRAY_A
+		);
+
+		if ( ! $row ) {
+			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order not found in cancel_order - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() );
+
+			return false;
+		}
+
+		// Authorization checks (unless bypassed by admin operations)
+		if ( ! $bypass_auth ) {
+			$current_user_id = get_current_user_id();
+
+			// Check if user is logged in
+			if ( ! $current_user_id ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized cancel_order attempt by non-logged user - Order ID: ' . $order_id );
+				return false;
+			}
+			
+			// Check if user owns the order or is admin
+			if ( $row['user_id'] != $current_user_id && ! current_user_can( 'manage_options' ) ) {
+				\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Unauthorized cancel_order attempt - Order ID: ' . $order_id . ' - Order Owner: ' . $row['user_id'] . ' - Current User: ' . $current_user_id );
+				return false;
+			}
+		}
+
 		if ( $row['status'] != 'cancelled' ) {
 
 			// Update mds-pixel post status
@@ -1878,11 +2020,21 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders SET `status`='cancelled', date_stamp='$now', approved='N', order_in_progress='N' WHERE order_id='" . intval( $order_id ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'cancelled', 'date_stamp' => $now, 'approved' => 'N', 'order_in_progress' => 'N' ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', '%s', '%s', '%s' ),
+				array( '%d' )
+			);
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET `status`='cancelled', `approved`='N' WHERE order_id='" . intval( $order_id ) . "' AND banner_id='" . intval( $row['banner_id'] ) . "'";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql . " (cancel order) " );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'status' => 'cancelled', 'approved' => 'N' ),
+				array( 'order_id' => intval( $order_id ), 'banner_id' => intval( $row['banner_id'] ) ),
+				array( '%s', '%s' ),
+				array( '%d', '%d' )
+			);
 		}
 
 		// process the grid, if auto_publish is on
@@ -1892,23 +2044,38 @@ class Orders {
 			publish_image( $row['banner_id'] );
 			process_map( $row['banner_id'] );
 		}
+		
+		// Log successful cancellation
+		$context = $bypass_auth ? 'admin bypass' : 'user action';
+		\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: Order cancelled successfully - Order ID: ' . $order_id . ' - User: ' . get_current_user_id() . ' - Context: ' . $context );
+		
+		return true;
 	}
 
 	public static function process_paid_renew_orders() {
 		//Complete: Only expired orders that have status as 'renew_paid'
+		global $wpdb;
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='renew_paid' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		while ( $row = mysqli_fetch_array( $result ) ) {
+		$results = $wpdb->get_results(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status='renew_paid'",
+			ARRAY_A
+		);
+		
+		foreach ( $results as $row ) {
 			// if expired
 			self::complete_renew_order( $row['order_id'] );
 		}
 	}
 
 	public static function complete_renew_order( $order_id ) {
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' and status='renew_paid' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-		$order_row = mysqli_fetch_array( $result );
+		global $wpdb;
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND status = 'renew_paid'",
+				intval( $order_id )
+			),
+			ARRAY_A
+		);
 
 		if ( $order_row['status'] != 'completed' ) {
 
@@ -1920,22 +2087,36 @@ class Orders {
 
 			$now = current_time( 'mysql' );
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "orders set status='completed', date_published=NULL, date_stamp='$now' WHERE order_id=" . intval( $order_id );
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'status' => 'completed', 'date_published' => null, 'date_stamp' => $now ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s', null, '%s' ),
+				array( '%d' )
+			);
 
 			// update pixel's order_id
 
-			$sql = "UPDATE " . MDS_DB_PREFIX . "blocks SET order_id='" . intval( $order_row['order_id'] ) . "' WHERE order_id='" . intval( $order_row['original_order_id'] ) . "' AND banner_id='" . intval( $order_row['banner_id'] ) . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->update(
+				MDS_DB_PREFIX . "blocks",
+				array( 'order_id' => intval( $order_row['order_id'] ) ),
+				array( 'order_id' => intval( $order_row['original_order_id'] ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+				array( '%d' ),
+				array( '%d', '%d' )
+			);
 
 			// update ads' order id
 			carbon_set_post_meta( $order_row['ad_id'], 'order', intval( $order_row['order_id'] ) );
 
 			// mark pixels as sold.
 
-			$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id='" . intval( $order_id ) . "' ";
-			$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-			$order_row = mysqli_fetch_array( $result );
+			$order_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+					intval( $order_id )
+				),
+				ARRAY_A
+			);
 
 			if ( strpos( $order_row['blocks'], "," ) !== false ) {
 				$blocks = explode( ",", $order_row['blocks'] );
@@ -1943,8 +2124,13 @@ class Orders {
 				$blocks = array( 0 => $order_row['blocks'] );
 			}
 			foreach ( $blocks as $key => $val ) {
-				$sql = "UPDATE " . MDS_DB_PREFIX . "blocks set status='sold' where block_id='" . intval( $val ) . "' and banner_id=" . intval( $order_row['banner_id'] );
-				mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+				$wpdb->update(
+					MDS_DB_PREFIX . "blocks",
+					array( 'status' => 'sold' ),
+					array( 'block_id' => intval( $val ), 'banner_id' => intval( $order_row['banner_id'] ) ),
+					array( '%s' ),
+					array( '%d', '%d' )
+				);
 			}
 
 			$user_info = get_userdata( intval( $order_row['user_id'] ) );
@@ -2066,7 +2252,7 @@ class Orders {
             <div class="mds-order-details-section">
                 <b><?php Language::out( 'Quantity:' ); ?></b>
 				<?php
-				$STATS_DISPLAY_MODE = Config::get( 'STATS_DISPLAY_MODE' );
+				$STATS_DISPLAY_MODE = Options::get_option( 'stats-display-mode' );
 				if ( $STATS_DISPLAY_MODE == "PIXELS" ) {
 					echo intval( $order_row['quantity'] );
 					echo " " . Language::get( 'pixels' );
@@ -2263,18 +2449,30 @@ class Orders {
 
 		// get the order
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks where block_id=" . intval( $block_from ) . " AND banner_id=" . intval( $banner_id );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$source_block = mysqli_fetch_array( $result );
+		global $wpdb;
+		$source_block = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+				intval( $block_from ),
+				intval( $banner_id )
+			),
+			ARRAY_A
+		);
 
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "blocks WHERE order_id=" . intval( $source_block['order_id'] ) . " AND banner_id=" . intval( $banner_id );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
+		$result = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE order_id = %d AND banner_id = %d",
+				intval( $source_block['order_id'] ),
+				intval( $banner_id )
+			),
+			ARRAY_A
+		);
 
 		$banner_data = load_banner_constants( $banner_id );
 
 		$grid_width = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
 
-		while ( $block_row = mysqli_fetch_array( $result ) ) { // check each block to make sure we can move it.
+		while ( $block_row = array_shift( $result ) ) { // check each block to make sure we can move it.
 
 			$block_to = ( ( $block_row['x'] + $dx ) / $banner_data['BLK_WIDTH'] ) + ( ( ( $block_row['y'] + $dy ) / $banner_data['BLK_HEIGHT'] ) * ( $grid_width / $banner_data['BLK_WIDTH'] ) );
 
@@ -2285,9 +2483,10 @@ class Orders {
 			}
 		}
 
-		mysqli_data_seek( $result, 0 );
+		// Reset array pointer to beginning
+		reset( $result );
 
-		while ( $block_row = mysqli_fetch_array( $result ) ) {
+		while ( $block_row = array_shift( $result ) ) {
 
 			$block_from = ( ( $block_row['x'] ) / $banner_data['BLK_WIDTH'] ) + ( ( $block_row['y'] / $banner_data['BLK_HEIGHT'] ) * ( $grid_width / $banner_data['BLK_WIDTH'] ) );
 			$block_to   = ( ( $block_row['x'] + $dx ) / $banner_data['BLK_WIDTH'] ) + ( ( ( $block_row['y'] + $dy ) / $banner_data['BLK_HEIGHT'] ) * ( $grid_width / $banner_data['BLK_WIDTH'] ) );
@@ -2331,20 +2530,34 @@ class Orders {
 				return $can_get_package;
 			}
 		} else {
-
+			
 			// check against the banner. (Banner has no packages)
 			if ( ( $banner_data['G_MAX_ORDERS'] > 0 ) ) {
-
-				$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders where `banner_id`='" . intval( $BID ) . "' and status <> 'deleted' and status <> 'new' AND user_id='" . intval( $user_id ) . "'";
-
-				$result = mysqli_query( $GLOBALS['connection'], $sql ) or Logs::log("MDS Debug: DB Error: " . mysqli_error( $GLOBALS['connection'] ) . " SQL: " . $sql); // Log DB errors
-				$count = $result ? mysqli_num_rows( $result ) : 0; // Handle potential query failure
-
-				if ( $count >= $banner_data['G_MAX_ORDERS'] ) {
-					return false;
-				} else {
-					return true;
+				
+				global $wpdb;
+				// Count user orders for this banner that are not deleted or new
+				$sql = $wpdb->prepare(
+					"SELECT COUNT(order_id)
+					   FROM " . MDS_DB_PREFIX . "orders
+					  WHERE banner_id = %d
+					    AND status NOT IN ('deleted','new')
+					    AND user_id = %d",
+					intval( $BID ),
+					intval( $user_id )
+				);
+				
+				$count = (int) $wpdb->get_var( $sql );
+				
+				// Log DB error if present (without breaking the flow)
+				if ( ! empty( $wpdb->last_error ) ) {
+					\MillionDollarScript\Classes\System\Logs::log( 'MDS DB Error in can_user_order: ' . $wpdb->last_error . ' SQL: ' . $sql );
 				}
+				
+				if ( $count >= intval( $banner_data['G_MAX_ORDERS'] ) ) {
+					return false;
+				}
+				
+				return true;
 			} else {
 				// can make unlimited orders
 				return true;
@@ -2375,6 +2588,130 @@ class Orders {
 				$now, $now, $order_id );
 			$wpdb->query( $sql );
 		}
+	}
+
+	/**
+	 * Check if an order has already been paid for or has a payment commitment
+	 *
+	 * @param int $order_id Order ID to check
+	 * @return bool True if payment exists or order is committed for payment, false otherwise
+	 */
+	public static function has_payment( int $order_id ): bool {
+		global $wpdb;
+		
+		// Check for actual DEBIT transactions (automated payments)
+		$payment_count = $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM " . MDS_DB_PREFIX . "transactions 
+			 WHERE order_id = %d AND type = 'DEBIT'", 
+			$order_id
+		));
+		
+		if ( $payment_count > 0 ) {
+			return true;
+		}
+		
+		// Check for WooCommerce orders that indicate payment was submitted
+		$ad_id = $wpdb->get_var( $wpdb->prepare(
+			"SELECT ad_id FROM " . MDS_DB_PREFIX . "orders 
+			 WHERE order_id = %d", 
+			$order_id
+		));
+		
+		if ( $ad_id ) {
+			$wc_order_id = get_post_meta( $ad_id, '_wc_order_id', true );
+			if ( $wc_order_id ) {
+				$wc_order = wc_get_order( $wc_order_id );
+				if ( $wc_order ) {
+					$wc_status = $wc_order->get_status();
+					// If WooCommerce order exists with these statuses, payment was submitted
+					if ( in_array( $wc_status, [ 'on-hold', 'processing', 'completed' ] ) ) {
+						return true;
+					}
+				}
+			}
+		}
+		
+		// Check order status - only 'completed' orders should be considered as having payment
+		// 'confirmed' orders without WooCommerce payment should still show "Pay Now"
+		$order_status = $wpdb->get_var( $wpdb->prepare(
+			"SELECT status FROM " . MDS_DB_PREFIX . "orders 
+			 WHERE order_id = %d", 
+			$order_id
+		));
+		
+		return $order_status === 'completed';
+	}
+
+	/**
+	 * Get header action buttons for new orders in manage page
+	 *
+	 * @param array $order Order data
+	 * @return string HTML for action buttons
+	 */
+	public static function get_header_action_buttons( array $order ): string {
+		if ( $order['status'] !== 'new' ) {
+			return '';
+		}
+
+		$buttons = '';
+		$steps = Steps::get_steps();
+		$current_step = $order['current_step'];
+		$USE_AJAX = Options::get_option( 'use-ajax' );
+
+		// Determine which button to show based on current step
+		if ( $steps[ $current_step ] == Steps::STEP_UPLOAD ) {
+			$args = [ 'BID' => $order['banner_id'] ];
+			$page_name = 'upload';
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
+				$page_name = 'order';
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( $page_name, $args ) );
+			$buttons .= "<input class='mds-button mds-upload' type='button' value='" . esc_attr( Language::get( 'Upload' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $steps[ $current_step ] == Steps::STEP_WRITE_AD ) {
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( 'write-ad', $args ) );
+			$buttons .= "<input class='mds-button mds-write' type='button' value='" . esc_attr( Language::get( 'Write Ad' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $steps[ $current_step ] == Steps::STEP_CONFIRM_ORDER ) {
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( 'confirm-order', $args ) );
+			$buttons .= "<input class='mds-button mds-confirm' type='button' value='" . esc_attr( Language::get( 'Confirm Now' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $steps[ $current_step ] == Steps::STEP_PAYMENT && !self::has_payment( $order['order_id'] ) ) {
+			$args = [
+				'order_id' => $order['order_id'],
+				'BID'      => $order['banner_id'],
+			];
+			$url = esc_url( Utility::get_page_url( 'payment', $args ) );
+			$buttons .= "<input class='mds-button mds-pay' type='button' value='" . esc_attr( Language::get( 'Pay Now' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else if ( $current_step == 0 ) {
+			// Initial step - show appropriate start button
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
+				$text = Language::get( 'Upload' );
+				$page_name = 'upload';
+				$args['order_id'] = $order['order_id'];
+			} else {
+				$text = Language::get( 'Order' );
+				$page_name = 'order';
+			}
+			$url = esc_url( Utility::get_page_url( $page_name, $args ) );
+			$buttons .= "<input class='mds-button mds-upload' type='button' value='" . esc_attr( $text ) . "' onclick='window.location=\"" . $url . "\"' />";
+		} else {
+			$args = [ 'BID' => $order['banner_id'] ];
+			if ( Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
+				$args['order_id'] = $order['order_id'];
+			}
+			$url = esc_url( Utility::get_page_url( 'order', $args ) );
+			$buttons .= "<input class='mds-button mds-continue' type='button' value='" . esc_attr( Language::get( 'Continue' ) ) . "' onclick='window.location=\"" . $url . "\"' />";
+		}
+
+		return $buttons;
 	}
 
 }

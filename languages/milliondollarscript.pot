@@ -5,68 +5,2033 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.12.85\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.13.20\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-06-12 19:23:56\n"
-"PO-Revision-Date: 2025-06-12 19:23:56\n"
-"X-Generator: Million Dollar Script Two 2.5.12.85\n"
+"POT-Creation-Date: 2025-08-21 15:28:42\n"
+"PO-Revision-Date: 2025-08-21 15:28:42\n"
+"X-Generator: Million Dollar Script Two 2.5.13.20\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
-msgid "The Million Dollar Script cookies file has been removed or disabled. "
+msgid "Create Pages"
 msgstr ""
 
-msgid "You may be logged out when the page next refreshes. "
+msgid "Generating preview..."
 msgstr ""
 
-msgid "This is necessary for proper plugin functionality."
+msgid "Creating pages..."
 msgstr ""
 
-msgid "Failed to automatically delete the required cookies file. "
+msgid "Pages created successfully!"
 msgstr ""
 
-msgid "Please manually delete this file to avoid login issues: "
+msgid "An error occurred"
 msgstr ""
 
-msgid "Privileged"
+msgid "Are you sure you want to create these pages?"
 msgstr ""
 
-msgid "Privileged users bypass payment for pixels."
+msgid "This will update existing pages. Continue?"
 msgstr ""
 
-msgid "Million Dollar Script"
+msgid "Please select at least one page type"
 msgstr ""
 
-msgid "View Count"
+msgid "Please select an implementation type"
 msgstr ""
 
-msgid "Click Count"
+msgid "Create MDS Pages"
 msgstr ""
 
-msgid "<b>The file: %FILE% doesn't exist.</b><br>"
+msgid "Manage Existing Pages"
 msgstr ""
 
-msgid "<b>Please process your pixels from the Admin section (Look under 'Pixel Admin')</b>"
+msgid "Quick Setup"
 msgstr ""
 
-msgid "<b>Sold:</b> <span class=\"status_text\">%SOLD%</span><br/>"
+msgid "Create a complete set of MDS pages with default settings."
 msgstr ""
 
-msgid "<b>Available:</b> <span class=\"status_text\">%AVAILABLE%</span><br/>"
+msgid "Create All Standard Pages"
 msgstr ""
 
-msgid "Date of Purchase"
+msgid "Choose Implementation Type"
 msgstr ""
 
-msgid "Ads(s)"
+msgid "Select how you want your MDS pages to be implemented on your site."
 msgstr ""
 
-msgid "Pixels"
+msgid "Shortcode Implementation"
+msgstr ""
+
+msgid "Traditional WordPress shortcodes. Works with any theme and is easy to customize."
+msgstr ""
+
+msgid "Pros:"
+msgstr ""
+
+msgid "Universal compatibility"
+msgstr ""
+
+msgid "Easy to use"
+msgstr ""
+
+msgid "Lightweight"
+msgstr ""
+
+msgid "Cons:"
+msgstr ""
+
+msgid "Less visual in editor"
+msgstr ""
+
+msgid "Requires shortcode knowledge"
+msgstr ""
+
+msgid "Gutenberg Blocks"
+msgstr ""
+
+msgid "Modern Gutenberg blocks with visual editing and live preview."
+msgstr ""
+
+msgid "Visual editing"
+msgstr ""
+
+msgid "Live preview"
+msgstr ""
+
+msgid "Modern interface"
+msgstr ""
+
+msgid "Requires Gutenberg"
+msgstr ""
+
+msgid "Slightly heavier"
+msgstr ""
+
+msgid "Select Page Types"
+msgstr ""
+
+msgid "Choose which MDS pages you want to create. You can select any combination of pages."
+msgstr ""
+
+msgid "Select Grid"
+msgstr ""
+
+msgid "Choose which grid you want to create pages for."
+msgstr ""
+
+msgid "Toggle sort by ID or Name"
+msgstr ""
+
+msgid "ID"
+msgstr ""
+
+msgid "Toggle sort direction"
+msgstr ""
+
+msgid "ASC"
+msgstr ""
+
+msgid "Configure Pages"
+msgstr ""
+
+msgid "Customize the settings for your selected pages."
+msgstr ""
+
+msgid "Handle Existing Pages"
+msgstr ""
+
+msgid "Choose what to do if pages already exist."
+msgstr ""
+
+msgid "Create New Pages"
+msgstr ""
+
+msgid "Always create new pages, even if pages with similar names exist."
+msgstr ""
+
+msgid "Update Existing Pages"
+msgstr ""
+
+msgid "Update existing pages with new content if they already exist."
+msgstr ""
+
+msgid "Skip Existing Pages"
+msgstr ""
+
+msgid "Only create pages that do not already exist."
+msgstr ""
+
+msgid "Review and Create"
+msgstr ""
+
+msgid "Preview Creation"
+msgstr ""
+
+msgid "Creation Preview"
+msgstr ""
+
+msgid "Creation Results"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Database configuration error"
+msgstr ""
+
+msgid "Database error loading grids"
+msgstr ""
+
+msgid "No enabled grids found. Please enable a grid first."
+msgstr ""
+
+msgid "Pixel Grid"
+msgstr ""
+
+msgid "Main pixel grid display page"
+msgstr ""
+
+msgid "Order Page"
+msgstr ""
+
+msgid "Page for ordering pixels"
+msgstr ""
+
+msgid "Write Content"
+msgstr ""
+
+msgid "Page for creating content"
+msgstr ""
+
+msgid "Order Confirmation"
+msgstr ""
+
+msgid "Order confirmation and review page"
+msgstr ""
+
+msgid "Payment Processing"
+msgstr ""
+
+msgid "Payment processing page"
+msgstr ""
+
+msgid "Manage Pixels"
+msgstr ""
+
+msgid "Page for managing existing pixels"
+msgstr ""
+
+msgid "Thank You"
+msgstr ""
+
+msgid "Thank you page after purchase"
+msgstr ""
+
+msgid "Pixel List"
+msgstr ""
+
+msgid "List of all pixel owners"
+msgstr ""
+
+msgid "File Upload"
+msgstr ""
+
+msgid "File upload page"
+msgstr ""
+
+msgid "No Orders"
+msgstr ""
+
+msgid "Page shown when no orders exist"
+msgstr ""
+
+msgid "Stats Box"
+msgstr ""
+
+msgid "Displays sold/available pixel statistics (150px × 60px)"
+msgstr ""
+
+msgid "Required"
+msgstr ""
+
+msgid "Insufficient permissions"
+msgstr ""
+
+msgid "Implementation type is required"
+msgstr ""
+
+msgid "At least one page type must be selected"
+msgstr ""
+
+msgid "Security check failed"
+msgstr ""
+
+msgid "Database configuration error. Please check plugin configuration."
+msgstr ""
+
+msgid "Database error retrieving grid information."
+msgstr ""
+
+msgid "No grid found. Please create a grid first."
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Page Type"
+msgstr ""
+
+msgid "Implementation"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Scan Pages"
+msgstr ""
+
+msgid "Repair Pages"
+msgstr ""
+
+msgid "Activate"
+msgstr ""
+
+msgid "Deactivate"
+msgstr ""
+
+msgid "Remove from MDS Management"
+msgstr ""
+
+msgid "Delete Page"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Write Advertisement"
+msgstr ""
+
+msgid "Manage Ads"
+msgstr ""
+
+msgid "Advertiser List"
+msgstr ""
+
+msgid "Shortcode"
+msgstr ""
+
+msgid "Block"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "Needs Repair"
+msgstr ""
+
+msgid "Validation Failed"
+msgstr ""
+
+msgid "Missing Content"
+msgstr ""
+
+msgid "Click to scan for specific errors and get repair suggestions for this page"
+msgstr ""
+
+msgid "Never"
+msgstr ""
+
+msgid "ago"
+msgstr ""
+
+msgid "View Details"
+msgstr ""
+
+msgid "Scan Page"
+msgstr ""
+
+msgid "Deactivate Page"
+msgstr ""
+
+msgid "Activate Page"
+msgstr ""
+
+msgid "Repair Page"
+msgstr ""
+
+msgid "Configure"
+msgstr ""
+
+msgid "No MDS pages found."
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Needs Attention"
+msgstr ""
+
+msgid "Failed to create %s page: %s"
+msgstr ""
+
+msgid "Exception creating %s page: %s"
+msgstr ""
+
+msgid "Page already exists, skipped"
+msgstr ""
+
+msgid "Template not found for page type"
+msgstr ""
+
+msgid "Invalid implementation type"
+msgstr ""
+
+msgid "Invalid page type: %s"
+msgstr ""
+
+msgid "Invalid grid data for %s: %s"
+msgstr ""
+
+msgid "Grid data for %s is empty"
+msgstr ""
+
+msgid "Invalid number for %s"
+msgstr ""
+
+msgid "Value for %s is too small"
+msgstr ""
+
+msgid "Value for %s is too large"
+msgstr ""
+
+msgid "Invalid option for %s"
+msgstr ""
+
+msgid "Invalid multiselect for %s"
+msgstr ""
+
+msgid "Invalid option %s for %s"
+msgstr ""
+
+msgid "Page %s already exists and will be updated with new content"
+msgstr ""
+
+msgid "Page %s already exists and will be skipped"
+msgstr ""
+
+msgid "Page %s already exists but a new page will be created with a different name"
+msgstr ""
+
+msgid "Consider using shortcode implementation for better compatibility with your WordPress version"
+msgstr ""
+
+msgid "Consider creating an Order page to allow pixel purchases"
+msgstr ""
+
+msgid "Will create new"
+msgstr ""
+
+msgid "Will update existing"
+msgstr ""
+
+msgid "Will skip existing"
+msgstr ""
+
+msgid "Pixel Grid Configuration"
+msgstr ""
+
+msgid "Order Pixels Configuration"
+msgstr ""
+
+msgid "Write Content Configuration"
+msgstr ""
+
+msgid "Order Confirmation Configuration"
+msgstr ""
+
+msgid "Payment Configuration"
+msgstr ""
+
+msgid "Manage Pixels Configuration"
+msgstr ""
+
+msgid "Thank You Page Configuration"
+msgstr ""
+
+msgid "Pixel List Configuration"
+msgstr ""
+
+msgid "File Upload Configuration"
+msgstr ""
+
+msgid "No Orders Configuration"
+msgstr ""
+
+msgid "Statistics Box Configuration"
+msgstr ""
+
+msgid "Sorry, you are not allowed to access this page."
+msgstr ""
+
+msgid "Grid not found."
+msgstr ""
+
+msgid "Error sending data."
+msgstr ""
+
+msgid "Invalid callback: %s"
+msgstr ""
+
+msgid "Manage Pages"
+msgstr ""
+
+msgid "Pages per page"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Troubleshooting"
+msgstr ""
+
+msgid "Details"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+msgid "Processing..."
+msgstr ""
+
+msgid "No Action Selected"
+msgstr ""
+
+msgid "Please select an action to perform."
+msgstr ""
+
+msgid "No Items Selected"
+msgstr ""
+
+msgid "Please select one or more items to perform this action on."
+msgstr ""
+
+msgid "Are you sure you want to delete this page? This action cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete %d pages? This action cannot be undone."
+msgstr ""
+
+msgid "Processing Bulk Action"
+msgstr ""
+
+msgid "Scanning pages"
+msgstr ""
+
+msgid "Repairing pages"
+msgstr ""
+
+msgid "Deleting pages"
+msgstr ""
+
+msgid "Activating pages"
+msgstr ""
+
+msgid "Deactivating pages"
+msgstr ""
+
+msgid "Bulk Action Completed"
+msgstr ""
+
+msgid "Bulk Action Completed with Errors"
+msgstr ""
+
+msgid "Bulk Action Failed"
+msgstr ""
+
+msgid "An unknown error occurred."
+msgstr ""
+
+msgid "AJAX Error"
+msgstr ""
+
+msgid "Page Details"
+msgstr ""
+
+msgid "Failed to load content."
+msgstr ""
+
+msgid "Scan Completed"
+msgstr ""
+
+msgid "Scan Failed"
+msgstr ""
+
+msgid "Failed to send scan request."
+msgstr ""
+
+msgid "Repair Completed"
+msgstr ""
+
+msgid "Repair Failed"
+msgstr ""
+
+msgid "Failed to send repair request."
+msgstr ""
+
+msgid "Page Configuration"
+msgstr ""
+
+msgid "Configuration Saved"
+msgstr ""
+
+msgid "Configuration Failed"
+msgstr ""
+
+msgid "Failed to send configuration request."
+msgstr ""
+
+msgid "Scanning for Errors"
+msgstr ""
+
+msgid "Analyzing page for errors..."
+msgstr ""
+
+msgid "Page Error Analysis"
+msgstr ""
+
+msgid "Error Scan Failed"
+msgstr ""
+
+msgid "Failed to send error scan request."
+msgstr ""
+
+msgid "Confirm Delete"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Action Completed"
+msgstr ""
+
+msgid "Action Failed"
+msgstr ""
+
+msgid "Manage MDS Pages"
+msgstr ""
+
+msgid "Total MDS Pages"
+msgstr ""
+
+msgid "Active Pages"
+msgstr ""
+
+msgid "Auto-Detected"
+msgstr ""
+
+msgid "Quick Actions"
+msgstr ""
+
+msgid "Scan All Pages"
+msgstr ""
+
+msgid "Bulk Update Implementations"
+msgstr ""
+
+msgid "Validate All Pages"
+msgstr ""
+
+msgid "Refresh List"
+msgstr ""
+
+msgid "All Page Types"
+msgstr ""
+
+msgid "All Statuses"
+msgstr ""
+
+msgid "All Implementation Types"
+msgstr ""
+
+msgid "Search pages..."
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Clear Filters"
+msgstr ""
+
+msgid "List table initialization failed. Please refresh the page."
+msgstr ""
+
+msgid "Save Configuration"
+msgstr ""
+
+msgid "Error Resolution"
+msgstr ""
+
+msgid "Scan for Page Errors"
+msgstr ""
+
+msgid "Repair All Issues"
+msgstr ""
+
+msgid "Fix All Auto-Fixable Errors"
+msgstr ""
+
+msgid "Reset Page Statuses"
+msgstr ""
+
+msgid "Export Page Data"
+msgstr ""
+
+msgid "No pages selected"
+msgstr ""
+
+msgid "Post with ID %d does not exist"
+msgstr ""
+
+msgid "Insufficient permissions to delete post: %s (ID: %d)"
+msgstr ""
+
+msgid "Failed to delete post: %s (ID: %d)"
+msgstr ""
+
+msgid "Failed to remove %s from MDS management: %s"
+msgstr ""
+
+msgid "Unknown action: %s"
+msgstr ""
+
+msgid "Bulk action completed: %d successful, %d errors"
+msgstr ""
+
+msgid "Errors:"
+msgstr ""
+
+msgid " and %d more..."
+msgstr ""
+
+msgid "Page not found"
+msgstr ""
+
+msgid "No metadata found for page"
+msgstr ""
+
+msgid "Failed to correct page type: %s"
+msgstr ""
+
+msgid "Corrected page type from \"%s\" to \"%s\""
+msgstr ""
+
+msgid "Page type detection failed: %s"
+msgstr ""
+
+msgid "Added missing shortcode"
+msgstr ""
+
+msgid "Added missing block"
+msgstr ""
+
+msgid "Updated page status"
+msgstr ""
+
+msgid "Security check failed. Please refresh the page and try again."
+msgstr ""
+
+msgid "No action specified"
+msgstr ""
+
+msgid "Invalid action: %s"
+msgstr ""
+
+msgid "An error occurred while processing the bulk action."
+msgstr ""
+
+msgid "Configuration updated successfully"
+msgstr ""
+
+msgid "Page scanned and metadata updated"
+msgstr ""
+
+msgid "Page \"%s\" is not an MDS page"
+msgstr ""
+
+msgid "No page ID provided"
+msgstr ""
+
+msgid "An error occurred while activating the page."
+msgstr ""
+
+msgid "An error occurred while deactivating the page."
+msgstr ""
+
+msgid "An error occurred while deleting the page."
+msgstr ""
+
+msgid "Page Information"
+msgstr ""
+
+msgid "URL"
+msgstr ""
+
+msgid "Created"
+msgstr ""
+
+msgid "Modified"
+msgstr ""
+
+msgid "MDS Metadata"
+msgstr ""
+
+msgid "Creation Method"
+msgstr ""
+
+msgid "Confidence Score"
+msgstr ""
+
+msgid "Last Scan"
+msgstr ""
+
+msgid "Detection Analysis"
+msgstr ""
+
+msgid "Is MDS Page"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "Detection Confidence"
+msgstr ""
+
+msgid "Detected Type"
+msgstr ""
+
+msgid "Page Errors"
+msgstr ""
+
+msgid "Suggested Fix:"
+msgstr ""
+
+msgid "Fix This Error"
+msgstr ""
+
+msgid "This error requires manual intervention."
+msgstr ""
+
+msgid "Edit Page"
+msgstr ""
+
+msgid "View Page"
+msgstr ""
+
+msgid "This page allows you to manage all MDS pages on your site. You can view page status, perform bulk operations, and configure individual pages."
+msgstr ""
+
+msgid "Available actions include scanning pages for MDS content, repairing broken pages, updating configurations, and exporting page data."
+msgstr ""
+
+msgid "If pages are not working correctly, try scanning them first, then use the repair function. Check the page details for more information about any issues."
+msgstr ""
+
+msgid "Scan completed: %d pages processed, %d MDS pages found"
+msgstr ""
+
+msgid "Invalid scan ID"
+msgstr ""
+
+msgid "Scan data not found or expired"
+msgstr ""
+
+msgid "No pages to process in this batch"
+msgstr ""
+
+msgid "Compatibility fixes: %d applied"
+msgstr ""
+
+msgid "Content fixes: %d applied"
+msgstr ""
+
+msgid "Status repairs: %d pages processed"
+msgstr ""
+
+msgid "No issues found to repair. All pages appear to be functioning correctly."
+msgstr ""
+
+msgid "Repair completed: %d total fixes applied, %d errors encountered"
+msgstr ""
+
+msgid "Error scanning failed: "
+msgstr ""
+
+msgid "Error fixing completed: %d errors fixed, %d failed"
+msgstr ""
+
+msgid "Error is not auto-fixable"
+msgstr ""
+
+msgid "Failed to update page type: "
+msgstr ""
+
+msgid "Page type updated to \"%s\""
+msgstr ""
+
+msgid "Error updating page type: "
+msgstr ""
+
+msgid "Unknown error type"
+msgstr ""
+
+msgid "Error fixed successfully"
+msgstr ""
+
+msgid "Pending migration found"
+msgstr ""
+
+msgid "Migration %s is pending and should be run"
+msgstr ""
+
+msgid "Pages missing metadata"
+msgstr ""
+
+msgid "%d MDS pages are missing metadata records"
+msgstr ""
+
+msgid "Incorrect page type detected"
+msgstr ""
+
+msgid "Page \"%s\" is classified as \"%s\" but should be \"%s\""
+msgstr ""
+
+msgid "Migration completed: %d pages migrated"
+msgstr ""
+
+msgid "Migration completed but no new pages were migrated"
+msgstr ""
+
+msgid "Migration failed: %s"
+msgstr ""
+
+msgid "Created metadata for %d pages"
+msgstr ""
+
+msgid "No new metadata was created - pages may already have metadata"
+msgstr ""
+
+msgid "Failed to create missing metadata: "
+msgstr ""
+
+msgid "No page ID provided for page type correction"
+msgstr ""
+
+msgid "Page type corrected successfully"
+msgstr ""
+
+msgid "Failed to correct page type"
+msgstr ""
+
+msgid "Error correcting page type: %s"
+msgstr ""
+
+msgid "Unknown compatibility error type"
+msgstr ""
+
+msgid "Invalid page ID"
+msgstr ""
+
+msgid "No metadata found for this page"
+msgstr ""
+
+msgid "No error data provided"
+msgstr ""
+
+msgid "Invalid error data format"
+msgstr ""
+
+msgid "Page metadata not found. Please scan the page first."
+msgstr ""
+
+msgid "Page metadata not found"
+msgstr ""
+
+msgid "Page configuration saved successfully"
+msgstr ""
+
+msgid "Post not found"
+msgstr ""
+
+msgid "Failed to update status for page %d: %s"
+msgstr ""
+
+msgid "Page status reset completed: %d pages updated"
+msgstr ""
+
+msgid "Validation completed: %d pages checked, %d still valid, %d invalid pages found"
+msgstr ""
+
+msgid "An error occurred during validation: "
+msgstr ""
+
+msgid "Failed to initialize MDS metadata system: %s"
+msgstr ""
+
+msgid "Plugin Activation Error"
+msgstr ""
+
+msgid "Page Management"
+msgstr ""
+
+msgid "Cleaned up %d orphaned pages"
+msgstr ""
+
+msgid "Metadata not found"
+msgstr ""
+
+msgid "Page type is required"
+msgstr ""
+
+msgid "Write Ad"
+msgstr ""
+
+msgid "Payment"
+msgstr ""
+
+msgid "MDS"
+msgstr ""
+
+msgid "Add Grid Size Configuration"
+msgstr ""
+
+msgid "This grid page needs a grid size configuration to function properly."
+msgstr ""
+
+msgid "Add Payment Methods Configuration"
+msgstr ""
+
+msgid "This order page needs payment methods configuration."
+msgstr ""
+
+msgid "Add MDS Content"
+msgstr ""
+
+msgid "This page needs MDS shortcode or block content to function."
+msgstr ""
+
+msgid "Scan stopped due to execution time limit"
+msgstr ""
+
+msgid "Scan failed with exception: %s"
+msgstr ""
+
+msgid "Failed to create metadata for page %d: %s"
+msgstr ""
+
+msgid "Error processing page %d: %s"
+msgstr ""
+
+msgid "Failed to update page %d: %s"
+msgstr ""
+
+msgid "Error scanning page %d: %s"
+msgstr ""
+
+msgid "Page ID %d for %s does not exist"
+msgstr ""
+
+msgid "Failed to migrate page %d (%s): %s"
+msgstr ""
+
+msgid "URLs & Redirects"
+msgstr ""
+
+msgid "WP Pages"
+msgstr ""
+
+msgid "<h3>The following options allow you to manage links and redirects to other pages.</h3>"
+msgstr ""
+
+msgid "Account Page"
+msgstr ""
+
+msgid "The page where users can modify their account details. If left empty will redirect to the default WP profile page. If WooCommerce integration is enabled it will go to the WooCommerce My Account page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here."
+msgstr ""
+
+msgid "Register Page"
+msgstr ""
+
+msgid "The page where users can register for an account. If left empty will redirect to the default WP registration page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here."
+msgstr ""
+
+msgid "Login Page"
+msgstr ""
+
+msgid "The login page to redirect users to. If left empty will redirect to the default WP login. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full login URL here."
+msgstr ""
+
+msgid "Login Page Target"
+msgstr ""
+
+msgid "Current Page"
+msgstr ""
+
+msgid "Redirect"
+msgstr ""
+
+msgid "How to open the login page when shown. When set to Current Page it will attempt to load the login page into the current page content. If that fails or it's set to Redirect then it will redirect to the default WP login page. If you want to further customize the login/registration page beyond the options here then you can install a plugin like Ultimate Member and set the URLs here to the pages provided by it such as Account, Register, Login, and Forgot Password pages."
+msgstr ""
+
+msgid "Forgot Password Page"
+msgstr ""
+
+msgid "The URL to the forgot password page. If left empty will redirect to the default WP forgot password page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full forgot password page URL here."
+msgstr ""
+
+msgid "Checkout URL"
+msgstr ""
+
+msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
+msgstr ""
+
+msgid "Thank-you Page URL"
+msgstr ""
+
+msgid "The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message."
+msgstr ""
+
+msgid "Dynamic Page ID"
+msgstr ""
+
+msgid "The page id to use to act as your dynamic page. If entered, this page will be used to essentially trick WP into thinking the dynamically generated pages by this plugin such as /milliondollarscript/order, /milliondollarscript/manage, etc. are this page. The reason you might want to do this is so that you can assign styles, headers/footers or other things to that page and they will show on these dynamic pages properly."
+msgstr ""
+
+msgid "Confirm Orders Page"
+msgstr ""
+
+msgid "Enable the Confirm Order page which shows after filling out the fields and before the checkout page."
+msgstr ""
+
+msgid "Enable MDS Pixels Pages?"
+msgstr ""
+
+msgid "Set to Yes to enable the MDS Pixels page template for the MDS Pixels pages. Visiting a MDS Pixels page will then display the same details shown in the popup boxes. If set to No then when visiting a MDS Pixels page it will show a 404 (Page Not Found) error page."
+msgstr ""
+
+msgid "Exclude from search"
+msgstr ""
+
+msgid "If checked then pixels will be excluded from search results. Note: Only the text and title fields are searchable."
+msgstr ""
+
+msgid "Endpoint"
+msgstr ""
+
+msgid "The endpoint to use for dynamic pages. Example: /<span style=\"color: red;\">endpoint</span>/order. If left empty will use the default: milliondollarscript"
+msgstr ""
+
+msgid "Enable URL cloaking?"
+msgstr ""
+
+msgid "Yes - All links will point directly to the Advertiser's URL. Click tracking will be managed by JavaScript."
+msgstr ""
+
+msgid "No - All links will be re-directed to the /milliondollarscript/click/ endpoint."
+msgstr ""
+
+msgid "Supposedly, when enabled, the advertiser's link will get a better advantage from search engines."
+msgstr ""
+
+msgid "Validate URL?"
+msgstr ""
+
+msgid "Yes - The script will try to connect to the Advertiser's URL to make sure that the link is correct."
+msgstr ""
+
+msgid "If enabled, validates URLs before allowing them to be saved."
+msgstr ""
+
+msgid "Redirect when clicking available blocks?"
+msgstr ""
+
+msgid "Yes - When an available block is clicked, redirect to specific URL"
+msgstr ""
+
+msgid "Redirect URL"
+msgstr ""
+
+msgid "URL to redirect to when an available block is clicked (if enabled above)."
+msgstr ""
+
+msgid "Styles"
+msgstr ""
+
+msgid "Theme Mode"
+msgstr ""
+
+msgid "Light Mode"
+msgstr ""
+
+msgid "Dark Mode"
+msgstr ""
+
+msgid "Choose between light and dark theme for the frontend display. Changing this will affect all color settings below. Your current settings will be backed up before switching."
+msgstr ""
+
+msgid "Backup & Restore"
+msgstr ""
+
+msgid "Export & Import Color Settings"
+msgstr ""
+
+msgid "Export your current color settings as a backup file or import settings from a previously saved file."
+msgstr ""
+
+msgid "Export Colors"
+msgstr ""
+
+msgid "Reset to Defaults"
+msgstr ""
+
+msgid "Import Colors:"
+msgstr ""
+
+msgid "Import Colors"
+msgstr ""
+
+msgid "Note: Import will replace all current color settings. Make sure to export your current settings first as a backup."
+msgstr ""
+
+msgid "Main Background Colors"
+msgstr ""
+
+msgid "Primary background colors for the main frontend interface including grid display, user pages, and content areas."
+msgstr ""
+
+msgid "Light Mode - Primary Background"
+msgstr ""
+
+msgid "Primary background color for the main frontend interface including grid display, user pages, and content areas in light mode."
+msgstr ""
+
+msgid "Dark Mode - Primary Background"
+msgstr ""
+
+msgid "Primary background color for the main frontend interface including grid display, user pages, and content areas in dark mode."
+msgstr ""
+
+msgid "Secondary Background Colors"
+msgstr ""
+
+msgid "Background colors for cards, menus, navigation bars, and elevated interface elements."
+msgstr ""
+
+msgid "Light Mode - Secondary Background"
+msgstr ""
+
+msgid "Secondary background color for cards, menus, navigation bars, and elevated interface elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Background"
+msgstr ""
+
+msgid "Secondary background color for cards, menus, navigation bars, and elevated interface elements in dark mode."
+msgstr ""
+
+msgid "Tertiary Background Colors"
+msgstr ""
+
+msgid "Background colors for subtle overlays, hover states, and supporting interface elements."
+msgstr ""
+
+msgid "Light Mode - Tertiary Background"
+msgstr ""
+
+msgid "Tertiary background color for subtle overlays, hover states, and supporting interface elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Tertiary Background"
+msgstr ""
+
+msgid "Tertiary background color for subtle overlays, hover states, and supporting interface elements in dark mode."
+msgstr ""
+
+msgid "Primary Text Colors"
+msgstr ""
+
+msgid "Primary text colors for all content, headings, and interface labels with high contrast readability."
+msgstr ""
+
+msgid "Light Mode - Primary Text"
+msgstr ""
+
+msgid "Primary text color for all content, headings, and interface labels throughout the frontend in light mode."
+msgstr ""
+
+msgid "Dark Mode - Primary Text"
+msgstr ""
+
+msgid "Primary text color for all content, headings, and interface labels throughout the frontend in dark mode."
+msgstr ""
+
+msgid "Secondary Text Colors"
+msgstr ""
+
+msgid "Text colors for supporting information, metadata, and less prominent interface elements."
+msgstr ""
+
+msgid "Light Mode - Secondary Text"
+msgstr ""
+
+msgid "Secondary text color for supporting information, metadata, and less prominent interface elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Text"
+msgstr ""
+
+msgid "Secondary text color for supporting information, metadata, and less prominent interface elements in dark mode."
+msgstr ""
+
+msgid "Accent Colors"
+msgstr ""
+
+msgid "Accent colors for highlights, links, and special emphasis elements."
+msgstr ""
+
+msgid "Light Mode - Secondary Accent"
+msgstr ""
+
+msgid "Secondary accent color for highlights, special emphasis, and decorative elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Accent"
+msgstr ""
+
+msgid "Secondary accent color for highlights, special emphasis, and decorative elements in dark mode."
+msgstr ""
+
+msgid "Primary Button Colors"
+msgstr ""
+
+msgid "Colors for primary action buttons including submit, login, and main navigation actions."
+msgstr ""
+
+msgid "Light Mode - Primary Button Background"
+msgstr ""
+
+msgid "Background color for primary action buttons including submit, login, and main navigation actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Primary Button Text"
+msgstr ""
+
+msgid "Text color for primary action buttons including submit, login, and main navigation actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Primary Button Text"
+msgstr ""
+
+msgid "Text color for primary action buttons including submit, login, and main navigation actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Primary Button Background"
+msgstr ""
+
+msgid "Background color for primary action buttons including submit, login, and main navigation actions in dark mode."
+msgstr ""
+
+msgid "Secondary Button Colors"
+msgstr ""
+
+msgid "Colors for secondary action buttons including edit, manage, and alternative actions."
+msgstr ""
+
+msgid "Light Mode - Secondary Button Background"
+msgstr ""
+
+msgid "Background color for secondary action buttons including edit, manage, and alternative actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Secondary Button Text"
+msgstr ""
+
+msgid "Text color for secondary action buttons including edit, manage, and alternative actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Button Background"
+msgstr ""
+
+msgid "Background color for secondary action buttons including edit, manage, and alternative actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Secondary Button Text"
+msgstr ""
+
+msgid "Text color for secondary action buttons including edit, manage, and alternative actions in dark mode."
+msgstr ""
+
+msgid "Success Button Colors"
+msgstr ""
+
+msgid "Colors for success and confirmation buttons including confirm, upload, pay, and complete actions."
+msgstr ""
+
+msgid "Light Mode - Success Button Background"
+msgstr ""
+
+msgid "Background color for success and confirmation buttons including confirm, upload, pay, and complete actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Success Button Text"
+msgstr ""
+
+msgid "Text color for success and confirmation buttons including confirm, upload, pay, and complete actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Success Button Background"
+msgstr ""
+
+msgid "Background color for success and confirmation buttons including confirm, upload, pay, and complete actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Success Button Text"
+msgstr ""
+
+msgid "Text color for success and confirmation buttons including confirm, upload, pay, and complete actions in dark mode."
+msgstr ""
+
+msgid "Danger Button Colors"
+msgstr ""
+
+msgid "Colors for danger and destructive buttons including cancel, delete, and reset actions."
+msgstr ""
+
+msgid "Light Mode - Danger Button Background"
+msgstr ""
+
+msgid "Background color for danger and destructive buttons including cancel, delete, and reset actions in light mode."
+msgstr ""
+
+msgid "Light Mode - Danger Button Text"
+msgstr ""
+
+msgid "Text color for danger and destructive buttons including cancel, delete, and reset actions in light mode."
+msgstr ""
+
+msgid "Dark Mode - Danger Button Background"
+msgstr ""
+
+msgid "Background color for danger and destructive buttons including cancel, delete, and reset actions in dark mode."
+msgstr ""
+
+msgid "Dark Mode - Danger Button Text"
+msgstr ""
+
+msgid "Text color for danger and destructive buttons including cancel, delete, and reset actions in dark mode."
+msgstr ""
+
+msgid "Border Colors"
+msgstr ""
+
+msgid "Colors for borders, dividers, input outlines, and interface element separators."
+msgstr ""
+
+msgid "Light Mode - Border Color"
+msgstr ""
+
+msgid "Border color for form inputs, cards, dividers, and interface element outlines in light mode."
+msgstr ""
+
+msgid "Dark Mode - Border Color"
+msgstr ""
+
+msgid "Border color for form inputs, cards, dividers, and interface element outlines in dark mode."
+msgstr ""
+
+msgid "Tooltip Colors"
+msgstr ""
+
+msgid "Colors for tooltips, popups, informational overlays, and help elements."
+msgstr ""
+
+msgid "Light Mode - Tooltip Background"
+msgstr ""
+
+msgid "Background color for tooltips, popups, informational overlays, and help elements in light mode."
+msgstr ""
+
+msgid "Dark Mode - Tooltip Background"
+msgstr ""
+
+msgid "Background color for tooltips, popups, informational overlays, and help elements in dark mode."
+msgstr ""
+
+msgid "Custom CSS"
+msgstr ""
+
+msgid "Add custom CSS to override default styles. This will be saved to the bottom of the dynamically generated CSS file."
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "Output Grid Image As"
+msgstr ""
+
+msgid "JPEG (Lossy compression)"
+msgstr ""
+
+msgid "PNG (Non-lossy compression)"
+msgstr ""
+
+msgid "GIF (8-bit, 256 color)"
+msgstr ""
+
+msgid "Choose the output format for grid images."
+msgstr ""
+
+msgid "JPEG Quality"
+msgstr ""
+
+msgid "JPEG quality percentage (1-100)."
+msgstr ""
+
+msgid "Interlace Grid Image"
+msgstr ""
+
+msgid "Enable interlaced loading preview for PNG/GIF images."
+msgstr ""
+
+msgid "Display Pixel Background"
+msgstr ""
+
+msgid "Show a blank pixel grid background while the grid loads."
+msgstr ""
+
+msgid "Pixel Selection Method"
+msgstr ""
+
+msgid "Simple (Upload image → Place image on grid)"
+msgstr ""
+
+msgid "Advanced (Select blocks → Upload image)"
+msgstr ""
+
+msgid "Choose how users select pixels in the grid."
+msgstr ""
+
+msgid "Show Uploaded Image in Advanced Mode"
+msgstr ""
+
+msgid "If Yes, the uploaded image and its dimensions will be shown in advanced mode. If No, only the image within the grid will be visible."
+msgstr ""
+
+msgid "Resize Uploaded Pixels Automatically"
+msgstr ""
+
+msgid "Uploaded pixels will be resized to fit into the blocks."
+msgstr ""
+
+msgid "Show Grid Dropdown on Manage Pixels Page?"
+msgstr ""
+
+msgid "If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL."
+msgstr ""
+
+msgid "Invert Pixels"
+msgstr ""
+
+msgid "If checked, reverses the order pixels are displayed within the grid container."
+msgstr ""
+
+msgid "Stats Display Mode"
+msgstr ""
+
+msgid "Blocks - Stats box will display sold/available blocks."
+msgstr ""
+
+msgid "Pixels - Stats box will display sold/available pixels."
+msgstr ""
+
+msgid "Display stats as blocks or pixels."
+msgstr ""
+
+msgid "Login"
+msgstr ""
+
+msgid "Login Redirect"
+msgstr ""
+
+msgid "The URL to redirect users to after login."
+msgstr ""
+
+msgid "Logout Redirect"
+msgstr ""
+
+msgid "The URL to redirect users to after logout."
+msgstr ""
+
+msgid "Login Header Image"
+msgstr ""
+
+msgid "The login header image used only on the default WP login page. If this isn't set then it will try to use the theme logo. If that isn't set it'll show nothing but the login box unless you set the Login Header Text below. A good size for this image is 320 X 100 pixels."
+msgstr ""
+
+msgid "Login Header Text"
+msgstr ""
+
+msgid "The text to show above the Login page. This will only be shown if there is no Login Header Image set above."
+msgstr ""
+
+msgid "Popup"
+msgstr ""
+
+msgid "Show a box when interacting with a block?"
+msgstr ""
+
+msgid "Yes - Show a popup box"
+msgstr ""
+
+msgid "No - No popup box"
+msgstr ""
+
+msgid "Controls whether popup boxes are displayed when interacting with the grid."
+msgstr ""
+
+msgid "Popup interaction method"
+msgstr ""
+
+msgid "Click - A box will popup when blocks are clicked on the grid"
+msgstr ""
+
+msgid "Hover - A box will popup when blocks are hovered over on the grid"
+msgstr ""
+
+msgid "Controls how users interact with the grid to display popup boxes."
+msgstr ""
+
+msgid "Popup Template"
+msgstr ""
+
+msgid "This is the template for the popup that displays when a block on the grid is interacted with. Placeholders: %text%, %url%, %image%"
+msgstr ""
+
+msgid "Max Popup Size"
+msgstr ""
+
+msgid "The maximum popup size in pixels. The fields will be scaled to fit within this width automatically."
+msgstr ""
+
+msgid "Max Image Size"
+msgstr ""
+
+msgid "The maximum image size in pixels. The system will attempt to resize images larger than this."
+msgstr ""
+
+msgid "Link Target"
+msgstr ""
+
+msgid "Open in Same Tab/Window"
+msgstr ""
+
+msgid "Open in New Tab/Window"
+msgstr ""
+
+msgid "Open in Parent Context"
+msgstr ""
+
+msgid "Open in Full Window"
+msgstr ""
+
+msgid "How to open links in the popup when they are clicked."
+msgstr ""
+
+msgid "Orders"
+msgstr ""
+
+msgid "Block Selection Mode"
+msgstr ""
+
+msgid "Yes - When Pixel Selection Method is set to Advanced users will be able to change the size of their block selection area."
+msgstr ""
+
+msgid "No - Users will not be able to change the size of their block selection area."
+msgstr ""
+
+msgid "Show block selection mode. Note that you can change the min and max block placement sizes by editing the grid under <a href=\"%GRIDS_URL%\">Admin > Pixel Management > Grids</a>."
+msgstr ""
+
+msgid "Expire Orders"
+msgstr ""
+
+msgid "Enable expiration of orders."
+msgstr ""
+
+msgid "Auto-approve"
+msgstr ""
+
+msgid "Enabling this will automatically approve orders before payments are verified by an admin."
+msgstr ""
+
+msgid "Currency"
+msgstr ""
+
+msgid "The currency to use for orders and payments when WooCommerce isn't enabled. If WooCommerce is enabled then it will use the setting from it's settings. If WooCommerce Payments plugin is enabled then it will use those settings."
+msgstr ""
+
+msgid "Currency Symbol"
+msgstr ""
+
+msgid "The currency symbol to use for orders and payments when WooCommerce isn't enabled. If WooCommerce is enabled then it will use the setting from it's settings. If WooCommerce Payments plugin is enabled then it will use those settings."
+msgstr ""
+
+msgid "Order Locking"
+msgstr ""
+
+msgid "Enabling this will prevent users from editing their orders after they are approved or completed."
+msgstr ""
+
+msgid "Order Timing"
+msgstr ""
+
+msgid "Minutes to Keep Expired Orders"
+msgstr ""
+
+msgid "How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Confirmed Orders"
+msgstr ""
+
+msgid "How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Unconfirmed Orders"
+msgstr ""
+
+msgid "How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant."
+msgstr ""
+
+msgid "Minutes to Keep Cancelled Orders"
+msgstr ""
+
+msgid "How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Make Popup Text Optional"
+msgstr ""
+
+msgid "Setting to Yes will make the Popup Text field optional."
+msgstr ""
+
+msgid "Make URL Optional"
+msgstr ""
+
+msgid "Setting to Yes will make the URL field optional."
+msgstr ""
+
+msgid "Make Image Optional"
+msgstr ""
+
+msgid "Setting to Yes will make the Image field optional."
+msgstr ""
+
+msgid "Permissions"
+msgstr ""
+
+msgid "Enable Permissions?"
+msgstr ""
+
+msgid "If you want to control access to MDS user pages you can enable permissions. This will require you to use a plugin like User Role Editor or to code it yourself in order to implement the proper roles and capabilities for your users. Only enable this if you want to enable the permission system for user roles and the following capabilities: "
+msgstr ""
+
+msgid "Enable Capabilities"
+msgstr ""
+
+msgid "Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability."
+msgstr ""
+
+msgid "Analytics"
+msgstr ""
+
+msgid "Advanced Click Tracking"
+msgstr ""
+
+msgid "Yes - Clicks (clicking the link on the popup) will be counted by day"
+msgstr ""
+
+msgid "Enables detailed click tracking statistics."
+msgstr ""
+
+msgid "Advanced View Tracking"
+msgstr ""
+
+msgid "Yes - Views (clicking the block to trigger the popup) will be counted by day"
+msgstr ""
+
+msgid "Enables detailed view tracking statistics."
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "Delete data on uninstall?"
+msgstr ""
+
+msgid "If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled."
+msgstr ""
+
+msgid "Plugin updates"
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "Don't update"
+msgstr ""
+
+msgid "Snapshot"
+msgstr ""
+
+msgid "Development"
+msgstr ""
+
+msgid "<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the \"main\" branch. Code from the other branches will eventually make it's way here when it's deemed to be stable enough.<br /><br /><strong>Don't update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the \"snapshot\" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the \"dev\" branch while working towards the next release when it's thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the \"dev\" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you're doing. You should never use this branch on a live site.<br /><br /><span style=\"color: red\">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>"
+msgstr ""
+
+msgid "Enable Logging"
+msgstr ""
+
+msgid "Enable this to record debug information to the log file. Useful for troubleshooting."
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Update Language"
+msgstr ""
+
+msgid "This will automatically add any missing entries to the plugin language file."
+msgstr ""
+
+msgid "Transliterate Cyrillic Slugs"
+msgstr ""
+
+msgid "If enabled, attempts to convert Cyrillic characters in ad titles to Latin equivalents for cleaner URL slugs (post names). If disabled, WordPress default slug generation is used."
+msgstr ""
+
+msgid "Million Dollar Script Options"
+msgstr ""
+
+msgid "Security check failed."
+msgstr ""
+
+msgid "You do not have permission to create pages."
+msgstr ""
+
+msgid "Million Dollar Script Grid"
+msgstr ""
+
+msgid "Order Pixels"
+msgstr ""
+
+msgid "Your Pixels"
+msgstr ""
+
+msgid "Checkout"
+msgstr ""
+
+msgid "Post ID is required"
+msgstr ""
+
+msgid "Valid page type is required"
+msgstr ""
+
+msgid "Valid creation method is required"
+msgstr ""
+
+msgid "Valid content type is required"
+msgstr ""
+
+msgid "Valid status is required"
+msgstr ""
+
+msgid "Confidence score must be between 0 and 1"
+msgstr ""
+
+msgid "Confirm Order"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Upload"
+msgstr ""
+
+msgid "Setup Wizard"
+msgstr ""
+
+msgid "Manual Creation"
+msgstr ""
+
+msgid "Imported"
+msgstr ""
+
+msgid "API"
+msgstr ""
+
+msgid "Manual Scan"
+msgstr ""
+
+msgid "Mixed Content"
+msgstr ""
+
+msgid "Custom"
+msgstr ""
+
+msgid "Failed to save metadata for page %d: %s"
+msgstr ""
+
+msgid "Error validating page %d: %s"
+msgstr ""
+
+msgid "Missing MDS shortcode"
+msgstr ""
+
+msgid "This page should contain an MDS shortcode but none was found"
+msgstr ""
+
+msgid "Missing MDS block"
+msgstr ""
+
+msgid "This page should contain an MDS block but none was found"
+msgstr ""
+
+msgid "This page is registered as type \"%s\" but appears to be type \"%s\"."
+msgstr ""
+
+msgid "Not an MDS page"
+msgstr ""
+
+msgid "This page does not appear to be an MDS page, but it is in the MDS page list."
+msgstr ""
+
+msgid "Remove this page from the MDS page list."
+msgstr ""
+
+msgid "There are %d orphaned MDS pages in your database. <a href=\"%s\">Clean them up</a>."
+msgstr ""
+
+msgid "Post no longer exists"
+msgstr ""
+
+msgid "Page no longer contains MDS content"
+msgstr ""
+
+msgid "Grid page missing grid size configuration"
+msgstr ""
+
+msgid "Order page missing payment methods configuration"
+msgstr ""
+
+msgid "MDS Page Management System has detected pages that need to be migrated to the new metadata system."
+msgstr ""
+
+msgid "Run Migration"
+msgstr ""
+
+msgid "Dismiss"
+msgstr ""
+
+msgid "Compatibility"
+msgstr ""
+
+msgid "Migration completed successfully!"
+msgstr ""
+
+msgid "Total pages"
+msgstr ""
+
+msgid "Migrated pages"
+msgstr ""
+
+msgid "Skipped pages"
+msgstr ""
+
+msgid "Failed pages"
+msgstr ""
+
+msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
+msgstr ""
+
+msgid "Database operation failed"
+msgstr ""
+
+msgid "Error copying file. From: %s To: %s"
+msgstr ""
+
+msgid "Error deleting folder: %s"
+msgstr ""
+
+msgid "Please wait..."
+msgstr ""
+
+msgid "Write Your Ad"
+msgstr ""
+
+msgid "Thank-You!"
+msgstr ""
+
+msgid "<b>Upload Your pixels</b> -> Write Your Ad -> Confirm -> Payment -> Thank you!"
+msgstr ""
+
+msgid "Upload Your pixels -> <b>Write Your Ad</b> -> Confirm -> Payment -> Thank you!"
+msgstr ""
+
+msgid "Upload Your pixels -> Write Your Ad -> <b>Confirm</b> -> Payment -> Thank you!"
+msgstr ""
+
+msgid "No blocks selected for checking."
+msgstr ""
+
+msgid "This space is not available! Please try to place your pixels in a different area."
+msgstr ""
+
+msgid "Missing required page data (option or title)."
+msgstr ""
+
+msgid "Insufficient permissions!"
 msgstr ""
 
 msgid "Please Wait..."
@@ -105,9 +2070,6 @@ msgstr ""
 msgid "Unable to find pixels."
 msgstr ""
 
-msgid "Sorry, you are not allowed to access this page."
-msgstr ""
-
 msgid "Edit your Ad / Change your pixels"
 msgstr ""
 
@@ -115,6 +2077,9 @@ msgid "<p>Here you can edit your ad or change your pixels.</p>"
 msgstr ""
 
 msgid "<p><b>Your Pixels:</b></p>"
+msgstr ""
+
+msgid "Pixels"
 msgstr ""
 
 msgid "Pixel Info"
@@ -132,9 +2097,6 @@ msgstr ""
 msgid "To change these pixels, select an image up to %SIZE_X% pixels wide & %SIZE_Y% pixels high and click \"upload\"."
 msgstr ""
 
-msgid "Upload"
-msgstr ""
-
 msgid "Supported formats:"
 msgstr ""
 
@@ -144,247 +2106,544 @@ msgstr ""
 msgid "Ad Saved"
 msgstr ""
 
-msgid "Error copying file. From: %s To: %s"
-msgstr ""
-
-msgid "Error deleting folder: %s"
-msgstr ""
-
-msgid "Please wait..."
-msgstr ""
-
-msgid "Grid"
-msgstr ""
-
-msgid "Order Pixels"
-msgstr ""
-
-msgid "Write Your Ad"
-msgstr ""
-
-msgid "Confirm Order"
-msgstr ""
-
-msgid "Payment"
-msgstr ""
-
-msgid "Manage Pixels"
-msgstr ""
-
-msgid "Thank-You!"
-msgstr ""
-
-msgid "List"
-msgstr ""
-
-msgid "No Orders"
-msgstr ""
-
-msgid "<b>Upload Your pixels</b> -> Write Your Ad -> Confirm -> Payment -> Thank you!"
-msgstr ""
-
-msgid "Upload Your pixels -> <b>Write Your Ad</b> -> Confirm -> Payment -> Thank you!"
-msgstr ""
-
-msgid "Upload Your pixels -> Write Your Ad -> <b>Confirm</b> -> Payment -> Thank you!"
-msgstr ""
-
-msgid "No blocks selected for checking."
-msgstr ""
-
-msgid "This space is not available! Please try to place your pixels in a different area."
-msgstr ""
-
-msgid "Missing required page data (option or title)."
-msgstr ""
-
-msgid "Insufficient permissions!"
-msgstr ""
-
 msgid "Could not create directory."
 msgstr ""
 
-msgid "Stats box"
+msgid "Success!"
 msgstr ""
 
-msgid "Ads List"
+msgid "Error!"
 msgstr ""
 
-msgid "Block Preview"
+msgid "Reset!"
 msgstr ""
 
-msgid "Grid id"
+msgid "This will unselect all Not For Sale blocks. Are you sure you want to do this?"
 msgstr ""
 
-msgid "Input the MDS grid id here."
+msgid "You haven't made any changes to save!"
 msgstr ""
 
-msgid "Alignment"
+msgid "Million Dollar Script"
 msgstr ""
 
-msgid "Left"
+msgid "Million Dollar Script Logo"
 msgstr ""
 
-msgid "Right"
+msgid "Main"
 msgstr ""
 
-msgid "Center"
+msgid "Admin"
 msgstr ""
 
-msgid "Align to the left, right or center."
+msgid "Options"
 msgstr ""
 
-msgid "Width"
+msgid "Emails"
 msgstr ""
 
-msgid "Width of the iframe. Examples: 1000px or 100% or auto"
+msgid "Changelog"
 msgstr ""
 
-msgid "Height"
+msgid "Logs"
 msgstr ""
 
-msgid "Height of the iframe. Examples: 1000px or 100% or auto"
+msgid "View Site"
 msgstr ""
 
-msgid "Type"
+msgid "Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience."
 msgstr ""
 
-msgid "Type of MDS component to load."
+msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
 msgstr ""
 
-msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
+msgid "Last Updated: %s"
 msgstr ""
 
-msgid "<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>"
+msgid "Last Updated: N/A"
 msgstr ""
 
-msgid "<h3>Your order was completed.</h3>"
+msgid "GMT: %s"
 msgstr ""
 
-msgid "Order Date"
+msgid "Server: %s"
+msgstr ""
+
+msgid "Local: %s"
+msgstr ""
+
+msgid "Customer Accounts"
+msgstr ""
+
+msgid "Orders Waiting"
+msgstr ""
+
+msgid "Orders Cancelled"
+msgstr ""
+
+msgid "Orders Denied"
+msgstr ""
+
+msgid "Orders Completed"
+msgstr ""
+
+msgid "Pixels Waiting for approval"
+msgstr ""
+
+msgid "Credits"
+msgstr ""
+
+msgid "Ryan Rhode - Developer"
+msgstr ""
+
+msgid "Adam Malinowski - Project Founder"
+msgstr ""
+
+msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
+msgstr ""
+
+msgid "Premium Installation Service"
+msgstr ""
+
+msgid "The premium installation service handles full plugin setup and configuration for you."
+msgstr ""
+
+msgid "Learn More About The Installation Service"
+msgstr ""
+
+msgid "Custom Development Services"
+msgstr ""
+
+msgid "Want custom features or integrations?<br>The development team can help."
+msgstr ""
+
+msgid "Get Custom Development"
+msgstr ""
+
+msgid "Want Reliable Hosting?"
+msgstr ""
+
+msgid "Hostinger offers fast, affordable hosting for your MDS site."
+msgstr ""
+
+msgid "Check out Hostinger Deals"
+msgstr ""
+
+msgid "Million Dollar Script v%s"
+msgstr ""
+
+msgid "Database v%s"
+msgstr ""
+
+msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3.<br>See %s for license information."
+msgstr ""
+
+msgid "MDS Logs"
+msgstr ""
+
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+msgid "Million Dollar Script Logs"
+msgstr ""
+
+msgid "Log Settings"
+msgstr ""
+
+msgid "Enable Live Update"
+msgstr ""
+
+msgid "Automatically refresh the log view below with new entries every few seconds."
+msgstr ""
+
+msgid "Log File Path"
+msgstr ""
+
+msgid "Could not determine log path."
+msgstr ""
+
+msgid "Manage Log File"
+msgstr ""
+
+msgid "Clear Log File"
+msgstr ""
+
+msgid "Deletes the current log file. A new file will be created when the next log event occurs."
+msgstr ""
+
+msgid "Log Content"
+msgstr ""
+
+msgid "Loading log entries..."
+msgstr ""
+
+msgid "Are you sure you want to clear the log file? This action cannot be undone."
+msgstr ""
+
+msgid "An AJAX error occurred. Please check your browser console or server logs."
+msgstr ""
+
+msgid "Error loading logs."
+msgstr ""
+
+msgid "Live log update enabled."
+msgstr ""
+
+msgid "Live log update disabled."
+msgstr ""
+
+msgid "Log file cleared successfully."
+msgstr ""
+
+msgid "Log file has been cleared."
+msgstr ""
+
+msgid "Log file is empty."
+msgstr ""
+
+msgid "Logging enabled."
+msgstr ""
+
+msgid "Logging disabled."
+msgstr ""
+
+msgid "Permission denied."
+msgstr ""
+
+msgid "Failed to update logging setting."
+msgstr ""
+
+msgid "Could not clear log file. Check file permissions or if the file exists."
+msgstr ""
+
+msgid "Log file is empty or does not exist."
+msgstr ""
+
+msgid "Could not open log file for reading."
+msgstr ""
+
+msgid "Pixels Awaiting Approval"
+msgstr ""
+
+msgid "Approved Pixels"
+msgstr ""
+
+msgid "Here you can approve or disapprove pixels that have been ordered by your users."
+msgstr ""
+
+msgid "Change Grid"
+msgstr ""
+
+msgid "Select bulk action"
+msgstr ""
+
+msgid "Bulk Actions"
+msgstr ""
+
+msgid "Approve"
+msgstr ""
+
+msgid "Disapprove"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "%s items"
+msgstr ""
+
+msgid "Select All"
 msgstr ""
 
 msgid "Order ID"
 msgstr ""
 
-msgid "In progress"
+msgid "Ad ID"
 msgstr ""
 
-msgid "Quantity"
+msgid "Order Date"
 msgstr ""
 
-msgid "Price"
+msgid "Username"
 msgstr ""
 
-msgid "Time"
+msgid "Block Count"
 msgstr ""
 
-msgid "Expired!"
+msgid "Block Coordinates"
 msgstr ""
 
-msgid "Not Yet Published"
+msgid "Image"
 msgstr ""
 
-msgid "%ELAPSED% elapsed<br> %TO_GO% to go"
+msgid "Payment Status"
 msgstr ""
 
-msgid "Never"
+msgid "Select %s"
 msgstr ""
 
-msgid "Write Ad"
+msgid "No Image"
 msgstr ""
 
-msgid "Confirm Now"
+msgid "No orders found matching your criteria."
 msgstr ""
 
-msgid "Pay Now"
+msgid "Million Dollar Script Changelog"
 msgstr ""
 
-msgid "Continue"
+msgid "Error:"
 msgstr ""
 
-msgid "Order"
+msgid "Saving settings..."
 msgstr ""
 
-msgid "Cancel"
+msgid "Completing setup..."
 msgstr ""
 
-msgid "Cancel, are you sure?"
+msgid "Welcome"
 msgstr ""
 
-msgid "Expires in: %TIME%"
+msgid "Basic Settings"
 msgstr ""
 
-msgid "Manage"
+msgid "Complete"
 msgstr ""
 
-msgid "Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew"
+msgid "Welcome to Million Dollar Script!"
 msgstr ""
 
-msgid "Thank you for your payment! Your order is awaiting approval."
+msgid "This wizard will guide you through setting up your Million Dollar Script installation. We'll help you:"
 msgstr ""
 
-msgid "Confirm now"
+msgid "Create necessary pages for your site"
 msgstr ""
 
-msgid "<h1>No new orders in progress</h1>"
+msgid "Configure basic settings"
 msgstr ""
 
-msgid "<p>You don't have any orders in progress. Please go <a href=\"%ORDER_URL%\">here to order pixels</a>.</p>"
+msgid "Get started with your Million Dollar Script website"
 msgstr ""
 
-msgid "Error: Grid not found"
+msgid "This wizard is optional. You can skip it and configure everything manually through the plugin settings."
 msgstr ""
 
-msgid "Preview:"
+msgid "Need Professional Installation?"
 msgstr ""
 
-msgid "Order ID:"
+msgid "Want a hassle-free setup by the plugin developer? Our premium installation service includes:"
 msgstr ""
 
-msgid "Date:"
+msgid "Complete Million Dollar Script installation and configuration"
 msgstr ""
 
-msgid "Grid Name:"
+msgid "WordPress installation (or use your existing install)"
 msgstr ""
 
-msgid "Quantity:"
+msgid "Optional WooCommerce integration"
 msgstr ""
 
-msgid "pixels"
+msgid "Optional Divi theme integration"
 msgstr ""
 
-msgid "blocks"
+msgid "Free bug fixes and support"
 msgstr ""
 
-msgid "Expires:"
+msgid "Learn More About Our Installation Service"
 msgstr ""
 
-msgid "In %DAYS_EXPIRE% days from date of publishment"
+msgid "Need custom features or integrations? Our development team can help:"
 msgstr ""
 
-msgid "Price:"
+msgid "Custom features tailored to your business needs"
 msgstr ""
 
-msgid "Status:"
+msgid "Integration with other platforms and services"
 msgstr ""
 
-msgid "Cannot place pixels on order. You have reached the order limit for this grid. Please review your orders under Manage Pixels."
+msgid "Expert development by the plugin creator"
 msgstr ""
 
-msgid "<span style=\"color: red;\">Cannot move the order - the space chosen is not empty!</span><br/>"
+msgid "Transparent pricing and timeline"
 msgstr ""
 
-msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</b>"
+msgid "Need Reliable Hosting?"
 msgstr ""
 
-msgid "Maximum blocks selected. (%MAX_BLOCKS% allowed per order)"
+msgid "Power your Million Dollar Script site with fast, affordable hosting. Hostinger offers great performance and value, perfect for getting your pixel grid online."
 msgstr ""
 
-msgid "Sorry, cannot select block %BLOCK_ID% because it is on order / sold!"
+msgid "Skip Wizard"
 msgstr ""
 
-msgid "Sorry, cannot select this block of pixels because it is not for sale!"
+msgid "Let's Go!"
+msgstr ""
+
+msgid "Million Dollar Script requires several WordPress pages to function correctly. A shortcode will be inserted into the pages. Click the button below to automatically create these pages:"
+msgstr ""
+
+msgid "Grid Page"
+msgstr ""
+
+msgid "Displays your pixel grid"
+msgstr ""
+
+msgid "For processing orders"
+msgstr ""
+
+msgid "Write Ad Page"
+msgstr ""
+
+msgid "For writing ads"
+msgstr ""
+
+msgid "Confirm Order Page"
+msgstr ""
+
+msgid "For confirming orders"
+msgstr ""
+
+msgid "Payment Page"
+msgstr ""
+
+msgid "For payment processing"
+msgstr ""
+
+msgid "Checkout Page"
+msgstr ""
+
+msgid "For checkout process"
+msgstr ""
+
+msgid "Manage Page"
+msgstr ""
+
+msgid "For managing orders"
+msgstr ""
+
+msgid "Thank-You Page"
+msgstr ""
+
+msgid "For thanking users"
+msgstr ""
+
+msgid "Upload Page"
+msgstr ""
+
+msgid "Shown when the user uploads their image"
+msgstr ""
+
+msgid "No Orders Page"
+msgstr ""
+
+msgid "Shown when the user has no orders yet"
+msgstr ""
+
+msgid "To add the main grid or order pages to your site's navigation, you'll need to edit your menu.<br>Learn how: <a href=\"%WP_MENU_URL%\" target=\"_blank\">WordPress Menus</a>. If using a block theme, see <a href=\"%FSE_URL%\" target=\"_blank\">Full Site Editing</a>."
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Skip This Step"
+msgstr ""
+
+msgid "Configure the following basic settings for your Million Dollar Script installation:"
+msgstr ""
+
+msgid "Simple - Better for beginners"
+msgstr ""
+
+msgid "Advanced - More options for users"
+msgstr ""
+
+msgid "Choose how users will select pixels on your grid."
+msgstr ""
+
+msgid "Price Per Pixel"
+msgstr ""
+
+msgid "Set the default price per pixel."
+msgstr ""
+
+msgid "Grid Width"
+msgstr ""
+
+msgid "Width of the pixel grid in pixels."
+msgstr ""
+
+msgid "Grid Height"
+msgstr ""
+
+msgid "Height of the pixel grid in pixels."
+msgstr ""
+
+msgid "Enable WooCommerce Integration"
+msgstr ""
+
+msgid "Use WooCommerce for handling payments and pixel orders."
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "Setup Complete!"
+msgstr ""
+
+msgid "Congratulations! You have successfully set up Million Dollar Script. Your website is now ready to accept pixel orders and start generating revenue."
+msgstr ""
+
+msgid "What's Next?"
+msgstr ""
+
+msgid "Cusotmize your grid in the Grid Management section"
+msgstr ""
+
+msgid "Customize your pixel blocks to match your branding"
+msgstr ""
+
+msgid "Set up payment gateways to start accepting orders"
+msgstr ""
+
+msgid "Promote your Million Dollar Script website to potential customers"
+msgstr ""
+
+msgid "Enhance Your Million Dollar Script Experience"
+msgstr ""
+
+msgid "Go to Dashboard"
+msgstr ""
+
+msgid "Failed to create pages: "
+msgstr ""
+
+msgid "You do not have permission to perform this action."
+msgstr ""
+
+msgid "Settings saved successfully!"
+msgstr ""
+
+msgid "Error saving settings. Please try again or configure them manually from the Options page."
+msgstr ""
+
+msgid "Setup wizard completed successfully!"
+msgstr ""
+
+msgid "Error: You must be logged in to view this page"
+msgstr ""
+
+msgid "Error adding product to cart: "
+msgstr ""
+
+msgid "There was a problem adding the product to the cart."
+msgstr ""
+
+msgid "There was a problem processing your order. Please go back and try again."
+msgstr ""
+
+msgid "Your order has been successfully completed. Thank you for your purchase!"
+msgstr ""
+
+msgid "Your order has been received and is pending approval. Your order will be published as soon as the payment is cleared."
 msgstr ""
 
 msgid "%UPLOAD_PATH% directory is not writable. Give write permissions (777) to the directory.<br>"
@@ -394,6 +2653,90 @@ msgid "%UPLOAD_PATH%/images/ directory is not writable. Give write permissions (
 msgstr ""
 
 msgid "Could not write to file: "
+msgstr ""
+
+msgid "Grid ID"
+msgstr ""
+
+msgid "Popup Text"
+msgstr ""
+
+msgid "Text to display in the popup that shows when the block is interacted with."
+msgstr ""
+
+msgid "The URL to link to."
+msgstr ""
+
+msgid "The %FIELD% field is required."
+msgstr ""
+
+msgid "Expiry Date"
+msgstr ""
+
+msgid "Approved"
+msgstr ""
+
+msgid "Published"
+msgstr ""
+
+msgid "Expired"
+msgstr ""
+
+msgid "Not Yet Published"
+msgstr ""
+
+msgid "No file was uploaded. Please select an image file."
+msgstr ""
+
+msgid "The uploaded file is too large."
+msgstr ""
+
+msgid "The file was only partially uploaded. Please try again."
+msgstr ""
+
+msgid "Missing temporary folder. Please contact the administrator."
+msgstr ""
+
+msgid "Failed to write file to disk. Please contact the administrator."
+msgstr ""
+
+msgid "File upload stopped by extension. Please contact the administrator."
+msgstr ""
+
+msgid "Unknown upload error. Please try again."
+msgstr ""
+
+msgid "Upload directory could not be created. Please contact the administrator."
+msgstr ""
+
+msgid "Upload directory is not writable. Please contact the administrator."
+msgstr ""
+
+msgid "Upload failed: Could not process the uploaded file. Please try again."
+msgstr ""
+
+msgid "Invalid image file. Please upload a valid image."
+msgstr ""
+
+msgid "Image dimensions are too small. Please upload a larger image."
+msgstr ""
+
+msgid "Image processing library not available. Please contact the administrator."
+msgstr ""
+
+msgid "Image resize failed: "
+msgstr ""
+
+msgid "Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set."
+msgstr ""
+
+msgid "Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels..."
+msgstr ""
+
+msgid "Failed to prepare uploaded file for processing. Please try again."
+msgstr ""
+
+msgid "Invalid package data submitted. Please check the fields and try again."
 msgstr ""
 
 msgid "Order Confirmed"
@@ -541,6 +2884,12 @@ msgid "This email is sent when an order has completed renewal. Placeholders: %FI
 msgstr ""
 
 msgid "Order Published"
+msgstr ""
+
+msgid "Pixels Modified: Send a notification email to Admin?"
+msgstr ""
+
+msgid "If checked then a notification email will be sent to the site admin when pixels are published."
 msgstr ""
 
 msgid "Order Published Subject"
@@ -699,1363 +3048,85 @@ msgstr ""
 msgid "Number of days to keep sent emails in the database. Enter 0 to keep forever."
 msgstr ""
 
-msgid "Pixels Modified: Send a notification email to Admin?"
-msgstr ""
-
-msgid "If checked then a notification email will be sent to the site admin when pixels are published."
-msgstr ""
-
 msgid "Million Dollar Script Emails"
 msgstr ""
 
-msgid "Your email address has been unsubscribed from these notifications."
+msgid "Privileged"
 msgstr ""
 
-msgid "This email was sent to the administrator email address for this WordPress site. If you are not the administrator and wish to stop receiving these emails, please"
+msgid "Privileged users bypass payment for pixels."
 msgstr ""
 
-msgid "<p><small>%EMAIL_DISABLE_MESSAGE% <a href=\"%DISABLE_LINK%\">click here</a>.</small></p>"
+msgid "View Count"
 msgstr ""
 
-msgid "Invalid package data submitted. Please check the fields and try again."
+msgid "Click Count"
 msgstr ""
 
-msgid "Select Grid"
+msgid "<b>The file: %FILE% doesn't exist.</b><br>"
 msgstr ""
 
-msgid "Grid ID"
+msgid "<b>Please process your pixels from the Admin section (Look under 'Pixel Admin')</b>"
 msgstr ""
 
-msgid "Popup Text"
+msgid "<b>Sold:</b> <span class=\"status_text\">%SOLD%</span><br/>"
 msgstr ""
 
-msgid "Text to display in the popup that shows when the block is interacted with."
+msgid "<b>Available:</b> <span class=\"status_text\">%AVAILABLE%</span><br/>"
 msgstr ""
 
-msgid "URL"
+msgid "Date of Purchase"
 msgstr ""
 
-msgid "The URL to link to."
+msgid "Ads(s)"
 msgstr ""
 
-msgid "Image"
+msgid "Stats box"
 msgstr ""
 
-msgid "The %FIELD% field is required."
+msgid "Ads List"
 msgstr ""
 
-msgid "Expiry Date"
+msgid "Block Preview"
 msgstr ""
 
-msgid "Approved"
+msgid "Grid id"
 msgstr ""
 
-msgid "Published"
+msgid "Input the MDS grid id here."
 msgstr ""
 
-msgid "Status"
+msgid "Alignment"
 msgstr ""
 
-msgid "Expired"
+msgid "Left"
 msgstr ""
 
-msgid "Yes"
+msgid "Right"
 msgstr ""
 
-msgid "No"
+msgid "Center"
 msgstr ""
 
-msgid "Million Dollar Script Logo"
+msgid "Align to the left, right or center."
 msgstr ""
 
-msgid "Main"
+msgid "Width"
 msgstr ""
 
-msgid "Admin"
+msgid "Width of the iframe. Examples: 1000px or 100% or auto"
 msgstr ""
 
-msgid "Options"
+msgid "Height"
 msgstr ""
 
-msgid "Emails"
+msgid "Height of the iframe. Examples: 1000px or 100% or auto"
 msgstr ""
 
-msgid "Changelog"
+msgid "Type"
 msgstr ""
 
-msgid "Logs"
-msgstr ""
-
-msgid "View Site"
-msgstr ""
-
-msgid "MDS"
-msgstr ""
-
-msgid "Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience."
-msgstr ""
-
-msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
-msgstr ""
-
-msgid "Last Updated: %s"
-msgstr ""
-
-msgid "Last Updated: N/A"
-msgstr ""
-
-msgid "GMT: %s"
-msgstr ""
-
-msgid "Server: %s"
-msgstr ""
-
-msgid "Local: %s"
-msgstr ""
-
-msgid "Orders"
-msgstr ""
-
-msgid "Customer Accounts"
-msgstr ""
-
-msgid "Orders Waiting"
-msgstr ""
-
-msgid "Orders Cancelled"
-msgstr ""
-
-msgid "Orders Denied"
-msgstr ""
-
-msgid "Orders Completed"
-msgstr ""
-
-msgid "Pixels Waiting for approval"
-msgstr ""
-
-msgid "Credits"
-msgstr ""
-
-msgid "Ryan Rhode - Developer"
-msgstr ""
-
-msgid "Adam Malinowski - Project Founder"
-msgstr ""
-
-msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
-msgstr ""
-
-msgid "Premium Installation Service"
-msgstr ""
-
-msgid "The premium installation service handles full plugin setup and configuration for you."
-msgstr ""
-
-msgid "Learn More About The Installation Service"
-msgstr ""
-
-msgid "Custom Development Services"
-msgstr ""
-
-msgid "Want custom features or integrations?<br>The development team can help."
-msgstr ""
-
-msgid "Get Custom Development"
-msgstr ""
-
-msgid "Want Reliable Hosting?"
-msgstr ""
-
-msgid "Hostinger offers fast, affordable hosting for your MDS site."
-msgstr ""
-
-msgid "Check out Hostinger Deals"
-msgstr ""
-
-msgid "Million Dollar Script v%s"
-msgstr ""
-
-msgid "Database v%s"
-msgstr ""
-
-msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3.<br>See %s for license information."
-msgstr ""
-
-msgid "Million Dollar Script Changelog"
-msgstr ""
-
-msgid "Million Dollar Script Extensions"
-msgstr ""
-
-msgid "MDS Extensions"
-msgstr ""
-
-msgid "You do not have permission to check for updates."
-msgstr ""
-
-msgid "Missing required parameters."
-msgstr ""
-
-msgid "An error occurred while checking for updates."
-msgstr ""
-
-msgid "You do not have sufficient permissions to perform this action."
-msgstr ""
-
-msgid "Extension slug is missing."
-msgstr ""
-
-msgid "Could not find plugin file for slug: %s"
-msgstr ""
-
-msgid "Extension is already active."
-msgstr ""
-
-msgid "Extension activated successfully."
-msgstr ""
-
-msgid "You do not have permission to install updates."
-msgstr ""
-
-msgid "Extension updated successfully."
-msgstr ""
-
-msgid "You do not have sufficient permissions to access this page."
-msgstr ""
-
-msgid "Could not connect to extension server: "
-msgstr ""
-
-msgid "You can only manage installed extensions at this time."
-msgstr ""
-
-msgid "Available Extensions"
-msgstr ""
-
-msgid "Extension"
-msgstr ""
-
-msgid "Version"
-msgstr ""
-
-msgid "Action"
-msgstr ""
-
-msgid "Premium"
-msgstr ""
-
-msgid "Free"
-msgstr ""
-
-msgid "Active"
-msgstr ""
-
-msgid "Activate"
-msgstr ""
-
-msgid "Install"
-msgstr ""
-
-msgid "Installed Extensions"
-msgstr ""
-
-msgid "No extensions installed."
-msgstr ""
-
-msgid "Update"
-msgstr ""
-
-msgid "Inactive"
-msgstr ""
-
-msgid "Check for Updates"
-msgstr ""
-
-msgid "Check All for Updates"
-msgstr ""
-
-msgid "Permission denied."
-msgstr ""
-
-msgid "Failed to fetch extensions from server."
-msgstr ""
-
-msgid "Extension ID is required."
-msgstr ""
-
-msgid "Extension not found."
-msgstr ""
-
-msgid "Failed to fetch extension from server."
-msgstr ""
-
-msgid "You do not have permission to install extensions."
-msgstr ""
-
-msgid "Extension slug is required."
-msgstr ""
-
-msgid "Extension ID (UUID) is required."
-msgstr ""
-
-msgid "PHP ZipArchive extension is missing on the server. This is required to install extensions. Please ask your hosting provider or system administrator to install/enable it."
-msgstr ""
-
-msgid "Failed to retrieve package data from download URL. Response code: "
-msgstr ""
-
-msgid "Could not create temporary file for extension package."
-msgstr ""
-
-msgid "WP Filesystem not available for writing temporary package."
-msgstr ""
-
-msgid "Could not write package data to temporary file: "
-msgstr ""
-
-msgid "WP Filesystem not available for post-installation directory rename."
-msgstr ""
-
-msgid "Failed to delete existing directory at expected plugin path."
-msgstr ""
-
-msgid "Failed to correct plugin directory name after installation."
-msgstr ""
-
-msgid "Installation failed: "
-msgstr ""
-
-msgid "Upgrader returned an unexpected result and no specific errors were reported by the skin."
-msgstr ""
-
-msgid "POST_INSTALL_ERROR: Installation seemed to succeed, but the plugin file could not be located using slug: "
-msgstr ""
-
-msgid "Extension installed but failed to activate: "
-msgstr ""
-
-msgid "Extension installed and activated successfully."
-msgstr ""
-
-msgid "Success!"
-msgstr ""
-
-msgid "Error!"
-msgstr ""
-
-msgid "Reset!"
-msgstr ""
-
-msgid "This will unselect all Not For Sale blocks. Are you sure you want to do this?"
-msgstr ""
-
-msgid "You haven't made any changes to save!"
-msgstr ""
-
-msgid "MDS Logs"
-msgstr ""
-
-msgid "Million Dollar Script Logs"
-msgstr ""
-
-msgid "Log Settings"
-msgstr ""
-
-msgid "Enable Logging"
-msgstr ""
-
-msgid "Enable this to record debug information to the log file. Useful for troubleshooting."
-msgstr ""
-
-msgid "Enable Live Update"
-msgstr ""
-
-msgid "Automatically refresh the log view below with new entries every few seconds."
-msgstr ""
-
-msgid "Log File Path"
-msgstr ""
-
-msgid "Could not determine log path."
-msgstr ""
-
-msgid "Manage Log File"
-msgstr ""
-
-msgid "Clear Log File"
-msgstr ""
-
-msgid "Deletes the current log file. A new file will be created when the next log event occurs."
-msgstr ""
-
-msgid "Log Content"
-msgstr ""
-
-msgid "Loading log entries..."
-msgstr ""
-
-msgid "Are you sure you want to clear the log file? This action cannot be undone."
-msgstr ""
-
-msgid "An AJAX error occurred. Please check your browser console or server logs."
-msgstr ""
-
-msgid "Error loading logs."
-msgstr ""
-
-msgid "Live log update enabled."
-msgstr ""
-
-msgid "Live log update disabled."
-msgstr ""
-
-msgid "Log file cleared successfully."
-msgstr ""
-
-msgid "Log file has been cleared."
-msgstr ""
-
-msgid "Log file is empty."
-msgstr ""
-
-msgid "Logging enabled."
-msgstr ""
-
-msgid "Logging disabled."
-msgstr ""
-
-msgid "Failed to update logging setting."
-msgstr ""
-
-msgid "Could not clear log file. Check file permissions or if the file exists."
-msgstr ""
-
-msgid "Log file is empty or does not exist."
-msgstr ""
-
-msgid "Could not open log file for reading."
-msgstr ""
-
-msgid "Setup Wizard"
-msgstr ""
-
-msgid "Error:"
-msgstr ""
-
-msgid "Creating pages..."
-msgstr ""
-
-msgid "Saving settings..."
-msgstr ""
-
-msgid "Completing setup..."
-msgstr ""
-
-msgid "Welcome"
-msgstr ""
-
-msgid "Create Pages"
-msgstr ""
-
-msgid "Basic Settings"
-msgstr ""
-
-msgid "Complete"
-msgstr ""
-
-msgid "Welcome to Million Dollar Script!"
-msgstr ""
-
-msgid "This wizard will guide you through setting up your Million Dollar Script installation. We'll help you:"
-msgstr ""
-
-msgid "Create necessary pages for your site"
-msgstr ""
-
-msgid "Configure basic settings"
-msgstr ""
-
-msgid "Get started with your Million Dollar Script website"
-msgstr ""
-
-msgid "This wizard is optional. You can skip it and configure everything manually through the plugin settings."
-msgstr ""
-
-msgid "Need Professional Installation?"
-msgstr ""
-
-msgid "Want a hassle-free setup by the plugin developer? Our premium installation service includes:"
-msgstr ""
-
-msgid "Complete Million Dollar Script installation and configuration"
-msgstr ""
-
-msgid "WordPress installation (or use your existing install)"
-msgstr ""
-
-msgid "Optional WooCommerce integration"
-msgstr ""
-
-msgid "Optional Divi theme integration"
-msgstr ""
-
-msgid "Free bug fixes and support"
-msgstr ""
-
-msgid "Learn More About Our Installation Service"
-msgstr ""
-
-msgid "Need custom features or integrations? Our development team can help:"
-msgstr ""
-
-msgid "Custom features tailored to your business needs"
-msgstr ""
-
-msgid "Integration with other platforms and services"
-msgstr ""
-
-msgid "Expert development by the plugin creator"
-msgstr ""
-
-msgid "Transparent pricing and timeline"
-msgstr ""
-
-msgid "Need Reliable Hosting?"
-msgstr ""
-
-msgid "Power your Million Dollar Script site with fast, affordable hosting. Hostinger offers great performance and value, perfect for getting your pixel grid online."
-msgstr ""
-
-msgid "Skip Wizard"
-msgstr ""
-
-msgid "Let's Go!"
-msgstr ""
-
-msgid "Million Dollar Script requires several WordPress pages to function correctly. A shortcode will be inserted into the pages. Click the button below to automatically create these pages:"
-msgstr ""
-
-msgid "Grid Page"
-msgstr ""
-
-msgid "Displays your pixel grid"
-msgstr ""
-
-msgid "Order Page"
-msgstr ""
-
-msgid "For processing orders"
-msgstr ""
-
-msgid "Write Ad Page"
-msgstr ""
-
-msgid "For writing ads"
-msgstr ""
-
-msgid "Confirm Order Page"
-msgstr ""
-
-msgid "For confirming orders"
-msgstr ""
-
-msgid "Payment Page"
-msgstr ""
-
-msgid "For payment processing"
-msgstr ""
-
-msgid "Checkout Page"
-msgstr ""
-
-msgid "For checkout process"
-msgstr ""
-
-msgid "Manage Page"
-msgstr ""
-
-msgid "For managing orders"
-msgstr ""
-
-msgid "Thank-You Page"
-msgstr ""
-
-msgid "For thanking users"
-msgstr ""
-
-msgid "Upload Page"
-msgstr ""
-
-msgid "Shown when the user uploads their image"
-msgstr ""
-
-msgid "No Orders Page"
-msgstr ""
-
-msgid "Shown when the user has no orders yet"
-msgstr ""
-
-msgid "To add the main grid or order pages to your site's navigation, you'll need to edit your menu.<br>Learn how: <a href=\"%WP_MENU_URL%\" target=\"_blank\">WordPress Menus</a>. If using a block theme, see <a href=\"%FSE_URL%\" target=\"_blank\">Full Site Editing</a>."
-msgstr ""
-
-msgid "Back"
-msgstr ""
-
-msgid "Skip This Step"
-msgstr ""
-
-msgid "Configure the following basic settings for your Million Dollar Script installation:"
-msgstr ""
-
-msgid "Pixel Selection Method"
-msgstr ""
-
-msgid "Simple - Better for beginners"
-msgstr ""
-
-msgid "Advanced - More options for users"
-msgstr ""
-
-msgid "Choose how users will select pixels on your grid."
-msgstr ""
-
-msgid "Price Per Pixel"
-msgstr ""
-
-msgid "Set the default price per pixel."
-msgstr ""
-
-msgid "Grid Width"
-msgstr ""
-
-msgid "Width of the pixel grid in pixels."
-msgstr ""
-
-msgid "Grid Height"
-msgstr ""
-
-msgid "Height of the pixel grid in pixels."
-msgstr ""
-
-msgid "Enable WooCommerce Integration"
-msgstr ""
-
-msgid "Use WooCommerce for handling payments and pixel orders."
-msgstr ""
-
-msgid "Save Settings"
-msgstr ""
-
-msgid "Setup Complete!"
-msgstr ""
-
-msgid "Congratulations! You have successfully set up Million Dollar Script. Your website is now ready to accept pixel orders and start generating revenue."
-msgstr ""
-
-msgid "What's Next?"
-msgstr ""
-
-msgid "Cusotmize your grid in the Grid Management section"
-msgstr ""
-
-msgid "Customize your pixel blocks to match your branding"
-msgstr ""
-
-msgid "Set up payment gateways to start accepting orders"
-msgstr ""
-
-msgid "Promote your Million Dollar Script website to potential customers"
-msgstr ""
-
-msgid "Enhance Your Million Dollar Script Experience"
-msgstr ""
-
-msgid "Go to Dashboard"
-msgstr ""
-
-msgid "Security check failed."
-msgstr ""
-
-msgid "You do not have permission to create pages."
-msgstr ""
-
-msgid "Some pages could not be created."
-msgstr ""
-
-msgid "You do not have permission to perform this action."
-msgstr ""
-
-msgid "Settings saved successfully!"
-msgstr ""
-
-msgid "Error saving settings. Please try again or configure them manually from the Options page."
-msgstr ""
-
-msgid "Setup wizard completed successfully!"
-msgstr ""
-
-msgid "Grid not found."
-msgstr ""
-
-msgid "Error sending data."
-msgstr ""
-
-msgid "Invalid callback: %s"
-msgstr ""
-
-msgid "Pages"
-msgstr ""
-
-msgid "Clicking this button will create multiple pages for use with MDS."
-msgstr ""
-
-msgid "Delete Pages"
-msgstr ""
-
-msgid "Clicking this button will delete all pages created by MDS."
-msgstr ""
-
-msgid "MDS Pages"
-msgstr ""
-
-msgid "<h3>The following options will automatically use the pages created above. You can change them. These are the page id #</h3>"
-msgstr ""
-
-msgid "The grid page."
-msgstr ""
-
-msgid "Users Order Page"
-msgstr ""
-
-msgid "The order page for Users."
-msgstr ""
-
-msgid "Users Write Ad Page"
-msgstr ""
-
-msgid "The write ad page for Users."
-msgstr ""
-
-msgid "Users Confirm Order Page"
-msgstr ""
-
-msgid "The confirm order page for Users."
-msgstr ""
-
-msgid "Users Payment Page"
-msgstr ""
-
-msgid "The payment page for Users."
-msgstr ""
-
-msgid "Users Manage Page"
-msgstr ""
-
-msgid "The manage page for Users."
-msgstr ""
-
-msgid "Users Thank You Page"
-msgstr ""
-
-msgid "The thank you page for Users."
-msgstr ""
-
-msgid "Users List Page"
-msgstr ""
-
-msgid "The list page for Users."
-msgstr ""
-
-msgid "Users Upload Page"
-msgstr ""
-
-msgid "The upload page for Users."
-msgstr ""
-
-msgid "Users No Orders Page"
-msgstr ""
-
-msgid "The no orders page for Users."
-msgstr ""
-
-msgid "URLs & Redirects"
-msgstr ""
-
-msgid "WP Pages"
-msgstr ""
-
-msgid "<h3>The following options allow you to manage links and redirects to other pages.</h3>"
-msgstr ""
-
-msgid "Account Page"
-msgstr ""
-
-msgid "The page where users can modify their account details. If left empty will redirect to the default WP profile page. If WooCommerce integration is enabled it will go to the WooCommerce My Account page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here."
-msgstr ""
-
-msgid "Register Page"
-msgstr ""
-
-msgid "The page where users can register for an account. If left empty will redirect to the default WP registration page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full registration page URL here."
-msgstr ""
-
-msgid "Login Page"
-msgstr ""
-
-msgid "The login page to redirect users to. If left empty will redirect to the default WP login. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full login URL here."
-msgstr ""
-
-msgid "Login Page Target"
-msgstr ""
-
-msgid "Current Page"
-msgstr ""
-
-msgid "Redirect"
-msgstr ""
-
-msgid "How to open the login page when shown. When set to Current Page it will attempt to load the login page into the current page content. If that fails or it's set to Redirect then it will redirect to the default WP login page. If you want to further customize the login/registration page beyond the options here then you can install a plugin like Ultimate Member and set the URLs here to the pages provided by it such as Account, Register, Login, and Forgot Password pages."
-msgstr ""
-
-msgid "Forgot Password Page"
-msgstr ""
-
-msgid "The URL to the forgot password page. If left empty will redirect to the default WP forgot password page. Set the height to auto for the Buy Pixels/Users page to auto scale to fit in the height of the page. If using a custom login page such as with Ultimate Member then enter the full forgot password page URL here."
-msgstr ""
-
-msgid "Checkout URL"
-msgstr ""
-
-msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
-msgstr ""
-
-msgid "Thank-you Page URL"
-msgstr ""
-
-msgid "The thank-you page to redirect users to. If left empty will redirect to a default page with a thank-you message."
-msgstr ""
-
-msgid "Dynamic Page ID"
-msgstr ""
-
-msgid "The page id to use to act as your dynamic page. If entered, this page will be used to essentially trick WP into thinking the dynamically generated pages by this plugin such as /milliondollarscript/order, /milliondollarscript/manage, etc. are this page. The reason you might want to do this is so that you can assign styles, headers/footers or other things to that page and they will show on these dynamic pages properly."
-msgstr ""
-
-msgid "Confirm Orders Page"
-msgstr ""
-
-msgid "Enable the Confirm Order page which shows after filling out the fields and before the checkout page."
-msgstr ""
-
-msgid "Enable MDS Pixels Pages?"
-msgstr ""
-
-msgid "Set to Yes to enable the MDS Pixels page template for the MDS Pixels pages. Visiting a MDS Pixels page will then display the same details shown in the popup boxes. If set to No then when visiting a MDS Pixels page it will show a 404 (Page Not Found) error page."
-msgstr ""
-
-msgid "Exclude from search"
-msgstr ""
-
-msgid "If checked then pixels will be excluded from search results. Note: Only the text and title fields are searchable."
-msgstr ""
-
-msgid "Endpoint"
-msgstr ""
-
-msgid "The endpoint to use for dynamic pages. Example: /<span style=\"color: red;\">endpoint</span>/order. If left empty will use the default: milliondollarscript"
-msgstr ""
-
-msgid "Enable URL cloaking?"
-msgstr ""
-
-msgid "Yes - All links will point directly to the Advertiser's URL. Click tracking will be managed by JavaScript."
-msgstr ""
-
-msgid "No - All links will be re-directed to the /milliondollarscript/click/ endpoint."
-msgstr ""
-
-msgid "Supposedly, when enabled, the advertiser's link will get a better advantage from search engines."
-msgstr ""
-
-msgid "Validate URL?"
-msgstr ""
-
-msgid "Yes - The script will try to connect to the Advertiser's URL to make sure that the link is correct."
-msgstr ""
-
-msgid "If enabled, validates URLs before allowing them to be saved."
-msgstr ""
-
-msgid "Redirect when clicking available blocks?"
-msgstr ""
-
-msgid "Yes - When an available block is clicked, redirect to specific URL"
-msgstr ""
-
-msgid "Redirect URL"
-msgstr ""
-
-msgid "URL to redirect to when an available block is clicked (if enabled above)."
-msgstr ""
-
-msgid "Styles"
-msgstr ""
-
-msgid "Button Color (Primary)"
-msgstr ""
-
-msgid "Background color for primary buttons."
-msgstr ""
-
-msgid "Button Text Color (Primary)"
-msgstr ""
-
-msgid "Text color for primary buttons."
-msgstr ""
-
-msgid "Button Secondary Background"
-msgstr ""
-
-msgid "Background color for secondary buttons."
-msgstr ""
-
-msgid "Button Secondary Text"
-msgstr ""
-
-msgid "Text color for secondary buttons."
-msgstr ""
-
-msgid "Button Success Background"
-msgstr ""
-
-msgid "Background color for success buttons."
-msgstr ""
-
-msgid "Button Success Text"
-msgstr ""
-
-msgid "Text color for success buttons."
-msgstr ""
-
-msgid "Button Danger Background"
-msgstr ""
-
-msgid "Background color for danger/delete buttons."
-msgstr ""
-
-msgid "Button Danger Text"
-msgstr ""
-
-msgid "Text color for danger/delete buttons."
-msgstr ""
-
-msgid "Primary Color"
-msgstr ""
-
-msgid "Primary accent color used for highlights, links, etc."
-msgstr ""
-
-msgid "Secondary Color"
-msgstr ""
-
-msgid "Secondary accent color."
-msgstr ""
-
-msgid "Background Color"
-msgstr ""
-
-msgid "Main background color for admin pages."
-msgstr ""
-
-msgid "Text Color"
-msgstr ""
-
-msgid "Default text color."
-msgstr ""
-
-msgid "Custom CSS"
-msgstr ""
-
-msgid "Add custom CSS to override default styles. This will be saved to the bottom of the dynamically generated CSS file."
-msgstr ""
-
-msgid "Output Grid Image As"
-msgstr ""
-
-msgid "JPEG (Lossy compression)"
-msgstr ""
-
-msgid "PNG (Non-lossy compression)"
-msgstr ""
-
-msgid "GIF (8-bit, 256 color)"
-msgstr ""
-
-msgid "Choose the output format for grid images."
-msgstr ""
-
-msgid "JPEG Quality"
-msgstr ""
-
-msgid "JPEG quality percentage (1-100)."
-msgstr ""
-
-msgid "Interlace Grid Image"
-msgstr ""
-
-msgid "Enable interlaced loading preview for PNG/GIF images."
-msgstr ""
-
-msgid "Display Pixel Background"
-msgstr ""
-
-msgid "Show a blank pixel grid background while the grid loads."
-msgstr ""
-
-msgid "Simple (Upload image → Place image on grid)"
-msgstr ""
-
-msgid "Advanced (Select blocks → Upload image)"
-msgstr ""
-
-msgid "Choose how users select pixels in the grid."
-msgstr ""
-
-msgid "Resize Uploaded Pixels Automatically"
-msgstr ""
-
-msgid "Uploaded pixels will be resized to fit into the blocks."
-msgstr ""
-
-msgid "Show Grid Dropdown on Manage Pixels Page?"
-msgstr ""
-
-msgid "If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL."
-msgstr ""
-
-msgid "Invert Pixels"
-msgstr ""
-
-msgid "If checked, reverses the order pixels are displayed within the grid container."
-msgstr ""
-
-msgid "Stats Display Mode"
-msgstr ""
-
-msgid "Blocks - Stats box will display sold/available blocks."
-msgstr ""
-
-msgid "Pixels - Stats box will display sold/available pixels."
-msgstr ""
-
-msgid "Display stats as blocks or pixels."
-msgstr ""
-
-msgid "Login"
-msgstr ""
-
-msgid "Login Redirect"
-msgstr ""
-
-msgid "The URL to redirect users to after login."
-msgstr ""
-
-msgid "Logout Redirect"
-msgstr ""
-
-msgid "The URL to redirect users to after logout."
-msgstr ""
-
-msgid "Login Header Image"
-msgstr ""
-
-msgid "The login header image used only on the default WP login page. If this isn't set then it will try to use the theme logo. If that isn't set it'll show nothing but the login box unless you set the Login Header Text below. A good size for this image is 320 X 100 pixels."
-msgstr ""
-
-msgid "Login Header Text"
-msgstr ""
-
-msgid "The text to show above the Login page. This will only be shown if there is no Login Header Image set above."
-msgstr ""
-
-msgid "Popup"
-msgstr ""
-
-msgid "Show a box when interacting with a block?"
-msgstr ""
-
-msgid "Yes - Show a popup box"
-msgstr ""
-
-msgid "No - No popup box"
-msgstr ""
-
-msgid "Controls whether popup boxes are displayed when interacting with the grid."
-msgstr ""
-
-msgid "Popup interaction method"
-msgstr ""
-
-msgid "Click - A box will popup when blocks are clicked on the grid"
-msgstr ""
-
-msgid "Hover - A box will popup when blocks are hovered over on the grid"
-msgstr ""
-
-msgid "Controls how users interact with the grid to display popup boxes."
-msgstr ""
-
-msgid "Popup Template"
-msgstr ""
-
-msgid "This is the template for the popup that displays when a block on the grid is interacted with. Placeholders: %text%, %url%, %image%"
-msgstr ""
-
-msgid "Max Popup Size"
-msgstr ""
-
-msgid "The maximum popup size in pixels. The fields will be scaled to fit within this width automatically."
-msgstr ""
-
-msgid "Max Image Size"
-msgstr ""
-
-msgid "The maximum image size in pixels. The system will attempt to resize images larger than this."
-msgstr ""
-
-msgid "Link Target"
-msgstr ""
-
-msgid "Open in Same Tab/Window"
-msgstr ""
-
-msgid "Open in New Tab/Window"
-msgstr ""
-
-msgid "Open in Parent Context"
-msgstr ""
-
-msgid "Open in Full Window"
-msgstr ""
-
-msgid "How to open links in the popup when they are clicked."
-msgstr ""
-
-msgid "Block Selection Mode"
-msgstr ""
-
-msgid "Yes - When Pixel Selection Method is set to Advanced users will be able to change the size of their block selection area."
-msgstr ""
-
-msgid "No - Users will not be able to change the size of their block selection area."
-msgstr ""
-
-msgid "Show block selection mode. Note that you can change the min and max block placement sizes by editing the grid under <a href=\"%GRIDS_URL%\">Admin > Pixel Management > Grids</a>."
-msgstr ""
-
-msgid "Expire Orders"
-msgstr ""
-
-msgid "Enable expiration of orders."
-msgstr ""
-
-msgid "Auto-approve"
-msgstr ""
-
-msgid "Enabling this will automatically approve orders before payments are verified by an admin."
-msgstr ""
-
-msgid "Currency"
-msgstr ""
-
-msgid "The currency to use for orders and payments when WooCommerce isn't enabled. If WooCommerce is enabled then it will use the setting from it's settings. If WooCommerce Payments plugin is enabled then it will use those settings."
-msgstr ""
-
-msgid "Currency Symbol"
-msgstr ""
-
-msgid "The currency symbol to use for orders and payments when WooCommerce isn't enabled. If WooCommerce is enabled then it will use the setting from it's settings. If WooCommerce Payments plugin is enabled then it will use those settings."
-msgstr ""
-
-msgid "Order Locking"
-msgstr ""
-
-msgid "Enabling this will prevent users from editing their orders after they are approved or completed."
-msgstr ""
-
-msgid "Order Timing"
-msgstr ""
-
-msgid "Minutes to Keep Expired Orders"
-msgstr ""
-
-msgid "How many minutes to keep Expired orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
-msgstr ""
-
-msgid "Minutes to Keep Confirmed Orders"
-msgstr ""
-
-msgid "How many minutes to keep Confirmed (but not paid) orders before cancellation. Enter a number. 0 = Do not cancel. -1 = instant."
-msgstr ""
-
-msgid "Minutes to Keep Unconfirmed Orders"
-msgstr ""
-
-msgid "How many minutes to keep New/Unconfirmed orders before deletion. Enter a number. 0 = never delete. -1 = instant."
-msgstr ""
-
-msgid "Minutes to Keep Cancelled Orders"
-msgstr ""
-
-msgid "How many minutes to keep Cancelled orders before deletion. Enter a number. 0 = never delete. -1 = instant. Note: If deleted, the order will stay in the database, and only the status will simply change to deleted. The blocks will be freed."
-msgstr ""
-
-msgid "Fields"
-msgstr ""
-
-msgid "Make Popup Text Optional"
-msgstr ""
-
-msgid "Setting to Yes will make the Popup Text field optional."
-msgstr ""
-
-msgid "Make URL Optional"
-msgstr ""
-
-msgid "Setting to Yes will make the URL field optional."
-msgstr ""
-
-msgid "Make Image Optional"
-msgstr ""
-
-msgid "Setting to Yes will make the Image field optional."
-msgstr ""
-
-msgid "Permissions"
-msgstr ""
-
-msgid "Enable Permissions?"
-msgstr ""
-
-msgid "If you want to control access to MDS user pages you can enable permissions. This will require you to use a plugin like User Role Editor or to code it yourself in order to implement the proper roles and capabilities for your users. Only enable this if you want to enable the permission system for user roles and the following capabilities: "
-msgstr ""
-
-msgid "Enable Capabilities"
-msgstr ""
-
-msgid "Select any number of capabilities to enable. Once enabled you can use a plugin like User Role Editor to allow access to any of the MDS menus that appear in the Buy Pixels / users area. If deselected it will show the related MDS menu item and allow access to the page. If selected it will only show the menu item if the user belongs to a role that has the listed capability."
-msgstr ""
-
-msgid "Analytics"
-msgstr ""
-
-msgid "Advanced Click Tracking"
-msgstr ""
-
-msgid "Yes - Clicks (clicking the link on the popup) will be counted by day"
-msgstr ""
-
-msgid "Enables detailed click tracking statistics."
-msgstr ""
-
-msgid "Advanced View Tracking"
-msgstr ""
-
-msgid "Yes - Views (clicking the block to trigger the popup) will be counted by day"
-msgstr ""
-
-msgid "Enables detailed view tracking statistics."
-msgstr ""
-
-msgid "System"
-msgstr ""
-
-msgid "Extension Server URL"
-msgstr ""
-
-msgid "The URL of the extension server for automatic updates and downloads. Use http://host.docker.internal:15346 for development or your production server URL. Default: https://extensions.milliondollarscript.com"
-msgstr ""
-
-msgid "License Key"
-msgstr ""
-
-msgid "Your license key for accessing premium extensions and updates from the extension server."
-msgstr ""
-
-msgid "Delete data on uninstall?"
-msgstr ""
-
-msgid "If yes then all database tables created by this plugin will be completely deleted when the plugin is uninstalled."
-msgstr ""
-
-msgid "Plugin updates"
-msgstr ""
-
-msgid "Don't update"
-msgstr ""
-
-msgid "Snapshot"
-msgstr ""
-
-msgid "Development"
-msgstr ""
-
-msgid "<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the \"main\" branch. Code from the other branches will eventually make it's way here when it's deemed to be stable enough.<br /><br /><strong>Don't update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the \"snapshot\" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the \"dev\" branch while working towards the next release when it's thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the \"dev\" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you're doing. You should never use this branch on a live site.<br /><br /><span style=\"color: red\">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>"
-msgstr ""
-
-msgid "Language"
-msgstr ""
-
-msgid "Update Language"
-msgstr ""
-
-msgid "This will automatically add any missing entries to the plugin language file."
-msgstr ""
-
-msgid "Transliterate Cyrillic Slugs"
-msgstr ""
-
-msgid "If enabled, attempts to convert Cyrillic characters in ad titles to Latin equivalents for cleaner URL slugs (post names). If disabled, WordPress default slug generation is used."
-msgstr ""
-
-msgid "Million Dollar Script Options"
-msgstr ""
-
-msgid "Million Dollar Script Grid"
-msgstr ""
-
-msgid "Your Pixels"
-msgstr ""
-
-msgid "Checkout"
-msgstr ""
-
-msgid "You must upgrade the plugin to 2.3.5 before updating to %s."
-msgstr ""
-
-msgid "Plugin Activation Error"
-msgstr ""
-
-msgid "Error: You must be logged in to view this page"
-msgstr ""
-
-msgid "Error adding product to cart: "
-msgstr ""
-
-msgid "There was a problem adding the product to the cart."
-msgstr ""
-
-msgid "There was a problem processing your order. Please go back and try again."
-msgstr ""
-
-msgid "Your order has been successfully completed. Thank you for your purchase!"
-msgstr ""
-
-msgid "Your order has been successfully submitted and is now being processed. Thank you for your purchase!"
-msgstr ""
-
-msgid "Your order has been received and is pending approval. Please wait for confirmation from our team."
+msgid "Type of MDS component to load."
 msgstr ""
 
 msgid "Quantity does not match! (1)"
@@ -2070,13 +3141,7 @@ msgstr ""
 msgid "Check this to set this product as a Million Dollar Script Pixels product."
 msgstr ""
 
-msgid "MDS: Corresponding MDS Order %MDS_ORDER_ID% pixels automatically cancelled due to full WooCommerce refund."
-msgstr ""
-
-msgid "MDS Error: Could not cancel associated pixels during refund sync - Orders class not found."
-msgstr ""
-
-msgid "MDS Error: Exception during pixel cancellation sync: %ERROR_MESSAGE%"
+msgid "<p>You don't have any orders in progress. Please go <a href=\"%ORDER_URL%\">here to order pixels</a>.</p>"
 msgstr ""
 
 msgid "WooCommerce"
@@ -2112,94 +3177,478 @@ msgstr ""
 msgid "Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab."
 msgstr ""
 
-msgid "Orders cleared successfully!"
+msgid "MDS Wizard: Failed to create default WooCommerce product because WooCommerce is not active or another error occurred."
 msgstr ""
 
-msgid "Done!"
+msgid "MDS: Corresponding MDS Order %MDS_ORDER_ID% pixels automatically cancelled due to full WooCommerce refund."
 msgstr ""
 
-msgid "Now you should <a href=\"%PROCESS_PIXELS_URL%\">Process Pixels</a> to regenerate your grid."
+msgid "MDS Error: Could not cancel associated pixels during refund sync - Orders class not found."
 msgstr ""
 
-msgid "Clear Orders"
+msgid "MDS Error: Exception during pixel cancellation sync: %ERROR_MESSAGE%"
 msgstr ""
 
-msgid "<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</b>"
 msgstr ""
 
-msgid "You might want to run a backup before doing this. Click the Delete button below if you wish to proceed.</p>"
+msgid "Maximum blocks selected. (%MAX_BLOCKS% allowed per order)"
 msgstr ""
 
-msgid "Clear associated WooCommerce orders too?"
+msgid "Sorry, cannot select block %BLOCK_ID% because it is on order / sold!"
 msgstr ""
 
-msgid "WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgid "Sorry, cannot select this block of pixels because it is not for sale!"
 msgstr ""
 
-msgid "You might want to run a backup before doing this. Are you sure?"
+msgid "<h3>Your order was completed.</h3>"
 msgstr ""
 
-msgid "Pixels Awaiting Approval"
+msgid "In progress"
 msgstr ""
 
-msgid "Approved Pixels"
+msgid "Quantity"
 msgstr ""
 
-msgid "Change Grid"
+msgid "Price"
 msgstr ""
 
-msgid "Select bulk action"
+msgid "Time"
 msgstr ""
 
-msgid "Bulk Actions"
+msgid "Expired!"
 msgstr ""
 
-msgid "Approve"
+msgid "%ELAPSED% elapsed<br> %TO_GO% to go"
 msgstr ""
 
-msgid "Disapprove"
+msgid "Cancel, are you sure?"
 msgstr ""
 
-msgid "Apply"
+msgid "Pay Now"
 msgstr ""
 
-msgid "%s items"
+msgid "Payment submitted and processing..."
 msgstr ""
 
-msgid "Select All"
+msgid "Expires in: %TIME%"
 msgstr ""
 
-msgid "Actions"
+msgid "Manage"
 msgstr ""
 
-msgid "Ad ID"
+msgid "Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew"
 msgstr ""
 
-msgid "Username"
+msgid "Thank you for your payment! Your order is awaiting approval."
 msgstr ""
 
-msgid "Block Count"
+msgid "Confirm now"
 msgstr ""
 
-msgid "Title"
+msgid "<h1>No new orders in progress</h1>"
 msgstr ""
 
-msgid "Block Coordinates"
+msgid "Error: Grid not found"
 msgstr ""
 
-msgid "Payment Status"
+msgid "Preview:"
 msgstr ""
 
-msgid "Select %s"
+msgid "Order ID:"
 msgstr ""
 
-msgid "No Image"
+msgid "Date:"
 msgstr ""
 
-msgid "No orders found matching your criteria."
+msgid "Grid Name:"
 msgstr ""
 
-msgid "Sorry, you are not allowed to perform this action."
+msgid "Quantity:"
+msgstr ""
+
+msgid "pixels"
+msgstr ""
+
+msgid "blocks"
+msgstr ""
+
+msgid "Expires:"
+msgstr ""
+
+msgid "In %DAYS_EXPIRE% days from date of publishment"
+msgstr ""
+
+msgid "Price:"
+msgstr ""
+
+msgid "Status:"
+msgstr ""
+
+msgid "Cannot place pixels on order. You have reached the order limit for this grid. Please review your orders under Manage Pixels."
+msgstr ""
+
+msgid "<span style=\"color: red;\">Cannot move the order - the space chosen is not empty!</span><br/>"
+msgstr ""
+
+msgid "Confirm Now"
+msgstr ""
+
+msgid "Order"
+msgstr ""
+
+msgid "Continue"
+msgstr ""
+
+msgid "ERROR: Cannot save your ad for the following reasons: "
+msgstr ""
+
+msgid "Save Ad"
+msgstr ""
+
+msgid "* Required field"
+msgstr ""
+
+msgid "Expires"
+msgstr ""
+
+msgid "Not Published"
+msgstr ""
+
+msgid "Not Approved"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Confirmed"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "Denied"
+msgstr ""
+
+msgid "Deleted"
+msgstr ""
+
+msgid "Renew Now"
+msgstr ""
+
+msgid "Renewal Paid"
+msgstr ""
+
+msgid "Paid"
+msgstr ""
+
+msgid "No ads were found."
+msgstr ""
+
+msgid "Status: "
+msgstr ""
+
+msgid "Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels."
+msgstr ""
+
+msgid "Invalid file key specified: %KEY%"
+msgstr ""
+
+msgid "Invalid upload method or upload error."
+msgstr ""
+
+msgid "PHP Upload Error Code: %CODE%"
+msgstr ""
+
+msgid "File upload failed."
+msgstr ""
+
+msgid "Possible file upload attack or server error during file move."
+msgstr ""
+
+msgid "Could not read image dimensions after conversion. File might be corrupted."
+msgstr ""
+
+msgid "Image processing failed: %ERROR%"
+msgstr ""
+
+msgid "Price Options"
+msgstr ""
+
+msgid "Please select your preferred package from the following list:"
+msgstr ""
+
+msgid "Here are the available price options for this grid:"
+msgstr ""
+
+msgid "Max Orders"
+msgstr ""
+
+msgid "free"
+msgstr ""
+
+msgid "/ %NUM_PIXELS% pixels"
+msgstr ""
+
+msgid "Expires in %DAYS_EXPIRE% days."
+msgstr ""
+
+msgid "Unlimited"
+msgstr ""
+
+msgid "Today!"
+msgstr ""
+
+msgid "Day ago"
+msgstr ""
+
+msgid "Days ago"
+msgstr ""
+
+msgid "Price Table"
+msgstr ""
+
+msgid "The following table shows the different price regions for the selected grid."
+msgstr ""
+
+msgid "Price / %NUM_PIXELS% pixels"
+msgstr ""
+
+msgid "Color"
+msgstr ""
+
+msgid "From row"
+msgstr ""
+
+msgid "To row"
+msgstr ""
+
+msgid "From column"
+msgstr ""
+
+msgid "To column"
+msgstr ""
+
+msgid "Register"
+msgstr ""
+
+msgid "Security check failed. Please reload the page and try again."
+msgstr ""
+
+msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
+msgstr ""
+
+msgid "Invalid grid."
+msgstr ""
+
+msgid "Invalid grid configuration."
+msgstr ""
+
+msgid "You are not logged in. Please log in or sign up for a new account."
+msgstr ""
+
+msgid "Thank you for your order!"
+msgstr ""
+
+msgid "<p>1. <a href=\"%ORDER_URL%?BID=%BID%\">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
+msgstr ""
+
+msgid "Edit Order"
+msgstr ""
+
+msgid "<h3>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a></h3>"
+msgstr ""
+
+msgid "<< Previous"
+msgstr ""
+
+msgid "Next >>"
+msgstr ""
+
+msgid "<p><span style=\"color:red\">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</p>"
+msgstr ""
+
+msgid "Complete Order >>"
+msgstr ""
+
+msgid "Confirm & Pay >>"
+msgstr ""
+
+msgid "Error: Could not load grid data for the specified ID."
+msgstr ""
+
+msgid "Error: Could not load grid data."
+msgstr ""
+
+msgid "No Access"
+msgstr ""
+
+msgid "Order has been successfully cancelled."
+msgstr ""
+
+msgid "Manage your pixels"
+msgstr ""
+
+msgid "<p>Here you can manage your pixels.<p>"
+msgstr ""
+
+msgid "<p><a class=\"mds-order-pixels mds-button\" href=\"%ORDER_URL%\">Order Pixels</a></p>"
+msgstr ""
+
+msgid "<p>You own %PIXEL_COUNT% blocks.</p>"
+msgstr ""
+
+msgid "<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks).</p>"
+msgstr ""
+
+msgid "<p>Your pixels were clicked %CLICK_COUNT% times.</p>"
+msgstr ""
+
+msgid "<p>Your pixels were viewed %VIEW_COUNT% times.</p>"
+msgstr ""
+
+msgid "Note: Your pixels are waiting for approval. They will be scheduled to go live once they are approved."
+msgstr ""
+
+msgid "Note: Your pixels are now published and live!"
+msgstr ""
+
+msgid "Your pixels are now approved! They are now waiting for the webmaster to publish them on to the public grid."
+msgstr ""
+
+msgid "\"Completed\" - Orders where the transaction was successfully completed.<br />\n\"Confirmed\" - Orders confirmed by you, but the transaction has not been completed.<br />\n\"Pending\" - Orders confirmed by you, but the transaction has not been approved.<br />\n\"Denied\" - Denied by the administrator.<br />\n\"Cancelled\" - Orders that have been cancelled.<br />\n\"Expired\" - Pixels were expired after the specified term. You can renew this order.<br />"
+msgstr ""
+
+msgid "Your blocks are shown on the grid below. Only your blocks are shown.<br />\n- Click your block to edit it.<br />\n- <b>Red</b> blocks have no pixels yet. Click on them to upload your pixels."
+msgstr ""
+
+msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
+msgstr ""
+
+msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
+msgstr ""
+
+msgid "<p>We are sorry, it looks like you took too long! Either your session has timed out or the pixels we tried to reserve for you were snapped up by someone else in the meantime! Please go <a href=\"%ORDER_PAGE%\">here</a> and try again.</p>"
+msgstr ""
+
+msgid "<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
+msgstr ""
+
+msgid "Available Grids"
+msgstr ""
+
+msgid "There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:"
+msgstr ""
+
+msgid "Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a>"
+msgstr ""
+
+msgid "Select Pixels"
+msgstr ""
+
+msgid "<h3>Instructions:</h3>\n                    <p>Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). Select the blocks that you want, and then press the 'Buy Pixels Now' button.</p>"
+msgstr ""
+
+msgid "%USR_GRID_BLOCK% Available<br />\n%USR_SEL_BLOCK% Selected (click to deselect)<br />\n%USR_SOL_BLOCK% Sold<br />\n%USR_RES_BLOCK% Reserved<br />\n%USR_ORD_BLOCK% Ordered<br />\n%USR_NFS_BLOCK% Not for sale<br />"
+msgstr ""
+
+msgid "Selection Size"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Blocks"
+msgstr ""
+
+msgid "Erase"
+msgstr ""
+
+msgid "Buy Pixels Now"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "<h3>Please write your advertisement and click \"Save Ad\" when done.</h3>"
+msgstr ""
+
+msgid "Sorry there was an error with your session."
+msgstr ""
+
+msgid "Go Back"
+msgstr ""
+
+msgid "Complete Order"
+msgstr ""
+
+msgid "Confirm & Pay"
+msgstr ""
+
+msgid "The upload image file is empty."
+msgstr ""
+
+msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a></p>"
+msgstr ""
+
+msgid "Upload your pixel image"
+msgstr ""
+
+msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
+msgstr ""
+
+msgid "<p><strong>Upload your pixels:</strong></p>"
+msgstr ""
+
+msgid "Your uploaded pixels:"
+msgstr ""
+
+msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />"
+msgstr ""
+
+msgid "Your image was automatically resized to %WIDTH%x%HEIGHT% to fit the grid constraints."
+msgstr ""
+
+msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />"
+msgstr ""
+
+msgid "File upload error: "
+msgstr ""
+
+msgid "There was an error with the image file."
+msgstr ""
+
+msgid "<p>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a>.</p>"
+msgstr ""
+
+msgid "<p>- Upload a GIF, JPEG or PNG graphics file<br/>\n- Click \"Browse\" to find your file on your computer, then click \"Upload\".<br/>\n- Once uploaded, you will be able to position your file over the grid.<br/></p>"
+msgstr ""
+
+msgid "Your Uploaded Pixels"
+msgstr ""
+
+msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high."
+msgstr ""
+
+msgid "<strong style=\"color:red;\">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>"
+msgstr ""
+
+msgid "<strong style=\"color:red;\">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>"
+msgstr ""
+
+msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks."
+msgstr ""
+
+msgid "This will cost you %TOTAL_COST%."
+msgstr ""
+
+msgid "License not found"
 msgstr ""
 
 msgid "Background image uploaded successfully."
@@ -2262,12 +3711,6 @@ msgstr ""
 msgid "Selected Grid:"
 msgstr ""
 
-msgid "Grid processing completed successfully."
-msgstr ""
-
-msgid "Check Completed."
-msgstr ""
-
 msgid "Million Dollar Script logo"
 msgstr ""
 
@@ -2298,22 +3741,13 @@ msgstr ""
 msgid "Waiting"
 msgstr ""
 
-msgid "Completed"
-msgstr ""
-
 msgid "Reserved"
 msgstr ""
 
-msgid "Denied"
-msgstr ""
-
-msgid "Cancelled"
-msgstr ""
-
-msgid "Deleted"
-msgstr ""
-
 msgid "Map"
+msgstr ""
+
+msgid "Clear Orders"
 msgstr ""
 
 msgid "Pixel Approval"
@@ -2352,10 +3786,31 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-msgid "Packages allow you to group pixels together and define the pricing and duration options available for purchasing pixels on a specific grid."
+msgid "The path to your uploads directory: %UPLOAD_PATH%"
 msgstr ""
 
-msgid "Listing rows that are marked as custom price."
+msgid "Orders cleared successfully!"
+msgstr ""
+
+msgid "Done!"
+msgstr ""
+
+msgid "Now you should <a href=\"%PROCESS_PIXELS_URL%\">Process Pixels</a> to regenerate your grid."
+msgstr ""
+
+msgid "<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgstr ""
+
+msgid "You might want to run a backup before doing this. Click the Delete button below if you wish to proceed.</p>"
+msgstr ""
+
+msgid "Clear associated WooCommerce orders too?"
+msgstr ""
+
+msgid "WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgstr ""
+
+msgid "You might want to run a backup before doing this. Are you sure?"
 msgstr ""
 
 msgid "Show All"
@@ -2373,332 +3828,155 @@ msgstr ""
 msgid "Manage Refund (WooCommerce)"
 msgstr ""
 
-msgid "The path to your uploads directory: %UPLOAD_PATH%"
+msgid "Successfully processed [COUNT] grid(s)."
 msgstr ""
 
-msgid "License not found"
+msgid "Error processing grids: "
 msgstr ""
 
-msgid "<h3>Please write your advertisement and click \"Save Ad\" when done.</h3>"
+msgid "Packages allow you to group pixels together and define the pricing and duration options available for purchasing pixels on a specific grid."
 msgstr ""
 
-msgid "Sorry there was an error with your session."
+msgid "Listing rows that are marked as custom price."
 msgstr ""
 
-msgid "Go Back"
+msgid "Check Completed."
 msgstr ""
 
-msgid "<< Previous"
+msgid "MDS Backward Compatibility"
 msgstr ""
 
-msgid "Next >>"
+msgid "Compatibility Status"
 msgstr ""
 
-msgid "<p><span style=\"color:red\">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</p>"
+msgid "Compatibility Version"
 msgstr ""
 
-msgid "Complete Order"
+msgid "Migration Status"
 msgstr ""
 
-msgid "Confirm & Pay"
+msgid "Pages with Metadata"
 msgstr ""
 
-msgid "No Access"
+msgid "Pending Migrations"
 msgstr ""
 
-msgid "<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
+msgid "The following migrations are pending and should be completed to ensure full compatibility:"
 msgstr ""
 
-msgid "Available Grids"
+msgid "Initial page migration to metadata system"
 msgstr ""
 
-msgid "There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:"
+msgid "Metadata migration for existing pages"
 msgstr ""
 
-msgid "Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a>"
+msgid "Run Migration Now"
 msgstr ""
 
-msgid "Select Pixels"
+msgid "This will migrate existing MDS pages to the new metadata system. This process is safe and reversible."
 msgstr ""
 
-msgid "<h3>Instructions:</h3>\n                    <p>Each square represents a block of %PIXEL_C% pixels (%BLK_WIDTH%x%BLK_HEIGHT%). Select the blocks that you want, and then press the 'Buy Pixels Now' button.</p>"
+msgid "Last Migration Results"
 msgstr ""
 
-msgid "%USR_GRID_BLOCK% Available<br />\n%USR_SEL_BLOCK% Selected (click to deselect)<br />\n%USR_SOL_BLOCK% Sold<br />\n%USR_RES_BLOCK% Reserved<br />\n%USR_ORD_BLOCK% Ordered<br />\n%USR_NFS_BLOCK% Not for sale<br />"
+msgid "Total Pages Processed"
 msgstr ""
 
-msgid "Selection Size"
+msgid "Successfully Migrated"
 msgstr ""
 
-msgid "Size"
+msgid "Skipped (Already Migrated)"
 msgstr ""
 
-msgid "Blocks"
+msgid "Failed"
 msgstr ""
 
-msgid "Erase"
+msgid "Migration Errors"
 msgstr ""
 
-msgid "Buy Pixels Now"
+msgid "Compatibility Information"
 msgstr ""
 
-msgid "Reset"
+msgid "What is Backward Compatibility?"
 msgstr ""
 
-msgid "File type not supported."
+msgid "The MDS Backward Compatibility system ensures that existing MDS pages continue to work seamlessly after upgrading to the new page management system. It automatically detects and migrates existing pages, shortcodes, and blocks to the new metadata system."
 msgstr ""
 
-msgid "There was an error with the image file."
+msgid "Supported Legacy Features"
 msgstr ""
 
-msgid "<p>1. <a href=\"%ORDER_URL%?BID=%BID%\">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
+msgid "Legacy shortcodes: [mds], [million_dollar_script], [pixel_grid]"
 msgstr ""
 
-msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a></p>"
+msgid "Legacy Gutenberg blocks: mds/grid-block, mds/order-block, etc."
 msgstr ""
 
-msgid "<p>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a>.</p>"
+msgid "Existing page option references"
 msgstr ""
 
-msgid "Upload your pixel image"
+msgid "Custom page configurations and settings"
 msgstr ""
 
-msgid "<p>- Upload a GIF, JPEG or PNG graphics file<br/>\n- Click \"Browse\" to find your file on your computer, then click \"Upload\".<br/>\n- Once uploaded, you will be able to position your file over the grid.<br/></p>"
+msgid "Migration Process"
 msgstr ""
 
-msgid "<p><strong>Upload your pixels:</strong></p>"
+msgid "Scan all pages for MDS content (shortcodes, blocks, references)"
 msgstr ""
 
-msgid "Your Uploaded Pixels"
+msgid "Analyze content and determine page types with confidence scoring"
 msgstr ""
 
-msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high."
+msgid "Create metadata records for detected MDS pages"
 msgstr ""
 
-msgid "<strong style=\"color:red;\">Sorry, the uploaded image is too big. This image has %COUNT% pixels... A limit of %MAX_PIXELS% pixels per order is set.</strong>"
+msgid "Update legacy shortcodes and blocks to current standards"
 msgstr ""
 
-msgid "<strong style=\"color:red;\">Sorry, you are required to upload an image with at least %MIN_PIXELS% pixels. This image only has %COUNT% pixels...</strong>"
+msgid "Preserve all existing functionality and settings"
 msgstr ""
 
-msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks."
+msgid "Safety and Reversibility"
 msgstr ""
 
-msgid "This will cost you %TOTAL_COST%."
+msgid "The migration process is designed to be safe and non-destructive. Original page content is preserved, and migration notes are added to track changes. If needed, pages can be restored to their original state."
 msgstr ""
 
-msgid "Edit Order"
+msgid "Advanced Actions"
 msgstr ""
 
-msgid "You are not logged in. Please log in or sign up for a new account."
+msgid "View Page Management"
 msgstr ""
 
-msgid "Error: Could not load grid data for the specified ID."
+msgid "Refresh Status"
 msgstr ""
 
-msgid "Error: Could not load grid data."
+msgid "Debug System Status"
 msgstr ""
 
-msgid "Thank you for your order!"
+msgid "Reset Migration Status"
 msgstr ""
 
-msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
+msgid "Force Run Migration Now"
 msgstr ""
 
-msgid "The upload image file is empty."
+msgid "Page Error Details"
 msgstr ""
 
-msgid "Manage your pixels"
+msgid "Apply Fix"
 msgstr ""
 
-msgid "<p>Here you can manage your pixels.<p>"
+msgid "The Million Dollar Script cookies file has been removed or disabled. "
 msgstr ""
 
-msgid "<p><a class=\"mds-order-pixels mds-button\" href=\"%ORDER_URL%\">Order Pixels</a></p>"
+msgid "You may be logged out when the page next refreshes. "
 msgstr ""
 
-msgid "<p>You own %PIXEL_COUNT% blocks.</p>"
+msgid "This is necessary for proper plugin functionality."
 msgstr ""
 
-msgid "<p>You have %PIXEL_ORD_COUNT% pixels on order (%BLOCK_ORD_COUNT% blocks).</p>"
+msgid "Failed to automatically delete the required cookies file. "
 msgstr ""
 
-msgid "<p>Your pixels were clicked %CLICK_COUNT% times.</p>"
-msgstr ""
-
-msgid "<p>Your pixels were viewed %VIEW_COUNT% times.</p>"
-msgstr ""
-
-msgid "Note: Your pixels are waiting for approval. They will be scheduled to go live once they are approved."
-msgstr ""
-
-msgid "Note: Your pixels are now published and live!"
-msgstr ""
-
-msgid "Your pixels are now approved! They are now waiting for the webmaster to publish them on to the public grid."
-msgstr ""
-
-msgid "\"Completed\" - Orders where the transaction was successfully completed.<br />\n\"Confirmed\" - Orders confirmed by you, but the transaction has not been completed.<br />\n\"Pending\" - Orders confirmed by you, but the transaction has not been approved.<br />\n\"Denied\" - Denied by the administrator.<br />\n\"Cancelled\" - Orders that have been cancelled.<br />\n\"Expired\" - Pixels were expired after the specified term. You can renew this order.<br />"
-msgstr ""
-
-msgid "Your blocks are shown on the grid below. Only your blocks are shown.<br />\n- Click your block to edit it.<br />\n- <b>Red</b> blocks have no pixels yet. Click on them to upload your pixels."
-msgstr ""
-
-msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
-msgstr ""
-
-msgid "Invalid file type: %MIME_TYPE%. Please upload a JPG, PNG, or GIF."
-msgstr ""
-
-msgid "Upload failed: Could not process the uploaded file. Please try again."
-msgstr ""
-
-msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
-msgstr ""
-
-msgid "Your uploaded pixels:"
-msgstr ""
-
-msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />"
-msgstr ""
-
-msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />"
-msgstr ""
-
-msgid "<h3>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a></h3>"
-msgstr ""
-
-msgid "Complete Order >>"
-msgstr ""
-
-msgid "Confirm & Pay >>"
-msgstr ""
-
-msgid "Register"
-msgstr ""
-
-msgid "\n\n%EMAIL_DISABLE_MESSAGE% click the following link: %DISABLE_LINK%"
-msgstr ""
-
-msgid "Price Options"
-msgstr ""
-
-msgid "Please select your preferred package from the following list:"
-msgstr ""
-
-msgid "Here are the available price options for this grid:"
-msgstr ""
-
-msgid "Expires"
-msgstr ""
-
-msgid "Max Orders"
-msgstr ""
-
-msgid "free"
-msgstr ""
-
-msgid "/ %NUM_PIXELS% pixels"
-msgstr ""
-
-msgid "Expires in %DAYS_EXPIRE% days."
-msgstr ""
-
-msgid "Unlimited"
-msgstr ""
-
-msgid "Price Table"
-msgstr ""
-
-msgid "The following table shows the different price regions for the selected grid."
-msgstr ""
-
-msgid "Price / %NUM_PIXELS% pixels"
-msgstr ""
-
-msgid "Color"
-msgstr ""
-
-msgid "From row"
-msgstr ""
-
-msgid "To row"
-msgstr ""
-
-msgid "From column"
-msgstr ""
-
-msgid "To column"
-msgstr ""
-
-msgid "Today!"
-msgstr ""
-
-msgid "Day ago"
-msgstr ""
-
-msgid "Days ago"
-msgstr ""
-
-msgid "ERROR: Cannot save your ad for the following reasons: "
-msgstr ""
-
-msgid "Save Ad"
-msgstr ""
-
-msgid "* Required field"
-msgstr ""
-
-msgid "Edit"
-msgstr ""
-
-msgid "Not Published"
-msgstr ""
-
-msgid "Not Approved"
-msgstr ""
-
-msgid "Pending"
-msgstr ""
-
-msgid "Confirmed"
-msgstr ""
-
-msgid "New"
-msgstr ""
-
-msgid "Renew Now"
-msgstr ""
-
-msgid "Renewal Paid"
-msgstr ""
-
-msgid "Paid"
-msgstr ""
-
-msgid "No ads were found."
-msgstr ""
-
-msgid "Status: "
-msgstr ""
-
-msgid "Invalid file key specified: %KEY%"
-msgstr ""
-
-msgid "Invalid upload method or upload error."
-msgstr ""
-
-msgid "PHP Upload Error Code: %CODE%"
-msgstr ""
-
-msgid "Possible file upload attack or server error during file move."
-msgstr ""
-
-msgid "Could not read image dimensions after conversion. File might be corrupted."
-msgstr ""
-
-msgid "Image too large. You uploaded an image that is %ACTUAL_W%×%ACTUAL_H% pixels, exceeding the selected area of %TARGET_W%×%TARGET_H% pixels."
-msgstr ""
-
-msgid "Image processing failed: %ERROR%"
+msgid "Please manually delete this file to avoid login issues: "
 msgstr ""

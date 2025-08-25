@@ -26,7 +26,7 @@
  *
  */
 
-use MillionDollarScript\Classes\Data\Config;
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
@@ -40,7 +40,7 @@ mds_wp_login_check();
 //	return;
 //}
 
-global $BID, $f2;
+global $BID, $f2, $wpdb;
 $BID = $f2->bid();
 
 if ( ! empty( $_REQUEST['order_id'] ) ) {
@@ -50,11 +50,15 @@ if ( ! empty( $_REQUEST['order_id'] ) ) {
 	$order_id = Orders::get_current_order_id();
 }
 
-$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=" . intval( $order_id ) . " AND user_id=" . get_current_user_id();
-$order_result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+$sql = $wpdb->prepare(
+	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d",
+	intval( $order_id ),
+	get_current_user_id()
+);
+$order_row = $wpdb->get_row( $sql, ARRAY_A );
 
 // Handle when no order id is found.
-if ( mysqli_num_rows( $order_result ) == 0 ) {
+if ( ! $order_row ) {
 	if ( wp_doing_ajax() ) {
 		Orders::no_orders();
 		wp_die();
@@ -63,12 +67,15 @@ if ( mysqli_num_rows( $order_result ) == 0 ) {
 	Utility::redirect( Utility::get_page_url( 'no-orders' ) );
 }
 
-$order_row = mysqli_fetch_array( $order_result );
+// Check for database errors
+if ( $wpdb->last_error ) {
+	wp_die( esc_html( $wpdb->last_error ) );
+}
 
 // Process confirmation
 if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
 	// move temp order to confirmed order
-	$advanced_order = Config::get( 'USE_AJAX' ) == 'YES';
+	$advanced_order = Options::get_option( 'use-ajax' ) == 'YES';
 
 	if ( ! $advanced_order ) {
 		$order_id = Orders::reserve_pixels_for_temp_order( $order_row );
@@ -85,6 +92,7 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 			Utility::redirect( Utility::get_page_url( 'thank-you' ) );
 		} else {
 			Orders::confirm_order( get_current_user_id(), $order_id );
+			// After confirming, let the payment flow continue below
 		}
 
 	} else {
@@ -101,23 +109,23 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 
 	$_REQUEST['order_id'] = $order_id;
 
-} else if ( ! empty( $order_id ) ) {
-	// Handle Pay Now button on Manage Pixels page
-
-	// check the user's rank
-	$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
-
-	// Complete order if price is 0 or user is privileged
-	if ( ( $order_row['price'] == '0' ) || ( $privileged == 1 ) ) {
-		Orders::complete_order( get_current_user_id(), $order_id );
-		Orders::reset_order_progress();
-		Utility::redirect( Utility::get_page_url( 'thank-you' ) );
-	}
 }
 
-if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) ) {
+if ( get_user_meta( get_current_user_id(), 'mds_confirm', true ) || $order_row['status'] == 'confirmed' ) {
 	Steps::update_step( 'payment' );
 	$_REQUEST['order_id'] = $order_id;
+	
+	// Reset order progress now that payment is starting - gives users a clean slate
+	// while preserving the current confirmed order for payment processing
+	Orders::reset_order_progress();
+	
+	// For advanced mode (use-ajax == YES), ensure order status is set to pending when reaching payment screen
+	// This ensures consistency with simple mode behavior
+	$advanced_order = Options::get_option( 'use-ajax' ) == 'YES';
+	if ( $advanced_order && $order_row['status'] == 'confirmed' ) {
+		Orders::pend_order( $order_id );
+	}
+	
 	\MillionDollarScript\Classes\Payment\Payment::handle_checkout( $order_id );
 } else {
 	if ( isset( $_REQUEST['renew'] ) && $_REQUEST['renew'] === 'true' ) {

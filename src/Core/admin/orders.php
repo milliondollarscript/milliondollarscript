@@ -27,103 +27,12 @@
  */
 
 use MillionDollarScript\Classes\Forms\FormFields;
-use MillionDollarScript\Classes\Orders\Blocks;
-use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Currency;
-use MillionDollarScript\Classes\Payment\Payment;
 use MillionDollarScript\Classes\System\Functions;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( ! empty( $_POST['search'] ) ) {
-	return;
-}
-
-@set_time_limit( 180 );
-
 global $wpdb;
-
-$oid = 0;
-if ( isset( $_REQUEST['mass_complete'] ) && $_REQUEST['mass_complete'] != '' ) {
-
-	foreach ( $_REQUEST['orders'] as $oid ) {
-
-		$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $oid );
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-		$order_row = mysqli_fetch_array( $result );
-
-		if ( $order_row['status'] != 'completed' ) {
-			Orders::complete_order( $order_row['user_id'], $oid, false );
-			Payment::debit_transaction( $order_row['user_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
-		}
-	}
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'complete' ) {
-
-	$sql = "SELECT * from " . MDS_DB_PREFIX . "orders where order_id=" . intval( $_REQUEST['order_id'] );
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
-	$order_row = mysqli_fetch_array( $result );
-
-	Orders::complete_order( $_REQUEST['user_id'], $_REQUEST['order_id'] );
-	Payment::debit_transaction( $_REQUEST['order_id'], $order_row['price'], $order_row['currency'], $order_row['order_id'], 'complete', 'Admin' );
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'cancel' ) {
-	Orders::cancel_order( $_REQUEST['order_id'] );
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'unreserve' ) {
-	Blocks::unreserve_block( $_REQUEST['block_id'], $_REQUEST['banner_id'] );
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mass_cancel'] ) && $_REQUEST['mass_cancel'] != '' ) {
-	foreach ( $_REQUEST['orders'] as $oid ) {
-
-		//echo "$order_id ";
-		Orders::cancel_order( $oid );
-	}
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
-
-	Orders::delete_order( $_REQUEST['order_id'] );
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
-
-if ( isset( $_REQUEST['mass_delete'] ) && $_REQUEST['mass_delete'] != '' ) {
-
-	foreach ( $_REQUEST['orders'] as $oid ) {
-		Orders::delete_order( $oid );
-	}
-
-	if ( ! isset( $_REQUEST['page'] ) ) {
-		return;
-	}
-}
 
 $q_aday     = isset( $_REQUEST['q_aday'] ) ? intval( $_REQUEST['q_aday'] ) : 0;
 $q_amon     = isset( $_REQUEST['q_amon'] ) ? intval( $_REQUEST['q_amon'] ) : 0;
@@ -252,182 +161,96 @@ $paginated_results = $wpdb->get_results( $sql, ARRAY_A );
                     <label>
                         <select name="q_aday">
                             <option></option>
-                            <option <?php if ( $q_aday == '1' ) {
-								echo ' selected ';
-							} ?> >1
+                            <option <?php if ( $q_aday == '1' ) { echo ' selected '; } ?> >1
                             </option>
-                            <option <?php if ( $q_aday == '2' ) {
-								echo ' selected ';
-							} ?> >2
+                            <option <?php if ( $q_aday == '2' ) { echo ' selected '; } ?> >2
                             </option>
-                            <option <?php if ( $q_aday == '3' ) {
-								echo ' selected ';
-							} ?> >3
+                            <option <?php if ( $q_aday == '3' ) { echo ' selected '; } ?> >3
                             </option>
-                            <option <?php if ( $q_aday == '4' ) {
-								echo ' selected ';
-							} ?> >4
+                            <option <?php if ( $q_aday == '4' ) { echo ' selected '; } ?> >4
                             </option>
-                            <option <?php if ( $q_aday == '5' ) {
-								echo ' selected ';
-							} ?> >5
+                            <option <?php if ( $q_aday == '5' ) { echo ' selected '; } ?> >5
                             </option>
-                            <option <?php if ( $q_aday == '6' ) {
-								echo ' selected ';
-							} ?> >6
+                            <option <?php if ( $q_aday == '6' ) { echo ' selected '; } ?> >6
                             </option>
-                            <option <?php if ( $q_aday == '7' ) {
-								echo ' selected ';
-							} ?>>7
+                            <option <?php if ( $q_aday == '7' ) { echo ' selected '; } ?>>7
                             </option>
-                            <option <?php if ( $q_aday == '8' ) {
-								echo ' selected ';
-							} ?>>8
+                            <option <?php if ( $q_aday == '8' ) { echo ' selected '; } ?>>8
                             </option>
-                            <option <?php if ( $q_aday == '9' ) {
-								echo ' selected ';
-							} ?> >9
+                            <option <?php if ( $q_aday == '9' ) { echo ' selected '; } ?> >9
                             </option>
-                            <option <?php if ( $q_aday == '25' ) {
-								echo ' selected ';
-							} ?> >25
+                            <option <?php if ( $q_aday == '25' ) { echo ' selected '; } ?> >25
                             </option>
-                            <option <?php if ( $q_aday == '26' ) {
-								echo ' selected ';
-							} ?> >26
+                            <option <?php if ( $q_aday == '26' ) { echo ' selected '; } ?> >26
                             </option>
-                            <option <?php if ( $q_aday == '10' ) {
-								echo ' selected ';
-							} ?> >10
+                            <option <?php if ( $q_aday == '10' ) { echo ' selected '; } ?> >10
                             </option>
-                            <option <?php if ( $q_aday == '11' ) {
-								echo ' selected ';
-							} ?> > 11
+                            <option <?php if ( $q_aday == '11' ) { echo ' selected '; } ?> > 11
                             </option>
-                            <option <?php if ( $q_aday == '12' ) {
-								echo ' selected ';
-							} ?> >12
+                            <option <?php if ( $q_aday == '12' ) { echo ' selected '; } ?> >12
                             </option>
-                            <option <?php if ( $q_aday == '13' ) {
-								echo ' selected ';
-							} ?> >13
+                            <option <?php if ( $q_aday == '13' ) { echo ' selected '; } ?> >13
                             </option>
-                            <option <?php if ( $q_aday == '14' ) {
-								echo ' selected ';
-							} ?> >14
+                            <option <?php if ( $q_aday == '14' ) { echo ' selected '; } ?> >14
                             </option>
-                            <option <?php if ( $q_aday == '15' ) {
-								echo ' selected ';
-							} ?> >15
+                            <option <?php if ( $q_aday == '15' ) { echo ' selected '; } ?> >15
                             </option>
-                            <option <?php if ( $q_aday == '16' ) {
-								echo ' selected ';
-							} ?> >16
+                            <option <?php if ( $q_aday == '16' ) { echo ' selected '; } ?> >16
                             </option>
-                            <option <?php if ( $q_aday == '17' ) {
-								echo ' selected ';
-							} ?> >17
+                            <option <?php if ( $q_aday == '17' ) { echo ' selected '; } ?> >17
                             </option>
-                            <option <?php if ( $q_aday == '18' ) {
-								echo ' selected ';
-							} ?> >18
+                            <option <?php if ( $q_aday == '18' ) { echo ' selected '; } ?> >18
                             </option>
-                            <option <?php if ( $q_aday == '19' ) {
-								echo ' selected ';
-							} ?> >19
+                            <option <?php if ( $q_aday == '19' ) { echo ' selected '; } ?> >19
                             </option>
-                            <option <?php if ( $q_aday == '20' ) {
-								echo ' selected ';
-							} ?> >20
+                            <option <?php if ( $q_aday == '20' ) { echo ' selected '; } ?> >20
                             </option>
-                            <option <?php if ( $q_aday == '21' ) {
-								echo ' selected ';
-							} ?> >21
+                            <option <?php if ( $q_aday == '21' ) { echo ' selected '; } ?> >21
                             </option>
-                            <option <?php if ( $q_aday == '22' ) {
-								echo ' selected ';
-							} ?> >22
+                            <option <?php if ( $q_aday == '22' ) { echo ' selected '; } ?> >22
                             </option>
-                            <option <?php if ( $q_aday == '23' ) {
-								echo ' selected ';
-							} ?> >23
+                            <option <?php if ( $q_aday == '23' ) { echo ' selected '; } ?> >23
                             </option>
-                            <option <?php if ( $q_aday == '24' ) {
-								echo ' selected ';
-							} ?> >24
+                            <option <?php if ( $q_aday == '24' ) { echo ' selected '; } ?> >24
                             </option>
-                            <option <?php if ( $q_aday == '27' ) {
-								echo ' selected ';
-							} ?> >27
+                            <option <?php if ( $q_aday == '27' ) { echo ' selected '; } ?> >27
                             </option>
-                            <option <?php if ( $q_aday == '28' ) {
-								echo ' selected ';
-							} ?> >28
+                            <option <?php if ( $q_aday == '28' ) { echo ' selected '; } ?> >28
                             </option>
-                            <option <?php if ( $q_aday == '29' ) {
-								echo ' selected ';
-							} ?> >29
+                            <option <?php if ( $q_aday == '29' ) { echo ' selected '; } ?> >29
                             </option>
-                            <option <?php if ( $q_aday == '30' ) {
-								echo ' selected ';
-							} ?> >30
+                            <option <?php if ( $q_aday == '30' ) { echo ' selected '; } ?> >30
                             </option>
-                            <option <?php if ( $q_aday == '31' ) {
-								echo ' selected ';
-							} ?> >31
+                            <option <?php if ( $q_aday == '31' ) { echo ' selected '; } ?> >31
                             </option>
                         </select>
                     </label>
                     <label>
                         <select name="q_amon">
                             <option></option>
-                            <option <?php if ( $q_amon == '1' ) {
-								echo ' selected ';
-							} ?> value="1">Jan
+                            <option <?php if ( $q_amon == '1' ) { echo ' selected '; } ?> value="1">Jan
                             </option>
-                            <option <?php if ( $q_amon == '2' ) {
-								echo ' selected ';
-							} ?> value="2">Feb
+                            <option <?php if ( $q_amon == '2' ) { echo ' selected '; } ?> value="2">Feb
                             </option>
-                            <option <?php if ( $q_amon == '3' ) {
-								echo ' selected ';
-							} ?> value="3">Mar
+                            <option <?php if ( $q_amon == '3' ) { echo ' selected '; } ?> value="3">Mar
                             </option>
-                            <option <?php if ( $q_amon == '4' ) {
-								echo ' selected ';
-							} ?> value="4">Apr
+                            <option <?php if ( $q_amon == '4' ) { echo ' selected '; } ?> value="4">Apr
                             </option>
-                            <option <?php if ( $q_amon == '5' ) {
-								echo ' selected ';
-							} ?> value="5">May
+                            <option <?php if ( $q_amon == '5' ) { echo ' selected '; } ?> value="5">May
                             </option>
-                            <option <?php if ( $q_amon == '6' ) {
-								echo ' selected ';
-							} ?> value="6">Jun
+                            <option <?php if ( $q_amon == '6' ) { echo ' selected '; } ?> value="6">Jun
                             </option>
-                            <option <?php if ( $q_amon == '7' ) {
-								echo ' selected ';
-							} ?> value="7">Jul
+                            <option <?php if ( $q_amon == '7' ) { echo ' selected '; } ?> value="7">Jul
                             </option>
-                            <option <?php if ( $q_amon == '8' ) {
-								echo ' selected ';
-							} ?> value="8">Aug
+                            <option <?php if ( $q_amon == '8' ) { echo ' selected '; } ?> value="8">Aug
                             </option>
-                            <option <?php if ( $q_amon == '9' ) {
-								echo ' selected ';
-							} ?> value="9">Sep
+                            <option <?php if ( $q_amon == '9' ) { echo ' selected '; } ?> value="9">Sep
                             </option>
-                            <option <?php if ( $q_amon == '10' ) {
-								echo ' selected ';
-							} ?> value="10">Oct
+                            <option <?php if ( $q_amon == '10' ) { echo ' selected '; } ?> value="10">Oct
                             </option>
-                            <option <?php if ( $q_amon == '11' ) {
-								echo ' selected ';
-							} ?> value="11">Nov
+                            <option <?php if ( $q_amon == '11' ) { echo ' selected '; } ?> value="11">Nov
                             </option>
-                            <option <?php if ( $q_amon == '12' ) {
-								echo ' selected ';
-							} ?> value="12">Dec
+                            <option <?php if ( $q_amon == '12' ) { echo ' selected '; } ?> value="12">Dec
                             </option>
                         </select>
                     </label>
@@ -482,10 +305,12 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 
 ?>
 
-<form style="margin: 0;" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" name="form1">
+<form style="margin: 0;" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="mass_action_form">
 	<?php wp_nonce_field( 'mds-admin' ); ?>
+    <input type="hidden" name="mds-action" id="mds-action" value=""/>
+    <input type="hidden" name="order_id" id="order_id" value=""/>
     <input type="hidden" name="action" value="mds_admin_form_submission"/>
-    <input type="hidden" name="mds_dest" value="orders"/>
+    <input type="hidden" name="mds_dest" id="mds_dest_input" value="complete-orders"/>
     <input type="hidden" name="offset" value="<?php echo $offset; ?>"/>
     <input type="hidden" name="q_name" value="<?php echo esc_attr( $q_name ); ?>">
     <input type="hidden" name="q_username" value="<?php echo esc_attr( $q_username ); ?>">
@@ -521,21 +346,21 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 						if ( $show != 'RE' ) {
 							?>
                             <input type="submit" value='Complete'
-                                   onclick="if (!confirmLink(this, 'Complete for all selected, are you sure?')) return false"
+                                   onclick="return confirm('Complete for all selected, are you sure?')"
                                    name='mass_complete'>
-							<?php
+						<?php
 						}
 						if ( $show != 'CA' ) {
 							?>
                             | <input type="submit" value='Cancel' name='mass_cancel'
-                                     onclick="if (!confirmLink(this, 'Cancel for all selected, are you sure?')) return false">
-							<?php
+                                     onclick="document.getElementById('mds_dest_input').value = 'cancel-orders'; return confirm('Cancel for all selected, are you sure?')">
+						<?php
 						}
 						if ( $show == 'CA' ) {
 							?>
                             | <input type="submit" value='Delete' name='mass_delete'
-                                     onclick="if (!confirmLink(this, 'Delete for all selected, are you sure?')) return false">
-							<?php
+                                     onclick="return confirm('Delete for all selected, are you sure?')">
+						<?php
 						}
 					} ?>
                 </td>
@@ -646,9 +471,8 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                             #<?php echo intval( $row['ad_id'] ); ?></a><?php } ?></td>
                     <td><?php
 
-						$sql = "select * from " . MDS_DB_PREFIX . "banners where banner_id=" . $row['banner_id'];
-						$b_result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
-						$b_row = mysqli_fetch_array( $b_result );
+						$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d", $row['banner_id'] );
+						$b_row = $wpdb->get_row( $sql, ARRAY_A );
 
 						if ( $b_row ) {
 							echo esc_html( $b_row['name'] );
@@ -672,12 +496,12 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 						) );
 
 						// If we found a WC order ID and WooCommerce is active and function exists
-						if ( $wc_order_id && function_exists( 'wc_get_order' ) ) {
-							$wc_order = wc_get_order( $wc_order_id );
-							if ( $wc_order && $wc_order->get_status() === 'refunded' ) {
-								$is_wc_refunded = true;
-							}
+					if ( $wc_order_id && function_exists( 'wc_get_order' ) ) {
+						$wc_order = wc_get_order( $wc_order_id );
+						if ( $wc_order && $wc_order->get_status() === 'refunded' ) {
+							$is_wc_refunded = true;
 						}
+					}
 
 						if ( $is_wc_refunded ) {
 							echo "(Refunded)";
@@ -690,50 +514,60 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                    value="Cancel"
                                    onclick="if (!confirmLink(this, 'Unreserve block <?php echo intval( $row['block_id'] ); ?>, are you sure?')) return false;"
                                    data-link="<?php echo esc_url(
-								       admin_url(
-									       'admin.php?page=mds-orders&mds-action=unreserve&user_id=' . intval( $row['ID'] ) . '&block_id=' . intval( $row['block_id'] ) . '&banner_id=' . intval( $row['banner_id'] ) . '&order_id=' . intval( $row['order_id'] ) . $date_link . $q_string . '&show=' . $show
-								       )
-							       ); ?>">
-						<?php } else {
+									   wp_nonce_url(
+											   admin_url(
+													   'admin.php?page=mds-orders&mds-action=unreserve&user_id=' . intval( $row['ID'] ) . '&block_id=' . intval( $row['block_id'] ) . '&banner_id=' . intval( $row['banner_id'] ) . '&order_id=' . intval( $row['order_id'] ) . $date_link . $q_string . '&show=' . $show
+											   )
+									   )
+							   );
+							   ?>">
+						<?php
+						}
+						else {
 							if ( ( $row['status'] != 'completed' ) && ( $row['status'] != 'deleted' ) && ! $is_wc_refunded ) {
 								?>
                                 <input type="button"
                                        style="font-size: 9px;"
                                        value="Complete"
-                                       onclick="if (!confirmLink(this, 'Payment from <?php echo esc_attr( $row['user_nicename'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) return false;"
-                                       data-link="<?php echo esc_url(
-									       admin_url(
-										       'admin.php?page=mds-orders&mds-action=complete&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
-									       )
-								       ); ?>">
-								<?php
+                                       onclick="
+                                            if (confirm('Payment from <?php echo esc_attr( $row['user_nicename'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) {
+                                                document.getElementById('mds-action').value = 'complete';
+                                                document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
+                                                document.getElementById('mass_action_form').submit();
+                                            }
+                                       ">
+							<?php
 							}
 							if ( $row['status'] == 'cancelled' ) {
 								?>
                                 <input type="button"
                                        style="font-size: 9px;"
                                        value="Delete"
-                                       onclick="if (!confirmLink(this, 'Delete the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) return false;"
-                                       data-link="<?php echo esc_url(
-									       admin_url(
-										       'admin.php?page=mds-orders&mds-action=delete&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
-									       )
-								       ); ?>">
-								<?php
-							} else if ( $row['status'] == 'deleted' ) {
+                                       onclick="
+                                            if (confirm('Delete the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) {
+                                                document.getElementById('mds-action').value = 'delete';
+                                                document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
+                                                document.getElementById('mass_action_form').submit();
+                                            }
+                                       ">
+						<?php
+							}
+							else if ( $row['status'] == 'deleted' ) {
 
 							} else {
 								?>
                                 <input type="button"
                                        style="font-size: 9px;"
                                        value="Cancel"
-                                       onclick="if (!confirmLink(this, 'Cancel the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) return false;"
-                                       data-link="<?php echo esc_url(
-									       admin_url(
-										       'admin.php?page=mds-orders&mds-action=cancel&user_id=' . intval( $row['ID'] ) . '&order_id=' . intval( $row['order_id'] . $date_link . $q_string . "&show=" . $show )
-									       )
-								       ); ?>">
-								<?php
+                                       onclick="
+                                            if (confirm('Cancel the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) {
+                                                document.getElementById('mds-action').value = 'cancel';
+                                                document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
+                                                document.getElementById('mds_dest_input').value = 'cancel-orders';
+                                                document.getElementById('mass_action_form').submit();
+                                            }
+                                       ">
+						<?php
 							}
 						}
 						?>

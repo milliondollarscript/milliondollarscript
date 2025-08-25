@@ -32,6 +32,7 @@ use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\Data\DarkModeImages;
 use MillionDollarScript\Classes\Services\GridImageGenerator;
+use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -103,17 +104,24 @@ function validate_or_defaults(): void {
 validate_or_defaults();
 
 if ( isset( $_REQUEST['reset_image'] ) && $_REQUEST['reset_image'] != '' ) {
+	global $wpdb;
 	$default = get_default_image( $_REQUEST['reset_image'] );
-	$sql     = "UPDATE " . MDS_DB_PREFIX . "banners SET `" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['reset_image'] ) . "`='" . mysqli_real_escape_string( $GLOBALS['connection'], $default ) . "' WHERE banner_id='" . $BID . "' ";
-	mysqli_query( $GLOBALS['connection'], $sql );
+	$image_column = sanitize_key( $_REQUEST['reset_image'] );
+	$wpdb->update(
+		MDS_DB_PREFIX . 'banners',
+		[ $image_column => $default ],
+		[ 'banner_id' => $BID ],
+		[ '%s' ],
+		[ '%d' ]
+	);
 }
 
 function display_reset_link( $BID, $image_name ): void {
 	if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'edit' ) {
 		?>
         <a class="inventory-reset-link" title="Reset to default"
-           onclick="if (! confirmLink(this, 'Reset this image to deafult, are you sure?')) return false;"
-           href='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>'>x</a>
+           onclick="confirmLink(this, 'Reset this image to deafult, are you sure?')"
+           data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>' href="#">x</a>
 		<?php
 	}
 }
@@ -239,13 +247,31 @@ function is_default(): bool {
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disable' ) {
-	$sql = "UPDATE `" . MDS_DB_PREFIX . "banners` SET enabled='N' WHERE banner_id=" . $BID;
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	global $wpdb;
+	$result = $wpdb->update(
+		MDS_DB_PREFIX . 'banners',
+		[ 'enabled' => 'N' ],
+		[ 'banner_id' => $BID ],
+		[ '%s' ],
+		[ '%d' ]
+	);
+	if ( $result === false ) {
+		die( 'Database error: ' . $wpdb->last_error );
+	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'enable' ) {
-	$sql = "UPDATE `" . MDS_DB_PREFIX . "banners` SET enabled='Y' WHERE banner_id=" . $BID;
-	mysqli_query( $GLOBALS['connection'], $sql ) or die( mds_sql_error( $sql ) );
+	global $wpdb;
+	$result = $wpdb->update(
+		MDS_DB_PREFIX . 'banners',
+		[ 'enabled' => 'Y' ],
+		[ 'banner_id' => $BID ],
+		[ '%s' ],
+		[ '%d' ]
+	);
+	if ( $result === false ) {
+		die( 'Database error: ' . $wpdb->last_error );
+	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
@@ -255,29 +281,43 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 
 		// check orders..
 
-		$sql = "SELECT * FROM " . MDS_DB_PREFIX . "orders where status <> 'deleted' and banner_id=" . $BID;
-		// echo $sql;
-		$res = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		if ( mysqli_num_rows( $res ) == 0 ) {
+		global $wpdb;
+		$orders = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE status <> 'deleted' AND banner_id = %d",
+			$BID
+		) );
+		if ( empty( $orders ) ) {
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id='" . $BID . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->delete(
+				MDS_DB_PREFIX . 'blocks',
+				[ 'banner_id' => $BID ],
+				[ '%d' ]
+			);
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "prices WHERE banner_id='" . $BID . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->delete(
+				MDS_DB_PREFIX . 'prices',
+				[ 'banner_id' => $BID ],
+				[ '%d' ]
+			);
 
-			$sql = "DELETE FROM " . MDS_DB_PREFIX . "banners WHERE banner_id='" . $BID . "' ";
-			mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			$wpdb->delete(
+				MDS_DB_PREFIX . 'banners',
+				[ 'banner_id' => $BID ],
+				[ '%d' ]
+			);
 
 			// DELETE ADS
 			// TODO: delete mds-pixels
 			// $sql = "select * FROM " . MDS_DB_PREFIX . "ads where banner_id='" . $BID . "' ";
-			// $res2 = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-			// while ( $row2 = mysqli_fetch_array( $res2 ) ) {
+			// $res2 = $wpdb->get_results( $sql );
+			// foreach ( $res2 as $row2 ) {
 			//
 			// 	delete_ads_files( $row2['ad_id'] );
-			// 	$sql = "DELETE from " . MDS_DB_PREFIX . "ads where ad_id='" . intval( $row2['ad_id'] ) . "' ";
-			// 	mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) . $sql );
+			// 	$wpdb->delete(
+			// 	    MDS_DB_PREFIX . "ads",
+			// 	    array( 'ad_id' => intval( $row2['ad_id'] ) ),
+			// 	    array( '%d' )
+			// 	);
 			// }
 
 			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".jpg" );
@@ -287,8 +327,9 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 			// Check if WooCommerce integration is enabled
 			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
 				$product = WooCommerceFunctions::get_product();
-
-				WooCommerceFunctions::delete_variation( $product, $BID );
+				if ( $product ) {
+					WooCommerceFunctions::delete_variation( $product, $BID );
+				}
 			}
 
 		} else {
@@ -298,16 +339,40 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 }
 
 function get_banner_image_data( $b_row, $image_name ): string {
-	$uploaddir = Utility::get_upload_path() . "grids/";
 	if ( isset( $_FILES ) && isset( $_FILES[ $image_name ] ) && isset( $_FILES[ $image_name ]['tmp_name'] ) && $_FILES[ $image_name ]['tmp_name'] ) {
-		// a new image was uploaded
-		$uploadfile = $uploaddir . $image_name . $_FILES[ $image_name ]['name'];
-		move_uploaded_file( $_FILES[ $image_name ]['tmp_name'], $uploadfile );
-		$fh       = fopen( $uploadfile, 'rb' );
-		$contents = fread( $fh, filesize( $uploadfile ) );
-		fclose( $fh );
-		$contents = addslashes( base64_encode( $contents ) );
-		unlink( $uploadfile );
+		// Validate uploaded file for security
+		$validation = \MillionDollarScript\Classes\System\FileValidator::validate_image_upload( $_FILES[ $image_name ] );
+		
+		if ( ! $validation['valid'] ) {
+			// Log security violation attempt
+			error_log( 'MDS Security: Invalid file upload attempt for ' . $image_name . ': ' . $validation['error'] );
+			
+			// Return default image instead of failing
+			return addslashes( get_default_image( $image_name ) );
+		}
+		
+		// Process validated file securely
+		$secure_filename = \MillionDollarScript\Classes\System\FileValidator::generate_secure_filename( $_FILES[ $image_name ]['name'], 'grid_' );
+		$secure_uploaddir = \MillionDollarScript\Classes\System\FileValidator::get_secure_upload_path( 'grids' );
+		$uploadfile = $secure_uploaddir . $secure_filename;
+		
+		if ( move_uploaded_file( $_FILES[ $image_name ]['tmp_name'], $uploadfile ) ) {
+			$fh = fopen( $uploadfile, 'rb' );
+			if ( $fh ) {
+				$contents = fread( $fh, filesize( $uploadfile ) );
+				fclose( $fh );
+				$contents = addslashes( base64_encode( $contents ) );
+				
+				// Clean up temporary file
+				unlink( $uploadfile );
+			} else {
+				error_log( 'MDS Security: Failed to read uploaded file: ' . $uploadfile );
+				return addslashes( get_default_image( $image_name ) );
+			}
+		} else {
+			error_log( 'MDS Security: Failed to move uploaded file for ' . $image_name );
+			return addslashes( get_default_image( $image_name ) );
+		}
 	} else if ( isset( $b_row[ $image_name ] ) && $b_row[ $image_name ] != '' ) {
 		// use the old image
 		$contents = addslashes( ( $b_row[ $image_name ] ) );
@@ -322,9 +387,11 @@ function get_banner_image_sql_values( $BID ) {
 	$row = "";
 	// get banner
 	if ( $BID ) {
-		$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`='" . intval( $BID ) . "' ";
-		$result = mysqli_query( $GLOBALS['connection'], $sql ) or die( mysqli_error( $GLOBALS['connection'] ) );
-		$row = mysqli_fetch_array( $result );
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare(
+			"SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d",
+			$BID
+		), ARRAY_A );
 	}
 
 	return ", '" . get_banner_image_data( $row, 'grid_block' ) . "' , '" . get_banner_image_data( $row, 'nfs_block' ) . "', '" . get_banner_image_data( $row, 'tile' ) . "', '" . get_banner_image_data( $row, 'usr_grid_block' ) . "', '" . get_banner_image_data( $row, 'usr_nfs_block' ) . "', '" . get_banner_image_data( $row, 'usr_ord_block' ) . "', '" . get_banner_image_data( $row, 'usr_res_block' ) . "', '" . get_banner_image_data( $row, 'usr_sel_block' ) . "', '" . get_banner_image_data( $row, 'usr_sol_block' ) . "'";
@@ -417,7 +484,7 @@ function handle_dark_mode_generation( int $banner_id, string $theme_mode ): stri
 		}
 
 	} catch ( Exception $e ) {
-		error_log( 'MDS Grid Dark Mode Generation Error: ' . $e->getMessage() );
+		Logs::log( 'MDS Grid Dark Mode Generation Error: ' . $e->getMessage() );
 		return '<p style="color: red;">Error: ' . esc_html( $e->getMessage() ) . '</p>';
 	}
 }
@@ -434,7 +501,7 @@ function get_theme_images_for_grid( string $theme_mode ): array {
 		try {
 			return GridImageGenerator::generate_theme_images( $theme_mode );
 		} catch ( Exception $e ) {
-			error_log( 'MDS Dynamic Image Generation Failed: ' . $e->getMessage() );
+			Logs::log( 'MDS Dynamic Image Generation Failed: ' . $e->getMessage() );
 			// Fall back to static images
 		}
 	}
@@ -510,6 +577,7 @@ function backup_single_grid_images( int $banner_id, string $theme_mode ): bool {
 
 if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 
+	global $wpdb;
 	$error = validate_input();
 
 	if ( $error != '' ) {
@@ -524,44 +592,102 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 		$new = false;
 		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'new' ) {
 			$new = true;
-			$sql = "INSERT INTO `" . MDS_DB_PREFIX . "banners` ( `banner_id` , `grid_width` , `grid_height` , `days_expire` , `price_per_block`, `name`, `currency`, `max_orders`, `block_width`, `block_height`, `max_blocks`, `min_blocks`, `date_updated`, `bgcolor`, `auto_publish`, `auto_approve`, `nfs_covered`, `enabled` $image_sql_fields ) VALUES (NULL, '" . intval( $_REQUEST['grid_width'] ) . "', '" . intval( $_REQUEST['grid_height'] ) . "', '" . intval( $_REQUEST['days_expire'] ) . "', '" . floatval( $_REQUEST['price_per_block'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['currency'] ) . "', '" . intval( $_REQUEST['max_orders'] ) . "', '" . intval( $_REQUEST['block_width'] ) . "', '" . intval( $_REQUEST['block_height'] ) . "', '" . intval( $_REQUEST['max_blocks'] ) . "', '" . intval( $_REQUEST['min_blocks'] ) . "', '" . $now . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['bgcolor'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_publish'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_approve'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['nfs_covered'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['enabled'] ) . "' $image_sql_values);";
+			$sql = $wpdb->prepare(
+				"INSERT INTO " . MDS_DB_PREFIX . "banners ( banner_id, grid_width, grid_height, days_expire, price_per_block, name, currency, max_orders, block_width, block_height, max_blocks, min_blocks, date_updated, bgcolor, auto_publish, auto_approve, nfs_covered, enabled, grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block ) VALUES (NULL, %d, %d, %d, %f, %s, %s, %d, %d, %d, %d, %d, %s, %s, %s, %s, %s, %s" . str_repeat(", %s", 9) . ")",
+				intval( $_REQUEST['grid_width'] ),
+				intval( $_REQUEST['grid_height'] ),
+				intval( $_REQUEST['days_expire'] ),
+				floatval( $_REQUEST['price_per_block'] ),
+				$_REQUEST['name'],
+				$_REQUEST['currency'],
+				intval( $_REQUEST['max_orders'] ),
+				intval( $_REQUEST['block_width'] ),
+				intval( $_REQUEST['block_height'] ),
+				intval( $_REQUEST['max_blocks'] ),
+				intval( $_REQUEST['min_blocks'] ),
+				$now,
+				$_REQUEST['bgcolor'],
+				$_REQUEST['auto_publish'],
+				$_REQUEST['auto_approve'],
+				$_REQUEST['nfs_covered'],
+				$_REQUEST['enabled'],
+				get_banner_image_data( '', 'grid_block' ),
+				get_banner_image_data( '', 'nfs_block' ),
+				get_banner_image_data( '', 'tile' ),
+				get_banner_image_data( '', 'usr_grid_block' ),
+				get_banner_image_data( '', 'usr_nfs_block' ),
+				get_banner_image_data( '', 'usr_ord_block' ),
+				get_banner_image_data( '', 'usr_res_block' ),
+				get_banner_image_data( '', 'usr_sel_block' ),
+				get_banner_image_data( '', 'usr_sol_block' )
+			);
 		} else {
-			$sql = "REPLACE INTO `" . MDS_DB_PREFIX . "banners` ( `banner_id` , `grid_width` , `grid_height` , `days_expire` , `price_per_block`, `name`, `currency`, `max_orders`, `block_width`, `block_height`, `max_blocks`, `min_blocks`, `date_updated`, `bgcolor`, `auto_publish`, `auto_approve`, `nfs_covered`, `enabled` $image_sql_fields ) VALUES ('" . $BID . "', '" . intval( $_REQUEST['grid_width'] ) . "', '" . intval( $_REQUEST['grid_height'] ) . "', '" . intval( $_REQUEST['days_expire'] ) . "', '" . floatval( $_REQUEST['price_per_block'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['name'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['currency'] ) . "', '" . intval( $_REQUEST['max_orders'] ) . "', '" . intval( $_REQUEST['block_width'] ) . "', '" . intval( $_REQUEST['block_height'] ) . "', '" . intval( $_REQUEST['max_blocks'] ) . "', '" . intval( $_REQUEST['min_blocks'] ) . "', '" . $now . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['bgcolor'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_publish'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['auto_approve'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['nfs_covered'] ) . "', '" . mysqli_real_escape_string( $GLOBALS['connection'], $_REQUEST['enabled'] ) . "' $image_sql_values);";
+			// Get current banner data for existing images
+			global $wpdb;
+			$current_banner = $wpdb->get_row( $wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d",
+				$BID
+			), ARRAY_A );
+			
+			$sql = $wpdb->prepare(
+				"REPLACE INTO " . MDS_DB_PREFIX . "banners ( banner_id, grid_width, grid_height, days_expire, price_per_block, name, currency, max_orders, block_width, block_height, max_blocks, min_blocks, date_updated, bgcolor, auto_publish, auto_approve, nfs_covered, enabled, grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block ) VALUES (%d, %d, %d, %d, %f, %s, %s, %d, %d, %d, %d, %d, %s, %s, %s, %s, %s, %s" . str_repeat(", %s", 9) . ")",
+				$BID,
+				intval( $_REQUEST['grid_width'] ),
+				intval( $_REQUEST['grid_height'] ),
+				intval( $_REQUEST['days_expire'] ),
+				floatval( $_REQUEST['price_per_block'] ),
+				$_REQUEST['name'],
+				$_REQUEST['currency'],
+				intval( $_REQUEST['max_orders'] ),
+				intval( $_REQUEST['block_width'] ),
+				intval( $_REQUEST['block_height'] ),
+				intval( $_REQUEST['max_blocks'] ),
+				intval( $_REQUEST['min_blocks'] ),
+				$now,
+				$_REQUEST['bgcolor'],
+				$_REQUEST['auto_publish'],
+				$_REQUEST['auto_approve'],
+				$_REQUEST['nfs_covered'],
+				$_REQUEST['enabled'],
+				get_banner_image_data( $current_banner, 'grid_block' ),
+				get_banner_image_data( $current_banner, 'nfs_block' ),
+				get_banner_image_data( $current_banner, 'tile' ),
+				get_banner_image_data( $current_banner, 'usr_grid_block' ),
+				get_banner_image_data( $current_banner, 'usr_nfs_block' ),
+				get_banner_image_data( $current_banner, 'usr_ord_block' ),
+				get_banner_image_data( $current_banner, 'usr_res_block' ),
+				get_banner_image_data( $current_banner, 'usr_sel_block' ),
+				get_banner_image_data( $current_banner, 'usr_sol_block' )
+			);
 		}
 
-		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mds_sql_error( $sql ) );
+		global $wpdb;
+		$result = $wpdb->query( $sql );
+		if ( $result === false ) {
+			die( 'Database error: ' . $wpdb->last_error );
+		}
 
-		$BID = mysqli_insert_id( $GLOBALS['connection'] );
+		$BID = $wpdb->insert_id;
 
 		// TODO: Add individual order expiry dates
-		$sql = "UPDATE `" . MDS_DB_PREFIX . "orders` SET days_expire=" . intval( $_REQUEST['days_expire'] ) . " WHERE banner_id=" . $BID;
-		mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
+		$wpdb->update(
+			MDS_DB_PREFIX . 'orders',
+			[ 'days_expire' => intval( $_REQUEST['days_expire'] ) ],
+			[ 'banner_id' => $BID ],
+			[ '%d' ],
+			[ '%d' ]
+		);
 
 		$_REQUEST['new'] = '';
 
 		// WooCommerce integration
 		// Check if WooCommerce is active and integration is enabled
 		if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
-			// Get product from CarbonFields
-			$product_option = Options::get_option( 'product', null, true );
-
-			// Product id
-			$product_id = $product_option[0]['id'];
-
-			// WC Product
-			$product = wc_get_product( $product_id );
-
-			WooCommerceFunctions::update_attributes( $product );
-			//
-			// if ( $new ) {
-			// 	// Add attributes to product
-			// 	\MillionDollarScript\Classes\System\Functions::add_variation( $product, $BID );
-			// } else {
-			// 	// Update attributes on product
-			// 	\MillionDollarScript\Classes\System\Functions::update_variation( $product, $BID );
-			// }
-
-			$product->save();
+			$product = WooCommerceFunctions::get_product();
+			if ( $product ) {
+				WooCommerceFunctions::update_attributes( $product );
+				$product->save();
+			}
 		}
 	}
 
@@ -586,9 +712,11 @@ if ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] == '1' ) {
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'edit' ) {
 	echo "<h4>Edit Grid #";
 
-	$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE `banner_id`='" . $BID . "' ";
-	$result = mysqli_query( $GLOBALS['connection'], $sql ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-	$row                         = mysqli_fetch_array( $result );
+	global $wpdb;
+	$row = $wpdb->get_row( $wpdb->prepare(
+		"SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d",
+		$BID
+	), ARRAY_A );
 	$_REQUEST['BID']             = $row['banner_id'];
 	$_REQUEST['grid_width']      = $row['grid_width'];
 	$_REQUEST['grid_height']     = $row['grid_height'];
@@ -678,10 +806,13 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                 <div class="inventory-entry">
 					<?php
 
-					$sql   = "SELECT * FROM " . MDS_DB_PREFIX . "blocks where banner_id=" . $BID . " AND status <> 'nfs' limit 1 ";
-					$b_res = mysqli_query( $GLOBALS['connection'], $sql );
+					global $wpdb;
+					$b_res = $wpdb->get_results( $wpdb->prepare(
+						"SELECT * FROM " . MDS_DB_PREFIX . "blocks WHERE banner_id = %d AND status <> 'nfs' LIMIT 1",
+						$BID
+					) );
 
-					if ( isset( $row ) && isset( $row['banner_id'] ) && $row['banner_id'] != '' && mysqli_num_rows( $b_res ) > 0 ) {
+					if ( isset( $row ) && isset( $row['banner_id'] ) && $row['banner_id'] != '' && ! empty( $b_res ) ) {
 						$locked = true;
 					} else {
 						$locked = false;
@@ -1168,8 +1299,12 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
         </div>
 
 		<?php
-		$result = mysqli_query( $GLOBALS['connection'], "SELECT * FROM `" . MDS_DB_PREFIX . "banners` ORDER BY `enabled` DESC, `date_updated` ASC, `publish_date` ASC, `banner_id` ASC" ) or die ( mysqli_error( $GLOBALS['connection'] ) );
-		while ( $row = mysqli_fetch_array( $result, MYSQLI_ASSOC ) ) {
+		global $wpdb;
+		$results = $wpdb->get_results(
+			"SELECT * FROM " . MDS_DB_PREFIX . "banners ORDER BY enabled DESC, date_updated ASC, publish_date ASC, banner_id ASC",
+			ARRAY_A
+		);
+		foreach ( $results as $row ) {
 			?>
             <div class="inventory2-content">
                 <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a>
@@ -1187,8 +1322,8 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 				}
 				if ( $row['banner_id'] != '1' ) {
 					?>
-                    <a onclick="if (! confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')) return false;"
-                       href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo $row['banner_id']; ?>'>Delete</a>
+                    <a onclick="confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')"
+                       data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo $row['banner_id']; ?>' href="#">Delete</a>
 					<?php
 				}
 				?>
