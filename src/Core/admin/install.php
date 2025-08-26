@@ -269,6 +269,27 @@ function install_db(): void {
 		KEY `idx_completed_at` (`completed_at`)
 	) $charset_collate;" );
 
+	// MDS Extension Licenses table
+	dbDelta( "CREATE TABLE `" . MDS_DB_PREFIX . "extension_licenses` (
+		`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+		`plugin_name` VARCHAR(255) NOT NULL,
+		`license_key` VARCHAR(128) NOT NULL,
+		`status` VARCHAR(32) NOT NULL DEFAULT 'active',
+		`seats` INT UNSIGNED NOT NULL DEFAULT 1,
+		`email` VARCHAR(255) NOT NULL,
+		`external_id` VARCHAR(128) NULL,
+		`customer_id` VARCHAR(128) NULL,
+		`order_id` VARCHAR(128) NULL,
+		`expires_at` DATETIME NULL,
+		`metadata` LONGTEXT NULL,
+		`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		PRIMARY KEY (`id`),
+		UNIQUE KEY `license_key` (`license_key`),
+		UNIQUE KEY `external_id` (`external_id`),
+		KEY `plugin_name` (`plugin_name`)
+	) $charset_collate;" );
+
 	// Insert default grid
 	if ( $insert_banners ) {
 		$wpdb->insert(

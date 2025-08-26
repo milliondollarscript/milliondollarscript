@@ -1,32 +1,169 @@
 /*
- * Million Dollar Script Two
- *
- * @author      Ryan Rhode
- * @copyright   (C) 2025, Ryan Rhode
- * @license     https://opensource.org/licenses/GPL-3.0 GNU General Public License, version 3
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
- *    Million Dollar Script
- *    Pixels to Profit: Ignite Your Revolution
- *    https://milliondollarscript.com/
- *
+ * Million Dollar Script Two - Extensions admin (merged canonical)
+ * GPL-3.0
  */
 
 jQuery(document).ready(function ($) {
 	"use strict";
+
+	// Enhanced notice system with better UX and non-animated injection
+	function showNotice(type, message, autoHide = true) {
+		const noticeClass = type === "error" ? "notice-error" : (type === "warning" ? "notice-warning" : "notice-success");
+		const icon = type === "error" ? "❌" : (type === "warning" ? "⚠️" : "✅");
+		const noticeHtml = `
+			<div class="notice ${noticeClass} is-dismissible mds-enhanced-notice">
+				<p><span class="mds-notice-icon">${icon}</span> ${message}</p>
+				<button type="button" class="notice-dismiss">
+					<span class="screen-reader-text">Dismiss this notice.</span>
+				</button>
+			</div>
+		`;
+
+		$('.mds-enhanced-notice').remove();
+
+		const $notice = $(noticeHtml);
+		const $wrap = $('.wrap').first();
+		if ($wrap.length) { $notice.prependTo($wrap); } else { $notice.prependTo($('#wpbody-content').first()); }
+		$notice.show();
+
+		if (autoHide && type === "success") {
+			setTimeout(() => {
+				$('.mds-enhanced-notice.notice.' + noticeClass).remove();
+			}, 5000);
+		}
+
+		$(document).off('click', '.mds-enhanced-notice .notice-dismiss').on('click', '.mds-enhanced-notice .notice-dismiss', function () {
+			$(this).closest('.mds-enhanced-notice').remove();
+		});
+	}
+
+	// Enhanced button state management
+	function setButtonLoading($button, loadingText) {
+		$button.data('original-html', $button.html());
+		$button.prop('disabled', true)
+			.html(`<span class="spinner is-active"></span> ${loadingText}`)
+			.addClass('mds-btn-loading');
+	}
+
+	function resetButton($button, text = null) {
+		const original = text || $button.data('original-html') || $button.html();
+		$button.prop('disabled', false)
+			.html(original)
+			.removeClass('mds-btn-loading');
+	}
+
+	// Premium extensions UI gating on page load
+	(function gatePremiumInstallUI() {
+		try {
+			const licenseKey = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.license_key)
+				? String(MDS_EXTENSIONS_DATA.license_key).trim()
+				: '';
+
+			const extServerBase = (
+				window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.extension_server_url
+					? MDS_EXTENSIONS_DATA.extension_server_url
+					: 'http://localhost:15346'
+			).replace(/\/+$/, '');
+
+			const $premiumRows = $('table.widefat tbody tr[data-is-premium="true"]').filter(function () {
+				return !$(this).attr('data-plugin-file');
+			});
+
+			function annotateBuy($row, text) {
+				const $purchase = $row.find('.mds-purchase-buttons');
+				if ($purchase.length && !$row.find('.mds-license-required-note').length) {
+					$('<span class="mds-license-required-note" title="License required" style="margin-left:8px;color:#666;">' + (text || 'License required') + '</span>')
+						.appendTo($purchase);
+				}
+			}
+
+			function disableInstall($row, title) {
+				const $btn = $row.find('.mds-install-extension');
+				if (!$btn.length) return;
+				$btn.prop('disabled', true)
+					.addClass('disabled')
+					.attr('aria-disabled', 'true')
+					.attr('title', title || 'License required');
+				annotateBuy($row, 'License required');
+			}
+
+			function enableInstall($row) {
+				const $btn = $row.find('.mds-install-extension');
+				if (!$btn.length) return;
+				$btn.prop('disabled', false)
+					.removeClass('disabled')
+					.removeAttr('aria-disabled')
+					.removeAttr('title');
+				$row.find('.mds-license-required-note').remove();
+			}
+
+			if (!$premiumRows.length) return;
+
+			if (!licenseKey) {
+				$premiumRows.each(function () {
+					disableInstall($(this));
+				});
+				return;
+			}
+
+			const rows = $premiumRows.toArray();
+
+			function next(i) {
+				if (i >= rows.length) return;
+				const $row = $(rows[i]);
+				const extensionId = $row.data('extension-id');
+
+				disableInstall($row, 'Validating license...');
+
+				if (!extensionId) {
+					return next(i + 1);
+				}
+
+				const url = extServerBase
+					+ '/api/public/licenses/lookup?key='
+					+ encodeURIComponent(licenseKey)
+					+ '&extensionId='
+					+ encodeURIComponent(String(extensionId));
+
+				fetch(url, { method: 'GET', credentials: 'omit' })
+					.then(res => res.ok ? res.json() : Promise.reject(new Error('HTTP ' + res.status)))
+					.then(json => {
+						const valid =
+							(json && json.valid === true)
+							|| (json && json.data && json.data.valid === true);
+
+						if (valid === true) {
+							enableInstall($row);
+						} else {
+							disableInstall($row);
+						}
+					})
+					.catch(() => {
+						disableInstall($row);
+					})
+					.finally(() => next(i + 1));
+			}
+
+			next(0);
+		} catch (e) {
+			$('table.widefat tbody tr[data-is-premium="true"]').filter(function () {
+				return !$(this).attr('data-plugin-file');
+			}).each(function () {
+				const $row = $(this);
+				const $btn = $row.find('.mds-install-extension');
+				if ($btn.length) {
+					$btn.prop('disabled', true)
+						.addClass('disabled')
+						.attr('aria-disabled', 'true')
+						.attr('title', 'License required');
+				}
+				const $purchase = $row.find('.mds-purchase-buttons');
+				if ($purchase.length && !$row.find('.mds-license-required-note').length) {
+					$purchase.append('<span class="mds-license-required-note" title="License required" style="margin-left:8px;color:#666;">License required</span>');
+				}
+			});
+		}
+	})();
 
 	// Handle check for updates button
 	$(document).on("click", ".mds-check-updates", function (e) {
@@ -36,14 +173,10 @@ jQuery(document).ready(function ($) {
 		const $row = $button.closest("tr");
 		const extensionId = $row.data("extension-id");
 		const currentVersion = $row.data("version");
-		const pluginFile = $row.data("plugin-file"); // Added this line
+		const pluginFile = $row.data("plugin-file");
 
-		// Disable button and show spinner
-		$button
-			.prop("disabled", true)
-			.html('<span class="spinner is-active"></span> Checking...');
+		setButtonLoading($button, 'Checking...');
 
-		// Make AJAX request to check for updates
 		$.ajax({
 			url: MDS_EXTENSIONS_DATA.ajax_url,
 			type: "POST",
@@ -52,24 +185,20 @@ jQuery(document).ready(function ($) {
 				nonce: MDS_EXTENSIONS_DATA.nonce,
 				extension_id: extensionId,
 				current_version: currentVersion,
-				plugin_file: pluginFile, // Added this line
+				plugin_file: pluginFile,
 			},
 			dataType: "json",
 			success: function (response) {
 				if (response.success) {
 					handleUpdateResponse(response.data, $row);
 				} else {
-					showNotice(
-						"error",
-						response.data.message || "Failed to check for updates.",
-					);
-					resetButton($button, "Check for Updates");
+					showNotice("error", response.data.message || "Failed to check for updates.");
+					resetButton($button);
 				}
 			},
-			error: function (xhr, status, error) {
-				console.error("Error checking for updates:", error);
+			error: function () {
 				showNotice("error", "An error occurred while checking for updates.");
-				resetButton($button, "Check for Updates");
+				resetButton($button);
 			},
 		});
 	});
@@ -80,20 +209,21 @@ jQuery(document).ready(function ($) {
 
 		const $button = $(this);
 		const $row = $button.closest("tr");
-		const extensionId = $button.data("extension-id"); // This is UUID
-		const extensionSlug = $button.data("extension-slug"); // This is the slug
+		const extensionId = $button.data("extension-id") || $row.data("extension-id");
+		const extensionSlug = $button.data("extension-slug") || '';
 		const downloadUrl = $button.data("download-url");
 
-		if (!confirm("Are you sure you want to install this update?")) {
+		if (!downloadUrl || !extensionId) {
+			showNotice("error", "Missing update package information.");
 			return;
 		}
 
-		// Disable button and show spinner
-		$button
-			.prop("disabled", true)
-			.html('<span class="spinner is-active"></span> Updating...');
+		if (!confirm("Install this update now?")) {
+			return;
+		}
 
-		// Make AJAX request to install update
+		setButtonLoading($button, 'Updating...');
+
 		$.ajax({
 			url: MDS_EXTENSIONS_DATA.ajax_url,
 			type: "POST",
@@ -107,98 +237,118 @@ jQuery(document).ready(function ($) {
 			dataType: "json",
 			success: function (response) {
 				if (response.success) {
-					showNotice(
-						"success",
-						response.data.message || "Update installed successfully.",
-					);
+					showNotice("success", response.data.message || "Update installed successfully.");
 					if (response.data.reload) {
-						setTimeout(() => window.location.reload(), 1500);
+						setTimeout(() => window.location.reload(), 2000);
 					}
 				} else {
-					showNotice(
-						"error",
-						response.data.message || "Failed to install update.",
-					);
-					resetButton($button, "Install Update");
+					showNotice("error", response.data.message || "Failed to install update.");
+					resetButton($button);
 				}
 			},
-			error: function (xhr, status, error) {
-				console.error("Error installing update:", error);
+			error: function () {
 				showNotice("error", "An error occurred while installing the update.");
-				resetButton($button, "Install Update");
+				resetButton($button);
 			},
 		});
 	});
 
-	/**
-	 * Handle the update check response
-	 */
-	function handleUpdateResponse(updateInfo, $row) {
-		const $updateCell = $row.find(".mds-update-cell");
-		const $button = $row.find(".mds-check-updates");
+	// Handle install extension button
+	$(document).on("click", ".mds-install-extension", function (e) {
+		e.preventDefault();
 
-		if (updateInfo.update_available) {
-			// Show update available message with version and changelog
-			let html = `
-                <div class="mds-update-available">
-                    <p><strong>Version ${updateInfo.latest_version} is available!</strong></p>
-                    ${updateInfo.changelog ? `<div class="mds-changelog">${updateInfo.changelog}</div>` : ""}
-                    <p>
-                        <button class="button button-primary mds-install-update"
-                                data-download-url="${updateInfo.download_url}"
-                                data-extension-slug="${updateInfo.extension_slug}">
-                            Update Now
-                        </button>
-                    </p>
-                </div>
-            `;
-			$updateCell.html(html);
-			resetButton($button, "Check Again");
-		} else {
-			// No updates available
-			$updateCell.html(
-				'<span class="mds-no-updates">You have the latest version.</span>',
+		const $button = $(this);
+		const $row = $button.closest("tr");
+		const extensionId = $button.data("extension-id");
+		const extensionSlug = $button.data("extension-slug");
+
+		const isPremiumAttr = $row.data("is-premium");
+		const isPremium = isPremiumAttr === true || isPremiumAttr === "true";
+		const hasLicense = !!(MDS_EXTENSIONS_DATA.license_key && String(MDS_EXTENSIONS_DATA.license_key).trim());
+
+		if (isPremium && !hasLicense) {
+			const settingsUrl = MDS_EXTENSIONS_DATA.settings_url || '#';
+			showNotice(
+				"warning",
+				`This extension requires a valid license. Enter your license key at Million Dollar Script → Options → System → License Key. <a href="${settingsUrl}">Open System tab</a>`,
+				false
 			);
-			resetButton($button, "Check for Updates");
+			return;
 		}
 
-		// Trigger event to notify that update check is complete for this row
-		$row.trigger("mds-update-checked");
-	}
+		setButtonLoading($button, 'Installing...');
 
-	/**
-	 * Show a notice message
-	 */
-	function showNotice(type, message) {
-		const noticeClass = type === "error" ? "notice-error" : "notice-success";
-		const noticeHtml = `
-            <div class="notice ${noticeClass} is-dismissible">
-                <p>${message}</p>
-                <button type="button" class="notice-dismiss">
-                    <span class="screen-reader-text">Dismiss this notice.</span>
-                </button>
-            </div>
-        `;
-
-		// Add notice after the h1 heading
-		$(".wrap > h1").after(noticeHtml);
-
-		// Make notice dismissible
-		$(document).on("click", ".notice-dismiss", function () {
-			$(this)
-				.closest(".notice")
-				.fadeOut(200, function () {
-					$(this).remove();
-				});
+		$.ajax({
+			url: MDS_EXTENSIONS_DATA.ajax_url,
+			type: "POST",
+			data: {
+				action: "mds_install_extension",
+				nonce: MDS_EXTENSIONS_DATA.nonce,
+				extension_id: extensionId,
+				extension_slug: extensionSlug,
+			},
+			dataType: "json",
+			success: function (response) {
+				if (response.success) {
+					showNotice("success", response.data.message || "Extension installed successfully.");
+					if (response.data.reload) {
+						setTimeout(() => window.location.reload(), 2000);
+					}
+				} else {
+					showNotice("error", response.data.message || "Failed to install extension.");
+					resetButton($button);
+				}
+			},
+			error: function () {
+				showNotice("error", "An error occurred while installing the extension.");
+				resetButton($button);
+			},
 		});
-	}
+	});
 
-	/**
-	 * Reset a button to its original state
-	 */
-	function resetButton($button, text) {
-		$button.prop("disabled", false).html(text);
-	}
+	// Handle activate extension button
+	$(document).on("click", ".mds-activate-extension", function (e) {
+		e.preventDefault();
+
+		const $button = $(this);
+		const extensionSlug = $button.data("extension-slug");
+		const nonce = $button.data("nonce");
+
+		if (!confirm(MDS_EXTENSIONS_DATA.i18n?.confirm_activation || "Are you sure you want to activate this extension?")) {
+			return;
+		}
+
+		setButtonLoading($button, (MDS_EXTENSIONS_DATA.i18n?.activating || 'Activating...'));
+
+		$.ajax({
+			url: MDS_EXTENSIONS_DATA.ajax_url,
+			type: "POST",
+			data: {
+				action: "mds_activate_extension",
+				nonce: nonce,
+				extension_slug: extensionSlug,
+			},
+			dataType: "json",
+			success: function (response) {
+				if (response.success) {
+					showNotice("success", response.data.message || (MDS_EXTENSIONS_DATA.i18n?.activation_success || "Extension activated successfully."));
+					if (response.data.reload !== false) {
+						setTimeout(() => window.location.reload(), 1500);
+					} else {
+						const $active = $('<span class="button button-secondary mds-ext-active" disabled="disabled">Active</span>');
+						$button.replaceWith($active);
+					}
+				} else {
+					showNotice("error", response.data.message || (MDS_EXTENSIONS_DATA.i18n?.activation_failed || "Failed to activate extension."));
+					resetButton($button, MDS_EXTENSIONS_DATA.i18n?.activate || "Activate");
+				}
+			},
+			error: function () {
+				showNotice("error", MDS_EXTENSIONS_DATA.i18n?.activation_error || "An error occurred while activating the extension.");
+				resetButton($button, MDS_EXTENSIONS_DATA.i18n?.activate || "Activate");
+			},
+		});
+	});
 
 	// Handle Check All for Updates button
 	$(document).on("click", ".mds-check-all-updates", function (e) {
@@ -209,29 +359,20 @@ jQuery(document).ready(function ($) {
 		let completed = 0;
 		let hasUpdates = false;
 
-		// Disable button and show spinner
-		$button
-			.prop("disabled", true)
-			.html('<span class="spinner is-active"></span> Checking All...');
+		setButtonLoading($button, 'Checking All...');
 
-		// Check each extension for updates
 		$rows.each(function () {
 			const $row = $(this);
-			const extensionId = $row.data("extension-id");
-			const currentVersion = $row.data("version");
 			const $updateButton = $row.find(".mds-check-updates");
 
-			// Skip if already checking
 			if ($updateButton.prop("disabled")) {
 				completed++;
 				checkAllComplete();
 				return;
 			}
 
-			// Simulate click on the check updates button
 			$updateButton.trigger("click");
 
-			// Listen for update check completion
 			$row.off("mds-update-checked").on("mds-update-checked", function () {
 				completed++;
 				if ($row.find(".mds-update-available").length) {
@@ -241,16 +382,12 @@ jQuery(document).ready(function ($) {
 			});
 		});
 
-		// Check if all updates have been checked
 		function checkAllComplete() {
 			if (completed >= $rows.length) {
-				resetButton($button, "Check All for Updates");
+				resetButton($button);
 
 				if (hasUpdates) {
-					showNotice(
-						"success",
-						"Finished checking for updates. Some extensions have updates available.",
-					);
+					showNotice("success", "Finished checking for updates. Some extensions have updates available.");
 				} else {
 					showNotice("success", "All extensions are up to date.");
 				}
@@ -258,116 +395,133 @@ jQuery(document).ready(function ($) {
 		}
 	});
 
-	// Handle install extension button
-	$(document).on("click", ".mds-install-extension", function (e) {
+	// Handle the update check response
+	function handleUpdateResponse(updateInfo, $row) {
+		const $updateCell = $row.find(".mds-update-cell");
+		const $button = $row.find(".mds-check-updates");
+
+		const latestVersion = updateInfo.latest_version || updateInfo.new_version || updateInfo.version || '';
+		const downloadUrl = updateInfo.download_url || updateInfo.package_url || '';
+		const extensionId = $row.data('extension-id') || '';
+
+		if (updateInfo.update_available) {
+			const html = `
+				<div class="mds-update-available">
+					<p><strong>Version ${latestVersion} is available!</strong></p>
+					${updateInfo.changelog ? `<div class="mds-changelog">${updateInfo.changelog}</div>` : ""}
+					<p>
+						<button class="button button-primary mds-install-update"
+								data-download-url="${downloadUrl}"
+								data-extension-id="${extensionId}">
+							Update Now
+						</button>
+					</p>
+				</div>
+			`;
+			$updateCell.html(html);
+			resetButton($button, "Check Again");
+		} else {
+			$updateCell.html('<span class="mds-no-updates">You have the latest version.</span>');
+			resetButton($button, "Check for Updates");
+		}
+
+		$row.trigger("mds-update-checked");
+	}
+
+	// Handle purchase extension button
+	$(document).on("click", ".mds-purchase-extension", function (e) {
 		e.preventDefault();
 
 		const $button = $(this);
-		const extensionId = $button.data("extension-id"); // This is UUID
-		const extensionSlug = $button.data("extension-slug"); // This is the slug
+		const extensionId = $button.data("extension-id");
+		const nonce = $button.data("nonce");
 
-		if (!confirm("Are you sure you want to install this extension?")) {
-			return;
-		}
+		setButtonLoading($button, 'Redirecting...');
 
-		// Disable button and show spinner
-		$button
-			.prop("disabled", true)
-			.html('<span class="spinner is-active"></span> Installing...');
-
-		// Make AJAX request to install extension
 		$.ajax({
 			url: MDS_EXTENSIONS_DATA.ajax_url,
 			type: "POST",
 			data: {
-				action: "mds_install_extension",
-				nonce: MDS_EXTENSIONS_DATA.nonce,
-				extension_id: extensionId,      // UUID
-				extension_slug: extensionSlug,  // Slug
+				action: "mds_purchase_extension",
+				nonce: nonce,
+				extension_id: extensionId,
 			},
 			dataType: "json",
 			success: function (response) {
-				if (response.success) {
-					showNotice(
-						"success",
-						response.data.message || "Extension installed successfully.",
-					);
-					if (response.data.reload) {
-						setTimeout(() => window.location.reload(), 1500);
-					}
+				if (response.success && response.data && response.data.checkout_url) {
+					window.location.href = response.data.checkout_url;
 				} else {
-					showNotice(
-						"error",
-						response.data.message || "Failed to install extension.",
-					);
-					resetButton($button, "Install");
+					showNotice("error", (response.data && response.data.message) || "Failed to initiate purchase.");
+					resetButton($button, "Purchase");
 				}
 			},
-			error: function (xhr, status, error) {
-				console.error("Error installing extension:", error);
-				showNotice("error", "An error occurred while installing the extension.");
-				resetButton($button, "Install");
+			error: function () {
+				showNotice("error", "An error occurred while initiating the purchase.");
+				resetButton($button, "Purchase");
 			},
 		});
 	});
 
-	// Handle activate extension button
-	$(document).on("click", ".mds-activate-extension", function (e) {
+	// License activation handler
+	$(document).on('click', '.mds-activate-license', function (e) {
 		e.preventDefault();
-
+		const $form = $(this).closest('.mds-license-form');
 		const $button = $(this);
-		const extensionSlug = $button.data("extension-slug"); // Slug
-		const nonce = $button.data("nonce"); // Nonce from the button
+		const extension_slug = $form.data('extension-slug');
+		const license_key = $form.find('input[name="license_key"]').val();
+		const nonce = $form.find('input[name="nonce"]').val();
 
-		if (!confirm(MDS_EXTENSIONS_DATA.i18n?.confirm_activation || "Are you sure you want to activate this extension?")) {
-			return;
-		}
+		setButtonLoading($button, 'Activating...');
 
-		// Disable button and show spinner
-		$button
-			.prop("disabled", true)
-			.html('<span class="spinner is-active"></span> ' + (MDS_EXTENSIONS_DATA.i18n?.activating || 'Activating...'));
-
-		// Make AJAX request to activate extension
-		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
-			type: "POST",
-			data: {
-				action: "mds_activate_extension", // New AJAX action
-				nonce: nonce, // Use nonce from the button
-				extension_slug: extensionSlug,
-			},
-			dataType: "json",
-			success: function (response) {
-				if (response.success) {
-					showNotice(
-						"success",
-						response.data.message || (MDS_EXTENSIONS_DATA.i18n?.activation_success || "Extension activated successfully.")
-					);
-					// Reload the page to reflect changes (e.g., button state, active plugins list)
-					if (response.data.reload !== false) { // Allow explicit no-reload
-						setTimeout(() => window.location.reload(), 1500);
-					} else {
-                        // If no reload, manually update button (though reload is generally better)
-                        $button.removeClass('mds-activate-extension button-secondary')
-                               .addClass('mds-ext-active button-disabled') // Assuming button-disabled or similar class
-                               .text(MDS_EXTENSIONS_DATA.i18n?.active || 'Active')
-                               .prop('disabled', true);
-                    }
+		$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+			action: 'mds_activate_license',
+			extension_slug: extension_slug,
+			license_key: license_key,
+			nonce: nonce,
+		})
+			.done(function (response) {
+				if (response && response.success) {
+					location.reload();
 				} else {
-					showNotice(
-						"error",
-						response.data.message || (MDS_EXTENSIONS_DATA.i18n?.activation_failed || "Failed to activate extension.")
-					);
-					resetButton($button, MDS_EXTENSIONS_DATA.i18n?.activate || "Activate");
+					const msg = response && response.data && response.data.message ? response.data.message : 'Activation failed.';
+					showNotice('error', msg, false);
+					resetButton($button, 'Activate');
 				}
-			},
-			error: function (xhr, status, error) {
-				console.error("Error activating extension:", error);
-				showNotice("error", MDS_EXTENSIONS_DATA.i18n?.activation_error || "An error occurred while activating the extension.");
-				resetButton($button, MDS_EXTENSIONS_DATA.i18n?.activate || "Activate");
-			},
-		});
+			})
+			.fail(function () {
+				showNotice('error', 'An error occurred during activation.', false);
+				resetButton($button, 'Activate');
+			});
+	});
+
+	// License deactivation handler
+	$(document).on('click', '.mds-deactivate-license', function (e) {
+		e.preventDefault();
+		const $form = $(this).closest('.mds-license-form');
+		const $button = $(this);
+		const extension_slug = $form.data('extension-slug');
+		const nonce = $form.find('input[name="nonce"]').val();
+
+		setButtonLoading($button, 'Deactivating...');
+
+		$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+			action: 'mds_deactivate_license',
+			extension_slug: extension_slug,
+			nonce: nonce,
+		})
+			.done(function (response) {
+				if (response && response.success) {
+					location.reload();
+				} else {
+					const msg = response && response.data && response.data.message ? response.data.message : 'Deactivation failed.';
+					showNotice('error', msg, false);
+					resetButton($button, 'Deactivate');
+				}
+			})
+			.fail(function () {
+				showNotice('error', 'An error occurred during deactivation.', false);
+				resetButton($button, 'Deactivate');
+			});
 	});
 
 });

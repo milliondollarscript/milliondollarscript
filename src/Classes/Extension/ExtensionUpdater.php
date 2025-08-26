@@ -30,7 +30,7 @@ class ExtensionUpdater {
      */
     public function __construct(string $extensionServerUrl = '', string $licenseKey = '') {
         $this->extensionServerUrl = $extensionServerUrl ?: Options::get_option( 'extension_server_url', 'https://extensions.milliondollarscript.com' );
-        $this->licenseKey = $licenseKey ?: Options::get_option('license_key', '');
+        $this->licenseKey = $licenseKey;
     }
 
     /**

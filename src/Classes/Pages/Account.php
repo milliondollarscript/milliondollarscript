@@ -40,7 +40,7 @@ class Account
         // Notices at top
         settings_errors('mds_account_notices');
 
-        $license_key = Options::get_option('license_key', '');
+        $license_key = ''; // This is deprecated
         $configured_base = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
         $admin_email = get_option('admin_email', '');
 
@@ -48,82 +48,6 @@ class Account
         $lookup = null;
         $error = null;
 
-        if (empty($license_key)) {
-            add_settings_error(
-                'mds_account_notices',
-                'mds_missing_license',
-                Language::get('No license key found. Enter your license key at Million Dollar Script → Options → System → License Key.'),
-                'warning'
-            );
-        } else {
-            try {
-                $candidates = [
-                    rtrim((string)$configured_base, '/'),
-                    'http://extension-server:3000',
-                    'http://extension-server-dev:3000',
-                    'http://host.docker.internal:15346',
-                    'http://localhost:15346',
-                ];
-
-                $args = [
-                    'timeout' => 20,
-                    'headers' => [
-                        'Content-Type' => 'application/json',
-                        'User-Agent' => 'MDS-WordPress-Plugin/' . (defined('MDS_VERSION') ? MDS_VERSION : 'dev'),
-                    ],
-                    'sslverify' => !Utility::is_development_environment(),
-                ];
-
-                foreach ($candidates as $base) {
-                    if (empty($base)) {
-                        continue;
-                    }
-                    $url = rtrim($base, '/') . '/api/public/licenses/lookup?key=' . rawurlencode($license_key);
-                    $res = wp_remote_get($url, $args);
-                    if (is_wp_error($res)) {
-                        $error = $res->get_error_message();
-                        continue;
-                    }
-                    $code = (int) wp_remote_retrieve_response_code($res);
-                    if ($code === 200) {
-                        $body = wp_remote_retrieve_body($res);
-                        $data = json_decode($body, true);
-                        if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
-                            $lookup = $data;
-                            $resolved_base = $base;
-                            break;
-                        } else {
-                            $error = 'Invalid JSON from server';
-                        }
-                    } else {
-                        $error = 'HTTP ' . $code;
-                    }
-                }
-
-                if (!$resolved_base) {
-                    add_settings_error(
-                        'mds_account_notices',
-                        'mds_server_unreachable',
-                        sprintf(
-                            /* translators: %s is the error text */
-                            esc_html(Language::get('Could not contact Extension Server. Last error: %s')),
-                            esc_html((string)$error)
-                        ),
-                        'error'
-                    );
-                } elseif ($resolved_base && rtrim((string)$resolved_base, '/') !== rtrim((string)$configured_base, '/')) {
-                    // Suggest updating base URL
-                    set_transient('mds_ext_server_fallback_notice', $resolved_base, MINUTE_IN_SECONDS * 5);
-                }
-            } catch (\Throwable $e) {
-                add_settings_error(
-                    'mds_account_notices',
-                    'mds_lookup_exception',
-                    esc_html(Language::get('License lookup failed: ') . $e->getMessage()),
-                    'error'
-                );
-            }
-        }
 
         $portal_url = '';
         if ($resolved_base && !empty($admin_email)) {

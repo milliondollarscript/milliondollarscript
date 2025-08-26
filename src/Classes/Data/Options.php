@@ -1101,17 +1101,6 @@ class Options {
 					->set_default_value( 'https://extensions.milliondollarscript.com' )
 					->set_help_text( Language::get( 'The URL of the extension server for automatic updates and downloads. Use http://host.docker.internal:15346 or http://localhost:3000 for development or your production server URL. Default: https://extensions.milliondollarscript.com' ) ),
 
-				// License Key
-				Field::make( 'text', MDS_PREFIX . 'license_key', Language::get( 'License Key' ) )
-					->set_default_value( '' )
-					->set_help_text(
-						Language::get( 'Your license key for accessing premium extensions and updates from the extension server.' ) . ' ' .
-						Language::get_replace(
-							'To purchase, open <a href="%EXT_URL%">MDS → Extensions</a> and use the Buy button for a specific extension.',
-							'%EXT_URL%',
-							esc_url( admin_url( 'admin.php?page=mds-extensions' ) )
-						)
-					),
 
 				// Delete data on uninstall?
 				Field::make( 'radio', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )

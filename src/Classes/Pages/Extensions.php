@@ -110,6 +110,9 @@ class Extensions {
         add_action( 'wp_ajax_mds_install_extension_update', [ __CLASS__, 'ajax_install_extension_update' ] );
         add_action( 'wp_ajax_mds_activate_extension', [ __CLASS__, 'ajax_activate_extension' ] );
         add_action( 'wp_ajax_mds_install_extension', [ self::class, 'ajax_install_extension' ] );
+        add_action( 'wp_ajax_mds_purchase_extension', [ self::class, 'ajax_purchase_extension' ] );
+add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_license' ] );
+        add_action( 'wp_ajax_mds_deactivate_license', [ self::class, 'ajax_deactivate_license' ] );
     }
     
     /**
@@ -378,7 +381,7 @@ class Extensions {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
         
         // Get the license key for authentication
-        $license_key = Options::get_option( 'license_key', '' );
+        $license_key = ''; // This is deprecated
         
         // Set up the upgrader
         $upgrader = new \Plugin_Upgrader( new \Plugin_Upgrader_Skin( [ 'plugin' => $extension_id ] ) );
@@ -439,11 +442,18 @@ class Extensions {
         ?>
         <div class="wrap mds-extensions-page" id="mds-extensions-page">
             <?php
-                $mds_license_key_inline = Options::get_option('license_key', '');
-                if (empty($mds_license_key_inline)) {
-                    self::print_missing_license_notice_inline();
-                }
-            ?>
+            // Show purchase return notices at top of Extensions page
+            $purchase = isset($_GET['purchase']) ? sanitize_text_field($_GET['purchase']) : '';
+            $ext_param = isset($_GET['ext']) ? sanitize_text_field($_GET['ext']) : '';
+            if ($purchase === 'success' && $ext_param !== '') : ?>
+                <div class="notice notice-success">
+                    <p><?php echo esc_html( Language::get('Purchase received. Activation will be available once payment clears. You may need to refresh in a minute.') ); ?></p>
+                </div>
+            <?php elseif ($purchase === 'cancel') : ?>
+                <div class="notice notice-warning">
+                    <p><?php echo esc_html( Language::get('Purchase was cancelled.') ); ?></p>
+                </div>
+            <?php endif; ?>
             <?php if ($extension_server_error) : ?>
                 <div class="notice notice-warning">
                     <p><?php echo esc_html( Language::get('Could not connect to extension server: ') . $extension_server_error ); ?></p>
@@ -464,7 +474,6 @@ class Extensions {
             <div class="mds-extensions-container">
                 <h2><?php echo esc_html( Language::get('Available Extensions') ); ?></h2>
                 
-                <?php error_log('MDS_DEBUG: render method - available_extensions before table generation: ' . print_r($available_extensions, true)); ?>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
@@ -509,53 +518,53 @@ class Extensions {
                                             <?php echo esc_html( Language::get('Activate') ); ?>
                                         </button>
                                     <?php endif; ?>
-                                <?php else : ?>
-                                    <?php
-                                        $buy_buttons_html = '';
-                                        if ( ($extension['isPremium'] ?? false) ) {
-                                            $pl = $extension['purchase_links'] ?? [];
-                                            $btns = [];
-                                            if (!empty($pl['one_time'])) {
-                                                $btns[] = sprintf(
-                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
-                                                    esc_url($pl['one_time']),
-                                                    esc_html( Language::get('Buy One‑Time') )
-                                                );
+                                <?php else :
+                                    $is_premium = $extension['isPremium'] ?? false;
+                                    $has_purchase_links = !empty(array_filter(array_values($extension['purchase_links'] ?? [])));
+                                    $purchase_any = !empty($extension['purchase']['anyAvailable']);
+                                    $can_purchase = !empty($extension['can_purchase']);
+                                    $any_purchase = $has_purchase_links || $purchase_any || $can_purchase;
+                                    $is_licensed = self::is_extension_licensed($extension['id']);
+
+                                    if ($is_premium) {
+                                        if ($is_licensed) {
+                                            // Premium and licensed: Show Install button
+                                            ?>
+                                            <button class="button button-primary mds-install-extension"
+                                                    data-nonce="<?php echo esc_attr($nonce); ?>"
+                                                    data-extension-id="<?php echo esc_attr($extension['id']); ?>"
+                                                    data-extension-slug="<?php echo esc_attr($extension['slug']); ?>">
+                                                <?php echo esc_html(Language::get('Install')); ?>
+                                            </button>
+                                            <?php
+                                        } elseif ($any_purchase) {
+                                            // Premium, not licensed, with purchase availability: Show Purchase button
+                                            $plan_attr = '';
+                                            if (!empty($extension['purchase_links']['one_time'])) {
+                                                $plan_attr = ' data-plan="one_time"';
                                             }
-                                            if (!empty($pl['monthly'])) {
-                                                $btns[] = sprintf(
-                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
-                                                    esc_url($pl['monthly']),
-                                                    esc_html( Language::get('Buy Monthly') )
-                                                );
-                                            }
-                                            if (!empty($pl['yearly'])) {
-                                                $btns[] = sprintf(
-                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
-                                                    esc_url($pl['yearly']),
-                                                    esc_html( Language::get('Buy Yearly') )
-                                                );
-                                            }
-                                            if (empty($btns) && !empty($pl['default'])) {
-                                                $btns[] = sprintf(
-                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
-                                                    esc_url($pl['default']),
-                                                    esc_html( Language::get('Purchase') )
-                                                );
-                                            }
-                                            if (!empty($btns)) {
-                                                $buy_buttons_html = '<div class="mds-purchase-buttons" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' . implode(' ', $btns) . '</div>';
-                                            }
+                                            echo '<button class="button button-primary mds-purchase-extension" data-extension-id="' . esc_attr($extension['id']) . '" data-nonce="' . esc_attr($nonce) . '"' . $plan_attr . '>' . esc_html(Language::get('Purchase')) . '</button>';
+                                        } else {
+                                            // Premium, not licensed, no purchase availability: Unavailable
+                                            ?>
+                                            <button class="button button-secondary" disabled="disabled">
+                                                <?php echo esc_html(Language::get('Unavailable')); ?>
+                                            </button>
+                                            <?php
                                         }
-                                        echo $buy_buttons_html;
-                                    ?>
-                                    <button class="button button-primary mds-install-extension"
-                                            data-nonce="<?php echo esc_attr( $nonce ); ?>"
-                                            data-extension-id="<?php echo esc_attr( $extension['id'] ); /* UUID from server */ ?>"
-                                            data-extension-slug="<?php echo esc_attr( $extension['slug'] ); /* Slug derived/from server */ ?>">
-                                        <?php echo esc_html( Language::get('Install') ); ?>
-                                    </button>
-                                <?php endif; ?>
+                                    } else {
+                                        // Free extension: Show Install button
+                                        ?>
+                                        <button class="button button-primary mds-install-extension"
+                                                data-nonce="<?php echo esc_attr($nonce); ?>"
+                                                data-extension-id="<?php echo esc_attr($extension['id']); ?>"
+                                                data-extension-slug="<?php echo esc_attr($extension['slug']); ?>">
+                                            <?php echo esc_html(Language::get('Install')); ?>
+                                        </button>
+                                        <?php
+                                    }
+                                endif;
+                                ?>
                             </td>
                             </tr>
                         <?php endforeach; ?>
@@ -579,6 +588,7 @@ class Extensions {
                                 <th><?php echo esc_html( Language::get('Extension') ); ?></th>
                                 <th><?php echo esc_html( Language::get('Version') ); ?></th>
                                 <th><?php echo esc_html( Language::get('Status') ); ?></th>
+                                <th><?php echo esc_html( Language::get('License') ); ?></th>
                                 <th><?php echo esc_html( Language::get('Update') ); ?></th>
                             </tr>
                         </thead>
@@ -601,8 +611,11 @@ class Extensions {
                                             <span class="mds-status-inactive"><?php echo esc_html( Language::get('Inactive') ); ?></span>
                                         <?php endif; ?>
                                     </td>
+                                    <td class="mds-license-cell">
+                                        <?php self::render_license_form( $extension ); ?>
+                                    </td>
                                     <td class="mds-update-cell">
-                                        <button class="button mds-check-updates" 
+                                        <button class="button mds-check-updates"
                                                 data-nonce="<?php echo esc_attr( $nonce ); ?>">
                                             <?php echo esc_html( Language::get('Check for Updates') ); ?>
                                         </button>
@@ -632,8 +645,8 @@ class Extensions {
         // This is already called within the render method which checks if we're on the right page
         // No need for additional checks here
 
-        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-extensions_enhanced.js';
-        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-extensions_enhanced.js';
+        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-extensions.min.js';
+        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-extensions.min.js';
         $style_path = MDS_BASE_PATH . 'src/Assets/css/admin/extensions_enhanced.css';
         $style_url = MDS_BASE_URL . 'src/Assets/css/admin/extensions_enhanced.css';
 
@@ -653,7 +666,7 @@ class Extensions {
             $extensions_data = [
                 'ajax_url'    => admin_url( 'admin-ajax.php' ),
                 'nonce'       => wp_create_nonce( 'mds_extensions_nonce' ),
-                'license_key' => Options::get_option('license_key',''),
+                'license_key' => '',
                 'settings_url'=> admin_url('admin.php?page=milliondollarscript_options#system'),
                 'extension_server_url' => Options::get_option('extension_server_url', 'http://localhost:15346'),
                 'text'        => [
@@ -684,10 +697,6 @@ class Extensions {
         if ( $page !== 'mds-extensions' ) {
             return;
         }
-        $mds_license_key = Options::get_option('license_key', '');
-        if ( ! empty( $mds_license_key ) ) {
-            return;
-        }
         $settings_url = admin_url('admin.php?page=milliondollarscript_options#system');
         $link_label   = Language::get('Go to System tab');
         if ( empty( $link_label ) ) {
@@ -711,10 +720,6 @@ class Extensions {
      */
     public static function print_missing_license_notice_inline(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-        $mds_license_key = Options::get_option('license_key', '');
-        if ( ! empty( $mds_license_key ) ) {
             return;
         }
         $settings_url = admin_url('admin.php?page=milliondollarscript_options#system');
@@ -815,7 +820,7 @@ class Extensions {
      */
     protected static function fetch_available_extensions(): array {
         $user_configured_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
-        $license_key = Options::get_option('license_key', '');
+        $license_key = ''; // This is deprecated
 
         $args = [
             'timeout' => 30,
@@ -947,6 +952,7 @@ class Extensions {
                     'anyAvailable' => (bool) ( $extension['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) ),
                 ],
                 'purchase_links' => $purchase_links,
+                'can_purchase'   => (bool) ( $extension['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) ),
             ];
         }
 
@@ -1004,6 +1010,48 @@ class Extensions {
         return $transformed_extensions;
     }
 
+    /**
+     * Get the browser-facing base URL for the Extension Server.
+     * Prefers a configurable public URL; falls back to localhost:15346 for dev.
+     */
+    private static function get_browser_extension_server_base_url(): string {
+        $public = \MillionDollarScript\Classes\Data\Options::get_option('mds_extension_server_public_url', '');
+        if (is_string($public) && $public !== '') {
+            return rtrim($public, '/');
+        }
+        return 'http://localhost:15346';
+    }
+
+    /**
+     * Normalize a checkout URL for browser redirection.
+     * - Prefix relative URLs with the browser base
+     * - Rewrite internal Docker host/port to the public base in dev
+     * - Preserve absolute public URLs
+     */
+    private static function normalize_public_checkout_url(string $url): string {
+        if (!is_string($url) || $url === '') {
+            return $url;
+        }
+        // If relative path, prefix with browser base
+        if ($url[0] === '/') {
+            return rtrim(self::get_browser_extension_server_base_url(), '/') . $url;
+        }
+        $parsed = wp_parse_url($url);
+        if (is_array($parsed) && !empty($parsed['host'])) {
+            $host = strtolower($parsed['host']);
+            $port = isset($parsed['port']) ? (int) $parsed['port'] : null;
+            // Map internal dev host/port to the browser-facing base
+            if ($host === 'extension-server-dev' || $host === 'extension-server' || $port === 3000) {
+                $publicBase = rtrim(self::get_browser_extension_server_base_url(), '/');
+                $path     = isset($parsed['path']) && is_string($parsed['path']) ? $parsed['path'] : '';
+                $query    = isset($parsed['query']) && $parsed['query'] !== '' ? ('?' . $parsed['query']) : '';
+                $fragment = isset($parsed['fragment']) && $parsed['fragment'] !== '' ? ('#' . $parsed['fragment']) : '';
+                return $publicBase . $path . $query . $fragment;
+            }
+        }
+        return $url;
+    }
+
     // --- AJAX Handlers ---
 
     /**
@@ -1045,7 +1093,7 @@ class Extensions {
 
         try {
             $extension_server_url = Options::get_option('extension_server_url', 'http://localhost:3000');
-            $license_key = Options::get_option('license_key', '');
+            $license_key = ''; // This is deprecated
             
             $api_url = rtrim($extension_server_url, '/') . '/api/extensions/' . urlencode($extension_id);
             
@@ -1084,8 +1132,58 @@ class Extensions {
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('Invalid JSON response from extension server');
             }
+
+            // Normalize detail shape and purchase metadata
+            $detail = [];
+            if (is_array($data)) {
+                if (isset($data['data']) && is_array($data['data'])) {
+                    $detail = $data['data'];
+                } elseif (isset($data['extension']) && is_array($data['extension'])) {
+                    $detail = $data['extension'];
+                } else {
+                    $detail = $data;
+                }
+            }
+
+            // Normalize purchase links (to snake_case) and anyAvailable flag
+            $purchase_links = [
+                'one_time' => null,
+                'monthly'  => null,
+                'yearly'   => null,
+                'default'  => null,
+            ];
+            $server_links = [];
+            if (isset($detail['purchase']) && is_array($detail['purchase']) && isset($detail['purchase']['links']) && is_array($detail['purchase']['links'])) {
+                $server_links = $detail['purchase']['links'];
+            }
+
+            $abs = function($url) use ($extension_server_url) {
+                if (!is_string($url) || $url === '') {
+                    return null;
+                }
+                if (preg_match('#^https?://#i', $url)) {
+                    return $url;
+                }
+                $base = is_string($extension_server_url) && $extension_server_url !== '' ? rtrim($extension_server_url, '/') : 'http://localhost:15346';
+                return $base . '/' . ltrim($url, '/');
+            };
+
+            if (!empty($server_links)) {
+                $purchase_links['one_time'] = isset($server_links['oneTime']) ? $abs($server_links['oneTime']) : null;
+                $purchase_links['monthly']  = isset($server_links['monthly']) ? $abs($server_links['monthly']) : null;
+                $purchase_links['yearly']   = isset($server_links['yearly']) ? $abs($server_links['yearly']) : null;
+                $purchase_links['default']  = isset($server_links['default']) ? $abs($server_links['default']) : null;
+            }
+
+            $any_available = (bool) ( $detail['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) );
+
+            $detail['purchase'] = [
+                'anyAvailable' => $any_available,
+            ];
+            $detail['purchase_links'] = $purchase_links;
+            $detail['can_purchase'] = $any_available;
             
-            wp_send_json_success(['extension' => $data]);
+            wp_send_json_success(['extension' => $detail]);
             
         } catch (\Exception $e) {
             error_log('Error fetching extension: ' . $e->getMessage());
@@ -1122,7 +1220,7 @@ class Extensions {
             // Default to the service name and internal port for Docker environments.
             // The user can override this in MDS settings if their setup is different.
             $extension_server_url = Options::get_option('extension_server_url', 'http://localhost:3000');
-            $license_key = Options::get_option('license_key', '');
+            $license_key = ''; // This is deprecated
 
             error_log('[MDS Extension Install] Extension ID: ' . $extension_id);
             error_log('[MDS Extension Install] Retrieved Extension Server URL: ' . $extension_server_url);
@@ -1230,7 +1328,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
     require_once ABSPATH . 'wp-admin/includes/plugin.php';
     
     // Get the license key for authentication
-    $license_key = Options::get_option('license_key', '');
+    $license_key = '';
     
     // Set up the upgrader
     $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() ); 
@@ -1577,6 +1675,312 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         'reload' => true
     ];
 }
+    public static function ajax_purchase_extension(): void {
+        check_ajax_referer('mds_extensions_nonce', 'nonce');
 
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => Language::get('You do not have sufficient permissions to perform this action.')], 403);
+            return;
+        }
 
+        $extension_id = isset($_POST['extension_id']) ? sanitize_text_field(wp_unslash($_POST['extension_id'])) : '';
+        $plan_raw     = isset($_POST['plan']) ? sanitize_text_field(wp_unslash($_POST['plan'])) : '';
+
+        if (empty($extension_id)) {
+            wp_send_json_error(['message' => Language::get('Extension ID is required.')], 400);
+            return;
+        }
+
+        // Constrain plan to allowed values; optional
+        $allowed_plans = ['one_time', 'monthly', 'yearly'];
+        $plan = in_array($plan_raw, $allowed_plans, true) ? $plan_raw : null;
+
+        try {
+            // Reuse base resolution pattern from fetch_available_extensions()
+            $user_configured_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+
+            $args = [
+                'timeout' => 15, // short timeout
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'User-Agent'   => 'MDS-WordPress-Plugin/' . MDS_VERSION,
+                ],
+                'sslverify' => !Utility::is_development_environment(),
+            ];
+
+            $candidates = [
+                rtrim((string)$user_configured_url, '/'),
+                'http://extension-server:3000',
+                'http://extension-server-dev:3000',
+                'http://host.docker.internal:15346',
+                'http://localhost:15346',
+            ];
+
+            $response = null;
+            $working_base = null;
+            $errors = [];
+
+            foreach ($candidates as $base) {
+                if (empty($base)) {
+                    continue;
+                }
+                $api_url = rtrim($base, '/') . '/api/extensions/' . urlencode($extension_id);
+                $res = wp_remote_get($api_url, $args);
+
+                if (is_wp_error($res)) {
+                    $errors[] = $base . ' => ' . $res->get_error_message();
+                    continue;
+                }
+
+                $code = wp_remote_retrieve_response_code($res);
+                if ($code === 200) {
+                    $response = $res;
+                    $working_base = $base;
+                    break;
+                } else {
+                    $errors[] = $base . ' => HTTP ' . $code;
+                }
+            }
+
+            if (!$response || !$working_base) {
+                wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
+            }
+
+            $response_body = wp_remote_retrieve_body($response);
+            $data = json_decode($response_body, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                wp_send_json_error(['message' => Language::get('Invalid response from extension server.')], 400);
+            }
+
+            // Handle common server response shapes
+            $detail = [];
+            if (is_array($data)) {
+                if (isset($data['data']) && is_array($data['data'])) {
+                    $detail = $data['data'];
+                } elseif (isset($data['extension']) && is_array($data['extension'])) {
+                    $detail = $data['extension'];
+                } else {
+                    $detail = $data;
+                }
+            }
+
+            $links = [];
+            if (isset($detail['purchase']) && is_array($detail['purchase']) && isset($detail['purchase']['links']) && is_array($detail['purchase']['links'])) {
+                $links = $detail['purchase']['links'];
+            }
+
+            if (empty($links)) {
+                wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
+            }
+
+            // Plan key mapping and selection priority
+            $planKeyMap = [
+                'one_time' => 'oneTime',
+                'monthly'  => 'monthly',
+                'yearly'   => 'yearly',
+            ];
+
+            $selected = null;
+            $planKey = $plan && isset($planKeyMap[$plan]) ? $planKeyMap[$plan] : null;
+
+            if ($planKey && !empty($links[$planKey]) && is_string($links[$planKey])) {
+                $selected = $links[$planKey];
+            }
+            if (!$selected) {
+                $selected = $links['oneTime'] ?? null;
+            }
+            if (!$selected) {
+                $selected = $links['monthly'] ?? null;
+            }
+            if (!$selected) {
+                $selected = $links['yearly'] ?? null;
+            }
+            if (!$selected) {
+                $selected = $links['default'] ?? null;
+            }
+
+            if (empty($selected) || !is_string($selected)) {
+                wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
+            }
+
+            // Normalize to absolute URL
+            $abs = function ($url) use ($working_base) {
+                if (!is_string($url) || $url === '') {
+                    return null;
+                }
+                if (preg_match('#^https?://#i', $url)) {
+                    return $url;
+                }
+                $base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : 'http://localhost:15346';
+                return $base . '/' . ltrim($url, '/');
+            };
+
+            $absolute = $abs($selected);
+            if (!$absolute) {
+                wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
+            }
+
+            $checkout_url = self::normalize_public_checkout_url($absolute);
+
+            // Append return URLs so Stripe redirects back to the WP admin Extensions page
+            $success_url = add_query_arg(
+                [
+                    'page'     => 'mds-extensions',
+                    'purchase' => 'success',
+                    'ext'      => $extension_id,
+                ],
+                admin_url('admin.php')
+            );
+            $cancel_url = add_query_arg(
+                [
+                    'page'     => 'mds-extensions',
+                    'purchase' => 'cancel',
+                    'ext'      => $extension_id,
+                ],
+                admin_url('admin.php')
+            );
+            $checkout_url = add_query_arg(
+                [
+                    'successUrl' => rawurlencode($success_url),
+                    'cancelUrl'  => rawurlencode($cancel_url),
+                ],
+                $checkout_url
+            );
+
+            wp_send_json_success(['checkout_url' => $checkout_url], 200);
+        } catch (\Exception $e) {
+            // Keep logs minimal; do not expose internal details
+            wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
+        }
+    }
+
+    /**
+     * Render the license form for an extension.
+     *
+     * @param array $extension
+     */
+    protected static function render_license_form( array $extension ): void {
+        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        $license = $license_manager->get_license( $extension['id'] );
+        $nonce = wp_create_nonce( 'mds_license_nonce_' . $extension['id'] );
+        ?>
+        <form class="mds-license-form" data-extension-slug="<?php echo esc_attr( $extension['id'] ); ?>">
+            <input type="hidden" name="extension_slug" value="<?php echo esc_attr( $extension['id'] ); ?>">
+            <input type="hidden" name="nonce" value="<?php echo esc_attr( $nonce ); ?>">
+
+            <?php if ( $license && $license->status === 'active' ) : ?>
+                <span class="mds-license-status-active"><?php echo esc_html( Language::get('Active') ); ?></span>
+                <button type="button" class="button button-secondary mds-deactivate-license">
+                    <?php echo esc_html( Language::get('Deactivate') ); ?>
+                </button>
+            <?php else : ?>
+                <input type="text" name="license_key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>" value="<?php echo esc_attr( $license ? $license->license_key : '' ); ?>">
+                <button type="button" class="button button-primary mds-activate-license">
+                    <?php echo esc_html( Language::get('Activate') ); ?>
+                </button>
+            <?php endif; ?>
+        </form>
+    <?php }
+
+    /**
+     * AJAX handler for activating a license.
+     */
+    public static function ajax_activate_license(): void {
+        check_ajax_referer( 'mds_license_nonce_' . $_POST['extension_slug'], 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ] );
+        }
+
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] );
+        $license_key    = sanitize_text_field( $_POST['license_key'] );
+
+        if ( empty( $extension_slug ) || empty( $license_key ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
+        }
+
+        $result = \MillionDollarScript\Classes\Extension\API::activate_license( $license_key, $extension_slug );
+
+        if ( $result['success'] ) {
+            $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            $license = $license_manager->get_license( $extension_slug );
+
+            if ( $license ) {
+                $license_manager->update_license( $license->id, [
+                    'license_key' => $license_key,
+                    'status'      => 'active',
+                    'expires_at'  => $result['license']['expires_at'],
+                ] );
+            } else {
+                $license_manager->add_license( $extension_slug, $license_key );
+                $license = $license_manager->get_license( $extension_slug );
+                $license_manager->update_license( $license->id, [
+                    'status'      => 'active',
+                    'expires_at'  => $result['license']['expires_at'],
+                ] );
+            }
+
+            wp_send_json_success( [ 'message' => $result['message'] ] );
+        } else {
+            wp_send_json_error( [ 'message' => $result['message'] ] );
+        }
+    }
+
+    /**
+     * AJAX handler for deactivating a license.
+     */
+    public static function ajax_deactivate_license(): void {
+        check_ajax_referer( 'mds_license_nonce_' . $_POST['extension_slug'], 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ] );
+        }
+
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] );
+
+        if ( empty( $extension_slug ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
+        }
+
+        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        $license         = $license_manager->get_license( $extension_slug );
+
+        if ( ! $license ) {
+            wp_send_json_error( [ 'message' => Language::get( 'License not found.' ) ] );
+        }
+
+        $result = \MillionDollarScript\Classes\Extension\API::deactivate_license( $license->license_key, $extension_slug );
+
+        if ( $result['success'] ) {
+            $license_manager->update_license( $license->id, [ 'status' => 'inactive' ] );
+            wp_send_json_success( [ 'message' => $result['message'] ] );
+        } else {
+            wp_send_json_error( [ 'message' => $result['message'] ] );
+        }
+    }
+    
+        /**
+         * Check if an extension is licensed.
+         *
+         * @param string $extension_id The ID of the extension.
+         * @return bool True if the extension has an active license, false otherwise.
+         */
+        protected static function is_extension_licensed(string $extension_id): bool {
+            // If the license manager class doesn't exist, we can't check.
+            if (!class_exists('\MillionDollarScript\Classes\Extension\MDS_License_Manager')) {
+                return false;
+            }
+    
+            try {
+                $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+                $license = $license_manager->get_license($extension_id);
+    
+                return $license && $license->status === 'active';
+            } catch (\Exception $e) {
+                // If the table doesn't exist or another DB error occurs, assume not licensed.
+                error_log('Error checking license status for extension ' . $extension_id . ': ' . $e->getMessage());
+                return false;
+            }
+        }
 }

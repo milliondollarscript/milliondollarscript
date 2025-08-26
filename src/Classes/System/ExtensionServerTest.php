@@ -30,7 +30,7 @@ class ExtensionServerTest {
             : 'https://extensions.milliondollarscript.com';
         $server_url = Options::get_option('extension_server_url', $default_server_url);
         $api_key = Options::get_option('extension_server_api_key', '');
-        $license_key = Options::get_option('extension_license_key', '');
+        $license_key = ''; // This is deprecated
 
         $results['server_info']['url'] = $server_url;
         $results['server_info']['has_api_key'] = !empty($api_key);
@@ -119,41 +119,6 @@ class ExtensionServerTest {
         }
 
         // Test 4: License Validation (if license key is configured)
-        if (!empty($license_key)) {
-            try {
-                $response = wp_remote_post($server_url . '/api/validate', [
-                    'timeout' => 10,
-                    'sslverify' => strpos($server_url, 'localhost') === false,
-                    'headers' => [
-                        'Content-Type' => 'application/json',
-                        'Accept' => 'application/json',
-                    ],
-                    'body' => json_encode([
-                        'licenseKey' => $license_key,
-                        'productIdentifier' => 'test_validation',
-                    ]),
-                ]);
-
-                if (!is_wp_error($response)) {
-                    $status_code = wp_remote_retrieve_response_code($response);
-                    if ($status_code === 200) {
-                        $body = json_decode(wp_remote_retrieve_body($response), true);
-                        if (isset($body['success'])) {
-                            $results['license_validation'] = true;
-                            $results['server_info']['license_valid'] = $body['valid'] ?? false;
-                        } else {
-                            $results['errors'][] = "Invalid license validation response format";
-                        }
-                    } else {
-                        $results['errors'][] = "License validation returned status: $status_code";
-                    }
-                } else {
-                    $results['errors'][] = "License validation request failed: " . $response->get_error_message();
-                }
-            } catch (Exception $e) {
-                $results['errors'][] = "License validation exception: " . $e->getMessage();
-            }
-        }
 
         // Overall success
         $results['overall_success'] = $results['server_reachable'] && 
