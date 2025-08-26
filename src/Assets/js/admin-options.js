@@ -488,3 +488,103 @@ jQuery(document).ready(function ($) {
 		});
 	}
 });
+
+// === MDS Options Assist: Auto-open System tab and highlight License Key when hash=#system ===
+jQuery(document).ready(function ($) {
+  function ensureAssistStyles() {
+    if (!$('#mds-options-assist-styles').length) {
+      $('head').append(`
+        <style id="mds-options-assist-styles">
+          .mds-highlight-field {
+            outline: 3px solid #f59e0b !important;
+            box-shadow: 0 0 0 3px rgba(245,158,11,.3) !important;
+            transition: outline-color .3s ease;
+          }
+          .mds-highlight-field input[type="text"] {
+            background: #fff7ed !important;
+          }
+        </style>
+      `);
+    }
+  }
+
+  function clickSystemTab() {
+    // Try multiple selectors Carbon Fields might use for tabs
+    const candidates = [
+      '.cf-container__tabs button, .cf-container__tabs a',
+      '.cf-tabs__nav button, .cf-tabs__nav a',
+      '.carbon-theme-options button, .carbon-theme-options a',
+      '.wrap .cf-container button, .wrap .cf-container a'
+    ];
+    for (const sel of candidates) {
+      const $els = $(sel).filter(function () {
+        const txt = ($(this).text() || '').trim().toLowerCase();
+        return txt === 'system';
+      });
+      if ($els.length) {
+        $els.first().trigger('click');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function findLicenseInput() {
+    // Prefer compact input name used by Carbon Fields
+    let $input = $('input[name*="_milliondollarscript_license_key"]');
+    if (!$input.length) {
+      // Fallbacks: by label text or generic search
+      const $label = $('label, .cf-field__label').filter(function () {
+        return ($(this).text() || '').trim().toLowerCase() === 'license key';
+      }).first();
+      if ($label.length) {
+        $input = $label.closest('.cf-field').find('input[type="text"]').first();
+      }
+      if (!$input.length) {
+        $input = $('input[type="text"]').filter(function () {
+          return (this.name || '').toLowerCase().includes('license_key');
+        }).first();
+      }
+    }
+    return $input;
+  }
+
+  function highlightLicenseField() {
+    const $input = findLicenseInput();
+    if ($input && $input.length) {
+      const $field = $input.closest('.cf-field').length ? $input.closest('.cf-field') : $input;
+      $field.addClass('mds-highlight-field');
+      $input.focus();
+      // Scroll into view
+      try { $field[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      setTimeout(() => $field.removeClass('mds-highlight-field'), 4000);
+    }
+  }
+
+  function openSystemTabAndHighlight() {
+    ensureAssistStyles();
+    // Carbon Fields initializes asynchronously; retry a few times
+    let attempts = 0;
+    const maxAttempts = 15;
+    const timer = setInterval(() => {
+      attempts++;
+      const clicked = clickSystemTab();
+      if (clicked || attempts >= maxAttempts) {
+        clearInterval(timer);
+        setTimeout(highlightLicenseField, 200);
+      }
+    }, 200);
+  }
+
+  // Trigger when arriving with #system hash
+  if (window.location.hash && window.location.hash.toLowerCase() === '#system') {
+    openSystemTabAndHighlight();
+  }
+
+  // Also support dynamic navigation to #system without full reload
+  $(window).on('hashchange', function () {
+    if (window.location.hash && window.location.hash.toLowerCase() === '#system') {
+      openSystemTabAndHighlight();
+    }
+  });
+});

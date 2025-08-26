@@ -109,12 +109,6 @@ class MillionDollarScript {
 
 			<div class="milliondollarscript-dashboard-container">
 
-				<div class="mds-cta mds-cta-extensions mds-cta-full">
-					<h2>Discover Extensions</h2>
-					<p>Supercharge Million Dollar Script with powerful add-ons for analytics, automation, and more.</p>
-					<p><a class="button button-primary" href="<?php echo esc_url( admin_url('admin.php?page=mds-extensions') ); ?>">Explore Extensions</a></p>
-				</div>
-
 				<div class="milliondollarscript-description milliondollarscript-section">
 					<p><?php Language::out( 'Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience.' ); ?></p>
 					<p><?php Language::out( 'Visit the <a target="_blank" href="https://milliondollarscript.com/million-dollar-script-wordpress-plugin/">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation.' ); ?></p>
@@ -207,6 +201,15 @@ class MillionDollarScript {
 				</div>
 
 				<div class="milliondollarscript-services milliondollarscript-section">
+
+					<div class="mds-promo-box mds-cta-full">
+						<h4><?php Language::out('Discover Extensions'); ?></h4>
+						<p><?php Language::out('Supercharge Million Dollar Script with powerful add-ons for custom fields, translations, analytics, automation, and more.'); ?></p>
+						<p class="promo-cta">
+							<a href="<?php echo esc_url( admin_url('admin.php?page=mds-extensions') ); ?>" class="button button-primary"><?php Language::out('Explore Extensions'); ?></a>
+						</p>
+					</div>
+
 					<div class="mds-promo-box">
 						<h4><?php Language::out('Premium Installation Service'); ?></h4>
 						<p><?php Language::out('The premium installation service handles full plugin setup and configuration for you.'); ?></p>
@@ -217,18 +220,18 @@ class MillionDollarScript {
 					<div class="mds-promo-box">
 						<h4><?php Language::out('Custom Development Services'); ?></h4>
 						<p><?php Language::out('Want custom features or integrations?<br>The development team can help.'); ?></p>
-							<p class="promo-cta">
-								<a href="https://milliondollarscript.com/order-custom-development-services/" target="_blank" class="button button-primary"><?php Language::out('Get Custom Development'); ?></a>
-							</p>
-						</div>
-						<div class="mds-promo-box">
-							<h4><?php Language::out('Want Reliable Hosting?'); ?></h4>
-							<p><?php Language::out('Hostinger offers fast, affordable hosting for your MDS site.'); ?></p>
-							<p class="promo-cta">
-								<a href="https://hostinger.com?REFERRALCODE=MILLIONDOLLARS" target="_blank" class="button button-secondary"><?php Language::out('Check out Hostinger Deals'); ?></a>
-							</p>
-						</div>
+						<p class="promo-cta">
+							<a href="https://milliondollarscript.com/order-custom-development-services/" target="_blank" class="button button-primary"><?php Language::out('Get Custom Development'); ?></a>
+						</p>
 					</div>
+					<div class="mds-promo-box">
+						<h4><?php Language::out('Want Reliable Hosting?'); ?></h4>
+						<p><?php Language::out('Hostinger offers fast, affordable hosting for your MDS site.'); ?></p>
+						<p class="promo-cta">
+							<a href="https://hostinger.com?REFERRALCODE=MILLIONDOLLARS" target="_blank" class="button button-secondary"><?php Language::out('Check out Hostinger Deals'); ?></a>
+						</p>
+					</div>
+				</div>
 
 				<div class="milliondollarscript-version milliondollarscript-section">
 					<p>

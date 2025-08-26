@@ -12,6 +12,7 @@
     padding: 30px;
     border-radius: 12px;
     margin-bottom: 30px;
+    margin-top: 12px;
     position: relative;
     overflow: hidden;
 }
@@ -409,3 +410,41 @@
 .mds-cta-full h2 { margin: 0 0 6px; color: #fff; }
 .mds-cta-full p { margin: 0 0 8px; color: #e5e7eb; }
 .mds-cta-full .button.button-primary { background: #16a34a; border-color: #16a34a; }
+
+/* Ensure notices are readable on gradient headers */
+/* Removed styling of WordPress notices inside header to preserve standard admin notice layout */
+
+/* Top-of-page license notice positioning and visibility - keep in normal flow */
+.mds-license-notice-top {
+  margin: 15px 0 !important;
+}
+
+/* Guard: keep WP admin notices in standard flow and clickable */
+body.wp-admin .wrap > .notice {
+  display: block !important;
+  float: none !important;
+  clear: both !important;
+  position: static !important;
+  z-index: auto !important;
+  margin: 15px 0 !important;
+  color: #1d2327 !important; /* WP admin text color */
+  background-color: #fff !important; /* standard notice bg */
+}
+body.wp-admin .wrap > .notice a {
+  color: #2271b1 !important;
+  text-decoration: underline;
+}
+body.wp-admin .wrap > .notice .mds-go-to-system { pointer-events: auto; }
+
+/* Header should not overlay or capture notices */
+.mds-extensions-page .mds-extensions-header {
+  position: relative;
+  z-index: 0;
+  margin-top: 16px;
+  color: inherit; /* do not force white on descendants */
+}
+/* Prevent header styles from affecting nested notices if they still get wrapped for any reason */
+.mds-extensions-header .notice {
+  color: #1d2327 !important;
+  background-color: #fff !important;
+}

@@ -1104,7 +1104,14 @@ class Options {
 				// License Key
 				Field::make( 'text', MDS_PREFIX . 'license_key', Language::get( 'License Key' ) )
 					->set_default_value( '' )
-					->set_help_text( Language::get( 'Your license key for accessing premium extensions and updates from the extension server.' ) ),
+					->set_help_text(
+						Language::get( 'Your license key for accessing premium extensions and updates from the extension server.' ) . ' ' .
+						Language::get_replace(
+							'To purchase, open <a href="%EXT_URL%">MDS → Extensions</a> and use the Buy button for a specific extension.',
+							'%EXT_URL%',
+							esc_url( admin_url( 'admin.php?page=mds-extensions' ) )
+						)
+					),
 
 				// Delete data on uninstall?
 				Field::make( 'radio', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
@@ -1309,14 +1316,21 @@ class Options {
 	}
 
 	public static function enqueue_scripts(): void {
+		if ( ! is_admin() ) {
+			return;
+		}
+		$page = isset( $_GET['page'] ) ? sanitize_text_field( $_GET['page'] ) : '';
+		if ( $page !== 'milliondollarscript_options' ) {
+			return;
+		}
 
-		wp_register_script(
-			MDS_PREFIX . 'admin-options-js',
-			MDS_BASE_URL . 'src/Assets/js/admin-options.min.js',
-			[ 'jquery' ],
-			filemtime( MDS_BASE_PATH . 'src/Assets/js/admin-options.min.js' ),
-			true
-		);
+			wp_register_script(
+				MDS_PREFIX . 'admin-options-js',
+				MDS_BASE_URL . 'src/Assets/js/admin-options.min.js',
+				[ 'jquery' ],
+				filemtime( MDS_BASE_PATH . 'src/Assets/js/admin-options.min.js' ),
+				true
+			);
 
 		wp_localize_script( MDS_PREFIX . 'admin-options-js', 'MDS', [
 			'nonce'      => wp_create_nonce( 'mds_admin_nonce' ),
@@ -1434,12 +1448,13 @@ class Options {
 	}
 
 	public static function init(): void {
-		add_action( 'carbon_fields_register_fields', [ __CLASS__, 'register' ] );
-		add_action( 'carbon_fields_container_saved', [ __CLASS__, 'handle_theme_options_save' ] );
-
-		// AJAX handlers for theme switching
-		add_action( 'wp_ajax_mds_handle_theme_change', [ __CLASS__, 'ajax_handle_theme_change' ] );
-	}
+			add_action( 'carbon_fields_register_fields', [ __CLASS__, 'register' ] );
+			add_action( 'carbon_fields_container_saved', [ __CLASS__, 'handle_theme_options_save' ] );
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
+	
+			// AJAX handlers for theme switching
+			add_action( 'wp_ajax_mds_handle_theme_change', [ __CLASS__, 'ajax_handle_theme_change' ] );
+		}
 
 	public static function handle_theme_options_save(): void {
 		// Regenerate dynamic styles after theme options are saved

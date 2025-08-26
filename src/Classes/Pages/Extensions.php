@@ -59,6 +59,16 @@ class Extensions {
         add_action('admin_menu', [self::class, 'menu']);
         add_action('admin_init', [self::class, 'register_ajax_handlers']);
         add_action('init', [self::class, 'init_extension_updaters']);
+        add_action('admin_notices', [self::class, 'print_server_fallback_notice']);
+
+        // Default Purchase URL filter for admin UI if not provided elsewhere
+        add_filter('mds_license_purchase_url', function($url) {
+            if (!empty($url)) {
+                return $url;
+            }
+            $base = Options::get_option('extension_server_url', 'http://localhost:15346');
+            return rtrim($base, '/') . '/store';
+        });
     }
 
     /**
@@ -428,39 +438,26 @@ class Extensions {
         
         ?>
         <div class="wrap mds-extensions-page" id="mds-extensions-page">
-            <div class="mds-extensions-header">
-                <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
-                <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
-            </div>
-            
+            <?php
+                $mds_license_key_inline = Options::get_option('license_key', '');
+                if (empty($mds_license_key_inline)) {
+                    self::print_missing_license_notice_inline();
+                }
+            ?>
             <?php if ($extension_server_error) : ?>
                 <div class="notice notice-warning">
                     <p><?php echo esc_html( Language::get('Could not connect to extension server: ') . $extension_server_error ); ?></p>
                     <p><?php echo esc_html( Language::get('You can only manage installed extensions at this time.') ); ?></p>
                 </div>
             <?php endif; ?>
-            
-            <!-- Extension Discovery Banner -->
-            <?php if (!empty($available_extensions)) : ?>
-            <div class="mds-discovery-banner">
-                <div class="mds-banner-content">
-                    <div class="mds-banner-text">
-                        <h2><?php echo esc_html( Language::get('🚀 Unlock Your Potential') ); ?></h2>
-                        <p><?php echo esc_html( Language::get('Join thousands of successful marketers using MDS extensions to boost conversions and maximize revenue.') ); ?></p>
-                    </div>
-                    <div class="mds-banner-stats">
-                        <div class="mds-stat">
-                            <span class="mds-stat-number"><?php echo count($available_extensions); ?>+</span>
-                            <span class="mds-stat-label"><?php echo esc_html( Language::get('Extensions Available') ); ?></span>
-                        </div>
-                        <div class="mds-stat">
-                            <span class="mds-stat-number">50K+</span>
-                            <span class="mds-stat-label"><?php echo esc_html( Language::get('Active Users') ); ?></span>
-                        </div>
-                    </div>
-                </div>
+            <div class="mds-extensions-header">
+                <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
+                <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
             </div>
-            <?php endif; ?>
+            
+            <?php
+            // Metrics banner removed. Future enhancement: fetch dynamic, non-fake metrics (e.g., cached license totals) from server for display.
+            ?>
             
             <!-- Available Extensions Section -->
             <?php if (!empty($available_extensions)) : ?>
@@ -482,7 +479,7 @@ class Extensions {
                             // $extension object now contains 'is_installed', 'is_active', and 'slug' 
                             // from fetch_available_extensions(). The old check below is no longer primary.
                         ?>
-                            <tr data-extension-id="<?php echo esc_attr( $extension['id'] ); ?>" data-version="<?php echo esc_attr( $extension['version'] ); ?>"<?php if (isset($extension['is_installed']) && $extension['is_installed'] && !empty($extension['installed_plugin_file'])) { echo ' data-plugin-file="' . esc_attr($extension['installed_plugin_file']) . '"'; } ?>>
+                            <tr data-extension-id="<?php echo esc_attr( $extension['id'] ); ?>" data-version="<?php echo esc_attr( $extension['version'] ); ?>" data-is-premium="<?php echo ($extension['isPremium'] ?? false) ? 'true' : 'false'; ?>"<?php if (isset($extension['is_installed']) && $extension['is_installed'] && !empty($extension['installed_plugin_file'])) { echo ' data-plugin-file="' . esc_attr($extension['installed_plugin_file']) . '"'; } ?>>
                                 <td class="mds-extension-name">
                                     <strong><?php echo esc_html( $extension['name'] ); ?></strong>
                                     <?php if (!empty($extension['description'])) : ?>
@@ -513,6 +510,45 @@ class Extensions {
                                         </button>
                                     <?php endif; ?>
                                 <?php else : ?>
+                                    <?php
+                                        $buy_buttons_html = '';
+                                        if ( ($extension['isPremium'] ?? false) ) {
+                                            $pl = $extension['purchase_links'] ?? [];
+                                            $btns = [];
+                                            if (!empty($pl['one_time'])) {
+                                                $btns[] = sprintf(
+                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
+                                                    esc_url($pl['one_time']),
+                                                    esc_html( Language::get('Buy One‑Time') )
+                                                );
+                                            }
+                                            if (!empty($pl['monthly'])) {
+                                                $btns[] = sprintf(
+                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
+                                                    esc_url($pl['monthly']),
+                                                    esc_html( Language::get('Buy Monthly') )
+                                                );
+                                            }
+                                            if (!empty($pl['yearly'])) {
+                                                $btns[] = sprintf(
+                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
+                                                    esc_url($pl['yearly']),
+                                                    esc_html( Language::get('Buy Yearly') )
+                                                );
+                                            }
+                                            if (empty($btns) && !empty($pl['default'])) {
+                                                $btns[] = sprintf(
+                                                    '<a class="button button-secondary" target="_blank" rel="noopener noreferrer" href="%s">%s</a>',
+                                                    esc_url($pl['default']),
+                                                    esc_html( Language::get('Purchase') )
+                                                );
+                                            }
+                                            if (!empty($btns)) {
+                                                $buy_buttons_html = '<div class="mds-purchase-buttons" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">' . implode(' ', $btns) . '</div>';
+                                            }
+                                        }
+                                        echo $buy_buttons_html;
+                                    ?>
                                     <button class="button button-primary mds-install-extension"
                                             data-nonce="<?php echo esc_attr( $nonce ); ?>"
                                             data-extension-id="<?php echo esc_attr( $extension['id'] ); /* UUID from server */ ?>"
@@ -615,9 +651,12 @@ class Extensions {
             
             // Create the data to be passed to JavaScript
             $extensions_data = [
-                'ajax_url' => admin_url( 'admin-ajax.php' ),
-                'nonce'    => wp_create_nonce( 'mds_extensions_nonce' ),
-                'text'     => [
+                'ajax_url'    => admin_url( 'admin-ajax.php' ),
+                'nonce'       => wp_create_nonce( 'mds_extensions_nonce' ),
+                'license_key' => Options::get_option('license_key',''),
+                'settings_url'=> admin_url('admin.php?page=milliondollarscript_options#system'),
+                'extension_server_url' => Options::get_option('extension_server_url', 'http://localhost:15346'),
+                'text'        => [
                 ]
             ];
             wp_localize_script( $script_handle, 'MDS_EXTENSIONS_DATA', $extensions_data );
@@ -631,6 +670,101 @@ class Extensions {
                 filemtime( $style_path )
             );
         }
+    }
+    
+    /**
+     * Print a top-level admin notice about missing license key on the Extensions page.
+     * Renders in the standard WP notices area for consistent placement and clickability.
+     */
+    public static function print_missing_license_notice(): void {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        $page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+        if ( $page !== 'mds-extensions' ) {
+            return;
+        }
+        $mds_license_key = Options::get_option('license_key', '');
+        if ( ! empty( $mds_license_key ) ) {
+            return;
+        }
+        $settings_url = admin_url('admin.php?page=milliondollarscript_options#system');
+        $link_label   = Language::get('Go to System tab');
+        if ( empty( $link_label ) ) {
+            $link_label = 'Go to System tab';
+        }
+        $message_text = Language::get('Some extensions require a valid license. Enter your license key at Million Dollar Script → Options → System → License Key.');
+        ?>
+        <div class="notice notice-warning is-dismissible mds-license-notice-top">
+            <p>
+                <?php echo esc_html( $message_text ); ?>
+                <a class="mds-go-to-system" href="<?php echo esc_url( $settings_url ); ?>">
+                    <?php echo esc_html( $link_label ); ?>
+                </a>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
+     * Inline printer for missing license notice to guarantee placement before header.
+     */
+    public static function print_missing_license_notice_inline(): void {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        $mds_license_key = Options::get_option('license_key', '');
+        if ( ! empty( $mds_license_key ) ) {
+            return;
+        }
+        $settings_url = admin_url('admin.php?page=milliondollarscript_options#system');
+        $link_label   = Language::get('Go to System tab');
+        if ( empty( $link_label ) ) {
+            $link_label = 'Go to System tab';
+        }
+        $message_text = Language::get('Some extensions require a valid license. Enter your license key at Million Dollar Script → Options → System → License Key.');
+        ?>
+        <div class="notice notice-warning is-dismissible mds-license-notice-top">
+            <p>
+                <?php echo esc_html( $message_text ); ?>
+                <a class="mds-go-to-system" href="<?php echo esc_url( $settings_url ); ?>">
+                    <?php echo esc_html( $link_label ); ?>
+                </a>
+            </p>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Print a fallback notice when the plugin had to use localhost for the Extension Server.
+     * This runs in the standard WP admin_notices area and is scoped to the Extensions page.
+     */
+    public static function print_server_fallback_notice(): void {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        $page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+        if ( $page !== 'mds-extensions' ) {
+            return;
+        }
+        $resolved_url = get_transient('mds_ext_server_fallback_notice');
+        if ( ! $resolved_url ) {
+            return;
+        }
+        delete_transient('mds_ext_server_fallback_notice');
+        $settings_url = admin_url('admin.php?page=milliondollarscript_options#system');
+        ?>
+        <div class="notice notice-warning mds-ext-server-fallback">
+            <p><?php echo esc_html( Language::get('Connected to the Extension Server using a fallback URL.') ); ?></p>
+            <p>
+                <?php echo esc_html( Language::get('Update your Extension Server URL in Million Dollar Script → Options → System to:') ); ?>
+                <code><?php echo esc_html( is_string($resolved_url) && !empty($resolved_url) ? (string)$resolved_url : 'http://localhost:15346' ); ?></code>.
+                <a class="mds-go-to-system" href="<?php echo esc_url( $settings_url ); ?>">
+                    <?php echo esc_html( Language::get('Open System tab') ); ?>
+                </a>
+            </p>
+        </div>
+        <?php
     }
     
     /**
@@ -680,137 +814,194 @@ class Extensions {
      * @throws \Exception If the API request fails
      */
     protected static function fetch_available_extensions(): array {
-        $extension_server_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+        $user_configured_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
         $license_key = Options::get_option('license_key', '');
-        
-        $api_url = rtrim($extension_server_url, '/') . '/api/extensions';
-        
+
         $args = [
             'timeout' => 30,
             'headers' => [
                 'Content-Type' => 'application/json',
-                'User-Agent' => 'MDS-WordPress-Plugin/' . MDS_VERSION,
+                'User-Agent'   => 'MDS-WordPress-Plugin/' . MDS_VERSION,
             ],
             'sslverify' => !Utility::is_development_environment(),
         ];
-        
+
         if (!empty($license_key)) {
             $args['headers']['x-license-key'] = $license_key;
         }
-        
-        $response = wp_remote_get($api_url, $args);
-        
-        if (is_wp_error($response)) {
-            throw new \Exception('Failed to connect to extension server: ' . $response->get_error_message());
+
+        $candidates = [
+            rtrim((string)$user_configured_url, '/'),
+            'http://extension-server:3000',
+            'http://extension-server-dev:3000',
+            'http://host.docker.internal:15346',
+            'http://localhost:15346',
+        ];
+
+        $response = null;
+        $working_base = null;
+        $errors = [];
+
+        foreach ($candidates as $base) {
+            if (empty($base)) {
+                continue;
+            }
+            $api_url = rtrim($base, '/') . '/api/extensions';
+            $res = wp_remote_get($api_url, $args);
+
+            if (is_wp_error($res)) {
+                $errors[] = $base . ' => ' . $res->get_error_message();
+                continue;
+            }
+
+            $code = wp_remote_retrieve_response_code($res);
+            if ($code === 200) {
+                $response = $res;
+                $working_base = $base;
+                break;
+            } else {
+                $errors[] = $base . ' => HTTP ' . $code;
+            }
         }
-        
+
+        if (!$response) {
+            throw new \Exception('Failed to connect to extension server. Tried: ' . implode('; ', $errors));
+        }
+
+        if (!empty($working_base) && rtrim((string)$working_base, '/') !== rtrim((string)$user_configured_url, '/')) {
+            set_transient('mds_ext_server_fallback_notice', $working_base, MINUTE_IN_SECONDS * 5);
+        }
+
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = wp_remote_retrieve_body($response);
-        
+
         if ($response_code !== 200) {
             throw new \Exception('Extension server returned error: ' . $response_code);
         }
-        
+
         $data = json_decode($response_body, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception('Invalid JSON response from extension server');
         }
-        
-        // Handle different response formats
+
         if (isset($data['success']) && !$data['success']) {
             throw new \Exception($data['error'] ?? 'Unknown error from extension server');
         }
-        
-        // Extract extensions from response (handle different response formats)
+
         $extensions = $data;
         if (isset($data['data'])) {
             $extensions = $data['data'];
         } elseif (isset($data['extensions'])) {
             $extensions = $data['extensions'];
         }
-        
-        // Transform extension data to match expected format
+
         $transformed_extensions = [];
         foreach ($extensions as $extension) {
+            // Normalize purchase links (server may return relative /store/checkout or absolute URLs)
+            $purchase_links = [
+                'one_time' => null,
+                'monthly'  => null,
+                'yearly'   => null,
+                'default'  => null,
+            ];
+            $server_links = [];
+            if (isset($extension['purchase']) && is_array($extension['purchase']) && isset($extension['purchase']['links']) && is_array($extension['purchase']['links'])) {
+                $server_links = $extension['purchase']['links'];
+            }
+
+            $abs = function($url) use ($working_base) {
+                if (!is_string($url) || $url === '') {
+                    return null;
+                }
+                if (preg_match('#^https?://#i', $url)) {
+                    return $url;
+                }
+                $base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : 'http://localhost:15346';
+                return $base . '/' . ltrim($url, '/');
+            };
+
+            if (!empty($server_links)) {
+                $purchase_links['one_time'] = isset($server_links['oneTime']) ? $abs($server_links['oneTime']) : null;
+                $purchase_links['monthly']  = isset($server_links['monthly']) ? $abs($server_links['monthly']) : null;
+                $purchase_links['yearly']   = isset($server_links['yearly']) ? $abs($server_links['yearly']) : null;
+                $purchase_links['default']  = isset($server_links['default']) ? $abs($server_links['default']) : null;
+            }
+
             $transformed_extensions[] = [
-                'id' => $extension['id'] ?? '',
-                'name' => $extension['name'] ?? '',
-                'version' => $extension['version'] ?? '',
-                'description' => $extension['description'] ?? '',
-                'isPremium' => $extension['is_premium'] ?? false,
-                'file_name' => $extension['file_name'] ?? '',
-                'file_path' => $extension['file_path'] ?? '',
-                'created_at' => $extension['created_at'] ?? '',
-                'updated_at' => $extension['updated_at'] ?? '',
-                'changelog' => $extension['changelog'] ?? '',
-                'requires' => $extension['requires'] ?? '',
+                'id'           => $extension['id'] ?? '',
+                'name'         => $extension['name'] ?? '',
+                'version'      => $extension['version'] ?? '',
+                'description'  => $extension['description'] ?? '',
+                'isPremium'    => $extension['is_premium'] ?? false,
+                'file_name'    => $extension['file_name'] ?? '',
+                'file_path'    => $extension['file_path'] ?? '',
+                'created_at'   => $extension['created_at'] ?? '',
+                'updated_at'   => $extension['updated_at'] ?? '',
+                'changelog'    => $extension['changelog'] ?? '',
+                'requires'     => $extension['requires'] ?? '',
                 'requires_php' => $extension['requires_php'] ?? '',
-                'tested' => $extension['tested'] ?? '',
+                'tested'       => $extension['tested'] ?? '',
+                // New: pass through purchase availability and normalized links for WP UI
+                'purchase'     => [
+                    'anyAvailable' => (bool) ( $extension['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) ),
+                ],
+                'purchase_links' => $purchase_links,
             ];
         }
-        
-        // Get all installed plugins to check status
-    if ( ! function_exists( 'get_plugins' ) ) {
-        require_once ABSPATH . 'wp-admin/includes/plugin.php';
-    }
-    $installed_plugins = get_plugins();
-    // Get active plugins. Ensure it's an array.
-    $active_plugins_option = get_option( 'active_plugins', [] );
-    $active_plugins = is_array($active_plugins_option) ? $active_plugins_option : [];
 
-    // Augment available extensions with installed/active status
-    foreach ($transformed_extensions as $key => $extension) {
-        $is_installed = false;
-        $is_active = false;
-        $installed_plugin_file = null;
+        if ( ! function_exists( 'get_plugins' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        $installed_plugins = get_plugins();
+        $active_plugins_option = get_option( 'active_plugins', [] );
+        $active_plugins = is_array($active_plugins_option) ? $active_plugins_option : [];
 
-        // The extension slug is consistently derived from the extension's 'name'.
-    // This ensures uniformity in how slugs are determined for checking status and during installation.
-    $plugin_slug_from_server = '';
-    if (!empty($extension['name'])) {
-        $plugin_slug_from_server = sanitize_title($extension['name']);
-    } else {
-        // As a last resort, generate a unique slug if the name is empty, though this is unlikely.
-        $plugin_slug_from_server = 'mds_ext_' . uniqid();
-    }
+        foreach ($transformed_extensions as $key => $extension) {
+            $is_installed = false;
+            $is_active = false;
+            $installed_plugin_file = null;
 
-    // Store this definitive slug back into the extension data for consistent use
-    $transformed_extensions[$key]['slug'] = $plugin_slug_from_server;
+            $plugin_slug_from_server = '';
+            if (!empty($extension['name'])) {
+                $plugin_slug_from_server = sanitize_title($extension['name']);
+            } else {
+                $plugin_slug_from_server = 'mds_ext_' . uniqid();
+            }
 
-    if (!empty($plugin_slug_from_server)) {
-            foreach ($installed_plugins as $plugin_file => $plugin_data) {
-                $current_plugin_dir = dirname($plugin_file);
-                $current_plugin_basename = basename($plugin_file, '.php');
-                error_log("[MDS DEBUG] Checking: Server Slug ('{$plugin_slug_from_server}') vs Installed Plugin File ('{$plugin_file}'), Dir ('{$current_plugin_dir}'), Basename ('{$current_plugin_basename}')");
+            $transformed_extensions[$key]['slug'] = $plugin_slug_from_server;
 
-                // Check if the directory name matches the slug (for plugins in a folder)
-                if ($current_plugin_dir === $plugin_slug_from_server && $current_plugin_dir !== '.') {
-                    error_log("[MDS DEBUG] Match on directory: {$plugin_slug_from_server}");
-                    $is_installed = true;
-                    $installed_plugin_file = $plugin_file;
-                    break; // Found the plugin
-                }
-                // Check for single-file plugins where filename (without .php) is the slug
-                if ($current_plugin_basename === $plugin_slug_from_server && $current_plugin_dir === '.') {
-                    error_log("[MDS DEBUG] Match on basename (single file plugin): {$plugin_slug_from_server}");
-                    $is_installed = true;
-                    $installed_plugin_file = $plugin_file;
-                    break; // Found the plugin
+            if (!empty($plugin_slug_from_server)) {
+                foreach ($installed_plugins as $plugin_file => $plugin_data) {
+                    $current_plugin_dir = dirname($plugin_file);
+                    $current_plugin_basename = basename($plugin_file, '.php');
+                    error_log("[MDS DEBUG] Checking: Server Slug ('{$plugin_slug_from_server}') vs Installed Plugin File ('{$plugin_file}'), Dir ('{$current_plugin_dir}'), Basename ('{$current_plugin_basename}')");
+
+                    if ($current_plugin_dir === $plugin_slug_from_server && $current_plugin_dir !== '.') {
+                        error_log("[MDS DEBUG] Match on directory: {$plugin_slug_from_server}");
+                        $is_installed = true;
+                        $installed_plugin_file = $plugin_file;
+                        break;
+                    }
+                    if ($current_plugin_basename === $plugin_slug_from_server && $current_plugin_dir === '.') {
+                        error_log("[MDS DEBUG] Match on basename (single file plugin): {$plugin_slug_from_server}");
+                        $is_installed = true;
+                        $installed_plugin_file = $plugin_file;
+                        break;
+                    }
                 }
             }
+
+            if ($is_installed && $installed_plugin_file) {
+                $is_active = in_array($installed_plugin_file, $active_plugins, true);
+            }
+
+            $transformed_extensions[$key]['is_installed'] = $is_installed;
+            $transformed_extensions[$key]['is_active'] = $is_active;
         }
 
-        if ($is_installed && $installed_plugin_file) {
-            $is_active = in_array($installed_plugin_file, $active_plugins, true);
-        }
-
-        $transformed_extensions[$key]['is_installed'] = $is_installed;
-        $transformed_extensions[$key]['is_active'] = $is_active;
-    }
-
-    error_log('MDS_DEBUG: fetch_available_extensions results: ' . print_r($transformed_extensions, true));
-    return $transformed_extensions;
+        error_log('MDS_DEBUG: fetch_available_extensions results: ' . print_r($transformed_extensions, true));
+        return $transformed_extensions;
     }
 
     // --- AJAX Handlers ---
