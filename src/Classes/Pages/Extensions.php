@@ -439,6 +439,12 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         // Add nonce for security
         $nonce = wp_create_nonce( 'mds_extensions_nonce' );
         
+        // Build catalog map keyed by normalized Plugin Name for quick lookups
+        $catalogByName = [];
+        if (!empty($available_extensions) && is_array($available_extensions)) {
+            $catalogByName = self::build_catalog_by_name($available_extensions);
+        }
+        
         ?>
         <div class="wrap mds-extensions-page" id="mds-extensions-page">
             <?php
@@ -612,7 +618,21 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                                         <?php endif; ?>
                                     </td>
                                     <td class="mds-license-cell">
-                                        <?php self::render_license_form( $extension ); ?>
+                                        <?php
+                                        $hide_license_ui = false;
+                                        if (!empty($catalogByName)) {
+                                            $installed_name_key = self::normalize_extension_name($extension['name'] ?? '');
+                                            if ($installed_name_key !== '' && isset($catalogByName[$installed_name_key])) {
+                                                $matched = $catalogByName[$installed_name_key];
+                                                if (is_array($matched) && array_key_exists('isPremium', $matched) && $matched['isPremium'] === false) {
+                                                    $hide_license_ui = true;
+                                                }
+                                            }
+                                        }
+                                        if (!$hide_license_ui) {
+                                            self::render_license_form($extension);
+                                        }
+                                        ?>
                                     </td>
                                     <td class="mds-update-cell">
                                         <button class="button mds-check-updates"
@@ -936,6 +956,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             $transformed_extensions[] = [
                 'id'           => $extension['id'] ?? '',
                 'name'         => $extension['name'] ?? '',
+                'pluginName'   => $extension['plugin_name'] ?? ($extension['pluginName'] ?? ($extension['name'] ?? '')),
                 'version'      => $extension['version'] ?? '',
                 'description'  => $extension['description'] ?? '',
                 'isPremium'    => $extension['is_premium'] ?? false,
@@ -981,16 +1002,16 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                 foreach ($installed_plugins as $plugin_file => $plugin_data) {
                     $current_plugin_dir = dirname($plugin_file);
                     $current_plugin_basename = basename($plugin_file, '.php');
-                    error_log("[MDS DEBUG] Checking: Server Slug ('{$plugin_slug_from_server}') vs Installed Plugin File ('{$plugin_file}'), Dir ('{$current_plugin_dir}'), Basename ('{$current_plugin_basename}')");
+                    // error_log("[MDS DEBUG] Checking: Server Slug ('{$plugin_slug_from_server}') vs Installed Plugin File ('{$plugin_file}'), Dir ('{$current_plugin_dir}'), Basename ('{$current_plugin_basename}')");
 
                     if ($current_plugin_dir === $plugin_slug_from_server && $current_plugin_dir !== '.') {
-                        error_log("[MDS DEBUG] Match on directory: {$plugin_slug_from_server}");
+                        // error_log("[MDS DEBUG] Match on directory: {$plugin_slug_from_server}");
                         $is_installed = true;
                         $installed_plugin_file = $plugin_file;
                         break;
                     }
                     if ($current_plugin_basename === $plugin_slug_from_server && $current_plugin_dir === '.') {
-                        error_log("[MDS DEBUG] Match on basename (single file plugin): {$plugin_slug_from_server}");
+                        // error_log("[MDS DEBUG] Match on basename (single file plugin): {$plugin_slug_from_server}");
                         $is_installed = true;
                         $installed_plugin_file = $plugin_file;
                         break;
@@ -1006,7 +1027,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             $transformed_extensions[$key]['is_active'] = $is_active;
         }
 
-        error_log('MDS_DEBUG: fetch_available_extensions results: ' . print_r($transformed_extensions, true));
+        // error_log('MDS_DEBUG: fetch_available_extensions results: ' . print_r($transformed_extensions, true));
         return $transformed_extensions;
     }
 
@@ -1051,7 +1072,41 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         }
         return $url;
     }
-
+    
+    /**
+     * Normalize plugin/extension names for catalog matching.
+     * Trims and lowercases the input, stripping tags for safety.
+     */
+    private static function normalize_extension_name(?string $name): string {
+        if (!is_string($name)) {
+            return '';
+        }
+        $clean = trim(wp_strip_all_tags($name));
+        if ($clean === '') {
+            return '';
+        }
+        return strtolower($clean);
+    }
+    
+    /**
+     * Build a map of catalog entries keyed by normalized pluginName (fallback to name).
+     * Only used for UI decisions; does not affect server or database logic.
+     */
+    private static function build_catalog_by_name(array $available_extensions): array {
+        $map = [];
+        foreach ($available_extensions as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $candidate = $item['pluginName'] ?? ($item['name'] ?? '');
+            $key = self::normalize_extension_name(is_string($candidate) ? $candidate : '');
+            if ($key !== '') {
+                $map[$key] = $item;
+            }
+        }
+        return $map;
+    }
+    
     // --- AJAX Handlers ---
 
     /**
