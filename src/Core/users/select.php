@@ -181,7 +181,7 @@ $order_blocks = array_map( function ( $block_id ) use ( $BID ) {
 
 Language::out( '<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>' );
 
-$res = $wpdb->get_results( "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name`" );
+$res = $wpdb->get_results( "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name`", ARRAY_A );
 
 if ( count( $res ) > 1 ) {
 	?>
