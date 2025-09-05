@@ -27,6 +27,57 @@
 
 let debug = false;
 
+// Centered modal utility (blocking until OK)
+(function initMdsModal(){
+    if (document.getElementById('mds-modal-style')) return;
+    const css = `
+    #mds-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100000; display: none; align-items: center; justify-content: center; padding: 16px; }
+    #mds-modal { max-width: 520px; width: 100%; border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.35); background: var(--mds-bg-secondary, #333); color: var(--mds-text-primary, #fff); border: 1px solid var(--mds-border-color, rgba(255,255,255,0.1)); }
+    #mds-modal .mds-modal-body { padding: 18px 20px; font-size: 15px; line-height: 1.45; }
+    #mds-modal .mds-modal-actions { padding: 12px 16px 16px; display: flex; justify-content: flex-end; gap: 10px; }
+    #mds-modal .mds-btn { cursor: pointer; padding: 8px 14px; border-radius: 6px; border: none; font-size: 14px; }
+    #mds-modal .mds-btn-ok { background: var(--mds-btn-primary-bg, #0073aa); color: var(--mds-btn-primary-text, #ffffff); }
+    #mds-modal .mds-btn-ok:focus { outline: 2px solid var(--mds-border-color, rgba(255,255,255,0.4)); outline-offset: 2px; }
+    `;
+    const style = document.createElement('style');
+    style.id = 'mds-modal-style';
+    style.textContent = css;
+    document.head.appendChild(style);
+    const overlay = document.createElement('div');
+    overlay.id = 'mds-modal-overlay';
+    overlay.innerHTML = `
+      <div id="mds-modal" role="dialog" aria-modal="true" aria-labelledby="mds-modal-title">
+        <div class="mds-modal-body" id="mds-modal-message"></div>
+        <div class="mds-modal-actions">
+          <button type="button" class="mds-btn mds-btn-ok" id="mds-modal-ok">OK</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target.id === 'mds-modal-overlay') {
+        // Click outside does nothing, to emulate blocking alert
+      }
+    });
+    document.getElementById('mds-modal-ok').addEventListener('click', () => {
+      overlay.style.display = 'none';
+      const okBtn = document.getElementById('mds-modal-ok');
+      if (okBtn) okBtn.blur();
+    });
+})();
+
+function mds_show_modal(msg) {
+    const overlay = document.getElementById('mds-modal-overlay');
+    const message = document.getElementById('mds-modal-message');
+    if (!overlay || !message) return alert(String(msg));
+    message.textContent = String(msg);
+    overlay.style.display = 'flex';
+    // focus OK for keyboard users
+    setTimeout(() => {
+      const okBtn = document.getElementById('mds-modal-ok');
+      if (okBtn) okBtn.focus();
+    }, 0);
+}
+
 // Initialize
 let first_load = true;
 let ajax_queue = [];
@@ -42,7 +93,6 @@ let grid_height = MDS_OBJECT.grid_height;
 
 let BLK_WIDTH = MDS_OBJECT.BLK_WIDTH;
 let BLK_HEIGHT = MDS_OBJECT.BLK_HEIGHT;
-
 let G_MAX_BLOCKS = MDS_OBJECT.G_MAX_BLOCKS;
 let G_MIN_BLOCKS = MDS_OBJECT.G_MIN_BLOCKS;
 
@@ -84,11 +134,7 @@ function remove_ajax_loader() {
 }
 
 const messageout = function (message) {
-	if (debug) {
-		console.log(message);
-	} else {
-		alert(message);
-	}
+	mds_show_modal(String(message));
 };
 
 jQuery.fn.rescaleStyles = function () {
@@ -151,6 +197,7 @@ function reserve_block(block_id) {
 		}
 
 		update_order();
+	} else {
 	}
 }
 
@@ -159,6 +206,7 @@ function unreserve_block(block_id) {
 	if (index > -1) {
 		selectedBlocks.splice(index, 1);
 		update_order();
+	} else {
 	}
 }
 
@@ -218,6 +266,7 @@ function remove_block(block_id) {
 	let myblock = document.getElementById("block" + block_id.toString());
 	if (myblock !== null) {
 		myblock.remove();
+	} else {
 	}
 
 	unreserve_block(block_id);
@@ -232,8 +281,14 @@ function invert_block(clicked_block) {
 	}
 }
 
-function is_block_selected(clicked_block) {
-	return selectedBlocks.indexOf(clicked_block) !== -1;
+function is_block_selected(clicked_blocks) {
+	// If clicked_blocks is not an array, make it one for consistent checking
+	if (!Array.isArray(clicked_blocks)) {
+		clicked_blocks = [{ id: clicked_blocks }];
+	}
+
+	// Check if any of the clicked blocks are already in the selectedBlocks array
+	return clicked_blocks.some((block) => selectedBlocks.includes(block.id));
 }
 
 function get_clicked_blocks(OffsetX, OffsetY, block) {
@@ -250,11 +305,13 @@ function get_clicked_blocks(OffsetX, OffsetY, block) {
 				y = OffsetY + j * BLK_HEIGHT;
 				// Ensure the block is within the grid boundaries
 				if (x >= 0 && x < GRD_WIDTH && y >= 0 && y < GRD_HEIGHT) {
-					clicked_blocks.push({
+					const newBlock = {
 						id: get_clicked_block(x, y),
 						x: x,
 						y: y,
-					});
+					};
+					clicked_blocks.push(newBlock);
+				} else {
 				}
 			}
 		}
@@ -272,18 +329,24 @@ function get_clicked_blocks(OffsetX, OffsetY, block) {
 	return clicked_blocks;
 }
 
-function do_blocks(block, OffsetX, OffsetY, op) {
-	let clicked_blocks = get_clicked_blocks(OffsetX, OffsetY, block);
-	for (const clicked_block of clicked_blocks) {
+function do_blocks(blocks, op) {
+	// Ensure blocks is an array
+	if (!Array.isArray(blocks)) {
+		blocks = [blocks];
+	}
+
+	for (const block of blocks) {
+		// block can be just an ID (number) or an object with id, x, y
+		const block_id = typeof block === 'object' ? block.id : block;
+		const block_x = typeof block === 'object' ? block.x : null;
+		const block_y = typeof block === 'object' ? block.y : null;
+
 		if (op === "add") {
-			// add block
-			add_block(clicked_block.id, clicked_block.x, clicked_block.y);
+			add_block(block_id, block_x, block_y);
 		} else if (op === "remove") {
-			// remove block
-			remove_block(clicked_block.id);
+			remove_block(block_id);
 		} else if (op === "invert") {
-			// invert block
-			invert_block(clicked_block);
+			invert_block({ id: block_id, x: block_x, y: block_y });
 		}
 	}
 
@@ -313,7 +376,13 @@ function select_pixels(offset) {
 	// 	return false;
 	// }
 	//
-	// pointer.style.visibility = 'hidden';
+	if (!pointer) {
+		pointer = document.getElementById("block_pointer");
+		if (!pointer) {
+			return false; // Exit if pointer cannot be found
+		}
+	}
+	// pointer.style.visibility = "hidden";
 
 	change_block_state(offset.x, offset.y);
 
@@ -324,13 +393,13 @@ function load_order() {
 	if (MDS_OBJECT.blocks.length === 0) {
 		return;
 	}
-	for (let i = 0; i < MDS_OBJECT.blocks.length; i++) {
-		add_block(
-			parseInt(MDS_OBJECT.blocks[i].block_id, 10),
-			parseInt(MDS_OBJECT.blocks[i].x, 10) * scaled_width,
-			parseInt(MDS_OBJECT.blocks[i].y, 10) * scaled_height,
-		);
-	}
+
+	// Use the more detailed MDS_OBJECT.blocks array to draw the initial state
+	MDS_OBJECT.blocks.forEach(function (block) {
+		// The add_block function correctly calculates position, so we pass the block ID.
+		// It also handles adding the block to the internal selectedBlocks array.
+		add_block(parseInt(block.block_id, 10));
+	});
 
 	if (pixel_form !== null) {
 		pixel_form.addEventListener("submit", formSubmit);
@@ -451,13 +520,28 @@ function get_pointer_size() {
 
 function update_pointer_size() {
 	let size = get_pointer_size();
-	pointer.style.width = size.width + "px";
-	pointer.style.height = size.height + "px";
+
+	// Defensive check to ensure we have valid dimensions
+	if (size.width > 0 && size.height > 0) {
+		pointer.style.width = size.width + "px";
+		pointer.style.height = size.height + "px";
+	}
 }
 
 function show_pointer(offset) {
-	pointer.style.visibility = "visible";
-	pointer.style.display = "block";
+	// Ensure pointer is valid before using it
+	if (!pointer) {
+		pointer = document.getElementById("block_pointer");
+		if (!pointer) {
+			return false; // Exit if pointer cannot be found
+		}
+	}
+	if (pointer.style.visibility !== "visible") {
+		pointer.style.visibility = "visible";
+	}
+	if (pointer.style.display !== "block") {
+		pointer.style.display = "block";
+	}
 
 	pointer.style.top = offset.y + "px";
 	pointer.style.left = offset.x + "px";
@@ -467,6 +551,32 @@ function show_pointer(offset) {
 
 	update_pointer_size();
 
+	return true;
+}
+
+function jsCheckRectangle(blockIds) {
+	if (!Array.isArray(blockIds) || blockIds.length <= 1) return true;
+	const cols = parseInt(MDS_OBJECT.grid_width, 10) || 1;
+	const set = new Set(blockIds.map(n => parseInt(n, 10)));
+	const xs = new Set();
+	const ys = new Set();
+	for (const id of set) {
+		const x = id % cols;
+		const y = Math.floor(id / cols);
+		xs.add(x); ys.add(y);
+	}
+	const xArr = Array.from(xs).sort((a,b)=>a-b);
+	const yArr = Array.from(ys).sort((a,b)=>a-b);
+	for (let i=1;i<xArr.length;i++){ if (xArr[i] !== xArr[i-1] + 1) return false; }
+	for (let j=1;j<yArr.length;j++){ if (yArr[j] !== yArr[j-1] + 1) return false; }
+	const area = xArr.length * yArr.length;
+	if (area !== set.size) return false;
+	for (const y of yArr) {
+		for (const x of xArr) {
+			const id = y * cols + x;
+			if (!set.has(id)) return false;
+		}
+	}
 	return true;
 }
 
@@ -486,7 +596,25 @@ function formSubmit(event) {
 		let submit1_lang = submit_button1.value;
 		submit_button1.value = MDS_OBJECT.WAIT;
 
-		// Wait for ajax queue to finish
+// Client-side submit-time validation (min blocks and rectangle if enabled)
+				const minBlocks = parseInt(MDS_OBJECT.G_MIN_BLOCKS, 10) || 0;
+				const selMode = (MDS_OBJECT.selection_adjacency_mode || 'ADJACENT');
+				if (minBlocks > 0 && selectedBlocks.length < minBlocks) {
+					messageout('You must select at least ' + minBlocks + ' blocks.');
+					submitting = false;
+					submit_button1.disabled = false;
+					submit_button1.value = submit1_lang;
+					return false;
+				}
+				if (selMode === 'RECTANGLE' && !jsCheckRectangle(selectedBlocks)) {
+					messageout(MDS_OBJECT.rectangle_required || 'Selection must form a rectangle or square.');
+					submitting = false;
+					submit_button1.disabled = false;
+					submit_button1.value = submit1_lang;
+					return false;
+				}
+
+				// Wait for ajax queue to finish
 		let waitInterval = setInterval(function () {
 			if (ajax_queue.length === 0) {
 				clearInterval(waitInterval);
@@ -507,8 +635,10 @@ function formSubmit(event) {
 				// submit_button1.disabled = false;
 				// submit_button1.value = submit1_lang;
 				// submitting = false;
+			} else {
 			}
 		}, 1000);
+	} else {
 	}
 }
 
@@ -531,7 +661,10 @@ function reset_pixels() {
 				$myblocks.children().each(function () {
 					remove_block(jQuery(this).data("blockid"));
 				});
+			} else {
 			}
+		},
+		error: function (xhr, status, error) {
 		},
 		complete: function () {
 			remove_ajax_loader();
@@ -602,118 +735,6 @@ function center_block(coords) {
 	return coords;
 }
 
-function handle_click_events() {
-	let clickValid = true;
-	let startX, startY;
-
-	// pixels of movement to tolerate set to half of the smallest of the block dimensions
-	const threshold = Math.min(BLK_WIDTH, BLK_HEIGHT) / 2;
-
-	jQuery(pixel_container).on("mousedown", function (event) {
-		clickValid = true;
-		startX = event.originalEvent.pageX;
-		startY = event.originalEvent.pageY;
-	});
-
-	jQuery(pixel_container).on("mousemove", function (event) {
-		if (clickValid) {
-			let currentX = event.originalEvent.pageX;
-			let currentY = event.originalEvent.pageY;
-			// If the mouse has moved more than the threshold, invalidate the click
-			if (
-				Math.abs(startX - currentX) > threshold ||
-				Math.abs(startY - currentY) > threshold
-			) {
-				clickValid = false;
-			}
-		}
-
-		let coords = center_block({
-			x: event.originalEvent.pageX,
-			y: event.originalEvent.pageY,
-		});
-		let offset = getOffset(coords.x, coords.y);
-		if (offset == null) {
-			return false;
-		}
-		show_pointer(offset);
-	});
-
-	jQuery(pixel_container).on("click", function (event) {
-		event.preventDefault();
-		if (clickValid) {
-			let coords = center_block({
-				x: event.originalEvent.pageX,
-				y: event.originalEvent.pageY,
-			});
-			let offset = getOffset(coords.x, coords.y);
-			if (offset == null) {
-				return false;
-			}
-			show_pointer(offset);
-			select_pixels(offset);
-		}
-		clickValid = true;
-		return false;
-	});
-}
-
-function handle_touch_events() {
-	// Current zoom level and last-known pan position
-	if (window.mds_zoom === undefined) {
-		window.mds_zoom = 1;
-		window.mds_pan_x = 0;
-		window.mds_pan_y = 0;
-	}
-
-	// Add Pinch gesture for zooming
-	let options = {
-		supportedGestures: [Tap, Pinch, Pan],
-	};
-
-	let pointerListener = new PointerListener(pixel_container, options);
-
-	// Handle tap gestures for selecting pixels
-	pixel_container.addEventListener("tap", function (event) {
-		let offset = getOffset(
-			event.detail.live.center.x,
-			event.detail.live.center.y,
-			true,
-		);
-		if (offset == null) {
-			return true;
-		}
-
-		show_pointer(offset);
-		select_pixels(offset);
-	});
-
-	// Handle pinch gestures for zooming
-	pixel_container.addEventListener("pinch", function (event) {
-		// Prevent default browser actions like page zooming
-		event.preventDefault && event.preventDefault();
-
-		// Get the scale value from the pinch event
-		const newScale = event.detail.live.scale;
-		if (!newScale || newScale <= 0) return;
-
-		// Apply scaling to the grid container
-		applyZoom(newScale, event.detail.live.center.x, event.detail.live.center.y);
-	});
-
-	// Handle pan gestures for moving around when zoomed in
-	pixel_container.addEventListener("pan", function (event) {
-		// Only allow panning when zoomed in
-		if (window.mds_zoom <= 1) return;
-
-		// Update pan position
-		window.mds_pan_x += event.detail.live.deltaX;
-		window.mds_pan_y += event.detail.live.deltaY;
-
-		// Apply the transformation
-		applyTransform();
-	});
-}
 
 /**
  * @return {boolean}
@@ -748,70 +769,90 @@ function get_block_position(block_id) {
 }
 
 function get_clicked_block(OffsetX, OffsetY) {
-	OffsetX /= scaled_width;
-	OffsetY /= scaled_height;
+    // Ensure we are working with original, unscaled values for calculation
+    const unscaledX = OffsetX / scaled_width;
+    const unscaledY = OffsetY / scaled_height;
 
-	let X = OffsetX / orig.BLK_WIDTH;
-	let Y = (OffsetY / orig.BLK_HEIGHT) * (orig.GRD_WIDTH / orig.BLK_WIDTH);
+    // Calculate the block column (x) and row (y)
+    const blockX = Math.floor(unscaledX / orig.BLK_WIDTH);
+    const blockY = Math.floor(unscaledY / orig.BLK_HEIGHT);
 
-	return Math.round(X + Y);
+    // Calculate the block ID
+    const gridWidthInBlocks = Math.floor(orig.GRD_WIDTH / orig.BLK_WIDTH);
+    const blockId = blockY * gridWidthInBlocks + blockX;
+
+    return Math.round(blockId);
 }
 
 function change_block_state(OffsetX, OffsetY) {
-	let clicked_block = get_clicked_block(OffsetX, OffsetY);
-	let erasing = jQuery("#erase").is(":checked");
-	let selection_size = parseInt(pixel_form.elements.selection_size.value, 10);
+    const single_clicked_block = get_clicked_block(OffsetX, OffsetY);
+    const selection_size = parseInt(jQuery("#mds-selection-size-value").val(), 10) || 1;
+    const all_blocks_in_selection = get_clicked_blocks(OffsetX, OffsetY, single_clicked_block);
+    const is_erase_mode = jQuery('#erase').is(':checked');
 
-	let data = {
-		erasing: erasing,
-		clicked_block: clicked_block,
-		OffsetX: OffsetX,
-		OffsetY: OffsetY,
-		// Use URL object to correctly append params
-		url: (() => {
-			const url = new URL(MDS_OBJECT.UPDATE_ORDER, window.location.origin);
-			url.searchParams.set("selection_size", selection_size);
-			url.searchParams.set("user_id", MDS_OBJECT.user_id);
-			url.searchParams.set("block_id", clicked_block.toString());
-			url.searchParams.set("BID", MDS_OBJECT.BID);
-			url.searchParams.set("t", MDS_OBJECT.time);
-			url.searchParams.set("erase", erasing);
-			// Also add the nonce here for the AJAX request
-			url.searchParams.set("_wpnonce", MDS_OBJECT.NONCE);
-			return url.toString();
-		})(),
-	};
+    let blocks_to_add = [];
+    let blocks_to_remove = [];
+    let action = 'add'; // Default action
 
-	if (is_block_selected(clicked_block)) {
-		if (erasing) {
-			data.action = "remove";
-			do_blocks(clicked_block, OffsetX, OffsetY, "remove");
-		} else {
-			if (MDS_OBJECT.INVERT_PIXELS === "YES") {
-				data.action = "invert";
-				do_blocks(clicked_block, OffsetX, OffsetY, "invert");
-			} else {
-				data.action = "add";
-				do_blocks(clicked_block, OffsetX, OffsetY, "add");
-			}
-		}
-	} else {
-		if (erasing) {
-			data.action = "remove";
-			do_blocks(clicked_block, OffsetX, OffsetY, "remove");
-		} else {
-			if (MDS_OBJECT.INVERT_PIXELS === "YES") {
-				data.action = "invert";
-				do_blocks(clicked_block, OffsetX, OffsetY, "invert");
-			} else {
-				data.action = "add";
-				do_blocks(clicked_block, OffsetX, OffsetY, "add");
-			}
-		}
-	}
+    if (is_erase_mode) {
+        action = 'remove';
+        // In erase mode, we only want to remove blocks that are currently selected.
+        all_blocks_in_selection.forEach(block => {
+            if (selectedBlocks.includes(block.id)) {
+                blocks_to_remove.push(block.id);
+            }
+        });
+    } else if (MDS_OBJECT.INVERT_PIXELS === "YES") {
+        action = 'invert';
+        // Invert logic for both single and area selection (XOR)
+        all_blocks_in_selection.forEach(block => {
+            if (selectedBlocks.includes(block.id)) {
+                blocks_to_remove.push(block.id);
+            } else {
+                blocks_to_add.push(block.id);
+            }
+        });
+    } else {
+        // Standard mode: add all blocks in the selection, avoiding duplicates.
+        action = 'add';
+        all_blocks_in_selection.forEach(block => {
+            if (!selectedBlocks.includes(block.id)) {
+                blocks_to_add.push(block.id);
+            }
+        });
+    }
 
-	// Add data to ajax queue
-	ajax_queue.push(data);
+    // Visually update blocks immediately for better UX
+blocks_to_add.forEach(id => { add_block(id); });
+    blocks_to_remove.forEach(id => { remove_block(id); });
+
+    // Only proceed with AJAX if there's an actual change
+    if (blocks_to_add.length === 0 && blocks_to_remove.length === 0) {
+        return; // No changes, no need to call server
+    }
+
+    const url = new URL(MDS_OBJECT.UPDATE_ORDER, window.location.origin);
+    url.searchParams.set("selection_size", selection_size);
+    url.searchParams.set("user_id", MDS_OBJECT.user_id);
+    url.searchParams.set("block_id", single_clicked_block.toString());
+    url.searchParams.set("BID", MDS_OBJECT.BID);
+    url.searchParams.set("t", MDS_OBJECT.time);
+    url.searchParams.set("_wpnonce", MDS_OBJECT.NONCE);
+    url.searchParams.set('action', action);
+
+    let data = {
+        action: action,
+        clicked_block: single_clicked_block,
+        OffsetX: OffsetX,
+        OffsetY: OffsetY,
+        blocks_to_add: blocks_to_add,
+        blocks_to_remove: blocks_to_remove,
+        original_add: blocks_to_add, // Preserve original state for revert
+        original_remove: blocks_to_remove, // Preserve original state for revert
+        url: url.toString(),
+    };
+
+    ajax_queue.push(data);
 }
 
 function implode(myArray) {
@@ -840,24 +881,8 @@ window.addEventListener("resize", function () {
 	}, 100);
 });
 
-jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
-	console.log("ajaxComplete");
-	const params = new URLSearchParams(settings.data);
-	const type = params.get("type");
-
-	// Check if the type parameter is order
-	if (type !== "order") {
-		return;
-	}
-
-	if (first_load) {
-		first_load = false;
-	} else {
-		return;
-	}
-
+function initializeGrid() {
 	grid = document.getElementById("pixelimg");
-	let $grid = jQuery(grid);
 	$myblocks = jQuery("#blocks");
 	total_cost = document.getElementById("total_cost");
 	submit_button1 = document.getElementById("submit_button1");
@@ -865,153 +890,177 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 	pixel_container = document.getElementById("pixel_container");
 	pixel_form = document.getElementById("pixel_form");
 
+	// Defensive checks for all critical elements
+	if (!grid || !$myblocks.length || !pixel_container || !pointer) {
+		return;
+	}
+
+	// Initial setup
 	rescale_grid();
+	load_order();
 
-	if ($grid.length === 0) {
-		remove_ajax_loader();
-	}
+	// --- Event Listeners ---
+	let clickValid = true;
+	let startX, startY;
+	const threshold = Math.min(BLK_WIDTH, BLK_HEIGHT) / 2;
 
+	// Mouse Events (for desktop)
+	jQuery(pixel_container)
+		.on("mousedown", function (event) {
+			clickValid = true;
+			startX = event.originalEvent.pageX;
+			startY = event.originalEvent.pageY;
+		})
+		.on("mousemove", function (event) {
+			if (clickValid) {
+				let currentX = event.originalEvent.pageX;
+				let currentY = event.originalEvent.pageY;
+				if (Math.abs(startX - currentX) > threshold || Math.abs(startY - currentY) > threshold) {
+					clickValid = false;
+				}
+			}
+			let coords = center_block({
+				x: event.originalEvent.pageX,
+				y: event.originalEvent.pageY
+			});
+			let offset = getOffset(coords.x, coords.y);
+			if (offset == null) return false;
+			show_pointer(offset);
+		})
+		.on("click", function (event) {
+			event.preventDefault();
+			if (clickValid) {
+				let coords = center_block({
+					x: event.originalEvent.pageX,
+					y: event.originalEvent.pageY
+				});
+				let offset = getOffset(coords.x, coords.y);
+				if (offset == null) return false;
+				show_pointer(offset);
+				select_pixels(offset);
+			}
+			clickValid = true; // Reset for next click
+			return false;
+		});
+
+	// Touch Events (for mobile)
 	if (has_touch()) {
-		handle_touch_events();
-	} else {
-		handle_click_events();
+		let pointerListener = new PointerListener(pixel_container, {
+			supportedGestures: [Tap, Pinch, Pan]
+		});
+
+		pixel_container.addEventListener("tap", function (event) {
+			let offset = getOffset(event.detail.live.center.x, event.detail.live.center.y, true);
+			if (offset == null) return true;
+			show_pointer(offset);
+			select_pixels(offset);
+		});
+
+		pixel_container.addEventListener("pinch", function (event) {
+			event.preventDefault && event.preventDefault();
+			const newScale = event.detail.live.scale;
+			if (!newScale || newScale <= 0) return;
+			applyZoom(newScale, event.detail.live.center.x, event.detail.live.center.y);
+		});
+
+		pixel_container.addEventListener("pan", function (event) {
+			if (window.mds_zoom <= 1) return;
+			window.mds_pan_x += event.detail.live.deltaX;
+			window.mds_pan_y += event.detail.live.deltaY;
+			applyTransform();
+		});
 	}
 
-	// disable context menu on grid
-	jQuery(grid).oncontextmenu = (e) => {
-		e.preventDefault();
-	};
 
-	let ajax_queue_interval = setInterval(function () {
+	// Disable context menu on grid
+	jQuery(grid).on("contextmenu", (e) => {
+		e.preventDefault();
+	});
+
+	// Set up form submission and reset buttons
+	if (submit_button1) {
+		jQuery(submit_button1).on("click", formSubmit);
+	}
+	jQuery("#reset_button").on("click", reset_pixels);
+
+
+	// AJAX queue processor
+	setInterval(function () {
 		if (ajax_queue.length === 0 || ajaxing) {
 			return;
 		}
-
 		ajaxing = true;
-
-		add_ajax_loader(".mds-pixel-wrapper");
-
+		add_ajax_loader(jQuery(".mds-pixel-wrapper"));
 		let data = ajax_queue.shift();
-
 		jQuery.ajax({
 			type: "POST",
 			url: data.url,
 			data: {
 				_wpnonce: MDS_OBJECT.NONCE,
-				erasing: data.erasing,
+				action: data.action,
 				block_id: data.clicked_block,
 				selection_size: parseInt(jQuery("#mds-selection-size-value").val(), 10) || 1,
 				BID: MDS_OBJECT.BID,
+				blocks_to_add: data.blocks_to_add.join(','),
+				blocks_to_remove: data.blocks_to_remove.join(',')
 			},
 			success: function (response) {
-				if (
-					response.success !== true ||
-					(response.data && response.data.error === "true")
-				) {
-					switch (data.action) {
-						case "invert":
-							do_blocks(
-								data.clicked_block,
-								data.OffsetX,
-								data.OffsetY,
-								"invert",
-							);
-							break;
-						case "remove":
-							if (!data.erasing) {
-								do_blocks(
-									data.clicked_block,
-									data.OffsetX,
-									data.OffsetY,
-									"add",
-								);
-							}
-							break;
-						case "add":
-							do_blocks(
-								data.clicked_block,
-								data.OffsetX,
-								data.OffsetY,
-								"remove",
-							);
-							break;
+				if (response.success === true) {
+					if (response.data && response.data.data) {
+						if (response.data.data.added && Array.isArray(response.data.data.added) && response.data.data.added.length > 0) {
+							do_blocks(response.data.data.added, "add");
+						}
+						if (response.data.data.removed && Array.isArray(response.data.data.removed) && response.data.data.removed.length > 0) {
+							do_blocks(response.data.data.removed, "remove");
+						}
+						if (response.data.data.type === "order_id" && pixel_form) {
+							pixel_form.order_id.value = parseInt(response.data.data.value, 10);
+						}
 					}
-
-					// Use the correctly nested path for the error message
-					messageout(response.data.data.value);
-				}
-
-				if (response.data && response.data.type === "order_id") {
-					// save order id
-					if (pixel_form !== null) {
-						pixel_form.order_id.value = parseInt(response.data.data.value, 10);
+				} else {
+					// Revert UI changes on failure
+					if (data.action === 'invert') {
+						do_blocks(data.original_add, "remove");
+						do_blocks(data.original_remove, "add");
+					} else {
+						do_blocks(data.original_add, "remove");
+					}
+					if (response.data && response.data.data && response.data.data.value) {
+						messageout(response.data.data.value);
+					} else {
+						messageout("An unknown error occurred.");
 					}
 				}
 			},
-			fail: function () {
-				switch (data.action) {
-					case "invert":
-						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, "invert");
-						break;
-					case "remove":
-						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, "add");
-						break;
-					case "add":
-						do_blocks(data.clicked_block, data.OffsetX, data.OffsetY, "remove");
-						break;
-				}
-
-				if (jQuery.isPlainObject(data)) {
-					messageout("Error: " + JSON.stringify(data));
+			error: function (xhr, status, error) {
+				if (data.action === 'invert') {
+					do_blocks(data.original_add, "remove");
+					do_blocks(data.original_remove, "add");
 				} else {
-					messageout("Error: " + data);
+					do_blocks(data.original_add, "remove");
+				}
+				// Prefer server-provided message when available (WordPress wp_send_json_error wraps it)
+				let serverMsg = null;
+				if (xhr && xhr.responseJSON && xhr.responseJSON.data) {
+					if (xhr.responseJSON.data.data && xhr.responseJSON.data.data.value) {
+						serverMsg = xhr.responseJSON.data.data.value;
+					} else if (xhr.responseJSON.data.value) {
+						serverMsg = xhr.responseJSON.data.value;
+					}
+				}
+				if (serverMsg) {
+					messageout(serverMsg);
+				} else {
+					messageout("Request failed: " + status);
 				}
 			},
 			complete: function () {
 				ajaxing = false;
 				remove_ajax_loader();
-			},
+			}
 		});
 	}, 100);
 
-	document
-		.querySelectorAll('.mds-select-input input[type="checkbox"]')
-		.forEach(function (radio) {
-			radio.addEventListener("hover", function () {
-				this.style.cursor = "pointer";
-			});
-			radio.addEventListener("change", function () {
-				const label = this.nextElementSibling;
-				const iconErase = label.querySelector(".icon-erase");
-				const iconSelect = label.querySelector(".icon-select");
-
-				if (iconErase && iconSelect) {
-					if (this.checked) {
-						iconErase.setAttribute("stroke", "#FFFFFF");
-						iconSelect.setAttribute("stroke", "none");
-					} else {
-						iconErase.setAttribute("stroke", "none");
-						iconSelect.setAttribute("stroke", "#008000");
-					}
-				}
-			});
-		});
-
-	const $pixelimg = jQuery("#pixelimg");
-	$pixelimg
-		.one("load", function () {
-			rescale_grid();
-			load_order();
-			jQuery(".ajax-loader").remove();
-		})
-		.each(function () {
-			if (this.complete) {
-				jQuery(this).trigger("load");
-			}
-		});
-	$pixelimg.on("loadstart", function () {
-		add_ajax_loader(".mds-pixel-wrapper");
-	});
 
 	function add_ajax_loader(container) {
 		let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
@@ -1024,9 +1073,9 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 				.css("left", jQuery(container).width() / 2 - $ajax_loader.width() / 2);
 		}
 	}
+	add_ajax_loader(jQuery(".mds-pixel-wrapper"));
 
-	add_ajax_loader(".mds-pixel-wrapper");
-
+	// Size selection slider and input logic
 	const $mds_selection_size_slider = jQuery("#mds-selection-size-slider");
 	const $mds_selection_size_value = jQuery("#mds-selection-size-value");
 	const $mds_total_blocks_value = jQuery("#mds-total-blocks-value");
@@ -1034,11 +1083,7 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 	if ($mds_selection_size_slider.length > 0) {
 		$mds_selection_size_slider.on("input", function () {
 			const blockSize = parseInt(jQuery(this).val());
-			console.log("blockSize", blockSize);
-			const adjustedBlockSize = Math.min(
-				blockSize,
-				Math.min(GRD_WIDTH, GRD_HEIGHT),
-			);
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
 			$mds_selection_size_value.val(adjustedBlockSize);
 			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
 			update_pointer_size();
@@ -1046,10 +1091,7 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 
 		$mds_selection_size_value.on("input", function () {
 			const blockSize = parseInt(jQuery(this).val());
-			const adjustedBlockSize = Math.min(
-				blockSize,
-				Math.min(GRD_WIDTH, GRD_HEIGHT),
-			);
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
 			$mds_selection_size_slider.val(adjustedBlockSize);
 			$mds_total_blocks_value.val(Math.pow(adjustedBlockSize, 2));
 			update_pointer_size();
@@ -1057,60 +1099,24 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 
 		let previousTotalBlocks = parseInt($mds_total_blocks_value.val());
 		let updateTimer;
-
 		$mds_total_blocks_value.on("input", function () {
 			let totalBlocks = parseInt(jQuery(this).val());
 			const isIncreasing = totalBlocks > previousTotalBlocks;
-			let blockSize;
-
-			if (isIncreasing) {
-				// Snap up to the next perfect square
-				blockSize = Math.ceil(Math.sqrt(totalBlocks));
-			} else {
-				// Snap down to the previous perfect square
-				blockSize = Math.floor(Math.sqrt(totalBlocks));
-			}
-
-			const adjustedBlockSize = Math.min(
-				blockSize,
-				Math.min(GRD_WIDTH, GRD_HEIGHT),
-			);
-
-			// Update the slider and selection size input
+			let blockSize = isIncreasing ? Math.ceil(Math.sqrt(totalBlocks)) : Math.floor(Math.sqrt(totalBlocks));
+			const adjustedBlockSize = Math.min(blockSize, Math.min(GRD_WIDTH, GRD_HEIGHT));
 			$mds_selection_size_slider.val(adjustedBlockSize);
 			$mds_selection_size_value.val(adjustedBlockSize);
-
 			clearTimeout(updateTimer);
-
 			updateTimer = setTimeout(() => {
 				totalBlocks = Math.pow(adjustedBlockSize, 2);
-
-				// Set the total blocks value to the adjusted value
 				$mds_total_blocks_value.val(totalBlocks);
-
-				// Update previous total blocks for next change
 				previousTotalBlocks = totalBlocks;
-
 				update_pointer_size();
 			}, 1000);
 		});
 	}
 
-	jQuery(submit_button1).on("click", function (e) {
-		e.preventDefault();
-		e.stopPropagation();
-		formSubmit(e);
-		return false;
-	});
-
-	jQuery("#reset_button").on("click", function (e) {
-		e.preventDefault();
-		e.stopPropagation();
-		reset_pixels();
-		return false;
-	});
-
-	// Add reset zoom button if it doesn't exist yet
+	// Reset zoom button
 	if (jQuery("#reset_zoom_button").length === 0) {
 		const resetZoomButton = jQuery("<button>", {
 			id: "reset_zoom_button",
@@ -1131,12 +1137,55 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 			},
 		});
 		jQuery(".mds-pixel-wrapper").append(resetZoomButton);
+		resetZoomButton.on("click", resetZoom);
+	}
+}
 
-		resetZoomButton.on("click", function () {
-			resetZoom();
-		});
+// --- New Robust Initialization Logic ---
+var gridInitialized = false;
+
+// Use MutationObserver to reliably detect when the grid is added to the DOM
+const observerTarget = document.body;
+const observerConfig = {
+	childList: true,
+	subtree: true
+};
+
+const mutationObserver = new MutationObserver((mutationsList, observer) => {
+	if (gridInitialized) {
+		return;
+	}
+
+	for (const mutation of mutationsList) {
+		if (mutation.type === 'childList') {
+			const pixelGrid = document.getElementById('pixelimg');
+			if (pixelGrid) {
+				// Image element is in the DOM, now wait for it to load.
+				const init = () => {
+					if (gridInitialized) return;
+					gridInitialized = true;
+					initializeGrid();
+					// Once initialized, we don't need to observe anymore.
+					observer.disconnect();
+					// Remove ajax loader that might be present.
+					jQuery(".ajax-loader").remove();
+				};
+
+				// Handle cached images: if .complete is true, onload won't fire.
+				if (pixelGrid.complete) {
+					init();
+				} else {
+					// Otherwise, wait for the onload event.
+					pixelGrid.addEventListener('load', init);
+				}
+				break;
+			}
+		}
 	}
 });
+
+// Start observing the document body for changes
+mutationObserver.observe(observerTarget, observerConfig);
 
 // Function to apply zoom to the grid container
 function applyZoom(scaleChange, centerX, centerY) {

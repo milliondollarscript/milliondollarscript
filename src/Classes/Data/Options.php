@@ -839,13 +839,21 @@ class Options {
 					->set_help_text( Language::get( 'If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL.' ) ),
 
 				// Invert Pixels
-				Field::make( 'radio', MDS_PREFIX . 'invert-pixels', Language::get( 'Invert Pixels' ) )
+				Field::make( 'radio', MDS_PREFIX . 'invert-pixels', Language::get( 'Invert Selection' ) )
 					->set_default_value( 'NO' )
 					->set_options( [
 						'YES' => Language::get( 'Yes' ),
 						'NO'  => Language::get( 'No' ),
 					] )
-					->set_help_text( Language::get( 'If checked, reverses the order pixels are displayed within the grid container.' ) ),
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'use-ajax',
+							'compare' => '=',
+							'value'   => 'YES',
+						],
+					] )
+					->set_help_text( Language::get( 'If enabled, clicking a selected block will deselect it (inverting the selection). This only applies to the Advanced selection method.' ) ),
 
 				// Stats Display Mode
 				Field::make( 'radio', MDS_PREFIX . 'stats-display-mode', Language::get( 'Stats Display Mode' ) )
@@ -950,6 +958,24 @@ class Options {
 							esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) )
 						)
 					),
+
+				// Selection Adjacency Mode (Advanced selection)
+				Field::make( 'radio', MDS_PREFIX . 'selection-adjacency-mode', Language::get( 'Selection Adjacency Mode' ) )
+					->set_default_value( 'ADJACENT' )
+					->set_options( [
+						'ADJACENT'  => Language::get( 'Adjacent (any contiguous shape)' ),
+						'RECTANGLE' => Language::get( 'Rectangle only' ),
+						'NONE'      => Language::get( 'No adjacency enforcement' ),
+					] )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'use-ajax',
+							'compare' => '=',
+							'value'   => 'YES',
+						],
+					] )
+					->set_help_text( Language::get( 'Controls how adjacency is enforced in Advanced selection: any contiguous shape, strict rectangle, or no enforcement.' ) ),
 
 				// Expire Orders
 				Field::make( 'radio', MDS_PREFIX . 'expire-orders', Language::get( 'Expire Orders' ) )

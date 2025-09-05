@@ -396,6 +396,30 @@ class Forms {
 				// Always redirect to the upload page
 				break;
 			case 'write-ad':
+				global $wpdb;
+
+				// Process selected pixels and update order
+				if ( ! empty( $_POST['selected_pixels'] ) && ! empty( $_POST['order_id'] ) ) {
+					$order_id = intval( $_POST['order_id'] );
+
+					// Ensure the user owns this order
+					if ( Orders::is_owned_by( $order_id ) ) {
+						$selected_pixels = sanitize_text_field( $_POST['selected_pixels'] );
+						$pixel_array     = explode( ',', $selected_pixels );
+						$block_count     = count( $pixel_array );
+
+						if ( $block_count > 0 ) {
+							$wpdb->update(
+								MDS_DB_PREFIX . 'orders',
+								[ 'blocks' => $block_count ],
+								[ 'order_id' => $order_id ],
+								[ '%d' ],
+								[ '%d' ]
+							);
+						}
+					}
+				}
+
 				require_once MDS_CORE_PATH . 'users/write_ad.php';
 
 				$package           = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
