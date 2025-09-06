@@ -4,6 +4,7 @@ use Imagine\Image\Box;
 use Imagine\Image\Point;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Logs;
+use MillionDollarScript\Classes\System\Utility;
 
 /*
  * Million Dollar Script Two
@@ -154,6 +155,38 @@ function mds_apply_opacity_gd(\GdImage &$image, int $opacity): bool {
     return true;
 }
 
+/** Resolve Blocks Layering mode for a grid. */
+function mds_get_grid_blocks_layering(int $BID): string {
+    $val = get_option( 'mds_grid_blocks_layering_' . $BID, 'below' );
+    return ($val === 'above') ? 'above' : 'below';
+}
+
+/** Resolve overlay block image absolute path for a grid/context/mode. */
+function mds_resolve_overlay_path(int $BID, string $variant): string {
+    // $variant: 'public-light', 'public-dark', 'ordering-light', 'ordering-dark'
+    $opt = get_option( 'mds_grid_overlay_images_' . $BID, [] );
+    $ctx = str_contains($variant, 'ordering') ? 'ordering' : 'public';
+    $mode = str_contains($variant, 'dark') ? 'dark' : 'light';
+
+    // Uploaded file (stored as basename)
+    $basename = '';
+    if (is_array($opt) && isset($opt[$ctx]) && is_array($opt[$ctx]) && !empty($opt[$ctx][$mode])) {
+        $basename = $opt[$ctx][$mode];
+    }
+    if (!empty($basename)) {
+        $upload_dir = Utility::get_upload_path() . 'grids/overlays/';
+        $path = wp_normalize_path( $upload_dir . $basename );
+        if ( file_exists( $path ) ) {
+            return $path;
+        }
+    }
+
+    // Fallback to bundled defaults
+    $images_dir = wp_normalize_path( MDS_CORE_PATH . 'images/' );
+    $fallback = $images_dir . 'overlay-' . $variant . '.png';
+    return $fallback;
+}
+
 /**
  * Output grid map
  *
@@ -244,6 +277,9 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	$useGd = ($imagine instanceof \Imagine\Gd\Imagine);
 
 	$banner_data = load_banner_constants( $BID );
+
+	// Determine grid layering mode
+	$mds_blocks_layering = mds_get_grid_blocks_layering( (int)$BID );
 
 	// Precompute grid dimensions
 	$blkW = (int)$banner_data['BLK_WIDTH'];
@@ -565,8 +601,15 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	// grid size
 	$size = new Imagine\Image\Box( $gridW, $gridH );
 
-	// create empty grid
-	$map = $imagine->create( $size );
+	// create base canvas (fill color when Above mode)
+	if ( $mds_blocks_layering === 'above' ) {
+		$bg_colors = get_option( 'mds_grid_bg_colors_' . $BID, array('light' => '#ffffff', 'dark' => '#14181c') );
+		$theme_mode = ( Options::get_option( 'theme_mode', 'light' ) === 'dark' ) ? 'dark' : 'light';
+		$base_hex = $bg_colors[$theme_mode] ?? ( $theme_mode === 'dark' ? '#14181c' : '#ffffff' );
+		$map = $imagine->create( $size, $palette->color( $base_hex, 100 ) );
+	} else {
+		$map = $imagine->create( $size );
+	}
 	/** @var \Imagine\Gd\Image $map */
 	// detect GD driver for direct imagecopy
 	$useGd = $map instanceof Imagine\Gd\Image;
@@ -618,31 +661,31 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
 		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
 
-			if ( isset( $blocks[ $cell ] ) && $blocks[ $cell ] != '' ) {
-				if ( isset( $show_orders ) && $blocks[ $cell ] == "order" ) {
-					$grid_front[ $x ][ $y ] = $orders[ $cell ];
-				} else if ( isset( $user ) && $blocks[ $cell ] == "user" ) {
-					$grid_front[ $x ][ $y ] = $users[ $cell ];
-				} else if ( isset( $default_nfs_block ) && $blocks[ $cell ] == "nfs" ) {
-					$grid_back[ $x ][ $y ] = $nfs[ $cell ];
-				} else if ( isset( $default_nfs_front_block ) && $blocks[ $cell ] == "nfs_front" ) {
-					$grid_front[ $x ][ $y ] = $nfs[ $cell ];
-				} else if ( isset( $default_ordered_block ) && $blocks[ $cell ] == "ordered" ) {
-					$grid_front[ $x ][ $y ] = $default_ordered_block;
-				} else if ( isset( $default_reserved_block ) && $blocks[ $cell ] == "reserved" ) {
-					$grid_front[ $x ][ $y ] = $default_reserved_block;
-				} else if ( isset( $default_selected_block ) && $blocks[ $cell ] == "selected" ) {
-					$grid_front[ $x ][ $y ] = $default_selected_block;
-				} else if ( isset( $default_sold_block ) && $blocks[ $cell ] == "sold" ) {
-					$grid_front[ $x ][ $y ] = $default_sold_block;
-				} else if ( isset( $show_grid ) ) {
-					$grid_back[ $x ][ $y ] = $default_block;
-				}
-			} else if ( isset( $show_grid ) ) {
-				$grid_back[ $x ][ $y ] = $default_block;
-			} else {
-				$grid_back[ $x ][ $y ] = $blank_block;
-			}
+            if ( isset( $blocks[ $cell ] ) && $blocks[ $cell ] != '' ) {
+                if ( isset( $show_orders ) && $blocks[ $cell ] == "order" ) {
+                    $grid_front[ $x ][ $y ] = $orders[ $cell ];
+                } else if ( isset( $user ) && $blocks[ $cell ] == "user" ) {
+                    $grid_front[ $x ][ $y ] = $users[ $cell ];
+                } else if ( isset( $default_nfs_block ) && $blocks[ $cell ] == "nfs" ) {
+                    $grid_back[ $x ][ $y ] = $nfs[ $cell ];
+                } else if ( isset( $default_nfs_front_block ) && $blocks[ $cell ] == "nfs_front" ) {
+                    $grid_front[ $x ][ $y ] = $nfs[ $cell ];
+                } else if ( isset( $default_ordered_block ) && $blocks[ $cell ] == "ordered" ) {
+                    $grid_front[ $x ][ $y ] = $default_ordered_block;
+                } else if ( isset( $default_reserved_block ) && $blocks[ $cell ] == "reserved" ) {
+                    $grid_front[ $x ][ $y ] = $default_reserved_block;
+                } else if ( isset( $default_selected_block ) && $blocks[ $cell ] == "selected" ) {
+                    $grid_front[ $x ][ $y ] = $default_selected_block;
+                } else if ( isset( $default_sold_block ) && $blocks[ $cell ] == "sold" ) {
+                    $grid_front[ $x ][ $y ] = $default_sold_block;
+                } else if ( isset( $show_grid ) && $mds_blocks_layering !== 'above' ) {
+                    $grid_back[ $x ][ $y ] = $default_block;
+                }
+            } else if ( isset( $show_grid ) && $mds_blocks_layering !== 'above' ) {
+                $grid_back[ $x ][ $y ] = $default_block;
+            } else {
+                $grid_back[ $x ][ $y ] = $blank_block;
+            }
 
 			// price zone grid layer
 			if ( isset( $show_price_zones ) && isset( $price_zone_blocks[ $cell ] ) ) {
@@ -669,14 +712,16 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 					}
 				} else {
 					// add grid behind if nothing's there in case images are transparent
-					if ( $useGd ) {
-						/** @var \Imagine\Gd\Image $img */
-						$img = $default_block;
-						/** @var \GdImage $src */
-						$src = $img->getGdResource();
-						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
-					} else {
-						$map->paste( $default_block, new Imagine\Image\Point( $x, $y ) );
+					if ( $mds_blocks_layering !== 'above' ) {
+						if ( $useGd ) {
+							/** @var \\Imagine\\Gd\\Image $img */
+							$img = $default_block;
+							/** @var \\GdImage $src */
+							$src = $img->getGdResource();
+							imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+						} else {
+$map->paste( $default_block, new Imagine\Image\Point( $x, $y ) );
+						}
 					}
 				}
 			}
@@ -719,20 +764,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 			/** @var \GdImage $src */
 			$src = $img->getGdResource();
 
-			// Apply opacity to the source background image using our helper function
-			if (mds_apply_opacity_gd($src, $opacity)) {
-				// Enable alpha blending on the destination before copying
-				imagealphablending($dstRes, true);
-				imagesavealpha($dstRes, true); // Ensure destination saves alpha too
-
-				// Use imagecopy (respects alpha) instead of imagecopymerge
-				imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
-			} else {
-				// Handle error if opacity application failed (optional)
-				Logs::log("MDS Error: Failed to apply opacity to GD background image for BID: $BID");
-				// As a fallback, maybe copy without opacity?
-				// imagecopy( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight() );
-			}
+			// Apply opacity using imagecopymerge for GD driver
+			imagealphablending($dstRes, true);
+			imagesavealpha($dstRes, true);
+			imagecopymerge( $dstRes, $src, $bgx, $bgy, 0, 0, $bgsize->getWidth(), $bgsize->getHeight(), (int)$opacity );
 
 		} else {
 			// Apply opacity with Imagick (compatible with Imagick 3.x)
@@ -750,6 +785,34 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		}
 	}
 
+	// When Above, overlay grid-line blocks between background and front blocks
+	if ( isset($show_grid) && $mds_blocks_layering === 'above' ) {
+		$mode = ( Options::get_option( 'theme_mode', 'light' ) === 'dark' ) ? 'dark' : 'light';
+		$variant = ( $ordering ? 'ordering' : 'public' ) . '-' . $mode;
+		$overlay_path = mds_resolve_overlay_path( (int)$BID, $variant );
+		try {
+			$overlay_block = $imagine->open( $overlay_path );
+			$overlay_block->resize( $block_size );
+			for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
+				for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
+					if ( $useGd ) {
+						/** @var \Imagine\Gd\Image $img */
+						$img = $overlay_block;
+						/** @var \GdImage $src */
+						$src = $img->getGdResource();
+						imagealphablending($dstRes, true);
+						imagesavealpha($dstRes, true);
+						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+					} else {
+						$map->paste( $overlay_block, new Imagine\Image\Point( $x, $y ) );
+					}
+				}
+			}
+		} catch ( \Exception $e ) {
+			Logs::log( 'MDS overlay error for BID ' . (int)$BID . ': ' . $e->getMessage() );
+		}
+	}
+
 	// paste the blocks
 	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
 		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
@@ -764,6 +827,34 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 					$map->paste( $grid_front[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
 				}
 			}
+		}
+	}
+
+// [moved earlier] overlay grid-line blocks between background and front blocks
+if ( false ) {
+		$mode = ( Options::get_option( 'theme_mode', 'light' ) === 'dark' ) ? 'dark' : 'light';
+		$variant = ( $ordering ? 'ordering' : 'public' ) . '-' . $mode;
+		$overlay_path = mds_resolve_overlay_path( (int)$BID, $variant );
+		try {
+			$overlay_block = $imagine->open( $overlay_path );
+			$overlay_block->resize( $block_size );
+			for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
+				for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
+					if ( $useGd ) {
+						/** @var \Imagine\Gd\Image $img */
+						$img = $overlay_block;
+						/** @var \GdImage $src */
+						$src = $img->getGdResource();
+						imagealphablending($dstRes, true);
+						imagesavealpha($dstRes, true);
+						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+					} else {
+						$map->paste( $overlay_block, new Imagine\Image\Point( $x, $y ) );
+					}
+				}
+			}
+		} catch ( \Exception $e ) {
+			Logs::log( 'MDS overlay error for BID ' . (int)$BID . ': ' . $e->getMessage() );
 		}
 	}
 

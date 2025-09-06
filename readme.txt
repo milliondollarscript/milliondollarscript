@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.13.29
+Stable tag: 2.5.13.30
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -38,6 +38,10 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Mass complete and cancel of orders not working.
 * Fix: Grid select not working in advanced mode.
 * Feature: Add option for Selection Adjacency Mode under the Orders tab.
+* Feature: Add per-grid option to layer blocks above or below the background image (default remains below). When set to above, block backgrounds become transparent and grid lines render on top of the background.
+* Feature: Support per-grid overlay images for Public and Ordering variants in both Light and Dark modes when layering is above. Overlays are PNG; managed on Manage Grids (under Dark Mode Image Management). Sensible defaults are bundled.
+* Feature: Add per-grid background color settings for Light and Dark modes (defaults: #ffffff and #14181c).
+* Perf: Reduce memory usage when applying background opacity by replacing per-pixel alpha manipulation with GD imagecopymerge().
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.

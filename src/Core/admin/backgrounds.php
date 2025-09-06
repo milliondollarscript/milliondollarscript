@@ -135,6 +135,18 @@ $res = $wpdb->get_results( $sql, ARRAY_A );
 		?>
     </select>
 </form>
+<?php
+// If this grid uses Blocks position = Above, show a reminder about overlay images management
+$layering = get_option( 'mds_grid_blocks_layering_' . intval($BID), 'below' );
+if ( $layering === 'above' ) {
+    $manage_url = admin_url( 'admin.php?page=mds-manage-grids&mds-action=edit&BID=' . intval( $BID ) );
+    echo '<div class="notice notice-info is-dismissible" style="margin-top:10px;">'
+        . '<p><strong>Heads up:</strong> For this grid, Blocks position is set to <strong>Above</strong>. '
+        . 'Transparent overlay grid-line images are managed on the <em>Manage Grids</em> page.</p>'
+        . '<p><a class="button button-secondary" href="' . esc_url( $manage_url ) . '">Open Manage Grids</a></p>'
+        . '</div>';
+}
+?>
 <hr>
 <?php Language::out( 'Upload <b>Image (PNG, JPG, GIF)</b> to blend:' ); ?>
 <br>
