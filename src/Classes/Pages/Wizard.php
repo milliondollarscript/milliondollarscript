@@ -23,6 +23,10 @@ class Wizard {
      * Option name to track wizard completion status.
      */
     const OPTION_NAME_WIZARD_COMPLETE = 'mds_wizard_complete';
+    /**
+     * Option name to track if wizard created pages.
+     */
+    const OPTION_NAME_PAGES_CREATED = 'mds_wizard_pages_created';
     
     /**
      * Transient name for activation redirect.
@@ -536,6 +540,8 @@ class Wizard {
             if ( isset( $result['errors'] ) && !empty( $result['errors'] ) ) {
                 wp_send_json_error( [ 'message' => implode( '; ', $result['errors'] ) ], 500 );
             } else {
+                // Mark that pages have been created by the wizard
+                update_option( self::OPTION_NAME_PAGES_CREATED, true );
                 // Format the response for the wizard frontend
                 $created_pages = [];
                 

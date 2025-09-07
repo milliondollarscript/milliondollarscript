@@ -4,7 +4,7 @@
   Plugin Name: Million Dollar Script Two
   Plugin URI: https://milliondollarscript.com
   Description: A WordPress plugin with Million Dollar Script Two embedded in it.
-  Version: 2.5.13.33
+  Version: 2.5.13.34
   Author: Ryan Rhode
   Author URI: https://milliondollarscript.com
   Text Domain: milliondollarscript
@@ -64,7 +64,7 @@ defined( 'MDS_TEXT_DOMAIN' ) or define( 'MDS_TEXT_DOMAIN', 'milliondollarscript'
 defined( 'MDS_PREFIX' ) or define( 'MDS_PREFIX', 'milliondollarscript_' );
 defined( 'MDS_DB_PREFIX' ) or define( 'MDS_DB_PREFIX', $wpdb->prefix . 'mds_' );
 defined( 'MDS_DB_VERSION' ) or define( 'MDS_DB_VERSION', '2.5.13.26' );
-defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.13.33' );
+defined( 'MDS_VERSION' ) or define( 'MDS_VERSION', '2.5.13.34' );
 
 // Detect PHP version
 $minimum_version = '8.1.0';
@@ -200,25 +200,43 @@ function milliondollarscript_two_uninstall(): void {
 		Classes\System\Utility::clear_orders();
 
 		$tables = Database::get_mds_tables();
-		$tables = array_merge($tables, Database::get_old_mds_tables());
+		$tables = array_merge( $tables, Database::get_old_mds_tables() );
 
 		foreach ( $tables as $table ) {
-			$wpdb->query(
-				"DROP TABLE IF EXISTS " . MDS_DB_PREFIX . $table,
-			);
+			$wpdb->query( "DROP TABLE IF EXISTS " . MDS_DB_PREFIX . $table );
 		}
 
+		// Drop metadata system tables as well
+		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}mds_page_metadata" );
+		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}mds_page_config" );
+		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}mds_detection_log" );
+
+		// Explicitly remove wizard flags and transients
+		delete_option( \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_WIZARD_COMPLETE );
+		delete_option( \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_PAGES_CREATED );
+		delete_transient( 'mds_wizard_redirect' );
+
+		// Remove most plugin options and transients
+		$prefix_like = esc_sql( MDS_PREFIX );
 		$wpdb->query(
-			"DELETE FROM " . $wpdb->prefix . "options WHERE `option_name` LIKE '%" . MDS_PREFIX . "%' 
-			OR `option_name` = 'mds_last_order_modification_time' 
-			OR `option_name` = 'mds_migrate_product_executed'
-			OR `option_name` = 'mds_db_version'
-			OR `option_name` = " . \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_WIZARD_COMPLETE . "
-			OR `option_name` = 'mds_use_woocommerce_integration'
-			OR `option_name` LIKE '_transient_timeout_mds_blocks_banner_id%'
-			OR `option_name` LIKE '_transient_mds_blocks_banner_id%'
-			OR `option_name` LIKE 'mds_background_opacity%'
-			",
+			"DELETE FROM {$wpdb->options} 
+			WHERE option_name LIKE '%{$prefix_like}%' 
+			OR option_name = 'mds_last_order_modification_time' 
+			OR option_name = 'mds_migrate_product_executed'
+			OR option_name = 'mds_db_version'
+			OR option_name = 'mds_use_woocommerce_integration'
+			OR option_name = 'mds_migration_results'
+			OR option_name = 'mds_migration_completed'
+			OR option_name = 'mds_compatibility_version'
+			OR option_name = 'mds_page_management_version'
+			OR option_name = 'mds_pending_migrations'
+			OR option_name = 'mds_db_initialized'
+			OR option_name LIKE '_transient_mds_%'
+			OR option_name LIKE '_transient_timeout_mds_%'
+			OR option_name LIKE '_site_transient_mds_%'
+			OR option_name LIKE '_site_transient_timeout_mds_%'
+			OR option_name LIKE 'mds_background_opacity%'
+			"
 		);
 
 		// TODO: delete privileged user meta, any other user meta

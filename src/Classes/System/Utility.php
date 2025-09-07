@@ -560,24 +560,32 @@ class Utility {
 			}
 		}
 		
-		// If page-based URL failed and this is a critical page, try to auto-create it
-		if ( empty( $url ) && in_array( $page_name, [ 'order', 'grid', 'manage' ] ) ) {
-			try {
-				$created_page_id = self::ensure_page_exists( $page_name );
-				if ( $created_page_id && is_numeric( $created_page_id ) ) {
-					$permalink = get_permalink( $created_page_id );
-					if ( $permalink && $permalink !== home_url( '/' ) ) {
-						$url = $permalink;
-						// Clear the cached pages to reflect the new page
-						global $mds_pages, $mds_page_ids;
-						$mds_pages = null;
-						$mds_page_ids = null;
-					}
-				}
-			} catch ( \Exception $e ) {
-				Logs::log( "MDS: Error auto-creating page for '{$page_name}': " . $e->getMessage() );
-			}
-		}
+        // If page-based URL failed and this is a critical page, decide whether to auto-create or fall back
+        if ( empty( $url ) && in_array( $page_name, [ 'order', 'grid', 'manage' ], true ) ) {
+            // Only auto-create if the wizard explicitly created pages
+$pages_created = (bool) get_option( \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_PAGES_CREATED, false );
+
+            if ( $pages_created ) {
+                try {
+                    $created_page_id = self::ensure_page_exists( $page_name );
+                    if ( $created_page_id && is_numeric( $created_page_id ) ) {
+                        $permalink = get_permalink( $created_page_id );
+                        if ( $permalink && $permalink !== home_url( '/' ) ) {
+                            $url = $permalink;
+                            // Clear the cached pages to reflect the new page
+                            global $mds_pages, $mds_page_ids;
+                            $mds_pages = null;
+                            $mds_page_ids = null;
+                        }
+                    }
+} catch ( \Exception $e ) {
+                    Logs::log( "MDS: Error auto-creating page for '{$page_name}': " . $e->getMessage() );
+                }
+            } else {
+                // Wizard hasn't created pages: use endpoint fallback instead of auto-creating pages
+                $url = self::get_endpoint_url( $page_name );
+            }
+        }
 		
 		// Fallback to endpoint URL if page-based URL still failed
 		if ( empty( $url ) ) {
@@ -641,11 +649,11 @@ class Utility {
 				'title' => Language::get( 'Million Dollar Script Grid' ),
 				'content' => '[milliondollarscript]'
 			],
-			'manage' => [
-				'option_name' => 'users-manage-page',
-				'title' => Language::get( 'Manage Pixels' ),
-				'content' => '[milliondollarscript type="manage"]'
-			]
+'manage' => [
+            'option_name' => 'users-manage-page',
+            'title' => Language::get( 'Manage Pixels' ),
+            'content' => '[milliondollarscript type="manage" width="100%" height="auto"]'
+        ]
 		];
 		
 		if ( ! isset( $page_configs[ $page_name ] ) ) {

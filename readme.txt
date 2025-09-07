@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.13.33
+Stable tag: 2.5.13.34
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -54,6 +54,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: MDS Pixels search behavior corrected when enabled: titles are searchable again and results remain restricted to completed status; conditional bug in posts_search resolved.
 * Fix: Prevented MDS link and button colors from affecting the rest of your theme. Styles are now scoped to the MDS container rather than the entire page (no more mds-container on <body> by default). If you previously relied on the old behavior, you can temporarily re‑enable it with:
   add_filter('mds_enable_legacy_body_classes', '__return_true');
+* Fix: No more duplicate Manage Pixels pages; page creation runs after the Setup Wizard. Manage shortcode now uses width="100%" height="auto".
+* Fix: Migration notice is hidden on fresh installs until the wizard finishes or legacy pages exist.
+* Fix: Uninstall (Delete data = Yes) now removes plugin options and metadata tables; pages stay. Wizard will show after reinstall.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
