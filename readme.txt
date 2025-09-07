@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.13.30
+Stable tag: 2.5.13.31
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -42,6 +42,16 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Feature: Support per-grid overlay images for Public and Ordering variants in both Light and Dark modes when layering is above. Overlays are PNG; managed on Manage Grids (under Dark Mode Image Management). Sensible defaults are bundled.
 * Feature: Add per-grid background color settings for Light and Dark modes (defaults: #ffffff and #14181c).
 * Perf: Reduce memory usage when applying background opacity by replacing per-pixel alpha manipulation with GD imagecopymerge().
+* Feature: Admin‑configurable MDS Pixels permalinks.
+  - Base segment is now configurable (default: mds-pixel).
+  - Slug pattern supports tokens: %username%, %display_name%, %order_id%, %grid%, %pixel_id%, %text%, and %meta:field%.
+  - Developers can extend/override tokens via the mds_permalink_tokens filter.
+  - Respects the Transliterate Cyrillic titles to Latin option for cleaner slugs.
+* Feature: Migration tool to update existing MDS Pixel slugs to the current pattern.
+  - Stores previous slugs and issues automatic 301 redirects.
+  - Legacy base segments are recognized and redirected to the new structure.
+  - Usage: After changing the base or slug pattern, click Save Changes first, then click Run migration (batched with nonce/capability checks).
+* Fix: MDS Pixels search behavior corrected when enabled: titles are searchable again and results remain restricted to completed status; conditional bug in posts_search resolved.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
