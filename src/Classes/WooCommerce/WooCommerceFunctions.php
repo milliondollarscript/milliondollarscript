@@ -936,4 +936,39 @@ class WooCommerceFunctions {
 
 		self::reset_wc_session_variables_by_order_id( $mds_order_id );
 	}
+
+	/**
+	 * Get the WooCommerce My Account page URL if available.
+	 */
+	public static function get_myaccount_url(): string {
+		if ( ! self::is_wc_active() ) { return ''; }
+		if ( function_exists( 'wc_get_page_permalink' ) ) {
+			$url = wc_get_page_permalink( 'myaccount' );
+			if ( is_string( $url ) && ! empty( $url ) ) { return $url; }
+		}
+		$page_id = (int) get_option( 'woocommerce_myaccount_page_id' );
+		return $page_id ? (string) get_permalink( $page_id ) : '';
+	}
+
+	/**
+	 * If Account/Register/Login URLs are still at their defaults, point them to WC My Account URL.
+	 */
+	public static function sync_account_register_login_pages_to_myaccount_if_defaults(): void {
+		if ( ! self::is_wc_active() ) { return; }
+		$myaccount = self::get_myaccount_url();
+		if ( empty( $myaccount ) ) { return; }
+
+		$defaults = [
+			'account-page'  => function_exists( 'get_edit_profile_url' ) ? get_edit_profile_url() : admin_url( 'profile.php' ),
+			'register-page' => function_exists( 'wp_registration_url' ) ? wp_registration_url() : ( wp_login_url() . '?action=register' ),
+			'login-page'    => function_exists( 'wp_login_url' ) ? wp_login_url() : wp_login_url(),
+		];
+
+		foreach ( $defaults as $key => $default ) {
+			$current = \MillionDollarScript\Classes\Data\Options::get_option( $key, null, true );
+			if ( empty( $current ) || $current === $default ) {
+				\MillionDollarScript\Classes\Data\Options::update_option( $key, $myaccount );
+			}
+		}
+	}
 }

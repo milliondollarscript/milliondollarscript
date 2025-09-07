@@ -55,13 +55,31 @@ class WooCommerceOptions {
 			// WooCommerce Integration
 			Field::make( 'separator', $prefix . 'separator', Language::get( 'WooCommerce' ) ),
 
-			Field::make( 'radio', $prefix . 'woocommerce', Language::get( 'WooCommerce Integration' ) )
-			     ->set_default_value( 'no' )
-			     ->set_options( [
+Field::make( 'radio', $prefix . 'woocommerce', Language::get( 'WooCommerce Integration' ) )
+     ->set_default_value( 'no' )
+     ->set_options( [
 					'no' => Language::get( 'No' ),
 					'yes' => Language::get( 'Yes' ),
 				 ] )
-			     ->set_help_text( Language::get( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.' ) ),
+     ->set_help_text( Language::get( 'Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the "WooCommerce" payment module in MDS and create a product in WC for it.' ) ),
+
+			// Hint: registration on My Account page
+			Field::make( 'html', $prefix . 'wc_registration_hint', Language::get( 'Registration on My Account page' ) )
+			     ->set_conditional_logic( [
+				     'relation' => 'AND',
+				     [
+					     'field'   => $prefix . 'woocommerce',
+					     'compare' => '=',
+					     'value'   => 'yes',
+				     ],
+			     ] )
+			     ->set_html(
+				     '<p class="description">' .
+Language::get( 'To show a registration form on WooCommerce\'s My Account page, enable the setting in WooCommerce > Settings > Accounts & Privacy under Account creation:' ) .
+				     ' <strong>' . Language::get( 'Allow customers to create an account > On "My account" page' ) . '</strong>. ' .
+				     '<a href="' . esc_url( admin_url( add_query_arg( [ 'page' => 'wc-settings', 'tab' => 'account' ], 'admin.php' ) ) ) . '">' . Language::get( 'Open WooCommerce Accounts & Privacy settings' ) . '</a>.' .
+				     '</p>'
+			     ),
 
 			// WooCommerce Product
 			Field::make( 'association', $prefix . 'product', Language::get( 'Product' ) )
@@ -146,9 +164,11 @@ class WooCommerceOptions {
 	 */
 	public static function mds_options_save( \Carbon_Fields\Field\Field $field, string $name ) {
 		switch ( $name ) {
-			case 'woocommerce':
+case 'woocommerce':
 				if ( class_exists( 'woocommerce' ) && $field->get_value() == 'yes' ) {
 					WooCommerceFunctions::enable_woocommerce_payments();
+					// If Account/Register/Login URLs are still defaults, point them to WC My Account
+					WooCommerceFunctions::sync_account_register_login_pages_to_myaccount_if_defaults();
 				} else {
 					WooCommerceFunctions::disable_woocommerce_payments();
 				}
