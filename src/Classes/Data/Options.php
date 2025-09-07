@@ -143,6 +143,29 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'If checked then pixels will be excluded from search results. Note: Only the text and title fields are searchable.' ) ),
 
+				// MDS Pixels base (CPT rewrite base)
+				Field::make( 'text', MDS_PREFIX . 'mds-pixel-base', Language::get( 'MDS Pixels base' ) )
+					->set_default_value( 'mds-pixel' )
+					->set_help_text( Language::get( 'Base segment for MDS Pixels URLs. Example: /mds-pixel/sample-slug. Changing this will flush permalinks and add the previous base to a redirect list.' ) ),
+
+				// MDS Pixels slug pattern
+				Field::make( 'text', MDS_PREFIX . 'mds-pixel-slug-structure', Language::get( 'MDS Pixels slug pattern' ) )
+					->set_default_value( '%username%-%order_id%' )
+					->set_help_text( Language::get( 'Pattern for MDS Pixels slugs. Supported tokens: %username%, %display_name%, %order_id%, %grid%, %pixel_id%, %text%, and %meta:your_field%.' ) ),
+
+				// Migrate slugs (button)
+                Field::make( 'html', MDS_PREFIX . 'mds-pixel-slug-migrate', Language::get( 'Migrate MDS Pixels slugs' ) )
+					->set_html(
+'<div style="margin:8px 0;">'
+						. '<p class="description" style="margin-bottom:6px;">'
+						. 'Updates all existing MDS Pixels to use the current slug pattern and stores previous slugs for automatic 301 redirects. '
+						. 'After changing the base or slug pattern, click <strong>Save Changes</strong> first, then run this migration. May take time on large sites.'
+						. '</p>'
+						. '<button type="button" id="mds_migrate_slugs_btn" class="button button-secondary">Run migration</button> '
+						. '<span id="mds_migrate_slugs_status"></span>'
+						. '</div>'
+					),
+
 				// Endpoint
 				Field::make( 'text', MDS_PREFIX . 'endpoint', Language::get( 'Endpoint' ) )
 					->set_default_value( 'milliondollarscript' )
@@ -1222,6 +1245,30 @@ class Options {
 					flush_rewrite_rules();
 				}
 				break;
+            case 'mds-pixel-base':
+				$old = self::get_option( 'mds-pixel-base', 'mds-pixel' );
+				$new = sanitize_title( (string) $field->get_value() );
+				if ( empty( $new ) ) { $new = 'mds-pixel'; }
+				if ( $new !== $old ) {
+					$hist_key = '_' . MDS_PREFIX . 'mds-pixel-base-history';
+					$history = get_option( $hist_key, [] );
+					if ( ! is_array( $history ) ) { $history = []; }
+					if ( ! in_array( $old, $history, true ) ) { $history[] = $old; }
+					update_option( $hist_key, $history );
+					$field->set_value( $new );
+					flush_rewrite_rules();
+				}
+				break;
+
+			case 'mds-pixel-slug-structure':
+				$old = self::get_option( 'mds-pixel-slug-structure', '%username%-%order_id%' );
+				$new = (string) $field->get_value();
+				if ( $new !== $old ) {
+					// No rewrite structure change, but flush for good measure after pattern updates
+					flush_rewrite_rules();
+				}
+				break;
+
 			case 'users':
 			case 'admin':
 			default:
@@ -1342,6 +1389,7 @@ class Options {
 		] );
 
 		wp_enqueue_script( MDS_PREFIX . 'admin-options-js' );
+
 	}
 
 	/**
@@ -1454,7 +1502,8 @@ class Options {
 		add_action( 'carbon_fields_container_saved', [ __CLASS__, 'handle_theme_options_save' ] );
 
 		// AJAX handlers for theme switching
-		add_action( 'wp_ajax_mds_handle_theme_change', [ __CLASS__, 'ajax_handle_theme_change' ] );
+        add_action( 'wp_ajax_mds_handle_theme_change', [ __CLASS__, 'ajax_handle_theme_change' ] );
+		add_action( 'wp_ajax_mds_migrate_slugs', [ __CLASS__, 'ajax_migrate_slugs' ] );
 	}
 
 	public static function handle_theme_options_save(): void {
@@ -1479,7 +1528,74 @@ class Options {
 		$new_theme = sanitize_text_field( $_POST['theme'] ?? 'light' );
 		$result = self::handle_theme_change( $new_theme );
 
-		wp_send_json( $result );
+        wp_send_json( $result );
+	}
+
+	/**
+	 * AJAX: Migrate mds-pixel slugs to the current pattern.
+	 */
+    public static function ajax_migrate_slugs(): void {
+		if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'mds_admin_nonce' ) ) {
+			wp_send_json_error( [ 'message' => 'bad_nonce' ], 403 );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'forbidden' ], 403 );
+		}
+		$page = max( 1, intval( $_POST['page'] ?? 1 ) );
+		$batch = intval( $_POST['batch_size'] ?? 100 );
+		if ( $batch < 1 ) { $batch = 100; }
+		if ( $batch > 500 ) { $batch = 500; }
+
+		$lock_key = '_' . MDS_PREFIX . 'slug_migration_lock';
+		$lock = get_transient( $lock_key );
+		if ( $page === 1 ) {
+			if ( $lock ) {
+				wp_send_json_error( [ 'message' => 'already_running' ], 409 );
+			}
+			set_transient( $lock_key, 1, 15 * MINUTE_IN_SECONDS );
+		} else {
+			if ( ! $lock ) { set_transient( $lock_key, 1, 15 * MINUTE_IN_SECONDS ); }
+			else { set_transient( $lock_key, 1, 15 * MINUTE_IN_SECONDS ); }
+		}
+
+		$q = new \WP_Query( [
+			'post_type' => 'mds-pixel',
+			'post_status' => 'any',
+			'posts_per_page' => $batch,
+			'paged' => $page,
+			'fields' => 'ids',
+			'no_found_rows' => false,
+		] );
+
+		$updated_batch = 0;
+		if ( $q->have_posts() ) {
+			foreach ( $q->posts as $post_id ) {
+				$post = get_post( $post_id );
+				if ( ! $post ) { continue; }
+				$old = $post->post_name;
+				$new = \MillionDollarScript\Classes\Web\Permalinks::build_slug_for_post( (int) $post_id );
+				if ( ! empty( $new ) && $new !== $old ) {
+					add_post_meta( $post_id, '_wp_old_slug', $old );
+					wp_update_post( [ 'ID' => $post_id, 'post_name' => $new ] );
+					$updated_batch++;
+				}
+			}
+		}
+
+		$total_pages = intval( $q->max_num_pages );
+        $done = ( $page >= max( 1, $total_pages ) ) || ! $q->have_posts();
+		if ( $done ) { 
+			delete_transient( $lock_key );
+			// Flush permalinks once at the end of migration
+			flush_rewrite_rules();
+		}
+
+		wp_send_json_success( [
+			'updated' => $updated_batch,
+			'page' => $page,
+			'total_pages' => max( 1, $total_pages ),
+			'done' => $done,
+		] );
 	}
 
 	/**
