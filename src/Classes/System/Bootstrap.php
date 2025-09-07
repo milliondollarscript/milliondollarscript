@@ -334,9 +334,9 @@ add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Ad
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
 		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
 
-		// Enqueue dynamic CSS inline for frontend and login pages
-		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Web\Styles', 'enqueue_dynamic_styles' ], 20 );
-		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\Web\Styles', 'enqueue_dynamic_styles' ], 20 );
+		// Enqueue dynamic CSS for frontend and login pages (late to win tie-specificity)
+		add_action( 'wp_enqueue_scripts', [ '\\MillionDollarScript\\Classes\\Web\\Styles', 'enqueue_dynamic_styles' ], 100 );
+		add_action( 'login_enqueue_scripts', [ '\\MillionDollarScript\\Classes\\Web\\Styles', 'enqueue_dynamic_styles' ], 100 );
 
 		// enqueue js on specific admin pages
 		$admin_page = is_admin() && isset( $_REQUEST['page'] );

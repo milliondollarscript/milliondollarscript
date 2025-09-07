@@ -130,11 +130,12 @@ class Styles {
         $css_vars[] = "    --mds-btn-tertiary-text: {$button_tertiary_text};";
         $css_vars[] = "    --mds-btn-border-radius: {$button_border_radius}px;";
 
-        $css = "/* MDS Dynamic Theme Variables */\n:root {\n" . implode( "\n", $css_vars ) . "\n}\n\n";
+        // Scope variables to the MDS container and the WordPress login page to avoid leaking globals
+        $css = "/* MDS Dynamic Theme Variables */\n.mds-container, body.login {\n" . implode( "\n", $css_vars ) . "\n}\n\n";
 
         // Theme-specific body class application
         $css .= "/* Theme Application */\n";
-        $css .= "body.mds-container,\n.mds-container {\n";
+        $css .= ".mds-container {\n";
         $css .= "    background-color: var(--mds-bg-primary);\n";
         $css .= "    color: var(--mds-text-primary);\n";
         $css .= "}\n\n";
@@ -401,14 +402,21 @@ class Styles {
      */
     public static function get_theme_body_classes(): array {
         $theme_mode = Options::get_option( 'theme_mode', 'light' );
-        
-        $classes = [
-            'mds-container',
-            "mds-theme-{$theme_mode}",
-            'mds-theme-active'
-        ];
-        
-        return $classes;
+
+        // Default: do not add any MDS classes to <body> to prevent style leakage.
+        // If a site explicitly opts in, re-enable legacy behavior via filter.
+        $enable_legacy = apply_filters( 'mds_enable_legacy_body_classes', false );
+
+        if ( $enable_legacy ) {
+            return [
+                'mds-container',
+                "mds-theme-{$theme_mode}",
+                'mds-theme-active',
+            ];
+        }
+
+        // No body classes by default.
+        return [];
     }
 
     /**
