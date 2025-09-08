@@ -497,8 +497,9 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                         <?php foreach ( $available_extensions as $extension ) : 
                             // $extension object now contains 'is_installed', 'is_active', and 'slug' 
                             // from fetch_available_extensions(). The old check below is no longer primary.
+                            $is_licensed = self::is_extension_licensed($extension['slug'] ?? '');
                         ?>
-                            <tr data-extension-id="<?php echo esc_attr( $extension['id'] ); ?>" data-version="<?php echo esc_attr( $extension['version'] ); ?>" data-is-premium="<?php echo ($extension['isPremium'] ?? false) ? 'true' : 'false'; ?>" data-is-licensed="<?php echo $is_licensed ? 'true' : 'false'; ?>"<?php if (isset($extension['is_installed']) && $extension['is_installed'] && !empty($extension['installed_plugin_file'])) { echo ' data-plugin-file=\"' . esc_attr($extension['installed_plugin_file']) . '\"'; } ?>>
+                            <tr data-extension-id="<?php echo esc_attr( $extension['id'] ); ?>" data-version="<?php echo esc_attr( $extension['version'] ); ?>" data-is-premium="<?php echo ($extension['isPremium'] ?? false) ? 'true' : 'false'; ?>" data-is-licensed="<?php echo $is_licensed ? 'true' : 'false'; ?>"<?php if (isset($extension['is_installed']) && $extension['is_installed'] && !empty($extension['installed_plugin_file'])) { echo ' data-plugin-file="' . esc_attr($extension['installed_plugin_file']) . '"'; } ?>>
                                 <td class="mds-extension-name">
                                     <strong><?php echo esc_html( $extension['name'] ); ?></strong>
                                     <?php if (!empty($extension['description'])) : ?>
@@ -534,7 +535,6 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                                     $purchase_any = !empty($extension['purchase']['anyAvailable']);
                                     $can_purchase = !empty($extension['can_purchase']);
                                     $any_purchase = $has_purchase_links || $purchase_any || $can_purchase;
-$is_licensed = self::is_extension_licensed($extension['slug'] ?? '');
 
                                     if ($is_premium) {
                                         if ($is_licensed) {
