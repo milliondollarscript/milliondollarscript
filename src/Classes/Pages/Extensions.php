@@ -59,7 +59,7 @@ class Extensions {
         add_action('admin_menu', [self::class, 'menu']);
         add_action('admin_init', [self::class, 'register_ajax_handlers']);
         add_action('init', [self::class, 'init_extension_updaters']);
-        add_action('admin_notices', [self::class, 'print_server_fallback_notice']);
+        // Fallback notice will be printed inline within render() for proper placement
 
         // Default Purchase URL filter for admin UI if not provided elsewhere
         add_filter('mds_license_purchase_url', function($url) {
@@ -447,8 +447,13 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         
         ?>
         <div class="wrap mds-extensions-page" id="mds-extensions-page">
+            <div class="mds-extensions-header">
+                <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
+                <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
+            </div>
+            
             <?php
-            // Show purchase return notices at top of Extensions page
+            // Show purchase/fallback notices positioned below the header, above the Available Extensions section
             $purchase = isset($_GET['purchase']) ? sanitize_text_field($_GET['purchase']) : '';
             $ext_param = isset($_GET['ext']) ? sanitize_text_field($_GET['ext']) : '';
             if ($purchase === 'success' && $ext_param !== '') : ?>
@@ -460,20 +465,15 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                     <p><?php echo esc_html( Language::get('Purchase was cancelled.') ); ?></p>
                 </div>
             <?php endif; ?>
-            <?php if ($extension_server_error) : ?>
+            <?php 
+            // Print fallback notice inline
+            self::print_server_fallback_notice();
+            if ($extension_server_error) : ?>
                 <div class="notice notice-warning">
                     <p><?php echo esc_html( Language::get('Could not connect to extension server: ') . $extension_server_error ); ?></p>
                     <p><?php echo esc_html( Language::get('You can only manage installed extensions at this time.') ); ?></p>
                 </div>
             <?php endif; ?>
-            <div class="mds-extensions-header">
-                <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
-                <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
-            </div>
-            
-            <?php
-            // Metrics banner removed. Future enhancement: fetch dynamic, non-fake metrics (e.g., cached license totals) from server for display.
-            ?>
             
             <!-- Available Extensions Section -->
             <?php if (!empty($available_extensions)) : ?>
@@ -619,13 +619,15 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                                     </td>
                                     <td class="mds-license-cell">
                                         <?php
-                                        $hide_license_ui = false;
+                                        // Default to hiding license UI unless catalog says this is premium
+                                        $hide_license_ui = true;
                                         if (!empty($catalogByName)) {
                                             $installed_name_key = self::normalize_extension_name($extension['name'] ?? '');
                                             if ($installed_name_key !== '' && isset($catalogByName[$installed_name_key])) {
                                                 $matched = $catalogByName[$installed_name_key];
-                                                if (is_array($matched) && array_key_exists('isPremium', $matched) && $matched['isPremium'] === false) {
-                                                    $hide_license_ui = true;
+                                                if (is_array($matched) && array_key_exists('isPremium', $matched)) {
+                                                    // Show license UI only for premium
+                                                    $hide_license_ui = ($matched['isPremium'] === false);
                                                 }
                                             }
                                         }
