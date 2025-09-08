@@ -452,9 +452,8 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                 <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
             </div>
 
-            <!-- In-page notices anchor: JS and server-side notices will render below header, above content -->
-            <div id="mds-extensions-notices" class="mds-extensions-notices" aria-live="polite" aria-atomic="true"></div>
-            
+            <!-- In-page notices anchor: All notices render below header, above content -->
+            <div id="mds-extensions-notices" class="mds-extensions-notices" aria-live="polite" aria-atomic="true">
             <?php
             // Show purchase/fallback notices positioned below the header, above the Available Extensions section
             $purchase = isset($_GET['purchase']) ? sanitize_text_field($_GET['purchase']) : '';
@@ -477,6 +476,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                     <p><?php echo esc_html( Language::get('You can only manage installed extensions at this time.') ); ?></p>
                 </div>
             <?php endif; ?>
+            </div>
             
             <!-- Available Extensions Section -->
             <?php if (!empty($available_extensions)) : ?>

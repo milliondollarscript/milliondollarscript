@@ -27,10 +27,10 @@ jQuery(document).ready(function ($) {
 		if ($anchor.length) {
 			$notice.appendTo($anchor);
 		} else {
-			// Fallback: place immediately after the extensions header if present, else into wpbody-content
-			const $header = $('#mds-extensions-page .mds-extensions-header').first();
-			if ($header.length) {
-				$notice.insertAfter($header);
+			// Fallback: place below the entire header banner, right before the Available Extensions section
+			const $avail = $('#mds-extensions-page .mds-extensions-container').first();
+			if ($avail.length) {
+				$notice.insertBefore($avail);
 			} else {
 				$notice.prependTo($('#wpbody-content').first());
 			}
