@@ -451,6 +451,9 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                 <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
                 <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
             </div>
+
+            <!-- In-page notices anchor: JS and server-side notices will render below header, above content -->
+            <div id="mds-extensions-notices" class="mds-extensions-notices" aria-live="polite" aria-atomic="true"></div>
             
             <?php
             // Show purchase/fallback notices positioned below the header, above the Available Extensions section
@@ -667,8 +670,9 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         // This is already called within the render method which checks if we're on the right page
         // No need for additional checks here
 
-        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-extensions.min.js';
-        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-extensions.min.js';
+        // Prefer unminified script during development to ensure latest JS changes take effect
+        $script_path = MDS_BASE_PATH . 'src/Assets/js/admin-extensions.js';
+        $script_url = MDS_BASE_URL . 'src/Assets/js/admin-extensions.js';
         $style_path = MDS_BASE_PATH . 'src/Assets/css/admin/extensions_enhanced.css';
         $style_url = MDS_BASE_URL . 'src/Assets/css/admin/extensions_enhanced.css';
 

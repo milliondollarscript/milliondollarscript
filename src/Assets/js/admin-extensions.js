@@ -22,8 +22,19 @@ jQuery(document).ready(function ($) {
 		$('.mds-enhanced-notice').remove();
 
 		const $notice = $(noticeHtml);
-		const $wrap = $('.wrap').first();
-		if ($wrap.length) { $notice.prependTo($wrap); } else { $notice.prependTo($('#wpbody-content').first()); }
+		// Prefer in-page anchor below header to avoid notices appearing inside the header area
+		const $anchor = $('#mds-extensions-notices');
+		if ($anchor.length) {
+			$notice.appendTo($anchor);
+		} else {
+			// Fallback: place immediately after the extensions header if present, else into wpbody-content
+			const $header = $('#mds-extensions-page .mds-extensions-header').first();
+			if ($header.length) {
+				$notice.insertAfter($header);
+			} else {
+				$notice.prependTo($('#wpbody-content').first());
+			}
+		}
 		$notice.show();
 
 		if (autoHide && type === "success") {
