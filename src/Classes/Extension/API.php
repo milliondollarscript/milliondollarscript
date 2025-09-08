@@ -33,16 +33,20 @@ class API {
      * @return array|mixed
      */
     public static function activate_license( string $license_key, string $extension_slug ) {
-        $url = self::get_base_url() . '/api/licenses/activate';
+        // Use public API for activation; pass productIdentifier as slug for now
+        $url = self::get_base_url() . '/api/public/activate';
 
         $response = wp_remote_post( $url, [
             'body' => json_encode( [
-                'license_key'    => $license_key,
-                'extension_slug' => $extension_slug,
+                'licenseKey'        => $license_key,
+                'productIdentifier' => $extension_slug,
+                // deviceId not strictly needed for our activation; omit or use site host if required later
             ] ),
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
+            'timeout' => 20,
+            'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment(),
         ] );
 
         if ( is_wp_error( $response ) ) {
@@ -107,16 +111,19 @@ class API {
      * @return array|mixed
      */
     public static function deactivate_license( string $license_key, string $extension_slug ) {
-        $url = self::get_base_url() . '/api/licenses/deactivate';
+        // Use public API for deactivation; pass productIdentifier as slug for consistency
+        $url = self::get_base_url() . '/api/public/deactivate';
 
         $response = wp_remote_post( $url, [
             'body' => json_encode( [
-                'license_key'    => $license_key,
-                'extension_slug' => $extension_slug,
+                'licenseKey'        => $license_key,
+                'productIdentifier' => $extension_slug,
             ] ),
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
+            'timeout' => 20,
+            'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment(),
         ] );
 
         if ( is_wp_error( $response ) ) {

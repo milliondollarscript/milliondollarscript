@@ -521,12 +521,25 @@ $(document).on('click', '.mds-manage-subscription', function(){
             }
             const sub = resp.data;
             const current = sub.currentPlan || sub.plan || '';
+            const currentDesc = sub.currentPlanDescription || '';
             const options = sub.availablePlans || [];
-            $overlay.find('.mds-current-plan').text(current ? ('Current plan: ' + current) : '');
+
+            // Human-friendly plan description
+            let descText = currentDesc;
+            if (!descText) {
+                const map = { one_time: 'One-time (no renewals)', monthly: 'Monthly subscription', yearly: 'Yearly subscription' };
+                descText = map[current] || current || '';
+                if ((current === 'monthly' || current === 'yearly') && sub.renewsAt) {
+                    try { descText += ' (renews ' + new Date(sub.renewsAt).toLocaleDateString() + ')'; } catch {}
+                }
+            }
+            $overlay.find('.mds-current-plan').text(descText ? ('Current plan: ' + descText) : '');
+
             if (options.length) {
-                const radios = options.map(o => `<label style="display:flex;align-items:center;gap:8px;margin:6px 0;"><input type="radio" name="mds-manage-plan" value="${o}"><span>${o}</span></label>`).join('');
+                const labelMap = { one_time: 'One-time', monthly: 'Monthly subscription', yearly: 'Yearly subscription' };
+                const radios = options.map(o => `<label style=\"display:flex;align-items:center;gap:8px;margin:6px 0;\"><input type=\"radio\" name=\"mds-manage-plan\" value=\"${o}\"><span>${labelMap[o] || o}</span></label>`).join('');
                 $plans.html(radios);
-                $plans.off('change','input[name="mds-manage-plan"]').on('change','input[name="mds-manage-plan"]', function(){
+                $plans.off('change','input[name=\"mds-manage-plan\"]').on('change','input[name=\"mds-manage-plan\"]', function(){
                     $apply.prop('disabled', !$(this).val()).data('plan', $(this).val());
                 });
             } else {
