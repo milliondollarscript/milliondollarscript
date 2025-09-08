@@ -6,6 +6,24 @@
 jQuery(document).ready(function ($) {
 	"use strict";
 
+	// Ensure any notices that accidentally render inside the header are relocated
+	(function relocateHeaderNotices() {
+		try {
+			const $anchor = $('#mds-extensions-notices');
+			const $headerNotices = $('#mds-extensions-page .mds-extensions-header .notice');
+			if ($headerNotices.length) {
+				if ($anchor.length) {
+					$headerNotices.detach().appendTo($anchor);
+				} else {
+					const $avail = $('#mds-extensions-page .mds-extensions-container').first();
+					if ($avail.length) {
+						$headerNotices.detach().insertBefore($avail);
+					}
+				}
+			}
+		} catch (e) { /* noop */ }
+	})();
+
 	// Enhanced notice system with better UX and non-animated injection
 	function showNotice(type, message, autoHide = true) {
 		const noticeClass = type === "error" ? "notice-error" : (type === "warning" ? "notice-warning" : "notice-success");
