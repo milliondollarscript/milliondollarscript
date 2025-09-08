@@ -900,6 +900,19 @@ class Options {
 					->set_default_value( home_url() )
 					->set_help_text( Language::get( 'The URL to redirect users to after logout.' ) ),
 
+				// WooCommerce Login Redirect
+				Field::make( 'text', MDS_PREFIX . 'woocommerce-login-redirect', Language::get( 'WooCommerce Login Redirect' ) )
+					->set_default_value( '' )
+					->set_help_text( Language::get( 'When WooCommerce integration is enabled, redirect users to this URL after a successful WooCommerce login. Leave empty to use WooCommerce\'s default behavior.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'woocommerce',
+							'compare' => '=',
+							'value'   => 'yes',
+						],
+					] ),
+
 				// WP Login Header Image
 				Field::make( 'image', MDS_PREFIX . 'login-header-image', Language::get( 'Login Header Image' ) )
 					->set_default_value( '' )
@@ -1235,6 +1248,10 @@ class Options {
 					$text = nl2br( $field->get_value() );
 				}
 				$field->set_value( $text );
+				break;
+			case 'woocommerce-login-redirect':
+				// Sanitize URL for WooCommerce login redirect
+				$field->set_value( esc_url_raw( (string) $field->get_value() ) );
 				break;
 			case 'endpoint':
 				if ( empty( $field->get_value() ) ) {

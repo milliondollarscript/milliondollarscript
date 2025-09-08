@@ -65,6 +65,9 @@ class WooCommerce {
 		add_filter( 'woocommerce_add_error', [ __CLASS__, 'custom_wc_error_msg' ] );
 		add_action( 'woocommerce_new_order', [ __CLASS__, 'new_order' ], 10, 1 );
 
+		// Redirect after WooCommerce login based on MDS option
+		add_filter( 'woocommerce_login_redirect', [ __CLASS__, 'login_redirect' ], 10, 2 );
+
 		// Remove order again button
 		add_action( 'woocommerce_order_details_before_order_table', [ __CLASS__, 'maybe_remove_order_again_button' ] );
 
@@ -636,5 +639,30 @@ class WooCommerce {
 		}
 
 		return $message;
+	}
+
+	/**
+	 * Filter WooCommerce login redirect when integration is enabled.
+	 *
+	 * @param string   $redirect Default redirect URL.
+	 * @param \WP_User $user     User logging in.
+	 *
+	 * @return string
+	 */
+	public static function login_redirect( string $redirect, $user ): string {
+		// Ensure integration toggle is enabled (use Carbon Fields-backed value)
+		if ( Options::get_option( 'woocommerce', 'no' ) !== 'yes' ) {
+			return $redirect;
+		}
+
+		$url = (string) Options::get_option( 'woocommerce-login-redirect', '' );
+		if ( empty( $url ) ) {
+			return $redirect;
+		}
+
+		$url = trim( $url );
+		// Validate and fall back to the original redirect if invalid
+		$safe = wp_validate_redirect( $url, $redirect );
+		return is_string( $safe ) ? $safe : $redirect;
 	}
 }
