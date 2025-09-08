@@ -1153,10 +1153,8 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         }
 
         try {
-            $extension_server_url = Options::get_option('extension_server_url', 'http://localhost:3000');
+            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
             $license_key = ''; // This is deprecated
-            
-            $api_url = rtrim($extension_server_url, '/') . '/api/extensions/' . urlencode($extension_id);
             
             $args = [
                 'timeout' => 30,
@@ -1171,7 +1169,31 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                 $args['headers']['x-license-key'] = $license_key;
             }
             
-            $response = wp_remote_get($api_url, $args);
+            // Resolve a working base using same candidate logic as fetch_available_extensions()
+            $candidates = [
+                rtrim((string)$user_configured_url, '/'),
+                'http://extension-server:3000',
+                'http://extension-server-dev:3000',
+                'http://host.docker.internal:15346',
+                'http://localhost:15346',
+            ];
+            
+            $response = null;
+            $working_base = null;
+            foreach ($candidates as $base) {
+                if (empty($base)) { continue; }
+                $api_url = rtrim($base, '/') . '/api/extensions/' . urlencode($extension_id);
+                $res = wp_remote_get($api_url, $args);
+                if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
+                    $response = $res;
+                    $working_base = $base;
+                    break;
+                }
+            }
+            
+            if (!$response) {
+                throw new \Exception('Failed to connect to extension server for extension detail.');
+            }
             
             if (is_wp_error($response)) {
                 throw new \Exception('Failed to connect to extension server: ' . $response->get_error_message());
@@ -1280,14 +1302,36 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         try {
             // Default to the service name and internal port for Docker environments.
             // The user can override this in MDS settings if their setup is different.
-            $extension_server_url = Options::get_option('extension_server_url', 'http://localhost:3000');
+            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
             $license_key = ''; // This is deprecated
 
             error_log('[MDS Extension Install] Extension ID: ' . $extension_id);
-            error_log('[MDS Extension Install] Retrieved Extension Server URL: ' . $extension_server_url);
+            error_log('[MDS Extension Install] Retrieved Extension Server URL: ' . $user_configured_url);
             error_log('[MDS Extension Install] Retrieved License Key: ' . (empty($license_key) ? 'EMPTY' : $license_key));
             
-            $download_url = rtrim($extension_server_url, '/') . '/api/extensions/' . urlencode($extension_id) . '/download';
+            // Resolve a working base using same candidate logic as fetch_available_extensions()
+            $candidates = [
+                rtrim((string)$user_configured_url, '/'),
+                'http://extension-server:3000',
+                'http://extension-server-dev:3000',
+                'http://host.docker.internal:15346',
+                'http://localhost:15346',
+            ];
+            $working_base = null;
+            foreach ($candidates as $base) {
+                if (empty($base)) { continue; }
+                $probe = rtrim($base, '/') . '/api/public/ping';
+                $probe_res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
+                if (!is_wp_error($probe_res) && wp_remote_retrieve_response_code($probe_res) === 200) {
+                    $working_base = $base;
+                    break;
+                }
+            }
+            if (!$working_base) {
+                throw new \Exception(Language::get('Extension server unreachable.'));
+            }
+            
+            $download_url = rtrim($working_base, '/') . '/api/extensions/' . urlencode($extension_id) . '/download';
             
             if (!empty($license_key)) {
                 $download_url .= '?licenseKey=' . urlencode($license_key);
