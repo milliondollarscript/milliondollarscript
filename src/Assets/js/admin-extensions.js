@@ -510,31 +510,47 @@ jQuery(document).ready(function ($) {
 			const siteId = String(MDS_EXTENSIONS_DATA.site_id || '').trim();
 			if (!siteId) return;
 
-			showNotice('success', 'Finalizing your purchase (claiming license)...', false);
-			$.ajax({
-				url: MDS_EXTENSIONS_DATA.ajax_url,
-				type: 'POST',
-				data: {
-					action: 'mds_claim_license',
-					nonce: MDS_EXTENSIONS_DATA.nonce,
-					extension_slug: extSlug,
-					claim_token: claimToken,
-					site_id: siteId,
-				},
-				dataType: 'json',
-				success: function (resp) {
-					if (resp && resp.success) {
-						showNotice('success', 'License claimed. You can now install the extension.');
-						setTimeout(() => window.location.replace(window.location.href.replace(/([?&])purchase=success[^&]*/,'$1')), 1500);
-					} else {
-						const msg = resp && resp.data && resp.data.message ? resp.data.message : 'License claim failed.';
-						showNotice('error', msg, false);
-					}
-				},
-				error: function () {
-					showNotice('error', 'An error occurred while claiming the license.', false);
+			let attempts = 0;
+			const maxAttempts = 12; // ~60s total with 5s intervals
+			const attemptClaim = () => {
+				attempts++;
+				if (attempts === 1) {
+					showNotice('success', 'Finalizing your purchase (claiming license)...', false);
 				}
-			});
+				$.ajax({
+					url: MDS_EXTENSIONS_DATA.ajax_url,
+					type: 'POST',
+					data: {
+						action: 'mds_claim_license',
+						nonce: MDS_EXTENSIONS_DATA.nonce,
+						extension_slug: extSlug,
+						claim_token: claimToken,
+						site_id: siteId,
+					},
+					dataType: 'json',
+					success: function (resp) {
+						if (resp && resp.success) {
+							showNotice('success', 'License claimed. You can now install the extension.');
+							setTimeout(() => window.location.replace(window.location.href.replace(/([?&])purchase=success[^&]*/,'$1')), 1500);
+						} else {
+							if (attempts < maxAttempts) {
+								setTimeout(attemptClaim, 5000);
+							} else {
+								const msg = resp && resp.data && resp.data.message ? resp.data.message : 'License claim failed.';
+								showNotice('error', msg, false);
+							}
+						}
+					},
+					error: function () {
+						if (attempts < maxAttempts) {
+							setTimeout(attemptClaim, 5000);
+						} else {
+							showNotice('error', 'An error occurred while claiming the license.', false);
+						}
+					}
+				});
+			};
+			attemptClaim();
 		} catch (e) { /* noop */ }
 	})();
 
