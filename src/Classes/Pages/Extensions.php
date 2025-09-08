@@ -498,7 +498,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                             // $extension object now contains 'is_installed', 'is_active', and 'slug' 
                             // from fetch_available_extensions(). The old check below is no longer primary.
                         ?>
-                            <tr data-extension-id="<?php echo esc_attr( $extension['id'] ); ?>" data-version="<?php echo esc_attr( $extension['version'] ); ?>" data-is-premium="<?php echo ($extension['isPremium'] ?? false) ? 'true' : 'false'; ?>"<?php if (isset($extension['is_installed']) && $extension['is_installed'] && !empty($extension['installed_plugin_file'])) { echo ' data-plugin-file="' . esc_attr($extension['installed_plugin_file']) . '"'; } ?>>
+                            <tr data-extension-id="<?php echo esc_attr( $extension['id'] ); ?>" data-version="<?php echo esc_attr( $extension['version'] ); ?>" data-is-premium="<?php echo ($extension['isPremium'] ?? false) ? 'true' : 'false'; ?>" data-is-licensed="<?php echo $is_licensed ? 'true' : 'false'; ?>"<?php if (isset($extension['is_installed']) && $extension['is_installed'] && !empty($extension['installed_plugin_file'])) { echo ' data-plugin-file=\"' . esc_attr($extension['installed_plugin_file']) . '\"'; } ?>>
                                 <td class="mds-extension-name">
                                     <strong><?php echo esc_html( $extension['name'] ); ?></strong>
                                     <?php if (!empty($extension['description'])) : ?>
@@ -534,7 +534,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                                     $purchase_any = !empty($extension['purchase']['anyAvailable']);
                                     $can_purchase = !empty($extension['can_purchase']);
                                     $any_purchase = $has_purchase_links || $purchase_any || $can_purchase;
-                                    $is_licensed = self::is_extension_licensed($extension['id']);
+$is_licensed = self::is_extension_licensed($extension['slug'] ?? '');
 
                                     if ($is_premium) {
                                         if ($is_licensed) {
@@ -1318,7 +1318,17 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             // Default to the service name and internal port for Docker environments.
             // The user can override this in MDS settings if their setup is different.
             $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-            $license_key = ''; // This is deprecated
+            // Fetch a license key if available for premium downloads
+            $license_key = '';
+            if (!empty($extension_slug)) {
+                if (class_exists('MillionDollarScript\\Classes\\Extension\\MDS_License_Manager')) {
+                    $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+                    $lic = $lm->get_license($extension_slug);
+                    if ($lic && !empty($lic->license_key) && ($lic->status === 'active')) {
+                        $license_key = (string)$lic->license_key;
+                    }
+                }
+            }
 
             error_log('[MDS Extension Install] Extension ID: ' . $extension_id);
             error_log('[MDS Extension Install] Retrieved Extension Server URL: ' . $user_configured_url);
@@ -1372,7 +1382,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
 
             error_log('[MDS Extension Install] Final Download URL: ' . $download_url);
             
-            $result = self::install_extension_from_url($extension_id, $extension_slug, $download_url);
+            $result = self::install_extension_from_url($extension_id, $extension_slug, $download_url, $license_key);
             wp_send_json_success($result);
             
         } catch (\Exception $e) {
@@ -1414,7 +1424,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
      * @return array Result of the installation.
      * @throws \Exception If the installation fails.
      */
-    public static function install_extension_from_url( string $extension_id, string $extension_slug, string $download_url ): array {
+    public static function install_extension_from_url( string $extension_id, string $extension_slug, string $download_url, string $license_key = '' ): array {
     // DIAGNOSTIC: Check for ZipArchive class
     if ( ! class_exists( 'ZipArchive' ) ) {
         $zip_error_msg = Language::get('PHP ZipArchive extension is missing on the server. This is required to install extensions. Please ask your hosting provider or system administrator to install/enable it.');
@@ -1465,8 +1475,8 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-admin/includes/plugin.php';
     
-    // Get the license key for authentication
-    $license_key = '';
+    // Get the license key for authentication (passed in)
+    $license_key = is_string($license_key) ? $license_key : '';
     
     // Set up the upgrader
     $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() ); 
@@ -1997,6 +2007,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                     // Pass-through metadata for Stripe checkout session
                     'siteId'     => rawurlencode($site_id),
                     'claimToken' => rawurlencode($claim_token),
+                    'extensionSlug' => rawurlencode($ext_slug_for_claim),
                 ],
                 $checkout_url
             );
@@ -2018,8 +2029,8 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         $license = $license_manager->get_license( $extension['id'] );
         $nonce = wp_create_nonce( 'mds_license_nonce_' . $extension['id'] );
         ?>
-        <form class="mds-license-form" data-extension-slug="<?php echo esc_attr( $extension['id'] ); ?>">
-            <input type="hidden" name="extension_slug" value="<?php echo esc_attr( $extension['id'] ); ?>">
+        <form class="mds-license-form" data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>">
+            <input type="hidden" name="extension_slug" value="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>">
             <input type="hidden" name="nonce" value="<?php echo esc_attr( $nonce ); ?>">
 
             <?php if ( $license && $license->status === 'active' ) : ?>
@@ -2217,7 +2228,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
          * @param string $extension_id The ID of the extension.
          * @return bool True if the extension has an active license, false otherwise.
          */
-        protected static function is_extension_licensed(string $extension_id): bool {
+        protected static function is_extension_licensed(string $extension_slug): bool {
             // If the license manager class doesn't exist, we can't check.
             if (!class_exists('\MillionDollarScript\Classes\Extension\MDS_License_Manager')) {
                 return false;
@@ -2225,12 +2236,12 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
     
             try {
                 $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-                $license = $license_manager->get_license($extension_id);
+                $license = $license_manager->get_license($extension_slug);
     
                 return $license && $license->status === 'active';
             } catch (\Exception $e) {
                 // If the table doesn't exist or another DB error occurs, assume not licensed.
-                error_log('Error checking license status for extension ' . $extension_id . ': ' . $e->getMessage());
+                error_log('Error checking license status for extension ' . $extension_slug . ': ' . $e->getMessage());
                 return false;
             }
         }

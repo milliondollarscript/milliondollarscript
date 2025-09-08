@@ -128,9 +128,16 @@ jQuery(document).ready(function ($) {
 
 			if (!$premiumRows.length) return;
 
+			// If we don't have a license key localized, trust the server-rendered row state
 			if (!licenseKey) {
 				$premiumRows.each(function () {
-					disableInstall($(this));
+					const $row = $(this);
+					const licensed = String($row.data('is-licensed') || '').toLowerCase() === 'true';
+					if (licensed) {
+						enableInstall($row);
+					} else {
+						disableInstall($row);
+					}
 				});
 				return;
 			}
@@ -293,7 +300,8 @@ jQuery(document).ready(function ($) {
 
 		const isPremiumAttr = $row.data("is-premium");
 		const isPremium = isPremiumAttr === true || isPremiumAttr === "true";
-		const hasLicense = !!(MDS_EXTENSIONS_DATA.license_key && String(MDS_EXTENSIONS_DATA.license_key).trim());
+		const licensedAttr = String($row.data("is-licensed") || '').toLowerCase() === 'true';
+		const hasLicense = licensedAttr || !!(MDS_EXTENSIONS_DATA.license_key && String(MDS_EXTENSIONS_DATA.license_key).trim());
 
 		if (isPremium && !hasLicense) {
 			const settingsUrl = MDS_EXTENSIONS_DATA.settings_url || '#';
