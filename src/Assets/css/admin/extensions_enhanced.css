@@ -298,6 +298,39 @@
     }
 }
 
+/* Modal */
+.mds-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000; /* over admin */
+}
+.mds-modal {
+    background: #fff;
+    border-radius: 8px;
+    max-width: 560px;
+    width: 95%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.mds-modal header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+}
+.mds-modal .mds-modal-body {
+    padding: 16px;
+}
+.mds-modal footer {
+    padding: 12px 16px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 /* Table compatibility for existing functionality */
 .mds-extensions-container {
     margin-top: 20px;
@@ -398,6 +431,96 @@
 /* Accessible header and banner overrides (placed after prior heading rules) */
 .mds-extensions-page .mds-extensions-header { background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%); }
 .mds-extensions-page .mds-extensions-header h1 { color: #ffffff; font-weight: 700; margin-bottom: 8px; }
+
+/* --- License UI: Manage toggle + input sizing --- */
+.dashicons {
+    vertical-align: middle;
+}
+
+.mds-visibility-toggle.button-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #1d2327;
+}
+
+.mds-visibility-toggle .dashicons {
+    font-size: 18px;
+}
+
+/* Manage toggle */
+.mds-license-cell {
+    position: relative;
+    vertical-align: middle;
+}
+
+.mds-manage-license-toggle.button-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: #2271b1;
+    cursor: pointer;
+}
+
+.mds-manage-license-toggle.button-link:hover,
+.mds-manage-license-toggle.button-link:focus {
+    color: #135e96;
+    text-decoration: underline;
+}
+
+.mds-license-manage-content {
+    display: none; /* hidden by default; toggled via JS */
+    margin-top: 6px;
+}
+
+.mds-license-manage-content.is-open {
+    display: inline-block; /* inline within table cell */
+}
+
+ .mds-inline-license {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    max-width: 420px;
+}
+
+.mds-inline-license-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.mds-inline-license-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.mds-inline-license .mds-inline-license-key,
+.mds-license-form input[name="license_key"] {
+    width: 240px;
+    max-width: 60%;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.mds-inline-license-eye {
+    width: 32px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Prevent action buttons from overlapping license inputs on narrow widths */
+@media (max-width: 900px) {
+    .mds-inline-license .mds-inline-license-key,
+    .mds-license-form input[name="license_key"] {
+        width: 180px;
+        max-width: 55%;
+    }
+}
 .mds-extensions-page .mds-extensions-header .mds-extensions-subtitle { color: #e5e7eb; }
 .mds-extensions-page .mds-discovery-banner { background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%); }
 .mds-extensions-page .mds-discovery-banner .mds-banner-text h2 { color: #ffffff; font-weight: 700; margin-bottom: 8px; }

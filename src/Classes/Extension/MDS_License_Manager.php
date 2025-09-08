@@ -191,7 +191,12 @@ class MDS_License_Manager {
                 return true;
             }
 
-            $validation = API::validate_license( $license->license_key, $extension_slug );
+            // Decrypt license key (handles plaintext transparently as well)
+            $plaintext = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact( (string) $license->license_key );
+            if ($plaintext === '') {
+                return false;
+            }
+            $validation = API::validate_license( $plaintext, $extension_slug );
 
             if ( is_array( $validation ) && ! empty( $validation['success'] ) && ! empty( $validation['valid'] ) ) {
                 set_transient( 'mds_license_check_' . $extension_slug, 'valid', DAY_IN_SECONDS );
@@ -203,5 +208,18 @@ class MDS_License_Manager {
         }
 
         return false;
+    }
+
+    /**
+     * Get all licenses stored locally.
+     * @return array<int, object> List of license rows with dynamic columns
+     */
+    public function get_all_licenses(): array {
+        global $wpdb;
+        if ( ! $this->table_exists() ) {
+            return [];
+        }
+        $rows = $wpdb->get_results( "SELECT * FROM {$this->table_name} ORDER BY id DESC" );
+        return is_array($rows) ? $rows : [];
     }
 }
