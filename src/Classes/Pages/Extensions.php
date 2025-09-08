@@ -2340,7 +2340,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         }
     }
 
-    public static function ajax_available_activate_license(): void {
+        public static function ajax_available_activate_license(): void {
         check_ajax_referer( 'mds_extensions_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -2354,11 +2354,11 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
         }
 
-        // Attempt validation via extension server; on failure store as pending locally
-        $valid = false;
+        // Attempt activation via extension server; on failure store as pending locally
+        $activated = false;
         $expires_at = null;
         try {
-            $user_configured_url = \MillionDollarScript\Classes\Data\Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
+            $user_configured_url = \\MillionDollarScript\\Classes\\Data\\Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
             $candidates = [
                 rtrim((string)$user_configured_url, '/'),
                 'http://extension-server:3000',
@@ -2369,46 +2369,49 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             $working_base = null;
             foreach ($candidates as $base) {
                 if (empty($base)) { continue; }
-                $probe = rtrim($base, '/') . '/api/public/extensions';
-                $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment() ]);
+                $probe = rtrim($base, '/') . '/api/public/ping';
+                $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !\\MillionDollarScript\\Classes\\System\\Utility::is_development_environment() ]);
                 if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
                     $working_base = $base;
                     break;
                 }
             }
             if ($working_base) {
-                $validate_url = rtrim($working_base, '/') . '/api/public/validate';
+                $activate_url = rtrim($working_base, '/') . '/api/public/activate';
                 $body = wp_json_encode([
                     'licenseKey' => $license_key,
                     'productIdentifier' => $extension_slug,
                 ]);
-                $resp = wp_remote_post($validate_url, [
+                $resp = wp_remote_post($activate_url, [
                     'timeout' => 20,
                     'headers' => [ 'Content-Type' => 'application/json' ],
-                    'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment(),
+                    'sslverify' => !\\MillionDollarScript\\Classes\\System\\Utility::is_development_environment(),
                     'body'    => $body,
                 ]);
                 if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
                     $json = json_decode(wp_remote_retrieve_body($resp), true);
-                    $valid = is_array($json) && (!empty($json['valid']));
-                    if ($valid && isset($json['license']['expires_at'])) {
-                        $expires_at = $json['license']['expires_at'];
+                    $activated = is_array($json) && (!empty($json['success']) || !empty($json['activated']) || !empty($json['valid']));
+                    if (is_array($json)) {
+                        if (isset($json['license']['expires_at'])) { $expires_at = $json['license']['expires_at']; }
+                        elseif (isset($json['license']['expiresAt'])) { $expires_at = $json['license']['expiresAt']; }
+                        elseif (isset($json['expires_at'])) { $expires_at = $json['expires_at']; }
+                        elseif (isset($json['expiresAt'])) { $expires_at = $json['expiresAt']; }
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\\Exception $e) {
             // ignore; will store pending
         }
 
         // Encrypt and store locally
-        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        $license_manager = new \\MillionDollarScript\\Classes\\Extension\\MDS_License_Manager();
         $existing = $license_manager->get_license( $extension_slug );
-        $enc = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact($license_key);
+        $enc = \\MillionDollarScript\\Classes\\Extension\\LicenseCrypto::encryptToCompact($license_key);
 
         if ( $existing ) {
             $license_manager->update_license( (int)$existing->id, [
                 'license_key' => $enc,
-                'status'      => $valid ? 'active' : 'inactive',
+                'status'      => $activated ? 'active' : 'inactive',
                 'expires_at'  => $expires_at,
             ] );
         } else {
@@ -2416,13 +2419,13 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             $license = $license_manager->get_license( $extension_slug );
             if ($license) {
                 $license_manager->update_license( (int)$license->id, [
-                    'status'     => $valid ? 'active' : 'inactive',
+                    'status'     => $activated ? 'active' : 'inactive',
                     'expires_at' => $expires_at,
                 ] );
             }
         }
 
-        if ($valid) {
+        if ($activated) {
             wp_send_json_success(['message' => Language::get('License activated and stored.')]);
         } else {
             // Queue pending validation via cron by recording in an option
@@ -2469,22 +2472,26 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
         }
 
-        // Validate against Extension Server public endpoint, then store locally
+        // Activate via Extension Server public endpoint, then store locally
         try {
-            $validation = \MillionDollarScript\Classes\Extension\API::validate_license( $license_key, $extension_slug );
-            $valid = is_array($validation) && !empty($validation['success']) && !empty($validation['valid']);
+            $activation = \\MillionDollarScript\\Classes\\Extension\\API::activate_license( $license_key, $extension_slug );
+            $ok = is_array($activation) && (!empty($activation['success']) || !empty($activation['activated']) || !empty($activation['valid']));
             $expires_at = '';
-            if (is_array($validation) && isset($validation['license']['expires_at'])) {
-                $expires_at = (string)$validation['license']['expires_at'];
+            if (is_array($activation)) {
+                if (isset($activation['license']['expires_at'])) { $expires_at = (string)$activation['license']['expires_at']; }
+                elseif (isset($activation['license']['expiresAt'])) { $expires_at = (string)$activation['license']['expiresAt']; }
+                elseif (isset($activation['expires_at'])) { $expires_at = (string)$activation['expires_at']; }
+                elseif (isset($activation['expiresAt'])) { $expires_at = (string)$activation['expiresAt']; }
             }
 
-            if (!$valid) {
-                wp_send_json_error([ 'message' => Language::get('Invalid license key for this extension.') ]);
+            if (!$ok) {
+                $msg = is_array($activation) && isset($activation['message']) ? (string)$activation['message'] : Language::get('Activation failed.');
+                wp_send_json_error([ 'message' => $msg ]);
             }
 
-            $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            $license_manager = new \\MillionDollarScript\\Classes\\Extension\\MDS_License_Manager();
             $existing = $license_manager->get_license( $extension_slug );
-            $enc_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact($license_key);
+            $enc_key = \\MillionDollarScript\\Classes\\Extension\\LicenseCrypto::encryptToCompact($license_key);
 
             if ( $existing ) {
                 $license_manager->update_license( (int)$existing->id, [
@@ -2504,7 +2511,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             }
 
             wp_send_json_success( [ 'message' => Language::get('License activated and stored.') ] );
-        } catch (\Exception $e) {
+        } catch (\\Exception $e) {
             wp_send_json_error([ 'message' => $e->getMessage() ]);
         }
     }
@@ -2610,6 +2617,20 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 'status' => $json['status'] ?? '',
                 'renewsAt' => $json['renewsAt'] ?? ($json['expires_at'] ?? ''),
             ];
+            // Include a human-friendly description if provided by the server, otherwise derive one.
+            $desc = '';
+            if (is_array($json)) {
+                $desc = $json['currentPlanDescription'] ?? ($json['planDescription'] ?? '');
+            }
+            if ($desc === '' && is_string($out['currentPlan']) && $out['currentPlan'] !== '') {
+                $map = [
+                    'one_time' => 'One-time (no renewals)',
+                    'monthly'  => 'Monthly subscription',
+                    'yearly'   => 'Yearly subscription',
+                ];
+                $desc = $map[$out['currentPlan']] ?? $out['currentPlan'];
+            }
+            $out['currentPlanDescription'] = $desc;
             wp_send_json_success($out);
         }
 

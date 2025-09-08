@@ -571,3 +571,11 @@ body.wp-admin .wrap > .notice .mds-go-to-system { pointer-events: auto; }
   color: #1d2327 !important;
   background-color: #fff !important;
 }
+
+/* Manage modal plan selection: indicate current plan */
+.mds-current-plan-indicator {
+  color: #6b7280; /* gray-500 */
+  font-style: italic;
+  font-size: 12px;
+  margin-left: 6px;
+}

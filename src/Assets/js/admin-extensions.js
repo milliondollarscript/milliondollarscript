@@ -537,10 +537,18 @@ $(document).on('click', '.mds-manage-subscription', function(){
 
             if (options.length) {
                 const labelMap = { one_time: 'One-time', monthly: 'Monthly subscription', yearly: 'Yearly subscription' };
-                const radios = options.map(o => `<label style=\"display:flex;align-items:center;gap:8px;margin:6px 0;\"><input type=\"radio\" name=\"mds-manage-plan\" value=\"${o}\"><span>${labelMap[o] || o}</span></label>`).join('');
+                const radios = options.map(o => {
+                    const isCurrent = o === current;
+                    const label = labelMap[o] || o;
+                    const badge = isCurrent ? ' <em class=\"mds-current-plan-indicator\">(current)</em>' : '';
+                    const checked = isCurrent ? ' checked' : '';
+                    const disabled = isCurrent ? ' disabled aria-checked=\"true\"' : '';
+                    return `<label style=\"display:flex;align-items:center;gap:8px;margin:6px 0;\"><input type=\"radio\" name=\"mds-manage-plan\" value=\"${o}\"${checked}${disabled}><span>${label}${badge}</span></label>`;
+                }).join('');
                 $plans.html(radios);
                 $plans.off('change','input[name=\"mds-manage-plan\"]').on('change','input[name=\"mds-manage-plan\"]', function(){
-                    $apply.prop('disabled', !$(this).val()).data('plan', $(this).val());
+                    const chosen = $(this).val();
+                    $apply.prop('disabled', !chosen || chosen === current).data('plan', chosen);
                 });
             } else {
                 $plans.html('<p>No alternative plans available.</p>');
@@ -825,8 +833,37 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 				showNotice('error', 'An error occurred during deactivation.', false);
 				resetButton($button, 'Deactivate');
 			});
+		});
 	});
 
+// Inline license activation in Available Extensions
+$(document).on('click', '.mds-inline-license-activate', function (e) {
+    e.preventDefault();
+    const $btn = $(this);
+    const $wrap = $btn.closest('.mds-inline-license');
+    const slug = $wrap.data('extension-slug');
+    const key = String($wrap.find('.mds-inline-license-key').val() || '').trim();
+    if (!slug) { showNotice('error', 'Missing extension identifier.', false); return; }
+    if (!key) { showNotice('warning', 'Please enter a license key.', false); return; }
+    setButtonLoading($btn, 'Activating...');
+    $.post(MDS_EXTENSIONS_DATA.ajax_url, {
+        action: 'mds_available_activate_license',
+        nonce: MDS_EXTENSIONS_DATA.nonce,
+        extension_slug: slug,
+        license_key: key
+    }).done(function(resp){
+        if (resp && resp.success) {
+            showNotice('success', (resp.data && resp.data.message) || 'License activated.');
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showNotice('error', (resp && resp.data && resp.data.message) || 'Activation failed.', false);
+            resetButton($btn, 'Activate');
+        }
+    }).fail(function(){
+        showNotice('error', 'Activation failed.', false);
+        resetButton($btn, 'Activate');
+    });
+});
 
 // Inline license: eye toggle using dashicons (hidden <-> visibility) placed in actions row
 	$(document).on('click', '.mds-inline-license-visibility', function () {
