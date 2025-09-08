@@ -112,6 +112,8 @@ class Extensions {
         add_action( 'wp_ajax_mds_install_extension', [ self::class, 'ajax_install_extension' ] );
         add_action( 'wp_ajax_mds_purchase_extension', [ self::class, 'ajax_purchase_extension' ] );
         add_action( 'wp_ajax_mds_claim_license', [ self::class, 'ajax_claim_license' ] );
+        add_action( 'wp_ajax_mds_available_activate_license', [ self::class, 'ajax_available_activate_license' ] );
+        add_action( 'wp_ajax_mds_get_license_plaintext', [ self::class, 'ajax_get_license_plaintext' ] );
 add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_license' ] );
         add_action( 'wp_ajax_mds_deactivate_license', [ self::class, 'ajax_deactivate_license' ] );
     }
@@ -489,7 +491,8 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                         <tr>
                             <th><?php echo esc_html( Language::get('Extension') ); ?></th>
                             <th><?php echo esc_html( Language::get('Version') ); ?></th>
-                            <th><?php echo esc_html( Language::get('Type') ); ?></th>
+            <th><?php echo esc_html( Language::get('Type') ); ?></th>
+                            <th><?php echo esc_html( Language::get('License') ); ?></th>
                             <th><?php echo esc_html( Language::get('Action') ); ?></th>
                         </tr>
                     </thead>
@@ -514,6 +517,15 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                                         <span class="mds-type-premium"><?php echo esc_html( Language::get('Premium') ); ?></span>
                                     <?php else : ?>
                                         <span class="mds-type-free"><?php echo esc_html( Language::get('Free') ); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="mds-license-cell">
+                                    <?php if (($extension['isPremium'] ?? false)) : ?>
+                                        <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr($extension['slug']); ?>">
+                                            <input type="password" class="regular-text mds-inline-license-key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>">
+                                            <button type="button" class="button mds-inline-license-eye" title="<?php echo esc_attr( Language::get('Show/Hide') ); ?>">👁</button>
+                                            <button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="<?php echo esc_attr($nonce); ?>"><?php echo esc_html( Language::get('Activate') ); ?></button>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                                 <td class="mds-action-cell">
@@ -554,6 +566,9 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                                                 $plan_attr = ' data-plan="one_time"';
                                             }
                                             echo '<button class="button button-primary mds-purchase-extension" data-extension-id="' . esc_attr($extension['id']) . '" data-nonce="' . esc_attr($nonce) . '"' . $plan_attr . '>' . esc_html(Language::get('Purchase')) . '</button>';
+                                            if ($extension_server_error) {
+                                                echo ' <a class="button" href="' . esc_url( admin_url('plugin-install.php?tab=upload') ) . '">' . esc_html( Language::get('Upload ZIP') ) . '</a>';
+                                            }
                                         } else {
                                             // Premium, not licensed, no purchase availability: Unavailable
                                             ?>
@@ -1169,7 +1184,20 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
 
         try {
             $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-            $license_key = ''; // This is deprecated
+            // Fetch a license key if available for premium downloads (decrypt if needed)
+            $license_key = '';
+            if (!empty($extension_slug)) {
+                if (class_exists('MillionDollarScript\\Classes\\Extension\\MDS_License_Manager')) {
+                    $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+                    $lic = $lm->get_license($extension_slug);
+                    if ($lic && !empty($lic->license_key)) {
+                        $pt = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact($lic->license_key);
+                        if (!empty($pt) && ($lic->status === 'active')) {
+                            $license_key = $pt;
+                        }
+                    }
+                }
+            }
             
             $args = [
                 'timeout' => 30,
@@ -2146,6 +2174,121 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         } catch (\Exception $e) {
             wp_send_json_error( [ 'message' => $e->getMessage() ] );
         }
+    }
+
+    public static function ajax_available_activate_license(): void {
+        check_ajax_referer( 'mds_extensions_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ] );
+        }
+
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] ?? '' );
+        $license_key    = sanitize_text_field( $_POST['license_key'] ?? '' );
+
+        if ( empty( $extension_slug ) || empty( $license_key ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
+        }
+
+        // Attempt validation via extension server; on failure store as pending locally
+        $valid = false;
+        $expires_at = null;
+        try {
+            $user_configured_url = \MillionDollarScript\Classes\Data\Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
+            $candidates = [
+                rtrim((string)$user_configured_url, '/'),
+                'http://extension-server:3000',
+                'http://extension-server-dev:3000',
+                'http://host.docker.internal:15346',
+                'http://localhost:15346',
+            ];
+            $working_base = null;
+            foreach ($candidates as $base) {
+                if (empty($base)) { continue; }
+                $probe = rtrim($base, '/') . '/api/public/extensions';
+                $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment() ]);
+                if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
+                    $working_base = $base;
+                    break;
+                }
+            }
+            if ($working_base) {
+                $validate_url = rtrim($working_base, '/') . '/api/public/validate';
+                $body = wp_json_encode([
+                    'licenseKey' => $license_key,
+                    'productIdentifier' => $extension_slug,
+                ]);
+                $resp = wp_remote_post($validate_url, [
+                    'timeout' => 20,
+                    'headers' => [ 'Content-Type' => 'application/json' ],
+                    'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment(),
+                    'body'    => $body,
+                ]);
+                if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
+                    $json = json_decode(wp_remote_retrieve_body($resp), true);
+                    $valid = is_array($json) && (!empty($json['valid']));
+                    if ($valid && isset($json['license']['expires_at'])) {
+                        $expires_at = $json['license']['expires_at'];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // ignore; will store pending
+        }
+
+        // Encrypt and store locally
+        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        $existing = $license_manager->get_license( $extension_slug );
+        $enc = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact($license_key);
+
+        if ( $existing ) {
+            $license_manager->update_license( (int)$existing->id, [
+                'license_key' => $enc,
+                'status'      => $valid ? 'active' : 'inactive',
+                'expires_at'  => $expires_at,
+            ] );
+        } else {
+            $license_manager->add_license( $extension_slug, $enc );
+            $license = $license_manager->get_license( $extension_slug );
+            if ($license) {
+                $license_manager->update_license( (int)$license->id, [
+                    'status'     => $valid ? 'active' : 'inactive',
+                    'expires_at' => $expires_at,
+                ] );
+            }
+        }
+
+        if ($valid) {
+            wp_send_json_success(['message' => Language::get('License activated and stored.')]);
+        } else {
+            // Queue pending validation via cron by recording in an option
+            $pending = get_option('mds_pending_license_validations', []);
+            if (!is_array($pending)) { $pending = []; }
+            $pending[$extension_slug] = [ 'stored_at' => time(), 'attempts' => 0 ];
+            update_option('mds_pending_license_validations', $pending, false);
+            wp_send_json_success(['message' => Language::get('License saved (pending validation).')]);
+        }
+    }
+
+    public static function ajax_get_license_plaintext(): void {
+        check_ajax_referer( 'mds_extensions_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ] );
+        }
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] ?? '' );
+        if (!$extension_slug) {
+            wp_send_json_error(['message' => Language::get('Missing extension slug.')]);
+        }
+        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        $license = $license_manager->get_license( $extension_slug );
+        if (!$license) {
+            wp_send_json_error(['message' => Language::get('No license found for this extension.')]);
+        }
+        $pt = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact($license->license_key);
+        if ($pt === '') {
+            wp_send_json_error(['message' => Language::get('Could not decrypt license key.')]);
+        }
+        wp_send_json_success(['license_key' => $pt]);
     }
 
     public static function ajax_activate_license(): void {

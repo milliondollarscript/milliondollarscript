@@ -616,4 +616,60 @@ jQuery(document).ready(function ($) {
 			});
 	});
 
+
+	// Inline license: eye toggle
+	$(document).on('click', '.mds-inline-license-eye', function () {
+		const $wrap = $(this).closest('.mds-inline-license');
+		const $input = $wrap.find('.mds-inline-license-key');
+		const extSlug = $wrap.data('extension-slug');
+		if ($input.attr('type') === 'password') {
+			// fetch plaintext from server
+			$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+				action: 'mds_get_license_plaintext',
+				nonce: MDS_EXTENSIONS_DATA.nonce,
+				extension_slug: extSlug,
+			}).done(function (resp) {
+				if (resp && resp.success && resp.data && resp.data.license_key) {
+					$input.val(resp.data.license_key);
+					$input.attr('type', 'text');
+				}
+			}).fail(function () {
+				showNotice('error', 'Failed to retrieve license key.', false);
+			});
+		} else {
+			$input.attr('type', 'password');
+		}
+	});
+
+	// Inline license: activate
+	$(document).on('click', '.mds-inline-license-activate', function () {
+		const $wrap = $(this).closest('.mds-inline-license');
+		const $input = $wrap.find('.mds-inline-license-key');
+		const extSlug = $wrap.data('extension-slug');
+		const key = String($input.val() || '').trim();
+		if (!key) {
+			showNotice('warning', 'Enter a license key first.', false);
+			return;
+		}
+		const $btn = $(this);
+		setButtonLoading($btn, 'Validating...');
+		$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+			action: 'mds_available_activate_license',
+			nonce: MDS_EXTENSIONS_DATA.nonce,
+			extension_slug: extSlug,
+			license_key: key,
+		}).done(function (resp) {
+			if (resp && resp.success) {
+				showNotice('success', resp.data && resp.data.message ? resp.data.message : 'License updated.');
+				setTimeout(() => window.location.reload(), 1000);
+			} else {
+				showNotice('error', (resp && resp.data && resp.data.message) || 'Failed to save license.', false);
+			}
+		}).fail(function () {
+			showNotice('error', 'Failed to save license.', false);
+		}).always(function () {
+			resetButton($btn, 'Activate');
+		});
+	});
+
 });
