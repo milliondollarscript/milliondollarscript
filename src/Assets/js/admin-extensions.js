@@ -491,6 +491,45 @@ jQuery(document).ready(function ($) {
 		});
 	});
 
+	// Auto-claim license after purchase success
+	(function autoClaimAfterPurchase() {
+		try {
+			const p = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.purchase) || {};
+			if (!p || p.status !== 'success') return;
+			const claimToken = String(p.claim_token || '').trim();
+			const extSlug = String(p.ext_slug || '').trim();
+			if (!claimToken || !extSlug) return;
+			const siteId = String(MDS_EXTENSIONS_DATA.site_id || '').trim();
+			if (!siteId) return;
+
+			showNotice('success', 'Finalizing your purchase (claiming license)...', false);
+			$.ajax({
+				url: MDS_EXTENSIONS_DATA.ajax_url,
+				type: 'POST',
+				data: {
+					action: 'mds_claim_license',
+					nonce: MDS_EXTENSIONS_DATA.nonce,
+					extension_slug: extSlug,
+					claim_token: claimToken,
+					site_id: siteId,
+				},
+				dataType: 'json',
+				success: function (resp) {
+					if (resp && resp.success) {
+						showNotice('success', 'License claimed. You can now install the extension.');
+						setTimeout(() => window.location.replace(window.location.href.replace(/([?&])purchase=success[^&]*/,'$1')), 1500);
+					} else {
+						const msg = resp && resp.data && resp.data.message ? resp.data.message : 'License claim failed.';
+						showNotice('error', msg, false);
+					}
+				},
+				error: function () {
+					showNotice('error', 'An error occurred while claiming the license.', false);
+				}
+			});
+		} catch (e) { /* noop */ }
+	})();
+
 	// License activation handler
 	$(document).on('click', '.mds-activate-license', function (e) {
 		e.preventDefault();

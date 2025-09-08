@@ -111,6 +111,7 @@ class Extensions {
         add_action( 'wp_ajax_mds_activate_extension', [ __CLASS__, 'ajax_activate_extension' ] );
         add_action( 'wp_ajax_mds_install_extension', [ self::class, 'ajax_install_extension' ] );
         add_action( 'wp_ajax_mds_purchase_extension', [ self::class, 'ajax_purchase_extension' ] );
+        add_action( 'wp_ajax_mds_claim_license', [ self::class, 'ajax_claim_license' ] );
 add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_license' ] );
         add_action( 'wp_ajax_mds_deactivate_license', [ self::class, 'ajax_deactivate_license' ] );
     }
@@ -689,12 +690,26 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             );
             
             // Create the data to be passed to JavaScript
+            $purchase = isset($_GET['purchase']) ? sanitize_text_field($_GET['purchase']) : '';
+            $ext_param = isset($_GET['ext']) ? sanitize_text_field($_GET['ext']) : '';
+            $ext_slug_param = isset($_GET['extSlug']) ? sanitize_text_field($_GET['extSlug']) : '';
+            $claim_token_param = isset($_GET['claimToken']) ? sanitize_text_field($_GET['claimToken']) : '';
+            $site_id = home_url();
+
             $extensions_data = [
                 'ajax_url'    => admin_url( 'admin-ajax.php' ),
                 'nonce'       => wp_create_nonce( 'mds_extensions_nonce' ),
                 'license_key' => '',
                 'settings_url'=> admin_url('admin.php?page=milliondollarscript_options#system'),
                 'extension_server_url' => Options::get_option('extension_server_url', 'http://localhost:15346'),
+                'extension_server_public_url' => Options::get_option('mds_extension_server_public_url', 'http://localhost:15346'),
+                'site_id'     => $site_id,
+                'purchase'    => [
+                    'status'   => $purchase,
+                    'ext_id'   => $ext_param,
+                    'ext_slug' => $ext_slug_param,
+                    'claim_token' => $claim_token_param,
+                ],
                 'text'        => [
                 ]
             ];
@@ -1320,9 +1335,27 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             $working_base = null;
             foreach ($candidates as $base) {
                 if (empty($base)) { continue; }
+                // Try /api/public/ping first
                 $probe = rtrim($base, '/') . '/api/public/ping';
                 $probe_res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
-                if (!is_wp_error($probe_res) && wp_remote_retrieve_response_code($probe_res) === 200) {
+                $code = !is_wp_error($probe_res) ? wp_remote_retrieve_response_code($probe_res) : 0;
+                if ($code === 200) {
+                    $working_base = $base;
+                    break;
+                }
+                // Fallback to /health
+                $probe2 = rtrim($base, '/') . '/health';
+                $probe2_res = wp_remote_get($probe2, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
+                $code2 = !is_wp_error($probe2_res) ? wp_remote_retrieve_response_code($probe2_res) : 0;
+                if ($code2 === 200) {
+                    $working_base = $base;
+                    break;
+                }
+                // Fallback to a simple GET on /api/extensions
+                $probe3 = rtrim($base, '/') . '/api/extensions';
+                $probe3_res = wp_remote_get($probe3, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
+                $code3 = !is_wp_error($probe3_res) ? wp_remote_retrieve_response_code($probe3_res) : 0;
+                if ($code3 === 200) {
                     $working_base = $base;
                     break;
                 }
@@ -1928,12 +1961,24 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
             $checkout_url = self::normalize_public_checkout_url($absolute);
 
+            // Derive a stable site ID and a one-time claim token
+            $site_id = home_url();
+            $claim_token = bin2hex(random_bytes(16));
+
+            // Compute extension slug for later claim
+            $ext_slug_for_claim = '';
+            if (!empty($detail['name']) && is_string($detail['name'])) {
+                $ext_slug_for_claim = sanitize_title($detail['name']);
+            }
+
             // Append return URLs so Stripe redirects back to the WP admin Extensions page
             $success_url = add_query_arg(
                 [
                     'page'     => 'mds-extensions',
                     'purchase' => 'success',
                     'ext'      => $extension_id,
+                    'extSlug'  => $ext_slug_for_claim,
+                    'claimToken' => $claim_token,
                 ],
                 admin_url('admin.php')
             );
@@ -1949,6 +1994,9 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 [
                     'successUrl' => rawurlencode($success_url),
                     'cancelUrl'  => rawurlencode($cancel_url),
+                    // Pass-through metadata for Stripe checkout session
+                    'siteId'     => rawurlencode($site_id),
+                    'claimToken' => rawurlencode($claim_token),
                 ],
                 $checkout_url
             );
@@ -1991,6 +2039,104 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
     /**
      * AJAX handler for activating a license.
      */
+    public static function ajax_claim_license(): void {
+        // Reuse nonce for the Extensions page
+        check_ajax_referer( 'mds_extensions_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ], 403 );
+        }
+
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] ?? '' );
+        $claim_token    = sanitize_text_field( $_POST['claim_token'] ?? '' );
+        $site_id        = sanitize_text_field( $_POST['site_id'] ?? '' );
+
+        if ( empty( $extension_slug ) || empty( $claim_token ) || empty( $site_id ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
+        }
+
+        try {
+            // Resolve working base for server-to-server call
+            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
+            $candidates = [
+                rtrim((string)$user_configured_url, '/'),
+                'http://extension-server:3000',
+                'http://extension-server-dev:3000',
+                'http://host.docker.internal:15346',
+                'http://localhost:15346',
+            ];
+            $working_base = null;
+            foreach ($candidates as $base) {
+                if (empty($base)) { continue; }
+                $probe = rtrim($base, '/') . '/api/extensions';
+                $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
+                if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
+                    $working_base = $base;
+                    break;
+                }
+            }
+            if (!$working_base) {
+                throw new \Exception('Extension server unreachable.');
+            }
+
+            $claim_url = rtrim($working_base, '/') . '/api/public/licenses/claim';
+            $response = wp_remote_post( $claim_url, [
+                'headers' => [ 'Content-Type' => 'application/json' ],
+                'timeout' => 30,
+                'sslverify' => !Utility::is_development_environment(),
+                'body'    => wp_json_encode([
+                    'extensionSlug' => $extension_slug,
+                    'siteId'        => $site_id,
+                    'claimToken'    => $claim_token,
+                ]),
+            ]);
+
+            if ( is_wp_error( $response ) ) {
+                throw new \Exception( $response->get_error_message() );
+            }
+            $code = wp_remote_retrieve_response_code($response);
+            $body = wp_remote_retrieve_body($response);
+            $json = json_decode($body, true);
+            if ($code !== 200) {
+                $msg = is_array($json) && isset($json['message']) ? (string)$json['message'] : 'Claim failed.';
+                throw new \Exception($msg);
+            }
+
+            // Extract license payload
+            $licensePayload = $json['license'] ?? ($json['data']['license'] ?? $json);
+            $licenseKey = is_array($licensePayload) ? ($licensePayload['licenseKey'] ?? ($licensePayload['license_key'] ?? '')) : '';
+            $expiresAt  = is_array($licensePayload) ? ($licensePayload['expiresAt'] ?? ($licensePayload['expires_at'] ?? '')) : '';
+
+            if (empty($licenseKey)) {
+                throw new \Exception('No license key returned from claim endpoint.');
+            }
+
+            // Store in local DB
+            $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            $license = $license_manager->get_license( $extension_slug );
+            if ( $license ) {
+                $license_manager->update_license( (int)$license->id, [
+                    'license_key' => $licenseKey,
+                    'status'      => 'active',
+                    'expires_at'  => $expiresAt,
+                ] );
+            } else {
+                $license_manager->add_license( $extension_slug, $licenseKey );
+                $license = $license_manager->get_license( $extension_slug );
+                if ($license) {
+                    $license_manager->update_license( (int)$license->id, [
+                        'status'     => 'active',
+                        'expires_at' => $expiresAt,
+                    ] );
+                }
+            }
+
+            wp_send_json_success( [ 'message' => Language::get('License claimed and saved.'), 'license_key' => $licenseKey ] );
+        } catch (\Exception $e) {
+            wp_send_json_error( [ 'message' => $e->getMessage() ] );
+        }
+    }
+
     public static function ajax_activate_license(): void {
         check_ajax_referer( 'mds_license_nonce_' . $_POST['extension_slug'], 'nonce' );
 
