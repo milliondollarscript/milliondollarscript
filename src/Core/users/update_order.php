@@ -29,15 +29,17 @@
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Debug;
 
 defined( 'ABSPATH' ) or exit;
 
 mds_wp_login_check();
 
 try {
-	// Robust nonce verification: accept either 'mds-select' or 'mds-order' and return JSON on failure instead of fatal
+	// Robust nonce verification
 	$nonce = $_REQUEST['_wpnonce'] ?? ($_REQUEST['NONCE'] ?? ($_REQUEST['mds_nonce'] ?? ''));
 	$nonce_valid = ( ! empty( $nonce ) ) && ( wp_verify_nonce( $nonce, 'mds-select' ) || wp_verify_nonce( $nonce, 'mds-order' ) );
+
 	if ( ! $nonce_valid ) {
 		wp_send_json_error( [
 			"error" => "true",
@@ -48,12 +50,12 @@ try {
 		], 403 );
 	}
 
-	// Normalize incoming parameters from either POST body or query string
+	// Normalize incoming parameters
 	$block_id = isset( $_REQUEST['block_id'] ) ? intval( $_REQUEST['block_id'] ) : -1;
 
 	global $BID, $f2, $banner_data;
 
-	// Prefer explicit BID from request, fallback to resolver safely
+	// Determine BID
 	if ( isset( $_REQUEST['BID'] ) && is_numeric( $_REQUEST['BID'] ) ) {
 		$BID = intval( $_REQUEST['BID'] );
 	} else {
@@ -61,6 +63,7 @@ try {
 	}
 	$output_result = "";
 
+	// Check if user is logged in
 	if ( ! is_user_logged_in() ) {
 		wp_send_json_error( [
 			"error" => "true",
@@ -71,6 +74,7 @@ try {
 		] );
 	}
 
+	// Validate BID
 	if ( ! is_numeric( $BID ) || $BID <= 0 ) {
 		wp_send_json_error( [
 			"error" => "true",
@@ -81,6 +85,7 @@ try {
 		], 400 );
 	}
 
+	// Load banner data
 	$banner_data = load_banner_constants( $BID );
 	if ( empty( $banner_data ) ) {
 		wp_send_json_error( [
@@ -92,6 +97,7 @@ try {
 		], 400 );
 	}
 
+	// Get user ID
 	if ( is_user_logged_in() ) {
 		$user_id = get_current_user_id();
 	} else {
@@ -104,7 +110,9 @@ try {
 		] );
 	}
 
-	if ( ! Orders::can_user_order( $banner_data, get_current_user_id() ) ) {
+	// Check user order permissions
+	$can_order = Orders::can_user_order( $banner_data, get_current_user_id() );
+	if ( ! $can_order ) {
 		wp_send_json_error( [
 			"error" => "true",
 			"type"  => "max_orders",
@@ -114,31 +122,26 @@ try {
 		] );
 	}
 
-	// reset blocks
+	// Handle reset blocks
 	$reset_flag = $_REQUEST['reset'] ?? ($_REQUEST['erase_all'] ?? false);
-
-	// Accept boolean true, "true", "1" as reset
 	$do_reset = ($reset_flag === true) || ($reset_flag === 'true') || ($reset_flag === '1') || ($reset_flag === 1);
-	if ( $do_reset ) {
 
+	if ( $do_reset ) {
 		global $wpdb;
 
 		$order_id = Orders::get_current_order_id();
 
 		if ( ! empty( $order_id ) ) {
-			// Check if order has any blocks
 			$sql = $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d", $order_id );
 			$row = $wpdb->get_row( $sql, ARRAY_A );
 
 			if ( isset( $row['blocks'] ) ) {
-
 				$wpdb->update(
 					MDS_DB_PREFIX . 'orders',
 					[ 'blocks' => '' ],
 					[ 'order_id' => $order_id ]
 				);
 
-				// Delete all blocks for the current order for the current user.
 				$current_user_id = get_current_user_id();
 				$wpdb->delete(
 					MDS_DB_PREFIX . 'blocks',
@@ -149,12 +152,10 @@ try {
 					]
 				);
 
-				// Update the last modification time
 				Orders::set_last_order_modification_time();
 			}
 
 		} else {
-			// Delete all reserved blocks for the current user for this grid.
 			$user_id = get_current_user_id();
 			$wpdb->delete(
 				MDS_DB_PREFIX . "blocks",
@@ -169,8 +170,6 @@ try {
 					"%d"
 				]
 			);
-
-			// Update the last modification time
 			Orders::set_last_order_modification_time();
 		}
 
@@ -183,24 +182,52 @@ try {
 		], 200 );
 	}
 
-	$size = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
-
-	// Allow selection_size from either body or query params
-	if ( isset( $_REQUEST['selection_size'] ) && $_REQUEST['selection_size'] !== '' ) {
-		$size = max( 1, intval( $_REQUEST['selection_size'] ) );
+	// Get blocks to add and remove from the request
+	$blocks_to_add = [];
+	if ( isset( $_REQUEST['blocks_to_add'] ) && $_REQUEST['blocks_to_add'] !== '' ) {
+		$raw = $_REQUEST['blocks_to_add'];
+		$blocks_to_add = is_array( $raw ) ? array_map( 'intval', $raw ) : array_map( 'intval', explode( ',', $raw ) );
 	}
 
-	$output_result = Blocks::select_block( $block_id, $banner_data, $size, $user_id );
+	$blocks_to_remove = [];
+	if ( isset( $_REQUEST['blocks_to_remove'] ) && $_REQUEST['blocks_to_remove'] !== '' ) {
+		$raw = $_REQUEST['blocks_to_remove'];
+		$blocks_to_remove = is_array( $raw ) ? array_map( 'intval', $raw ) : array_map( 'intval', explode( ',', $raw ) );
+	}
 
-	if ( isset( $output_result['error'] ) && $output_result['error'] == 'false' ) {
-		// Update the last modification time
+	$action = $_REQUEST['action'] ?? 'select';
+
+	// Mark this request as an in-progress selection phase: adjacency/min checks should be deferred
+	$GLOBALS['MDS_SELECTION_PHASE'] = true;
+	
+	switch ( $action ) {
+		case 'invert':
+			$selection = array_unique( array_merge( $blocks_to_add, $blocks_to_remove ) );
+			$output_result = Blocks::invert_selection( $banner_data, $user_id, $selection );
+			break;
+		case 'remove':
+			$added_blocks = [];
+			$output_result = Blocks::select_block( $banner_data, $user_id, $added_blocks, $blocks_to_remove );
+			break;
+		case 'select':
+		default:
+			$output_result = Blocks::select_block( $banner_data, $user_id, $blocks_to_add, $blocks_to_remove );
+			break;
+	}
+
+	// End selection phase flag (not strictly necessary to unset, but keep code clean)
+	unset( $GLOBALS['MDS_SELECTION_PHASE'] );
+
+	if ( isset( $output_result['error'] ) && !json_decode($output_result['error'])) {
 		Orders::set_last_order_modification_time();
 		wp_send_json_success( $output_result, 200 );
 	} else {
 		wp_send_json_error( $output_result, 400 );
 	}
+
 } catch ( \Throwable $e ) {
-	// Return structured JSON error rather than fatal
+	// Log the error for debugging
+	error_log("MDS Update Order Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
 	wp_send_json_error( [
 		"error" => "true",
 		"type"  => "exception",

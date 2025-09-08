@@ -181,7 +181,7 @@ $order_blocks = array_map( function ( $block_id ) use ( $BID ) {
 
 Language::out( '<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>' );
 
-$res = $wpdb->get_results( "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name`" );
+$res = $wpdb->get_results( "SELECT * FROM " . MDS_DB_PREFIX . "banners order by `name`", ARRAY_A );
 
 if ( count( $res ) > 1 ) {
 	?>
@@ -294,16 +294,13 @@ if ( $has_packages ) {
 
 		<?php
 		// If the grid max blocks isn't set to unlimited and is greater than 1 and has a max and min block size that aren't equal then display the selection size options.
-		$max_min_equal = $banner_data['G_MAX_BLOCKS'] == $banner_data['G_MIN_BLOCKS'];
-		if ( ( $banner_data['G_MAX_BLOCKS'] == 0 || $banner_data['G_MAX_BLOCKS'] > 1 ) && ! $max_min_equal ) {
+$max_min_equal = $banner_data['G_MAX_BLOCKS'] == $banner_data['G_MIN_BLOCKS'];
+$show_selection_controls = ( Options::get_option( 'block-selection-mode', 'YES' ) == 'YES' );
 
+if ( $show_selection_controls ) {
 			?>
             <div class="mds-select-wrapper">
-                <div class="mds-select-prompt">
-					<?php
-					if ( Options::get_option( 'block-selection-mode', 'YES' ) == 'YES' ) {
-					?>
-                </div>
+                <div class="mds-select-prompt"></div>
                 <div class="mds-select-items">
 					<?php
 
@@ -357,28 +354,35 @@ if ( $has_packages ) {
                     <div class="mds-input-item">
                         <div class="mds-input-item mds-slider">
                             <label for="mds-selection-size-slider"><?php Language::out( 'Selection Size' ); ?></label>
-                            <input type="range" id="mds-selection-size-slider" name="selection_size" min="<?php echo $min_size_adjusted; ?>" max="<?php echo $max_selection_size; ?>"
-                                   value="<?php echo $selection_size_adjusted; ?>">
+                            <?php
+                                // Determine side-length bounds for the selection (1..max_side)
+                                $grid_max_side = min( intval( $banner_data['G_WIDTH'] ), intval( $banner_data['G_HEIGHT'] ) );
+                                if ( intval( $banner_data['G_MAX_BLOCKS'] ) > 0 ) {
+                                    $max_side = min( $grid_max_side, (int) floor( sqrt( intval( $banner_data['G_MAX_BLOCKS'] ) ) ) );
+                                } else {
+                                    $max_side = $grid_max_side;
+                                }
+                                $max_side = max( 1, $max_side );
+                                $default_side = isset( $_REQUEST['selection_size'] ) ? intval( $_REQUEST['selection_size'] ) : 1;
+                                $default_side = min( max( 1, $default_side ), $max_side );
+                                $default_blocks_value = $default_side * $default_side;
+                            ?>
+                            <input type="range" id="mds-selection-size-slider" name="selection_size" min="1" max="<?php echo $max_side; ?>"
+                                   value="<?php echo $default_side; ?>">
                         </div>
                         <div class="mds-break"></div>
-                        <div class="mds-input-item mds-number">
+                        <div class="mds-input-item mds-number mds-input-size">
                             <label for="mds-selection-size-value"><?php Language::out( 'Size' ); ?></label>
-                            <input type="number" id="mds-selection-size-value" value="<?php echo $selection_size_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>"
-                                   max="<?php echo $max_selection_size; ?>">
+                            <input type="number" id="mds-selection-size-value" value="<?php echo $default_side; ?>" min="1"
+                                   max="<?php echo $max_side; ?>">
                         </div>
-                        <div class="mds-input-item mds-number">
+                        <div class="mds-input-item mds-number mds-input-blocks">
                             <label for="mds-total-blocks-value"><?php Language::out( 'Blocks' ); ?></label>
-                            <input type="number" id="mds-total-blocks-value" value="<?php echo $total_blocks_adjusted; ?>" min="<?php echo $min_size_adjusted; ?>"
-                                   max="<?php echo $max_total_blocks_input; ?>">
+                            <input type="number" id="mds-total-blocks-value" value="<?php echo $default_blocks_value; ?>" min="1"
+                                   max="<?php echo $max_side * $max_side; ?>">
                         </div>
                     </div>
 					<?php
-					} else {
-						$min_size = isset( $banner_data['G_MIN_BLOCKS'] ) ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
-						?>
-                        <input type="hidden" id='selection_size' name='selection_size' value='<?php echo $min_size; ?>'/>
-						<?php
-					}
 					?>
                     <div class="mds-input-item">
                         <div class="mds-select-input">
@@ -403,22 +407,11 @@ if ( $has_packages ) {
                     </div>
                 </div>
             </div>
-			<?php
+		<?php
 		} else {
-			// Size selection is not enabled so set the selection size to the maximum allowed blocks.
-			if ( $max_min_equal ) {
-				$size_value = intval( $banner_data['G_MAX_BLOCKS'] );
-			} else {
-				$size_value = 1;
-			}
-
-			// Calculate the maximum square size that can be fit within the maximum block limit
-			$max_square_size = floor( sqrt( $banner_data['G_MAX_BLOCKS'] ) );
-
-			// Calculate the total blocks value
-			$total_blocks_value = $max_square_size * $max_square_size;
-
-			// Set the values of the slider and size inputs to the maximum square size
+			// Block Selection Mode is set to No - hide controls and set to a safe default based on max blocks
+			$max_square_size     = max( 1, floor( sqrt( max( 1, intval( $banner_data['G_MAX_BLOCKS'] ) ) ) ) );
+			$total_blocks_value  = $max_square_size * $max_square_size;
 			?>
             <input type="hidden" id="mds-selection-size-slider" name="selection_size" value="<?php echo $max_square_size; ?>">
             <input type="hidden" id="mds-selection-size-value" value="<?php echo $max_square_size; ?>">
@@ -452,8 +445,8 @@ if ( $has_packages ) {
     <script type="text/javascript">
         // Pass grid dimensions to JavaScript
         if (typeof MDS_OBJECT !== 'undefined' && MDS_OBJECT.grid_data) {
-            MDS_OBJECT.grid_data.orig_width_px = <?php echo $orig_width; ?>;
-            MDS_OBJECT.grid_data.orig_height_px = <?php echo $orig_height; ?>;
+                MDS_OBJECT.grid_data.orig_width_px = <?php echo $orig_width; ?>;
+                MDS_OBJECT.grid_data.orig_height_px = <?php echo $orig_height; ?>;
         }
     </script>
 

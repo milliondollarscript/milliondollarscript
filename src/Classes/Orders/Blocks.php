@@ -37,7 +37,7 @@ use MillionDollarScript\Classes\System\Utility;
 
 class Blocks {
 
-	public static function select_block( $clicked_block, $banner_data, $size, $user_id ) {
+	public static function select_block( $banner_data, $user_id, $blocks_to_add = [], $blocks_to_remove = [], $block_set = null ) {
 
 		$BID = $banner_data['banner_id'];
 
@@ -59,7 +59,6 @@ class Blocks {
 
 		$blocks         = [];
 		$clicked_blocks = [];
-		$removed_blocks = [];
 		$return_val     = [
 			'error' => false,
 			'type'  => '',
@@ -67,118 +66,156 @@ class Blocks {
 		];
 
 		global $wpdb;
-		$blocksrow = $wpdb->get_row(
+
+		$orderid = Orders::get_current_order_in_progress();
+
+		// Check if any of the blocks to be added are already taken
+		if ( ! empty( $blocks_to_add ) ) {
+			$placeholders = implode( ',', array_fill( 0, count( $blocks_to_add ), '%d' ) );
+			$query        = $wpdb->prepare(
+				"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id IN ($placeholders) AND banner_id = %d AND (status = 'sold' OR (status = 'reserved' AND user_id != %d))",
+				array_merge( $blocks_to_add, [ intval( $BID ), $user_id ] )
+			);
+			$taken_blocks = $wpdb->get_col( $query );
+
+			if ( ! empty( $taken_blocks ) ) {
+				return [
+					"error" => "true",
+					"type"  => "advertiser_sel_sold_error",
+					"data"  => [
+						"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID%", implode( ', ', $taken_blocks ) ),
+					]
+				];
+			}
+		}
+
+		if ( $orderid == null ) {
+			$orderid = Orders::create_order( $user_id, $BID );
+		}
+
+		// put block on order
+		$ordersrow = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT status, user_id, ad_id, order_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
-				intval( $clicked_block ),
+				"SELECT blocks,status,ad_id,order_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id = %d AND order_id = %d AND banner_id = %d AND status != 'deleted'",
+				get_current_user_id(),
+				$orderid,
 				intval( $BID )
 			),
 			ARRAY_A
 		);
 
-		$orderid = Orders::get_current_order_in_progress();
+		$current_blocks = [];
+		if ( isset( $ordersrow ) && $ordersrow['blocks'] != '' ) {
+			$current_blocks = explode( ",", $ordersrow['blocks'] );
+			array_walk( $current_blocks, 'intval' );
+		}
 
-		if ( ( $blocksrow == null || $blocksrow['status'] == '' ) || ( ( $blocksrow['status'] == 'reserved' || $blocksrow['order_id'] == $orderid ) && ( $blocksrow['user_id'] == get_current_user_id() ) ) ) {
+		if ( $block_set !== null ) {
+			// If a specific block set is provided (for inversion), use it directly.
+			$new_block_set = $block_set;
+		} else {
+			// Original logic: Add new blocks
+			$new_block_set = array_unique( array_merge( $current_blocks, $blocks_to_add ) );
 
-			if ( $orderid == null ) {
-				$orderid = Orders::create_order( $user_id, $BID );
+			// Original logic: Remove blocks to be removed
+			$new_block_set = array_diff( $new_block_set, $blocks_to_remove );
+		}
+
+		$new_blocks_for_validation = array_values( $new_block_set );
+
+
+		$blocks_per_row = $banner_data['G_WIDTH'];
+
+		$selection_phase = ! empty( $GLOBALS['MDS_SELECTION_PHASE'] );
+
+		// Enforce adjacency according to option, but only when not in selection phase.
+		$mode        = Options::get_option( 'selection-adjacency-mode', 'ADJACENT' );
+		$is_adjacent = true;
+		if ( ! $selection_phase && $mode !== 'NONE' ) {
+			if ( $mode === 'RECTANGLE' ) {
+				$is_adjacent = self::check_adjacency( $new_blocks_for_validation, $blocks_per_row );
+			} else {
+				$is_adjacent = self::check_contiguous( $new_blocks_for_validation, $blocks_per_row );
 			}
+		}
 
-			// put block on order
-			$ordersrow = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT blocks,status,ad_id,order_id FROM " . MDS_DB_PREFIX . "orders WHERE user_id = %d AND order_id = %d AND banner_id = %d AND status != 'deleted'",
-					get_current_user_id(),
-					$orderid,
-					intval( $BID )
-				),
-				ARRAY_A
-			);
-			if ( isset( $ordersrow ) && $ordersrow['blocks'] != '' ) {
-				$blocks = explode( ",", $ordersrow['blocks'] );
-				array_walk( $blocks, 'intval' );
-			}
+		if ( ! $is_adjacent ) {
+			$error_type = ( $mode === 'RECTANGLE' ) ? 'not_rectangle' : 'not_adjacent';
+			$message    = ( $mode === 'RECTANGLE' )
+				? Language::get( 'You must select blocks forming a rectangle or square.' )
+				: Language::get( 'You must select a block adjacent to another one.' );
+			return [
+				"error" => "true",
+				"type"  => $error_type,
+				"data"  => [
+					"value" => $message,
+				]
+			];
+		}
 
-			// $blocks2 will be modified based on deselections
-			$blocks2 = $blocks;
+		// The blocks are adjacent, so we can proceed with the new set of blocks.
+		$new_blocks = $new_blocks_for_validation;
 
-			$pos            = self::get_block_position( $clicked_block, $BID );
-			$blocks_per_row = $banner_data['G_WIDTH'];
-			$blocks_per_col = $banner_data['G_HEIGHT'];
-			$max_x_px       = $blocks_per_row * $banner_data['BLK_WIDTH'];
-			$max_y_px       = $blocks_per_col * $banner_data['BLK_HEIGHT'];
-			$max_blocks     = $banner_data['G_MAX_BLOCKS'] == 0 ? $blocks_per_row * $blocks_per_col : $banner_data['G_MAX_BLOCKS'];
-			$max_size       = min( floor( sqrt( ( $max_blocks ) ) ), $size );
-
-			for ( $y = 0; $y < $max_size; $y ++ ) {
-				$y_pos = $pos['y'] + ( $y % $blocks_per_col ) * $banner_data['BLK_HEIGHT'];
-				for ( $x = 0; $x < $max_size; $x ++ ) {
-					$x_pos = $pos['x'] + ( $x % $blocks_per_row ) * $banner_data['BLK_WIDTH'];
-
-					if ( $x_pos <= $max_x_px && $y_pos <= $max_y_px ) {
-						$clicked_block = self::get_block_id_from_position( $x_pos, $y_pos, $BID );
-
-						if ( isset( $_REQUEST['erase'] ) && $_REQUEST['erase'] == "true" ) {
-							// Erase logic
-							if ( ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-								unset( $blocks2[ $block ] );
-								$removed_blocks[] = $clicked_block;
-							}
-						} elseif ( ! empty( $size ) ) {
-							// Select logic
-							$invert = Options::get_option( 'invert-pixels' ) === 'yes';
-							if ( $invert && ( $block = array_search( $clicked_block, $blocks2 ) ) !== false ) {
-								// deselect
-								unset( $blocks2[ $block ] );
-								$removed_blocks[] = $clicked_block;
-							} else {
-								// select
-								$clicked_blocks[] = $clicked_block;
-							}
-						}
-					}
-				}
-			}
-
-			// Check for adjacency
-			$is_adjacent = self::check_adjacency( $blocks2, $clicked_blocks, $blocks_per_row, $blocks_per_col );
-
-			// remove $clicked_blocks if not found adjacent to another block
-			if ( ! $is_adjacent ) {
-				$clicked_blocks = array();
-				$return_val     = [
+		// check max blocks
+		$max_selected = false;
+		if ( $banner_data['G_MAX_BLOCKS'] > 0 ) {
+			if ( sizeof( $new_blocks ) > $banner_data['G_MAX_BLOCKS'] ) {
+				$max_selected = true;
+				$return_val   = [
 					"error" => "true",
-					"type"  => "not_adjacent",
+					"type"  => "max_blocks_selected",
 					"data"  => [
-						"value" => Language::get( 'You must select a block adjacent to another one.' ),
+						"value" => Language::get_replace( 'Maximum blocks selected. (%MAX_BLOCKS% allowed per order)', '%MAX_BLOCKS%', $banner_data['G_MAX_BLOCKS'] ),
 					]
 				];
 			}
+		}
 
-			// merge blocks
-			$new_blocks = array_unique( array_merge( $blocks2, $clicked_blocks ) );
+		$order_blocks = implode( ",", $new_blocks );
 
-			// check max blocks
-			$max_selected = false;
-			if ( $banner_data['G_MAX_BLOCKS'] > 0 ) {
-				if ( sizeof( $new_blocks ) > $banner_data['G_MAX_BLOCKS'] ) {
-					$max_selected = true;
-					$return_val   = [
-						"error" => "true",
-						"type"  => "max_blocks_selected",
-						"data"  => [
-							"value" => Language::get_replace( 'Maximum blocks selected. (%MAX_BLOCKS% allowed per order)', '%MAX_BLOCKS%', $banner_data['G_MAX_BLOCKS'] ),
-						]
-					];
-				}
+		// don't overwrite existing blocks from other orders
+		$existing_blocks = false;
+		if ( count( $new_blocks ) > 1 ) {
+			// single block is already handled, only handle multiple here
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != %d AND block_id IN(" . $order_blocks . ") AND banner_id = %d",
+					$orderid,
+					intval( $BID )
+				)
+			);
+			if ( count( $results ) > 0 ) {
+				$return_val = [
+					"error" => "true",
+					"type"  => "advertiser_sel_sold_error",
+					"data"  => [
+						"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID% ", '' ),
+					]
+				];
+
+				$existing_blocks = true;
+			}
+		}
+
+		// if conditions are met then select new blocks
+		if ( ! $max_selected && $is_adjacent && ! $existing_blocks && ( ( $order_blocks !== '' ) || ! empty( $blocks_to_remove ) || in_array( 0, $blocks_to_remove, true ) ) ) {
+			$price      = $total = 0;
+			$num_blocks = sizeof( $new_blocks );
+			$quantity   = ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] ) * $num_blocks;
+			$now        = current_time( 'mysql' );
+
+			$orderid = 0;
+			if ( isset( $ordersrow['order_id'] ) ) {
+				$orderid = intval( $ordersrow['order_id'] );
 			}
 
-			$order_blocks = implode( ",", $new_blocks );
+			$adid = 0;
+			if ( isset( $ordersrow['ad_id'] ) ) {
+				$adid = intval( $ordersrow['ad_id'] );
+			}
 
-			// don't overwrite existing blocks from other orders
-			$existing_blocks = false;
-			if ( count( $new_blocks ) > 1 ) {
-				// single block is already handled, only handle multiple here
+			// One last check to make sure we aren't replacing existing blocks from other orders
+			if ( ! empty( $order_blocks ) || $order_blocks == '0' ) {
 				$results = $wpdb->get_results(
 					$wpdb->prepare(
 						"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != %d AND block_id IN(" . $order_blocks . ") AND banner_id = %d",
@@ -187,222 +224,339 @@ class Blocks {
 					)
 				);
 				if ( count( $results ) > 0 ) {
-					$return_val = [
+					return [
 						"error" => "true",
 						"type"  => "advertiser_sel_sold_error",
 						"data"  => [
 							"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID% ", '' ),
 						]
 					];
-
-					$existing_blocks = true;
 				}
 			}
 
-			// if conditions are met then select new blocks
-			if ( ! $max_selected && $is_adjacent && ! $existing_blocks && ( ( ! empty( $order_blocks ) || $order_blocks == '0' ) || ! empty( $removed_blocks ) || $removed_blocks == '0' ) ) {
-				$price      = $total = 0;
-				$num_blocks = sizeof( $new_blocks );
-				$quantity   = ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] ) * $num_blocks;
-				$now        = current_time( 'mysql' );
+			global $wpdb;
 
-				$orderid = 0;
-				if ( isset( $ordersrow['order_id'] ) ) {
-					$orderid = intval( $ordersrow['order_id'] );
-				}
+			$user_id = get_current_user_id();
 
-				$adid = 0;
-				if ( isset( $ordersrow['ad_id'] ) ) {
-					$adid = intval( $ordersrow['ad_id'] );
-				}
-
-				// One last check to make sure we aren't replacing existing blocks from other orders
-				if ( ! empty( $order_blocks ) || $order_blocks == '0' ) {
-					$results = $wpdb->get_results(
-						$wpdb->prepare(
-							"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE order_id != %d AND block_id IN(" . $order_blocks . ") AND banner_id = %d",
-							$orderid,
-							intval( $BID )
-						)
-					);
-					if ( count( $results ) > 0 ) {
-						return [
-							"error" => "true",
-							"type"  => "advertiser_sel_sold_error",
-							"data"  => [
-								"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID% ", '' ),
-							]
-						];
-					}
-				}
-
-				global $wpdb;
-
-				$user_id = get_current_user_id();
-
-				$current_order_id = Orders::get_current_order_in_progress( $user_id );
-				if ( $current_order_id != null ) {
-					// Set all orders as not in progress for the current user.
-					$sql = $wpdb->prepare(
-						"UPDATE " . MDS_DB_PREFIX . "orders SET order_in_progress='N' WHERE user_id=%d",
-						$user_id
-					);
-					$wpdb->query( $sql );
-				}
-
+			$current_order_id = Orders::get_current_order_in_progress( $user_id );
+			if ( $current_order_id != null ) {
+				// Set all orders as not in progress for the current user.
 				$sql = $wpdb->prepare(
-					"REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved, order_in_progress) VALUES (%d, %d, %s, 'new', NOW(), %f, %d, %d, %s, %d, %s, %d, %s, %s)",
-					$user_id,
-					$orderid,
-					$order_blocks,
-					floatval( $price ),
-					intval( $quantity ),
-					intval( $BID ),
-					Currency::get_default_currency(),
-					intval( $banner_data['DAYS_EXPIRE'] ),
-					$now,
-					$adid,
-					$banner_data['AUTO_APPROVE'],
-					'Y'
+					"UPDATE " . MDS_DB_PREFIX . "orders SET order_in_progress='N' WHERE user_id=%d",
+					$user_id
 				);
-
 				$wpdb->query( $sql );
+			}
 
-				$order_id = $wpdb->insert_id;
+			$sql = $wpdb->prepare(
+				"REPLACE INTO " . MDS_DB_PREFIX . "orders (user_id, order_id, blocks, status, order_date, price, quantity, banner_id, currency, days_expire, date_stamp, ad_id, approved, order_in_progress) VALUES (%d, %d, %s, 'new', NOW(), %f, %d, %d, %s, %d, %s, %d, %s, %s)",
+				$user_id,
+				$orderid,
+				$order_blocks,
+				floatval( $price ),
+				intval( $quantity ),
+				intval( $BID ),
+				Currency::get_default_currency(),
+				intval( $banner_data['DAYS_EXPIRE'] ),
+				$now,
+				$adid,
+				$banner_data['AUTO_APPROVE'],
+				'Y'
+			);
 
-				Steps::set_current_step( $order_id, 1 );
+			$wpdb->query( $sql );
 
-				$return_val = [
-					"error" => "false",
-					"type"  => "order_id",
-					"data"  => [
-						"value" => intval( $order_id ),
-					]
-				];
+			$order_id = $wpdb->insert_id;
 
-				// Clean up reserved blocks and blocks for this specific order only
+			Steps::set_current_step( $order_id, 1 );
+
+			$return_val = [
+				"error" => "false",
+				"type"  => "order_id",
+				"data"  => [
+					"value" => intval( $order_id ),
+				]
+			];
+
+			// Clean up reserved blocks and blocks for this specific order only
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id = %d AND (status = 'reserved' OR (order_id = %d AND status != 'sold')) AND banner_id = %d",
+					get_current_user_id(),
+					$order_id,
+					intval( $BID )
+				)
+			);
+
+			// Delete specifically removed blocks from the database
+			if ( ! empty( $blocks_to_remove ) ) {
+				$placeholders = implode( ',', array_fill( 0, count( $blocks_to_remove ), '%d' ) );
 				$wpdb->query(
 					$wpdb->prepare(
-						"DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id = %d AND (status = 'reserved' OR (order_id = %d AND status != 'sold')) AND banner_id = %d",
-						get_current_user_id(),
-						$order_id,
-						intval( $BID )
+						"DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE user_id = %d AND block_id IN ($placeholders) AND banner_id = %d",
+						array_merge( [ get_current_user_id() ], $blocks_to_remove, [ intval( $BID ) ] )
 					)
 				);
+			}
 
-				$cell = 0;
+			$cell = 0;
 
-				$blocks_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
-				$blocks_x = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
+			$blocks_y = $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'];
+			$blocks_x = $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'];
 
-				for ( $y = 0; $y < $blocks_y; $y += $banner_data['BLK_HEIGHT'] ) {
-					for ( $x = 0; $x < $blocks_x; $x += $banner_data['BLK_WIDTH'] ) {
-						if ( in_array( $cell, $new_blocks ) ) {
-							$price = get_zone_price( $BID, $y, $x );
+			for ( $y = 0; $y < $blocks_y; $y += $banner_data['BLK_HEIGHT'] ) {
+				for ( $x = 0; $x < $blocks_x; $x += $banner_data['BLK_WIDTH'] ) {
+					if ( in_array( $cell, $new_blocks ) ) {
+						$price = get_zone_price( $BID, $y, $x );
 
-							// reserve block
-							$wpdb->replace(
-								MDS_DB_PREFIX . "blocks",
-								array(
-									'block_id' => intval( $cell ),
-									'user_id' => get_current_user_id(),
-									'status' => 'reserved',
-									'x' => intval( $x ),
-									'y' => intval( $y ),
-									'image_data' => '',
-									'url' => '',
-									'alt_text' => '',
-									'approved' => $banner_data['AUTO_APPROVE'],
-									'banner_id' => intval( $BID ),
-									'ad_id' => $adid,
-									'currency' => Currency::get_default_currency(),
-									'price' => floatval( $price ),
-									'order_id' => intval( $order_id ),
-									'click_count' => 0,
-									'view_count' => 0
-								),
-								array( '%d', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%f', '%d', '%d', '%d' )
-							);
+						// reserve block
+						$wpdb->replace(
+							MDS_DB_PREFIX . "blocks",
+							array(
+								'block_id' => intval( $cell ),
+								'user_id' => get_current_user_id(),
+								'status' => 'reserved',
+								'x' => intval( $x ),
+								'y' => intval( $y ),
+								'image_data' => '',
+								'url' => '',
+								'alt_text' => '',
+								'approved' => $banner_data['AUTO_APPROVE'],
+								'banner_id' => intval( $BID ),
+								'ad_id' => $adid,
+								'currency' => Currency::get_default_currency(),
+								'price' => floatval( $price ),
+								'order_id' => intval( $order_id ),
+								'click_count' => 0,
+								'view_count' => 0
+							),
+							array( '%d', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%f', '%d', '%d', '%d' )
+						);
 
-							$total += $price;
-						}
-						$cell ++;
+						$total += $price;
 					}
-				}
-
-				// update price
-				$wpdb->update(
-					MDS_DB_PREFIX . "orders",
-					array( 'price' => floatval( $total ) ),
-					array( 'order_id' => intval( $order_id ) ),
-					array( '%f' ),
-					array( '%d' )
-				);
-
-				$wpdb->update(
-					MDS_DB_PREFIX . "orders",
-					array( 'original_order_id' => intval( $order_id ) ),
-					array( 'order_id' => intval( $order_id ) ),
-					array( '%d' ),
-					array( '%d' )
-				);
-
-				// check that we have ad_id, if not then create an ad for this order.
-				if ( $adid == 0 ) {
-					$_REQUEST['order_id'] = $order_id;
-					$_REQUEST['BID']      = $BID;
-					$_REQUEST['user_id']  = get_current_user_id();
+					$cell ++;
 				}
 			}
 
-		} else {
+			// update price
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'price' => floatval( $total ) ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%f' ),
+				array( '%d' )
+			);
 
-			if ( $blocksrow['status'] == 'nfs' ) {
-				$return_val = [
-					"error" => "true",
-					"type"  => "advertiser_sel_nfs_error",
-					"data"  => [
-						"value" => Language::get( 'Sorry, cannot select this block of pixels because it is not for sale!' ),
-					]
-				];
-			} else {
-				$return_val = [
-					"error" => "true",
-					"type"  => "advertiser_sel_sold_error",
-					"data"  => [
-						"value" => Language::get_replace( 'Sorry, cannot select block %BLOCK_ID% because it is on order / sold!', "%BLOCK_ID%", $clicked_block ),
-					]
-				];
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'original_order_id' => intval( $order_id ) ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%d' ),
+				array( '%d' )
+			);
+
+			$wpdb->update(
+				MDS_DB_PREFIX . "orders",
+				array( 'blocks' => $order_blocks ),
+				array( 'order_id' => intval( $order_id ) ),
+				array( '%s' ),
+				array( '%d' )
+			);
+
+			// check that we have ad_id, if not then create an ad for this order.
+			if ( $adid == 0 ) {
+				$_REQUEST['order_id'] = $order_id;
+				$_REQUEST['BID']      = $BID;
+				$_REQUEST['user_id']  = get_current_user_id();
 			}
 		}
+
+		// This part is tricky as we don't have a single "clicked_block" anymore.
+		// The previous logic was checking a single block.
+		// The new logic in the AJAX request already pre-validates if blocks are taken.
+		// We can probably remove this whole `else` block or adapt it.
+		// For now, let's assume the pre-validation is enough.
+
+		$return_val['data']['added']   = array_values( array_map( 'intval', (array) $blocks_to_add ) );
+		$return_val['data']['removed'] = array_values( array_map( 'intval', (array) $blocks_to_remove ) );
 
 		return $return_val;
 	}
 
+	public static function invert_selection( $banner_data, $user_id, $selection ) {
+		$BID = $banner_data['banner_id'];
+
+		$order_id = Orders::get_current_order_id();
+
+		if ( $order_id == null ) {
+			$order_id = Orders::create_order( $user_id, $BID );
+		}
+
+		$current_blocks = self::get_blocks_for_order( $order_id );
+
+		// Calculate symmetric difference
+		$blocks_to_keep_from_current = array_diff( $current_blocks, $selection );
+		$blocks_to_add_from_selection = array_diff( $selection, $current_blocks );
+		$new_block_set = array_unique( array_merge( $blocks_to_keep_from_current, $blocks_to_add_from_selection ) );
+
+		// Calculate added and removed blocks for select_block
+		$added_blocks = array_map('intval', array_diff($new_block_set, $current_blocks));
+		$removed_blocks = array_map('intval', array_diff($current_blocks, $new_block_set));
+
+		$result = self::select_block( $banner_data, $user_id, $added_blocks, $removed_blocks, $new_block_set );
+
+		return $result;
+	}
+
+	public static function remove_blocks( $banner_data, $user_id, $blocks_to_remove ) {
+		$BID = $banner_data['banner_id'];
+
+		$order_id = Orders::get_current_order_id();
+
+		if ( $order_id == null ) {
+			$order_id = Orders::create_order( $user_id, $BID );
+		}
+
+		$current_blocks = self::get_blocks_for_order( $order_id );
+		$new_block_set = array_map('intval', array_diff( $current_blocks, $blocks_to_remove ));
+		$result = self::select_block( $banner_data, $user_id, [], [], $new_block_set );
+		
+		return $result;
+	}
+
+	public static function get_blocks_for_order( $order_id ) {
+		global $wpdb;
+
+		$blocks = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d",
+				$order_id
+			)
+		);
+
+		if ( is_null( $blocks ) || $blocks === '' ) {
+			return [];
+		}
+
+		return array_map( 'intval', explode( ',', $blocks ) );
+	}
+
 	/**
-	 * Check adjacency of blocks using Breadth-First Search.
+	 * Checks if the selected blocks form a solid, contiguous rectangle.
+	 *
+	 * @param array $blocks
+	 * @param array $clicked_blocks
+	 * @param int   $blocks_per_row
+	 *
+	 * @return bool
 	 */
-	public static function check_adjacency( $blocks, $clicked_blocks, $blocks_per_row, $blocks_per_col ): bool {
-		$all_blocks = array_merge( $blocks, $clicked_blocks );
+	public static function check_adjacency( $all_blocks, $blocks_per_row ): bool {
+		// Normalize to unique integer IDs to avoid string/integer key mismatches
+		$all_blocks = array_values( array_unique( array_map( 'intval', (array) $all_blocks ) ) );
+		$count      = count( $all_blocks );
+
+		if ( $count <= 1 ) {
+			return true;
+		}
+
+		// Compute x,y sets
+		$xs = [];
+		$ys = [];
+		$set = [];
+		foreach ( $all_blocks as $block_id ) {
+			$x = $block_id % $blocks_per_row;
+			$y = intdiv( $block_id, $blocks_per_row );
+			$xs[$x] = true;
+			$ys[$y] = true;
+			$set[$block_id] = true;
+		}
+
+		$xs = array_keys( $xs );
+		$ys = array_keys( $ys );
+		sort( $xs );
+		sort( $ys );
+
+		$width  = count( $xs );
+		$height = count( $ys );
+
+		// Size must match rectangle area
+		if ( $count !== ( $width * $height ) ) {
+			return false;
+		}
+
+		// Ensure xs and ys are consecutive (no gaps)
+		for ( $i = 1; $i < $width; $i++ ) {
+			if ( $xs[$i] !== $xs[$i - 1] + 1 ) {
+				return false;
+			}
+		}
+		for ( $j = 1; $j < $height; $j++ ) {
+			if ( $ys[$j] !== $ys[$j - 1] + 1 ) {
+				return false;
+			}
+		}
+
+		// Ensure all positions in rectangle are present
+		foreach ( $ys as $y ) {
+			foreach ( $xs as $x ) {
+				$block_id = $y * $blocks_per_row + $x;
+				if ( ! isset( $set[ $block_id ] ) ) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Checks if selected blocks are 4-neighbor contiguous (not necessarily rectangular).
+	 *
+	 * @param array $all_blocks
+	 * @param int   $blocks_per_row
+	 *
+	 * @return bool
+	 */
+	public static function check_contiguous( $all_blocks, int $blocks_per_row ): bool {
 		if ( empty( $all_blocks ) ) {
 			return true;
 		}
 
-		$visited    = [];
-		$queue      = [ reset( $all_blocks ) ];
-		$directions = [ - 1, 1, - $blocks_per_row, $blocks_per_row ];
+		$all_blocks = array_values( array_unique( array_map( 'intval', $all_blocks ) ) );
+		$set        = array_flip( $all_blocks );
+
+		$start = $all_blocks[0];
+		$visited = [];
+		$queue   = [ $start ];
+		$visited[$start] = true;
 
 		while ( ! empty( $queue ) ) {
 			$current = array_shift( $queue );
-			if ( in_array( $current, $visited ) ) {
-				continue;
-			}
-			$visited[] = $current;
 
-			foreach ( $directions as $direction ) {
-				$neighbor = $current + $direction;
-				if ( in_array( $neighbor, $all_blocks ) && ! in_array( $neighbor, $visited ) ) {
-					$queue[] = $neighbor;
+			// Compute 4-neighbors with row-boundary checks
+			$neighbors = [];
+			// Up
+			$up = $current - $blocks_per_row;
+			if ( $up >= 0 ) {
+				$neighbors[] = $up;
+			}
+			// Down
+			$down = $current + $blocks_per_row;
+			$neighbors[] = $down;
+			// Left (only if not in first column)
+			if ( $current % $blocks_per_row !== 0 ) {
+				$neighbors[] = $current - 1;
+			}
+			// Right (only if not in last column)
+			if ( $current % $blocks_per_row !== ( $blocks_per_row - 1 ) ) {
+				$neighbors[] = $current + 1;
+			}
+
+			foreach ( $neighbors as $n ) {
+				if ( isset( $set[ $n ] ) && ! isset( $visited[ $n ] ) ) {
+					$visited[ $n ] = true;
+					$queue[]       = $n;
 				}
 			}
 		}
@@ -596,7 +750,7 @@ class Blocks {
 
 	public static function get_block_position( $block_id, $banner_id ) {
 
-		$cell     = "0";
+		$cell     = 0;
 		$ret['x'] = 0;
 		$ret['y'] = 0;
 

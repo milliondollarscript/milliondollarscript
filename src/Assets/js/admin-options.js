@@ -377,7 +377,49 @@ jQuery(document).ready(function ($) {
 		reader.readAsText(file);
 	});
 
-	// Reset to defaults functionality
+// Migration: Run batched slug migration for MDS Pixels
+function mdsRunSlugMigrationBatch(page, totalPages, updatedTotal) {
+	page = page || 1;
+	updatedTotal = updatedTotal || 0;
+	var $btn = $('#mds_migrate_slugs_btn');
+	var $status = $('#mds_migrate_slugs_status');
+	$.post((window.MDS && MDS.ajaxurl) || ajaxurl, {
+		action: 'mds_migrate_slugs',
+		page: page,
+		batch_size: 100,
+		nonce: (window.MDS && MDS.nonce) || ''
+	}, function(resp) {
+		if (resp && resp.success) {
+			var d = resp.data || {};
+			updatedTotal += (d.updated || 0);
+			totalPages = d.total_pages || totalPages || 1;
+			if (d.done) {
+				$status.text('Done (' + updatedTotal + ' updated)');
+				$btn.prop('disabled', false).text('Run migration');
+			} else {
+				$status.text('Running... page ' + page + '/' + totalPages + ' (' + updatedTotal + ' updated)');
+				setTimeout(function(){
+					mdsRunSlugMigrationBatch(page + 1, totalPages, updatedTotal);
+				}, 1200);
+			}
+		} else {
+			$status.text('Error');
+			$btn.prop('disabled', false).text('Run migration');
+		}
+	}).fail(function(){
+		$status.text('Error');
+		$('#mds_migrate_slugs_btn').prop('disabled', false).text('Run migration');
+	});
+}
+
+$(document).on('click', '#mds_migrate_slugs_btn', function(){
+	var $btn = $(this), $status = $('#mds_migrate_slugs_status');
+	$btn.prop('disabled', true).text('Running...');
+	$status.text('Starting...');
+	mdsRunSlugMigrationBatch(1, 0, 0);
+});
+
+// Reset to defaults functionality
 	$('#mds_reset_colors').on('click', function(e) {
 		e.preventDefault();
 		

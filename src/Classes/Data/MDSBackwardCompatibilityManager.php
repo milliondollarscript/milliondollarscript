@@ -31,6 +31,7 @@ namespace MillionDollarScript\Classes\Data;
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\System\Logs;
+use MillionDollarScript\Classes\Pages\Wizard;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -940,11 +941,67 @@ class MDSBackwardCompatibilityManager {
      */
     private function getPendingMigrations(): array {
         $pending = [];
+
+        // Compute wizard state and potential legacy pages once
+        $wizard_complete = (bool) get_option( Wizard::OPTION_NAME_WIZARD_COMPLETE, false );
+        $pages_created = (bool) get_option( Wizard::OPTION_NAME_PAGES_CREATED, false );
+        $potential_pages = $this->findPotentialMDSPages();
+
+        // Fresh install suppression: If the wizard hasn't completed yet and we don't detect
+        // any potential legacy MDS pages, suppress migration notices entirely. This avoids
+        // confusing notices immediately after a fresh install before the wizard runs.
+        if ( ! $wizard_complete && empty( $potential_pages ) ) {
+            return [];
+        }
+        
+        // If wizard finished and created pages, assume fresh install flow and skip migration notice.
+        // We also mark migration as completed to prevent repeat notices, since new pages are already in the new system.
+        if ( $wizard_complete && $pages_created ) {
+            if ( $this->metadata_manager->isDatabaseReady() ) {
+                if ( ! get_option( 'mds_migration_completed' ) ) {
+                    update_option( 'mds_migration_completed', time() );
+                }
+                if ( ! get_option( 'mds_migration_results' ) ) {
+                    update_option( 'mds_migration_results', [
+                        'completed_at' => current_time( 'mysql' ),
+                        'total_pages' => 0,
+                        'migrated_pages' => 0,
+                        'skipped_pages' => 0,
+                        'failed_pages' => 0,
+                        'auto_completed' => true,
+                        'reason' => 'wizard_completed_pages_created'
+                    ] );
+                }
+            }
+            return [];
+        }
         
         // Check if metadata system is ready - if not, tables need to be created
         if ( ! $this->metadata_manager->isDatabaseReady() ) {
             $pending[] = 'initial_migration';
             return $pending; // Don't check other things if DB isn't ready
+        }
+
+        // If there are no legacy pages and no metadata, nothing to migrate – mark completed and exit.
+        if ( empty( $potential_pages ) ) {
+            $total_metadata = intval( $this->metadata_manager->getTotalPagesWithMetadata() );
+            if ( $total_metadata === 0 ) {
+                if ( ! get_option( 'mds_migration_completed' ) ) {
+                    update_option( 'mds_migration_completed', time() );
+                }
+                if ( ! get_option( 'mds_migration_results' ) ) {
+                    update_option( 'mds_migration_results', [
+                        'completed_at' => current_time( 'mysql' ),
+                        'total_pages' => 0,
+                        'migrated_pages' => 0,
+                        'skipped_pages' => 0,
+                        'failed_pages' => 0,
+                        'auto_completed' => true,
+                        'reason' => 'no_pages_and_no_metadata'
+                    ] );
+                }
+                return [];
+            }
         }
         
         // Check if initial migration is complete

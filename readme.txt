@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.6.1
+Stable tag: 2.6.1.1
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -39,6 +39,27 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Tooltip text not visible in light theme.
 * Feature: Add All Grids to select box to admin Pixel Approval screens.
 * Fix: Mass complete and cancel of orders not working.
+* Fix: Grid select not working in advanced mode.
+* Feature: Add option for Selection Adjacency Mode under the Orders tab.
+* Feature: Add per-grid option to layer blocks above or below the background image (default remains below). When set to above, block backgrounds become transparent and grid lines render on top of the background.
+* Feature: Support per-grid overlay images for Public and Ordering variants in both Light and Dark modes when layering is above. Overlays are PNG; managed on Manage Grids (under Dark Mode Image Management). Sensible defaults are bundled.
+* Feature: Add per-grid background color settings for Light and Dark modes (defaults: #ffffff and #14181c).
+* Perf: Reduce memory usage when applying background opacity by replacing per-pixel alpha manipulation with GD imagecopymerge().
+* Feature: Admin‑configurable MDS Pixels permalinks.
+  - Base segment is now configurable (default: mds-pixel).
+  - Slug pattern supports tokens: %username%, %display_name%, %order_id%, %grid%, %pixel_id%, %text%, and %meta:field%.
+  - Developers can extend/override tokens via the mds_permalink_tokens filter.
+  - Respects the Transliterate Cyrillic titles to Latin option for cleaner slugs.
+* Feature: Migration tool to update existing MDS Pixel slugs to the current pattern.
+  - Stores previous slugs and issues automatic 301 redirects.
+  - Legacy base segments are recognized and redirected to the new structure.
+  - Usage: After changing the base or slug pattern, click Save Changes first, then click Run migration (batched with nonce/capability checks).
+* Fix: MDS Pixels search behavior corrected when enabled: titles are searchable again and results remain restricted to completed status; conditional bug in posts_search resolved.
+* Fix: Prevented MDS link and button colors from affecting the rest of your theme. Styles are now scoped to the MDS container rather than the entire page (no more mds-container on <body> by default). If you previously relied on the old behavior, you can temporarily re‑enable it with:
+  add_filter('mds_enable_legacy_body_classes', '__return_true');
+* Fix: No more duplicate Manage Pixels pages; page creation runs after the Setup Wizard. Manage shortcode now uses width="100%" height="auto".
+* Fix: Migration notice is hidden on fresh installs until the wizard finishes or legacy pages exist.
+* Fix: Uninstall (Delete data = Yes) now removes plugin options and metadata tables; pages stay. Wizard will show after reinstall.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.

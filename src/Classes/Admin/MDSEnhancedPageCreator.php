@@ -640,10 +640,17 @@ class MDSEnhancedPageCreator {
      * @return int|null
      */
     private function getExistingPageId( string $page_type ): ?int {
-        $option_key = $this->getOptionKeyForPageType( $page_type );
-        if ( $option_key ) {
+        // Check all known aliases for this page type
+        $option_keys = $this->getOptionKeyAliasesForPageType( $page_type );
+        foreach ( $option_keys as $option_key ) {
             $page_id = get_option( $option_key );
             if ( $page_id && get_post( $page_id ) ) {
+                // If we found a page via an alias, normalize by updating all aliases to this ID
+                foreach ( $option_keys as $alias_key ) {
+                    if ( get_option( $alias_key ) != $page_id ) {
+                        update_option( $alias_key, intval( $page_id ) );
+                    }
+                }
                 return intval( $page_id );
             }
         }
@@ -673,6 +680,35 @@ class MDSEnhancedPageCreator {
         ];
         
         return $mapping[$page_type] ?? null;
+    }
+
+    /**
+     * Returns all option key aliases for a given page type for backward compatibility.
+     * For example, the "manage" page historically used users-pixels-page; alias it here.
+     *
+     * @param string $page_type
+     * @return array
+     */
+    private function getOptionKeyAliasesForPageType( string $page_type ): array {
+        $primary = $this->getOptionKeyForPageType( $page_type );
+        $aliases = [];
+        if ( $primary ) {
+            $aliases[] = $primary;
+        }
+
+        switch ( $page_type ) {
+            case 'manage':
+                // Legacy alias used by older installers/options
+                $aliases[] = '_mds_users-pixels-page';
+                break;
+            case 'confirm-order':
+                // Historically also referred to as checkout in some versions
+                $aliases[] = '_mds_users-checkout-page';
+                break;
+        }
+
+        // Ensure unique
+        return array_values( array_unique( $aliases ) );
     }
     
     /**
@@ -1379,8 +1415,8 @@ class MDSEnhancedPageCreator {
         $all_pages = array_merge( $created_pages, $updated_pages );
         
         foreach ( $all_pages as $page_info ) {
-            $option_key = $this->getOptionKeyForPageType( $page_info['page_type'] );
-            if ( $option_key ) {
+            $option_keys = $this->getOptionKeyAliasesForPageType( $page_info['page_type'] );
+            foreach ( $option_keys as $option_key ) {
                 update_option( $option_key, $page_info['page_id'] );
             }
         }

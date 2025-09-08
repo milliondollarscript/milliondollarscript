@@ -58,7 +58,7 @@ class FormFields {
 				'has_archive'         => false,
 				'searchable'          => true,
 				'exclude_from_search' => false,
-				'rewrite'             => array( 'slug' => 'mds-pixel' ),
+'rewrite'             => array( 'slug' => \MillionDollarScript\Classes\Web\Permalinks::get_base() ),
 			)
 		);
 	}
@@ -414,6 +414,13 @@ class FormFields {
 							$post_data['post_name'] = $post_name;
 						}
 						$post_id = wp_insert_post( $post_data );
+						// Apply configured slug pattern immediately after creation
+						if ( ! is_wp_error( $post_id ) && $post_id ) {
+							$slug = \MillionDollarScript\Classes\Web\Permalinks::build_slug_for_post( (int) $post_id );
+							if ( ! empty( $slug ) ) {
+								wp_update_post( [ 'ID' => $post_id, 'post_name' => $slug ] );
+							}
+						}
 					}
 				}
 			}
@@ -1109,21 +1116,24 @@ class FormFields {
 		}
 
 		// Check if MDS pixel template is enabled and exclude-from-search is disabled
-		if ( Options::get_option( 'mds-pixel-template', 'no' ) && Options::get_option( 'exclude-from-search' ) == 'no' ) {
+if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'yes' && Options::get_option( 'exclude-from-search', 'no' ) == 'no' ) {
 
 			$s = sanitize_text_field( $s );
 
-			$search = "
+$search = "
             AND (
                 (
                     {$wpdb->posts}.post_type = '" . self::$post_type . "'
-                    AND {$wpdb->posts}.ID IN (
-                        SELECT post_id
-                        FROM {$wpdb->postmeta}
-                        WHERE meta_key = '_" . MDS_PREFIX . "text'
-                        AND meta_value LIKE '%{$s}%'
-                    )
                     AND {$wpdb->posts}.post_status = 'completed'
+                    AND (
+                        {$wpdb->posts}.post_title LIKE '%{$s}%'
+                        OR {$wpdb->posts}.ID IN (
+                            SELECT post_id
+                            FROM {$wpdb->postmeta}
+                            WHERE meta_key = '_" . MDS_PREFIX . "text'
+                            AND meta_value LIKE '%{$s}%'
+                        )
+                    )
                 )
                 OR (
                     {$wpdb->posts}.post_title LIKE '%{$s}%'

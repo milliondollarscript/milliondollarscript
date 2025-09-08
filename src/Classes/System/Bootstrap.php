@@ -34,6 +34,7 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Forms\Forms;
 use MillionDollarScript\Classes\Web\Routes;
+use MillionDollarScript\Classes\Web\Permalinks;
 use MillionDollarScript\Classes\WooCommerce\WooCommerce;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceOptions;
@@ -223,8 +224,11 @@ class Bootstrap {
 		// Initialize metadata system and WordPress integration
 		add_action( 'init', [ '\MillionDollarScript\Classes\Data\MDSPageWordPressIntegration', 'initializeStatic' ] );
 
-		// Initialize Grid Image Switcher for theme mode automation
-		add_action( 'init', [ '\MillionDollarScript\Classes\Services\GridImageSwitcher', 'init' ] );
+// Initialize Grid Image Switcher for theme mode automation
+		add_action( 'init', [ '\\MillionDollarScript\\Classes\\Services\\GridImageSwitcher', 'init' ] );
+
+		// Initialize MDS Pixels Permalinks and old-base redirects
+		add_action( 'init', [ '\\MillionDollarScript\\Classes\\Web\\Permalinks', 'init' ] );
 
 		// Add Block
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Blocks\Block', 'register_style' ] );
@@ -310,7 +314,9 @@ class Bootstrap {
 		// Load Admin AJAX
 		add_action( 'wp_ajax_mds_admin_ajax', [ Admin::class, 'ajax' ] );
 
-		add_action( 'wp_ajax_mds_update_language', [ '\MillionDollarScript\Classes\Admin\Admin', 'update_language' ] );
+add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Admin\\Admin', 'update_language' ] );
+		// Register slug migration AJAX explicitly so it works on Options page
+		add_action( 'wp_ajax_mds_migrate_slugs', [ '\\MillionDollarScript\\Classes\\Data\\Options', 'ajax_migrate_slugs' ] );
 
 		// AJAX handlers for Click Reports View Type preference
 		add_action( 'wp_ajax_mds_load_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'load_click_report_view_type' ] );
@@ -346,9 +352,9 @@ class Bootstrap {
 		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
 		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\System\Functions', 'enqueue_scripts' ] );
 
-		// Enqueue dynamic CSS inline for frontend and login pages
-		add_action( 'wp_enqueue_scripts', [ '\MillionDollarScript\Classes\Web\Styles', 'enqueue_dynamic_styles' ], 20 );
-		add_action( 'login_enqueue_scripts', [ '\MillionDollarScript\Classes\Web\Styles', 'enqueue_dynamic_styles' ], 20 );
+		// Enqueue dynamic CSS for frontend and login pages (late to win tie-specificity)
+		add_action( 'wp_enqueue_scripts', [ '\\MillionDollarScript\\Classes\\Web\\Styles', 'enqueue_dynamic_styles' ], 100 );
+		add_action( 'login_enqueue_scripts', [ '\\MillionDollarScript\\Classes\\Web\\Styles', 'enqueue_dynamic_styles' ], 100 );
 
 		// enqueue js on specific admin pages
 		$admin_page = is_admin() && isset( $_REQUEST['page'] );

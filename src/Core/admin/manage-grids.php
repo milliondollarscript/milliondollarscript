@@ -33,6 +33,7 @@ use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\Data\DarkModeImages;
 use MillionDollarScript\Classes\Services\GridImageGenerator;
 use MillionDollarScript\Classes\System\Logs;
+use MillionDollarScript\Classes\Admin\Notices;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -669,6 +670,59 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 
 		$BID = $wpdb->insert_id;
 
+		// Persist Grid Blocks Layering + overlay selections (no DB migration)
+		$effectiveBID = ( isset($BID) && intval($BID) > 0 ) ? intval($BID) : ( isset($_REQUEST['BID']) ? intval($_REQUEST['BID']) : 0 );
+		if ( $effectiveBID > 0 ) {
+			// Layering toggle
+			$layering = ( isset($_POST['grid_blocks_layering']) && $_POST['grid_blocks_layering'] === 'above' ) ? 'above' : 'below';
+			update_option( 'mds_grid_blocks_layering_' . $effectiveBID, $layering );
+
+			// Handle overlay uploads only when Above is selected
+			if ( $layering === 'above' ) {
+				$overlay_opt = get_option( 'mds_grid_overlay_images_' . $effectiveBID, array() );
+				if ( ! is_array( $overlay_opt ) ) { $overlay_opt = array(); }
+				$overlay_dir = \MillionDollarScript\Classes\System\Utility::get_upload_path() . 'grids/overlays/';
+				if ( ! file_exists( $overlay_dir ) ) { wp_mkdir_p( $overlay_dir ); }
+
+				$map = array(
+					'overlay_public_light'   => 'public-light',
+					'overlay_public_dark'    => 'public-dark',
+					'overlay_ordering_light' => 'ordering-light',
+					'overlay_ordering_dark'  => 'ordering-dark',
+				);
+
+				foreach ( $map as $input => $variant ) {
+					if ( isset($_FILES[$input]) && isset($_FILES[$input]['tmp_name']) && is_uploaded_file($_FILES[$input]['tmp_name']) ) {
+						$orig_name = sanitize_file_name( wp_unslash( $_FILES[$input]['name'] ) );
+						$check = wp_check_filetype_and_ext( $_FILES[$input]['tmp_name'], $orig_name, array( 'png' => 'image/png', 'gif' => 'image/gif' ) );
+if ( ! in_array( $check['type'], array('image/png','image/gif'), true ) ) {
+							// Invalid type, ignore this upload and add admin notice
+							Notices::add_notice( sprintf( 'Invalid overlay file type for %s. Only PNG or GIF are allowed.', esc_html( $orig_name ) ), 'error' );
+							continue;
+						}
+						$ext = strtolower( pathinfo( $orig_name, PATHINFO_EXTENSION ) );
+						$dest_basename = 'overlay-' . $variant . '-' . $effectiveBID . '.' . $ext;
+						$dest = wp_normalize_path( $overlay_dir . $dest_basename );
+						if ( move_uploaded_file( $_FILES[$input]['tmp_name'], $dest ) ) {
+							list($ctx,$mode) = array_pad( explode('-', $variant), 2, '' );
+							if ( ! isset( $overlay_opt[ $ctx ] ) || ! is_array( $overlay_opt[ $ctx ] ) ) { $overlay_opt[ $ctx ] = array(); }
+							$overlay_opt[ $ctx ][ $mode ] = $dest_basename;
+						}
+					}
+				}
+
+				update_option( 'mds_grid_overlay_images_' . $effectiveBID, $overlay_opt );
+
+				// Save grid background colors (light/dark)
+				$existing_bg = get_option( 'mds_grid_bg_colors_' . $effectiveBID, array('light' => '#ffffff', 'dark' => '#14181c') );
+				$light = isset($_POST['grid_bg_color_light']) ? sanitize_hex_color( $_POST['grid_bg_color_light'] ) : ($existing_bg['light'] ?? '#ffffff');
+				$dark  = isset($_POST['grid_bg_color_dark'])  ? sanitize_hex_color( $_POST['grid_bg_color_dark'] )  : ($existing_bg['dark'] ?? '#14181c');
+				if ( empty($light) ) { $light = '#ffffff'; }
+				if ( empty($dark) ) { $dark = '#14181c'; }
+				update_option( 'mds_grid_bg_colors_' . $effectiveBID, array( 'light' => $light, 'dark' => $dark ) );
+			}
+		}
+
 		// TODO: Add individual order expiry dates
 		$wpdb->update(
 			MDS_DB_PREFIX . 'orders',
@@ -1042,6 +1096,102 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     </div>
                 </div>
                 
+                <div class="inventory-section-title">Grid Blocks Layering</div>
+                <div class="inventory-entry">
+                    <div class="inventory-title">Blocks position</div>
+                    <div class="inventory-content">
+                        <?php $mds_blocks_layering = get_option( 'mds_grid_blocks_layering_' . intval($BID), 'below' ); ?>
+                        <label>
+                            <input type="radio" name="grid_blocks_layering" value="below" <?php echo ( $mds_blocks_layering !== 'above' ) ? 'checked' : ''; ?>>
+                            Background image above the grid blocks (default)
+                        </label>
+                        <br/>
+                        <label>
+                            <input type="radio" name="grid_blocks_layering" value="above" <?php echo ( $mds_blocks_layering === 'above' ) ? 'checked' : ''; ?>>
+                            Grid blocks above the background image
+                        </label>
+                        <p class="description">When set to "Grid blocks above", upload overlay-style images (transparent PNG or GIF) that contain only the grid lines. If you don't upload one, a bundled default will be used.</p>
+                        <?php $bg_page_url = admin_url( 'admin.php?page=mds-backgrounds&BID=' . intval( $BID ) ); ?>
+                        <p style="margin-top:6px;">
+                            <a class="button button-secondary" href="<?php echo esc_url( $bg_page_url ); ?>">Open Backgrounds page</a>
+                        </p>
+                    </div>
+                </div>
+
+                <?php
+                // Prepare current overlay selections and URLs for display
+                $overlay_opt = get_option( 'mds_grid_overlay_images_' . intval($BID), array() );
+                $overlay_upload_url = \MillionDollarScript\Classes\System\Utility::get_upload_url() . 'grids/overlays/';
+                $bw = intval($_REQUEST['block_width']);
+                $bh = intval($_REQUEST['block_height']);
+                $overlay_fields = array(
+                    'overlay_public_light'    => array('label' => 'Public overlay (Light)',    'key_ctx' => 'public',   'key_mode' => 'light',   'default' => MDS_CORE_URL . 'images/overlay-public-light.png'),
+                    'overlay_public_dark'     => array('label' => 'Public overlay (Dark)',     'key_ctx' => 'public',   'key_mode' => 'dark',    'default' => MDS_CORE_URL . 'images/overlay-public-dark.png'),
+                    'overlay_ordering_light'  => array('label' => 'Ordering overlay (Light)',  'key_ctx' => 'ordering', 'key_mode' => 'light',   'default' => MDS_CORE_URL . 'images/overlay-ordering-light.png'),
+                    'overlay_ordering_dark'   => array('label' => 'Ordering overlay (Dark)',   'key_ctx' => 'ordering', 'key_mode' => 'dark',    'default' => MDS_CORE_URL . 'images/overlay-ordering-dark.png'),
+                );
+                ?>
+                <div id="mds-overlay-selectors" <?php echo ($mds_blocks_layering === 'above') ? '' : 'style="display:none"'; ?>>
+                    <?php $bg_colors = get_option( 'mds_grid_bg_colors_' . intval($BID), array('light' => '#ffffff', 'dark' => '#14181c') ); ?>
+                    <div class="inventory-entry">
+                        <div class="inventory-title">Grid background color</div>
+                        <div class="inventory-content">
+                            <label style="margin-right:12px; display:inline-block;">
+                                <span style="display:inline-block; min-width:110px;">Light mode:</span>
+                                <input type="color" name="grid_bg_color_light" value="<?php echo esc_attr( $bg_colors['light'] ?? '#ffffff' ); ?>">
+                            </label>
+                            <label style="display:inline-block;">
+                                <span style="display:inline-block; min-width:110px;">Dark mode:</span>
+                                <input type="color" name="grid_bg_color_dark" value="<?php echo esc_attr( $bg_colors['dark'] ?? '#14181c' ); ?>">
+                            </label>
+                            <p class="description">Used when no background image is uploaded. Light default: #ffffff, Dark default: #14181c.</p>
+                        </div>
+                    </div>
+                    <div class="inventory-entry">
+                        <div class="inventory-title">Overlay images</div>
+                        <div class="inventory-content">
+                            <p>Recommended size: <?php echo $bw; ?>x<?php echo $bh; ?> (must match the block size for perfect alignment).</p>
+                        </div>
+                    </div>
+                    <?php foreach ( $overlay_fields as $name => $meta ): 
+                        $current = $overlay_opt[$meta['key_ctx']][$meta['key_mode']] ?? '';
+                        $current_url = $current ? esc_url( $overlay_upload_url . $current ) : '';
+                    ?>
+                        <div class="inventory-entry">
+                            <div class="inventory-title"><?php echo esc_html($meta['label']); ?></div>
+                            <div class="inventory-content">
+                                <?php if ( $current ): ?>
+                                    <div style="margin-bottom:6px;">
+                                        <img src="<?php echo $current_url; ?>" alt="" style="max-width:120px; background:#eee; padding:2px;">
+                                        <div><small>Current file: <?php echo esc_html($current); ?></small></div>
+                                    </div>
+                                <?php else: ?>
+                                    <div style="margin-bottom:6px;">
+                                        <img src="<?php echo esc_url( $meta['default'] ); ?>" alt="" style="max-width:120px; background:#eee; padding:2px;">
+                                        <div><small>Using plugin default.</small></div>
+                                    </div>
+                                <?php endif; ?>
+                                <input type="file" name="<?php echo esc_attr($name); ?>" accept="image/png,image/gif" size="10" />
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <script>
+                jQuery(function($){
+                    function toggleOverlaySelectors(){
+                        const val = $('input[name="grid_blocks_layering"]:checked').val();
+                        if(val === 'above'){
+                            $('#mds-overlay-selectors').slideDown(150);
+                        } else {
+                            $('#mds-overlay-selectors').slideUp(150);
+                        }
+                    }
+                    $('input[name="grid_blocks_layering"]').on('change', toggleOverlaySelectors);
+                    toggleOverlaySelectors();
+                });
+                </script>
+
                 <div class="inventory-section-title">Block Graphics - Displayed on the public Grid</div>
                 <div class="inventory-entry">
                     <div class="inventory-title">Grid Block</div>

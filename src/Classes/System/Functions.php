@@ -133,10 +133,12 @@ class Functions {
 			'time'                 => time(),
 			'advertiser_max_order' => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your order history under Manage Pixels.' ),
 			'not_adjacent'         => Language::get( 'You must select a block adjacent to another one.' ),
+			'rectangle_required'   => Language::get( 'You must select blocks forming a rectangle or square.' ),
 			'no_blocks_selected'   => Language::get( 'You have no blocks selected.' ),
 			'MDS_CORE_URL'         => esc_url( MDS_CORE_URL ),
 			'INVERT_PIXELS'        => Options::get_option( 'invert-pixels' ),
-			'WAIT'                 => Language::get( 'Please Wait! Reserving Pixels...' ),
+'WAIT'                 => Language::get( 'Please Wait! Reserving Pixels...' ),
+			'selection_adjacency_mode' => Options::get_option( 'selection-adjacency-mode', 'ADJACENT' ),
 		];
 	}
 

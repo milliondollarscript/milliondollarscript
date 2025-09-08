@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.13.25\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.13.34\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-08-25 14:16:48\n"
-"PO-Revision-Date: 2025-08-25 14:16:48\n"
-"X-Generator: Million Dollar Script Two 2.5.13.25\n"
+"POT-Creation-Date: 2025-09-07 18:30:31\n"
+"PO-Revision-Date: 2025-09-07 18:30:31\n"
+"X-Generator: Million Dollar Script Two 2.5.13.34\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1152,6 +1152,21 @@ msgstr ""
 msgid "If checked then pixels will be excluded from search results. Note: Only the text and title fields are searchable."
 msgstr ""
 
+msgid "MDS Pixels base"
+msgstr ""
+
+msgid "Base segment for MDS Pixels URLs. Example: /mds-pixel/sample-slug. Changing this will flush permalinks and add the previous base to a redirect list."
+msgstr ""
+
+msgid "MDS Pixels slug pattern"
+msgstr ""
+
+msgid "Pattern for MDS Pixels slugs. Supported tokens: %username%, %display_name%, %order_id%, %grid%, %pixel_id%, %text%, and %meta:your_field%."
+msgstr ""
+
+msgid "Migrate MDS Pixels slugs"
+msgstr ""
+
 msgid "Endpoint"
 msgstr ""
 
@@ -1566,10 +1581,10 @@ msgstr ""
 msgid "If Yes, a dropdown will appear on the user-facing Manage Pixels page allowing users to switch between available grids. If No, the page will only show pixels for the grid specified in the shortcode or URL."
 msgstr ""
 
-msgid "Invert Pixels"
+msgid "Invert Selection"
 msgstr ""
 
-msgid "If checked, reverses the order pixels are displayed within the grid container."
+msgid "If enabled, clicking a selected block will deselect it (inverting the selection). This only applies to the Advanced selection method."
 msgstr ""
 
 msgid "Stats Display Mode"
@@ -1687,6 +1702,21 @@ msgid "No - Users will not be able to change the size of their block selection a
 msgstr ""
 
 msgid "Show block selection mode. Note that you can change the min and max block placement sizes by editing the grid under <a href=\"%GRIDS_URL%\">Admin > Pixel Management > Grids</a>."
+msgstr ""
+
+msgid "Selection Adjacency Mode"
+msgstr ""
+
+msgid "Adjacent (any contiguous shape)"
+msgstr ""
+
+msgid "Rectangle only"
+msgstr ""
+
+msgid "No adjacency enforcement"
+msgstr ""
+
+msgid "Controls how adjacency is enforced in Advanced selection: any contiguous shape, strict rectangle, or no enforcement."
 msgstr ""
 
 msgid "Expire Orders"
@@ -2065,6 +2095,9 @@ msgid "Cannot place pixels on order. You have reached the order limit for this g
 msgstr ""
 
 msgid "You must select a block adjacent to another one."
+msgstr ""
+
+msgid "You must select blocks forming a rectangle or square."
 msgstr ""
 
 msgid "You have no blocks selected."
@@ -3315,6 +3348,18 @@ msgstr ""
 msgid "Enable WooCommerce integration. This will attempt to process orders through WooCommerce. Enabling this will automatically install and enable the \"WooCommerce\" payment module in MDS and create a product in WC for it."
 msgstr ""
 
+msgid "Registration on My Account page"
+msgstr ""
+
+msgid "To show a registration form on WooCommerce's My Account page, enable the setting in WooCommerce > Settings > Accounts & Privacy under Account creation:"
+msgstr ""
+
+msgid "Allow customers to create an account > On \"My account\" page"
+msgstr ""
+
+msgid "Open WooCommerce Accounts & Privacy settings"
+msgstr ""
+
 msgid "Product"
 msgstr ""
 
@@ -3354,13 +3399,10 @@ msgstr ""
 msgid "<b><span style=\"color:red\">Cannot place pixels on order.</span> You have reached the order limit for this grid. Please review your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</b>"
 msgstr ""
 
-msgid "Maximum blocks selected. (%MAX_BLOCKS% allowed per order)"
-msgstr ""
-
 msgid "Sorry, cannot select block %BLOCK_ID% because it is on order / sold!"
 msgstr ""
 
-msgid "Sorry, cannot select this block of pixels because it is not for sale!"
+msgid "Maximum blocks selected. (%MAX_BLOCKS% allowed per order)"
 msgstr ""
 
 msgid "<h3>Your order was completed.</h3>"
