@@ -120,6 +120,8 @@ let submit_button1;
 let pointer;
 let pixel_container;
 let pixel_form;
+let blocksCanvas;
+let blocksCtx;
 
 function add_ajax_loader(container) {
 	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
@@ -131,6 +133,59 @@ function add_ajax_loader(container) {
 
 function remove_ajax_loader() {
 	jQuery(".ajax-loader").remove();
+}
+
+// --- Canvas overlay helpers ---
+function setupBlocksCanvas() {
+	blocksCanvas = document.getElementById('blocks_canvas');
+	if (!blocksCanvas || !grid) return;
+	const part = window.MDS_GRID_PARTITION;
+	if (!part) return;
+	// Device pixel ratio aware sizing for crisp lines
+	const dpr = window.devicePixelRatio || 1;
+	blocksCanvas.style.width = part.preW + 'px';
+	blocksCanvas.style.height = part.preH + 'px';
+	blocksCanvas.width = Math.round(part.preW * dpr);
+	blocksCanvas.height = Math.round(part.preH * dpr);
+	blocksCtx = blocksCanvas.getContext('2d');
+	blocksCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+	blocksCtx.imageSmoothingEnabled = false;
+}
+
+let MDS_SEL_IMG = null;
+function preloadSelectionImage(url, cb) {
+	MDS_SEL_IMG = new Image();
+	MDS_SEL_IMG.onload = () => cb && cb();
+	MDS_SEL_IMG.onerror = () => { MDS_SEL_IMG = null; cb && cb(); };
+	MDS_SEL_IMG.src = url;
+}
+
+function renderSelectionCanvas() {
+	if (!blocksCanvas || !blocksCtx) return;
+	const part = window.MDS_GRID_PARTITION;
+	if (!part) return;
+	// Clear
+	blocksCtx.clearRect(0, 0, part.preW, part.preH);
+	const useImage = !!MDS_SEL_IMG;
+	if (!useImage) {
+		blocksCtx.fillStyle = 'rgba(0, 192, 0, 0.35)';
+	}
+	// Draw each selected block as an exact cell rect or image
+	for (let i = 0; i < selectedBlocks.length; i++) {
+		const id = selectedBlocks[i];
+		const x = id % part.cols;
+		const y = Math.floor(id / part.cols);
+		if (x < 0 || x >= part.cols || y < 0 || y >= part.rows) continue;
+		const left = part.colLefts[x];
+		const top = part.rowTops[y];
+		const w = part.colWidths[x];
+		const h = part.rowHeights[y];
+		if (useImage) {
+			blocksCtx.drawImage(MDS_SEL_IMG, left, top, w, h);
+		} else {
+			blocksCtx.fillRect(left, top, w, h);
+		}
+	}
 }
 
 const messageout = function (message) {
@@ -152,22 +207,29 @@ jQuery.fn.repositionStyles = function () {
 	if (this.attr("id") === undefined) {
 		return this;
 	}
-
+	const part = window.MDS_GRID_PARTITION;
 	let id = parseInt(jQuery(this).data("blockid"), 10);
-
-	// Use the same get_block_position function we use in add_block
-	// This ensures consistent positioning logic throughout the app
 	let pos = get_block_position(id);
-
-	// Apply current scaling and offsets
-	this.css({
-		// Convert block coordinates to pixels using current scaling
-		top: pos.y * BLK_HEIGHT + gridOffsetTop + "px",
-		left: pos.x * BLK_WIDTH + gridOffsetLeft + "px",
-		width: BLK_WIDTH + "px",
-		height: BLK_HEIGHT + "px",
-	});
-
+	if (part) {
+		this.css({
+			top: part.rowTops[pos.y] + "px",
+			left: part.colLefts[pos.x] + "px",
+			width: part.colWidths[pos.x] + "px",
+			height: part.rowHeights[pos.y] + "px",
+		});
+		// Ensure child image fills cell exactly
+		this.find('img').css({
+			width: part.colWidths[pos.x] + "px",
+			height: part.rowHeights[pos.y] + "px",
+		});
+	} else {
+		this.css({
+			top: pos.y * BLK_HEIGHT + gridOffsetTop + "px",
+			left: pos.x * BLK_WIDTH + gridOffsetLeft + "px",
+			width: BLK_WIDTH + "px",
+			height: BLK_HEIGHT + "px",
+		});
+	}
 	return this;
 };
 
@@ -211,13 +273,26 @@ function unreserve_block(block_id) {
 }
 
 function add_block(block_id, block_x, block_y) {
+	// Canvas mode: update selection set and draw
+	if (document.getElementById('blocks_canvas')) {
+		if (!selectedBlocks.includes(block_id)) {
+			reserve_block(block_id);
+			renderSelectionCanvas();
+		}
+		return;
+	}
+	// Legacy DOM overlays fallback
+	// Avoid duplicates
+	if (document.getElementById("block" + block_id.toString())) {
+		return;
+	}
 	// Calculate position based on block_id grid coordinates
-	// The get_block_position function returns block coordinates (not pixels)
 	let pos = get_block_position(block_id);
-
-	// Apply current scaling and grid offset to convert to pixels
-	let block_left = pos.x * BLK_WIDTH + gridOffsetLeft;
-	let block_top = pos.y * BLK_HEIGHT + gridOffsetTop;
+	const part = window.MDS_GRID_PARTITION;
+	let block_left = part ? part.colLefts[pos.x] : (pos.x * BLK_WIDTH + gridOffsetLeft);
+	let block_top = part ? part.rowTops[pos.y] : (pos.y * BLK_HEIGHT + gridOffsetTop);
+	let block_w = part ? part.colWidths[pos.x] : BLK_WIDTH;
+	let block_h = part ? part.rowHeights[pos.y] : BLK_HEIGHT;
 
 	// Create a document fragment
 	let fragment = document.createDocumentFragment();
@@ -228,10 +303,10 @@ function add_block(block_id, block_x, block_y) {
 		css: {
 			left: block_left + "px",
 			top: block_top + "px",
-			lineHeight: BLK_HEIGHT + "px",
-			fontSize: BLK_HEIGHT + "px",
-			width: BLK_WIDTH + "px",
-			height: BLK_HEIGHT + "px",
+			lineHeight: block_h + "px",
+			fontSize: block_h + "px",
+			width: block_w + "px",
+			height: block_h + "px",
 		},
 	}).addClass("mds-block");
 
@@ -240,10 +315,10 @@ function add_block(block_id, block_x, block_y) {
 		alt: "",
 		src: MDS_OBJECT.MDS_CORE_URL + "images/selected_block.png",
 		css: {
-			lineHeight: BLK_HEIGHT + "px",
-			fontSize: BLK_HEIGHT + "px",
-			width: BLK_WIDTH + "px",
-			height: BLK_HEIGHT + "px",
+			lineHeight: block_h + "px",
+			fontSize: block_h + "px",
+			width: block_w + "px",
+			height: block_h + "px",
 		},
 	});
 
@@ -263,6 +338,13 @@ function add_block(block_id, block_x, block_y) {
 }
 
 function remove_block(block_id) {
+	// Canvas mode
+	if (document.getElementById('blocks_canvas')) {
+		unreserve_block(block_id);
+		renderSelectionCanvas();
+		return;
+	}
+	// Legacy DOM fallback
 	let myblock = document.getElementById("block" + block_id.toString());
 	if (myblock !== null) {
 		myblock.remove();
@@ -292,40 +374,26 @@ function is_block_selected(clicked_blocks) {
 }
 
 function get_clicked_blocks(OffsetX, OffsetY, block) {
+	const part = window.MDS_GRID_PARTITION;
 	let clicked_blocks = [];
-	let x;
-	let y;
-
-	// Additional blocks if multiple selection radio buttons are selected
-	const selectedSize = parseInt(jQuery("#mds-selection-size-value").val(), 10);
-	if (selectedSize > 1) {
-		for (let i = 0; i < selectedSize; i++) {
-			for (let j = 0; j < selectedSize; j++) {
-				x = OffsetX + i * BLK_WIDTH;
-				y = OffsetY + j * BLK_HEIGHT;
-				// Ensure the block is within the grid boundaries
-				if (x >= 0 && x < GRD_WIDTH && y >= 0 && y < GRD_HEIGHT) {
-					const newBlock = {
-						id: get_clicked_block(x, y),
-						x: x,
-						y: y,
-					};
-					clicked_blocks.push(newBlock);
-				} else {
-				}
+	const sel = mds_getSelectionSize();
+	// Anchor col/row from block id (consistent with server mapping)
+	const pos = get_block_position(block);
+	let col = pos.x;
+	let row = pos.y;
+	// Clamp selection footprint
+	col = Math.max(0, Math.min(col, part.cols - sel));
+	row = Math.max(0, Math.min(row, part.rows - sel));
+	for (let j = 0; j < sel; j++) {
+		for (let i = 0; i < sel; i++) {
+			const cc = col + i;
+			const rr = row + j;
+			if (cc >= 0 && cc < part.cols && rr >= 0 && rr < part.rows) {
+				const id = rr * part.cols + cc;
+				clicked_blocks.push({ id, x: part.colLefts[cc], y: part.rowTops[rr] });
 			}
 		}
-	} else {
-		// Actual clicked block
-		x = OffsetX;
-		y = OffsetY;
-		clicked_blocks.push({
-			id: block,
-			x: x,
-			y: y,
-		});
 	}
-
 	return clicked_blocks;
 }
 
@@ -333,6 +401,31 @@ function do_blocks(blocks, op) {
 	// Ensure blocks is an array
 	if (!Array.isArray(blocks)) {
 		blocks = [blocks];
+	}
+
+	// Fast path for canvas overlay: batch update and single render
+	if (document.getElementById('blocks_canvas')) {
+		if (op === 'add') {
+			for (const block of blocks) {
+				const id = typeof block === 'object' ? block.id : block;
+				if (!selectedBlocks.includes(id)) selectedBlocks.push(id);
+			}
+			renderSelectionCanvas();
+			return;
+		} else if (op === 'remove') {
+			const toRemove = new Set(blocks.map(b => (typeof b === 'object' ? b.id : b)));
+			selectedBlocks = selectedBlocks.filter(id => !toRemove.has(id));
+			renderSelectionCanvas();
+			return;
+		} else if (op === 'invert') {
+			for (const block of blocks) {
+				const id = typeof block === 'object' ? block.id : block;
+				const idx = selectedBlocks.indexOf(id);
+				if (idx === -1) selectedBlocks.push(id); else selectedBlocks.splice(idx, 1);
+			}
+			renderSelectionCanvas();
+			return;
+		}
 	}
 
 	for (const block of blocks) {
@@ -350,7 +443,7 @@ function do_blocks(blocks, op) {
 		}
 	}
 
-	// Bind the mousemove event using event delegation
+	// Bind the mousemove event using event delegation (legacy overlays)
 	if (!has_touch()) {
 		$myblocks.on("mousemove", ".mds-block", function (event) {
 			let offset = getOffset(
@@ -396,10 +489,13 @@ function load_order() {
 
 	// Use the more detailed MDS_OBJECT.blocks array to draw the initial state
 	MDS_OBJECT.blocks.forEach(function (block) {
-		// The add_block function correctly calculates position, so we pass the block ID.
-		// It also handles adding the block to the internal selectedBlocks array.
 		add_block(parseInt(block.block_id, 10));
 	});
+
+	// If using canvas, render once at end
+	if (document.getElementById('blocks_canvas')) {
+		renderSelectionCanvas();
+	}
 
 	if (pixel_form !== null) {
 		pixel_form.addEventListener("submit", formSubmit);
@@ -413,49 +509,98 @@ function getObjCoords(obj) {
 	return { x: rect.left + scrollLeft, y: rect.top + scrollTop };
 }
 
+// --- Grid partition helpers (integer pixel boundaries) ---
+function mds_partition(size, count) {
+    const base = Math.floor(size / count);
+    const remainder = size % count;
+    const widths = new Array(count).fill(base);
+    for (let i = 0; i < remainder; i++) widths[i] += 1;
+    const edges = new Array(count + 1);
+    edges[0] = 0;
+    for (let i = 0; i < count; i++) edges[i + 1] = edges[i] + widths[i];
+    return { widths, edges };
+}
+
+function computeGridPartitions() {
+    if (!grid) return;
+    const cols = parseInt(MDS_OBJECT.grid_width, 10) || 1;
+    const rows = parseInt(MDS_OBJECT.grid_height, 10) || 1;
+    const preW = jQuery(grid).width();
+    const preH = jQuery(grid).height();
+    const colsPart = mds_partition(preW, cols);
+    const rowsPart = mds_partition(preH, rows);
+    window.MDS_GRID_PARTITION = {
+        cols,
+        rows,
+        preW,
+        preH,
+        colWidths: colsPart.widths,
+        colLefts: colsPart.edges,
+        rowHeights: rowsPart.widths,
+        rowTops: rowsPart.edges,
+    };
+}
+
+function mds_pageToPre(x, y) {
+    const rect = grid.getBoundingClientRect();
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const relX = x - (rect.left + scrollLeft);
+    const relY = y - (rect.top + scrollTop);
+    const part = window.MDS_GRID_PARTITION;
+    const scaleX = part ? (part.preW / rect.width) : 1;
+    const scaleY = part ? (part.preH / rect.height) : 1;
+    return { preX: relX * scaleX, preY: relY * scaleY };
+}
+
+function mds_findIndexFromPre(preCoord, edges, count) {
+    // binary search into edges array such that edges[i] <= preCoord < edges[i+1]
+    let lo = 0, hi = count;
+    while (lo + 1 < hi) {
+        const mid = (lo + hi) >> 1;
+        if (preCoord >= edges[mid]) lo = mid; else hi = mid;
+    }
+    if (lo < 0) return 0;
+    if (lo >= count) return count - 1;
+    return lo;
+}
+
+function mds_sumRange(arr, start, len) {
+    let s = 0;
+    for (let i = 0; i < len; i++) s += arr[start + i] || 0;
+    return s;
+}
+
+function mds_getSelectionSize() {
+    const n = parseInt(jQuery("#mds-selection-size-value").val(), 10) || 1;
+    const part = window.MDS_GRID_PARTITION;
+    if (!part) return n;
+    return Math.max(1, Math.min(n, Math.min(part.cols, part.rows)));
+}
+
 function getOffset(x, y, touch) {
 	if (grid == null) {
 		// grid may not be loaded yet
 		return null;
 	}
 
-	let pos = getObjCoords(grid);
-	let size = get_pointer_size();
-
-	let offset = {};
-	let scrollLeft = 0;
-	let scrollTop = 0;
-
-	if (touch) {
-		scrollLeft = document.documentElement.scrollLeft;
-		scrollTop = document.documentElement.scrollTop;
+	const part = window.MDS_GRID_PARTITION;
+	if (!part) {
+		// Fallback: ensure partitions exist
+		computeGridPartitions();
 	}
-
-	offset.x = x - pos.x + scrollLeft;
-	offset.y = y - pos.y + scrollTop;
-
-	// drop 1/10 from the OffsetX and OffsetY, eg 612 becomes 610
-	// expand to original scale first
-	offset.x =
-		Math.floor(offset.x / scaled_width / orig.BLK_WIDTH) * orig.BLK_WIDTH;
-	offset.y =
-		Math.floor(offset.y / scaled_height / orig.BLK_HEIGHT) * orig.BLK_HEIGHT;
-
-	// keep within range
-	offset.x = Math.max(
-		Math.min(offset.x, GRD_WIDTH - size.width / scaled_width),
-		0,
-	);
-	offset.y = Math.max(
-		Math.min(offset.y, GRD_HEIGHT - size.height / scaled_height),
-		0,
-	);
-
-	// scale back down if necessary
-	offset.x = offset.x * scaled_width;
-	offset.y = offset.y * scaled_height;
-
-	return offset;
+	const p = window.MDS_GRID_PARTITION;
+	const rect = grid.getBoundingClientRect();
+	// Convert to pre-transform coordinates
+	const pre = mds_pageToPre(x, y);
+	let col = mds_findIndexFromPre(pre.preX, p.colLefts, p.cols);
+	let row = mds_findIndexFromPre(pre.preY, p.rowTops, p.rows);
+	let sel = mds_getSelectionSize();
+	// Clamp so selection fits
+	col = Math.max(0, Math.min(col, p.cols - sel));
+	row = Math.max(0, Math.min(row, p.rows - sel));
+	// Return top-left in pre-transform pixels
+	return { x: p.colLefts[col], y: p.rowTops[row] };
 }
 
 function get_pointer_size() {
@@ -519,13 +664,18 @@ function get_pointer_size() {
 }
 
 function update_pointer_size() {
-	let size = get_pointer_size();
-
-	// Defensive check to ensure we have valid dimensions
-	if (size.width > 0 && size.height > 0) {
-		pointer.style.width = size.width + "px";
-		pointer.style.height = size.height + "px";
-	}
+	const p = window.MDS_GRID_PARTITION;
+	if (!p || !pointer) return;
+	const sel = mds_getSelectionSize();
+	// Determine current anchor block from pointer.map_x/map_y
+	let col = mds_findIndexFromPre(pointer.map_x || 0, p.colLefts, p.cols);
+	let row = mds_findIndexFromPre(pointer.map_y || 0, p.rowTops, p.rows);
+	col = Math.max(0, Math.min(col, p.cols - sel));
+	row = Math.max(0, Math.min(row, p.rows - sel));
+	const w = mds_sumRange(p.colWidths, col, sel);
+	const h = mds_sumRange(p.rowHeights, row, sel);
+	pointer.style.width = w + "px";
+	pointer.style.height = h + "px";
 }
 
 function show_pointer(offset) {
@@ -549,6 +699,7 @@ function show_pointer(offset) {
 	pointer.map_x = offset.x;
 	pointer.map_y = offset.y;
 
+	// Size pointer to exactly cover N×N cells
 	update_pointer_size();
 
 	return true;
@@ -585,7 +736,8 @@ function formSubmit(event) {
 	event.preventDefault();
 	event.stopPropagation();
 
-	if ($myblocks.html().trim() === "") {
+	// Canvas mode and legacy: rely on selectedBlocks
+	if (!Array.isArray(selectedBlocks) || selectedBlocks.length === 0) {
 		messageout(MDS_OBJECT.no_blocks_selected);
 		return false;
 	}
@@ -658,9 +810,11 @@ function reset_pixels() {
 		},
 		success: function (data) {
 			if (data.success === true && data.data && data.data.type === "removed") {
-				$myblocks.children().each(function () {
-					remove_block(jQuery(this).data("blockid"));
-				});
+				// Clear selection set and redraw (canvas mode)
+				selectedBlocks = [];
+				const input = document.getElementById('selected_pixels');
+				if (input) input.value = '';
+				renderSelectionCanvas();
 			} else {
 			}
 		},
@@ -678,34 +832,46 @@ function rescale_grid() {
 		return;
 	}
 
-	// Get original dimensions from data attributes
+	// Element's rendered rect (for screen mapping) and layout width/height (pre-transform)
+	const rect = grid.getBoundingClientRect();
+
+	// Get original dimensions from data attributes (pixels at 1x/original)
 	let origWidth =
 		parseInt(jQuery(grid).attr("data-original-width"), 10) || orig.GRD_WIDTH;
 	let origHeight =
 		parseInt(jQuery(grid).attr("data-original-height"), 10) || orig.GRD_HEIGHT;
 
-	// Get current dimensions
-	grid_width = jQuery(grid).width();
-	grid_height = jQuery(grid).height();
+	// Use layout width/height (pre-transform) to derive base block size
+	const preW = jQuery(grid).width();
+	const preH = jQuery(grid).height();
+	grid_width = preW;
+	grid_height = preH;
 
-	// Calculate scaling factors based on actual rendered dimensions compared to original dimensions
-	scaled_width = grid_width / origWidth;
-	scaled_height = grid_height / origHeight;
+	// Calculate scaling factors based on layout size compared to original dimensions (pre-transform)
+	scaled_width = preW / origWidth;
+	scaled_height = preH / origHeight;
+
+	// Build integer partitions for current layout size
+	computeGridPartitions();
 
 	// Also call scaleImageMap to ensure grid blocks are positioned properly
 	if (typeof scaleImageMap === "function") {
 		scaleImageMap();
 	}
 
-	// Update block dimensions based on scaling factors
+	// Resize canvas overlay to match new layout size and redraw
+	setupBlocksCanvas();
+	renderSelectionCanvas();
+
+	// Update block dimensions based on scaling factors (legacy average)
 	BLK_WIDTH = orig.BLK_WIDTH * scaled_width;
 	BLK_HEIGHT = orig.BLK_HEIGHT * scaled_height;
 
-	// Update grid offsets
-	gridOffsetLeft = grid.offsetLeft;
-	gridOffsetTop = grid.offsetTop;
+	// Overlays are positioned relative to the wrapper (0,0); no extra offsets needed
+	gridOffsetLeft = 0;
+	gridOffsetTop = 0;
 
-	// Update the pointer element
+	// Update the pointer element (will be resized precisely in update_pointer_size)
 	jQuery(pointer).rescaleStyles();
 
 	// Store current selected blocks before clearing
@@ -769,19 +935,12 @@ function get_block_position(block_id) {
 }
 
 function get_clicked_block(OffsetX, OffsetY) {
-    // Ensure we are working with original, unscaled values for calculation
-    const unscaledX = OffsetX / scaled_width;
-    const unscaledY = OffsetY / scaled_height;
-
-    // Calculate the block column (x) and row (y)
-    const blockX = Math.floor(unscaledX / orig.BLK_WIDTH);
-    const blockY = Math.floor(unscaledY / orig.BLK_HEIGHT);
-
-    // Calculate the block ID
-    const gridWidthInBlocks = Math.floor(orig.GRD_WIDTH / orig.BLK_WIDTH);
-    const blockId = blockY * gridWidthInBlocks + blockX;
-
-    return Math.round(blockId);
+    const p = window.MDS_GRID_PARTITION;
+    if (!p) computeGridPartitions();
+    const part = window.MDS_GRID_PARTITION;
+    const col = mds_findIndexFromPre(OffsetX, part.colLefts, part.cols);
+    const row = mds_findIndexFromPre(OffsetY, part.rowTops, part.rows);
+    return row * part.cols + col;
 }
 
 function change_block_state(OffsetX, OffsetY) {
@@ -889,14 +1048,20 @@ function initializeGrid() {
 	pointer = document.getElementById("block_pointer");
 	pixel_container = document.getElementById("pixel_container");
 	pixel_form = document.getElementById("pixel_form");
+	blocksCanvas = document.getElementById('blocks_canvas');
 
-	// Defensive checks for all critical elements
-	if (!grid || !$myblocks.length || !pixel_container || !pointer) {
+	// Defensive checks for all critical elements (allow canvas mode without #blocks)
+	if (!grid || !pixel_container || !pointer) {
 		return;
 	}
 
 	// Initial setup
 	rescale_grid();
+	setupBlocksCanvas();
+	// Preload selection image (optional); fallback to fill color
+	preloadSelectionImage((MDS_OBJECT && MDS_OBJECT.MDS_CORE_URL ? (MDS_OBJECT.MDS_CORE_URL + 'images/selected_block.png') : ''), function(){
+		renderSelectionCanvas();
+	});
 	load_order();
 
 	// --- Event Listeners ---
@@ -910,6 +1075,11 @@ function initializeGrid() {
 			clickValid = true;
 			startX = event.originalEvent.pageX;
 			startY = event.originalEvent.pageY;
+			// Show loader immediately for feedback
+			if (!window.mds_loader_shown) {
+				add_ajax_loader(jQuery(".mds-pixel-wrapper"));
+				window.mds_loader_shown = true;
+			}
 		})
 		.on("mousemove", function (event) {
 			if (clickValid) {
@@ -950,6 +1120,10 @@ function initializeGrid() {
 		});
 
 		pixel_container.addEventListener("tap", function (event) {
+			if (!window.mds_loader_shown) {
+				add_ajax_loader(jQuery(".mds-pixel-wrapper"));
+				window.mds_loader_shown = true;
+			}
 			let offset = getOffset(event.detail.live.center.x, event.detail.live.center.y, true);
 			if (offset == null) return true;
 			show_pointer(offset);
@@ -990,7 +1164,11 @@ function initializeGrid() {
 			return;
 		}
 		ajaxing = true;
-		add_ajax_loader(jQuery(".mds-pixel-wrapper"));
+		// Show loader once while the queue is being processed
+		if (!window.mds_loader_shown) {
+			add_ajax_loader(jQuery(".mds-pixel-wrapper"));
+			window.mds_loader_shown = true;
+		}
 		let data = ajax_queue.shift();
 		jQuery.ajax({
 			type: "POST",
@@ -1007,14 +1185,18 @@ function initializeGrid() {
 			success: function (response) {
 				if (response.success === true) {
 					if (response.data && response.data.data) {
-						if (response.data.data.added && Array.isArray(response.data.data.added) && response.data.data.added.length > 0) {
-							do_blocks(response.data.data.added, "add");
+						// Only apply differences beyond what we already optimistically updated
+						const srv = response.data.data;
+						if (srv.added && Array.isArray(srv.added) && srv.added.length > 0) {
+							const extraAdds = srv.added.filter(id => !(data.original_add || []).includes(id));
+							if (extraAdds.length) do_blocks(extraAdds, "add");
 						}
-						if (response.data.data.removed && Array.isArray(response.data.data.removed) && response.data.data.removed.length > 0) {
-							do_blocks(response.data.data.removed, "remove");
+						if (srv.removed && Array.isArray(srv.removed) && srv.removed.length > 0) {
+							const extraRemoves = srv.removed.filter(id => !(data.original_remove || []).includes(id));
+							if (extraRemoves.length) do_blocks(extraRemoves, "remove");
 						}
-						if (response.data.data.type === "order_id" && pixel_form) {
-							pixel_form.order_id.value = parseInt(response.data.data.value, 10);
+						if (srv.type === "order_id" && pixel_form) {
+							pixel_form.order_id.value = parseInt(srv.value, 10);
 						}
 					}
 				} else {
@@ -1056,7 +1238,11 @@ function initializeGrid() {
 			},
 			complete: function () {
 				ajaxing = false;
-				remove_ajax_loader();
+				// Only remove loader when queue is fully drained
+				if (ajax_queue.length === 0) {
+					remove_ajax_loader();
+					window.mds_loader_shown = false;
+				}
 			}
 		});
 	}, 100);
@@ -1068,7 +1254,7 @@ function initializeGrid() {
 		if ($container.length > 0) {
 			$container.append($ajax_loader);
 			$ajax_loader
-				.css("z-index", "10000")
+				.css("z-index", "10050")
 				.css("top", $container.position().top)
 				.css("left", jQuery(container).width() / 2 - $ajax_loader.width() / 2);
 		}
@@ -1227,7 +1413,7 @@ function applyTransform() {
 	// Apply transformation to wrapper
 	wrapper.css({
 		transform: transform,
-		"transform-origin": "center center",
+		"transform-origin": "top left",
 		transition: "transform 0.1s",
 	});
 

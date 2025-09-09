@@ -729,7 +729,14 @@ Ads list page
 	min-height: 32px;
 	position: absolute;
 	background: url(../images/ajax-loader.gif) no-repeat center center;
-	z-index: 9999;
+	z-index: 10050; /* above .mds-block (10000) and #block_pointer (10001) */
+}
+
+/* Ensure selection block images fill their cell exactly */
+.mds-block img {
+	display: block;
+	width: 100%;
+	height: 100%;
 }
 
 .tippy-content {
@@ -1042,6 +1049,15 @@ Ads list page
 	position: relative;
 	z-index: 1;
 	box-shadow: 1px 1px 0 0 var(--mds-bg-tertiary, #ccc);
+}
+
+/* Canvas overlay for selections */
+.mds-container .mds-pixel-wrapper canvas#blocks_canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 10000; /* below pointer (10001) and above image (1) */
+	pointer-events: none; /* do not block mouse */
 }
 
 body #login {

@@ -425,9 +425,9 @@ if ( $show_selection_controls ) {
 		</div>
 
 		<div id="pixel_container">
-			<div id="blocks"></div>
-			<span id='block_pointer'></span>
 			<div class="mds-pixel-wrapper">
+				<canvas id="blocks_canvas"></canvas>
+				<span id='block_pointer'></span>
 				<img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
 					data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
 					data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
