@@ -58,6 +58,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Migration notice is hidden on fresh installs until the wizard finishes or legacy pages exist.
 * Fix: Uninstall (Delete data = Yes) now removes plugin options and metadata tables; pages stay. Wizard will show after reinstall.
 * Feature: Added WooCommerce Login Redirect option (Options > Login) to control where users are sent after a successful WooCommerce login when integration is enabled.
+* Feature: Replaced Register button on the login form with a "Register Now" link placed directly under the Log In button.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
