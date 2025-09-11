@@ -101,7 +101,17 @@ $current_user_id = get_current_user_id();
 $query = $wpdb->prepare("SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE user_id=%d AND status='reserved' AND banner_id=%d", $current_user_id, $BID);
 $results = $wpdb->get_results($query);
 
-$count = count($results);
+// Fallback: if no reserved rows found yet, check the order's blocks CSV
+$blocks_csv_count = 0;
+if ( empty( $results ) ) {
+	$order_blocks_csv = $wpdb->get_var( $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND banner_id=%d", intval( Orders::get_current_order_id() ), $BID ) );
+	if ( $order_blocks_csv !== null && $order_blocks_csv !== '' ) {
+		$csv_arr = array_filter( array_map( 'trim', explode( ',', $order_blocks_csv ) ), static function ( $v ) { return $v !== ''; } );
+		$blocks_csv_count = count( $csv_arr );
+	}
+}
+
+$count = ! empty( $results ) ? count( $results ) : $blocks_csv_count;
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
 Language::out_replace(

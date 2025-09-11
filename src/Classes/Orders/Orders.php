@@ -2348,8 +2348,8 @@ class Orders {
 
 		$now = current_time( 'mysql' );
 
-		$sql = $wpdb->prepare(
-			"UPDATE " . MDS_DB_PREFIX . "orders
+        $sql = $wpdb->prepare(
+            "UPDATE " . MDS_DB_PREFIX . "orders
         SET user_id = %d,
             blocks = %s,
             status = 'new',
@@ -2364,42 +2364,45 @@ class Orders {
             ad_id = %d,
             approved = %s
         WHERE order_id = %d",
-			get_current_user_id(),
-			$in_str,
-			$now,
-			floatval( $temp_order_row['price'] ),
-			intval( $temp_order_row['quantity'] ),
-			intval( $temp_order_row['banner_id'] ),
-			Currency::get_default_currency(),
-			intval( $temp_order_row['days_expire'] ),
-			$now,
-			intval( $temp_order_row['package_id'] ),
-			intval( $temp_order_row['ad_id'] ),
-			$approved,
-			self::get_current_order_id()
-		);
-		$wpdb->query( $sql );
-		$order_id = self::get_current_order_id();
+            get_current_user_id(),
+            $in_str,
+            $now,
+            floatval( $temp_order_row['price'] ),
+            intval( $temp_order_row['quantity'] ),
+            intval( $temp_order_row['banner_id'] ),
+            Currency::get_default_currency(),
+            intval( $temp_order_row['days_expire'] ),
+            $now,
+            intval( $temp_order_row['package_id'] ),
+            intval( $temp_order_row['ad_id'] ),
+            $approved,
+            intval( $current_order_id )
+        );
+        $wpdb->query( $sql );
+        $order_id = intval( $current_order_id );
 
-		$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders SET original_order_id=%d WHERE order_id=%d", $order_id, $order_id );
+$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders SET original_order_id=%d WHERE order_id=%d", intval( $order_id ), intval( $order_id ) );
 		$wpdb->query( $sql );
 
 		$url      = carbon_get_post_meta( $temp_order_row['ad_id'], MDS_PREFIX . 'url' );
 		$alt_text = carbon_get_post_meta( $temp_order_row['ad_id'], MDS_PREFIX . 'text' );
 
-		if ( is_array( $block_info ) ) {
+		// Always remove previously reserved blocks for this order before inserting
+		$wpdb->delete(
+			MDS_DB_PREFIX . "blocks",
+			array(
+				'order_id' => $order_id
+			),
+			array(
+				'%d'
+			)
+		);
 
-			// Remove previously reserved blocks for this order.
-			$wpdb->delete(
-				MDS_DB_PREFIX . "blocks",
-				array(
-					'order_id' => $order_id
-				),
-				array(
-					'%d'
-				)
-			);
+		$__mds_inserted = 0;
+		$__mds_errors = [];
 
+		if ( is_array( $block_info ) && ! empty( $block_info ) ) {
+			// Insert using detailed block_info (includes precomputed image_data and map_x/map_y pricing)
 			foreach ( $block_info as $key => $block ) {
 				$sql = $wpdb->prepare( "REPLACE INTO `" . MDS_DB_PREFIX . "blocks` ( `block_id`, `user_id`, `status`, `x`, `y`, `image_data`, `url`, `alt_text`, `approved`, `banner_id`, `currency`, `price`, `order_id`, `ad_id`, `click_count`, `view_count`) VALUES (%d, %d, 'reserved', %d, %d, %s, %s, %s, %s, %d, %s, %f, %d, %d, 0, 0)",
 					intval( $key ),
@@ -2417,12 +2420,52 @@ class Orders {
 					intval( $temp_order_row['ad_id'] )
 				);
 				$wpdb->query( $sql );
+				if ( ! empty( $wpdb->last_error ) ) { $__mds_errors[] = $wpdb->last_error; }
+				$__mds_inserted += (int) $wpdb->rows_affected;
+			}
+		} else {
+			// Fallback: insert reserved rows based on orders.blocks CSV only (no image_data yet)
+			$blocks_csv = trim( (string) $temp_order_row['blocks'] );
+			if ( $blocks_csv !== '' ) {
+				$banner = load_banner_constants( intval( $temp_order_row['banner_id'] ) );
+				$blocks = array_map( 'intval', explode( ',', $blocks_csv ) );
+				foreach ( $blocks as $block_id ) {
+					$x_index = $block_id % $banner['G_WIDTH'];
+					$y_index = intdiv( $block_id, $banner['G_WIDTH'] );
+					$x       = $x_index * $banner['BLK_WIDTH'];
+					$y       = $y_index * $banner['BLK_HEIGHT'];
+					$price   = get_zone_price( intval( $temp_order_row['banner_id'] ), $y, $x );
+					$sql = $wpdb->prepare( "REPLACE INTO `" . MDS_DB_PREFIX . "blocks` ( `block_id`, `user_id`, `status`, `x`, `y`, `image_data`, `url`, `alt_text`, `approved`, `banner_id`, `currency`, `price`, `order_id`, `ad_id`, `click_count`, `view_count`) VALUES (%d, %d, 'reserved', %d, %d, %s, %s, %s, %s, %d, %s, %f, %d, %d, 0, 0)",
+						intval( $block_id ),
+						get_current_user_id(),
+						intval( $x ),
+						intval( $y ),
+						'',
+						$url,
+						$alt_text,
+						$approved,
+						intval( $temp_order_row['banner_id'] ),
+						Currency::get_default_currency(),
+						floatval( $price ),
+						intval( $order_id ),
+						intval( $temp_order_row['ad_id'] )
+					);
+					$wpdb->query( $sql );
+					if ( ! empty( $wpdb->last_error ) ) { $__mds_errors[] = $wpdb->last_error; }
+					$__mds_inserted += (int) $wpdb->rows_affected;
+				}
 			}
 		}
 
 		//delete_temp_order( get_current_order_id(), false );
 
 		// false = do not delete the ad...
+
+		// Debug log (non-fatal) for diagnostics in development
+		if ( ! empty( $__mds_errors ) ) {
+			@error_log( 'MDS reserve_pixels_for_temp_order errors: ' . implode( ' | ', $__mds_errors ) );
+		}
+		@error_log( 'MDS reserve_pixels_for_temp_order inserted rows: ' . $__mds_inserted . ' for order_id=' . $order_id );
 
 		return $order_id;
 	}

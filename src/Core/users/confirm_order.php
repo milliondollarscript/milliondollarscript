@@ -102,6 +102,48 @@ if ( is_null( $order_row ) || $order_row['status'] != 'new' && empty( $order_row
 	return;
 }
 
+// Submission-time validation: adjacency/rectangle and min/max blocks
+$blocks_per_row = $banner_data['G_WIDTH'];
+$blocks_array = [];
+if ( isset( $order_row['blocks'] ) && $order_row['blocks'] !== '' ) {
+	$blocks_array = array_map( 'intval', explode( ',', $order_row['blocks'] ) );
+}
+
+$errors_sub = [];
+// Enforce min blocks
+$min_blocks = intval( $banner_data['G_MIN_BLOCKS'] );
+if ( $min_blocks > 0 && count( $blocks_array ) < $min_blocks ) {
+	$errors_sub[] = Language::get_replace( 'You must select at least %MAX_BLOCKS% blocks.', '%MAX_BLOCKS%', $min_blocks );
+}
+// Enforce max blocks
+$max_blocks = intval( $banner_data['G_MAX_BLOCKS'] );
+if ( $max_blocks > 0 && count( $blocks_array ) > $max_blocks ) {
+	$errors_sub[] = Language::get_replace( 'Maximum blocks selected. (%MAX_BLOCKS% allowed per order)', '%MAX_BLOCKS%', $max_blocks );
+}
+// Enforce adjacency/rectangle depending on option
+$mode = Options::get_option( 'selection-adjacency-mode', 'ADJACENT' );
+if ( $mode !== 'NONE' ) {
+	if ( $mode === 'RECTANGLE' ) {
+		if ( ! \MillionDollarScript\Classes\Orders\Blocks::check_adjacency( $blocks_array, $blocks_per_row ) ) {
+			$errors_sub[] = Language::get( 'You must select blocks forming a rectangle or square.' );
+		}
+	} else {
+		if ( ! \MillionDollarScript\Classes\Orders\Blocks::check_contiguous( $blocks_array, $blocks_per_row ) ) {
+			$errors_sub[] = Language::get( 'You must select a block adjacent to another one.' );
+		}
+	}
+}
+
+if ( ! empty( $errors_sub ) ) {
+	require_once MDS_CORE_PATH . "html/header.php";
+	foreach ( $errors_sub as $err ) {
+		echo '<div class="mds-error">' . esc_html( $err ) . '</div>';
+	}
+	display_edit_order_button( $order_row['order_id'] );
+	require_once MDS_CORE_PATH . "html/footer.php";
+	return;
+}
+
 /* Login -> Select pixels -> Write ad -> Confirm order */
 if ( ! is_user_logged_in() ) {
 	mds_wp_login_check();

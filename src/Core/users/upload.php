@@ -203,7 +203,18 @@ if ( empty( $res ) ) {
 	$res = $wpdb->get_results( $sql );
 }
 
-$count             = count( $res );
+// If still nothing, fall back to orders.blocks CSV which is authoritative for selection
+$count = 0;
+if ( ! empty( $res ) ) {
+	$count = count( $res );
+} else {
+$order_blocks_csv = $wpdb->get_var( $wpdb->prepare( "SELECT blocks FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND banner_id=%d", $order_id, $BID ) );
+	if ( $order_blocks_csv !== null && $order_blocks_csv !== '' ) {
+		$csv_arr = array_filter( array_map( 'trim', explode( ',', $order_blocks_csv ) ), static function ( $v ) { return $v !== ''; } );
+		$count   = count( $csv_arr );
+	}
+}
+
 $not_enough_blocks = $count < $banner_data['G_MIN_BLOCKS'];
 
 Language::out_replace(
@@ -263,6 +274,14 @@ $sql = $wpdb->prepare(
 $order_row = $wpdb->get_row( $sql, ARRAY_A );
 if ( $wpdb->last_error ) {
 	wp_die( esc_html( $wpdb->last_error ) );
+}
+
+// Ensure reserved rows exist for this order before rendering the grid
+if ( $order_row && ! empty( $order_row['blocks'] ) ) {
+	$res_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . MDS_DB_PREFIX . "blocks WHERE order_id=%d AND banner_id=%d AND status='reserved'", intval( $order_id ), intval( $BID ) ) );
+	if ( $res_count === 0 ) {
+		\MillionDollarScript\Classes\Orders\Orders::reserve_pixels_for_temp_order( $order_row );
+	}
 }
 
 if ( ! $order_row ) {
@@ -418,7 +437,7 @@ if ( ! empty( $image ) ) {
 	// Check for any new orders
 	$order_row = Orders::find_new_order();
 
-	if ( $order_row == null || ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) || $not_enough_blocks ) {
+if ( $order_row == null || ( $order_row['status'] != 'new' && ( $order_row['order_id'] == '' ) || ( ( $order_row['status'] != 'new' && $order_row['quantity'] == '0' ) ) ) || $not_enough_blocks ) {
 		if ( $not_enough_blocks ) {
 			Functions::not_enough_blocks( $mds_order_id, $banner_data['G_MIN_BLOCKS'] );
 		} else {
