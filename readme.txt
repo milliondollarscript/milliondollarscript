@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.0
+Stable tag: 2.5.15.1
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -18,6 +18,9 @@ Million Dollar Script enables you to sell pixel-based advertising space on your 
 Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.com/million-dollar-script-wordpress-plugin/) page on the website for additional documentation.
 
 == Changelog ==
+
+= 2.5.15.0 =
+* Improvement: Cancelled blocks now appear as reserved on the ordering grid so it’s clear the area is temporarily unavailable. They’ll be cleaned up automatically based on your Order Timing settings.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.

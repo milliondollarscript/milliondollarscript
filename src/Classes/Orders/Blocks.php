@@ -73,7 +73,7 @@ class Blocks {
 		if ( ! empty( $blocks_to_add ) ) {
 			$placeholders = implode( ',', array_fill( 0, count( $blocks_to_add ), '%d' ) );
 			$query        = $wpdb->prepare(
-				"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id IN ($placeholders) AND banner_id = %d AND (status = 'sold' OR (status = 'reserved' AND user_id != %d))",
+				"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE block_id IN ($placeholders) AND banner_id = %d AND (status IN ('sold','cancelled') OR (status = 'reserved' AND user_id != %d))",
 				array_merge( $blocks_to_add, [ intval( $BID ), $user_id ] )
 			);
 			$taken_blocks = $wpdb->get_col( $query );

@@ -1855,6 +1855,9 @@ class Orders {
 				array( '%d', '%d' )
 			);
 
+			// Invalidate grid cache timestamp
+			self::set_last_order_modification_time();
+
 			if ( $row['status'] == 'new' ) {
 				// do not send email
 				return;
@@ -1954,6 +1957,9 @@ class Orders {
 				array( '%d' )
 			);
 
+			// Invalidate grid cache timestamp
+			self::set_last_order_modification_time();
+
 			// DELETE BLOCKS
 
 			if ( $order_row['blocks'] != '' ) {
@@ -2044,6 +2050,9 @@ class Orders {
 			publish_image( $row['banner_id'] );
 			process_map( $row['banner_id'] );
 		}
+		
+		// Invalidate grid cache timestamp
+		self::set_last_order_modification_time();
 		
 		// Log successful cancellation
 		$context = $bypass_auth ? 'admin bypass' : 'user action';
