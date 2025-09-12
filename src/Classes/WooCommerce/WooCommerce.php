@@ -62,6 +62,8 @@ class WooCommerce {
 		add_action( 'woocommerce_payment_complete', [ __CLASS__, 'payment_complete' ] );
 		add_action( 'woocommerce_after_cart_item_quantity_update', [ __CLASS__, 'adjust_cart_item_quantity_after_update' ], 20, 4 );
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', [ __CLASS__, 'validate_checkout' ], 10, 2 );
+		// Classic (non-Blocks) checkout hook to persist MDS mapping early
+		add_action( 'woocommerce_checkout_create_order', [ __CLASS__, 'checkout_create_order' ], 10, 2 );
 		add_filter( 'woocommerce_add_error', [ __CLASS__, 'custom_wc_error_msg' ] );
 		add_action( 'woocommerce_new_order', [ __CLASS__, 'new_order' ], 10, 1 );
 
@@ -607,20 +609,45 @@ class WooCommerce {
 		return null;
 	}
 
-	/**
-	 * Validates the checkout process for an order.
+/**
+	 * Classic (non-Blocks) checkout: persist MDS mapping early using CRUD, idempotently.
 	 *
-	 * @param $order \WC_Order The WooCommerce order object.
-	 * @param $request \WP_REST_Request The WordPress REST request object.
+	 * @param \\WC_Order $order
+	 * @param array $data
 	 *
 	 * @return void
 	 */
-	public static function validate_checkout( \WC_Order $order, \WP_REST_Request $request ): void {
-		if ( WooCommerceFunctions::is_mds_order( $order->get_id() ) && ! WooCommerceFunctions::valid_mds_order() ) {
-			wc_add_notice( 'MDS_VALIDATION_ERROR', 'error' );
+	public static function checkout_create_order( \\WC_Order $order, array $data ): void {
+		if ( ! WooCommerceFunctions::is_mds_order( $order->get_id() ) ) {
+			return;
 		}
+		// Reuse logic that saves mds_order_id and adds the order note only if not already present.
+		self::new_order( $order->get_id() );
 	}
 
+	/**
+	 * Validates the checkout process for an order.
+	 *
+	 * @param $order \\WC_Order The WooCommerce order object.
+	 * @param $request \\WP_REST_Request The WordPress REST request object.
+	 *
+	 * @return void
+	 */
+	public static function validate_checkout( \\WC_Order $order, \\WP_REST_Request $request ): void {
+		// For MDS orders created via WooCommerce Blocks (Store API), persist the MDS↔WC mapping
+		// early so that later status changes (e.g., Stripe webhook auto-complete) can find it.
+		if ( WooCommerceFunctions::is_mds_order( $order->get_id() ) ) {
+			// Idempotently add the mapping and note (re-uses existing logic in new_order()).
+			// This relies on the session key set during MDS Payment::handle_checkout.
+			self::new_order( $order->get_id() );
+
+			// Preserve existing validation behavior.
+			if ( ! WooCommerceFunctions::valid_mds_order() ) {
+				wc_add_notice( 'MDS_VALIDATION_ERROR', 'error' );
+			}
+		}
+	}
+	
 	/**
 	 * Custom error message for WooCommerce notice.
 	 *
