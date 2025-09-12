@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.13.34\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.15.3\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-07 18:30:31\n"
-"PO-Revision-Date: 2025-09-07 18:30:31\n"
-"X-Generator: Million Dollar Script Two 2.5.13.34\n"
+"POT-Creation-Date: 2025-09-13 00:40:53\n"
+"PO-Revision-Date: 2025-09-13 00:40:53\n"
+"X-Generator: Million Dollar Script Two 2.5.15.3\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1614,6 +1614,12 @@ msgstr ""
 msgid "The URL to redirect users to after logout."
 msgstr ""
 
+msgid "WooCommerce Login Redirect"
+msgstr ""
+
+msgid "When WooCommerce integration is enabled, redirect users to this URL after a successful WooCommerce login. Leave empty to use WooCommerce's default behavior."
+msgstr ""
+
 msgid "Login Header Image"
 msgstr ""
 
@@ -2769,6 +2775,15 @@ msgstr ""
 msgid "Failed to prepare uploaded file for processing. Please try again."
 msgstr ""
 
+msgid "Orders cleared successfully!"
+msgstr ""
+
+msgid "Associated WooCommerce orders were also deleted."
+msgstr ""
+
+msgid "Now you should <a href=\"%PROCESS_PIXELS_URL%\">Process Pixels</a> to regenerate your grid."
+msgstr ""
+
 msgid "Invalid package data submitted. Please check the fields and try again."
 msgstr ""
 
@@ -3477,7 +3492,13 @@ msgstr ""
 msgid "To column"
 msgstr ""
 
-msgid "Register"
+msgid "No account yet?"
+msgstr ""
+
+msgid "Register Now"
+msgstr ""
+
+msgid "Register for an account"
 msgstr ""
 
 msgid "Security check failed. Please reload the page and try again."
@@ -3625,6 +3646,9 @@ msgid "Sorry there was an error with your session."
 msgstr ""
 
 msgid "Go Back"
+msgstr ""
+
+msgid "You must select at least %MAX_BLOCKS% blocks."
 msgstr ""
 
 msgid "Complete Order"
@@ -3831,13 +3855,7 @@ msgstr ""
 msgid "The path to your uploads directory: %UPLOAD_PATH%"
 msgstr ""
 
-msgid "Orders cleared successfully!"
-msgstr ""
-
 msgid "Done!"
-msgstr ""
-
-msgid "Now you should <a href=\"%PROCESS_PIXELS_URL%\">Process Pixels</a> to regenerate your grid."
 msgstr ""
 
 msgid "<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
