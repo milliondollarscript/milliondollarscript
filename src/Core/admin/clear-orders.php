@@ -33,11 +33,6 @@ use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
 
-// Show success message if returning from a successful clear operation
-if (isset($_GET['cleared']) && $_GET['cleared'] == '1') {
-    // Use the Notices class to handle admin notices consistently
-    Notices::add_notice(Language::get("Orders cleared successfully!"), 'success');
-}
 
 // Handle direct requests (not through admin-post.php) with CSRF protection
 // This legacy handler is maintained for backward compatibility but secured

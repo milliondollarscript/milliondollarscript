@@ -35,6 +35,7 @@ use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Admin\Notices;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -647,8 +648,27 @@ class Forms {
 				// require_once MDS_CORE_PATH . 'admin/backgrounds.php';
 				break;
 			case 'clear-orders':
-				require_once MDS_CORE_PATH . 'admin/clear-orders.php';
-				$params['clear_orders'] = 'true';
+				// Determine if WooCommerce orders should also be cleared (checkbox in form)
+				$also_clear_wc = isset( $_POST['clear_woocommerce_orders'] ) && $_POST['clear_woocommerce_orders'] !== '';
+				
+				// Process clearing orders directly on POST to avoid nonce issues on redirect
+				Utility::clear_orders();
+				
+				// Queue admin notices before redirect so they render on the next GET
+				Notices::add_notice( Language::get( 'Orders cleared successfully!' ), 'success' );
+				if ( $also_clear_wc ) {
+					Notices::add_notice( Language::get( 'Associated WooCommerce orders were also deleted.' ), 'success' );
+				}
+				// Helpful hint to process pixels next
+				$process_pixels_url = admin_url( 'admin.php?page=mds-process-pixels' );
+				$hint_message = Language::get_replace( 'Now you should <a href="%PROCESS_PIXELS_URL%">Process Pixels</a> to regenerate your grid.', '%PROCESS_PIXELS_URL%', esc_url( $process_pixels_url ) );
+				Notices::add_notice( $hint_message, 'info' );
+				
+				// Redirect back to the Clear Orders page with a success flag for legacy compatibility
+				$params['cleared'] = '1';
+				if ( $also_clear_wc ) {
+					$params['wc'] = '1';
+				}
 				break;
 			case 'map-of-orders':
 				require_once MDS_CORE_PATH . 'admin/map-of-orders.php';

@@ -355,10 +355,24 @@ class Utility {
 			if ( \MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions::is_wc_active() ) {
 				$order_ids = $wpdb->get_col( "SELECT order_id FROM " . MDS_DB_PREFIX . "orders" );
 				foreach ( $order_ids as $order_id ) {
-					$wc_order_id = Orders::get_wc_order_id_from_mds_order_id( $order_id );
-					$order       = wc_get_order( $wc_order_id );
-					if ( $order ) {
-						$order->delete( true );
+					$wc_order_id = Orders::get_wc_order_id_from_mds_order_id( (int) $order_id );
+					
+					// Fallback: try mapping stored on the associated MDS Pixel post
+					if ( empty( $wc_order_id ) || ! is_numeric( $wc_order_id ) ) {
+						$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT ad_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", (int) $order_id ), ARRAY_A );
+						if ( $order_row && ! empty( $order_row['ad_id'] ) ) {
+							$maybe_wc = get_post_meta( (int) $order_row['ad_id'], '_wc_order_id', true );
+							if ( ! empty( $maybe_wc ) ) {
+								$wc_order_id = (int) $maybe_wc;
+							}
+						}
+					}
+					
+					if ( ! empty( $wc_order_id ) ) {
+						$order = wc_get_order( (int) $wc_order_id );
+						if ( $order ) {
+							$order->delete( true );
+						}
 					}
 				}
 			}

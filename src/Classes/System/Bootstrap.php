@@ -417,7 +417,6 @@ add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Ad
 		// Hook for when loaded
 		do_action( 'mds-loaded', $this );
 
-		add_action( 'admin_notices', [ Notices::class, 'display_notices' ] );
 
 		// phpcs:disable
 		return $this;
