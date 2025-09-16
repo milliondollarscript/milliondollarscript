@@ -344,15 +344,15 @@ class Blocks {
 				// Bulk insert/upsert in chunks with guard against overriding other users' reservations
 				$columns = "(block_id, user_id, status, x, y, image_data, url, alt_text, approved, banner_id, ad_id, currency, price, order_id, click_count, view_count)";
 				$values_place = "(%d, %d, %s, %d, %d, %s, %s, %s, %s, %d, %d, %s, %f, %d, %d, %d)";
-				$on_dupe = " ON DUPLICATE KEY UPDATE \
-					user_id = IF(user_id = VALUES(user_id), VALUES(user_id), user_id), \
-					status = IF(user_id = VALUES(user_id), 'reserved', status), \
-					x = IF(user_id = VALUES(user_id), VALUES(x), x), \
-					y = IF(user_id = VALUES(user_id), VALUES(y), y), \
-					price = IF(user_id = VALUES(user_id), VALUES(price), price), \
-					order_id = IF(user_id = VALUES(user_id), VALUES(order_id), order_id), \
-					currency = IF(user_id = VALUES(user_id), VALUES(currency), currency), \
-					approved = IF(user_id = VALUES(user_id), VALUES(approved), approved), \
+				$on_dupe = " ON DUPLICATE KEY UPDATE
+					user_id = IF(user_id = VALUES(user_id), VALUES(user_id), user_id),
+					status = IF(user_id = VALUES(user_id), 'reserved', status),
+					x = IF(user_id = VALUES(user_id), VALUES(x), x),
+					y = IF(user_id = VALUES(user_id), VALUES(y), y),
+					price = IF(user_id = VALUES(user_id), VALUES(price), price),
+					order_id = IF(user_id = VALUES(user_id), VALUES(order_id), order_id),
+					currency = IF(user_id = VALUES(user_id), VALUES(currency), currency),
+					approved = IF(user_id = VALUES(user_id), VALUES(approved), approved),
 					ad_id = IF(user_id = VALUES(user_id), VALUES(ad_id), ad_id)";
 
 				for ( $i = 0; $i < count( $rows ); $i += $chunk_size ) {
