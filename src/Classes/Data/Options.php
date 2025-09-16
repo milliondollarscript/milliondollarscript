@@ -980,6 +980,23 @@ class Options {
 
 			Language::get( 'Orders' ) => [
 
+				// Auto-advance after upload (Advanced mode)
+				Field::make( 'radio', MDS_PREFIX . 'auto-advance-after-upload', Language::get( 'Auto-advance after Upload (Advanced)' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'use-ajax',
+							'compare' => '=',
+							'value'   => 'YES',
+						],
+					] )
+					->set_help_text( Language::get( 'When enabled (Advanced selection method only), after a user uploads an image the flow skips the “Your Uploaded Pixels” preview and continues automatically. If the Confirm Orders Page is enabled, it goes to Confirm Order; if Confirm Orders is disabled, it goes directly to Payment. Default is No to show the preview screen as usual.' ) ),
+
 				// Block Selection Mode
 				Field::make( 'radio', MDS_PREFIX . 'block-selection-mode', Language::get( 'Block Selection Mode' ) )
 					->set_default_value( 'YES' )

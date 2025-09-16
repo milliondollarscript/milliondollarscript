@@ -317,13 +317,26 @@ class Forms {
 						$params['upload_error'] = urlencode( $upload_result['error'] );
 					} else {
 						$params['upload_success'] = '1';
-						$order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+						$order_id  = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
 						$image_data = file_get_contents( $upload_result['file_path'] );
-						\insert_ad_data( $order_id, false, $image_data );
+						$ad_id     = insert_ad_data( $order_id, false, $image_data );
+						
+						// Decide where to go next after successful upload (advanced vs simple)
+						$use_ajax = Options::get_option( 'use-ajax' ) == 'YES';
+						$auto_advance = $use_ajax && Options::get_option( 'auto-advance-after-upload', 'no' ) == 'yes';
+						if ( $auto_advance ) {
+							// Auto-advance directly to Write Your Ad form (Advanced mode only)
+							$mds_dest = 'write-ad';
+							$params['order_id'] = $order_id;
+							if ( is_int( $ad_id ) && $ad_id > 0 ) {
+								$params['aid'] = $ad_id;
+							}
+						} else {
+							// Default: return to order (Select Pixels) page to show preview and Write Your Ad button
+							$mds_dest = 'order';
+							$params['order_id'] = $order_id;
+						}
 					}
-					
-					// Redirect to order page to display results
-					$mds_dest = 'order';
 				} else {
 					// Normal order/select flow without file upload
 					$mds_dest          = 'order';
@@ -388,41 +401,97 @@ class Forms {
 						$params['upload_error'] = urlencode( $upload_result['error'] );
 					} else {
 						$params['upload_success'] = '1';
-						$order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+						$order_id  = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
 						$image_data = file_get_contents( $upload_result['file_path'] );
-						\insert_ad_data( $order_id, false, $image_data );
+						$ad_id     = insert_ad_data( $order_id, false, $image_data );
+						
+						// For simple method (upload-first), default is to return to the Upload page to show preview and Write Ad button
+						$use_ajax = Options::get_option( 'use-ajax' ) == 'YES';
+						$auto_advance = $use_ajax && Options::get_option( 'auto-advance-after-upload', 'no' ) == 'yes';
+						if ( $auto_advance ) {
+							// Auto-advance directly to Write Your Ad form (Advanced mode only)
+							$mds_dest = 'write-ad';
+							$params['order_id'] = $order_id;
+							if ( is_int( $ad_id ) && $ad_id > 0 ) {
+								$params['aid'] = $ad_id;
+							}
+						} else {
+							$mds_dest = 'upload';
+							$params['order_id'] = $order_id;
+						}
 					}
 				}
 				
 				// Always redirect to the upload page
 				break;
 			case 'write-ad':
-				global $wpdb;
+				// Determine whether this POST is just navigating to Write Ad (no save yet)
+				$is_save_request = isset( $_POST['save'] ) && $_POST['save'] === '1';
 
-				// Process selected pixels and update order
-				if ( ! empty( $_POST['selected_pixels'] ) && ! empty( $_POST['order_id'] ) ) {
-					$order_id = intval( $_POST['order_id'] );
+				// Ensure current order context before handling any actions (prefer form hidden order field)
+				$order_from_form   = isset( $_POST[ MDS_PREFIX . 'order' ] ) ? intval( $_POST[ MDS_PREFIX . 'order' ] ) : 0;
+				$order_id_param    = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+				$aid_param         = isset( $_REQUEST['aid'] ) ? intval( $_REQUEST['aid'] ) : 0;
+				$resolved_order_id = Orders::ensure_current_order_context( $order_from_form ?: $order_id_param, $aid_param, true );
 
-					// Ensure the user owns this order
-					if ( Orders::is_owned_by( $order_id ) ) {
-						$selected_pixels = sanitize_text_field( $_POST['selected_pixels'] );
-						$pixel_array     = explode( ',', $selected_pixels );
-						$block_count     = count( $pixel_array );
-
-						if ( $block_count > 0 ) {
-							$wpdb->update(
-								MDS_DB_PREFIX . 'orders',
-								[ 'blocks' => $block_count ],
-								[ 'order_id' => $order_id ],
-								[ '%d' ],
-								[ '%d' ]
-							);
+				if ( ! $is_save_request ) {
+					// No save action yet—redirect to the Write Ad page so the user can fill the form
+					$mds_dest = 'write-ad';
+					if ( $resolved_order_id ) {
+						$params['order_id'] = $resolved_order_id;
+					}
+					if ( $aid_param > 0 ) {
+						$params['aid'] = $aid_param;
+					} else if ( $resolved_order_id ) {
+						$existing_ad_id = Orders::get_ad_id_from_order_id( $resolved_order_id );
+						if ( ! empty( $existing_ad_id ) ) {
+							$params['aid'] = intval( $existing_ad_id );
 						}
 					}
+
+					// Preserve package if present for the landing page
+					$package           = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+					$params['package'] = $package;
+					break;
 				}
 
-				require_once MDS_CORE_PATH . 'users/write_ad.php';
+				// Save ad fields via Carbon Fields helper
+				$post_id_or_errors = FormFields::add();
 
+				if ( is_int( $post_id_or_errors ) && $post_id_or_errors > 0 ) {
+					// Success: decide next step based on Confirm Orders option
+					$confirm_enabled = Options::get_option( 'confirm-orders', 'yes' ) !== 'no';
+					$mds_dest        = $confirm_enabled ? 'confirm-order' : 'payment';
+
+					// Provide order_id and aid to help next screen
+					$params['aid'] = $post_id_or_errors;
+					$order_id_meta  = carbon_get_post_meta( $post_id_or_errors, MDS_PREFIX . 'order' );
+					$order_id_curr  = Orders::get_current_order_id();
+					$__redir_order_id = 0;
+					if ( ! empty( $order_id_meta ) ) {
+						$__redir_order_id = intval( $order_id_meta );
+					} else if ( $order_id_param > 0 ) {
+						$__redir_order_id = $order_id_param;
+					} else if ( ! empty( $order_id_curr ) ) {
+						$__redir_order_id = intval( $order_id_curr );
+					}
+					if ( $__redir_order_id > 0 ) {
+						$params['order_id'] = $__redir_order_id;
+					}
+				} else if ( is_array( $post_id_or_errors ) && ! empty( $post_id_or_errors ) ) {
+					// Validation errors: stay on Write Ad and surface a generic error param
+					$mds_dest = 'write-ad';
+					$params['mds_error'] = urlencode( Language::get( 'Please correct the highlighted fields.' ) );
+				} else if ( is_wp_error( $post_id_or_errors ) ) {
+					// Save failure: stay and display error
+					$mds_dest = 'write-ad';
+					$params['mds_error'] = urlencode( $post_id_or_errors->get_error_message() );
+				} else {
+					// Unknown state: be safe and stay on Write Ad
+					$mds_dest = 'write-ad';
+				}
+
+				// Preserve package if present
 				$package           = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
 				$params['package'] = $package;
 
@@ -436,11 +505,54 @@ class Forms {
 			$params['mds_error'] = urlencode( $mds_error );
 		}
 
-		// Update the current step
-		Steps::update_step( $mds_dest );
+		// Update the current step (normalize confirm-order hyphen to underscore for Steps)
+		$__step_key = ( $mds_dest === 'confirm-order' ) ? 'confirm_order' : $mds_dest;
+		Steps::update_step( $__step_key );
 
-		if ( isset( $_REQUEST['BID'] ) ) {
-			$params['BID'] = intval( $_REQUEST['BID'] );
+		// Preserve or derive BID for correct page context
+		$__bid_param = isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0;
+		if ( $__bid_param > 0 ) {
+			$params['BID'] = $__bid_param;
+		} else {
+			$__derived_bid = 0;
+			// Try to derive from order_id
+			$__order_id = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+			if ( $__order_id > 0 ) {
+				$__order = Orders::get_order( $__order_id );
+				if ( $__order && isset( $__order->banner_id ) ) {
+					$__derived_bid = intval( $__order->banner_id );
+				}
+			}
+			// Try to derive from aid (mds-pixel post)
+			if ( $__derived_bid <= 0 && isset( $_REQUEST['aid'] ) ) {
+				$__aid = intval( $_REQUEST['aid'] );
+				if ( $__aid > 0 ) {
+					$__maybe = carbon_get_post_meta( $__aid, MDS_PREFIX . 'grid' );
+					if ( $__maybe ) {
+						$__derived_bid = intval( $__maybe );
+					}
+				}
+			}
+			// Try current order in progress
+			if ( $__derived_bid <= 0 ) {
+				$__curr = Orders::get_current_order_id();
+				if ( $__curr ) {
+					$__order = Orders::get_order( $__curr );
+					if ( $__order && isset( $__order->banner_id ) ) {
+						$__derived_bid = intval( $__order->banner_id );
+					}
+				}
+			}
+			// Final fallback to runtime BID if available
+			if ( $__derived_bid <= 0 ) {
+				global $f2;
+				if ( isset( $f2 ) && is_object( $f2 ) && method_exists( $f2, 'bid' ) ) {
+					$__derived_bid = intval( $f2->bid() );
+				}
+			}
+			if ( $__derived_bid > 0 ) {
+				$params['BID'] = $__derived_bid;
+			}
 		}
 
 		$page_url = Utility::get_page_url( $mds_dest );

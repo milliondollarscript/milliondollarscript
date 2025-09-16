@@ -28,8 +28,10 @@
 
 defined( 'ABSPATH' ) or exit;
 
-\MillionDollarScript\Classes\System\Utility::get_header();
-
+ob_start();
 require_once MDS_CORE_PATH . 'users/thanks.php';
+$thanks_content = ob_get_clean();
 
+\MillionDollarScript\Classes\System\Utility::get_header();
+echo $thanks_content;
 \MillionDollarScript\Classes\System\Utility::get_footer();

@@ -45,10 +45,12 @@ $BID = $f2->bid();
 
 if ( ! empty( $_REQUEST['order_id'] ) ) {
 	$order_id = intval( $_REQUEST['order_id'] );
-	Orders::set_current_order_id( $order_id );
 } else {
 	$order_id = Orders::get_current_order_id();
 }
+
+// Ensure current order context is set and in progress for payment flow
+Orders::ensure_current_order_context( $order_id, isset($_REQUEST['aid']) ? intval($_REQUEST['aid']) : null, true );
 
 $sql = $wpdb->prepare(
 	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d",
@@ -87,10 +89,35 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 		$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
+			// Privileged or free order: complete immediately and go to Thank You
 			Orders::complete_order( get_current_user_id(), $order_id );
 			Orders::reset_order_progress();
-			Utility::redirect( Utility::get_page_url( 'thank-you' ) );
+
+			// 1) Custom override URL if provided in Options
+			$custom_ty = \MillionDollarScript\Classes\Data\Options::get_option( 'thank-you-page', '' );
+			if ( ! empty( $custom_ty ) ) {
+				$custom_ty_url = esc_url_raw( (string) $custom_ty );
+				if ( ! empty( $custom_ty_url ) ) {
+					\MillionDollarScript\Classes\System\Utility::redirect( $custom_ty_url );
+					exit;
+				}
+			}
+
+			// 2) Fall back to MDS Thank You page
+			$thank_you_url = \MillionDollarScript\Classes\System\Utility::get_page_url( 'thank-you' );
+			if ( ! empty( $thank_you_url ) ) {
+				\MillionDollarScript\Classes\System\Utility::redirect( $thank_you_url );
+				exit;
+			}
+
+			// 3) Last resort: show a generic message with a Manage link
+			$message  = \MillionDollarScript\Classes\Language\Language::get( '<h3>Your order was completed.</h3>' );
+			$manage   = \MillionDollarScript\Classes\System\Utility::get_page_url( 'manage' );
+			$message .= \MillionDollarScript\Classes\Language\Language::get_replace( '<p>You can manage your pixels under <a href="%MANAGE_URL%">Manage Pixels</a>.</p>', '%MANAGE_URL%', $manage ?: home_url( '/' ) );
+			echo $message;
+			return;
 		} else {
+			error_log( '[MDS DEBUG] users/payment.php confirm branch for order ' . $order_id );
 			Orders::confirm_order( get_current_user_id(), $order_id );
 			// After confirming, let the payment flow continue below
 		}

@@ -609,10 +609,10 @@ class WooCommerce {
 		return null;
 	}
 
-/**
+	/**
 	 * Classic (non-Blocks) checkout: persist MDS mapping early using CRUD, idempotently.
 	 *
-* @param \WC_Order $order
+	 * @param \WC_Order $order
 	 * @param array $data
 	 *
 	 * @return void
@@ -628,12 +628,12 @@ class WooCommerce {
 	/**
 	 * Validates the checkout process for an order.
 	 *
-* @param $order \WC_Order The WooCommerce order object.
-* @param $request \WP_REST_Request The WordPress REST request object.
+	 * @param $order \WC_Order The WooCommerce order object.
+	 * @param $request \WP_REST_Request The WordPress REST request object.
 	 *
 	 * @return void
 	 */
-public static function validate_checkout( \WC_Order $order, \WP_REST_Request $request ): void {
+	public static function validate_checkout( \WC_Order $order, \WP_REST_Request $request ): void {
 		// For MDS orders created via WooCommerce Blocks (Store API), persist the MDS↔WC mapping
 		// early so that later status changes (e.g., Stripe webhook auto-complete) can find it.
 		if ( WooCommerceFunctions::is_mds_order( $order->get_id() ) ) {

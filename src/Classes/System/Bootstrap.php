@@ -399,6 +399,9 @@ add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Ad
 		// Add form handlers
 		new Forms();
 
+		// Register admin-post handlers early to ensure actions run before any theme output
+		add_action( 'init', [ 'MillionDollarScript\Classes\Admin\AdminPostHandlers', 'register' ], 1 );
+
 		// Update checker
 		add_action( 'plugins_loaded', [ '\MillionDollarScript\Classes\System\Update', 'checker' ] );
 

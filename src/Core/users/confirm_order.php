@@ -55,7 +55,12 @@ function display_edit_order_button( $order_id ): void {
 
 Orders::update_temp_order_timestamp();
 
-$order_id = Orders::get_current_order_id();
+// Robustly resolve current order context using request hints (order_id/aid) and mark in-progress
+$incoming_order_id = isset( $_REQUEST['order_id'] ) && is_numeric( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+$incoming_aid      = isset( $_REQUEST['aid'] ) && is_numeric( $_REQUEST['aid'] ) ? intval( $_REQUEST['aid'] ) : 0;
+$resolved          = Orders::ensure_current_order_context( $incoming_order_id ?: null, $incoming_aid ?: null, true );
+
+$order_id = $resolved ?: Orders::get_current_order_id();
 
 if ( empty( $order_id ) ) {
 	if ( wp_doing_ajax() ) {
@@ -90,10 +95,8 @@ $BID = $order_row['banner_id'];
 
 $banner_data = load_banner_constants( $BID );
 
-// Check for any new orders
-$order_row = Orders::find_new_order();
-
-if ( is_null( $order_row ) || $order_row['status'] != 'new' && empty( $order_row['blocks'] ) && $order_row['blocks'] != '0' ) {
+// Gate: if order exists but has no blocks and is not 'new', show guidance to select more blocks
+if ( empty( $order_row ) || ( isset( $order_row['status'] ) && $order_row['status'] !== 'new' && empty( $order_row['blocks'] ) && $order_row['blocks'] != '0' ) ) {
 
 	require_once MDS_CORE_PATH . "html/header.php";
 	Functions::not_enough_blocks( $order_row['order_id'] ?? null, $banner_data['G_MIN_BLOCKS'] );
@@ -156,7 +159,10 @@ if ( ! is_user_logged_in() ) {
 
 	// Check if there is a pixel post for this order yet.
 	if ( empty( $mds_pixel_id ) ) {
-		Orders::no_orders();
+		require_once MDS_CORE_PATH . "html/header.php";
+		echo '<div class="mds-error">' . esc_html( Language::get( 'Please write your ad before confirming your order.' ) ) . '</div>';
+		display_edit_order_button( $order_row['order_id'] );
+		require_once MDS_CORE_PATH . "html/footer.php";
 
 		return;
 	}
@@ -210,12 +216,12 @@ if ( ! is_user_logged_in() ) {
 	// Display errors
 	if ( ! empty( $errors ) ) {
 		foreach ( $errors as $error ) {
-			echo '<div class="mds-error">' . $error . '</div>';
-		}
+				echo '<div class="mds-error">' . $error . '</div>';
+			}
 
-		display_edit_order_button( Orders::get_current_order_id() );
+			display_edit_order_button( $order_row['order_id'] );
 
-		return;
+			return;
 	}
 
 	$has_packages = banner_get_packages( $BID );
@@ -305,12 +311,11 @@ if ( ! is_user_logged_in() ) {
 	if ( ( $has_packages ) && ( isset( $_REQUEST['pack'] ) && $_REQUEST['pack'] == '' ) ) {
 		?>
         <form method="post" name="confirm-order" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-			<?php wp_nonce_field( 'mds-form' ); ?>
+            <?php wp_nonce_field( 'mds-form' ); ?>
             <input type="hidden" name="action" value="mds_form_submission">
             <input type="hidden" name="mds_dest" value="confirm-order">
-            <input type="hidden" name="selected_pixels"
-                   value="<?php echo htmlspecialchars( $_REQUEST['selected_pixels'] ); ?>">
-            <input type="hidden" name="order_id" value="<?php echo intval( $_REQUEST['order_id'] ); ?>">
+            <input type="hidden" name="selected_pixels" value="<?php echo isset( $_REQUEST['selected_pixels'] ) ? htmlspecialchars( $_REQUEST['selected_pixels'] ) : ''; ?>">
+            <input type="hidden" name="order_id" value="<?php echo intval( $order_row['order_id'] ); ?>">
             <input type="hidden" name="BID" value="<?php echo $BID; ?>">
 			<?php
 			display_package_options_table( $BID, $_REQUEST['pack'], true );
@@ -335,13 +340,13 @@ if ( ! is_user_logged_in() ) {
 		}
 	} else {
 
-		Orders::display_order( Orders::get_current_order_id(), $BID );
+		Orders::display_order( $order_row['order_id'], $BID );
 
 		?>
         <div class="mds-button-container">
 		<?php
 
-		display_edit_order_button( Orders::get_current_order_id() );
+		display_edit_order_button( $order_row['order_id'] );
 
 		if ( ! Orders::can_user_order( $banner_data, get_current_user_id(), ( $_REQUEST['pack'] ?? 0 ) ) ) {
 			// one more check before continue
@@ -364,16 +369,24 @@ if ( ! is_user_logged_in() ) {
 				if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
 					// go straight to publish...
 					?>
-                    <input type='button' class='mds-button mds-complete'
-                           value="<?php echo esc_attr( Language::get( 'Complete Order' ) ); ?>"
-                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment', [ 'mds-action' => 'complete', 'BID' => $BID, 'order_id' => Orders::get_current_order_id() ] ) ); ?>'">
+                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mds-inline-form">
+                        <input type="hidden" name="action" value="mds_complete_order" />
+                        <input type="hidden" name="order_id" value="<?php echo esc_attr( $order_row['order_id'] ); ?>" />
+                        <input type="hidden" name="BID" value="<?php echo esc_attr( $BID ); ?>" />
+                        <?php wp_nonce_field( 'mds_complete_order_' . $order_row['order_id'] ); ?>
+                        <button type="submit" class="mds-button mds-complete"><?php echo esc_html( Language::get( 'Complete Order' ) ); ?></button>
+                    </form>
 					<?php
 				} else {
 					// go to payment
 					?>
-                    <input type='button' class='mds-button mds-confirm'
-                           value="<?php echo esc_attr( Language::get( 'Confirm & Pay' ) ); ?>"
-                           onclick="window.location='<?php echo esc_url( Utility::get_page_url( 'payment', [ 'mds-action' => 'confirm', 'order_id' => $order_row['order_id'], 'BID' => $BID, '_wpnonce' => wp_create_nonce( 'mds-confirm-action' ) ] ) ); ?>'">
+                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="mds-inline-form">
+                        <input type="hidden" name="action" value="mds_confirm_order" />
+                        <input type="hidden" name="order_id" value="<?php echo esc_attr( $order_row['order_id'] ); ?>" />
+                        <input type="hidden" name="BID" value="<?php echo esc_attr( $BID ); ?>" />
+                        <?php wp_nonce_field( 'mds_confirm_order_' . $order_row['order_id'] ); ?>
+                        <button type="submit" class="mds-button mds-confirm"><?php echo esc_html( Language::get( 'Confirm & Pay' ) ); ?></button>
+                    </form>
 					<?php
 				}
 				?>

@@ -314,7 +314,7 @@ if ( ! empty( $tmp_image_file ) ) {
 			<?php wp_nonce_field( 'mds-form' ); ?>
             <input type="hidden" name="action" value="mds_form_submission">
             <input type="hidden" name="mds_dest" value="write-ad">
-            <input type="hidden" name="package" value="">
+            <input type="hidden" name="package" value="<?php echo $package_id; ?>">
             <input type="hidden" name="selected_pixels" value=''>
             <input type="hidden" name="order_id" value="<?php echo Orders::get_current_order_id(); ?>">
             <input type="hidden" value="<?php echo $BID; ?>" name="BID">

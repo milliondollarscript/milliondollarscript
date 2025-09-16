@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.6
+Stable tag: 2.5.15.8
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -23,6 +23,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Improvement: Cancelled blocks now appear as reserved on the ordering grid so it’s clear the area is temporarily unavailable. They’ll be cleaned up automatically based on your Order Timing settings.
 * Fix: Clear Orders not working correctly.
 * Chore: Update language file.
+* New: Added an “Auto-advance after Upload” option so advanced mode can jump users straight from uploading to confirming or paying, with smoother buttons and messages guiding them through the rest of the order.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.

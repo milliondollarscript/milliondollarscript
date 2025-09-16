@@ -135,7 +135,12 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 	$ad_id     = isset( $prams['ad_id'] ) ? intval( $prams['ad_id'] ) : "";
 	$user_id   = isset( $prams['user_id'] ) ? intval( $prams['user_id'] ) : "";
 	$order_id  = isset( $prams['order_id'] ) ? intval( $prams['order_id'] ) : Orders::get_current_order_id();
-	$banner_id = isset( $prams['banner_id'] ) ? intval( $prams['banner_id'] ) : "";
+	// Prefer the banner_id from prams, but fall back to current BID (from shortcode/endpoint) or request
+	$banner_id = ( isset( $prams['banner_id'] ) && intval( $prams['banner_id'] ) > 0 )
+		? intval( $prams['banner_id'] )
+		: ( isset( $BID ) && intval( $BID ) > 0
+			? intval( $BID )
+			: ( isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0 ) );
 
 	if ( is_admin() && $mode == "edit" ) {
 		$mds_form_action = 'mds_admin_form_submission';

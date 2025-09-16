@@ -387,11 +387,17 @@ class Orders {
 
 		$user_id = get_current_user_id();
 		if ( ! empty( $user_id ) ) {
+			if ( ! is_null( $order_id ) ) {
+				$order_id = intval( $order_id );
+				if ( $order_id <= 0 ) {
+					return;
+				}
+			}
 			if ( is_null( $order_id ) ) {
 				$order_id = self::create_order();
 			} else {
 				// Check if order id is owned by the user first
-				$order_id = self::is_owned_by( $order_id, $user_id, true );
+				$order_id = self::is_owned_by( (int) $order_id, $user_id, true );
 
 				if ( empty( $order_id ) ) {
 					return;
@@ -577,6 +583,56 @@ class Orders {
 		}
 
 		// Return null if no order is found
+		return null;
+	}
+
+	/**
+	 * Ensure the current order context is set reliably, without relying on URL parameters.
+	 * Optionally force the order to be marked as in-progress.
+	 *
+	 * @param int|null $order_id
+	 * @param int|null $aid
+	 * @param bool $force_in_progress
+	 *
+	 * @return int|null Resolved order_id or null if not found
+	 */
+	public static function ensure_current_order_context( ?int $order_id = null, ?int $aid = null, bool $force_in_progress = true ): ?int {
+		// 1) If a specific order_id is provided and owned by the current user, use it
+		if ( ! empty( $order_id ) ) {
+			$order_id = intval( $order_id );
+			if ( $order_id > 0 && self::is_owned_by( $order_id, get_current_user_id() ) ) {
+				self::set_current_order_id( $order_id );
+				if ( $force_in_progress ) {
+					self::set_order_in_progress( $order_id, true );
+				}
+				return $order_id;
+			}
+		}
+
+		// 2) If aid is provided, map it to an order and verify ownership
+		if ( ! empty( $aid ) ) {
+			$aid    = intval( $aid );
+			$mapped = self::get_order_id_from_ad_id( $aid );
+			if ( ! empty( $mapped ) && self::is_owned_by( (int) $mapped, get_current_user_id() ) ) {
+				self::set_current_order_id( (int) $mapped );
+				if ( $force_in_progress ) {
+					self::set_order_in_progress( (int) $mapped, true );
+				}
+				return (int) $mapped;
+			}
+		}
+
+		// 3) Try to find the latest 'new' order for this user
+		$order_row = self::find_new_order();
+		if ( is_array( $order_row ) && ! empty( $order_row['order_id'] ) ) {
+			$oid = (int) $order_row['order_id'];
+			if ( $force_in_progress ) {
+				self::set_order_in_progress( $oid, true );
+			}
+			return $oid;
+		}
+
+		// 4) No order found
 		return null;
 	}
 
@@ -988,9 +1044,13 @@ class Orders {
 						if ( $current_step != 0 ) {
 							echo Language::get( 'In progress' ) . '<br>';
 						}
-						$cancel_args = [ 'cancel' => 'yes', 'order_id' => $order['order_id'], 'mds_cancel_nonce' => wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] ) ];
-						$cancel_url = esc_url( Utility::get_page_url( 'manage', $cancel_args ) );
-						echo "<input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . $cancel_url . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
+						$__order_id_local = (int) $order['order_id'];
+						echo "<form method='post' action='" . esc_url( admin_url( 'admin-post.php' ) ) . "' class='mds-inline-form' onsubmit=\"return confirm('" . esc_js( Language::get( 'Cancel, are you sure?' ) ) . "');\">";
+						echo "<input type='hidden' name='action' value='mds_cancel_order' />";
+						echo "<input type='hidden' name='order_id' value='" . esc_attr( $__order_id_local ) . "' />";
+						ob_start(); wp_nonce_field( 'mds_cancel_order_' . $__order_id_local ); $nonce_field = ob_get_clean(); echo $nonce_field;
+						echo "<button type='submit' class='mds-button mds-cancel'>" . esc_html( Language::get( 'Cancel' ) ) . "</button>";
+						echo "</form>";
 						break;
 					case "confirmed":
 						if ( !self::has_payment( $order['order_id'] ) && ( self::is_order_in_progress( $order['order_id'] ) || ( WooCommerceFunctions::is_wc_active() ) ) ) {
@@ -1083,8 +1143,14 @@ class Orders {
 				$temp_var = '&order_id=' . $order['order_id'];
 				echo Language::get( 'In progress' ) . '<br>';
 				echo "<a href='" . Utility::get_page_url( 'order' ) . "?BID={$order['banner_id']}{$temp_var}'>" . Language::get( 'Confirm now' ) . "</a>";
-				$cancel_nonce = wp_create_nonce( 'mds_cancel_order_' . $order['order_id'] );
-				echo "<br><input class='mds-button mds-cancel' type='button' value='" . esc_attr( Language::get( 'Cancel' ) ) . "' data-link='" . esc_url( Utility::get_page_url( 'manage' ) . "?cancel=yes{$temp_var}&mds_cancel_nonce=" . $cancel_nonce ) . "' onclick='confirmLink(this, \"" . Language::get( 'Cancel, are you sure?' ) . "\")'>";
+				$__order_id_local = (int) $order['order_id'];
+					echo "<br>";
+					echo "<form method='post' action='" . esc_url( admin_url( 'admin-post.php' ) ) . "' class='mds-inline-form' onsubmit=\"return confirm('" . esc_js( Language::get( 'Cancel, are you sure?' ) ) . "');\">";
+					echo "<input type='hidden' name='action' value='mds_cancel_order' />";
+					echo "<input type='hidden' name='order_id' value='" . esc_attr( $__order_id_local ) . "' />";
+					ob_start(); wp_nonce_field( 'mds_cancel_order_' . $__order_id_local ); $nonce_field = ob_get_clean(); echo $nonce_field;
+					echo "<button type='submit' class='mds-button mds-cancel'>" . esc_html( Language::get( 'Cancel' ) ) . "</button>";
+					echo "</form>";
 			}
 			?>
         </div>

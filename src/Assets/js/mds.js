@@ -918,6 +918,10 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 	});
 
 	jQuery(".mds-button").on("click", function () {
+		const $btn = jQuery(this);
+		if ($btn.is(":submit") && $btn.closest("form").length) {
+			return;
+		}
 		jQuery(".mds-button").prop("disabled", true).attr("value", MDS.WAIT);
 	});
 
@@ -958,6 +962,15 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		collapsible: true,
 		active: 0,
 	});
+});
+
+jQuery(document).on("submit", "form", function () {
+	const $form = jQuery(this);
+	const $buttons = $form.find(".mds-button");
+	if ($buttons.length) {
+		$buttons.prop("disabled", true);
+		$buttons.filter("input").attr("value", MDS.WAIT);
+	}
 });
 
 function mdsToggleMenu() {
