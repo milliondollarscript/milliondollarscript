@@ -424,8 +424,15 @@ if ( $show_selection_controls ) {
 			<input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>'>
 		</div>
 
+		<div class="mds-grid-preloader"
+		     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+		     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+		     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>">
+		</div>
+
 		<div id="pixel_container">
-			<div class="mds-pixel-wrapper">
+			<div class="mds-pixel-wrapper"
+			     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>">
 				<canvas id="blocks_canvas"></canvas>
 				<span id='block_pointer'></span>
 				<img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
@@ -444,10 +451,19 @@ if ( $show_selection_controls ) {
     ?>
     <script type="text/javascript">
         // Pass grid dimensions to JavaScript
-        if (typeof MDS_OBJECT !== 'undefined' && MDS_OBJECT.grid_data) {
-                MDS_OBJECT.grid_data.orig_width_px = <?php echo $orig_width; ?>;
-                MDS_OBJECT.grid_data.orig_height_px = <?php echo $orig_height; ?>;
-        }
+        (function(){
+                var loaderUrl = '<?php echo esc_js( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>';
+                if (typeof window !== 'undefined') {
+                        window.MDS_LOADER_URL = loaderUrl;
+                }
+                if (typeof MDS_OBJECT !== 'undefined') {
+                        if (MDS_OBJECT.grid_data) {
+                                MDS_OBJECT.grid_data.orig_width_px = <?php echo $orig_width; ?>;
+                                MDS_OBJECT.grid_data.orig_height_px = <?php echo $orig_height; ?>;
+                        }
+                        MDS_OBJECT.loader_url = loaderUrl;
+                }
+        })();
     </script>
 
 <?php require_once MDS_CORE_PATH . "html/footer.php"; ?>

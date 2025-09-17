@@ -34,13 +34,108 @@ if (typeof window.MDS === 'undefined') {
 if (typeof window.MDS.hooks === 'undefined') {
 	window.MDS.hooks = {};
 }
- 
+
+function mdsIsAbsoluteUrl(url) {
+	return typeof url === 'string' && /^([a-z][a-z0-9+\.-]*:)?\/\//i.test(url);
+}
+
+function mdsFindPluginBaseUrl() {
+	if (typeof window.MDS_PLUGIN_BASE_URL === 'string' && window.MDS_PLUGIN_BASE_URL.length > 0) {
+		return window.MDS_PLUGIN_BASE_URL;
+	}
+	if (typeof window.MDS !== 'undefined' && typeof window.MDS.MDS_BASE_URL === 'string' && window.MDS.MDS_BASE_URL.length > 0) {
+		window.MDS_PLUGIN_BASE_URL = window.MDS.MDS_BASE_URL;
+		return window.MDS_PLUGIN_BASE_URL;
+	}
+	var scripts = document.getElementsByTagName('script');
+	for (var i = 0; i < scripts.length; i++) {
+		var src = scripts[i].getAttribute('src');
+		if (!src) {
+			continue;
+		}
+		var match = src.match(/(.*\/milliondollarscript-two\/)(?:src\/Assets\/js\/|src\/Assets\/)/i);
+		if (match && match[1]) {
+			window.MDS_PLUGIN_BASE_URL = match[1];
+			return window.MDS_PLUGIN_BASE_URL;
+		}
+	}
+	return typeof window.MDS_PLUGIN_BASE_URL === 'string' && window.MDS_PLUGIN_BASE_URL.length > 0 ? window.MDS_PLUGIN_BASE_URL : null;
+}
+
+function mdsEnsureAbsoluteUrl(url) {
+	if (!url) {
+		return null;
+	}
+	if (mdsIsAbsoluteUrl(url)) {
+		return url;
+	}
+	if (url.indexOf('//') === 0) {
+		return window.location.protocol + url;
+	}
+	var pluginBase = mdsFindPluginBaseUrl();
+	if (pluginBase) {
+		try {
+			return new URL(url.replace(/^\//, ''), pluginBase).href;
+		} catch (e) {}
+	}
+	try {
+		return new URL(url, window.location.origin + '/').href;
+	} catch (e) {
+		return null;
+	}
+}
+
+function mdsResolveLoaderUrl(preferred) {
+	var candidates = [];
+	if (preferred) {
+		candidates.push(preferred);
+	}
+	if (typeof window.MDS_LOADER_URL === 'string' && window.MDS_LOADER_URL.length > 0) {
+		candidates.push(window.MDS_LOADER_URL);
+	}
+	if (typeof window.MDS_OBJECT !== 'undefined' && typeof window.MDS_OBJECT.loader_url === 'string' && window.MDS_OBJECT.loader_url.length > 0) {
+		candidates.push(window.MDS_OBJECT.loader_url);
+	}
+	if (typeof window.MDS !== 'undefined' && typeof window.MDS.MDS_BASE_URL === 'string' && window.MDS.MDS_BASE_URL.length > 0) {
+		candidates.push(window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif');
+	}
+	var pluginBase = mdsFindPluginBaseUrl();
+	if (pluginBase) {
+		candidates.push(pluginBase + 'src/Assets/images/ajax-loader.gif');
+	}
+	for (var i = 0; i < candidates.length; i++) {
+		var absolute = mdsEnsureAbsoluteUrl(candidates[i]);
+		if (absolute) {
+			window.MDS_LOADER_URL = absolute;
+			return absolute;
+		}
+	}
+	if (pluginBase) {
+		var fallback = mdsEnsureAbsoluteUrl(pluginBase + 'src/Assets/images/ajax-loader.gif');
+		if (fallback) {
+			window.MDS_LOADER_URL = fallback;
+			return fallback;
+		}
+	}
+	return null;
+}
+
+window.MDSFindPluginBaseUrl = mdsFindPluginBaseUrl;
+window.MDSResolveLoaderUrl = mdsResolveLoaderUrl;
+
+if (typeof window.MDS_LOADER_URL === 'undefined' && typeof window.MDS !== 'undefined' && window.MDS.MDS_BASE_URL) {
+	window.MDS_LOADER_URL = window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif';
+}
+
 function add_ajax_loader(container) {
-	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
+	const loaderSrc = mdsResolveLoaderUrl();
+	const spinnerMarkup = loaderSrc
+		? "<img class='ajax-loader__spinner' src='" + loaderSrc + "' alt='Loading' width='32' height='32'/>"
+		: "<span class='ajax-loader__spinner'></span>";
+	let $ajax_loader = jQuery(
+		"<div class='ajax-loader' role='status' aria-live='polite'>" + spinnerMarkup + "</div>",
+	);
 	jQuery(container).append($ajax_loader);
-	$ajax_loader
-		.css("top", jQuery(container).position().top)
-		.css("left", jQuery(container).width() / 2 - $ajax_loader.width() / 2);
 }
 
 function remove_ajax_loader() {
@@ -78,8 +173,11 @@ function mds_grid(container, bid, width, height) {
 		BID: bid,
 	};
 
-	jQuery(grid).load(MDS.ajaxurl, data, function () {
-		mds_init("#theimage", true, MDS.ENABLE_MOUSEOVER !== "NO", false, true);
+	jQuery(grid).load(MDS.ajaxurl, data, function (responseText, textStatus) {
+		remove_ajax_loader();
+		if (textStatus !== "error") {
+			mds_init("#theimage", true, MDS.ENABLE_MOUSEOVER !== "NO", false, true);
+		}
 	});
 }
 
@@ -187,7 +285,8 @@ function updateTippyPosition() {
 }
 
 function add_tippy() {
-	const defaultContent = "<div class='ajax-loader'></div>";
+	const defaultContent =
+		"<div class='ajax-loader' role='status' aria-live='polite'><span class='ajax-loader__spinner' aria-hidden='true'></span></div>";
 	const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
 
 	let delay = 50;
@@ -205,6 +304,13 @@ function add_tippy() {
 	jQuery(document)
 		.off("click.mds-tippy", "area")
 		.on("click.mds-tippy", "area", function (e) {
+			// Ignore non-primary clicks so context menu/middle-click still work as expected
+			if (typeof e.button !== "undefined" && e.button !== 0) {
+				return true;
+			}
+			if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+				return true;
+			}
 			// If no tippy instance or content isn't loaded yet, prevent the default navigation
 			if (!this._tippy || !this._tippy._content) {
 				e.preventDefault();
@@ -239,7 +345,8 @@ function add_tippy() {
 				if (!this._tippy && typeof tippy === "function") {
 					tippy(this, {
 						theme: "light",
-						content: "<div class='ajax-loader'></div>",
+						content:
+							"<div class='ajax-loader' role='status' aria-live='polite'><span class='ajax-loader__spinner' aria-hidden='true'></span></div>",
 						duration: 50,
 						delay: MDS.TOOLTIP_TRIGGER === "mouseenter" ? 400 : 50,
 						trigger: MDS.TOOLTIP_TRIGGER,

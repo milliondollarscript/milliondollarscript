@@ -725,11 +725,64 @@ Ads list page
 }
 
 .ajax-loader {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	min-height: 64px;
+	margin: 12px 0;
+	padding: 16px 0;
+	box-sizing: border-box;
+}
+
+.ajax-loader__spinner {
+	display: inline-block;
 	width: 32px;
-	min-height: 32px;
-	position: absolute;
+	height: 32px;
 	background: url(../images/ajax-loader.gif) no-repeat center center;
-	z-index: 10050; /* above .mds-block (10000) and #block_pointer (10001) */
+	background-size: contain;
+}
+
+.mds-container .mds-pixel-wrapper {
+	position: relative;
+}
+
+.mds-container .mds-grid-preloader {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: auto;
+	margin: 0 auto 12px;
+}
+
+.mds-container .mds-grid-preloader .ajax-loader {
+	margin: 0;
+	padding: 0;
+	min-width: 32px;
+	min-height: 32px;
+	width: auto;
+	height: auto;
+}
+
+.mds-container .mds-grid-preloader .ajax-loader .ajax-loader__spinner {
+	width: 32px;
+	height: 32px;
+	background-size: contain;
+}
+
+.mds-container .mds-pixel-wrapper > .ajax-loader {
+	position: absolute;
+	inset: 0;
+	margin: 0;
+	padding: 16px 0 0;
+	min-height: 0;
+	height: 100%;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	background: transparent;
+	z-index: 10060; /* above canvas (10000) and pointer (10001) */
+	pointer-events: none;
 }
 
 /* Ensure selection block images fill their cell exactly */

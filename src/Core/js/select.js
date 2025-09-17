@@ -123,16 +123,151 @@ let pixel_form;
 let blocksCanvas;
 let blocksCtx;
 
-function add_ajax_loader(container) {
-	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
-	jQuery(container).append($ajax_loader);
-	$ajax_loader
-		.css("top", jQuery(container).position().top)
-		.css("left", jQuery(container).width() / 2 - $ajax_loader.width() / 2);
+function selectFindPluginBaseUrl() {
+	if (typeof window.MDSFindPluginBaseUrl === 'function') {
+		var base = window.MDSFindPluginBaseUrl();
+		if (base) {
+			return base;
+		}
+	}
+	if (typeof window.MDS_PLUGIN_BASE_URL === 'string' && window.MDS_PLUGIN_BASE_URL.length > 0) {
+		return window.MDS_PLUGIN_BASE_URL;
+	}
+	var scripts = document.getElementsByTagName('script');
+	for (var i = 0; i < scripts.length; i++) {
+		var src = scripts[i].getAttribute('src');
+		if (!src) {
+			continue;
+		}
+		var match = src.match(/(.*\/milliondollarscript-two\/)(?:src\/Assets\/js\/|src\/Assets\/)/i);
+		if (match && match[1]) {
+			window.MDS_PLUGIN_BASE_URL = match[1];
+			return window.MDS_PLUGIN_BASE_URL;
+		}
+	}
+	return typeof window.MDS_PLUGIN_BASE_URL === 'string' && window.MDS_PLUGIN_BASE_URL.length > 0 ? window.MDS_PLUGIN_BASE_URL : null;
 }
 
-function remove_ajax_loader() {
-	jQuery(".ajax-loader").remove();
+function selectEnsureAbsoluteUrl(url, pluginBase) {
+	if (!url) {
+		return null;
+	}
+	if (/^([a-z][a-z0-9+\.-]*:)?\/\//i.test(url)) {
+		return url;
+	}
+	if (url.indexOf('//') === 0) {
+		return window.location.protocol + url;
+	}
+	var base = pluginBase || selectFindPluginBaseUrl();
+	if (base) {
+		try {
+			return new URL(url.replace(/^\//, ''), base).href;
+		} catch (e) {}
+	}
+	try {
+		return new URL(url, window.location.origin + '/').href;
+	} catch (e) {
+		return null;
+	}
+}
+
+function selectResolveLoaderUrl(preferred) {
+	if (typeof window.MDSResolveLoaderUrl === 'function') {
+		var resolved = window.MDSResolveLoaderUrl(preferred);
+		if (resolved) {
+			return resolved;
+		}
+	}
+	var base = selectFindPluginBaseUrl();
+	var candidate = preferred || window.MDS_LOADER_URL || (typeof window.MDS !== 'undefined' && typeof window.MDS.MDS_BASE_URL === 'string'
+		? window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif'
+		: null);
+	candidate = selectEnsureAbsoluteUrl(candidate, base);
+	if (candidate) {
+		window.MDS_LOADER_URL = candidate;
+		return candidate;
+	}
+	if (base) {
+		var fallback = selectEnsureAbsoluteUrl(base + 'src/Assets/images/ajax-loader.gif', base);
+		if (fallback) {
+			window.MDS_LOADER_URL = fallback;
+			return fallback;
+		}
+	}
+	return null;
+}
+
+function show_initial_grid_loader(pixelGrid) {
+	const preloader = jQuery('.mds-grid-preloader');
+	if (!preloader.length || preloader.data('mdsPreloaderActive')) {
+		return;
+	}
+	const resolvedLoaderUrl = selectResolveLoaderUrl(preloader.attr('data-loader-src'));
+	if (preloader.children('.ajax-loader').length === 0) {
+		add_ajax_loader(preloader, {
+			loaderUrl: resolvedLoaderUrl,
+		});
+}
+	preloader.data('mdsPreloaderActive', true);
+	if (resolvedLoaderUrl) {
+		preloader.attr('data-loader-src', resolvedLoaderUrl);
+		window.MDS_LOADER_URL = resolvedLoaderUrl;
+	}
+	preloader.show();
+}
+
+function add_ajax_loader(container, options = {}) {
+	const $containers = container instanceof jQuery ? container : jQuery(container);
+	if (!$containers || !$containers.length) {
+		return;
+	}
+	const fallbackHeight = options.fallbackHeight || 0;
+	$containers.each(function () {
+		const $target = jQuery(this);
+		if ($target.children(".ajax-loader").length > 0) {
+			return;
+		}
+		if (fallbackHeight && !$target.data("mdsLoaderMinHeight")) {
+			$target.data("mdsLoaderMinHeight", $target.css("min-height") || "");
+			$target.css("min-height", fallbackHeight + "px");
+		}
+		var loaderSrc = selectResolveLoaderUrl(options.loaderUrl || $target.attr("data-loader-src"));
+		const spinnerMarkup = loaderSrc
+			? "<img class=\"ajax-loader__spinner\" src=\"" + loaderSrc + "\" alt=\"Loading\" width=\"32\" height=\"32\"/>"
+			: "<span class=\"ajax-loader__spinner\"></span>";
+		const $ajax_loader = jQuery(
+			"<div class='ajax-loader' role='status' aria-live='polite'>" + spinnerMarkup + "</div>",
+		);
+		$target.append($ajax_loader);
+		if (!$target.attr("data-loader-src") && loaderSrc) {
+			$target.attr("data-loader-src", loaderSrc);
+		}
+	});
+}
+
+function remove_ajax_loader(container) {
+	if (container) {
+		const $containers = container instanceof jQuery ? container : jQuery(container);
+		$containers.each(function () {
+			const $target = jQuery(this);
+			$target.find(".ajax-loader").remove();
+			const stored = $target.data("mdsLoaderMinHeight");
+			if (stored !== undefined) {
+				$target.css("min-height", stored);
+				$target.removeData("mdsLoaderMinHeight");
+			}
+		});
+	} else {
+		jQuery(".ajax-loader").each(function () {
+			const $parent = jQuery(this).parent();
+			jQuery(this).remove();
+			const stored = $parent.data("mdsLoaderMinHeight");
+			if (stored !== undefined) {
+				$parent.css("min-height", stored);
+				$parent.removeData("mdsLoaderMinHeight");
+			}
+		});
+	}
 }
 
 // --- Canvas overlay helpers ---
@@ -1055,6 +1190,12 @@ function initializeGrid() {
 		return;
 	}
 
+	const preloader = jQuery('.mds-grid-preloader');
+	if (preloader.length > 0) {
+		remove_ajax_loader(preloader);
+		preloader.hide();
+	}
+
 	// Initial setup
 	rescale_grid();
 	setupBlocksCanvas();
@@ -1072,14 +1213,15 @@ function initializeGrid() {
 	// Mouse Events (for desktop)
 	jQuery(pixel_container)
 		.on("mousedown", function (event) {
+			// Ignore non-primary button presses (right/middle click)
+			const button = event.which || (event.originalEvent && event.originalEvent.button);
+			if (typeof button !== "undefined" && button !== 1) {
+				clickValid = false;
+				return;
+			}
 			clickValid = true;
 			startX = event.originalEvent.pageX;
 			startY = event.originalEvent.pageY;
-			// Show loader immediately for feedback
-			if (!window.mds_loader_shown) {
-				add_ajax_loader(jQuery(".mds-pixel-wrapper"));
-				window.mds_loader_shown = true;
-			}
 		})
 		.on("mousemove", function (event) {
 			if (clickValid) {
@@ -1120,10 +1262,6 @@ function initializeGrid() {
 		});
 
 		pixel_container.addEventListener("tap", function (event) {
-			if (!window.mds_loader_shown) {
-				add_ajax_loader(jQuery(".mds-pixel-wrapper"));
-				window.mds_loader_shown = true;
-			}
 			let offset = getOffset(event.detail.live.center.x, event.detail.live.center.y, true);
 			if (offset == null) return true;
 			show_pointer(offset);
@@ -1164,11 +1302,7 @@ function initializeGrid() {
 			return;
 		}
 		ajaxing = true;
-		// Show loader once while the queue is being processed
-		if (!window.mds_loader_shown) {
-			add_ajax_loader(jQuery(".mds-pixel-wrapper"));
-			window.mds_loader_shown = true;
-		}
+		add_ajax_loader(jQuery(".mds-pixel-wrapper"));
 		let data = ajax_queue.shift();
 		jQuery.ajax({
 			type: "POST",
@@ -1241,25 +1375,10 @@ function initializeGrid() {
 				// Only remove loader when queue is fully drained
 				if (ajax_queue.length === 0) {
 					remove_ajax_loader();
-					window.mds_loader_shown = false;
-				}
+					}
 			}
 		});
 	}, 100);
-
-
-	function add_ajax_loader(container) {
-		let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
-		let $container = jQuery(container);
-		if ($container.length > 0) {
-			$container.append($ajax_loader);
-			$ajax_loader
-				.css("z-index", "10050")
-				.css("top", $container.position().top)
-				.css("left", jQuery(container).width() / 2 - $ajax_loader.width() / 2);
-		}
-	}
-	add_ajax_loader(jQuery(".mds-pixel-wrapper"));
 
 	// Size selection slider and input logic
 	const $mds_selection_size_slider = jQuery("#mds-selection-size-slider");
@@ -1346,6 +1465,7 @@ const mutationObserver = new MutationObserver((mutationsList, observer) => {
 		if (mutation.type === 'childList') {
 			const pixelGrid = document.getElementById('pixelimg');
 			if (pixelGrid) {
+				show_initial_grid_loader(pixelGrid);
 				// Image element is in the DOM, now wait for it to load.
 				const init = () => {
 					if (gridInitialized) return;
@@ -1353,8 +1473,6 @@ const mutationObserver = new MutationObserver((mutationsList, observer) => {
 					initializeGrid();
 					// Once initialized, we don't need to observe anymore.
 					observer.disconnect();
-					// Remove ajax loader that might be present.
-					jQuery(".ajax-loader").remove();
 				};
 
 				// Handle cached images: if .complete is true, onload won't fire.
@@ -1372,6 +1490,23 @@ const mutationObserver = new MutationObserver((mutationsList, observer) => {
 
 // Start observing the document body for changes
 mutationObserver.observe(observerTarget, observerConfig);
+
+const existingPixelGrid = document.getElementById('pixelimg');
+if (existingPixelGrid) {
+	show_initial_grid_loader(existingPixelGrid);
+	const initExisting = () => {
+		if (gridInitialized) return;
+		gridInitialized = true;
+		initializeGrid();
+		mutationObserver.disconnect();
+	};
+	if (existingPixelGrid.complete) {
+		initExisting();
+	} else {
+		existingPixelGrid.addEventListener('load', initExisting);
+		existingPixelGrid.addEventListener('error', initExisting);
+	}
+}
 
 // Function to apply zoom to the grid container
 function applyZoom(scaleChange, centerX, centerY) {

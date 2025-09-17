@@ -479,6 +479,7 @@ if ( $count > 0 ) {
 
 	$results = $wpdb->get_results( $sql, ARRAY_A );
 	if ( ! empty( $results ) ) { ?>
+        <div class="mds-grid-preloader" data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"></div>
         <div class="publish-grid">
             <map name="main" id="main">
 				<?php
@@ -550,69 +551,94 @@ if ( $count > 0 ) {
 			<!-- Inline script for image map scaling to ensure alignment of clickable areas with the grid image -->
 			<script>
 			(function() {
-				// Function to scale image map coordinates based on image dimensions
+				const preloader = document.querySelector('.mds-grid-preloader');
+				const preferredLoader = preloader ? preloader.getAttribute('data-loader-src') : null;
+				const resolvedLoader = (typeof window.MDSResolveLoaderUrl === 'function')
+					? window.MDSResolveLoaderUrl(preferredLoader)
+					: preferredLoader;
+
+				if (preloader) {
+					const loaderSrc = resolvedLoader || (typeof window.MDS !== 'undefined' && window.MDS.MDS_BASE_URL
+						? window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif'
+						: null);
+					preloader.setAttribute('data-loader-src', loaderSrc || '');
+					preloader.innerHTML = "<div class='ajax-loader' role='status' aria-live='polite'>" +
+						(loaderSrc
+							? "<img class='ajax-loader__spinner' src='" + loaderSrc + "' alt='Loading' width='32' height='32'/>"
+							: "<span class='ajax-loader__spinner'></span>") +
+						"</div>";
+					preloader.style.display = 'flex';
+				}
+
+				function hidePreloader() {
+					if (preloader) {
+						preloader.style.display = 'none';
+						preloader.innerHTML = '';
+					}
+				}
+
 				function scaleImageMap() {
-					// Get image and map elements
 					var img = document.getElementById('publish-grid');
 					var map = document.querySelector('map[name="main"]');
-					
-					// Exit if either element is missing
-					if (!img || !map) return;
-					
-					// Get the area elements in the map
+				
+					if (!img || !map) {
+						return;
+					}
+				
 					var areas = map.querySelectorAll('area');
-					if (!areas.length) return;
-					
-					// Get original and current dimensions
+					if (!areas.length) {
+						return;
+					}
+				
 					var origWidth = <?php echo $width; ?>;
 					var origHeight = <?php echo $height; ?>;
 					var currentWidth = img.clientWidth || img.offsetWidth;
 					var currentHeight = img.clientHeight || img.offsetHeight;
-					
-					// Calculate scale factors
 					var scaleX = currentWidth / origWidth;
 					var scaleY = currentHeight / origHeight;
-					
-					// Store original coordinates if not done yet and scale them
+				
 					Array.prototype.forEach.call(areas, function(area) {
-						// Store original coords if not already stored
 						if (!area.hasAttribute('data-original-coords')) {
 							area.setAttribute('data-original-coords', area.getAttribute('coords'));
 						}
-						
-						// Get original coordinates and prepare for scaling
+
 						var originalCoords = area.getAttribute('data-original-coords');
 						var coordsArray = originalCoords.split(',');
 						var scaledCoords = [];
-						
-						// Scale each coordinate
+
 						for (var i = 0; i < coordsArray.length; i++) {
-							// Even indices (0, 2, 4...) are X coordinates, odd are Y
 							var scaled = i % 2 === 0 ?
 								Math.round(parseInt(coordsArray[i], 10) * scaleX) :
 								Math.round(parseInt(coordsArray[i], 10) * scaleY);
 							scaledCoords.push(scaled);
 						}
-						
-						// Set the new coordinates
+
 						area.setAttribute('coords', scaledCoords.join(','));
 					});
 				}
-				
-				// Call immediately
-				scaleImageMap();
-				
-				// Also call on window resize
+
+				var imgElement = document.getElementById('publish-grid');
+				if (imgElement) {
+					var handleLoad = function() {
+						scaleImageMap();
+						hidePreloader();
+					};
+					if (imgElement.complete) {
+						handleLoad();
+					} else {
+						imgElement.addEventListener('load', handleLoad);
+						imgElement.addEventListener('error', hidePreloader);
+					}
+				} else {
+					hidePreloader();
+				}
+
 				window.addEventListener('resize', function() {
-					// Use debounce to avoid excessive scaling
 					if (window.mapResizeTimer) {
 						clearTimeout(window.mapResizeTimer);
 					}
 					window.mapResizeTimer = setTimeout(scaleImageMap, 150);
 				});
-				
-				// Also call when image loads
-				document.getElementById('publish-grid').addEventListener('load', scaleImageMap);
 			})();
 			</script>
         </div>
