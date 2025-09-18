@@ -172,6 +172,35 @@ class Forms {
 			$result['error'] = Language::get( 'Invalid image file. Please upload a valid image.' );
 			return $result;
 		}
+
+		// Enforce upload dimension limits configured in options
+		$dimension_limits = Options::get_upload_dimension_limits();
+		$width_limit      = $dimension_limits['width'];
+		$height_limit     = $dimension_limits['height'];
+
+		if ( ( $width_limit && $size[0] > $width_limit ) || ( $height_limit && $size[1] > $height_limit ) ) {
+			unlink( $uploadfile );
+			if ( $width_limit && $height_limit && $size[0] > $width_limit && $size[1] > $height_limit ) {
+				$result['error'] = Language::get_replace(
+					'The uploaded image (%ACTUAL_WIDTH% × %ACTUAL_HEIGHT% pixels) exceeds the maximum allowed dimensions of %WIDTH% × %HEIGHT% pixels.',
+					[ '%ACTUAL_WIDTH%', '%ACTUAL_HEIGHT%', '%WIDTH%', '%HEIGHT%' ],
+					[ $size[0], $size[1], $width_limit, $height_limit ]
+				);
+			} else if ( $width_limit && $size[0] > $width_limit ) {
+				$result['error'] = Language::get_replace(
+					'The uploaded image width (%ACTUAL_WIDTH% pixels) exceeds the maximum of %WIDTH% pixels.',
+					[ '%ACTUAL_WIDTH%', '%WIDTH%' ],
+					[ $size[0], $width_limit ]
+				);
+			} else {
+				$result['error'] = Language::get_replace(
+					'The uploaded image height (%ACTUAL_HEIGHT% pixels) exceeds the maximum of %HEIGHT% pixels.',
+					[ '%ACTUAL_HEIGHT%', '%HEIGHT%' ],
+					[ $size[1], $height_limit ]
+				);
+			}
+			return $result;
+		}
 		
 		// Validate minimum image dimensions
 		if ( $size[0] < 1 || $size[1] < 1 ) {
@@ -427,6 +456,7 @@ class Forms {
 			case 'write-ad':
 				// Determine whether this POST is just navigating to Write Ad (no save yet)
 				$is_save_request = isset( $_POST['save'] ) && $_POST['save'] === '1';
+				$is_manage_request = isset( $_REQUEST['manage-pixels'] );
 
 				// Ensure current order context before handling any actions (prefer form hidden order field)
 				$order_from_form   = isset( $_POST[ MDS_PREFIX . 'order' ] ) ? intval( $_POST[ MDS_PREFIX . 'order' ] ) : 0;
@@ -459,36 +489,90 @@ class Forms {
 				$post_id_or_errors = FormFields::add();
 
 				if ( is_int( $post_id_or_errors ) && $post_id_or_errors > 0 ) {
-					// Success: decide next step based on Confirm Orders option
-					$confirm_enabled = Options::get_option( 'confirm-orders', 'yes' ) !== 'no';
-					$mds_dest        = $confirm_enabled ? 'confirm-order' : 'payment';
+					if ( $is_manage_request ) {
+						$mds_dest = 'manage';
+						$params['aid'] = $post_id_or_errors;
+						$params['mds-action'] = 'manage';
+						$params['manage_success'] = '1';
+					} else {
+						// Success: decide next step based on Confirm Orders option
+						$confirm_enabled = Options::get_option( 'confirm-orders', 'yes' ) !== 'no';
+						$mds_dest        = $confirm_enabled ? 'confirm-order' : 'payment';
 
-					// Provide order_id and aid to help next screen
-					$params['aid'] = $post_id_or_errors;
-					$order_id_meta  = carbon_get_post_meta( $post_id_or_errors, MDS_PREFIX . 'order' );
-					$order_id_curr  = Orders::get_current_order_id();
-					$__redir_order_id = 0;
-					if ( ! empty( $order_id_meta ) ) {
-						$__redir_order_id = intval( $order_id_meta );
-					} else if ( $order_id_param > 0 ) {
-						$__redir_order_id = $order_id_param;
-					} else if ( ! empty( $order_id_curr ) ) {
-						$__redir_order_id = intval( $order_id_curr );
-					}
-					if ( $__redir_order_id > 0 ) {
-						$params['order_id'] = $__redir_order_id;
+						// Provide order_id and aid to help next screen
+						$params['aid'] = $post_id_or_errors;
+						$order_id_meta  = carbon_get_post_meta( $post_id_or_errors, MDS_PREFIX . 'order' );
+						$order_id_curr  = Orders::get_current_order_id();
+						$__redir_order_id = 0;
+						if ( ! empty( $order_id_meta ) ) {
+							$__redir_order_id = intval( $order_id_meta );
+						} else if ( $order_id_param > 0 ) {
+							$__redir_order_id = $order_id_param;
+						} else if ( ! empty( $order_id_curr ) ) {
+							$__redir_order_id = intval( $order_id_curr );
+						}
+						if ( $__redir_order_id > 0 ) {
+							$params['order_id'] = $__redir_order_id;
+						}
 					}
 				} else if ( is_array( $post_id_or_errors ) && ! empty( $post_id_or_errors ) ) {
-					// Validation errors: stay on Write Ad and surface a generic error param
-					$mds_dest = 'write-ad';
+					// Validation errors: stay on originating screen and surface a generic error param
+					$mds_dest = $is_manage_request ? 'manage' : 'write-ad';
 					$params['mds_error'] = urlencode( Language::get( 'Please correct the highlighted fields.' ) );
+					if ( $is_manage_request ) {
+						$params['mds-action'] = 'manage';
+						$manage_aid = isset( $_REQUEST['manage-pixels'] ) ? intval( $_REQUEST['manage-pixels'] ) : 0;
+						if ( $manage_aid > 0 ) {
+							$params['aid'] = $manage_aid;
+						}
+					} else {
+						if ( $resolved_order_id ) {
+							$params['order_id'] = $resolved_order_id;
+						}
+						if ( $aid_param > 0 ) {
+							$params['aid'] = $aid_param;
+						} else {
+							$existing_ad_id = Orders::get_ad_id_from_order_id( $resolved_order_id );
+							if ( $existing_ad_id ) {
+								$params['aid'] = intval( $existing_ad_id );
+							}
+						}
+					}
 				} else if ( is_wp_error( $post_id_or_errors ) ) {
 					// Save failure: stay and display error
-					$mds_dest = 'write-ad';
+					$mds_dest = $is_manage_request ? 'manage' : 'write-ad';
 					$params['mds_error'] = urlencode( $post_id_or_errors->get_error_message() );
+					if ( $is_manage_request ) {
+						$params['mds-action'] = 'manage';
+						$manage_aid = isset( $_REQUEST['manage-pixels'] ) ? intval( $_REQUEST['manage-pixels'] ) : 0;
+						if ( $manage_aid > 0 ) {
+							$params['aid'] = $manage_aid;
+						}
+					} else {
+						if ( $resolved_order_id ) {
+							$params['order_id'] = $resolved_order_id;
+						}
+						if ( $aid_param > 0 ) {
+							$params['aid'] = $aid_param;
+						}
+					}
 				} else {
 					// Unknown state: be safe and stay on Write Ad
-					$mds_dest = 'write-ad';
+					$mds_dest = $is_manage_request ? 'manage' : 'write-ad';
+					if ( $is_manage_request ) {
+						$params['mds-action'] = 'manage';
+						$manage_aid = isset( $_REQUEST['manage-pixels'] ) ? intval( $_REQUEST['manage-pixels'] ) : 0;
+						if ( $manage_aid > 0 ) {
+							$params['aid'] = $manage_aid;
+						}
+					} else {
+						if ( $resolved_order_id ) {
+							$params['order_id'] = $resolved_order_id;
+						}
+						if ( $aid_param > 0 ) {
+							$params['aid'] = $aid_param;
+						}
+					}
 				}
 
 				// Preserve package if present

@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.15.9\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.15.10\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-17 22:58:30\n"
-"PO-Revision-Date: 2025-09-17 22:58:30\n"
-"X-Generator: Million Dollar Script Two 2.5.15.9\n"
+"POT-Creation-Date: 2025-09-17 23:37:27\n"
+"PO-Revision-Date: 2025-09-17 23:37:27\n"
+"X-Generator: Million Dollar Script Two 2.5.15.10\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1809,6 +1809,18 @@ msgstr ""
 msgid "Setting to Yes will make the Image field optional."
 msgstr ""
 
+msgid "Max Upload Width"
+msgstr ""
+
+msgid "Maximum width (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size."
+msgstr ""
+
+msgid "Max Upload Height"
+msgstr ""
+
+msgid "Maximum height (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size."
+msgstr ""
+
 msgid "Permissions"
 msgstr ""
 
@@ -2713,6 +2725,18 @@ msgid "The URL to link to."
 msgstr ""
 
 msgid "The %FIELD% field is required."
+msgstr ""
+
+msgid "Unable to read the uploaded image dimensions. Please upload a valid image file."
+msgstr ""
+
+msgid "The uploaded image (%ACTUAL_WIDTH% × %ACTUAL_HEIGHT% pixels) exceeds the maximum allowed dimensions of %WIDTH% × %HEIGHT% pixels."
+msgstr ""
+
+msgid "The uploaded image width (%ACTUAL_WIDTH% pixels) exceeds the maximum of %WIDTH% pixels."
+msgstr ""
+
+msgid "The uploaded image height (%ACTUAL_HEIGHT% pixels) exceeds the maximum of %HEIGHT% pixels."
 msgstr ""
 
 msgid "Expiry Date"

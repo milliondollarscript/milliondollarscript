@@ -851,6 +851,50 @@ function upload_changed_pixels(
 			throw new \Exception( "<b>" . Language::get( 'File upload failed.' ) . "</b><br />" . esc_html( $validation_result['error'] ) );
 		}
 
+		// Enforce configured upload dimension limits before processing
+		$dimension_limits = Options::get_upload_dimension_limits();
+		if ( ( $dimension_limits['width'] ?? 0 ) || ( $dimension_limits['height'] ?? 0 ) ) {
+			$image_dimensions = @getimagesize( $files['tmp_name'] );
+			if ( $image_dimensions === false ) {
+				throw new \Exception( Language::get( 'Unable to read the uploaded image dimensions. Please upload a valid image file.' ) );
+			}
+
+			list( $uploaded_width, $uploaded_height ) = $image_dimensions;
+			$width_limit  = $dimension_limits['width'];
+			$height_limit = $dimension_limits['height'];
+
+			$width_violation  = $width_limit && $uploaded_width > $width_limit;
+			$height_violation = $height_limit && $uploaded_height > $height_limit;
+
+			if ( $width_violation || $height_violation ) {
+				if ( $width_violation && $height_violation ) {
+					throw new \Exception(
+						Language::get_replace(
+							'The uploaded image (%ACTUAL_WIDTH% × %ACTUAL_HEIGHT% pixels) exceeds the maximum allowed dimensions of %WIDTH% × %HEIGHT% pixels.',
+							[ '%ACTUAL_WIDTH%', '%ACTUAL_HEIGHT%', '%WIDTH%', '%HEIGHT%' ],
+							[ $uploaded_width, $uploaded_height, $width_limit, $height_limit ]
+						)
+					);
+				} else if ( $width_violation ) {
+					throw new \Exception(
+						Language::get_replace(
+							'The uploaded image width (%ACTUAL_WIDTH% pixels) exceeds the maximum of %WIDTH% pixels.',
+							[ '%ACTUAL_WIDTH%', '%WIDTH%' ],
+							[ $uploaded_width, $width_limit ]
+						)
+					);
+				} else {
+					throw new \Exception(
+						Language::get_replace(
+							'The uploaded image height (%ACTUAL_HEIGHT% pixels) exceeds the maximum of %HEIGHT% pixels.',
+							[ '%ACTUAL_HEIGHT%', '%HEIGHT%' ],
+							[ $uploaded_height, $height_limit ]
+						)
+					);
+				}
+			}
+		}
+
 		// Generate secure filename and get upload directory
 		$uploaddir = Utility::get_upload_path() . "images/";
 		$secure_filename = \MillionDollarScript\Classes\System\FileValidator::generate_secure_filename( $files['name'], "tmp_" . $order_id . "_" );

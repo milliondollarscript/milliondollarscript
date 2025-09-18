@@ -513,7 +513,46 @@ class FormFields {
 						if ( isset( $_FILES[ $field_name ] ) && $_FILES[ $field_name ]['error'] === UPLOAD_ERR_OK ) {
 							$file = $_FILES[ $field_name ];
 
-							// You can add additional checks here, such as checking the file type and size
+							// Enforce upload dimension limits before processing the file
+							$dimension_limits = Options::get_upload_dimension_limits();
+							if ( ( $dimension_limits['width'] ?? 0 ) > 0 || ( $dimension_limits['height'] ?? 0 ) > 0 ) {
+								$image_size = @getimagesize( $file['tmp_name'] );
+								if ( $image_size === false ) {
+									$errors[ $field_name ] = Language::get( 'Unable to read the uploaded image dimensions. Please upload a valid image file.' );
+									continue;
+								}
+
+								list( $uploaded_width, $uploaded_height ) = $image_size;
+								$width_limit  = $dimension_limits['width'];
+								$height_limit = $dimension_limits['height'];
+
+								$width_violation  = $width_limit && $uploaded_width > $width_limit;
+								$height_violation = $height_limit && $uploaded_height > $height_limit;
+
+								if ( $width_violation || $height_violation ) {
+									if ( $width_violation && $height_violation ) {
+										$errors[ $field_name ] = Language::get_replace(
+											'The uploaded image (%ACTUAL_WIDTH% × %ACTUAL_HEIGHT% pixels) exceeds the maximum allowed dimensions of %WIDTH% × %HEIGHT% pixels.',
+											[ '%ACTUAL_WIDTH%', '%ACTUAL_HEIGHT%', '%WIDTH%', '%HEIGHT%' ],
+											[ $uploaded_width, $uploaded_height, $width_limit, $height_limit ]
+										);
+									} else if ( $width_violation ) {
+										$errors[ $field_name ] = Language::get_replace(
+											'The uploaded image width (%ACTUAL_WIDTH% pixels) exceeds the maximum of %WIDTH% pixels.',
+											[ '%ACTUAL_WIDTH%', '%WIDTH%' ],
+											[ $uploaded_width, $width_limit ]
+										);
+									} else {
+										$errors[ $field_name ] = Language::get_replace(
+											'The uploaded image height (%ACTUAL_HEIGHT% pixels) exceeds the maximum of %HEIGHT% pixels.',
+											[ '%ACTUAL_HEIGHT%', '%HEIGHT%' ],
+											[ $uploaded_height, $height_limit ]
+										);
+									}
+
+									continue;
+								}
+							}
 
 							// Upload the file
 							$upload = wp_handle_upload( $file, array( 'test_form' => false ) );
@@ -596,6 +635,10 @@ class FormFields {
 			if ( empty( $errors ) ) {
 				return $post_id;
 			}
+		}
+
+		if ( ! empty( $errors ) ) {
+			update_user_meta( get_current_user_id(), 'error_message', $errors );
 		}
 
 		return $errors;

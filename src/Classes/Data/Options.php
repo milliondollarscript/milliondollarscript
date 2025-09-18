@@ -1124,6 +1124,19 @@ class Options {
 						'no'  => Language::get( 'No' ),
 					] )
 					->set_help_text( Language::get( 'Setting to Yes will make the Image field optional.' ) ),
+
+				// Max Upload Dimensions
+				Field::make( 'text', MDS_PREFIX . 'max-upload-width', Language::get( 'Max Upload Width' ) )
+					->set_default_value( '2000' )
+					->set_attribute( 'type', 'number' )
+					->set_attribute( 'min', '1' )
+					->set_help_text( Language::get( 'Maximum width (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size.' ) ),
+
+				Field::make( 'text', MDS_PREFIX . 'max-upload-height', Language::get( 'Max Upload Height' ) )
+					->set_default_value( '2000' )
+					->set_attribute( 'type', 'number' )
+					->set_attribute( 'min', '1' )
+					->set_help_text( Language::get( 'Maximum height (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size.' ) ),
 			],
 
 			Language::get( 'Permissions' ) => [
@@ -1353,6 +1366,24 @@ class Options {
 		}
 
 		return $val;
+	}
+
+	/**
+	 * Returns the configured maximum upload dimensions for ad images.
+	 *
+	 * @return array{width:int|null,height:int|null}
+	 */
+	public static function get_upload_dimension_limits(): array {
+		$width_option  = absint( self::get_option( 'max-upload-width', 2000 ) );
+		$height_option = absint( self::get_option( 'max-upload-height', 2000 ) );
+
+		$width_limit  = $width_option > 0 ? $width_option : null;
+		$height_limit = $height_option > 0 ? $height_option : null;
+
+		return [
+			'width'  => $width_limit,
+			'height' => $height_limit,
+		];
 	}
 
 	/**
