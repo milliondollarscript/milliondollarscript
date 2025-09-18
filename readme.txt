@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.14
+Stable tag: 2.5.15.15
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -28,6 +28,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Improvement: Grid backgrounds automatically follow your light or dark theme colors when no custom color is saved, keeping the grid looking consistent.
 * Improvement: Oversized image uploads now get a friendly nudge with clear sizing tips on both the order and manage screens, so you stay in the flow without any guesswork.
 * Fix: Brought the Not For Sale admin page back so you can quickly reserve blocks without running into access errors.
+* Fix: Stop WooCommerce’s empty checkout redirect from hijacking MDS routes so grid images load reliably regardless of the checkout page slug.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.

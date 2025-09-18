@@ -97,6 +97,7 @@ class Routes {
 		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
 
 		if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
+			add_filter( 'woocommerce_checkout_redirect_empty_cart', [ __CLASS__, 'prevent_wc_checkout_redirect' ], 999 );
 			$post_id = Options::get_option( 'dynamic-id' );
 			if ( ! empty( $post_id ) ) {
 				$post_id = intval( $post_id );
@@ -120,6 +121,10 @@ class Routes {
 
 			setup_postdata( $post );
 		}
+	}
+
+	public static function prevent_wc_checkout_redirect( bool $should_redirect ): bool {
+		return false;
 	}
 
 	/**
