@@ -744,6 +744,222 @@ class Orders {
 	}
 
 	/**
+	 * Persist the current pixel selection using the modern Orders facade.
+	 *
+	 * @param int $banner_id    The banner/grid identifier.
+	 * @param array $banner_data The banner metadata (sizes, pricing dimensions).
+	 * @param string $blocks_csv Comma separated list of block ids being selected.
+	 * @param array $block_info  Normalised block payload including coordinates and image data.
+	 * @param int|null $package_id Optional package being applied to the selection.
+	 *
+	 * @return array{order_id:int,total:float,package_id:int,block_count:int} Result summary for downstream handling.
+	 */
+	public static function persist_selection( int $banner_id, array $banner_data, string $blocks_csv, array $block_info, ?int $package_id = null ): array {
+		if ( ! function_exists( 'mds_wp_login_check' ) ) {
+			require_once MDS_CORE_PATH . 'include/functions.php';
+		}
+		if ( function_exists( 'mds_wp_login_check' ) ) {
+			mds_wp_login_check();
+		}
+
+		if ( ! is_user_logged_in() ) {
+			throw new \RuntimeException( 'User must be logged in to persist a selection.' );
+		}
+
+		$blocks_csv = trim( $blocks_csv );
+		if ( $blocks_csv === '' ) {
+			throw new \InvalidArgumentException( 'No blocks supplied for selection persistence.' );
+		}
+
+		// Normalise block list.
+		$block_ids = array_filter( array_map( 'intval', explode( ',', $blocks_csv ) ), static function ( $value ) {
+			return $value >= 0;
+		});
+		if ( empty( $block_ids ) ) {
+			throw new \InvalidArgumentException( 'Unable to resolve valid blocks from selection payload.' );
+		}
+
+		global $wpdb;
+		$user_id = get_current_user_id();
+		$order_id = self::get_current_order_in_progress( $user_id );
+		if ( empty( $order_id ) ) {
+			$order_id = self::create_order( $user_id, $banner_id );
+		}
+
+		$quantity      = count( $block_ids ) * max( 1, intval( $banner_data['BLK_WIDTH'] ?? 0 ) * intval( $banner_data['BLK_HEIGHT'] ?? 0 ) );
+		$now           = current_time( 'mysql' );
+		$existing_data = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT ad_id, block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d",
+				$order_id
+			),
+			ARRAY_A
+		);
+
+		$ad_id                 = $existing_data ? intval( $existing_data['ad_id'] ) : 0;
+		$persisted_block_state = $existing_data['block_info'] ?? '';
+
+		$steps        = Steps::get_steps( false );
+		$current_step = $steps[ Steps::STEP_WRITE_AD ] ?? (int) end( $steps );
+		if ( ! is_int( $current_step ) ) {
+			$current_step = (int) apply_filters( 'mds_default_order_step', 3 );
+		}
+		reset( $steps );
+
+		$result = $wpdb->replace(
+			MDS_DB_PREFIX . 'orders',
+			[
+				'user_id'           => $user_id,
+				'order_id'          => $order_id,
+				'blocks'            => $blocks_csv,
+				'status'            => 'new',
+				'order_date'        => $now,
+				'price'             => 0,
+				'quantity'          => $quantity,
+				'days_expire'       => intval( $banner_data['DAYS_EXPIRE'] ?? 0 ),
+				'banner_id'         => $banner_id,
+				'currency'          => Currency::get_default_currency(),
+				'date_stamp'        => $now,
+				'ad_id'             => $ad_id,
+				'published'         => 'N',
+				'block_info'        => $persisted_block_state,
+				'original_order_id' => $order_id,
+				'order_in_progress' => 'Y',
+				'current_step'      => $current_step,
+				'package_id'        => intval( $package_id ?? 0 ),
+			],
+			[
+				'%d', // user_id
+				'%d', // order_id
+				'%s', // blocks
+				'%s', // status
+				'%s', // order_date
+				'%f', // price (placeholder 0)
+				'%d', // quantity
+				'%d', // days_expire
+				'%d', // banner_id
+				'%s', // currency
+				'%s', // date_stamp
+				'%d', // ad_id
+				'%s', // published
+				'%s', // block_info
+				'%d', // original_order_id
+				'%s', // order_in_progress
+				'%d', // current_step
+				'%d', // package_id
+			]
+		);
+
+		if ( false === $result ) {
+			throw new \RuntimeException( 'Failed to persist selection record: ' . $wpdb->last_error );
+		}
+
+		self::set_current_order_id( $order_id );
+
+		$package_id = intval( $package_id ?? 0 );
+		$pricing    = self::update_selection_totals( $order_id, $banner_id, $banner_data, $block_info, $package_id );
+
+		$order_row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d",
+				$order_id,
+				$user_id
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $order_row ) ) {
+			throw new \RuntimeException( 'Unable to load order after selection persistence.' );
+		}
+
+		$reserved_order_id = self::reserve_pixels_for_temp_order( $order_row );
+
+		return [
+			'order_id'    => (int) $reserved_order_id,
+			'total'       => (float) $pricing['total'],
+			'package_id'  => (int) $pricing['package_id'],
+			'block_count' => count( $block_ids ),
+		];
+	}
+
+	/**
+	 * Update price, block info, and package metadata for a persisted selection.
+	 *
+	 * @param int $order_id    Target order id.
+	 * @param int $banner_id   Banner identifier.
+	 * @param array $banner_data Banner metadata for size calculations.
+	 * @param array $block_info Normalised block payload including coordinates and image data.
+	 * @param int $package_id  Package id applied to selection.
+	 *
+	 * @return array{total:float,package_id:int,block_info_serialized:string}
+	 */
+	protected static function update_selection_totals( int $order_id, int $banner_id, array $banner_data, array $block_info, int $package_id ): array {
+		global $wpdb;
+
+		if ( ! function_exists( 'banner_get_packages' ) ) {
+			require_once MDS_CORE_PATH . 'include/package_functions.php';
+		}
+		if ( ! function_exists( 'get_zone_price' ) ) {
+			require_once MDS_CORE_PATH . 'include/price_functions.php';
+		}
+
+		$has_packages = banner_get_packages( $banner_id );
+		if ( empty( $package_id ) ) {
+			$package_id = (int) ( function_exists( 'get_default_package' ) ? get_default_package( $banner_id ) : 0 );
+		}
+		$package = null;
+		if ( $has_packages && $package_id ) {
+			$package = function_exists( 'get_package' ) ? get_package( $package_id ) : null;
+		}
+
+		$currency = Currency::get_default_currency();
+		$total    = 0.0;
+
+		foreach ( $block_info as $key => $block ) {
+			$map_x = isset( $block['map_x'] ) ? intval( $block['map_x'] ) : 0;
+			$map_y = isset( $block['map_y'] ) ? intval( $block['map_y'] ) : 0;
+
+			if ( $package && isset( $package['price'] ) ) {
+				$price = (float) $package['price'];
+			} else {
+				$price = (float) get_zone_price( $banner_id, $map_y, $map_x );
+			}
+
+			$block_info[ $key ]['currency']  = $currency;
+			$block_info[ $key ]['price']     = $price;
+			$block_info[ $key ]['banner_id'] = $banner_id;
+
+			$total += $price;
+		}
+
+		$serialized = serialize( $block_info );
+
+		$updated = $wpdb->update(
+			MDS_DB_PREFIX . 'orders',
+			[
+				'price'      => $total,
+				'block_info' => $serialized,
+				'package_id' => $package_id,
+			],
+			[ 'order_id' => $order_id ],
+			[ '%f', '%s', '%d' ],
+			[ '%d' ]
+		);
+
+		if ( false === $updated ) {
+			throw new \RuntimeException( 'Failed to update selection totals: ' . $wpdb->last_error );
+		}
+
+		self::set_last_order_modification_time();
+
+		return [
+			'total'                  => $total,
+			'package_id'             => $package_id,
+			'block_info_serialized'  => $serialized,
+		];
+	}
+
+	/**
 	 * Get an orders completion status.
 	 *
 	 * @param mixed $order_id
@@ -2454,7 +2670,7 @@ class Orders {
         $wpdb->query( $sql );
         $order_id = intval( $current_order_id );
 
-$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders SET original_order_id=%d WHERE order_id=%d", intval( $order_id ), intval( $order_id ) );
+		$sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders SET original_order_id=%d WHERE order_id=%d", intval( $order_id ), intval( $order_id ) );
 		$wpdb->query( $sql );
 
 		$url      = carbon_get_post_meta( $temp_order_row['ad_id'], MDS_PREFIX . 'url' );
@@ -2538,7 +2754,6 @@ $sql = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "orders SET original_order_id
 		if ( ! empty( $__mds_errors ) ) {
 			@error_log( 'MDS reserve_pixels_for_temp_order errors: ' . implode( ' | ', $__mds_errors ) );
 		}
-		@error_log( 'MDS reserve_pixels_for_temp_order inserted rows: ' . $__mds_inserted . ' for order_id=' . $order_id );
 
 		return $order_id;
 	}

@@ -28,9 +28,8 @@
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
-use MillionDollarScript\Classes\Orders\Steps;
-use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\System\Logs;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -94,173 +93,26 @@ $_REQUEST['map_x']    = $floorx * $banner_data['BLK_WIDTH'];
 $_REQUEST['map_y']    = $floory * $banner_data['BLK_HEIGHT'];
 $_REQUEST['block_id'] = $floorid;
 
-// place on temp order -> then
-function place_temp_order( $in_str ) {
-
-	global $BID, $f2, $banner_data, $wpdb;
-
-	// cannot place order if there is no session!
-	mds_wp_login_check();
-
-	$blocks = explode( ',', $in_str );
-
-	$quantity = sizeof( $blocks ) * ( $banner_data['BLK_WIDTH'] * $banner_data['BLK_HEIGHT'] );
-
-	$now = current_time( 'mysql' );
-
-	// preserve ad_id & block info...
-	$order_id = Orders::get_current_order_in_progress();
-	if ( ! $order_id ) {
-		$order_id = Orders::create_order();
-	}
-
-	$sql = $wpdb->prepare( "SELECT ad_id, block_info FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%s", $order_id );
-	$row = $wpdb->get_row( $sql, ARRAY_A );
-
-	if ( $row ) {
-		$ad_id      = intval( $row['ad_id'] );
-		$block_info = wp_kses_data( $row['block_info'] );
-	} else {
-		$ad_id      = 0;
-		$block_info = '';
-	}
-
-	// DAYS_EXPIRE comes form load_banner_constants()
-	$table_name = MDS_DB_PREFIX . 'orders';
-
-	// Get current step
-	$steps        = Steps::get_steps( false );
-	$current_step = $steps['write-ad'];
-
-	$data = array(
-		'user_id'           => get_current_user_id(),
-		'order_id'          => $order_id,
-		'blocks'            => $in_str,
-		'status'            => 'new',
-		'order_date'        => $now,
-		'price'             => 0,
-		'quantity'          => intval( $quantity ),
-		'days_expire'       => intval( $banner_data['DAYS_EXPIRE'] ),
-		'banner_id'         => $BID,
-		'currency'          => Currency::get_default_currency(),
-		'date_stamp'        => $now,
-		'ad_id'             => $ad_id,
-		'published'         => 'N',
-		'block_info'        => $block_info,
-		'original_order_id' => $order_id,
-		'order_in_progress' => 'Y',
-		'current_step'      => $current_step,
-		'package_id'        => intval( $_REQUEST['package'] ?? 0 ),
-	);
-
-	$format = array(
-		'%s', // user_id
-		'%s', // order_id
-		'%s', // blocks
-		'%s', // status
-		'%s', // order_date
-		'%d', // price
-		'%d', // quantity
-		'%d', // days_expire
-		'%d', // banner_id
-		'%s', // currency
-		'%s', // date_stamp
-		'%d', // ad_id
-		'%s', // published
-		'%s', // block_info
-		'%s', // original_order_id
-		'%s', // order_in_progress
-		'%d', // current_step
-		'%d', // package_id
-	);
-
-	$result = $wpdb->replace( $table_name, $data, $format );
-	if ( false === $result ) {
-		mds_sql_error( 'Error: ' . $wpdb->last_error );
-	}
-
-	return true;
-}
-
-// reserves the pixels for the temp order..
-
-$price_table = '';
-
-function reserve_temp_order_pixels( $block_info, $in_str ): bool {
-
-	global $BID, $wpdb;
-
-	// cannot reserve pixels if there is no session
-	if ( ! is_user_logged_in() ) {
-		return false;
-	}
-
-	$has_packages = banner_get_packages( $BID );
-	$package_id   = intval( $_REQUEST['package'] ?? 0 );
-	if ( empty( $package_id ) ) {
-		$package_id = get_default_package( $BID );
-	}
-	$package = get_package( $package_id );
-	if ( ! is_null( $package ) ) {
-		$price = $package['price'];
-	} else {
-		$price = 0;
-	}
-
-	$total = 0;
-	foreach ( $block_info as $key => $block ) {
-
-		if ( ! $has_packages ) {
-			$price = get_zone_price( $BID, $block['map_y'], $block['map_x'] );
-		}
-
-		$currency = Currency::get_default_currency();
-
-		// enhance block info...
-		$block_info[ $key ]['currency']  = $currency;
-		$block_info[ $key ]['price']     = $price;
-		$block_info[ $key ]['banner_id'] = $BID;
-
-		$total += $price;
-	}
-
-	$sql = $wpdb->prepare(
-		"UPDATE " . MDS_DB_PREFIX . "orders SET price=%f, block_info=%s, package_id=%d WHERE order_id=%d",
-		floatval( $total ),
-		serialize( $block_info ),
-		$package_id,
-		Orders::get_current_order_id()
-	);
-	$wpdb->query( $sql ) or mds_sql_log_die( $sql );
-
-	// Update the last modification time
-	Orders::set_last_order_modification_time();
-
-	return true;
-}
-
 // MAIN
 // return true, or false if the image can fit
 
-check_selection_main();
+// Logs::log( 'MDS Legacy make_selection entry point invoked; delegating to Orders::persist_selection.' );
+// Logging disabled above to avoid excessive noise while the legacy shim remains.
 
-function check_selection_main(): void {
+$upload_image_file = Orders::get_tmp_img_name();
 
-	global $banner_data;
+if ( empty( $upload_image_file ) && $_POST['type'] == 'make-selection' ) {
+	wp_send_json( [
+		"error"    => "true",
+		"type"     => "no_orders",
+		"data"     => [
+			"value" => Language::get( '<h1>No new orders in progress</h1>' ),
+		],
+		'redirect' => Utility::get_page_url( 'no-orders' ),
+	] );
+}
 
-	$upload_image_file = Orders::get_tmp_img_name();
-
-	if ( empty( $upload_image_file ) && $_POST['type'] == 'make-selection' ) {
-		wp_send_json( [
-			"error"    => "true",
-			"type"     => "no_orders",
-			"data"     => [
-				"value" => Language::get( '<h1>No new orders in progress</h1>' ),
-			],
-			'redirect' => Utility::get_page_url( 'no-orders' ),
-		] );
-	}
-
+try {
 	$imagine = new Imagine\Gd\Imagine();
 
 	$image = $imagine->open( $upload_image_file );
@@ -276,7 +128,6 @@ function check_selection_main(): void {
 	$block_size = new Imagine\Image\Box( $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
 	$palette    = new Imagine\Image\Palette\RGB();
 	$color      = $palette->color( '#000', 0 );
-	//$zero_point = new Imagine\Image\Point( 0, 0 );
 
 	$block_info = $cb_array = array();
 	for ( $y = 0; $y < ( $new_size[1] ); $y += $banner_data['BLK_HEIGHT'] ) {
@@ -292,20 +143,9 @@ function check_selection_main(): void {
 			$block_info[ $cb ]['map_x'] = $map_x;
 			$block_info[ $cb ]['map_y'] = $map_y;
 
-			// create new destination image
 			$dest = $imagine->create( $block_size, $color );
-
-			// crop a part from the tiled image
-			//$block = $image->copy();
-			//$block->crop( new Imagine\Image\Point( $x, $y ), $block_size );
-
-			// paste the block into the destination image
-			//$dest->paste( $block, $zero_point );
-
-			// much faster
 			imagecopy( $dest->getGdResource(), $image->getGdResource(), 0, 0, $x, $y, $banner_data['BLK_WIDTH'], $banner_data['BLK_HEIGHT'] );
 
-			// save the image as a base64 encoded string
 			$data = base64_encode( $dest->get( "png", array( 'png_compression_level' => 9 ) ) );
 
 			$block_info[ $cb ]['image_data'] = $data;
@@ -318,48 +158,26 @@ function check_selection_main(): void {
 		return;
 	}
 
-	// create a temporary order and place the blocks on a temp order
-	place_temp_order( $in_str );
-	$result = reserve_temp_order_pixels( $block_info, $in_str );
+	$package_id = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : 0;
+	$persisted  = Orders::persist_selection( $BID, $banner_data, $in_str, $block_info, $package_id );
 
-	// Reserve pixels
-	global $wpdb;
+	wp_send_json( [
+		"error" => "false",
+		"type"  => "available",
+		"data"  => [
+			"order_id"    => $persisted['order_id'],
+			"block_count" => $persisted['block_count'],
+			"total"       => $persisted['total'],
+		],
+	] );
 
-	$order_id = intval( Orders::get_current_order_id() );
-	$user_id  = get_current_user_id();
-
-	$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d AND user_id = %d", $order_id, $user_id ), ARRAY_A );
-
-	// Handle when no order id is found.
-	if ( null === $order_row ) {
-		if ( wp_doing_ajax() ) {
-			echo json_encode( [
-				"error" => "true",
-				"type"  => "no_orders",
-				"data"  => [
-					"value" => Language::get( '<h1>No new orders in progress</h1>' ),
-				]
-			] );
-			wp_die();
-		}
-		Utility::redirect( Utility::get_page_url( 'no-orders' ) );
-	}
-
-	$order_id = Orders::reserve_pixels_for_temp_order( $order_row );
-
-	if ( $result && $order_id ) {
-		echo json_encode( [
-			"error" => "false",
-			"type"  => "available",
-			"data"  => []
-		] );
-	} else {
-		echo json_encode( [
-			"error" => "true",
-			"type"  => "unavailable",
-			"data"  => [
-				"value" => Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E434)",
-			]
-		] );
-	}
+} catch ( \Throwable $e ) {
+	Logs::log( 'MDS make_selection persistence failure: ' . $e->getMessage() );
+	wp_send_json( [
+		"error" => "true",
+		"type"  => "unavailable",
+		"data"  => [
+			"value" => Language::get( 'This space is not available! Please try to place your pixels in a different area.' ) . " (E434)",
+		],
+	] );
 }

@@ -36,6 +36,7 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use function esc_attr;
 
@@ -133,6 +134,8 @@ class Ajax {
 						require_once MDS_CORE_PATH . 'users/write_ad.php';
 						wp_die();
 					case "make-selection":
+						// Logs::log( 'MDS AJAX make-selection request routed through Orders::persist_selection handler.' );
+						// Logging suppressed to reduce noise while the legacy shim is still active.
 						require_once MDS_CORE_PATH . 'users/make_selection.php';
 						wp_die();
 					default:
