@@ -427,7 +427,7 @@ add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Ad
 	}
 
 	public function init_admin_pages(): void {
-		new NFS();
+		NFS::init();
 		new ApprovePixels();
 	}
 

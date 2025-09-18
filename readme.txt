@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.12
+Stable tag: 2.5.15.13
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -27,6 +27,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Improvement: Grid images now show a friendly loading message with a retry button if they need extra time, so visitors aren’t left wondering what happened.
 * Improvement: Grid backgrounds automatically follow your light or dark theme colors when no custom color is saved, keeping the grid looking consistent.
 * Improvement: Oversized image uploads now get a friendly nudge with clear sizing tips on both the order and manage screens, so you stay in the flow without any guesswork.
+* Fix: Brought the Not For Sale admin page back so you can quickly reserve blocks without running into access errors.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.
