@@ -479,9 +479,21 @@ if ( $count > 0 ) {
 
 	$results = $wpdb->get_results( $sql, ARRAY_A );
 	if ( ! empty( $results ) ) { ?>
-        <div class="mds-grid-preloader" data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"></div>
-        <div class="publish-grid">
-            <map name="main" id="main">
+        <div class="mds-grid-frame">
+            <div class="mds-grid-status">
+                <div class="mds-grid-preloader" data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+                     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                     hidden>
+                    <span class="mds-grid-preloader__spinner" aria-hidden="true"></span>
+                </div>
+                <div class="mds-grid-feedback" role="alert" aria-live="polite" hidden>
+                    <p class="mds-grid-feedback__message"><?php Language::out( "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time." ); ?></p>
+                    <button type="button" class="mds-grid-feedback__retry"><?php Language::out( 'Retry loading image' ); ?></button>
+                </div>
+            </div>
+            <div class="publish-grid">
+                <map name="main" id="main">
 				<?php
 				// Check if order locking is enabled
 				$order_locking_enabled = Options::get_option( 'order-locking', 'no' ) == 'yes';
@@ -539,7 +551,8 @@ if ( $count > 0 ) {
 
 			// Output img with specific class and data attributes for JS targeting
 			printf(
-				'<img id="publish-grid" class="mds-manage-grid" src="%s" width="%d" height="%d" usemap="#main" alt="" data-original-width="%d" data-original-height="%d"/>',
+				'<img id="publish-grid" class="mds-manage-grid" src="%s" data-grid-src="%s" width="%d" height="%d" usemap="#main" alt="" data-original-width="%d" data-original-height="%d"/>',
+				$src,
 				$src,
 				$width,
 				$height,
@@ -551,29 +564,87 @@ if ( $count > 0 ) {
 			<!-- Inline script for image map scaling to ensure alignment of clickable areas with the grid image -->
 			<script>
 			(function() {
-				const preloader = document.querySelector('.mds-grid-preloader');
+				const gridImage = document.getElementById('publish-grid');
+				const frame = gridImage ? gridImage.closest('.mds-grid-frame') : document.querySelector('.mds-grid-frame');
+				const preloader = frame ? frame.querySelector('.mds-grid-preloader') : null;
+				const feedback = frame ? frame.querySelector('.mds-grid-feedback') : null;
+				const retryButton = feedback ? feedback.querySelector('.mds-grid-feedback__retry') : null;
 				const preferredLoader = preloader ? preloader.getAttribute('data-loader-src') : null;
 				const resolvedLoader = (typeof window.MDSResolveLoaderUrl === 'function')
 					? window.MDSResolveLoaderUrl(preferredLoader)
 					: preferredLoader;
+				const baseSrc = gridImage ? (gridImage.getAttribute('data-grid-src') || gridImage.getAttribute('src')) : '';
 
-				if (preloader) {
-					const loaderSrc = resolvedLoader || (typeof window.MDS !== 'undefined' && window.MDS.MDS_BASE_URL
-						? window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif'
-						: null);
+				const loaderSrc = resolvedLoader || (typeof window.MDS !== 'undefined' && window.MDS.MDS_BASE_URL
+					? window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif'
+					: null);
+
+				function showPreloader(options) {
+					if (!preloader) {
+						return;
+					}
+					const spinnerMarkup = loaderSrc
+						? "<img class=\'mds-grid-preloader__spinner \' src=\'" + loaderSrc + "\' alt=\'\' aria-hidden=\'true\' width=\'32\' height=\'32\'/>"
+						: "<span class=\'mds-grid-preloader__spinner\' aria-hidden=\'true\'></span>";
 					preloader.setAttribute('data-loader-src', loaderSrc || '');
-					preloader.innerHTML = "<div class='ajax-loader' role='status' aria-live='polite'>" +
-						(loaderSrc
-							? "<img class='ajax-loader__spinner' src='" + loaderSrc + "' alt='Loading' width='32' height='32'/>"
-							: "<span class='ajax-loader__spinner'></span>") +
-						"</div>";
-					preloader.style.display = 'flex';
+					if (preloader.children.length === 0) {
+						preloader.innerHTML = spinnerMarkup;
+					}
+					preloader.removeAttribute('hidden');
+					preloader.dataset.mdsPreloaderActive = '1';
+					const opts = options || {};
+					if (opts.hideImage !== false) {
+						hideImage();
+					}
 				}
 
 				function hidePreloader() {
 					if (preloader) {
-						preloader.style.display = 'none';
+						preloader.setAttribute('hidden', 'hidden');
 						preloader.innerHTML = '';
+						delete preloader.dataset.mdsPreloaderActive;
+					}
+				}
+
+				function hideImage() {
+					if (gridImage) {
+						gridImage.classList.add('mds-grid-image--hidden');
+					}
+				}
+
+				function showImage() {
+					if (gridImage) {
+						gridImage.classList.remove('mds-grid-image--hidden');
+					}
+				}
+
+				const controls = gridImage ? {
+					showPreloader: (opts) => showPreloader(opts),
+					hidePreloader: () => hidePreloader(),
+					showFeedback: () => toggleFeedback(true),
+					hideFeedback: () => toggleFeedback(false),
+					hideImage: () => hideImage(),
+					showImage: () => showImage(),
+				} : null;
+
+				if (gridImage && controls) {
+					gridImage.mdsGridControls = controls;
+				}
+
+				showPreloader();
+
+				function toggleFeedback(show) {
+					if (!feedback) {
+						return;
+					}
+					if (show) {
+						feedback.removeAttribute('hidden');
+						feedback.classList.add('is-visible');
+						hideImage();
+					} else {
+						feedback.setAttribute('hidden', 'hidden');
+						feedback.classList.remove('is-visible');
+						showImage();
 					}
 				}
 
@@ -617,20 +688,51 @@ if ( $count > 0 ) {
 					});
 				}
 
-				var imgElement = document.getElementById('publish-grid');
-				if (imgElement) {
-					var handleLoad = function() {
-						scaleImageMap();
-						hidePreloader();
-					};
-					if (imgElement.complete) {
-						handleLoad();
-					} else {
-						imgElement.addEventListener('load', handleLoad);
-						imgElement.addEventListener('error', hidePreloader);
+				function handleLoad() {
+					if (!gridImage) {
+						return;
 					}
-				} else {
+					if (gridImage.naturalWidth === 0 || gridImage.naturalHeight === 0) {
+						hidePreloader();
+						hideImage();
+						toggleFeedback(true);
+						return;
+					}
+					scaleImageMap();
 					hidePreloader();
+					showImage();
+					toggleFeedback(false);
+				}
+
+				function handleError() {
+					hidePreloader();
+					hideImage();
+					toggleFeedback(true);
+				}
+
+				if (gridImage) {
+					if (gridImage.complete) {
+						if (gridImage.naturalWidth === 0 || gridImage.naturalHeight === 0) {
+							handleError();
+						} else {
+							handleLoad();
+						}
+					} else {
+						toggleFeedback(false);
+						showPreloader();
+					}
+					gridImage.addEventListener('load', handleLoad);
+					gridImage.addEventListener('error', handleError);
+				}
+
+				if (retryButton && gridImage) {
+					retryButton.addEventListener('click', function(event) {
+						event.preventDefault();
+						toggleFeedback(false);
+						showPreloader();
+						var separator = baseSrc.indexOf('?') === -1 ? '?' : '&';
+						gridImage.src = baseSrc + separator + '_mds_retry=' + Date.now();
+					});
 				}
 
 				window.addEventListener('resize', function() {
@@ -641,6 +743,7 @@ if ( $count > 0 ) {
 				});
 			})();
 			</script>
+		</div>
         </div>
 	<?php }
 } else {

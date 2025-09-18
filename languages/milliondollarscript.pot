@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.15.6\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.15.9\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-16 18:32:03\n"
-"PO-Revision-Date: 2025-09-16 18:32:03\n"
-"X-Generator: Million Dollar Script Two 2.5.15.6\n"
+"POT-Creation-Date: 2025-09-17 22:58:30\n"
+"PO-Revision-Date: 2025-09-17 22:58:30\n"
+"X-Generator: Million Dollar Script Two 2.5.15.9\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -3118,6 +3118,12 @@ msgid "View Count"
 msgstr ""
 
 msgid "Click Count"
+msgstr ""
+
+msgid "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time."
+msgstr ""
+
+msgid "Retry loading image"
 msgstr ""
 
 msgid "<b>The file: %FILE% doesn't exist.</b><br>"

@@ -289,23 +289,42 @@ if ( ! empty( $tmp_image_file ) ) {
         <input type="hidden" value="1" name="select">
         <input type="hidden" value="<?php echo $BID; ?>" name="BID">
 
-        <div id="pixels-container" style="max-width: 100%;">
-            <img style="cursor: pointer; max-width: 100%; width: auto; height: auto;"
-                 id="pixelimg" <?php if ( ( $USE_AJAX == 'YES' ) || ( $USE_AJAX == 'SIMPLE' ) ) { ?><?php } ?>
-                 type="image" name="map" value='Select Pixels.'
-                 width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
-                 height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
-                 src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
-                 data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
-                 data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
-                 alt=""/>
-            <span id="block_pointer" style="position: absolute; display: block;" 
-                  data-original-width="<?php echo $reqsize[0]; ?>" 
-                  data-original-height="<?php echo $reqsize[1]; ?>">
-                <img src="<?php echo esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ); ?>"
-                     alt=""
-                     style="width: 100%; height: 100%;"/>
-            </span>
+        <?php $grid_image_src = Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ); ?>
+
+        <div class="mds-grid-frame">
+            <div class="mds-grid-status">
+                <div class="mds-grid-preloader"
+                     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+                     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                     hidden>
+                    <span class="mds-grid-preloader__spinner" aria-hidden="true"></span>
+                </div>
+                <div class="mds-grid-feedback" role="alert" aria-live="polite" hidden>
+                    <p class="mds-grid-feedback__message"><?php Language::out( "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time." ); ?></p>
+                    <button type="button" class="mds-grid-feedback__retry"><?php Language::out( 'Retry loading image' ); ?></button>
+                </div>
+            </div>
+
+            <div id="pixels-container" class="mds-pixels-canvas">
+                <img style="cursor: pointer; max-width: 100%; width: auto; height: auto;"
+                     id="pixelimg" <?php if ( ( $USE_AJAX == 'YES' ) || ( $USE_AJAX == 'SIMPLE' ) ) { ?><?php } ?>
+                     type="image" name="map" value='Select Pixels.'
+                     width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                     height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                     src="<?php echo esc_url( $grid_image_src ); ?>"
+                     data-grid-src="<?php echo esc_url( $grid_image_src ); ?>"
+                     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                     alt=""/>
+                <span id="block_pointer" style="position: absolute; display: block;" 
+                      data-original-width="<?php echo $reqsize[0]; ?>" 
+                      data-original-height="<?php echo $reqsize[1]; ?>">
+                    <img src="<?php echo esc_url( Utility::get_page_url( 'get-pointer-graphic', [ 'BID' => $BID ] ) ); ?>"
+                         alt=""
+                         style="width: 100%; height: 100%;"/>
+                </span>
+            </div>
         </div>
         <input type="hidden" name="form_action" value="select">
     </form>

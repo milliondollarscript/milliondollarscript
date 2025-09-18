@@ -424,21 +424,35 @@ if ( $show_selection_controls ) {
 			<input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>'>
 		</div>
 
-		<div class="mds-grid-preloader"
-		     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
-		     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
-		     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>">
-		</div>
+		<?php
+		$grid_image_src = Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] );
+		?>
+		<div class="mds-grid-frame">
+			<div class="mds-grid-status">
+				<div class="mds-grid-preloader"
+				     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+				     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+				     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+				     hidden>
+					<span class="mds-grid-preloader__spinner" aria-hidden="true"></span>
+				</div>
+				<div class="mds-grid-feedback" role="alert" aria-live="polite" hidden>
+					<p class="mds-grid-feedback__message"><?php Language::out( "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time." ); ?></p>
+					<button type="button" class="mds-grid-feedback__retry"><?php Language::out( 'Retry loading image' ); ?></button>
+				</div>
+			</div>
 
-		<div id="pixel_container">
-			<div class="mds-pixel-wrapper"
-			     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>">
-				<canvas id="blocks_canvas"></canvas>
-				<span id='block_pointer'></span>
-				<img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
-					data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
-					data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
-					alt=""/>
+			<div id="pixel_container" class="mds-grid-canvas">
+				<div class="mds-pixel-wrapper"
+				     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>">
+					<canvas id="blocks_canvas"></canvas>
+					<span id='block_pointer'></span>
+					<img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( $grid_image_src ); ?>"
+						data-grid-src="<?php echo esc_url( $grid_image_src ); ?>"
+						data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+						data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+						alt=""/>
+				</div>
 			</div>
 		</div>
 

@@ -28,6 +28,8 @@
 
 defined( 'ABSPATH' ) or exit;
 
+use MillionDollarScript\Classes\Data\Options;
+
 function load_banner_row( $BID ) {
 
 	if ( ! is_numeric( $BID ) ) {
@@ -126,7 +128,7 @@ function load_banner_constants( $BID ): ?array {
 	$row["USR_RES_BLOCK"]  = base64_decode( $row['usr_res_block'] );
 	$row["USR_SOL_BLOCK"]  = base64_decode( $row['usr_sol_block'] );
 
-	$row["G_BGCOLOR"]    = $row['bgcolor'];
+	$row["G_BGCOLOR"]    = sanitize_hex_color( $row['bgcolor'] ) ?: '';
 	$row["AUTO_APPROVE"] = $row['auto_approve'];
 	$row["AUTO_PUBLISH"] = $row['auto_publish'];
 
@@ -137,6 +139,51 @@ function load_banner_constants( $BID ): ?array {
 	$row["TIME"] = intval($row['time_stamp']);
 
 	return $row;
+}
+
+/**
+ * Determine the effective background color for a grid container.
+ *
+ * Prefers the saved banner color, falls back to theme-specific grid colors,
+ * and finally the current theme's primary background value.
+ *
+ * @param int   $BID          Banner/Grid ID.
+ * @param array $banner_data  Banner data returned by load_banner_constants().
+ *
+ * @return string Sanitized hex color (e.g. "#101216") or an empty string when no color should be applied.
+ */
+function mds_get_grid_background_color( int $BID, array $banner_data ): string {
+	$raw_color = $banner_data['G_BGCOLOR'] ?? ( $banner_data['bgcolor'] ?? '' );
+	$color     = sanitize_hex_color( $raw_color ) ?: '';
+
+	$theme_mode = Options::get_option( 'theme_mode', 'light' );
+
+	// Allow theme-specific background overrides configured for the grid.
+	if ( ( ! $color || strtolower( $color ) === '#ffffff' ) ) {
+		$grid_theme_colors = get_option( 'mds_grid_bg_colors_' . $BID );
+		if ( is_array( $grid_theme_colors ) ) {
+			$theme_color = sanitize_hex_color( $grid_theme_colors[ $theme_mode ] ?? '' ) ?: '';
+			if ( $theme_color ) {
+				$color = $theme_color;
+			}
+		}
+	}
+
+	if ( ! $color ) {
+		$fallback_option  = $theme_mode === 'dark' ? 'dark_main_background' : 'background_color';
+		$fallback_default = $theme_mode === 'dark' ? '#101216' : '#ffffff';
+		$color            = sanitize_hex_color( Options::get_option( $fallback_option, $fallback_default ) ) ?: '';
+	}
+
+	/**
+	 * Filter the resolved grid background color before it is used.
+	 *
+	 * @param string $color        The resolved hex color (may be empty).
+	 * @param int    $BID          Grid/Banner ID.
+	 * @param array  $banner_data  Full banner data array.
+	 * @param string $theme_mode   Active theme mode (light|dark).
+	 */
+	return apply_filters( 'mds_grid_background_color', $color, $BID, $banner_data, $theme_mode );
 }
 
 function get_default_image( $image_name ) {

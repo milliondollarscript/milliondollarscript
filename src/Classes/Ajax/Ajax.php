@@ -37,6 +37,7 @@ use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Utility;
+use function esc_attr;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -172,18 +173,34 @@ class Ajax {
 		if ( file_exists( $BANNER_PATH . "grid" . $BID . ".$ext" ) ) {
 			$container = 'grid' . $BID;
 
-			$bgstyle = "";
-			if ( ! empty( $banner_data['G_BGCOLOR'] ) ) {
-				$bgstyle = ' style="background-color:' . $banner_data['G_BGCOLOR'] . ';"';
-			}
+			$background_color = mds_get_grid_background_color( $BID, $banner_data );
+			$bgstyle          = $background_color ? ' style="background-color:' . esc_attr( $background_color ) . ';"' : '';
+			$grid_src = $BANNER_URL . 'grid' . $BID . '.' . $ext . '?v=' . filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" );
 			?>
             <div class="mds-container">
                 <div class="grid-container <?php echo $container; ?>"<?php echo $bgstyle ?>>
                     <div class='grid-inner' id='<?php echo $container; ?>'>
 						<?php include_once( $map_file ); ?>
-                        <img id="theimage" src="<?php echo $BANNER_URL; ?>grid<?php echo $BID; ?>.<?php echo $ext; ?>?v=<?php echo filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" ); ?>"
-                            width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0"
-                            usemap="#map-grid-<?php echo $BID; ?>" alt=""/>
+                        <div class="mds-grid-frame">
+                            <div class="mds-grid-status">
+                                <div class="mds-grid-preloader"
+                                    data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+                                    data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                                    data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                                    hidden>
+                                    <span class="mds-grid-preloader__spinner" aria-hidden="true"></span>
+                                </div>
+                                <div class="mds-grid-feedback" role="alert" aria-live="polite" hidden>
+                                    <p class="mds-grid-feedback__message"><?php Language::out( "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time." ); ?></p>
+                                    <button type="button" class="mds-grid-feedback__retry"><?php Language::out( 'Retry loading image' ); ?></button>
+                                </div>
+                            </div>
+                            <div class="mds-grid-canvas">
+                                <img id="theimage" src="<?php echo esc_url( $grid_src ); ?>" data-grid-src="<?php echo esc_url( $grid_src ); ?>"
+                                    width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0"
+                                    usemap="#map-grid-<?php echo $BID; ?>" alt=""/>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,5 +1,153 @@
 let first_load = true;
 
+function setupOrderGridImageFeedback() {
+	const pixelImage = document.getElementById('pixelimg');
+	if (!pixelImage || pixelImage.dataset.mdsFeedbackAttached === '1') {
+		return;
+	}
+	pixelImage.dataset.mdsFeedbackAttached = '1';
+
+	const frame = pixelImage.closest('.mds-grid-frame');
+	if (!frame) {
+		return;
+	}
+	const feedback = frame.querySelector('.mds-grid-feedback');
+	const preloader = frame.querySelector('.mds-grid-preloader');
+	const pointer = frame.querySelector('#block_pointer') || document.getElementById('block_pointer');
+
+	if (!feedback || !preloader) {
+		return;
+	}
+	const retryButton = feedback.querySelector('.mds-grid-feedback__retry');
+	const baseSrc = pixelImage.getAttribute('data-grid-src') || pixelImage.getAttribute('src') || '';
+
+	const hidePointer = () => {
+		if (pointer) {
+			pointer.style.visibility = 'hidden';
+		}
+	};
+
+	const showPointer = () => {
+		if (pointer) {
+			pointer.style.visibility = 'visible';
+		}
+	};
+
+	const hideImage = () => {
+		pixelImage.classList.add('mds-grid-image--hidden');
+	};
+
+	const showImage = () => {
+		pixelImage.classList.remove('mds-grid-image--hidden');
+	};
+
+	const hideFeedback = () => {
+		feedback.setAttribute('hidden', 'hidden');
+		feedback.classList.remove('is-visible');
+	};
+
+	const ensurePreloaderSpinner = () => {
+		if (!preloader) {
+			return;
+		}
+		if (preloader.children.length === 0) {
+			const loaderSrc = preloader.getAttribute('data-loader-src');
+			const spinnerMarkup = loaderSrc
+				? "<img class='mds-grid-preloader__spinner' src='" + loaderSrc + "' alt='' aria-hidden='true' width='32' height='32'/>"
+				: "<span class='mds-grid-preloader__spinner' aria-hidden='true'></span>";
+			preloader.setAttribute('data-loader-src', loaderSrc || '');
+			preloader.innerHTML = spinnerMarkup;
+		}
+	};
+
+	const showPreloader = (options = {}) => {
+		if (!preloader) {
+			return;
+		}
+		ensurePreloaderSpinner();
+		preloader.removeAttribute('hidden');
+		preloader.dataset.mdsPreloaderActive = '1';
+		if (options.hideImage !== false) {
+			hideImage();
+		}
+		if (options.hidePointer !== false) {
+			hidePointer();
+		}
+	};
+
+	const hidePreloader = () => {
+		if (!preloader) {
+			return;
+		}
+		preloader.setAttribute('hidden', 'hidden');
+		preloader.innerHTML = '';
+		delete preloader.dataset.mdsPreloaderActive;
+	};
+
+	const showFeedback = () => {
+		hidePreloader();
+		feedback.removeAttribute('hidden');
+		feedback.classList.add('is-visible');
+		hidePointer();
+		hideImage();
+	};
+
+	const handleLoad = () => {
+		if (pixelImage.naturalWidth === 0 || pixelImage.naturalHeight === 0) {
+			showFeedback();
+			return;
+		}
+		hidePreloader();
+		showImage();
+		showPointer();
+		hideFeedback();
+	};
+
+	const handleError = () => {
+		showFeedback();
+	};
+
+	pixelImage.mdsGridControls = {
+		showPreloader,
+		hidePreloader,
+		showFeedback,
+		hideFeedback,
+		hidePointer,
+		showPointer,
+		hideImage,
+		showImage,
+	};
+
+	pixelImage.addEventListener('load', handleLoad);
+	pixelImage.addEventListener('error', handleError);
+	pixelImage.addEventListener('abort', handleError);
+
+	if (retryButton) {
+		retryButton.addEventListener('click', function (event) {
+			event.preventDefault();
+			hideFeedback();
+			showPreloader();
+			const separator = baseSrc.indexOf('?') === -1 ? '?' : '&';
+			pixelImage.src = baseSrc + separator + '_mds_retry=' + Date.now();
+		});
+	}
+
+	if (pixelImage.complete) {
+		if (pixelImage.naturalWidth === 0 || pixelImage.naturalHeight === 0) {
+			handleError();
+		} else {
+			handleLoad();
+		}
+	} else {
+		hideFeedback();
+		showPreloader();
+	}
+}
+
+jQuery(function () {
+	setupOrderGridImageFeedback();
+});
+
 jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 	const params = new URLSearchParams(settings.data);
 	const type = params.get("type");
@@ -21,6 +169,8 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 	if (window.$block_pointer.length === 0 || window.$pixelimg.length === 0) {
 		return;
 	}
+
+	setupOrderGridImageFeedback();
 
 	// Initialize pointer dimensions from MDS_GRID_DATA if available
 	if (window.MDS_OBJECT && window.MDS_OBJECT.grid_data) {

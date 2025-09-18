@@ -197,23 +197,205 @@ function selectResolveLoaderUrl(preferred) {
 	return null;
 }
 
+function findGridPreloader(pixelGrid) {
+	if (!pixelGrid) {
+		return null;
+	}
+	const $frame = jQuery(pixelGrid).closest('.mds-grid-frame');
+	if ($frame.length) {
+		const $preloader = $frame.find('.mds-grid-preloader').first();
+		if ($preloader.length) {
+			return $preloader;
+		}
+	}
+	return null;
+}
+
+function setupGridImageFeedback(pixelGrid, observer) {
+	if (!pixelGrid || pixelGrid.dataset.mdsInitialGridSetup === '1') {
+		return;
+	}
+	pixelGrid.dataset.mdsInitialGridSetup = '1';
+
+	const $frame = jQuery(pixelGrid).closest('.mds-grid-frame');
+	if (!$frame.length) {
+		return;
+	}
+	const preloader = $frame.find('.mds-grid-preloader');
+	const feedbackEl = $frame.find('.mds-grid-feedback').get(0);
+	if (!preloader.length || !feedbackEl) {
+		return;
+	}
+
+	const retryButton = feedbackEl.querySelector('.mds-grid-feedback__retry');
+	const baseSrc = pixelGrid.getAttribute('data-grid-src') || pixelGrid.getAttribute('src') || '';
+	const pointerEl = document.getElementById('block_pointer');
+
+	const hidePointer = () => {
+		if (pointerEl) {
+			pointerEl.style.visibility = 'hidden';
+		}
+	};
+
+	const showPointer = () => {
+		if (pointerEl) {
+			pointerEl.style.visibility = 'visible';
+		}
+	};
+
+	const hideImage = () => {
+		pixelGrid.classList.add('mds-grid-image--hidden');
+	};
+
+	const showImage = () => {
+		pixelGrid.classList.remove('mds-grid-image--hidden');
+	};
+
+	const hideFeedback = () => {
+		feedbackEl.setAttribute('hidden', 'hidden');
+		feedbackEl.classList.remove('is-visible');
+	};
+
+	const hidePreloader = () => {
+		if (!preloader.length) {
+			return;
+		}
+		remove_ajax_loader(preloader);
+		preloader.attr('hidden', 'hidden');
+		preloader.empty();
+		preloader.removeData('mdsPreloaderActive');
+	};
+
+	const ensurePreloaderSpinner = () => {
+		if (!preloader.length) {
+			return;
+		}
+		if (!preloader.children().length) {
+			const loaderSrc = preloader.attr('data-loader-src');
+			if (loaderSrc) {
+				preloader.html(`<img class="mds-grid-preloader__spinner" src="${loaderSrc}" alt="" aria-hidden="true" width="32" height="32"/>`);
+			} else {
+				preloader.html('<span class="mds-grid-preloader__spinner" aria-hidden="true"></span>');
+			}
+		}
+	};
+
+	const showPreloader = (options = {}) => {
+		if (!preloader.length) {
+			return;
+		}
+		ensurePreloaderSpinner();
+		preloader.removeAttr('hidden');
+		preloader.data('mdsPreloaderActive', true);
+		if (options.hideImage !== false) {
+			hideImage();
+		}
+		if (options.hidePointer !== false) {
+			hidePointer();
+		}
+	};
+
+	const showFeedback = () => {
+		hidePreloader();
+		feedbackEl.removeAttribute('hidden');
+		feedbackEl.classList.add('is-visible');
+		hideImage();
+		hidePointer();
+	};
+
+	const finalizeSuccess = () => {
+		hidePreloader();
+		hideFeedback();
+		showImage();
+		showPointer();
+		if (gridInitialized) {
+			return;
+		}
+		gridInitialized = true;
+		initializeGrid();
+		if (observer && typeof observer.disconnect === 'function') {
+			observer.disconnect();
+		}
+	};
+
+	const finalizeError = () => {
+		hidePreloader();
+		gridInitialized = false;
+		showFeedback();
+	};
+
+	pixelGrid.mdsGridControls = {
+		showPreloader,
+		hidePreloader,
+		showFeedback,
+		hideFeedback,
+		hidePointer,
+		showPointer,
+		hideImage,
+		showImage,
+	};
+
+	pixelGrid.addEventListener('load', () => {
+		if (pixelGrid.naturalWidth === 0 || pixelGrid.naturalHeight === 0) {
+			finalizeError();
+			return;
+		}
+		finalizeSuccess();
+	});
+
+	pixelGrid.addEventListener('error', finalizeError);
+	pixelGrid.addEventListener('abort', finalizeError);
+
+	if (retryButton) {
+		retryButton.addEventListener('click', (event) => {
+			event.preventDefault();
+			hideFeedback();
+			gridInitialized = false;
+			show_initial_grid_loader(pixelGrid);
+			showPreloader();
+			const separator = baseSrc.indexOf('?') === -1 ? '?' : '&';
+			pixelGrid.src = baseSrc + separator + '_mds_retry=' + Date.now();
+		});
+	}
+
+	if (pixelGrid.complete) {
+		if (pixelGrid.naturalWidth === 0 || pixelGrid.naturalHeight === 0) {
+			finalizeError();
+		} else {
+			finalizeSuccess();
+		}
+	} else {
+		hideFeedback();
+		showPreloader();
+	}
+}
+
 function show_initial_grid_loader(pixelGrid) {
-	const preloader = jQuery('.mds-grid-preloader');
-	if (!preloader.length || preloader.data('mdsPreloaderActive')) {
+	const preloader = findGridPreloader(pixelGrid);
+	if (!preloader || !preloader.length || preloader.data('mdsPreloaderActive')) {
 		return;
 	}
 	const resolvedLoaderUrl = selectResolveLoaderUrl(preloader.attr('data-loader-src'));
-	if (preloader.children('.ajax-loader').length === 0) {
-		add_ajax_loader(preloader, {
-			loaderUrl: resolvedLoaderUrl,
-		});
-}
-	preloader.data('mdsPreloaderActive', true);
 	if (resolvedLoaderUrl) {
 		preloader.attr('data-loader-src', resolvedLoaderUrl);
 		window.MDS_LOADER_URL = resolvedLoaderUrl;
 	}
-	preloader.show();
+	if (!preloader.children().length) {
+		const loaderSrc = resolvedLoaderUrl || preloader.attr('data-loader-src');
+		const markup = loaderSrc
+			? `<img class="mds-grid-preloader__spinner" src="${loaderSrc}" alt="" aria-hidden="true" width="32" height="32"/>`
+			: '<span class="mds-grid-preloader__spinner" aria-hidden="true"></span>';
+		preloader.html(markup);
+	}
+	preloader.removeAttr('hidden');
+	preloader.data('mdsPreloaderActive', true);
+	if (pixelGrid) {
+		pixelGrid.classList.add('mds-grid-image--hidden');
+	}
+	const pointer = document.getElementById('block_pointer');
+	if (pointer) {
+		pointer.style.visibility = 'hidden';
+	}
 }
 
 function add_ajax_loader(container, options = {}) {
@@ -932,7 +1114,21 @@ function formSubmit(event) {
 function reset_pixels() {
 	ajax_queue = [];
 
-	add_ajax_loader(".mds-pixel-wrapper");
+	const pixelGrid = document.getElementById('pixelimg');
+	const controls = pixelGrid ? pixelGrid.mdsGridControls : null;
+	const fallbackContainer = ".mds-pixel-wrapper";
+	const usingFallback = !controls;
+
+	if (controls) {
+		if (typeof controls.hideFeedback === 'function') {
+			controls.hideFeedback();
+		}
+		if (typeof controls.showPreloader === 'function') {
+			controls.showPreloader({ hideImage: false });
+		}
+	} else {
+		add_ajax_loader(fallbackContainer);
+	}
 
 	jQuery.ajax({
 		type: "POST",
@@ -956,7 +1152,22 @@ function reset_pixels() {
 		error: function (xhr, status, error) {
 		},
 		complete: function () {
-			remove_ajax_loader();
+			if (!usingFallback && controls) {
+				if (typeof controls.hidePreloader === 'function') {
+					controls.hidePreloader();
+				}
+				if (typeof controls.hideFeedback === 'function') {
+					controls.hideFeedback();
+				}
+				if (typeof controls.showImage === 'function') {
+					controls.showImage();
+				}
+				if (typeof controls.showPointer === 'function') {
+					controls.showPointer();
+				}
+			} else {
+				remove_ajax_loader(fallbackContainer);
+			}
 		},
 	});
 }
@@ -1190,10 +1401,29 @@ function initializeGrid() {
 		return;
 	}
 
-	const preloader = jQuery('.mds-grid-preloader');
-	if (preloader.length > 0) {
+	const preloader = findGridPreloader(grid);
+	if (preloader && preloader.length) {
 		remove_ajax_loader(preloader);
 		preloader.hide();
+		preloader.removeData('mdsPreloaderActive');
+	}
+	const $wrapperInit = jQuery(grid).closest('.mds-pixel-wrapper');
+	if ($wrapperInit.length) {
+		remove_ajax_loader($wrapperInit);
+		$wrapperInit.removeData('mdsPreloaderActive');
+	}
+
+	const directFeedbackWrapper = grid ? grid.parentElement : null;
+	let feedback = directFeedbackWrapper ? directFeedbackWrapper.querySelector('.mds-grid-feedback') : null;
+	if (!feedback && grid) {
+		const feedbackContainer = grid.closest('.mds-container');
+		feedback = feedbackContainer ? feedbackContainer.querySelector('.mds-grid-feedback') : document.querySelector('.mds-grid-feedback');
+	} else if (!feedback) {
+		feedback = document.querySelector('.mds-grid-feedback');
+	}
+	if (feedback) {
+		feedback.setAttribute('hidden', '');
+		feedback.classList.remove('is-visible');
 	}
 
 	// Initial setup
@@ -1302,7 +1532,20 @@ function initializeGrid() {
 			return;
 		}
 		ajaxing = true;
-		add_ajax_loader(jQuery(".mds-pixel-wrapper"));
+		const pixelGrid = document.getElementById('pixelimg');
+		const controls = pixelGrid ? pixelGrid.mdsGridControls : null;
+		const fallbackContainer = jQuery(".mds-pixel-wrapper");
+		const usingFallback = !controls;
+		if (controls) {
+			if (typeof controls.hideFeedback === 'function') {
+				controls.hideFeedback();
+			}
+			if (typeof controls.showPreloader === 'function') {
+				controls.showPreloader({ hideImage: false });
+			}
+		} else {
+			add_ajax_loader(fallbackContainer);
+		}
 		let data = ajax_queue.shift();
 		jQuery.ajax({
 			type: "POST",
@@ -1374,8 +1617,23 @@ function initializeGrid() {
 				ajaxing = false;
 				// Only remove loader when queue is fully drained
 				if (ajax_queue.length === 0) {
-					remove_ajax_loader();
+					if (!usingFallback && controls) {
+						if (typeof controls.hidePreloader === 'function') {
+							controls.hidePreloader();
+						}
+						if (typeof controls.hideFeedback === 'function') {
+							controls.hideFeedback();
+						}
+						if (typeof controls.showImage === 'function') {
+							controls.showImage();
+						}
+						if (typeof controls.showPointer === 'function') {
+							controls.showPointer();
+						}
+					} else {
+						remove_ajax_loader(fallbackContainer);
 					}
+				}
 			}
 		});
 	}, 100);
@@ -1466,22 +1724,7 @@ const mutationObserver = new MutationObserver((mutationsList, observer) => {
 			const pixelGrid = document.getElementById('pixelimg');
 			if (pixelGrid) {
 				show_initial_grid_loader(pixelGrid);
-				// Image element is in the DOM, now wait for it to load.
-				const init = () => {
-					if (gridInitialized) return;
-					gridInitialized = true;
-					initializeGrid();
-					// Once initialized, we don't need to observe anymore.
-					observer.disconnect();
-				};
-
-				// Handle cached images: if .complete is true, onload won't fire.
-				if (pixelGrid.complete) {
-					init();
-				} else {
-					// Otherwise, wait for the onload event.
-					pixelGrid.addEventListener('load', init);
-				}
+				setupGridImageFeedback(pixelGrid, observer);
 				break;
 			}
 		}
@@ -1494,18 +1737,7 @@ mutationObserver.observe(observerTarget, observerConfig);
 const existingPixelGrid = document.getElementById('pixelimg');
 if (existingPixelGrid) {
 	show_initial_grid_loader(existingPixelGrid);
-	const initExisting = () => {
-		if (gridInitialized) return;
-		gridInitialized = true;
-		initializeGrid();
-		mutationObserver.disconnect();
-	};
-	if (existingPixelGrid.complete) {
-		initExisting();
-	} else {
-		existingPixelGrid.addEventListener('load', initExisting);
-		existingPixelGrid.addEventListener('error', initExisting);
-	}
+	setupGridImageFeedback(existingPixelGrid, mutationObserver);
 }
 
 // Function to apply zoom to the grid container

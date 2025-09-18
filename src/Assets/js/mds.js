@@ -138,8 +138,15 @@ function add_ajax_loader(container) {
 	jQuery(container).append($ajax_loader);
 }
 
-function remove_ajax_loader() {
-	jQuery(".ajax-loader").remove();
+function remove_ajax_loader(container) {
+	if (container) {
+		const $containers = container instanceof jQuery ? container : jQuery(container);
+		$containers.each(function () {
+			jQuery(this).find('.ajax-loader').remove();
+		});
+	} else {
+		jQuery(".ajax-loader").remove();
+	}
 }
 
 var initialized = false;
@@ -662,6 +669,118 @@ function mds_handle_url_click() {
 		});
 }
 
+function setupPublicGridImageRecovery(imageEl) {
+	if (!imageEl || imageEl.dataset.mdsFeedbackAttached === '1') {
+		return;
+	}
+	imageEl.dataset.mdsFeedbackAttached = '1';
+
+	const frame = imageEl.closest('.mds-grid-frame');
+	if (!frame) {
+		return;
+	}
+
+	const feedback = frame.querySelector('.mds-grid-feedback');
+	const preloader = frame.querySelector('.mds-grid-preloader');
+	if (!feedback || !preloader) {
+		return;
+	}
+
+	const retryButton = feedback.querySelector('.mds-grid-feedback__retry');
+	const baseSrc = imageEl.getAttribute('data-grid-src') || imageEl.getAttribute('src') || '';
+
+	const hideFeedback = () => {
+		feedback.setAttribute('hidden', 'hidden');
+		feedback.classList.remove('is-visible');
+	};
+
+	const ensurePreloaderSpinner = () => {
+		if (!preloader.children.length) {
+			const loaderSrc = preloader.getAttribute('data-loader-src');
+			const markup = loaderSrc
+				? `<img class="mds-grid-preloader__spinner" src="${loaderSrc}" alt="" aria-hidden="true" width="32" height="32"/>`
+				: '<span class="mds-grid-preloader__spinner" aria-hidden="true"></span>';
+			preloader.innerHTML = markup;
+		}
+	};
+
+	const showPreloader = (options = {}) => {
+		ensurePreloaderSpinner();
+		preloader.removeAttribute('hidden');
+		if (options.hideImage !== false) {
+			hideImage();
+		}
+	};
+
+	const hidePreloader = () => {
+		preloader.setAttribute('hidden', 'hidden');
+		preloader.innerHTML = '';
+	};
+
+	const hideImage = () => {
+		imageEl.classList.add('mds-grid-image--hidden');
+	};
+
+	const showImage = () => {
+		imageEl.classList.remove('mds-grid-image--hidden');
+	};
+
+	const showFeedback = () => {
+		hidePreloader();
+		feedback.removeAttribute('hidden');
+		feedback.classList.add('is-visible');
+		hideImage();
+	};
+
+	const handleLoad = () => {
+		if (imageEl.naturalWidth === 0 || imageEl.naturalHeight === 0) {
+			showFeedback();
+			return;
+		}
+		hidePreloader();
+		hideFeedback();
+		showImage();
+	};
+
+	const handleError = () => {
+		showFeedback();
+	};
+
+	imageEl.mdsGridControls = {
+		showPreloader,
+		hidePreloader,
+		showFeedback,
+		hideFeedback,
+		hideImage,
+		showImage,
+	};
+
+	imageEl.addEventListener('load', handleLoad);
+	imageEl.addEventListener('error', handleError);
+	imageEl.addEventListener('abort', handleError);
+
+	if (retryButton) {
+		retryButton.addEventListener('click', function (event) {
+			event.preventDefault();
+			hideFeedback();
+			showPreloader();
+			const separator = baseSrc.indexOf('?') === -1 ? '?' : '&';
+			imageEl.src = baseSrc + separator + '_mds_retry=' + Date.now();
+		});
+	}
+
+	if (imageEl.complete) {
+		if (imageEl.naturalWidth === 0 || imageEl.naturalHeight === 0) {
+			handleError();
+		} else {
+			handleLoad();
+		}
+	} else {
+		hideFeedback();
+		showPreloader();
+	}
+}
+
 function mds_init(el, scalemap, tippy, type, isgrid) {
 	console.log("[MDS DEBUG] mds_init called with:", {
 		el,
@@ -705,6 +824,10 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 	}
 
 	try {
+		const domEl = $el.get(0);
+		if (domEl && domEl.tagName === 'IMG') {
+			setupPublicGridImageRecovery(domEl);
+		}
 		console.log("[MDS DEBUG] Initializing ImageMap for element:", el);
 		// Ensure ImageMap is available
 		if (typeof ImageMap !== "function") {

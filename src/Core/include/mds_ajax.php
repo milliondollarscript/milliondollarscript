@@ -95,10 +95,8 @@ class Mds_Ajax {
 		if ( $this->add_container !== false ) {
 			$container = $this->add_container . $BID;
 
-			$bgstyle = "";
-			if ( ! empty( $this->banner_data['G_BGCOLOR'] ) ) {
-				$bgstyle = ' style="background-color:' . $this->banner_data['G_BGCOLOR'] . ';"';
-			}
+			$background_color = mds_get_grid_background_color( $BID, $this->banner_data );
+			$bgstyle          = $background_color ? ' style="background-color:' . esc_attr( $background_color ) . ';"' : '';
 			?>
             <div class="mds-container">
                 <div class="grid-container <?php echo $container; ?>"<?php echo $bgstyle ?>></div>

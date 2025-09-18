@@ -1240,11 +1240,9 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
 						<?php display_reset_link( $BID, 'tile' ); ?>
 						<?php
-						$banner_data = load_banner_constants( $BID );
-						$bgstyle     = "";
-						if ( ! empty( $banner_data['G_BGCOLOR'] ) ) {
-							$bgstyle = ' style="background-color:' . $banner_data['G_BGCOLOR'] . ';"';
-						}
+						$banner_data      = load_banner_constants( $BID );
+						$background_color = mds_get_grid_background_color( $BID, $banner_data );
+						$bgstyle          = $background_color ? ' style="background-color:' . esc_attr( $background_color ) . ';"' : '';
 						?>
                         <img<?php echo $bgstyle; ?>
                                 src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=tile"

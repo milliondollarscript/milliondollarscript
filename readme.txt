@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.9
+Stable tag: 2.5.15.10
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -24,6 +24,8 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Clear Orders not working correctly.
 * Chore: Update language file.
 * New: Added an “Auto-advance after Upload” option so advanced mode can jump users straight from uploading to confirming or paying, with smoother buttons and messages guiding them through the rest of the order.
+* Improvement: Grid images now show a friendly loading message with a retry button if they need extra time, so visitors aren’t left wondering what happened.
+* Improvement: Grid backgrounds automatically follow your light or dark theme colors when no custom color is saved, keeping the grid looking consistent.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.
