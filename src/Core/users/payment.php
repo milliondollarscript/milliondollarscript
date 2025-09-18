@@ -117,7 +117,6 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 			echo $message;
 			return;
 		} else {
-			error_log( '[MDS DEBUG] users/payment.php confirm branch for order ' . $order_id );
 			Orders::confirm_order( get_current_user_id(), $order_id );
 			// After confirming, let the payment flow continue below
 		}

@@ -600,11 +600,9 @@ function mds_load_tippy(tippy, $el, scalemap, type, isgrid) {
 		window.tippy_instance == undefined &&
 		MDS.ENABLE_MOUSEOVER !== "NO"
 	) {
-		console.log("[MDS DEBUG] Loading Tippy for element:", $el);
 		tooltips_deferred = true;
 		defer("Popper", () => {
 			defer("tippy", () => {
-				console.log("[MDS DEBUG] Tippy deferred, adding now.");
 				add_tippy();
 				// Don't call mds_loaded_event here, let mds_init handle it
 			});
@@ -782,18 +780,10 @@ function setupPublicGridImageRecovery(imageEl) {
 }
 
 function mds_init(el, scalemap, tippy, type, isgrid) {
-	console.log("[MDS DEBUG] mds_init called with:", {
-		el,
-		scalemap,
-		tippy,
-		type,
-		isgrid,
-	});
 
 	// Prevent re-initialization on the same element if needed
 	const $el = jQuery(el);
 	if ($el.data("mds-initialized")) {
-		console.log("[MDS DEBUG] Element already initialized:", el);
 		return;
 	}
 	$el.data("mds-initialized", true);
@@ -802,15 +792,6 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 		console.error("[MDS ERROR] mds_init called with invalid element:", el);
 		return;
 	}
-
-	// Add body class if it's the manage page - This seems redundant if done in PHP?
-	// Check if this logic is still necessary here.
-	/*
-	if (type === 'manage') {
-		jQuery('body').addClass('mds-page-manage');
-		console.log('[MDS DEBUG] Added mds-page-manage body class.');
-	}
-	*/
 
 	// Check if the element is visible
 	if (!$el.is(":visible")) {
@@ -828,14 +809,12 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 		if (domEl && domEl.tagName === 'IMG') {
 			setupPublicGridImageRecovery(domEl);
 		}
-		console.log("[MDS DEBUG] Initializing ImageMap for element:", el);
 		// Ensure ImageMap is available
 		if (typeof ImageMap !== "function") {
 			console.error("[MDS ERROR] ImageMap function is not defined!");
 			return;
 		}
 		ImageMap(el, scalemap); // Pass scalemap parameter
-		console.log("[MDS DEBUG] ImageMap initialized for element:", el);
 
 		mds_loaded_event($el, scalemap, tippy, type, isgrid);
 
@@ -1010,7 +989,6 @@ jQuery(window).on("load", function () {
 jQuery(document).on("load", function () {
 	let $publishGrid = jQuery("#publish-grid");
 	if ($publishGrid.length > 0) {
-		console.log("[MDS DEBUG] document.ready init publish-grid");
 		mds_init("#publish-grid", true, false, false, true);
 	}
 });

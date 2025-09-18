@@ -1544,8 +1544,6 @@ class Orders {
 				if ( $wc_order ) {
 					if ( $wc_order->get_status() !== 'completed' ) {
 						$wc_order->update_status( 'completed', __( 'MDS order marked as completed.', 'milliondollarscript-two' ) );
-					} else {
-						Logs::log( '[MDS] WC order ' . $wc_order_id_int . ' already completed.' );
 					}
 				} else {
 					Logs::log( '[MDS] Could not load WC order with ID ' . $wc_order_id_int );

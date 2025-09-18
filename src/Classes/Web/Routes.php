@@ -52,7 +52,7 @@ class Routes {
 		register_deactivation_hook( MDS_BASE_FILE, [ __CLASS__, 'deactivate' ] );
 	}
 
-	private static function get_routes(): array {
+	public static function get_routes(): array {
 		return [
 			'order',
 			'order-pixels',

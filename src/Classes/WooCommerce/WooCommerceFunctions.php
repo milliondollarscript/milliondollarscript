@@ -41,24 +41,48 @@ class WooCommerceFunctions {
 	 * @param array $grids
 	 * @param \WC_Product_Variable|\WC_Product $product
 	 *
-	 * @return void
+	 * @return bool True when the attribute options were updated.
 	 */
-	public static function update_attribute( array $grids, \WC_Product_Variable|\WC_Product $product ): void {
-		$options = array_column( $grids, 'banner_id' );
+	public static function update_attribute( array $grids, \WC_Product_Variable|\WC_Product $product ): bool {
+		$options = array_map(
+			static function ( $grid ): string {
+				if ( is_array( $grid ) && isset( $grid['banner_id'] ) ) {
+					return (string) $grid['banner_id'];
+				}
+
+				if ( is_object( $grid ) && isset( $grid->banner_id ) ) {
+					return (string) $grid->banner_id;
+				}
+
+				return '';
+			},
+			$grids
+		);
+		$options = array_values( array_unique( array_filter( $options, 'strlen' ) ) );
 
 		// Get existing attributes
 		$attributes = $product->get_attributes();
-		$grid_attribute = null;
+		$attribute_key = null;
 
 		// Check if 'grid' attribute already exists
 		if ( isset( $attributes['grid'] ) ) {
-			$grid_attribute = $attributes['grid'];
+			$attribute_key = 'grid';
 		} elseif ( isset( $attributes['pa_grid'] ) ) { // Check for taxonomy-based attribute name too
-			$grid_attribute = $attributes['pa_grid'];
+			$attribute_key = 'pa_grid';
 		}
-		
-		if ( $grid_attribute instanceof \WC_Product_Attribute ) {
-			// Update existing attribute's options
+
+		if ( $attribute_key !== null && $attributes[ $attribute_key ] instanceof \WC_Product_Attribute ) {
+			$grid_attribute    = $attributes[ $attribute_key ];
+			$existing_options  = array_map( 'strval', $grid_attribute->get_options() );
+			$sorted_existing   = $existing_options;
+			$sorted_options    = $options;
+			sort( $sorted_existing );
+			sort( $sorted_options );
+
+			if ( $sorted_existing === $sorted_options ) {
+				return false;
+			}
+
 			$grid_attribute->set_options( $options );
 			$attributes[ $grid_attribute->get_name() ] = $grid_attribute; // Ensure it's updated in the array
 		} else {
@@ -76,8 +100,7 @@ class WooCommerceFunctions {
 		// Set the potentially modified attributes array back to the product
 		$product->set_attributes( $attributes );
 
-		// Save the product is handled within update_attributes caller if needed.
-		// $product->save(); // Removed from here
+		return true;
 	}
 
 	/**
@@ -172,7 +195,9 @@ class WooCommerceFunctions {
 
 		$grids = self::get_update_attribute_data();
 
-		self::update_attribute( $grids, $product );
+		if ( self::update_attribute( $grids, $product ) ) {
+			$product->save();
+		}
 
 		wp_cache_delete( $cache_key );
 	}
@@ -206,47 +231,57 @@ class WooCommerceFunctions {
 	 *
 	 * @param \WC_Product_Variable|\WC_Product $product
 	 *
-	 * @return void
+	 * @return bool True when the product or any variations were modified.
 	 */
-	public static function update_attributes( \WC_Product_Variable|\WC_Product $product ): void {
-		global $wpdb;
+	public static function update_attributes( \WC_Product_Variable|\WC_Product $product ): bool {
 
-		// Fetch data
 		$grids               = self::get_update_attribute_data();
 		$existing_variations = $product->get_children();
 
-		self::update_attribute( $grids, $product );
+		$changes_made      = false;
+		$attribute_changed = self::update_attribute( $grids, $product );
 
-		// Loop through all grids.
+		if ( $attribute_changed ) {
+			$changes_made = true;
+		}
+
 		foreach ( $grids as $grid ) {
-			$new_attribute_value = intval( $grid->banner_id );
+			$new_attribute_value = 0;
+			$current_price       = 0.0;
+
+			if ( is_array( $grid ) ) {
+				$new_attribute_value = isset( $grid['banner_id'] ) ? intval( $grid['banner_id'] ) : 0;
+				$current_price       = isset( $grid['price_per_block'] ) ? floatval( $grid['price_per_block'] ) : 0.0;
+			} else {
+				$new_attribute_value = isset( $grid->banner_id ) ? intval( $grid->banner_id ) : 0;
+				$current_price       = isset( $grid->price_per_block ) ? floatval( $grid->price_per_block ) : 0.0;
+			}
+
+			if ( $new_attribute_value <= 0 ) {
+				continue;
+			}
 
 			$exists       = false;
-			$variation    = null;
 			$variation_id = 0;
 
-			// Loop through all existing variations (grids on the product).
 			foreach ( $existing_variations as $existing_variation_id ) {
-				// Check cache
 				$cache_key          = 'wc_get_product_' . $existing_variation_id;
 				$existing_variation = wp_cache_get( $cache_key );
+
 				if ( false === $existing_variation ) {
-					// Store cache
 					$existing_variation = \WC()->product_factory->get_product( $existing_variation_id );
 					wp_cache_set( $cache_key, $existing_variation );
 				}
 
-				// Check cache
-				$cache_key              = 'wc_get_attribute_' . $existing_variation_id;
-				$exists_attribute_value = wp_cache_get( $cache_key );
-				if ( false === $exists_attribute_value ) {
-					// Store cache
+				$cache_key_attribute     = 'wc_get_attribute_' . $existing_variation_id;
+				$exists_attribute_value = wp_cache_get( $cache_key_attribute );
+
+				if ( false === $exists_attribute_value && $existing_variation ) {
 					$exists_attribute_value = intval( $existing_variation->get_attribute( 'grid' ) );
-					wp_cache_set( $cache_key, $exists_attribute_value );
+					wp_cache_set( $cache_key_attribute, $exists_attribute_value );
 				}
 
-				// If a variation exists for the grid save it for later and break out of the loop.
-				if ( $exists_attribute_value == $new_attribute_value ) {
+				if ( $exists_attribute_value === $new_attribute_value ) {
 					$exists       = true;
 					$variation_id = $existing_variation_id;
 					break;
@@ -255,45 +290,61 @@ class WooCommerceFunctions {
 			unset( $existing_variation_id );
 
 			if ( ! $exists ) {
-				// If no existing variation was found, make a new one.
 				$variation = new \WC_Product_Variation();
 				$variation->set_parent_id( $product->get_id() );
-				
-				// Fetch current price directly from DB for accuracy
-				$current_price = $wpdb->get_var(
-					$wpdb->prepare("SELECT price_per_block FROM " . $wpdb->prefix . "mds_banners WHERE banner_id = %d", $new_attribute_value)
-				);
-				if ($current_price === null) { $current_price = 0; } // Default if not found
-
-				$variation->set_regular_price( floatval($current_price) ); // Use fresh price
+				$variation->set_regular_price( $current_price );
 				$variation->set_virtual( true );
 				$variation->set_downloadable( true );
 				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
 				$variation->save();
+
+				$changes_made = true;
 			} else {
-				// If an existing variation was found, update it with the new data.
 				$variation = \wc_get_product( $variation_id );
 
-				// Fetch current price directly from DB for accuracy
-				$current_price = $wpdb->get_var(
-					$wpdb->prepare("SELECT price_per_block FROM " . $wpdb->prefix . "mds_banners WHERE banner_id = %d", $new_attribute_value)
-				);
-				if ($current_price === null) { $current_price = 0; } // Default if not found
+				if ( $variation instanceof \WC_Product_Variation ) {
+					$needs_save = false;
 
-				$variation->set_regular_price( floatval($current_price) ); // Use fresh price
-				$variation->set_virtual( true );
-				$variation->set_downloadable( true );
-				$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
-				$variation->save();
+					if ( floatval( $variation->get_regular_price() ) !== $current_price ) {
+						$variation->set_regular_price( $current_price );
+						$needs_save = true;
+					}
+
+					if ( ! $variation->get_virtual() ) {
+						$variation->set_virtual( true );
+						$needs_save = true;
+					}
+
+					if ( ! $variation->get_downloadable() ) {
+						$variation->set_downloadable( true );
+						$needs_save = true;
+					}
+
+					$existing_grid = intval( $variation->get_attribute( 'grid' ) );
+					if ( $existing_grid !== $new_attribute_value ) {
+						$variation->set_attributes( [ 'grid' => $new_attribute_value ] );
+						$needs_save = true;
+					}
+
+					if ( $needs_save ) {
+						$variation->save();
+						$changes_made = true;
+					}
+				}
 			}
 		}
 		unset( $grid );
 
-		// Cleanup
 		foreach ( $existing_variations as $existing_variation_id ) {
 			wp_cache_delete( 'wc_get_product_' . $existing_variation_id );
 			wp_cache_delete( 'wc_get_attribute_' . $existing_variation_id );
 		}
+
+		if ( $attribute_changed ) {
+			$product->save();
+		}
+
+		return $changes_made;
 	}
 
 	/**
@@ -482,13 +533,17 @@ class WooCommerceFunctions {
 			if ( $product_id ) {
 				$product = \wc_get_product( $product_id );
 
-				// Update WC Product attributes/variations ONLY if enabled and product is valid
-				WooCommerceFunctions::update_attributes( $product );
-
-				Logs::log("MDS Wizard: Successfully updated WC attributes for product ID: " . $product_id);
+				if ( $product instanceof \WC_Product ) {
+					// Update WC Product attributes/variations ONLY if enabled and product is valid
+					if ( WooCommerceFunctions::update_attributes( $product ) ) {
+						Logs::log( 'MDS Wizard: Successfully updated WC attributes for product ID: ' . $product_id );
+					}
+				} else {
+					Logs::log( 'MDS Wizard: Unable to load WooCommerce product with ID ' . $product_id );
+				}
 			} else {
 				// Log error if product couldn't be created or assigned
-				Logs::log('MDS Wizard: Failed to get or create/assign WooCommerce product. Attributes not updated.');
+				Logs::log( 'MDS Wizard: Failed to get or create/assign WooCommerce product. Attributes not updated.' );
 			}
 		}
 	}
