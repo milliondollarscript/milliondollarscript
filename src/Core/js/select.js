@@ -81,6 +81,8 @@ function mds_show_modal(msg) {
 // Initialize
 let first_load = true;
 let ajax_queue = [];
+let currentAjaxRequest = null;
+let suppressLoaderRemoval = false;
 let USE_AJAX = MDS_OBJECT.USE_AJAX;
 let block_str = MDS_OBJECT.block_str;
 let selectedBlocks = block_str !== "" ? block_str.split(",").map(Number) : [];
@@ -1112,12 +1114,23 @@ function formSubmit(event) {
 }
 
 function reset_pixels() {
-	ajax_queue = [];
-
 	const pixelGrid = document.getElementById('pixelimg');
 	const controls = pixelGrid ? pixelGrid.mdsGridControls : null;
-	const fallbackContainer = ".mds-pixel-wrapper";
+	const fallbackContainer = jQuery('.mds-pixel-wrapper');
 	const usingFallback = !controls;
+
+	ajax_queue = [];
+	if (currentAjaxRequest && typeof currentAjaxRequest.abort === 'function') {
+		suppressLoaderRemoval = true;
+		currentAjaxRequest.abort();
+	}
+	ajaxing = false;
+
+	if (fallbackContainer && fallbackContainer.length) {
+		add_ajax_loader(fallbackContainer);
+	} else {
+		add_ajax_loader('.mds-pixel-wrapper');
+	}
 
 	if (controls) {
 		if (typeof controls.hideFeedback === 'function') {
@@ -1126,11 +1139,9 @@ function reset_pixels() {
 		if (typeof controls.showPreloader === 'function') {
 			controls.showPreloader({ hideImage: false });
 		}
-	} else {
-		add_ajax_loader(fallbackContainer);
 	}
 
-	jQuery.ajax({
+	currentAjaxRequest = jQuery.ajax({
 		type: "POST",
 		url: MDS_OBJECT.UPDATE_ORDER,
 		data: {
@@ -1151,7 +1162,14 @@ function reset_pixels() {
 		},
 		error: function (xhr, status, error) {
 		},
-		complete: function () {
+		complete: function (jqXHR, textStatus) {
+			if (currentAjaxRequest === jqXHR) {
+				currentAjaxRequest = null;
+			}
+			if (textStatus === 'abort' && suppressLoaderRemoval) {
+				suppressLoaderRemoval = false;
+				return;
+			}
 			if (!usingFallback && controls) {
 				if (typeof controls.hidePreloader === 'function') {
 					controls.hidePreloader();
@@ -1165,9 +1183,9 @@ function reset_pixels() {
 				if (typeof controls.showPointer === 'function') {
 					controls.showPointer();
 				}
-			} else {
-				remove_ajax_loader(fallbackContainer);
 			}
+			remove_ajax_loader(fallbackContainer);
+			suppressLoaderRemoval = false;
 		},
 	});
 }
@@ -1536,6 +1554,9 @@ function initializeGrid() {
 		const controls = pixelGrid ? pixelGrid.mdsGridControls : null;
 		const fallbackContainer = jQuery(".mds-pixel-wrapper");
 		const usingFallback = !controls;
+		if (fallbackContainer && fallbackContainer.length) {
+			add_ajax_loader(fallbackContainer);
+		}
 		if (controls) {
 			if (typeof controls.hideFeedback === 'function') {
 				controls.hideFeedback();
@@ -1543,11 +1564,9 @@ function initializeGrid() {
 			if (typeof controls.showPreloader === 'function') {
 				controls.showPreloader({ hideImage: false });
 			}
-		} else {
-			add_ajax_loader(fallbackContainer);
 		}
 		let data = ajax_queue.shift();
-		jQuery.ajax({
+		currentAjaxRequest = jQuery.ajax({
 			type: "POST",
 			url: data.url,
 			data: {
@@ -1591,7 +1610,13 @@ function initializeGrid() {
 					}
 				}
 			},
-			error: function (xhr, status, error) {
+		error: function (xhr, status, error) {
+			if (status === 'abort') {
+				if (suppressLoaderRemoval) {
+					suppressLoaderRemoval = false;
+				}
+				return;
+			}
 				if (data.action === 'invert') {
 					do_blocks(data.original_add, "remove");
 					do_blocks(data.original_remove, "add");
@@ -1613,8 +1638,15 @@ function initializeGrid() {
 					messageout("Request failed: " + status);
 				}
 			},
-			complete: function () {
+			complete: function (jqXHR, textStatus) {
+				if (currentAjaxRequest === jqXHR) {
+					currentAjaxRequest = null;
+				}
 				ajaxing = false;
+				if (textStatus === 'abort' && suppressLoaderRemoval) {
+					suppressLoaderRemoval = false;
+					return;
+				}
 				// Only remove loader when queue is fully drained
 				if (ajax_queue.length === 0) {
 					if (!usingFallback && controls) {
@@ -1630,9 +1662,8 @@ function initializeGrid() {
 						if (typeof controls.showPointer === 'function') {
 							controls.showPointer();
 						}
-					} else {
-						remove_ajax_loader(fallbackContainer);
 					}
+					remove_ajax_loader(fallbackContainer);
 				}
 			}
 		});

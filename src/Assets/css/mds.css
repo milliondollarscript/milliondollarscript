@@ -750,8 +750,9 @@ Ads list page
 	min-height: 0;
 	height: 100%;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: center;
+	padding-top: 16px;
 	background: transparent;
 	z-index: 10060; /* above canvas (10000) and pointer (10001) */
 	pointer-events: none;
