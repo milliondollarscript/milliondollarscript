@@ -628,8 +628,8 @@ class WooCommerce {
 	/**
 	 * Validates the checkout process for an order.
 	 *
-	 * @param $order \WC_Order The WooCommerce order object.
-	 * @param $request \WP_REST_Request The WordPress REST request object.
+	 * @param \WC_Order       $order   The WooCommerce order object.
+	 * @param \WP_REST_Request $request The WordPress REST request object.
 	 *
 	 * @return void
 	 */
