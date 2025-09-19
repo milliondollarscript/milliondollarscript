@@ -979,22 +979,22 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     </div>
                 </div>
                 <div class="inventory-entry">
-                    <div class="inventory-title">Approve Automatically?</div>
-                    <div class="inventory-content">
-                        <label>
-                            <input type="radio" name="auto_approve"
-                                   value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
-								echo " checked ";
-							} ?> >
-                        </label>Yes. Approve all pixels automatically as they are submitted.<br>
-                        <label>
-                            <input type="radio" name="auto_approve"
-                                   value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
-								echo " checked ";
-							} ?> >
-                        </label>No, approve manually from the Admin.<br>
-                    </div>
-                </div>
+			<div class="inventory-title">Approve Automatically? (Per Grid)</div>
+			<div class="inventory-content">
+				<label>
+					<input type="radio" name="auto_approve"
+					       value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
+						echo " checked ";
+					} ?> >
+				</label>Yes. Approve pixel submissions on this grid automatically as they are submitted.<br>
+				<label>
+					<input type="radio" name="auto_approve"
+					       value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
+						echo " checked ";
+					} ?> >
+				</label>No. Review submissions for this grid from the <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N' ) ); ?>">Pixels Awaiting Approval</a> screen (Million Dollar Script &gt; Admin &gt; Pixel Approval &gt; Awaiting Approval).<br>
+			</div>
+		</div>
                 <div class="inventory-entry">
                     <div class="inventory-title">Publish Automatically?</div>
                     <div class="inventory-content">

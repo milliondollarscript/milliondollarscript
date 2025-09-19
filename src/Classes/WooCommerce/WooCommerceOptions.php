@@ -150,7 +150,7 @@ Language::get( 'To show a registration form on WooCommerce\'s My Account page, e
 					     'value'   => 'yes',
 				     )
 			     ) )
-			     ->set_help_text( Language::get( 'Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab.' ) ),
+			     ->set_help_text( Language::get( 'Immediately mark the linked MDS order as completed when WooCommerce changes the order status out of "on-hold". For manual/offline checkouts that bypass WooCommerce entirely, use the “Auto-complete manual payments” option on the Orders tab (visible only when WooCommerce integration is disabled).' ) ),
 		];
 
 		return $tabs;

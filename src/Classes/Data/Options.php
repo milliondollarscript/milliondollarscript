@@ -103,7 +103,7 @@ class Options {
 				// Checkout URL
 				Field::make( 'text', MDS_PREFIX . 'checkout-url', Language::get( 'Checkout URL' ) )
 					->set_default_value( '' )
-					->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
+					->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. When “Auto-complete manual payments” is disabled the message will ask customers to wait for approval. When it\'s enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
 
 				// Thank-you Page URL
 				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page URL' ) )
@@ -1039,14 +1039,21 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Enable expiration of orders.' ) ),
 
-				// Auto-approve
-				Field::make( 'radio', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-approve' ) )
+				// Auto-complete offline/manual payments
+				Field::make( 'radio', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-complete manual payments' ) )
 					->set_default_value( 'no' )
 					->set_options( [
 						'yes' => Language::get( 'Yes' ),
 						'no'  => Language::get( 'No' ),
 					] )
-					->set_help_text( Language::get( 'Enabling this will automatically approve orders before payments are verified by an admin.' ) ),
+					->set_conditional_logic( $woocommerce_logic )
+					->set_help_text(
+						Language::get_replace(
+							'Automatically mark manual/offline MDS checkout flows as completed so buyers see the thank-you page immediately. Pixel approval still follows each grid\'s “Approve Automatically?” setting and may require review on the <a href="%APPROVAL_URL%">Pixels Awaiting Approval</a> screen. Leave this disabled when WooCommerce integration is handling payments.',
+							'%APPROVAL_URL%',
+							esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N' ) )
+						)
+					),
 
 				// Currency
 				Field::make( 'text', MDS_PREFIX . 'currency', Language::get( 'Currency' ) )

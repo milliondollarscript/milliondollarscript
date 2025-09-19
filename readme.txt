@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.22
+Stable tag: 2.5.15.23
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -31,6 +31,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Stop WooCommerce’s empty checkout redirect from hijacking MDS routes so grid images load reliably regardless of the checkout page slug.
 * Fix: Adjacent block selection works again and shows a friendly message if something needs fixing.
 * Fix: WordPress search now finds MDS Pixels by popup text and custom meta—even when the template is off—and keeps apostrophes exactly as customers entered them.
+* Improvement: Clarified WooCommerce versus manual payment auto-complete settings and linked per-grid messaging to the Pixels Awaiting Approval screen for quicker reviews.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.

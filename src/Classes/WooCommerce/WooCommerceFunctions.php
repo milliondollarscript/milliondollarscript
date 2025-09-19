@@ -519,6 +519,20 @@ class WooCommerceFunctions {
 	}
 
 	/**
+	 * Determine if the MDS WooCommerce integration is enabled.
+	 */
+	public static function is_integration_enabled(): bool {
+		return self::is_wc_active() && Options::get_option( 'woocommerce', 'no' ) === 'yes';
+	}
+
+	/**
+	 * Check whether manual/offline auto-completion should run.
+	 */
+	public static function is_manual_auto_complete_enabled(): bool {
+		return Options::get_option( 'auto-approve', 'no' ) === 'yes' && ! self::is_integration_enabled();
+	}
+
+	/**
 	 * Enable WooCommerce payments module in MDS.
 	 *
 	 * @return void

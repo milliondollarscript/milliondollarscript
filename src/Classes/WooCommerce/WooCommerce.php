@@ -190,7 +190,7 @@ class WooCommerce {
 				Orders::renew( $mds_order_id );
 
 			} else {
-				if ( Options::get_option( 'auto-approve', 'no' ) == 'yes' ) {
+				if ( WooCommerceFunctions::is_manual_auto_complete_enabled() ) {
 					// Complete the order
 
 					$row = $wpdb->get_row( $wpdb->prepare(
@@ -521,8 +521,8 @@ class WooCommerce {
 		}
 
 		// Get current order status
-		$auto_complete = Options::get_option( 'wc-auto-complete', 'yes' ) == 'yes';
-		$auto_approve = Options::get_option( 'auto-approve', 'no' ) == 'yes';
+		$auto_complete         = Options::get_option( 'wc-auto-complete', 'yes' ) == 'yes';
+		$manual_auto_complete  = WooCommerceFunctions::is_manual_auto_complete_enabled();
 		
 		// Determine if we should complete the MDS order
 		$should_complete = false;
@@ -531,17 +531,15 @@ class WooCommerce {
 		// This handles manual completions by admin
 		if ($to === 'completed') {
 			$should_complete = true;
-		} elseif ($auto_complete && $auto_approve) {
-			// For automatic processing, both auto_complete and auto_approve must be enabled
-			// We should only auto-complete orders when they're in a state that indicates payment is confirmed
-			// For manual payment methods, they typically go to 'on-hold' until manually verified
-			if ($to === 'processing') {
-				// For processing status, only complete if it wasn't previously on-hold
-				// This prevents completing orders that are transitioning from on-hold to processing
-				// which typically happens with manual payment methods
-				if ($from !== 'on-hold') {
-					$should_complete = true;
-				}
+		} elseif ($auto_complete) {
+			// Respect WooCommerce auto-complete setting when payment is confirmed
+			if ($to === 'processing' && $from !== 'on-hold') {
+				$should_complete = true;
+			}
+		} elseif ( $manual_auto_complete && $to === 'processing' ) {
+			// Fallback for legacy/manual flows
+			if ( $from !== 'on-hold' ) {
+				$should_complete = true;
 			}
 		}
 
