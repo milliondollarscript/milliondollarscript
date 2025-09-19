@@ -46,6 +46,7 @@ class FormFields {
 
 	public static string $post_type = 'mds-pixel';
 	protected static array $fields;
+	protected static array $searchable_meta_keys = [];
 
 	public static function register_post_type(): void {
 		register_post_type( self::$post_type,
@@ -358,7 +359,8 @@ class FormFields {
 			$current_user = wp_get_current_user();
 
 			// Use the text field as the post title or username as backup
-			$raw_title = $_POST[ MDS_PREFIX . 'text' ] ?? $current_user->user_login;
+			$raw_title_input = self::normalize_raw_input( $_POST[ MDS_PREFIX . 'text' ] ?? null );
+			$raw_title       = $raw_title_input !== '' ? $raw_title_input : $current_user->user_login;
 			$post_title = sanitize_text_field( $raw_title ); // Keep original for title
 			
 			// Generate slug: Use transliterated title if setting is enabled
@@ -432,6 +434,10 @@ class FormFields {
 				$field_name = $field->get_base_name();
 				$value      = $_POST[ $field_name ] ?? null;
 
+				if ( isset( $_POST[ $field_name ] ) && is_string( $_POST[ $field_name ] ) ) {
+					$value = self::normalize_raw_input( $_POST[ $field_name ] );
+				}
+
 				if ( isset( $_POST[ $field_name ] ) || isset( $_FILES[ $field_name ] ) ) {
 					if ( $field->get_type() === 'text' ) {
 						if ( ! empty( $value ) ) {
@@ -479,10 +485,12 @@ class FormFields {
 								}
 							}
 
-							if ( $field_name != MDS_PREFIX . 'order' && $field_name != MDS_PREFIX . 'grid' ) {
-								// Update other fields besides order and grid if it's new or not.
+						if ( $field_name != MDS_PREFIX . 'order' && $field_name != MDS_PREFIX . 'grid' ) {
+							// Update other fields besides order and grid if it's new or not.
+							if ( is_string( $value ) ) {
 								$value = sanitize_text_field( $value );
-								carbon_set_post_meta( $post_id, $field_name, $value );
+							}
+							carbon_set_post_meta( $post_id, $field_name, $value );
 							}
 
 							// Update blocks
@@ -723,10 +731,20 @@ class FormFields {
 
 					break;
 				case 'text':
-					$field->set_value( sanitize_text_field( $field->get_value() ) );
+					$value = $field->get_value();
+					if ( is_string( $value ) ) {
+						$value = self::normalize_raw_input( $value );
+						$value = sanitize_text_field( $value );
+					}
+					$field->set_value( $value );
 					break;
 				case 'url':
-					$field->set_value( esc_url_raw( $field->get_value() ) );
+					$value = $field->get_value();
+					if ( is_string( $value ) ) {
+						$value = self::normalize_raw_input( $value );
+						$value = esc_url_raw( $value );
+					}
+					$field->set_value( $value );
 					break;
 				default:
 					break;
@@ -1119,7 +1137,7 @@ class FormFields {
 			return;
 		}
 
-		if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'no' || Options::get_option( 'exclude-from-search', 'no' ) == 'yes' ) {
+		if ( Options::get_option( 'exclude-from-search', 'no' ) == 'yes' ) {
 			$post_types_to_exclude = [ self::$post_type ];
 
 			if ( $query->get( 'post_type' ) ) {
@@ -1151,41 +1169,106 @@ class FormFields {
 	public static function posts_search( string $search, \WP_Query $query ): string {
 		global $wpdb;
 
-		$s = $query->get( 's' );
+			$s = $query->get( 's' );
+
+			if ( is_string( $s ) ) {
+				$s = self::normalize_raw_input( $s );
+			}
 
 		if ( empty( $s ) ) {
 			return $search;
 		}
 
 		// Check if MDS pixel template is enabled and exclude-from-search is disabled
-if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'yes' && Options::get_option( 'exclude-from-search', 'no' ) == 'no' ) {
+		if ( Options::get_option( 'exclude-from-search', 'no' ) == 'no' ) {
 
-			$s = sanitize_text_field( $s );
+				$s = sanitize_text_field( $s );
+				$searchable_statuses = apply_filters(
+					'mds_searchable_pixel_statuses',
+					[ 'completed', 'renew_paid' ]
+				);
+				$searchable_statuses = array_values( array_filter( array_unique( array_map( 'sanitize_key', (array) $searchable_statuses ) ) ) );
 
-$search = "
-            AND (
-                (
-                    {$wpdb->posts}.post_type = '" . self::$post_type . "'
-                    AND {$wpdb->posts}.post_status = 'completed'
-                    AND (
-                        {$wpdb->posts}.post_title LIKE '%{$s}%'
-                        OR {$wpdb->posts}.ID IN (
-                            SELECT post_id
-                            FROM {$wpdb->postmeta}
-                            WHERE meta_key = '_" . MDS_PREFIX . "text'
-                            AND meta_value LIKE '%{$s}%'
-                        )
-                    )
-                )
-                OR (
-                    {$wpdb->posts}.post_title LIKE '%{$s}%'
-                    AND {$wpdb->posts}.post_type != '" . self::$post_type . "'
-                )
-                OR (
-                    {$wpdb->posts}.post_content LIKE '%{$s}%'
-                    AND {$wpdb->posts}.post_type != '" . self::$post_type . "'
-                )
-            )";
+				if ( empty( $searchable_statuses ) ) {
+					$searchable_statuses = [ 'completed' ];
+				}
+
+				$status_placeholders = implode( ', ', array_fill( 0, count( $searchable_statuses ), '%s' ) );
+				$search_variants     = self::build_search_variants( $s );
+				if ( empty( $search_variants ) ) {
+					$search_variants = [ $s ];
+				}
+
+				$title_like_clauses = [];
+				$title_like_args    = [];
+				foreach ( $search_variants as $variant ) {
+					$title_like_clauses[] = "{$wpdb->posts}.post_title LIKE %s";
+					$title_like_args[]    = '%' . $wpdb->esc_like( $variant ) . '%';
+				}
+
+				$meta_keys           = self::get_searchable_meta_keys();
+				$pixel_match_clauses = [];
+				$pixel_match_args    = [];
+
+				if ( ! empty( $title_like_clauses ) ) {
+					$pixel_match_clauses[] = '( ' . implode( ' OR ', $title_like_clauses ) . ' )';
+					$pixel_match_args      = array_merge( $pixel_match_args, $title_like_args );
+				}
+
+				if ( ! empty( $meta_keys ) ) {
+					$meta_placeholders = implode( ', ', array_fill( 0, count( $meta_keys ), '%s' ) );
+					$meta_like_clauses = [];
+					$meta_like_args    = [];
+
+					foreach ( $search_variants as $variant ) {
+						$meta_like_clauses[] = 'meta_value LIKE %s';
+						$meta_like_args[]    = '%' . $wpdb->esc_like( $variant ) . '%';
+					}
+
+					if ( ! empty( $meta_like_clauses ) ) {
+						$pixel_match_clauses[] = "{$wpdb->posts}.ID IN (
+							SELECT post_id
+							FROM {$wpdb->postmeta}
+							WHERE meta_key IN ( {$meta_placeholders} )
+							AND ( " . implode( ' OR ', $meta_like_clauses ) . " )
+						)";
+						$pixel_match_args      = array_merge( $pixel_match_args, $meta_keys, $meta_like_args );
+					}
+				}
+
+				if ( empty( $pixel_match_clauses ) ) {
+					$pixel_match_clauses[] = "{$wpdb->posts}.post_title LIKE %s";
+					$pixel_match_args[]    = '%' . $wpdb->esc_like( $s ) . '%';
+				}
+
+				$pixel_clause_sql = implode( ' OR ', $pixel_match_clauses );
+				$primary_pattern  = $title_like_args[0] ?? '%' . $wpdb->esc_like( $s ) . '%';
+
+				$sql = "
+					AND (
+						(
+							{$wpdb->posts}.post_type = %s
+							AND {$wpdb->posts}.post_status IN ( {$status_placeholders} )
+							AND ( {$pixel_clause_sql} )
+						)
+						OR (
+							{$wpdb->posts}.post_type != %s
+							AND (
+								{$wpdb->posts}.post_title LIKE %s
+								OR {$wpdb->posts}.post_content LIKE %s
+							)
+						)
+					)
+				";
+
+				$args = array_merge(
+					[ self::$post_type ],
+					$searchable_statuses,
+					$pixel_match_args,
+					[ self::$post_type, $primary_pattern, $primary_pattern ]
+				);
+
+			$search = $wpdb->prepare( $sql, $args );
 
 			$search = apply_filters( 'mds_posts_search', $search, $s, $query );
 		}
@@ -1196,13 +1279,93 @@ $search = "
 		$exclude_ids = Utility::get_page_ids();
 
 		// Filter out empty values
-		$exclude_ids = array_filter( $exclude_ids );
+		$exclude_ids = array_filter( array_map( 'absint', $exclude_ids ) );
 
-		$exclude_ids_string = implode( ',', $exclude_ids );
-
-		// Modify the $search query
-		$search .= " AND {$wpdb->posts}.ID NOT IN (" . $exclude_ids_string . ")";
+		if ( ! empty( $exclude_ids ) ) {
+			$exclude_ids_string = implode( ',', $exclude_ids );
+			// Modify the $search query
+			$search .= " AND {$wpdb->posts}.ID NOT IN (" . $exclude_ids_string . ")";
+		}
 
 		return $search;
+	}
+
+	protected static function get_searchable_meta_keys(): array {
+		if ( ! empty( self::$searchable_meta_keys ) ) {
+			return self::$searchable_meta_keys;
+		}
+
+		if ( ! isset( self::$fields ) || empty( self::$fields ) ) {
+			self::get_fields();
+		}
+
+		$fields    = isset( self::$fields ) ? self::$fields : [];
+		$meta_keys = [];
+
+		foreach ( $fields as $field ) {
+			if ( ! $field instanceof Field ) {
+				continue;
+			}
+
+			$base_name = $field->get_base_name();
+			if ( ! is_string( $base_name ) || $base_name === '' ) {
+				continue;
+			}
+
+			$meta_keys[] = '_' . $base_name;
+		}
+
+		$default_text_key = '_' . MDS_PREFIX . 'text';
+		if ( ! in_array( $default_text_key, $meta_keys, true ) ) {
+			$meta_keys[] = $default_text_key;
+		}
+
+		$meta_keys = array_values( array_unique( array_filter( $meta_keys, 'is_string' ) ) );
+
+		$meta_keys = apply_filters( 'mds_searchable_pixel_meta_keys', $meta_keys, $fields );
+
+		if ( ! is_array( $meta_keys ) ) {
+			$meta_keys = [];
+		}
+
+		$meta_keys = array_values( array_unique( array_filter( $meta_keys, 'is_string' ) ) );
+
+		self::$searchable_meta_keys = $meta_keys;
+
+		return self::$searchable_meta_keys;
+	}
+
+	protected static function normalize_raw_input( $value ): string {
+		if ( ! is_string( $value ) ) {
+			return '';
+		}
+
+		$value = wp_unslash( $value );
+		$value = wp_specialchars_decode( $value, ENT_QUOTES );
+
+		return $value;
+	}
+
+	protected static function build_search_variants( string $term ): array {
+		$variants   = [];
+		$variants[] = $term;
+
+		$decoded = wp_specialchars_decode( $term, ENT_QUOTES );
+		if ( $decoded !== $term ) {
+			$variants[] = $decoded;
+		}
+
+		$base_for_entities = $decoded;
+
+		if ( $base_for_entities !== '' && strpos( $base_for_entities, "'" ) !== false ) {
+			$variants[] = str_replace( "'", '&#039;', $base_for_entities );
+			$variants[] = str_replace( "'", '&#8217;', $base_for_entities );
+			$variants[] = str_replace( "'", '&#x27;', $base_for_entities );
+			$variants[] = addslashes( $base_for_entities );
+		}
+
+		$variants = array_values( array_unique( array_filter( $variants, 'strlen' ) ) );
+
+		return $variants;
 	}
 }
