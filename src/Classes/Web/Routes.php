@@ -140,9 +140,14 @@ class Routes {
 		// Handle MDS Pixel post type
 		if ( is_singular( FormFields::$post_type ) ) {
 
-			if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'no' ) {
-				// Redirect to 404 page.
+			$pixel_template_setting = strtolower( (string) Options::get_option( 'mds-pixel-template', 'no' ) );
+			if ( in_array( $pixel_template_setting, [ 'no', 'false', '0' ], true ) ) {
+				// Force WordPress into 404 mode when pixel pages are disabled.
 				status_header( 404 );
+				nocache_headers();
+				if ( $wp_query instanceof \WP_Query ) {
+					$wp_query->set_404();
+				}
 
 				return get_404_template();
 			}
