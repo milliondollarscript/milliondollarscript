@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.24
+Stable tag: 2.5.15.26
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -33,6 +33,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: WordPress search now finds MDS Pixels by popup text and custom meta—even when the template is off—and keeps apostrophes exactly as customers entered them.
 * Improvement: Clarified WooCommerce versus manual payment auto-complete settings and linked per-grid messaging to the Pixels Awaiting Approval screen for quicker reviews.
 * Fix: Single MDS Pixel pages now mirror the popup layout and fall back to a 404 when pixels pages are disabled.
+* Fix: Grid image uploads now save consistently instead of reverting to the default artwork during edits.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.
