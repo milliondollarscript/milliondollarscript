@@ -85,7 +85,97 @@ let currentAjaxRequest = null;
 let suppressLoaderRemoval = false;
 let USE_AJAX = MDS_OBJECT.USE_AJAX;
 let block_str = MDS_OBJECT.block_str;
-let selectedBlocks = block_str !== "" ? block_str.split(",").map(Number) : [];
+function normalizeBlockId(value) {
+	const parsed = Number(value);
+	if (!Number.isFinite(parsed) || parsed < 0) {
+		return null;
+	}
+	return Math.floor(parsed);
+}
+
+function addBlockToSelection(value) {
+	const normalized = normalizeBlockId(value);
+	if (normalized === null) {
+		return;
+	}
+	if (!selectedBlocks.includes(normalized)) {
+		selectedBlocks.push(normalized);
+	}
+}
+
+function serializeSelectedBlocks() {
+	return selectedBlocks
+		.filter((id) => Number.isFinite(id) && id >= 0)
+		.join(",");
+}
+
+function selectionIncludes(value) {
+	const normalized = normalizeBlockId(value);
+	if (normalized === null) {
+		return false;
+	}
+	return selectedBlocks.includes(normalized);
+}
+
+function resetSubmitState(originalLabel) {
+	submitting = false;
+	if (submit_button1) {
+		submit_button1.disabled = false;
+		submit_button1.value = originalLabel;
+	}
+}
+
+function validateSelectionAjax() {
+	const ajaxUrl = MDS_OBJECT.ajaxurl || window.ajaxurl || (window.MDS && window.MDS.ajaxurl) || '';
+	const payload = {
+		action: 'mds_ajax',
+		type: 'validate-selection',
+		mds_nonce: MDS_OBJECT.mds_nonce,
+		BID: MDS_OBJECT.BID,
+		order_id: MDS_OBJECT.order_id || '',
+		mode: MDS_OBJECT.selection_adjacency_mode || 'ADJACENT',
+		blocks: serializeSelectedBlocks()
+	};
+
+	return jQuery.ajax({
+		type: 'POST',
+		url: ajaxUrl || MDS_OBJECT.UPDATE_ORDER,
+		dataType: 'json',
+		data: payload
+	});
+}
+
+function finalizeFormSubmission(originalLabel, normalizedValue) {
+	const normalized = typeof normalizedValue === 'string' ? normalizedValue : serializeSelectedBlocks();
+	const selectedPixelsInput = document.getElementById('selected_pixels');
+	if (selectedPixelsInput) {
+		selectedPixelsInput.value = normalized;
+	}
+	mds_update_package(jQuery(pixel_form));
+
+	let waitInterval = setInterval(function () {
+		if (ajax_queue.length === 0) {
+			clearInterval(waitInterval);
+			if (pixel_form !== null) {
+				const selectedPixelsInputInner = document.getElementById('selected_pixels');
+				if (selectedPixelsInputInner) {
+					selectedPixelsInputInner.value = normalized;
+				}
+				mds_update_package(jQuery(pixel_form));
+				pixel_form.submit();
+			}
+		}
+	}, 1000);
+}
+
+let selectedBlocks = block_str !== ""
+	? Array.from(new Set(
+		block_str
+			.split(",")
+			.map(normalizeBlockId)
+			.filter((id) => id !== null)
+	))
+	: [];
 let selecting = false;
 let ajaxing = false;
 let submitting = false;
@@ -563,13 +653,17 @@ function has_touch() {
 
 function update_order() {
 	if (selectedBlocks.length > 0) {
-		pixel_form.selected_pixels.value = selectedBlocks.join(",");
+		pixel_form.selected_pixels.value = serializeSelectedBlocks();
 	}
 }
 
 function reserve_block(block_id) {
-	if (selectedBlocks.indexOf(block_id) === -1) {
-		selectedBlocks.push(parseInt(block_id, 10));
+	const normalizedId = normalizeBlockId(block_id);
+	if (normalizedId === null) {
+		return;
+	}
+	if (!selectedBlocks.includes(normalizedId)) {
+		addBlockToSelection(normalizedId);
 
 		// remove default value of -1 from array
 		let index = selectedBlocks.indexOf(-1);
@@ -583,7 +677,11 @@ function reserve_block(block_id) {
 }
 
 function unreserve_block(block_id) {
-	let index = selectedBlocks.indexOf(block_id);
+	const normalizedId = normalizeBlockId(block_id);
+	if (normalizedId === null) {
+		return;
+	}
+	let index = selectedBlocks.indexOf(normalizedId);
 	if (index > -1) {
 		selectedBlocks.splice(index, 1);
 		update_order();
@@ -594,7 +692,7 @@ function unreserve_block(block_id) {
 function add_block(block_id, block_x, block_y) {
 	// Canvas mode: update selection set and draw
 	if (document.getElementById('blocks_canvas')) {
-		if (!selectedBlocks.includes(block_id)) {
+		if (!selectionIncludes(block_id)) {
 			reserve_block(block_id);
 			renderSelectionCanvas();
 		}
@@ -689,7 +787,7 @@ function is_block_selected(clicked_blocks) {
 	}
 
 	// Check if any of the clicked blocks are already in the selectedBlocks array
-	return clicked_blocks.some((block) => selectedBlocks.includes(block.id));
+	return clicked_blocks.some((block) => selectionIncludes(block.id));
 }
 
 function get_clicked_blocks(OffsetX, OffsetY, block) {
@@ -727,20 +825,33 @@ function do_blocks(blocks, op) {
 		if (op === 'add') {
 			for (const block of blocks) {
 				const id = typeof block === 'object' ? block.id : block;
-				if (!selectedBlocks.includes(id)) selectedBlocks.push(id);
+				if (!selectionIncludes(id)) addBlockToSelection(id);
 			}
 			renderSelectionCanvas();
 			return;
 		} else if (op === 'remove') {
-			const toRemove = new Set(blocks.map(b => (typeof b === 'object' ? b.id : b)));
-			selectedBlocks = selectedBlocks.filter(id => !toRemove.has(id));
+			const toRemove = new Set(
+				blocks
+					.map((b) => (typeof b === 'object' ? b.id : b))
+					.map(normalizeBlockId)
+					.filter((id) => id !== null)
+			);
+			selectedBlocks = selectedBlocks.filter((id) => !toRemove.has(id));
 			renderSelectionCanvas();
 			return;
 		} else if (op === 'invert') {
 			for (const block of blocks) {
 				const id = typeof block === 'object' ? block.id : block;
-				const idx = selectedBlocks.indexOf(id);
-				if (idx === -1) selectedBlocks.push(id); else selectedBlocks.splice(idx, 1);
+			const normalizedId = normalizeBlockId(id);
+			if (normalizedId === null) {
+				continue;
+			}
+			const idx = selectedBlocks.indexOf(normalizedId);
+			if (idx === -1) {
+				selectedBlocks.push(normalizedId);
+			} else {
+				selectedBlocks.splice(idx, 1);
+			}
 			}
 			renderSelectionCanvas();
 			return;
@@ -1024,6 +1135,56 @@ function show_pointer(offset) {
 	return true;
 }
 
+function jsCheckContiguous(blockIds) {
+	if (!Array.isArray(blockIds) || blockIds.length <= 1) {
+		return true;
+	}
+
+	const cols = parseInt(grid_width, 10);
+	if (!cols || cols <= 0) {
+		return true;
+	}
+
+	const normalized = blockIds.map(Number).filter(Number.isFinite);
+	if (!normalized.length) {
+		return true;
+	}
+
+	const set = new Set(normalized);
+	const visited = new Set();
+	const queue = [normalized[0]];
+	visited.add(normalized[0]);
+
+	while (queue.length) {
+		const current = queue.shift();
+		const neighbors = [];
+
+		const up = current - cols;
+		if (up >= 0) {
+			neighbors.push(up);
+		}
+
+		const down = current + cols;
+		neighbors.push(down);
+
+		if (current % cols !== 0) {
+			neighbors.push(current - 1);
+		}
+		if (current % cols !== cols - 1) {
+			neighbors.push(current + 1);
+		}
+
+		for (const neighbor of neighbors) {
+			if (set.has(neighbor) && !visited.has(neighbor)) {
+				visited.add(neighbor);
+				queue.push(neighbor);
+			}
+		}
+	}
+
+	return visited.size === set.size;
+}
+
 function jsCheckRectangle(blockIds) {
 	if (!Array.isArray(blockIds) || blockIds.length <= 1) return true;
 	const cols = parseInt(MDS_OBJECT.grid_width, 10) || 1;
@@ -1072,43 +1233,55 @@ function formSubmit(event) {
 				const selMode = (MDS_OBJECT.selection_adjacency_mode || 'ADJACENT');
 				if (minBlocks > 0 && selectedBlocks.length < minBlocks) {
 					messageout('You must select at least ' + minBlocks + ' blocks.');
-					submitting = false;
-					submit_button1.disabled = false;
-					submit_button1.value = submit1_lang;
+					resetSubmitState(submit1_lang);
 					return false;
 				}
 				if (selMode === 'RECTANGLE' && !jsCheckRectangle(selectedBlocks)) {
 					messageout(MDS_OBJECT.rectangle_required || 'Selection must form a rectangle or square.');
-					submitting = false;
-					submit_button1.disabled = false;
-					submit_button1.value = submit1_lang;
+					resetSubmitState(submit1_lang);
 					return false;
 				}
 
-				// Wait for ajax queue to finish
-		let waitInterval = setInterval(function () {
-			if (ajax_queue.length === 0) {
-				clearInterval(waitInterval);
-				if (pixel_form !== null) {
-					// Set selected_pixels hidden input before submit
-					let selectedPixelsInput = document.getElementById("selected_pixels");
-					if (selectedPixelsInput) {
-						selectedPixelsInput.value = selectedBlocks.join(",");
+
+		validateSelectionAjax()
+			.done(function (response) {
+				if (response && response.success) {
+					let normalized = null;
+					if (response.data && typeof response.data.normalized === 'string') {
+						normalized = response.data.normalized;
+						if (normalized === '') {
+							selectedBlocks = [];
+						} else {
+							selectedBlocks = Array.from(new Set(normalized.split(',')
+								.map(normalizeBlockId)
+								.filter(function (id) { return id !== null; })));
+						}
 					}
-					mds_update_package(jQuery(pixel_form));
-					
-					// Submit the form programmatically
-					// This will trigger the mds_form_submission function in Forms.php
-					pixel_form.submit();
+					finalizeFormSubmission(submit1_lang, normalized);
+				} else {
+					const messages = response && response.data && Array.isArray(response.data.messages) ? response.data.messages : [];
+					const message = messages.length ? messages.join(' ') : (MDS_OBJECT.not_adjacent || 'You must select a block adjacent to another one.');
+					messageout(message);
+					resetSubmitState(submit1_lang);
 				}
-				// Keep button disabled and showing wait message during redirect
-				// The page will redirect after form submission
-				// submit_button1.disabled = false;
-				// submit_button1.value = submit1_lang;
-				// submitting = false;
-			} else {
-			}
-		}, 1000);
+			})
+			.fail(function (jqXHR, textStatus) {
+				let failureMessage = null;
+				if (jqXHR && jqXHR.responseJSON) {
+					if (Array.isArray(jqXHR.responseJSON.messages) && jqXHR.responseJSON.messages.length) {
+						failureMessage = jqXHR.responseJSON.messages.join(' ');
+					} else if (jqXHR.responseJSON.data && Array.isArray(jqXHR.responseJSON.data.messages) && jqXHR.responseJSON.data.messages.length) {
+						failureMessage = jqXHR.responseJSON.data.messages.join(' ');
+					}
+				}
+				if (!failureMessage) {
+					failureMessage = 'Request failed: ' + (textStatus || 'unknown error');
+				}
+				messageout(failureMessage);
+				resetSubmitState(submit1_lang);
+			});
+
+		return false;
 	} else {
 	}
 }
@@ -1317,33 +1490,33 @@ function change_block_state(OffsetX, OffsetY) {
     let blocks_to_remove = [];
     let action = 'add'; // Default action
 
-    if (is_erase_mode) {
-        action = 'remove';
-        // In erase mode, we only want to remove blocks that are currently selected.
-        all_blocks_in_selection.forEach(block => {
-            if (selectedBlocks.includes(block.id)) {
-                blocks_to_remove.push(block.id);
-            }
-        });
-    } else if (MDS_OBJECT.INVERT_PIXELS === "YES") {
-        action = 'invert';
-        // Invert logic for both single and area selection (XOR)
-        all_blocks_in_selection.forEach(block => {
-            if (selectedBlocks.includes(block.id)) {
-                blocks_to_remove.push(block.id);
-            } else {
-                blocks_to_add.push(block.id);
-            }
-        });
-    } else {
-        // Standard mode: add all blocks in the selection, avoiding duplicates.
-        action = 'add';
-        all_blocks_in_selection.forEach(block => {
-            if (!selectedBlocks.includes(block.id)) {
-                blocks_to_add.push(block.id);
-            }
-        });
-    }
+	if (is_erase_mode) {
+		action = 'remove';
+		// In erase mode, we only want to remove blocks that are currently selected.
+		all_blocks_in_selection.forEach(block => {
+			if (selectionIncludes(block.id)) {
+				blocks_to_remove.push(block.id);
+			}
+		});
+	} else if (MDS_OBJECT.INVERT_PIXELS === "YES") {
+		action = 'invert';
+		// Invert logic for both single and area selection (XOR)
+		all_blocks_in_selection.forEach(block => {
+			if (selectionIncludes(block.id)) {
+				blocks_to_remove.push(block.id);
+			} else {
+				blocks_to_add.push(block.id);
+			}
+		});
+	} else {
+		// Standard mode: add all blocks in the selection, avoiding duplicates.
+		action = 'add';
+		all_blocks_in_selection.forEach(block => {
+			if (!selectionIncludes(block.id)) {
+				blocks_to_add.push(block.id);
+			}
+		});
+	}
 
     // Visually update blocks immediately for better UX
 blocks_to_add.forEach(id => { add_block(id); });

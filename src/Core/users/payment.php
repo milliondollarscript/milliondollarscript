@@ -28,6 +28,7 @@
 
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
 use MillionDollarScript\Classes\System\Utility;
@@ -76,6 +77,30 @@ if ( $wpdb->last_error ) {
 
 // Process confirmation
 if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
+	$banner_data = load_banner_constants( intval( $order_row['banner_id'] ) );
+
+	$selection_errors = [];
+	if ( $banner_data ) {
+		$blocks_array = Blocks::parse_block_ids( $order_row['blocks'] ?? '' );
+		$selection_errors = Blocks::validate_selection( $blocks_array, $banner_data );
+	}
+
+	if ( ! empty( $selection_errors ) ) {
+		require_once MDS_CORE_PATH . 'html/header.php';
+		foreach ( $selection_errors as $selection_error ) {
+			echo '<div class="mds-error">' . esc_html( $selection_error ) . '</div>';
+		}
+		$back_url = Utility::get_page_url( 'order', [
+			'order_id' => intval( $order_row['order_id'] ),
+			'BID'      => intval( $order_row['banner_id'] ),
+		] );
+		if ( ! empty( $back_url ) ) {
+			echo '<input type="button" value="' . esc_attr( Language::get( 'Go Back' ) ) . '" onclick="window.location=\'' . esc_url( $back_url ) . '\'" />';
+		}
+		require_once MDS_CORE_PATH . 'html/footer.php';
+		return;
+	}
+
 	// move temp order to confirmed order
 	$advanced_order = Options::get_option( 'use-ajax' ) == 'YES';
 

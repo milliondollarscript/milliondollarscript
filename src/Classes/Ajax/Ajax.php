@@ -36,9 +36,12 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 use function esc_attr;
+use function wp_unslash;
+use function sanitize_text_field;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -138,6 +141,9 @@ class Ajax {
 						// Logging suppressed to reduce noise while the legacy shim is still active.
 						require_once MDS_CORE_PATH . 'users/make_selection.php';
 						wp_die();
+					case "validate-selection":
+						self::handle_validate_selection();
+						wp_die();
 					default:
 						break;
 				}
@@ -145,6 +151,39 @@ class Ajax {
 		}
 
 		wp_die();
+	}
+
+	private static function handle_validate_selection(): void {
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( [
+				'messages' => [ Language::get( 'You must be logged in to continue.' ) ],
+			], 401 );
+		}
+
+		$BID = isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0;
+		if ( $BID <= 0 ) {
+			wp_send_json_error( [ 'messages' => [ Language::get( 'Invalid grid.' ) ] ], 400 );
+		}
+
+		$banner_data = load_banner_constants( $BID );
+		if ( empty( $banner_data ) ) {
+			wp_send_json_error( [ 'messages' => [ Language::get( 'Invalid grid configuration.' ) ] ], 400 );
+		}
+
+		$mode       = isset( $_REQUEST['mode'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_REQUEST['mode'] ) ) ) : null;
+		$raw_blocks = $_REQUEST['blocks'] ?? '';
+		$block_ids  = Blocks::parse_block_ids( $raw_blocks );
+
+		$errors = Blocks::validate_selection( $block_ids, $banner_data, $mode );
+		if ( ! empty( $errors ) ) {
+			wp_send_json_error( [ 'messages' => $errors ] );
+		}
+
+		wp_send_json_success( [
+			'messages'   => [],
+			'normalized' => implode( ',', $block_ids ),
+			'count'      => count( $block_ids ),
+		] );
 	}
 
 	public static function show_grid(): void {

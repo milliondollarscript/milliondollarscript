@@ -520,6 +520,100 @@ class Blocks {
 	}
 
 	/**
+	 * Normalize raw block identifiers into a unique list of non-negative integers.
+	 *
+	 * @param mixed $raw Source block list (string, array, etc.).
+	 * @return int[]
+	 */
+	public static function parse_block_ids( $raw ): array {
+		$block_ids = [];
+
+		if ( is_array( $raw ) ) {
+			$flat = [];
+			array_walk_recursive(
+				$raw,
+				static function ( $value ) use ( &$flat ) {
+					$flat[] = $value;
+				}
+			);
+			$raw = implode( ',', array_map( 'strval', $flat ) );
+		}
+
+		if ( is_string( $raw ) && $raw !== '' ) {
+			$matches = [];
+			preg_match_all( '/\d+/', $raw, $matches );
+			if ( ! empty( $matches[0] ) ) {
+				$block_ids = array_map( 'intval', $matches[0] );
+			}
+		}
+
+		$block_ids = array_filter(
+			array_map( 'intval', (array) $block_ids ),
+			static function ( $id ) {
+				return $id >= 0;
+			}
+		);
+
+		sort( $block_ids );
+
+		return array_values( array_unique( $block_ids ) );
+	}
+
+	/**
+	 * Validate a set of block IDs against banner configuration and current adjacency mode.
+	 *
+	 * @param int[]       $block_ids
+	 * @param array       $banner_data
+	 * @param string|null $mode Optional adjacency mode override (ADJACENT, RECTANGLE, NONE).
+	 *
+	 * @return string[] List of error messages.
+	 */
+	public static function validate_selection( array $block_ids, array $banner_data, ?string $mode = null ): array {
+		$errors        = [];
+		$unique_blocks = array_values( array_unique( array_map( 'intval', $block_ids ) ) );
+		$unique_blocks = array_filter(
+			$unique_blocks,
+			static function ( $id ) {
+				return $id >= 0;
+			}
+		);
+
+		$selected_count = count( $unique_blocks );
+
+		$min_blocks = intval( $banner_data['G_MIN_BLOCKS'] ?? 0 );
+		if ( $min_blocks > 0 && $selected_count < $min_blocks ) {
+			$errors[] = Language::get_replace( 'You must select at least %MAX_BLOCKS% blocks.', '%MAX_BLOCKS%', $min_blocks );
+		}
+
+		$max_blocks = intval( $banner_data['G_MAX_BLOCKS'] ?? 0 );
+		if ( $max_blocks > 0 && $selected_count > $max_blocks ) {
+			$errors[] = Language::get_replace( 'Maximum blocks selected. (%MAX_BLOCKS% allowed per order)', '%MAX_BLOCKS%', $max_blocks );
+		}
+
+		$check_mode = strtoupper( $mode ?? Options::get_option( 'selection-adjacency-mode', 'ADJACENT' ) );
+		if ( $check_mode === 'NONE' ) {
+			return $errors;
+		}
+
+		$blocks_per_row = intval( $banner_data['G_WIDTH'] ?? 0 );
+		if ( $blocks_per_row <= 0 || $selected_count === 0 ) {
+			return $errors;
+		}
+
+		if ( $check_mode === 'RECTANGLE' ) {
+			if ( ! self::check_adjacency( $unique_blocks, $blocks_per_row ) ) {
+				$errors[] = Language::get( 'You must select blocks forming a rectangle or square.' );
+			}
+		} else {
+			if ( ! self::check_contiguous( $unique_blocks, $blocks_per_row ) ) {
+				$errors[] = Language::get( 'You must select a block adjacent to another one.' );
+			}
+		}
+
+		return $errors;
+	}
+
+	/**
 	 * Checks if the selected blocks form a solid, contiguous rectangle.
 	 *
 	 * @param array $blocks

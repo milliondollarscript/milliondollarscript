@@ -1486,6 +1486,7 @@ class Orders {
 			'BLK_WIDTH'       => intval( $banner_data['BLK_WIDTH'] ),
 			'BLK_HEIGHT'      => intval( $banner_data['BLK_HEIGHT'] ),
 			'user_id'         => get_current_user_id(),
+			'order_id'        => isset( $order_row['order_id'] ) ? intval( $order_row['order_id'] ) : intval( self::get_current_order_id() ),
 			'BID'             => intval( $BID ),
 			'time'            => time(),
 			'WAIT'            => Language::get( 'Please Wait! Reserving Pixels...' ),

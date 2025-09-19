@@ -95,6 +95,7 @@ class Functions {
 		);
 		$order_result = $wpdb->get_row( $sql );
 		$order_row    = $order_result ? (array) $order_result : [];
+		$order_id     = isset( $order_row['order_id'] ) ? intval( $order_row['order_id'] ) : 0;
 
 		// load any existing blocks for this order
 		$order_row_blocks = '';
@@ -117,6 +118,8 @@ class Functions {
 
 		return [
 			'NONCE'                => wp_create_nonce( 'mds-select' ),
+			'mds_nonce'            => wp_create_nonce( 'mds_nonce' ),
+			'ajaxurl'              => esc_url( admin_url( 'admin-ajax.php' ) ),
 			'UPDATE_ORDER'         => esc_url( Utility::get_page_url( 'update-order' ) ),
 			'USE_AJAX'             => Options::get_option( 'use-ajax' ),
 			'block_str'            => $block_str,
@@ -129,6 +132,7 @@ class Functions {
 			'G_PRICE'              => floatval( $banner_data['G_PRICE'] ),
 			'blocks'               => $order_blocks,
 			'user_id'              => get_current_user_id(),
+			'order_id'             => $order_id,
 			'BID'                  => intval( $BID ),
 			'time'                 => time(),
 			'advertiser_max_order' => Language::get( 'Cannot place pixels on order. You have reached the order limit for this grid. Please review your order history under Manage Pixels.' ),

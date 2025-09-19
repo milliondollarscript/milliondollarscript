@@ -28,6 +28,7 @@
 
 namespace MillionDollarScript\Classes\Forms;
 
+use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
 use MillionDollarScript\Classes\System\Functions;
@@ -400,28 +401,54 @@ class Forms {
 				$params['mds-action'] = 'manage';
 				$params['aid']        = intval( $_REQUEST['aid'] );
 				break;
-			case 'upload':
-				// Check if a file was just uploaded
-				$upload_processed = isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '';
-				
-				global $f2;
-				$BID         = $f2->bid();
-				$banner_data = load_banner_constants( $BID );
+		case 'upload':
+			// Check if a file was just uploaded
+			$upload_processed = isset( $_FILES['graphic'] ) && $_FILES['graphic']['tmp_name'] != '';
+			
+			global $f2;
+			$BID         = $f2->bid();
+			$banner_data = load_banner_constants( $BID );
 
-				$min_size = $banner_data['G_MIN_BLOCKS'] ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
-				$max_size = $banner_data['G_MAX_BLOCKS'] ? intval( $banner_data['G_MAX_BLOCKS'] ) : intval( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] );
+			$min_size = $banner_data['G_MIN_BLOCKS'] ? intval( $banner_data['G_MIN_BLOCKS'] ) : 1;
+			$max_size = $banner_data['G_MAX_BLOCKS'] ? intval( $banner_data['G_MAX_BLOCKS'] ) : intval( $banner_data['G_WIDTH'] * $banner_data['G_HEIGHT'] );
 
-				$select                    = isset( $_REQUEST['select'] ) ? intval( $_REQUEST['select'] ) : 0;
-				$package                   = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
-				$order_id                  = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
-				$selection_size            = isset( $_REQUEST['selection_size'] ) && $_REQUEST['selection_size'] >= $min_size && $_REQUEST['selection_size'] <= $max_size ? intval( $_REQUEST['selection_size'] ) : $min_size;
-				$params['select']          = $select;
-				$params['package']         = $package;
-				$params['order_id']        = $order_id;
-				$params['selection_size']  = $selection_size;
-				
-				// If a file was uploaded, process it and redirect back to the upload page
-				if ( $upload_processed ) {
+			$select                    = isset( $_REQUEST['select'] ) ? intval( $_REQUEST['select'] ) : 0;
+			$package                   = isset( $_REQUEST['package'] ) ? intval( $_REQUEST['package'] ) : null;
+			$order_id                  = isset( $_REQUEST['order_id'] ) ? intval( $_REQUEST['order_id'] ) : 0;
+			$selection_size            = isset( $_REQUEST['selection_size'] ) && $_REQUEST['selection_size'] >= $min_size && $_REQUEST['selection_size'] <= $max_size ? intval( $_REQUEST['selection_size'] ) : $min_size;
+			$params['select']          = $select;
+			$params['package']         = $package;
+			$params['order_id']        = $order_id;
+			$params['selection_size']  = $selection_size;
+
+			$selection_errors = [];
+			if ( ! empty( $banner_data ) ) {
+				$blocks_raw = isset( $_POST['selected_pixels'] ) ? trim( (string) $_POST['selected_pixels'] ) : '';
+				if ( $blocks_raw === '' && $order_id > 0 ) {
+					$order_snapshot = Orders::get_order( $order_id );
+					if ( $order_snapshot && isset( $order_snapshot->blocks ) ) {
+						$blocks_raw = (string) $order_snapshot->blocks;
+					}
+				}
+
+				$blocks_array = Blocks::parse_block_ids( $blocks_raw );
+				$_POST['selected_pixels'] = implode( ',', $blocks_array );
+
+				$selection_errors = Blocks::validate_selection( $blocks_array, $banner_data );
+			}
+
+			if ( ! empty( $selection_errors ) ) {
+				$validation_message = implode( ' ', array_unique( $selection_errors ) );
+				$mds_error          = $validation_message;
+				$mds_dest           = 'order';
+				$params['mds_error'] = urlencode( $validation_message );
+				$params['order_id']  = $order_id;
+				$params['BID']       = intval( $BID );
+				break;
+			}
+			
+			// If a file was uploaded, process it and redirect back to the upload page
+			if ( $upload_processed ) {
 					// Process the file upload
 					$upload_result = self::process_order_pixels_upload();
 					
