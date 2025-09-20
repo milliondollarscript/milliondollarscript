@@ -340,62 +340,51 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 }
 
 function get_banner_image_data( $b_row, $image_name ): string {
+	static $cache = [];
+
+	if ( isset( $cache[ $image_name ] ) ) {
+		return $cache[ $image_name ];
+	}
+
+	$contents = addslashes( get_default_image( $image_name ) );
+
 	if ( isset( $_FILES ) && isset( $_FILES[ $image_name ] ) && isset( $_FILES[ $image_name ]['tmp_name'] ) && $_FILES[ $image_name ]['tmp_name'] ) {
 		// Validate uploaded file for security
 		$validation = \MillionDollarScript\Classes\System\FileValidator::validate_image_upload( $_FILES[ $image_name ] );
-		
+
 		if ( ! $validation['valid'] ) {
 			// Log security violation attempt
 			error_log( 'MDS Security: Invalid file upload attempt for ' . $image_name . ': ' . $validation['error'] );
-			
-			// Return default image instead of failing
-			return addslashes( get_default_image( $image_name ) );
-		}
-		
-		// Process validated file securely
-		$secure_filename = \MillionDollarScript\Classes\System\FileValidator::generate_secure_filename( $_FILES[ $image_name ]['name'], 'grid_' );
-		$secure_uploaddir = \MillionDollarScript\Classes\System\FileValidator::get_secure_upload_path( 'grids' );
-		$uploadfile = $secure_uploaddir . $secure_filename;
-		
-		if ( move_uploaded_file( $_FILES[ $image_name ]['tmp_name'], $uploadfile ) ) {
-			$fh = fopen( $uploadfile, 'rb' );
-			if ( $fh ) {
-				$contents = fread( $fh, filesize( $uploadfile ) );
-				fclose( $fh );
-				$contents = addslashes( base64_encode( $contents ) );
-				
-				// Clean up temporary file
-				unlink( $uploadfile );
-			} else {
-				error_log( 'MDS Security: Failed to read uploaded file: ' . $uploadfile );
-				return addslashes( get_default_image( $image_name ) );
-			}
 		} else {
-			error_log( 'MDS Security: Failed to move uploaded file for ' . $image_name );
-			return addslashes( get_default_image( $image_name ) );
+			// Process validated file securely
+			$secure_filename = \MillionDollarScript\Classes\System\FileValidator::generate_secure_filename( $_FILES[ $image_name ]['name'], 'grid_' );
+			$secure_uploaddir = \MillionDollarScript\Classes\System\FileValidator::get_secure_upload_path( 'grids' );
+			$uploadfile       = $secure_uploaddir . $secure_filename;
+
+			if ( move_uploaded_file( $_FILES[ $image_name ]['tmp_name'], $uploadfile ) ) {
+				$fh = fopen( $uploadfile, 'rb' );
+				if ( $fh ) {
+					$raw_contents = fread( $fh, filesize( $uploadfile ) );
+					fclose( $fh );
+					$contents = addslashes( base64_encode( $raw_contents ) );
+
+					// Clean up temporary file
+					unlink( $uploadfile );
+				} else {
+					error_log( 'MDS Security: Failed to read uploaded file: ' . $uploadfile );
+				}
+			} else {
+				error_log( 'MDS Security: Failed to move uploaded file for ' . $image_name );
+			}
 		}
 	} else if ( isset( $b_row[ $image_name ] ) && $b_row[ $image_name ] != '' ) {
 		// use the old image
 		$contents = addslashes( ( $b_row[ $image_name ] ) );
-	} else {
-		$contents = addslashes( get_default_image( $image_name ) );
 	}
+
+	$cache[ $image_name ] = $contents;
 
 	return $contents;
-}
-
-function get_banner_image_sql_values( $BID ) {
-	$row = "";
-	// get banner
-	if ( $BID ) {
-		global $wpdb;
-		$row = $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d",
-			$BID
-		), ARRAY_A );
-	}
-
-	return ", '" . get_banner_image_data( $row, 'grid_block' ) . "' , '" . get_banner_image_data( $row, 'nfs_block' ) . "', '" . get_banner_image_data( $row, 'tile' ) . "', '" . get_banner_image_data( $row, 'usr_grid_block' ) . "', '" . get_banner_image_data( $row, 'usr_nfs_block' ) . "', '" . get_banner_image_data( $row, 'usr_ord_block' ) . "', '" . get_banner_image_data( $row, 'usr_res_block' ) . "', '" . get_banner_image_data( $row, 'usr_sel_block' ) . "', '" . get_banner_image_data( $row, 'usr_sol_block' ) . "'";
 }
 
 function validate_block_size( $image_name, $BID ): bool {
@@ -586,9 +575,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 		echo "<span style='color:red;'>Error: cannot save due to the following errors:</span><br>";
 		echo "<span style='color:red;'>$error</span>";
 	} else {
-		$image_sql_fields = ', grid_block, nfs_block, tile, usr_grid_block, usr_nfs_block, usr_ord_block, usr_res_block, usr_sel_block, usr_sol_block ';
-		$image_sql_values = get_banner_image_sql_values( $BID );
-		$now              = current_time( 'mysql' );
+		$now = current_time( 'mysql' );
 
 		$new = false;
 		if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'new' ) {
@@ -979,22 +966,22 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     </div>
                 </div>
                 <div class="inventory-entry">
-                    <div class="inventory-title">Approve Automatically?</div>
-                    <div class="inventory-content">
-                        <label>
-                            <input type="radio" name="auto_approve"
-                                   value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
-								echo " checked ";
-							} ?> >
-                        </label>Yes. Approve all pixels automatically as they are submitted.<br>
-                        <label>
-                            <input type="radio" name="auto_approve"
-                                   value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
-								echo " checked ";
-							} ?> >
-                        </label>No, approve manually from the Admin.<br>
-                    </div>
-                </div>
+			<div class="inventory-title">Approve Automatically? (Per Grid)</div>
+			<div class="inventory-content">
+				<label>
+					<input type="radio" name="auto_approve"
+					       value="Y" <?php if ( $_REQUEST['auto_approve'] == 'Y' ) {
+						echo " checked ";
+					} ?> >
+				</label>Yes. Approve pixel submissions on this grid automatically as they are submitted.<br>
+				<label>
+					<input type="radio" name="auto_approve"
+					       value="N" <?php if ( $_REQUEST['auto_approve'] == 'N' ) {
+						echo " checked ";
+					} ?> >
+				</label>No. Review submissions for this grid from the <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N' ) ); ?>">Pixels Awaiting Approval</a> screen (Million Dollar Script &gt; Admin &gt; Pixel Approval &gt; Awaiting Approval).<br>
+			</div>
+		</div>
                 <div class="inventory-entry">
                     <div class="inventory-title">Publish Automatically?</div>
                     <div class="inventory-content">
@@ -1240,11 +1227,9 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
                     <div class="inventory-content">
 						<?php display_reset_link( $BID, 'tile' ); ?>
 						<?php
-						$banner_data = load_banner_constants( $BID );
-						$bgstyle     = "";
-						if ( ! empty( $banner_data['G_BGCOLOR'] ) ) {
-							$bgstyle = ' style="background-color:' . $banner_data['G_BGCOLOR'] . ';"';
-						}
+						$banner_data      = load_banner_constants( $BID );
+						$background_color = mds_get_grid_background_color( $BID, $banner_data );
+						$bgstyle          = $background_color ? ' style="background-color:' . esc_attr( $background_color ) . ';"' : '';
 						?>
                         <img<?php echo $bgstyle; ?>
                                 src="<?php echo esc_url( admin_url( 'admin-ajax.php?action=mds_admin_ajax&mds_admin_ajax_nonce=' . $mds_admin_ajax_nonce ) ); ?>&amp;mds-ajax=get-block-image&amp;t=<?php echo time(); ?>&amp;BID=<?php echo $BID; ?>&amp;image_name=tile"

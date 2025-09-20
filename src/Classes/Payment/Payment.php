@@ -49,10 +49,12 @@ class Payment {
 	public static function handle_checkout( int $order_id ): void {
 		Orders::set_current_order_id( $order_id );
 
-		$checkout_url = Options::get_option( 'checkout-url' );
+		$checkout_url         = Options::get_option( 'checkout-url' );
+		$woocommerce_enabled  = WooCommerceFunctions::is_integration_enabled();
+		$manual_auto_complete = WooCommerceFunctions::is_manual_auto_complete_enabled();
 		if ( empty( $checkout_url ) ) {
 			// Check if WooCommerce is active and integration is enabled
-			if ( WooCommerceFunctions::is_wc_active() && Options::get_option( 'woocommerce' ) == 'yes' ) {
+			if ( $woocommerce_enabled ) {
 
 				if ( ! empty( $order_id ) ) {
 
@@ -73,7 +75,7 @@ class Payment {
 							return;
 						}
 
-						if ( Options::get_option( 'auto-approve' ) == 'yes' ) {
+						if ( $manual_auto_complete ) {
 							Orders::complete_order( $row['user_id'], $order_id );
 							Payment::debit_transaction( $order_id, $row['price'], $row['currency'], 'WooCommerce', 'order', 'WooCommerce' );
 
@@ -218,7 +220,8 @@ class Payment {
 			return;
 		}
 
-		if ( Options::get_option( 'auto-approve' ) == 'yes' ) {
+		$manual_auto_complete = WooCommerceFunctions::is_manual_auto_complete_enabled();
+		if ( $manual_auto_complete ) {
 			if ( $order_id != '' ) {
 				if ( ! is_user_logged_in() ) {
 					if ( Utility::has_endpoint_or_ajax() ) {

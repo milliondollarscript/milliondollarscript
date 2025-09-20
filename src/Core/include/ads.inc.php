@@ -138,7 +138,12 @@ function display_ad_form( $form_id, $mode, $prams, $action = '' ) {
 	$ad_id     = isset( $prams['ad_id'] ) ? intval( $prams['ad_id'] ) : "";
 	$user_id   = isset( $prams['user_id'] ) ? intval( $prams['user_id'] ) : "";
 	$order_id  = isset( $prams['order_id'] ) ? intval( $prams['order_id'] ) : Orders::get_current_order_id();
-	$banner_id = isset( $prams['banner_id'] ) ? intval( $prams['banner_id'] ) : "";
+	// Prefer the banner_id from prams, but fall back to current BID (from shortcode/endpoint) or request
+	$banner_id = ( isset( $prams['banner_id'] ) && intval( $prams['banner_id'] ) > 0 )
+		? intval( $prams['banner_id'] )
+		: ( isset( $BID ) && intval( $BID ) > 0
+			? intval( $BID )
+			: ( isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0 ) );
 
 	if ( is_admin() && $mode == "edit" ) {
 		$mds_form_action = 'mds_admin_form_submission';
@@ -847,6 +852,50 @@ function upload_changed_pixels(
 			// Log security violation attempt
 			\MillionDollarScript\Classes\System\Logs::log( 'MDS Security: File upload validation failed in ads.inc.php - ' . $validation_result['error'] . ' - User: ' . get_current_user_id() . ' - File: ' . ( $files['name'] ?? 'unknown' ) );
 			throw new \Exception( "<b>" . Language::get( 'File upload failed.' ) . "</b><br />" . esc_html( $validation_result['error'] ) );
+		}
+
+		// Enforce configured upload dimension limits before processing
+		$dimension_limits = Options::get_upload_dimension_limits();
+		if ( ( $dimension_limits['width'] ?? 0 ) || ( $dimension_limits['height'] ?? 0 ) ) {
+			$image_dimensions = @getimagesize( $files['tmp_name'] );
+			if ( $image_dimensions === false ) {
+				throw new \Exception( Language::get( 'Unable to read the uploaded image dimensions. Please upload a valid image file.' ) );
+			}
+
+			list( $uploaded_width, $uploaded_height ) = $image_dimensions;
+			$width_limit  = $dimension_limits['width'];
+			$height_limit = $dimension_limits['height'];
+
+			$width_violation  = $width_limit && $uploaded_width > $width_limit;
+			$height_violation = $height_limit && $uploaded_height > $height_limit;
+
+			if ( $width_violation || $height_violation ) {
+				if ( $width_violation && $height_violation ) {
+					throw new \Exception(
+						Language::get_replace(
+							'The uploaded image (%ACTUAL_WIDTH% × %ACTUAL_HEIGHT% pixels) exceeds the maximum allowed dimensions of %WIDTH% × %HEIGHT% pixels.',
+							[ '%ACTUAL_WIDTH%', '%ACTUAL_HEIGHT%', '%WIDTH%', '%HEIGHT%' ],
+							[ $uploaded_width, $uploaded_height, $width_limit, $height_limit ]
+						)
+					);
+				} else if ( $width_violation ) {
+					throw new \Exception(
+						Language::get_replace(
+							'The uploaded image width (%ACTUAL_WIDTH% pixels) exceeds the maximum of %WIDTH% pixels.',
+							[ '%ACTUAL_WIDTH%', '%WIDTH%' ],
+							[ $uploaded_width, $width_limit ]
+						)
+					);
+				} else {
+					throw new \Exception(
+						Language::get_replace(
+							'The uploaded image height (%ACTUAL_HEIGHT% pixels) exceeds the maximum of %HEIGHT% pixels.',
+							[ '%ACTUAL_HEIGHT%', '%HEIGHT%' ],
+							[ $uploaded_height, $height_limit ]
+						)
+					);
+				}
+			}
 		}
 
 		// Generate secure filename and get upload directory

@@ -87,6 +87,11 @@ class Logs {
 		$timestamp = date( 'Y-m-d H:i:s T' );
 		$log_entry = sprintf( "[%s] [%s] %s\n", $timestamp, strtoupper( $level ), $message );
 
+		// Emit to PHP error log in development for quick inspection (guarded by constant).
+		if ( defined( 'MDS_DEV_LOG' ) && MDS_DEV_LOG ) {
+			error_log( '[MDS] ' . strtoupper( $level ) . ' ' . $message );
+		}
+
 		// Append to the log file using Filesystem class
 		$filesystem = new Filesystem();
 		try {

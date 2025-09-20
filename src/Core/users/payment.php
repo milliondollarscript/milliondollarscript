@@ -28,6 +28,7 @@
 
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Steps;
 use MillionDollarScript\Classes\System\Utility;
@@ -45,10 +46,12 @@ $BID = $f2->bid();
 
 if ( ! empty( $_REQUEST['order_id'] ) ) {
 	$order_id = intval( $_REQUEST['order_id'] );
-	Orders::set_current_order_id( $order_id );
 } else {
 	$order_id = Orders::get_current_order_id();
 }
+
+// Ensure current order context is set and in progress for payment flow
+Orders::ensure_current_order_context( $order_id, isset($_REQUEST['aid']) ? intval($_REQUEST['aid']) : null, true );
 
 $sql = $wpdb->prepare(
 	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d AND user_id=%d",
@@ -74,6 +77,30 @@ if ( $wpdb->last_error ) {
 
 // Process confirmation
 if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm' ) || ( $_REQUEST['mds-action'] == 'complete' ) ) ) {
+	$banner_data = load_banner_constants( intval( $order_row['banner_id'] ) );
+
+	$selection_errors = [];
+	if ( $banner_data ) {
+		$blocks_array = Blocks::parse_block_ids( $order_row['blocks'] ?? '' );
+		$selection_errors = Blocks::validate_selection( $blocks_array, $banner_data );
+	}
+
+	if ( ! empty( $selection_errors ) ) {
+		require_once MDS_CORE_PATH . 'html/header.php';
+		foreach ( $selection_errors as $selection_error ) {
+			echo '<div class="mds-error">' . esc_html( $selection_error ) . '</div>';
+		}
+		$back_url = Utility::get_page_url( 'order', [
+			'order_id' => intval( $order_row['order_id'] ),
+			'BID'      => intval( $order_row['banner_id'] ),
+		] );
+		if ( ! empty( $back_url ) ) {
+			echo '<input type="button" value="' . esc_attr( Language::get( 'Go Back' ) ) . '" onclick="window.location=\'' . esc_url( $back_url ) . '\'" />';
+		}
+		require_once MDS_CORE_PATH . 'html/footer.php';
+		return;
+	}
+
 	// move temp order to confirmed order
 	$advanced_order = Options::get_option( 'use-ajax' ) == 'YES';
 
@@ -87,9 +114,33 @@ if ( isset( $_REQUEST['mds-action'] ) && ( ( $_REQUEST['mds-action'] == 'confirm
 		$privileged = carbon_get_user_meta( get_current_user_id(), MDS_PREFIX . 'privileged' );
 
 		if ( ( $order_row['price'] == 0 ) || ( $privileged == '1' ) ) {
+			// Privileged or free order: complete immediately and go to Thank You
 			Orders::complete_order( get_current_user_id(), $order_id );
 			Orders::reset_order_progress();
-			Utility::redirect( Utility::get_page_url( 'thank-you' ) );
+
+			// 1) Custom override URL if provided in Options
+			$custom_ty = \MillionDollarScript\Classes\Data\Options::get_option( 'thank-you-page', '' );
+			if ( ! empty( $custom_ty ) ) {
+				$custom_ty_url = esc_url_raw( (string) $custom_ty );
+				if ( ! empty( $custom_ty_url ) ) {
+					\MillionDollarScript\Classes\System\Utility::redirect( $custom_ty_url );
+					exit;
+				}
+			}
+
+			// 2) Fall back to MDS Thank You page
+			$thank_you_url = \MillionDollarScript\Classes\System\Utility::get_page_url( 'thank-you' );
+			if ( ! empty( $thank_you_url ) ) {
+				\MillionDollarScript\Classes\System\Utility::redirect( $thank_you_url );
+				exit;
+			}
+
+			// 3) Last resort: show a generic message with a Manage link
+			$message  = \MillionDollarScript\Classes\Language\Language::get( '<h3>Your order was completed.</h3>' );
+			$manage   = \MillionDollarScript\Classes\System\Utility::get_page_url( 'manage' );
+			$message .= \MillionDollarScript\Classes\Language\Language::get_replace( '<p>You can manage your pixels under <a href="%MANAGE_URL%">Manage Pixels</a>.</p>', '%MANAGE_URL%', $manage ?: home_url( '/' ) );
+			echo $message;
+			return;
 		} else {
 			Orders::confirm_order( get_current_user_id(), $order_id );
 			// After confirming, let the payment flow continue below

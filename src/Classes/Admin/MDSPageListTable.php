@@ -167,6 +167,10 @@ class MDSPageListTable extends WP_List_Table {
                 continue;
             }
             
+            if ( $post->post_status === 'trash' ) {
+                continue;
+            }
+            
             $item = [
                 'ID' => $metadata->post_id,
                 'title' => $post->post_title,

@@ -335,7 +335,8 @@ class Admin {
 						<?php require MDS_CORE_PATH . "admin/admin_menu.php"; ?>
                         <div class="admin-content">
                             <div class="admin-content-inner">
-								<?php require MDS_CORE_PATH . "admin/" . $submenu_slug_formatted . ".php"; ?>
+                                <?php \MillionDollarScript\Classes\Admin\Notices::display_notices(); ?>
+                                <?php require MDS_CORE_PATH . "admin/" . $submenu_slug_formatted . ".php"; ?>
                             </div>
                         </div>
                     </div>

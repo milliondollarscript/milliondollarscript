@@ -57,6 +57,10 @@ class Changelog {
 			return '';
 		}
 
+		if ( ! self::ensureUpdateCheckerDependencies() ) {
+			return '<p>' . esc_html( Language::get( 'Changelog details are temporarily unavailable. Another plugin is preventing the update checker library from loading completely.' ) ) . '</p>';
+		}
+
 		$currentVersion   = $MDSUpdateChecker->getInstalledVersion();
 		$update           = $MDSUpdateChecker->getUpdate();
 		$changelogContent = '<h2>Current Version: ' . esc_html( $currentVersion ) . '</h2>';
@@ -86,5 +90,33 @@ class Changelog {
 		$changelogContent .= '</ul>';
 
 		return $changelogContent;
+	}
+
+	private static function ensureUpdateCheckerDependencies(): bool {
+		static $checked = false;
+
+		if ( $checked ) {
+			return class_exists( 'PucReadmeParser', false );
+		}
+
+		$checked = true;
+
+		$basePath = MDS_VENDOR_PATH . 'yahnis-elsts/plugin-update-checker/vendor/';
+
+		if ( ! class_exists( 'PucReadmeParser', false ) ) {
+			$parserPath = $basePath . 'PucReadmeParser.php';
+			if ( file_exists( $parserPath ) ) {
+				require_once $parserPath;
+			}
+		}
+
+		if ( ! class_exists( 'Parsedown', false ) ) {
+			$parsedownPath = $basePath . 'Parsedown.php';
+			if ( file_exists( $parsedownPath ) ) {
+				require_once $parsedownPath;
+			}
+		}
+
+		return class_exists( 'PucReadmeParser', false );
 	}
 }

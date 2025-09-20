@@ -424,14 +424,35 @@ if ( $show_selection_controls ) {
 			<input type="button" name='reset_button' id='reset_button' value='<?php echo esc_attr( Language::get( 'Reset' ) ); ?>'>
 		</div>
 
-		<div id="pixel_container">
-			<div id="blocks"></div>
-			<span id='block_pointer'></span>
-			<div class="mds-pixel-wrapper">
-				<img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] ) ); ?>"
-					data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
-					data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
-					alt=""/>
+		<?php
+		$grid_image_src = Utility::get_page_url( 'show-selection', [ 'BID' => $BID, 'gud' => time() ] );
+		?>
+		<div class="mds-grid-frame">
+			<div class="mds-grid-status">
+				<div class="mds-grid-preloader"
+				     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+				     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+				     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+				     hidden>
+					<span class="mds-grid-preloader__spinner" aria-hidden="true"></span>
+				</div>
+				<div class="mds-grid-feedback" role="alert" aria-live="polite" hidden>
+					<p class="mds-grid-feedback__message"><?php Language::out( "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time." ); ?></p>
+					<button type="button" class="mds-grid-feedback__retry"><?php Language::out( 'Retry loading image' ); ?></button>
+				</div>
+			</div>
+
+			<div id="pixel_container" class="mds-grid-canvas">
+				<div class="mds-pixel-wrapper"
+				     data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>">
+					<canvas id="blocks_canvas"></canvas>
+					<span id='block_pointer'></span>
+					<img id="pixelimg" draggable="false" unselectable="on" src="<?php echo esc_url( $grid_image_src ); ?>"
+						data-grid-src="<?php echo esc_url( $grid_image_src ); ?>"
+						data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+						data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+						alt=""/>
+				</div>
 			</div>
 		</div>
 
@@ -444,10 +465,19 @@ if ( $show_selection_controls ) {
     ?>
     <script type="text/javascript">
         // Pass grid dimensions to JavaScript
-        if (typeof MDS_OBJECT !== 'undefined' && MDS_OBJECT.grid_data) {
-                MDS_OBJECT.grid_data.orig_width_px = <?php echo $orig_width; ?>;
-                MDS_OBJECT.grid_data.orig_height_px = <?php echo $orig_height; ?>;
-        }
+        (function(){
+                var loaderUrl = '<?php echo esc_js( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>';
+                if (typeof window !== 'undefined') {
+                        window.MDS_LOADER_URL = loaderUrl;
+                }
+                if (typeof MDS_OBJECT !== 'undefined') {
+                        if (MDS_OBJECT.grid_data) {
+                                MDS_OBJECT.grid_data.orig_width_px = <?php echo $orig_width; ?>;
+                                MDS_OBJECT.grid_data.orig_height_px = <?php echo $orig_height; ?>;
+                        }
+                        MDS_OBJECT.loader_url = loaderUrl;
+                }
+        })();
     </script>
 
 <?php require_once MDS_CORE_PATH . "html/footer.php"; ?>

@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.13.34\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.15.20\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-07 18:30:31\n"
-"PO-Revision-Date: 2025-09-07 18:30:31\n"
-"X-Generator: Million Dollar Script Two 2.5.13.34\n"
+"POT-Creation-Date: 2025-09-19 09:34:24\n"
+"PO-Revision-Date: 2025-09-19 09:34:24\n"
+"X-Generator: Million Dollar Script Two 2.5.15.20\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1614,6 +1614,12 @@ msgstr ""
 msgid "The URL to redirect users to after logout."
 msgstr ""
 
+msgid "WooCommerce Login Redirect"
+msgstr ""
+
+msgid "When WooCommerce integration is enabled, redirect users to this URL after a successful WooCommerce login. Leave empty to use WooCommerce's default behavior."
+msgstr ""
+
 msgid "Login Header Image"
 msgstr ""
 
@@ -1690,6 +1696,12 @@ msgid "How to open links in the popup when they are clicked."
 msgstr ""
 
 msgid "Orders"
+msgstr ""
+
+msgid "Auto-advance after Upload (Advanced)"
+msgstr ""
+
+msgid "When enabled (Advanced selection method only), after a user uploads an image the flow skips the “Your Uploaded Pixels” preview and continues automatically. If the Confirm Orders Page is enabled, it goes to Confirm Order; if Confirm Orders is disabled, it goes directly to Payment. Default is No to show the preview screen as usual."
 msgstr ""
 
 msgid "Block Selection Mode"
@@ -1795,6 +1807,18 @@ msgid "Make Image Optional"
 msgstr ""
 
 msgid "Setting to Yes will make the Image field optional."
+msgstr ""
+
+msgid "Max Upload Width"
+msgstr ""
+
+msgid "Maximum width (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size."
+msgstr ""
+
+msgid "Max Upload Height"
+msgstr ""
+
+msgid "Maximum height (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size."
 msgstr ""
 
 msgid "Permissions"
@@ -2439,6 +2463,9 @@ msgstr ""
 msgid "Million Dollar Script Changelog"
 msgstr ""
 
+msgid "Changelog details are temporarily unavailable. Another plugin is preventing the update checker library from loading completely."
+msgstr ""
+
 msgid "Error:"
 msgstr ""
 
@@ -2868,6 +2895,18 @@ msgstr ""
 msgid "The %FIELD% field is required."
 msgstr ""
 
+msgid "Unable to read the uploaded image dimensions. Please upload a valid image file."
+msgstr ""
+
+msgid "The uploaded image (%ACTUAL_WIDTH% × %ACTUAL_HEIGHT% pixels) exceeds the maximum allowed dimensions of %WIDTH% × %HEIGHT% pixels."
+msgstr ""
+
+msgid "The uploaded image width (%ACTUAL_WIDTH% pixels) exceeds the maximum of %WIDTH% pixels."
+msgstr ""
+
+msgid "The uploaded image height (%ACTUAL_HEIGHT% pixels) exceeds the maximum of %HEIGHT% pixels."
+msgstr ""
+
 msgid "Expiry Date"
 msgstr ""
 
@@ -2932,6 +2971,18 @@ msgid "Sorry, you are required to upload an image with at least %MIN_PIXELS% pix
 msgstr ""
 
 msgid "Failed to prepare uploaded file for processing. Please try again."
+msgstr ""
+
+msgid "Please correct the highlighted fields."
+msgstr ""
+
+msgid "Orders cleared successfully!"
+msgstr ""
+
+msgid "Associated WooCommerce orders were also deleted."
+msgstr ""
+
+msgid "Now you should <a href=\"%PROCESS_PIXELS_URL%\">Process Pixels</a> to regenerate your grid."
 msgstr ""
 
 msgid "Invalid package data submitted. Please check the fields and try again."
@@ -3261,6 +3312,21 @@ msgstr ""
 msgid "Click Count"
 msgstr ""
 
+msgid "You must be logged in to continue."
+msgstr ""
+
+msgid "Invalid grid."
+msgstr ""
+
+msgid "Invalid grid configuration."
+msgstr ""
+
+msgid "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time."
+msgstr ""
+
+msgid "Retry loading image"
+msgstr ""
+
 msgid "<b>The file: %FILE% doesn't exist.</b><br>"
 msgstr ""
 
@@ -3403,6 +3469,9 @@ msgid "Sorry, cannot select block %BLOCK_ID% because it is on order / sold!"
 msgstr ""
 
 msgid "Maximum blocks selected. (%MAX_BLOCKS% allowed per order)"
+msgstr ""
+
+msgid "You must select at least %MAX_BLOCKS% blocks."
 msgstr ""
 
 msgid "<h3>Your order was completed.</h3>"
@@ -3639,19 +3708,19 @@ msgstr ""
 msgid "To column"
 msgstr ""
 
-msgid "Register"
+msgid "No account yet?"
+msgstr ""
+
+msgid "Register Now"
+msgstr ""
+
+msgid "Register for an account"
 msgstr ""
 
 msgid "Security check failed. Please reload the page and try again."
 msgstr ""
 
 msgid "You are not logged in. Please log in or sign up for a new account. The pixels that you have placed on order are saved and will be available once you log in."
-msgstr ""
-
-msgid "Invalid grid."
-msgstr ""
-
-msgid "Invalid grid configuration."
 msgstr ""
 
 msgid "You are not logged in. Please log in or sign up for a new account."
@@ -3735,6 +3804,9 @@ msgstr ""
 msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
 msgstr ""
 
+msgid "Go Back"
+msgstr ""
+
 msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
 msgstr ""
 
@@ -3786,7 +3858,7 @@ msgstr ""
 msgid "Sorry there was an error with your session."
 msgstr ""
 
-msgid "Go Back"
+msgid "Please write your ad before confirming your order."
 msgstr ""
 
 msgid "Complete Order"
@@ -3993,13 +4065,7 @@ msgstr ""
 msgid "The path to your uploads directory: %UPLOAD_PATH%"
 msgstr ""
 
-msgid "Orders cleared successfully!"
-msgstr ""
-
 msgid "Done!"
-msgstr ""
-
-msgid "Now you should <a href=\"%PROCESS_PIXELS_URL%\">Process Pixels</a> to regenerate your grid."
 msgstr ""
 
 msgid "<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"

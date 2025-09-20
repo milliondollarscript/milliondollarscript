@@ -40,6 +40,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Filesystem;
+use MillionDollarScript\Classes\Web\Routes;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -355,10 +356,24 @@ class Utility {
 			if ( \MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions::is_wc_active() ) {
 				$order_ids = $wpdb->get_col( "SELECT order_id FROM " . MDS_DB_PREFIX . "orders" );
 				foreach ( $order_ids as $order_id ) {
-					$wc_order_id = Orders::get_wc_order_id_from_mds_order_id( $order_id );
-					$order       = wc_get_order( $wc_order_id );
-					if ( $order ) {
-						$order->delete( true );
+					$wc_order_id = Orders::get_wc_order_id_from_mds_order_id( (int) $order_id );
+					
+					// Fallback: try mapping stored on the associated MDS Pixel post
+					if ( empty( $wc_order_id ) || ! is_numeric( $wc_order_id ) ) {
+						$order_row = $wpdb->get_row( $wpdb->prepare( "SELECT ad_id FROM " . MDS_DB_PREFIX . "orders WHERE order_id = %d", (int) $order_id ), ARRAY_A );
+						if ( $order_row && ! empty( $order_row['ad_id'] ) ) {
+							$maybe_wc = get_post_meta( (int) $order_row['ad_id'], '_wc_order_id', true );
+							if ( ! empty( $maybe_wc ) ) {
+								$wc_order_id = (int) $maybe_wc;
+							}
+						}
+					}
+					
+					if ( ! empty( $wc_order_id ) ) {
+						$order = wc_get_order( (int) $wc_order_id );
+						if ( $order ) {
+							$order->delete( true );
+						}
 					}
 				}
 			}
@@ -513,27 +528,43 @@ class Utility {
 		}
 		
 		$url = false;
-		
-		// Try to get pages configuration with error handling
+
 		try {
 			$pages = self::get_pages();
 		} catch ( \Exception $e ) {
 			Logs::log( "MDS: Error getting pages configuration: " . $e->getMessage() );
 			$pages = [];
 		}
-		
-		// Check if page exists in configuration
-		if ( empty( $pages ) || ! isset( $pages[ $page_name ] ) ) {
-			Logs::log( "MDS: Unknown page type '{$page_name}' requested or pages configuration unavailable" );
-			
-			// Even if pages config is unavailable, try direct fallback to endpoint
+
+		if ( empty( $pages ) ) {
+			Logs::log( "MDS: Pages configuration unavailable when resolving '{$page_name}'" );
+
 			$url = self::get_endpoint_url( $page_name );
 			if ( $url && ! empty( $args ) ) {
 				$url = add_query_arg( $args, $url );
 			}
+
 			return $url;
 		}
-		
+
+		$endpoint_only_routes = [];
+		if ( class_exists( Routes::class ) && method_exists( Routes::class, 'get_routes' ) ) {
+			$endpoint_only_routes = array_diff( Routes::get_routes(), array_keys( $pages ) );
+		}
+
+		if ( ! isset( $pages[ $page_name ] ) ) {
+			if ( ! in_array( $page_name, $endpoint_only_routes, true ) ) {
+				Logs::log( "MDS: Unknown page type '{$page_name}' requested or pages configuration unavailable" );
+			}
+
+			$url = self::get_endpoint_url( $page_name );
+			if ( $url && ! empty( $args ) ) {
+				$url = add_query_arg( $args, $url );
+			}
+
+			return $url;
+		}
+
 		$page_config = $pages[ $page_name ];
 		
 		// Try to get page-based URL first
@@ -559,33 +590,34 @@ class Utility {
 				Logs::log( "MDS: No valid page ID found for critical page '{$page_name}'" );
 			}
 		}
-		
-        // If page-based URL failed and this is a critical page, decide whether to auto-create or fall back
-        if ( empty( $url ) && in_array( $page_name, [ 'order', 'grid', 'manage' ], true ) ) {
-            // Only auto-create if the wizard explicitly created pages
-$pages_created = (bool) get_option( \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_PAGES_CREATED, false );
 
-            if ( $pages_created ) {
-                try {
-                    $created_page_id = self::ensure_page_exists( $page_name );
-                    if ( $created_page_id && is_numeric( $created_page_id ) ) {
-                        $permalink = get_permalink( $created_page_id );
-                        if ( $permalink && $permalink !== home_url( '/' ) ) {
-                            $url = $permalink;
-                            // Clear the cached pages to reflect the new page
-                            global $mds_pages, $mds_page_ids;
-                            $mds_pages = null;
-                            $mds_page_ids = null;
-                        }
-                    }
-} catch ( \Exception $e ) {
-                    Logs::log( "MDS: Error auto-creating page for '{$page_name}': " . $e->getMessage() );
-                }
-            } else {
-                // Wizard hasn't created pages: use endpoint fallback instead of auto-creating pages
-                $url = self::get_endpoint_url( $page_name );
-            }
-        }
+		// If page-based URL failed and this is a critical page, decide whether to auto-create or fall back
+		if ( empty( $url ) && in_array( $page_name, [ 'order', 'grid', 'manage' ], true ) ) {
+			// Only auto-create if the wizard explicitly created pages
+			$pages_created = (bool) get_option( \MillionDollarScript\Classes\Pages\Wizard::OPTION_NAME_PAGES_CREATED, false );
+
+			if ( $pages_created ) {
+				try {
+					$created_page_id = self::ensure_page_exists( $page_name );
+					if ( $created_page_id && is_numeric( $created_page_id ) ) {
+						$permalink = get_permalink( $created_page_id );
+						if ( $permalink && $permalink !== home_url( '/' ) ) {
+							$url = $permalink;
+
+							// Clear the cached pages to reflect the new page
+							global $mds_pages, $mds_page_ids;
+							$mds_pages   = null;
+							$mds_page_ids = null;
+						}
+					}
+				} catch ( \Exception $e ) {
+					Logs::log( "MDS: Error auto-creating page for '{$page_name}': " . $e->getMessage() );
+				}
+			} else {
+				// Wizard hasn't created pages: use endpoint fallback instead of auto-creating pages
+				$url = self::get_endpoint_url( $page_name );
+			}
+		}
 		
 		// Fallback to endpoint URL if page-based URL still failed
 		if ( empty( $url ) ) {

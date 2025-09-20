@@ -36,7 +36,18 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
+use MillionDollarScript\Classes\Orders\Blocks;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
+use function esc_attr;
+use function esc_html;
+use function esc_url;
+use function sanitize_html_class;
+use function sanitize_key;
+use function sanitize_text_field;
+use function wp_json_encode;
+use function wp_strip_all_tags;
+use function wp_unslash;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -134,7 +145,12 @@ class Ajax {
 						require_once MDS_CORE_PATH . 'users/write_ad.php';
 						wp_die();
 					case "make-selection":
+						// Logs::log( 'MDS AJAX make-selection request routed through Orders::persist_selection handler.' );
+						// Logging suppressed to reduce noise while the legacy shim is still active.
 						require_once MDS_CORE_PATH . 'users/make_selection.php';
+						wp_die();
+					case "validate-selection":
+						self::handle_validate_selection();
 						wp_die();
 					default:
 						break;
@@ -143,6 +159,39 @@ class Ajax {
 		}
 
 		wp_die();
+	}
+
+	private static function handle_validate_selection(): void {
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( [
+				'messages' => [ Language::get( 'You must be logged in to continue.' ) ],
+			], 401 );
+		}
+
+		$BID = isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0;
+		if ( $BID <= 0 ) {
+			wp_send_json_error( [ 'messages' => [ Language::get( 'Invalid grid.' ) ] ], 400 );
+		}
+
+		$banner_data = load_banner_constants( $BID );
+		if ( empty( $banner_data ) ) {
+			wp_send_json_error( [ 'messages' => [ Language::get( 'Invalid grid configuration.' ) ] ], 400 );
+		}
+
+		$mode       = isset( $_REQUEST['mode'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_REQUEST['mode'] ) ) ) : null;
+		$raw_blocks = $_REQUEST['blocks'] ?? '';
+		$block_ids  = Blocks::parse_block_ids( $raw_blocks );
+
+		$errors = Blocks::validate_selection( $block_ids, $banner_data, $mode );
+		if ( ! empty( $errors ) ) {
+			wp_send_json_error( [ 'messages' => $errors ] );
+		}
+
+		wp_send_json_success( [
+			'messages'   => [],
+			'normalized' => implode( ',', $block_ids ),
+			'count'      => count( $block_ids ),
+		] );
 	}
 
 	public static function show_grid(): void {
@@ -174,18 +223,34 @@ class Ajax {
 		if ( file_exists( $BANNER_PATH . "grid" . $BID . ".$ext" ) ) {
 			$container = 'grid' . $BID;
 
-			$bgstyle = "";
-			if ( ! empty( $banner_data['G_BGCOLOR'] ) ) {
-				$bgstyle = ' style="background-color:' . $banner_data['G_BGCOLOR'] . ';"';
-			}
+			$background_color = mds_get_grid_background_color( $BID, $banner_data );
+			$bgstyle          = $background_color ? ' style="background-color:' . esc_attr( $background_color ) . ';"' : '';
+			$grid_src = $BANNER_URL . 'grid' . $BID . '.' . $ext . '?v=' . filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" );
 			?>
             <div class="mds-container">
                 <div class="grid-container <?php echo $container; ?>"<?php echo $bgstyle ?>>
                     <div class='grid-inner' id='<?php echo $container; ?>'>
 						<?php include_once( $map_file ); ?>
-                        <img id="theimage" src="<?php echo $BANNER_URL; ?>grid<?php echo $BID; ?>.<?php echo $ext; ?>?v=<?php echo filemtime( $BANNER_PATH . "grid" . $BID . ".$ext" ); ?>"
-                            width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0"
-                            usemap="#map-grid-<?php echo $BID; ?>" alt=""/>
+                        <div class="mds-grid-frame">
+                            <div class="mds-grid-status">
+                                <div class="mds-grid-preloader"
+                                    data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+                                    data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                                    data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                                    hidden>
+                                    <span class="mds-grid-preloader__spinner" aria-hidden="true"></span>
+                                </div>
+                                <div class="mds-grid-feedback" role="alert" aria-live="polite" hidden>
+                                    <p class="mds-grid-feedback__message"><?php Language::out( "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time." ); ?></p>
+                                    <button type="button" class="mds-grid-feedback__retry"><?php Language::out( 'Retry loading image' ); ?></button>
+                                </div>
+                            </div>
+                            <div class="mds-grid-canvas">
+                                <img id="theimage" src="<?php echo esc_url( $grid_src ); ?>" data-grid-src="<?php echo esc_url( $grid_src ); ?>"
+                                    width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>" height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>" border="0"
+                                    usemap="#map-grid-<?php echo $BID; ?>" alt=""/>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -384,74 +449,513 @@ class Ajax {
 		require_once MDS_CORE_PATH . 'include/ads.inc.php';
 		global $wpdb;
 
-		?>
-        <div class="mds-container list-container">
-            <div class="list">
-                <div class="table-row header">
-                    <div class="list-heading"><?php Language::out( 'Date of Purchase' ); ?></div>
-                    <div class="list-heading"><?php Language::out( 'Ads(s)' ); ?></div>
-                    <div class="list-heading"><?php Language::out( 'Pixels' ); ?></div>
-                </div>
-				<?php
-				$sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners ORDER BY banner_id";
-				$banners = $wpdb->get_results( $sql, ARRAY_A );
-				foreach ( $banners as $banner ) {
-					?>
-                    <div class="table-row header">
-                        <div class="list-heading" style="width:100%;"><?php echo esc_html( $banner['name'] ); ?></div>
-                    </div>
-					<?php
-					//TODO: add option to order by other columns
-					$sql = $wpdb->prepare( "SELECT *, MAX(order_date) as max_date, sum(quantity) AS pixels FROM " . MDS_DB_PREFIX . "orders WHERE status='completed' AND approved='Y' AND published='Y' AND banner_id=%d GROUP BY user_id, banner_id, order_id ORDER BY pixels DESC", intval( $banner['banner_id'] ) );
-					$results = $wpdb->get_results( $sql, ARRAY_A );
-					foreach ( $results as $row ) {
-						?>
-                        <div class="table-row">
-                            <div class="list-cell">
-								<?php echo esc_html( get_date_from_gmt( $row['max_date'] ) ); ?>
-                            </div>
-                            <div class="list-cell">
-								<?php
+		$requested_bid = isset( $_REQUEST['BID'] ) ? absint( $_REQUEST['BID'] ) : 0;
+		$context       = [
+			'requested_bid' => $requested_bid,
+			'request'       => $_REQUEST,
+		];
 
-								if ( ! isset( $row['ad_id'] ) ) {
-									continue;
-								}
+		$container_attributes = [
+			'class' => 'mds-container list-container',
+		];
+		if ( $requested_bid > 0 ) {
+			$container_attributes['data-bid'] = (string) $requested_bid;
+		}
+		$container_attributes = apply_filters( 'mds_list_container_attributes', $container_attributes, $context );
 
-								$blocks   = explode( ',', $row['blocks'] );
-								$block_id = $blocks[0];
+		$list_attributes = apply_filters( 'mds_list_wrapper_attributes', [ 'class' => 'list' ], $context );
 
-								$ALT_TEXT = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'text' );
-								$ALT_TEXT = str_replace( [ "'", '"' ], "", $ALT_TEXT ?? '' );
+		$columns = apply_filters( 'mds_list_columns', self::get_default_list_columns(), $context );
+		if ( empty( $columns ) || ! is_array( $columns ) ) {
+			$columns = self::get_default_list_columns();
+		}
 
-								$url = carbon_get_post_meta( $row['ad_id'], MDS_PREFIX . 'url' );
+		$column_count = self::count_list_columns( $columns );
+		$context['column_count'] = $column_count;
 
-								$data_values = array(
-									'aid'       => $row['ad_id'],
-									'block_id'  => $block_id,
-									'banner_id' => $banner['banner_id'],
-									'alt_text'  => $ALT_TEXT,
-									'url'       => $url ?: "",
-								);
+		$grid_tracks = self::build_list_grid_tracks( $columns, $context );
+		$grid_tracks = apply_filters( 'mds_list_grid_tracks', $grid_tracks, $columns, $context );
+		$grid_template = implode( ' ', array_filter( array_map( 'trim', $grid_tracks ) ) );
+		$grid_template = apply_filters( 'mds_list_grid_template', $grid_template, $columns, $context );
 
-								echo '<br /><a target="_blank" data-data="' . htmlspecialchars( json_encode( $data_values, JSON_HEX_QUOT | JSON_HEX_APOS ), ENT_QUOTES, 'UTF-8' ) . '" data-alt-text="' . esc_attr( $ALT_TEXT ) . '" class="list-link" href="' . esc_url( $data_values['url'] ) . '">' . esc_html( $ALT_TEXT ) . '</a>';
+		if ( '' !== $grid_template ) {
+			$list_attributes = self::append_inline_style_declaration( $list_attributes, '--mds-list-grid-template:' . $grid_template . ';' );
+		}
 
-								?>
-                            </div>
-                            <div class="list-cell">
-								<?php echo intval( $row['pixels'] ); ?>
-                            </div>
-                        </div>
-						<?php
-					}
+		$list_attributes['data-column-count'] = (string) $column_count;
+		$context['grid_tracks']             = $grid_tracks;
+		$context['grid_template']           = $grid_template;
+
+		$heading_cells = [];
+		foreach ( $columns as $column ) {
+			$heading_cells[] = apply_filters(
+				'mds_list_heading_cell',
+				[
+					'content'    => $column['label'],
+					'attributes' => $column['heading_attributes'] ?? [ 'class' => 'list-heading' ],
+					'column'     => $column,
+				],
+				$column,
+				$context
+			);
+		}
+		$heading_cells          = apply_filters( 'mds_list_heading_cells', $heading_cells, $columns, $context );
+		$heading_row_attributes = apply_filters(
+			'mds_list_heading_row_attributes',
+			[ 'class' => 'table-row header' ],
+			$columns,
+			$context
+		);
+
+		$banners_sql = 'SELECT * FROM ' . MDS_DB_PREFIX . 'banners ORDER BY banner_id';
+		if ( $requested_bid > 0 ) {
+			$banners_sql = $wpdb->prepare(
+				'SELECT * FROM ' . MDS_DB_PREFIX . 'banners WHERE banner_id = %d',
+				$requested_bid
+			);
+		}
+		$banners_sql = apply_filters( 'mds_list_banners_sql', $banners_sql, $context );
+
+		$banners = $wpdb->get_results( $banners_sql, ARRAY_A );
+		$banners = apply_filters( 'mds_list_banners', $banners, $context );
+
+		$override_markup = apply_filters(
+			'mds_list_markup',
+			null,
+			[
+				'context'              => $context,
+				'columns'              => $columns,
+				'banners'              => $banners,
+				'heading_cells'        => $heading_cells,
+				'container_attributes' => $container_attributes,
+				'list_attributes'      => $list_attributes,
+			]
+		);
+
+		if ( null !== $override_markup ) {
+			echo $override_markup;
+			return;
+		}
+
+		do_action( 'mds_before_list', $context, $columns, $banners );
+
+		echo '<div' . self::stringify_attributes( $container_attributes ) . '>';
+		do_action( 'mds_before_list_inner', $context, $columns, $banners );
+
+		echo '<div class="mds-list-wrapper">';
+		echo '<div' . self::stringify_attributes( $list_attributes ) . '>';
+
+		self::render_row( $heading_cells, $heading_row_attributes );
+
+		foreach ( $banners as $banner ) {
+			$banner_context = array_merge( $context, [ 'banner' => $banner ] );
+
+			$banner_markup = apply_filters( 'mds_list_banner_markup', null, $banner_context, $columns );
+			if ( null !== $banner_markup ) {
+				echo $banner_markup;
+				continue;
+			}
+
+			$banner_heading_row_attributes = apply_filters(
+				'mds_list_banner_heading_row_attributes',
+				[ 'class' => [ 'header', 'mds-banner-row' ] ],
+				$banner_context,
+				$columns
+			);
+
+			if ( $column_count > 0 && ! isset( $banner_heading_row_attributes['data-column-count'] ) ) {
+				$banner_heading_row_attributes['data-column-count'] = (string) $column_count;
+			}
+
+			$banner_heading_cell = apply_filters(
+				'mds_list_banner_heading_cell',
+				[
+					'content'    => esc_html( $banner['name'] ),
+					'attributes' => [
+						'class' => [ 'list-heading', 'mds-banner-heading' ],
+					],
+				],
+				$banner_context,
+				$columns
+			);
+
+			$banner_heading_markup = apply_filters( 'mds_list_banner_heading_markup', null, $banner_heading_row_attributes, $banner_heading_cell, $banner_context, $columns );
+			if ( null !== $banner_heading_markup ) {
+				echo $banner_heading_markup;
+			} else {
+				echo '<div' . self::stringify_attributes( $banner_heading_row_attributes ) . '>';
+				echo '<div' . self::stringify_attributes( $banner_heading_cell['attributes'] ?? [] ) . '>' . $banner_heading_cell['content'] . '</div>';
+				echo '</div>';
+			}
+
+			$orders_sql = $wpdb->prepare(
+				"SELECT *, MAX(order_date) AS max_date, SUM(quantity) AS pixels FROM " . MDS_DB_PREFIX . "orders WHERE status = 'completed' AND approved = 'Y' AND published = 'Y' AND banner_id = %d GROUP BY user_id, banner_id, order_id ORDER BY pixels DESC",
+				intval( $banner['banner_id'] )
+			);
+			$orders_sql = apply_filters( 'mds_list_orders_sql', $orders_sql, $banner_context, $columns );
+
+			$rows = $wpdb->get_results( $orders_sql, ARRAY_A );
+			$rows = apply_filters( 'mds_list_rows', $rows, $banner_context, $columns );
+
+			if ( empty( $rows ) ) {
+				do_action( 'mds_list_no_rows', $banner_context, $columns );
+				continue;
+			}
+
+			foreach ( $rows as $row ) {
+				$row_context = self::build_list_row_context( $row, $banner, $columns, $context );
+				$row_context = apply_filters( 'mds_list_row_context', $row_context, $row, $banner, $columns );
+
+				if ( ! empty( $row_context['skip'] ) ) {
+					continue;
 				}
-				?>
-                <div class="table-row header">
-                    <div class="list-heading"><?php Language::out( 'Date of Purchase' ); ?></div>
-                    <div class="list-heading"><?php Language::out( 'Ads(s)' ); ?></div>
-                    <div class="list-heading"><?php Language::out( 'Pixels' ); ?></div>
-                </div>
-            </div>
-        </div>
-		<?php
+
+				$row_cells = self::build_list_row_cells( $columns, $row_context );
+				$row_cells = apply_filters( 'mds_list_row_cells', $row_cells, $row_context, $columns );
+
+				$row_attributes = apply_filters(
+					'mds_list_row_attributes',
+					[ 'class' => 'table-row' ],
+					$row_context,
+					$columns
+				);
+
+				$row_markup = apply_filters(
+					'mds_list_row_markup',
+						null,
+						$row_context,
+						$columns,
+						$row_cells,
+						$row_attributes
+				);
+
+				if ( null !== $row_markup ) {
+					echo $row_markup;
+					continue;
+				}
+
+				self::render_row( $row_cells, $row_attributes );
+			}
+
+			do_action( 'mds_after_list_banner_rows', $banner_context, $columns );
+		}
+
+		$render_footer_heading = apply_filters( 'mds_list_render_footer_heading', true, $context, $columns );
+
+		if ( $render_footer_heading ) {
+			self::render_row( $heading_cells, $heading_row_attributes );
+		}
+
+		echo '</div>';
+		echo '</div>';
+		do_action( 'mds_after_list_inner', $context, $columns, $banners );
+
+		echo '</div>';
+		do_action( 'mds_after_list', $context, $columns, $banners );
+	}
+
+	private static function get_default_list_columns(): array {
+		return [
+			[
+				'key'               => 'date',
+				'label'             => Language::get( 'Date of Purchase' ),
+				'render_callback'   => [ __CLASS__, 'render_list_date_cell' ],
+				'cell_attributes'   => [ 'class' => 'list-cell' ],
+				'heading_attributes' => [ 'class' => 'list-heading' ],
+			],
+			[
+				'key'               => 'ads',
+				'label'             => Language::get( 'Ads(s)' ),
+				'render_callback'   => [ __CLASS__, 'render_list_ads_cell' ],
+				'cell_attributes'   => [ 'class' => 'list-cell' ],
+				'heading_attributes' => [ 'class' => 'list-heading' ],
+			],
+			[
+				'key'               => 'pixels',
+				'label'             => Language::get( 'Pixels' ),
+				'render_callback'   => [ __CLASS__, 'render_list_pixels_cell' ],
+				'cell_attributes'   => [ 'class' => 'list-cell' ],
+				'heading_attributes' => [ 'class' => 'list-heading' ],
+			],
+		];
+	}
+
+	private static function build_list_row_context( array $row, array $banner, array $columns, array $context ): array {
+		$ad_id = isset( $row['ad_id'] ) ? intval( $row['ad_id'] ) : 0;
+
+		if ( $ad_id <= 0 ) {
+			return [
+				'row'     => $row,
+				'banner'  => $banner,
+				'columns' => $columns,
+				'context' => $context,
+				'skip'    => true,
+			];
+		}
+
+		$blocks = [];
+		if ( ! empty( $row['blocks'] ) ) {
+			$blocks = array_filter(
+				array_map( 'trim', explode( ',', (string) $row['blocks'] ) ),
+				static function ( $value ) {
+					return $value !== '';
+				}
+			);
+		}
+		$first_block = ! empty( $blocks ) ? intval( reset( $blocks ) ) : 0;
+
+		$alt_text      = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' ) ?? '';
+		$alt_text_trim = str_replace( [ "'", "\"" ], '', $alt_text );
+
+		$url = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' ) ?: '';
+
+		$data_values = [
+			'aid'       => $ad_id,
+			'block_id'  => $first_block,
+			'banner_id' => intval( $banner['banner_id'] ?? 0 ),
+			'alt_text'  => $alt_text_trim,
+			'url'       => $url,
+		];
+
+		$data_values = apply_filters( 'mds_list_link_data', $data_values, $row, $banner, $context );
+
+		return [
+			'row'            => $row,
+			'banner'         => $banner,
+			'columns'        => $columns,
+			'context'        => $context,
+			'skip'           => false,
+			'ad_id'          => $ad_id,
+			'blocks'         => $blocks,
+			'first_block'    => $first_block,
+			'alt_text_raw'   => $alt_text,
+			'alt_text_clean' => $alt_text_trim,
+			'url'            => $url,
+			'pixels'         => intval( $row['pixels'] ?? 0 ),
+			'data_values'   => $data_values,
+		];
+	}
+
+	private static function build_list_row_cells( array $columns, array $row_context ): array {
+		$cells = [];
+
+		foreach ( $columns as $column ) {
+			$key = $column['key'] ?? '';
+
+			if ( '' === $key ) {
+				continue;
+			}
+
+			$cell = [
+				'content'    => '',
+				'attributes' => $column['cell_attributes'] ?? [ 'class' => 'list-cell' ],
+				'column'     => $column,
+			];
+
+			if ( isset( $column['render_callback'] ) && is_callable( $column['render_callback'] ) ) {
+				$cell['content'] = call_user_func( $column['render_callback'], $row_context, $column );
+			} else {
+				$value_key       = $column['value_key'] ?? $key;
+				$value           = $row_context['row'][ $value_key ] ?? '';
+				$cell['content'] = esc_html( (string) $value );
+			}
+
+			$cell = apply_filters( 'mds_list_cell', $cell, $column, $row_context );
+
+			$filter_key = sanitize_key( $key );
+			$cell       = apply_filters( 'mds_list_cell_' . $filter_key, $cell, $column, $row_context );
+
+			$cells[ $key ] = $cell;
+		}
+
+		return $cells;
+	}
+
+	private static function render_list_date_cell( array $row_context, array $column ): string {
+		$date = $row_context['row']['max_date'] ?? '';
+
+		if ( empty( $date ) ) {
+			return '';
+		}
+
+		return esc_html( get_date_from_gmt( $date ) );
+	}
+
+	private static function render_list_ads_cell( array $row_context, array $column ): string {
+		$data_values = $row_context['data_values'] ?? [];
+		$json        = wp_json_encode( $data_values, JSON_HEX_QUOT | JSON_HEX_APOS );
+
+		if ( false === $json ) {
+			$json = '[]';
+		}
+
+		$attributes = [
+			'target'        => '_blank',
+			'class'         => 'list-link',
+			'href'          => esc_url( $row_context['url'] ?? '' ),
+			'data-data'     => htmlspecialchars( $json, ENT_QUOTES, 'UTF-8' ),
+			'data-alt-text' => $row_context['alt_text_clean'] ?? '',
+		];
+
+		$attributes = apply_filters( 'mds_list_link_attributes', $attributes, $row_context, $column );
+
+		$link_text = $row_context['alt_text_raw'] ?? '';
+		if ( '' === $link_text ) {
+			$link_text = $row_context['url'] ?? '';
+		}
+		$link_text = apply_filters( 'mds_list_link_text', $link_text, $row_context, $column );
+
+		return '<br /><a' . self::stringify_attributes( $attributes ) . '>' . esc_html( $link_text ) . '</a>';
+	}
+
+	private static function render_list_pixels_cell( array $row_context, array $column ): string {
+		return esc_html( (string) intval( $row_context['pixels'] ?? 0 ) );
+	}
+
+	private static function count_list_columns( $columns ): int {
+		if ( empty( $columns ) || ! is_iterable( $columns ) ) {
+			return 1;
+		}
+
+		$count = 0;
+		foreach ( $columns as $column ) {
+			if ( is_array( $column ) ) {
+				$count++;
+			}
+		}
+
+		return max( 1, $count );
+	}
+
+	private static function build_list_grid_tracks( array $columns, array $context ): array {
+		$tracks = [];
+
+		foreach ( array_values( $columns ) as $index => $column ) {
+			$tracks[] = self::resolve_grid_track_value( $column, $index, $columns, $context );
+		}
+
+		return $tracks;
+	}
+
+	private static function resolve_grid_track_value( array $column, int $index, array $columns, array $context ): string {
+		if ( isset( $column['grid_track'] ) ) {
+			$track = trim( (string) $column['grid_track'] );
+			if ( '' !== $track ) {
+				return $track;
+			}
+		}
+
+		$default_tracks = apply_filters(
+			'mds_list_default_grid_tracks',
+			[
+				0 => 'minmax(180px, 0.25fr)',
+				1 => 'minmax(0, 0.55fr)',
+			],
+			$columns,
+			$context
+		);
+
+		if ( isset( $default_tracks[ $index ] ) ) {
+			return (string) $default_tracks[ $index ];
+		}
+
+		return apply_filters( 'mds_list_fallback_grid_track', 'minmax(0, 0.25fr)', $column, $index, $columns, $context );
+	}
+
+	private static function append_inline_style_declaration( array $attributes, string $declaration ): array {
+		$declaration = trim( $declaration );
+		if ( '' === $declaration ) {
+			return $attributes;
+		}
+
+		if ( isset( $attributes['style'] ) ) {
+			if ( is_array( $attributes['style'] ) ) {
+				$attributes['style'][] = $declaration;
+			} else {
+				$attributes['style'] = trim( (string) $attributes['style'] );
+				if ( '' !== $attributes['style'] ) {
+					$attributes['style'] .= ' ' . $declaration;
+				} else {
+					$attributes['style'] = $declaration;
+				}
+			}
+		} else {
+			$attributes['style'] = $declaration;
+		}
+
+		return $attributes;
+	}
+
+	private static function render_row( array $cells, array $row_attributes ): void {
+		echo '<div' . self::stringify_attributes( $row_attributes ) . '>';
+
+		foreach ( $cells as $cell ) {
+			$attributes = [];
+			if ( isset( $cell['attributes'] ) && is_array( $cell['attributes'] ) ) {
+				$attributes = $cell['attributes'];
+			}
+
+			if ( ! isset( $attributes['data-label'] ) && isset( $cell['column']['label'] ) ) {
+				$attributes['data-label'] = wp_strip_all_tags( (string) $cell['column']['label'] );
+			}
+
+			echo '<div' . self::stringify_attributes( $attributes ) . '>';
+			echo $cell['content'];
+			echo '</div>';
+		}
+
+		echo '</div>';
+	}
+
+	private static function stringify_attributes( array $attributes ): string {
+		if ( empty( $attributes ) ) {
+			return '';
+		}
+
+		$parts = [];
+
+		foreach ( $attributes as $key => $value ) {
+			if ( null === $value ) {
+				continue;
+			}
+
+			if ( is_bool( $value ) ) {
+				if ( $value ) {
+					$parts[] = esc_attr( $key );
+				}
+				continue;
+			}
+
+			if ( 'class' === $key ) {
+				if ( is_array( $value ) ) {
+					$value = array_filter( array_map( 'sanitize_html_class', $value ) );
+					if ( empty( $value ) ) {
+						continue;
+					}
+					$value = implode( ' ', $value );
+				} else {
+					$raw_classes = preg_split( '/\s+/', (string) $value, -1, PREG_SPLIT_NO_EMPTY );
+					$value       = array_filter( array_map( 'sanitize_html_class', $raw_classes ) );
+					if ( empty( $value ) ) {
+						continue;
+					}
+					$value = implode( ' ', $value );
+				}
+			} elseif ( is_array( $value ) ) {
+				$value = implode( ' ', array_map( 'strval', $value ) );
+			}
+
+			if ( '' === $value ) {
+				continue;
+			}
+
+			$parts[] = sprintf( '%s="%s"', esc_attr( $key ), esc_attr( (string) $value ) );
+		}
+
+		if ( empty( $parts ) ) {
+			return '';
+		}
+
+		return ' ' . implode( ' ', $parts );
 	}
 }

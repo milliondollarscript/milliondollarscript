@@ -78,43 +78,31 @@ function mds_wp_login_check(): void {
 						?>
                         <div class="mds-login-form">
 							<?php
+							// Inject Register link inside the loginform (below submit) using the login_form_bottom filter
+							$__mds_login_cta_filter = null;
+							if ( get_option( 'users_can_register' ) ) {
+								$mds_register_cta_prefix = Language::get( 'No account yet?', false );
+								$mds_register_cta_link_text = Language::get( 'Register Now', false );
+								$mds_register_cta_aria = esc_attr( Language::get( 'Register for an account', false ) );
+								$__mds_cta_html = '<div class="mds-login-register-cta" style="margin-top:12px;color: var(--mds-text-secondary, #6c757d); font-size:0.95rem;"><span class="mds-register-prefix">' . $mds_register_cta_prefix . '</span> <a href="' . esc_url( $register_page ) . '" class="mds-register-link" title="' . $mds_register_cta_aria . '" aria-label="' . $mds_register_cta_aria . '" style="background:transparent !important;background-color:transparent !important;border:none !important;padding:0 !important;margin:0 !important;display:inline !important;color: var(--mds-accessible-link, #0066cc) !important;text-decoration: underline !important;font-weight:600;font-size:0.95rem;">' . $mds_register_cta_link_text . '</a></div>';
+								$__mds_login_cta_filter = function( $content, $args ) use ( $__mds_cta_html ) {
+									return $content . $__mds_cta_html;
+								};
+								add_filter( 'login_form_bottom', $__mds_login_cta_filter, 10, 2 );
+							}
+
 							// Login form
 							wp_login_form( [
 								'echo'     => true,
 								'redirect' => $login_redirect_url,
 							] );
 
-							// Register button
-							if ( get_option( 'users_can_register' ) ) {
-								?>
-                                <div class="mds-register-btn-container" style="display:none;"><a href="<?php echo esc_url( $register_page ); ?>" class="mds-register-link"><?php Language::out( 'Register' ); ?></a></div>
-								<?php
+							if ( $__mds_login_cta_filter ) {
+								remove_filter( 'login_form_bottom', $__mds_login_cta_filter, 10 );
 							}
+
 							?>
                         </div>
-                        <script>
-	                        jQuery(document).ready(function($){
-								const registerBtn = $('.mds-register-btn-container');
-								if (registerBtn.length) {
-									const submitBtn = $('#loginform .button[name="wp-submit"]');
-									const containerWidth = submitBtn.parent().width();
-									const targetWidth = containerWidth * 0.50 - 5;
-									submitBtn.animate({width: targetWidth}, 500);
-									setTimeout(function() {
-										registerBtn.insertAfter(submitBtn);
-										registerBtn.css({
-											width: '0',
-											display: 'inline-block',
-											verticalAlign: 'top',
-											overflow: 'hidden'
-										});
-										registerBtn.animate({width: targetWidth}, 500, function() {
-											registerBtn.css('overflow', 'visible');
-										});
-									}, 200);
-								}
-							});
-                        </script>
 						<?php
 						exit;
 					} else {

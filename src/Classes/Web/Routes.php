@@ -52,7 +52,7 @@ class Routes {
 		register_deactivation_hook( MDS_BASE_FILE, [ __CLASS__, 'deactivate' ] );
 	}
 
-	private static function get_routes(): array {
+	public static function get_routes(): array {
 		return [
 			'order',
 			'order-pixels',
@@ -97,6 +97,7 @@ class Routes {
 		$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
 
 		if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
+			add_filter( 'woocommerce_checkout_redirect_empty_cart', [ __CLASS__, 'prevent_wc_checkout_redirect' ], 999 );
 			$post_id = Options::get_option( 'dynamic-id' );
 			if ( ! empty( $post_id ) ) {
 				$post_id = intval( $post_id );
@@ -122,6 +123,10 @@ class Routes {
 		}
 	}
 
+	public static function prevent_wc_checkout_redirect( bool $should_redirect ): bool {
+		return false;
+	}
+
 	/**
 	 * Handle template_include filter.
 	 *
@@ -135,9 +140,14 @@ class Routes {
 		// Handle MDS Pixel post type
 		if ( is_singular( FormFields::$post_type ) ) {
 
-			if ( Options::get_option( 'mds-pixel-template', 'no' ) == 'no' ) {
-				// Redirect to 404 page.
+			$pixel_template_setting = strtolower( (string) Options::get_option( 'mds-pixel-template', 'no' ) );
+			if ( in_array( $pixel_template_setting, [ 'no', 'false', '0' ], true ) ) {
+				// Force WordPress into 404 mode when pixel pages are disabled.
 				status_header( 404 );
+				nocache_headers();
+				if ( $wp_query instanceof \WP_Query ) {
+					$wp_query->set_404();
+				}
 
 				return get_404_template();
 			}

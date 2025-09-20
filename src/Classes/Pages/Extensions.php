@@ -2358,7 +2358,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         $activated = false;
         $expires_at = null;
         try {
-            $user_configured_url = \\MillionDollarScript\\Classes\\Data\\Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
+            $user_configured_url = \MillionDollarScript\Classes\Data\Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
             $candidates = [
                 rtrim((string)$user_configured_url, '/'),
                 'http://extension-server:3000',
@@ -2370,7 +2370,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             foreach ($candidates as $base) {
                 if (empty($base)) { continue; }
                 $probe = rtrim($base, '/') . '/api/public/ping';
-                $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !\\MillionDollarScript\\Classes\\System\\Utility::is_development_environment() ]);
+                $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment() ]);
                 if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
                     $working_base = $base;
                     break;
@@ -2385,7 +2385,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 $resp = wp_remote_post($activate_url, [
                     'timeout' => 20,
                     'headers' => [ 'Content-Type' => 'application/json' ],
-                    'sslverify' => !\\MillionDollarScript\\Classes\\System\\Utility::is_development_environment(),
+                    'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment(),
                     'body'    => $body,
                 ]);
                 if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
@@ -2399,14 +2399,14 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                     }
                 }
             }
-        } catch (\\Exception $e) {
+        } catch (\Exception $e) {
             // ignore; will store pending
         }
 
         // Encrypt and store locally
-        $license_manager = new \\MillionDollarScript\\Classes\\Extension\\MDS_License_Manager();
+        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
         $existing = $license_manager->get_license( $extension_slug );
-        $enc = \\MillionDollarScript\\Classes\\Extension\\LicenseCrypto::encryptToCompact($license_key);
+        $enc = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact($license_key);
 
         if ( $existing ) {
             $license_manager->update_license( (int)$existing->id, [
@@ -2459,14 +2459,14 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
     }
 
     public static function ajax_activate_license(): void {
-        check_ajax_referer( 'mds_license_nonce_' . $_POST['extension_slug'], 'nonce' );
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] ?? '' );
+        check_ajax_referer( 'mds_license_nonce_' . $extension_slug, 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ] );
         }
 
-        $extension_slug = sanitize_text_field( $_POST['extension_slug'] );
-        $license_key    = sanitize_text_field( $_POST['license_key'] );
+        $license_key = sanitize_text_field( $_POST['license_key'] ?? '' );
 
         if ( empty( $extension_slug ) || empty( $license_key ) ) {
             wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
@@ -2474,7 +2474,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
         // Activate via Extension Server public endpoint, then store locally
         try {
-            $activation = \\MillionDollarScript\\Classes\\Extension\\API::activate_license( $license_key, $extension_slug );
+            $activation = \MillionDollarScript\Classes\Extension\API::activate_license( $license_key, $extension_slug );
             $ok = is_array($activation) && (!empty($activation['success']) || !empty($activation['activated']) || !empty($activation['valid']));
             $expires_at = '';
             if (is_array($activation)) {
@@ -2489,9 +2489,9 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 wp_send_json_error([ 'message' => $msg ]);
             }
 
-            $license_manager = new \\MillionDollarScript\\Classes\\Extension\\MDS_License_Manager();
+            $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
             $existing = $license_manager->get_license( $extension_slug );
-            $enc_key = \\MillionDollarScript\\Classes\\Extension\\LicenseCrypto::encryptToCompact($license_key);
+            $enc_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact($license_key);
 
             if ( $existing ) {
                 $license_manager->update_license( (int)$existing->id, [
@@ -2511,7 +2511,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             }
 
             wp_send_json_success( [ 'message' => Language::get('License activated and stored.') ] );
-        } catch (\\Exception $e) {
+        } catch (\Exception $e) {
             wp_send_json_error([ 'message' => $e->getMessage() ]);
         }
     }
@@ -2520,13 +2520,12 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
      * AJAX handler for deactivating a license.
      */
     public static function ajax_deactivate_license(): void {
-        check_ajax_referer( 'mds_license_nonce_' . $_POST['extension_slug'], 'nonce' );
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] ?? '' );
+        check_ajax_referer( 'mds_license_nonce_' . $extension_slug, 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ] );
         }
-
-        $extension_slug = sanitize_text_field( $_POST['extension_slug'] );
 
         if ( empty( $extension_slug ) ) {
             wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );

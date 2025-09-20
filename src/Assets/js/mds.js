@@ -34,17 +34,119 @@ if (typeof window.MDS === 'undefined') {
 if (typeof window.MDS.hooks === 'undefined') {
 	window.MDS.hooks = {};
 }
- 
-function add_ajax_loader(container) {
-	let $ajax_loader = jQuery("<div class='ajax-loader'></div>");
-	jQuery(container).append($ajax_loader);
-	$ajax_loader
-		.css("top", jQuery(container).position().top)
-		.css("left", jQuery(container).width() / 2 - $ajax_loader.width() / 2);
+
+function mdsIsAbsoluteUrl(url) {
+	return typeof url === 'string' && /^([a-z][a-z0-9+\.-]*:)?\/\//i.test(url);
 }
 
-function remove_ajax_loader() {
-	jQuery(".ajax-loader").remove();
+function mdsFindPluginBaseUrl() {
+	if (typeof window.MDS_PLUGIN_BASE_URL === 'string' && window.MDS_PLUGIN_BASE_URL.length > 0) {
+		return window.MDS_PLUGIN_BASE_URL;
+	}
+	if (typeof window.MDS !== 'undefined' && typeof window.MDS.MDS_BASE_URL === 'string' && window.MDS.MDS_BASE_URL.length > 0) {
+		window.MDS_PLUGIN_BASE_URL = window.MDS.MDS_BASE_URL;
+		return window.MDS_PLUGIN_BASE_URL;
+	}
+	var scripts = document.getElementsByTagName('script');
+	for (var i = 0; i < scripts.length; i++) {
+		var src = scripts[i].getAttribute('src');
+		if (!src) {
+			continue;
+		}
+		var match = src.match(/(.*\/milliondollarscript-two\/)(?:src\/Assets\/js\/|src\/Assets\/)/i);
+		if (match && match[1]) {
+			window.MDS_PLUGIN_BASE_URL = match[1];
+			return window.MDS_PLUGIN_BASE_URL;
+		}
+	}
+	return typeof window.MDS_PLUGIN_BASE_URL === 'string' && window.MDS_PLUGIN_BASE_URL.length > 0 ? window.MDS_PLUGIN_BASE_URL : null;
+}
+
+function mdsEnsureAbsoluteUrl(url) {
+	if (!url) {
+		return null;
+	}
+	if (mdsIsAbsoluteUrl(url)) {
+		return url;
+	}
+	if (url.indexOf('//') === 0) {
+		return window.location.protocol + url;
+	}
+	var pluginBase = mdsFindPluginBaseUrl();
+	if (pluginBase) {
+		try {
+			return new URL(url.replace(/^\//, ''), pluginBase).href;
+		} catch (e) {}
+	}
+	try {
+		return new URL(url, window.location.origin + '/').href;
+	} catch (e) {
+		return null;
+	}
+}
+
+function mdsResolveLoaderUrl(preferred) {
+	var candidates = [];
+	if (preferred) {
+		candidates.push(preferred);
+	}
+	if (typeof window.MDS_LOADER_URL === 'string' && window.MDS_LOADER_URL.length > 0) {
+		candidates.push(window.MDS_LOADER_URL);
+	}
+	if (typeof window.MDS_OBJECT !== 'undefined' && typeof window.MDS_OBJECT.loader_url === 'string' && window.MDS_OBJECT.loader_url.length > 0) {
+		candidates.push(window.MDS_OBJECT.loader_url);
+	}
+	if (typeof window.MDS !== 'undefined' && typeof window.MDS.MDS_BASE_URL === 'string' && window.MDS.MDS_BASE_URL.length > 0) {
+		candidates.push(window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif');
+	}
+	var pluginBase = mdsFindPluginBaseUrl();
+	if (pluginBase) {
+		candidates.push(pluginBase + 'src/Assets/images/ajax-loader.gif');
+	}
+	for (var i = 0; i < candidates.length; i++) {
+		var absolute = mdsEnsureAbsoluteUrl(candidates[i]);
+		if (absolute) {
+			window.MDS_LOADER_URL = absolute;
+			return absolute;
+		}
+	}
+	if (pluginBase) {
+		var fallback = mdsEnsureAbsoluteUrl(pluginBase + 'src/Assets/images/ajax-loader.gif');
+		if (fallback) {
+			window.MDS_LOADER_URL = fallback;
+			return fallback;
+		}
+	}
+	return null;
+}
+
+window.MDSFindPluginBaseUrl = mdsFindPluginBaseUrl;
+window.MDSResolveLoaderUrl = mdsResolveLoaderUrl;
+
+if (typeof window.MDS_LOADER_URL === 'undefined' && typeof window.MDS !== 'undefined' && window.MDS.MDS_BASE_URL) {
+	window.MDS_LOADER_URL = window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif';
+}
+
+function add_ajax_loader(container) {
+	const loaderSrc = mdsResolveLoaderUrl();
+	const spinnerMarkup = loaderSrc
+		? "<img class='ajax-loader__spinner' src='" + loaderSrc + "' alt='Loading' width='32' height='32'/>"
+		: "<span class='ajax-loader__spinner'></span>";
+	let $ajax_loader = jQuery(
+		"<div class='ajax-loader' role='status' aria-live='polite'>" + spinnerMarkup + "</div>",
+	);
+	jQuery(container).append($ajax_loader);
+}
+
+function remove_ajax_loader(container) {
+	if (container) {
+		const $containers = container instanceof jQuery ? container : jQuery(container);
+		$containers.each(function () {
+			jQuery(this).find('.ajax-loader').remove();
+		});
+	} else {
+		jQuery(".ajax-loader").remove();
+	}
 }
 
 var initialized = false;
@@ -78,8 +180,11 @@ function mds_grid(container, bid, width, height) {
 		BID: bid,
 	};
 
-	jQuery(grid).load(MDS.ajaxurl, data, function () {
-		mds_init("#theimage", true, MDS.ENABLE_MOUSEOVER !== "NO", false, true);
+	jQuery(grid).load(MDS.ajaxurl, data, function (responseText, textStatus) {
+		remove_ajax_loader();
+		if (textStatus !== "error") {
+			mds_init("#theimage", true, MDS.ENABLE_MOUSEOVER !== "NO", false, true);
+		}
 	});
 }
 
@@ -187,7 +292,8 @@ function updateTippyPosition() {
 }
 
 function add_tippy() {
-	const defaultContent = "<div class='ajax-loader'></div>";
+	const defaultContent =
+		"<div class='ajax-loader' role='status' aria-live='polite'><span class='ajax-loader__spinner' aria-hidden='true'></span></div>";
 	const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
 
 	let delay = 50;
@@ -205,6 +311,13 @@ function add_tippy() {
 	jQuery(document)
 		.off("click.mds-tippy", "area")
 		.on("click.mds-tippy", "area", function (e) {
+			// Ignore non-primary clicks so context menu/middle-click still work as expected
+			if (typeof e.button !== "undefined" && e.button !== 0) {
+				return true;
+			}
+			if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+				return true;
+			}
 			// If no tippy instance or content isn't loaded yet, prevent the default navigation
 			if (!this._tippy || !this._tippy._content) {
 				e.preventDefault();
@@ -239,7 +352,8 @@ function add_tippy() {
 				if (!this._tippy && typeof tippy === "function") {
 					tippy(this, {
 						theme: "light",
-						content: "<div class='ajax-loader'></div>",
+						content:
+							"<div class='ajax-loader' role='status' aria-live='polite'><span class='ajax-loader__spinner' aria-hidden='true'></span></div>",
 						duration: 50,
 						delay: MDS.TOOLTIP_TRIGGER === "mouseenter" ? 400 : 50,
 						trigger: MDS.TOOLTIP_TRIGGER,
@@ -486,11 +600,9 @@ function mds_load_tippy(tippy, $el, scalemap, type, isgrid) {
 		window.tippy_instance == undefined &&
 		MDS.ENABLE_MOUSEOVER !== "NO"
 	) {
-		console.log("[MDS DEBUG] Loading Tippy for element:", $el);
 		tooltips_deferred = true;
 		defer("Popper", () => {
 			defer("tippy", () => {
-				console.log("[MDS DEBUG] Tippy deferred, adding now.");
 				add_tippy();
 				// Don't call mds_loaded_event here, let mds_init handle it
 			});
@@ -555,19 +667,123 @@ function mds_handle_url_click() {
 		});
 }
 
+function setupPublicGridImageRecovery(imageEl) {
+	if (!imageEl || imageEl.dataset.mdsFeedbackAttached === '1') {
+		return;
+	}
+	imageEl.dataset.mdsFeedbackAttached = '1';
+
+	const frame = imageEl.closest('.mds-grid-frame');
+	if (!frame) {
+		return;
+	}
+
+	const feedback = frame.querySelector('.mds-grid-feedback');
+	const preloader = frame.querySelector('.mds-grid-preloader');
+	if (!feedback || !preloader) {
+		return;
+	}
+
+	const retryButton = feedback.querySelector('.mds-grid-feedback__retry');
+	const baseSrc = imageEl.getAttribute('data-grid-src') || imageEl.getAttribute('src') || '';
+
+	const hideFeedback = () => {
+		feedback.setAttribute('hidden', 'hidden');
+		feedback.classList.remove('is-visible');
+	};
+
+	const ensurePreloaderSpinner = () => {
+		if (!preloader.children.length) {
+			const loaderSrc = preloader.getAttribute('data-loader-src');
+			const markup = loaderSrc
+				? `<img class="mds-grid-preloader__spinner" src="${loaderSrc}" alt="" aria-hidden="true" width="32" height="32"/>`
+				: '<span class="mds-grid-preloader__spinner" aria-hidden="true"></span>';
+			preloader.innerHTML = markup;
+		}
+	};
+
+	const showPreloader = (options = {}) => {
+		ensurePreloaderSpinner();
+		preloader.removeAttribute('hidden');
+		if (options.hideImage !== false) {
+			hideImage();
+		}
+	};
+
+	const hidePreloader = () => {
+		preloader.setAttribute('hidden', 'hidden');
+		preloader.innerHTML = '';
+	};
+
+	const hideImage = () => {
+		imageEl.classList.add('mds-grid-image--hidden');
+	};
+
+	const showImage = () => {
+		imageEl.classList.remove('mds-grid-image--hidden');
+	};
+
+	const showFeedback = () => {
+		hidePreloader();
+		feedback.removeAttribute('hidden');
+		feedback.classList.add('is-visible');
+		hideImage();
+	};
+
+	const handleLoad = () => {
+		if (imageEl.naturalWidth === 0 || imageEl.naturalHeight === 0) {
+			showFeedback();
+			return;
+		}
+		hidePreloader();
+		hideFeedback();
+		showImage();
+	};
+
+	const handleError = () => {
+		showFeedback();
+	};
+
+	imageEl.mdsGridControls = {
+		showPreloader,
+		hidePreloader,
+		showFeedback,
+		hideFeedback,
+		hideImage,
+		showImage,
+	};
+
+	imageEl.addEventListener('load', handleLoad);
+	imageEl.addEventListener('error', handleError);
+	imageEl.addEventListener('abort', handleError);
+
+	if (retryButton) {
+		retryButton.addEventListener('click', function (event) {
+			event.preventDefault();
+			hideFeedback();
+			showPreloader();
+			const separator = baseSrc.indexOf('?') === -1 ? '?' : '&';
+			imageEl.src = baseSrc + separator + '_mds_retry=' + Date.now();
+		});
+	}
+
+	if (imageEl.complete) {
+		if (imageEl.naturalWidth === 0 || imageEl.naturalHeight === 0) {
+			handleError();
+		} else {
+			handleLoad();
+		}
+	} else {
+		hideFeedback();
+		showPreloader();
+	}
+}
+
 function mds_init(el, scalemap, tippy, type, isgrid) {
-	console.log("[MDS DEBUG] mds_init called with:", {
-		el,
-		scalemap,
-		tippy,
-		type,
-		isgrid,
-	});
 
 	// Prevent re-initialization on the same element if needed
 	const $el = jQuery(el);
 	if ($el.data("mds-initialized")) {
-		console.log("[MDS DEBUG] Element already initialized:", el);
 		return;
 	}
 	$el.data("mds-initialized", true);
@@ -576,15 +792,6 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 		console.error("[MDS ERROR] mds_init called with invalid element:", el);
 		return;
 	}
-
-	// Add body class if it's the manage page - This seems redundant if done in PHP?
-	// Check if this logic is still necessary here.
-	/*
-	if (type === 'manage') {
-		jQuery('body').addClass('mds-page-manage');
-		console.log('[MDS DEBUG] Added mds-page-manage body class.');
-	}
-	*/
 
 	// Check if the element is visible
 	if (!$el.is(":visible")) {
@@ -598,14 +805,16 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 	}
 
 	try {
-		console.log("[MDS DEBUG] Initializing ImageMap for element:", el);
+		const domEl = $el.get(0);
+		if (domEl && domEl.tagName === 'IMG') {
+			setupPublicGridImageRecovery(domEl);
+		}
 		// Ensure ImageMap is available
 		if (typeof ImageMap !== "function") {
 			console.error("[MDS ERROR] ImageMap function is not defined!");
 			return;
 		}
 		ImageMap(el, scalemap); // Pass scalemap parameter
-		console.log("[MDS DEBUG] ImageMap initialized for element:", el);
 
 		mds_loaded_event($el, scalemap, tippy, type, isgrid);
 
@@ -780,7 +989,6 @@ jQuery(window).on("load", function () {
 jQuery(document).on("load", function () {
 	let $publishGrid = jQuery("#publish-grid");
 	if ($publishGrid.length > 0) {
-		console.log("[MDS DEBUG] document.ready init publish-grid");
 		mds_init("#publish-grid", true, false, false, true);
 	}
 });
@@ -918,6 +1126,10 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 	});
 
 	jQuery(".mds-button").on("click", function () {
+		const $btn = jQuery(this);
+		if ($btn.is(":submit") && $btn.closest("form").length) {
+			return;
+		}
 		jQuery(".mds-button").prop("disabled", true).attr("value", MDS.WAIT);
 	});
 
@@ -958,6 +1170,15 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		collapsible: true,
 		active: 0,
 	});
+});
+
+jQuery(document).on("submit", "form", function () {
+	const $form = jQuery(this);
+	const $buttons = $form.find(".mds-button");
+	if ($buttons.length) {
+		$buttons.prop("disabled", true);
+		$buttons.filter("input").attr("value", MDS.WAIT);
+	}
 });
 
 function mdsToggleMenu() {

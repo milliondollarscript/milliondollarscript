@@ -26,10 +26,14 @@
  *
  */
 
+use MillionDollarScript\Classes\Ajax\Ajax;
+use MillionDollarScript\Classes\System\Utility;
+
 defined( 'ABSPATH' ) or exit;
 
-\MillionDollarScript\Classes\System\Utility::get_header();
+Utility::get_header();
 
-require_once MDS_CORE_PATH . 'users/list.php';
+// Render the modern list markup so styling and hooks remain consistent with the AJAX endpoint.
+Ajax::show_list();
 
-\MillionDollarScript\Classes\System\Utility::get_footer();
+Utility::get_footer();

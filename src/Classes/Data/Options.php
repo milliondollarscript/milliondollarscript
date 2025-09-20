@@ -103,7 +103,7 @@ class Options {
 				// Checkout URL
 				Field::make( 'text', MDS_PREFIX . 'checkout-url', Language::get( 'Checkout URL' ) )
 					->set_default_value( '' )
-					->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
+					->set_help_text( Language::get( 'The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don\'t specify a URL and WooCommerce integration is disabled, a default message will be displayed. When “Auto-complete manual payments” is disabled the message will ask customers to wait for approval. When it\'s enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%' ) ),
 
 				// Thank-you Page URL
 				Field::make( 'text', MDS_PREFIX . 'thank-you-page', Language::get( 'Thank-you Page URL' ) )
@@ -900,6 +900,19 @@ class Options {
 					->set_default_value( home_url() )
 					->set_help_text( Language::get( 'The URL to redirect users to after logout.' ) ),
 
+				// WooCommerce Login Redirect
+				Field::make( 'text', MDS_PREFIX . 'woocommerce-login-redirect', Language::get( 'WooCommerce Login Redirect' ) )
+					->set_default_value( '' )
+					->set_help_text( Language::get( 'When WooCommerce integration is enabled, redirect users to this URL after a successful WooCommerce login. Leave empty to use WooCommerce\'s default behavior.' ) )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'woocommerce',
+							'compare' => '=',
+							'value'   => 'yes',
+						],
+					] ),
+
 				// WP Login Header Image
 				Field::make( 'image', MDS_PREFIX . 'login-header-image', Language::get( 'Login Header Image' ) )
 					->set_default_value( '' )
@@ -967,6 +980,23 @@ class Options {
 
 			Language::get( 'Orders' ) => [
 
+				// Auto-advance after upload (Advanced mode)
+				Field::make( 'radio', MDS_PREFIX . 'auto-advance-after-upload', Language::get( 'Auto-advance after Upload (Advanced)' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
+					->set_conditional_logic( [
+						'relation' => 'AND',
+						[
+							'field'   => MDS_PREFIX . 'use-ajax',
+							'compare' => '=',
+							'value'   => 'YES',
+						],
+					] )
+					->set_help_text( Language::get( 'When enabled (Advanced selection method only), after a user uploads an image the flow skips the “Your Uploaded Pixels” preview and continues automatically. If the Confirm Orders Page is enabled, it goes to Confirm Order; if Confirm Orders is disabled, it goes directly to Payment. Default is No to show the preview screen as usual.' ) ),
+
 				// Block Selection Mode
 				Field::make( 'radio', MDS_PREFIX . 'block-selection-mode', Language::get( 'Block Selection Mode' ) )
 					->set_default_value( 'YES' )
@@ -1009,14 +1039,21 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Enable expiration of orders.' ) ),
 
-				// Auto-approve
-				Field::make( 'radio', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-approve' ) )
+				// Auto-complete offline/manual payments
+				Field::make( 'radio', MDS_PREFIX . 'auto-approve', Language::get( 'Auto-complete manual payments' ) )
 					->set_default_value( 'no' )
 					->set_options( [
 						'yes' => Language::get( 'Yes' ),
 						'no'  => Language::get( 'No' ),
 					] )
-					->set_help_text( Language::get( 'Enabling this will automatically approve orders before payments are verified by an admin.' ) ),
+					->set_conditional_logic( $woocommerce_logic )
+					->set_help_text(
+						Language::get_replace(
+							'Automatically mark manual/offline MDS checkout flows as completed so buyers see the thank-you page immediately. Pixel approval still follows each grid\'s “Approve Automatically?” setting and may require review on the <a href="%APPROVAL_URL%">Pixels Awaiting Approval</a> screen. Leave this disabled when WooCommerce integration is handling payments.',
+							'%APPROVAL_URL%',
+							esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N' ) )
+						)
+					),
 
 				// Currency
 				Field::make( 'text', MDS_PREFIX . 'currency', Language::get( 'Currency' ) )
@@ -1094,6 +1131,19 @@ class Options {
 						'no'  => Language::get( 'No' ),
 					] )
 					->set_help_text( Language::get( 'Setting to Yes will make the Image field optional.' ) ),
+
+				// Max Upload Dimensions
+				Field::make( 'text', MDS_PREFIX . 'max-upload-width', Language::get( 'Max Upload Width' ) )
+					->set_default_value( '2000' )
+					->set_attribute( 'type', 'number' )
+					->set_attribute( 'min', '1' )
+					->set_help_text( Language::get( 'Maximum width (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size.' ) ),
+
+				Field::make( 'text', MDS_PREFIX . 'max-upload-height', Language::get( 'Max Upload Height' ) )
+					->set_default_value( '2000' )
+					->set_attribute( 'type', 'number' )
+					->set_attribute( 'min', '1' )
+					->set_help_text( Language::get( 'Maximum height (in pixels) allowed when users upload ad images. Applies to both the grid image and tooltip image fields. Does not change display sizing; see Popup > Max Image Size.' ) ),
 			],
 
 			Language::get( 'Permissions' ) => [
@@ -1242,6 +1292,10 @@ class Options {
 				}
 				$field->set_value( $text );
 				break;
+			case 'woocommerce-login-redirect':
+				// Sanitize URL for WooCommerce login redirect
+				$field->set_value( esc_url_raw( (string) $field->get_value() ) );
+				break;
 			case 'endpoint':
 				if ( empty( $field->get_value() ) ) {
 					$field->set_value( 'milliondollarscript' );
@@ -1325,6 +1379,24 @@ class Options {
 		}
 
 		return $val;
+	}
+
+	/**
+	 * Returns the configured maximum upload dimensions for ad images.
+	 *
+	 * @return array{width:int|null,height:int|null}
+	 */
+	public static function get_upload_dimension_limits(): array {
+		$width_option  = absint( self::get_option( 'max-upload-width', 2000 ) );
+		$height_option = absint( self::get_option( 'max-upload-height', 2000 ) );
+
+		$width_limit  = $width_option > 0 ? $width_option : null;
+		$height_limit = $height_option > 0 ? $height_option : null;
+
+		return [
+			'width'  => $width_limit,
+			'height' => $height_limit,
+		];
 	}
 
 	/**

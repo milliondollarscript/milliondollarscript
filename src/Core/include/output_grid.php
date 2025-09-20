@@ -515,11 +515,15 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		}
 	}
 
-	// preload reserved blocks
+	// preload reserved blocks (include cancelled to visually block them until cleanup)
 	if ( isset( $default_reserved_block ) ) {
+		$current_user_id = get_current_user_id();
 		$sql = $wpdb->prepare(
-			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks WHERE `status`='reserved' AND banner_id=%d" . $and_not_user,
-			intval( $BID )
+			"SELECT block_id FROM " . MDS_DB_PREFIX . "blocks 
+			 WHERE banner_id=%d 
+			   AND ( (status = 'reserved' AND user_id != %d) OR status = 'cancelled')",
+			intval( $BID ),
+			intval( $current_user_id )
 		);
 		$result = $wpdb->get_results( $sql );
 

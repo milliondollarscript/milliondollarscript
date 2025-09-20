@@ -1,8 +1,8 @@
 <?php
 
-namespace MillionDollarScript\\Classes\\Extension;
+namespace MillionDollarScript\Classes\Extension;
 
-use MillionDollarScript\\Classes\\System\\Utility;
+use MillionDollarScript\Classes\System\Utility;
 
 use MillionDollarScript\Classes\Data\Options;
 

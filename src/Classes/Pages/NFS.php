@@ -67,7 +67,11 @@ class NFS {
 	 * @return void
 	 */
 	public static function menu(): void {
-		$handle = \add_submenu_page( 'MillionDollarScript_Admin', 'Million Dollar Script NFS', 'Not For Sale', 'manage_options', self::$slug, array( __CLASS__, 'html' ), 2 );
+		$handle = \add_submenu_page( 'milliondollarscript_admin', 'Million Dollar Script NFS', 'Not For Sale', 'manage_options', self::$slug, array( __CLASS__, 'html' ), 2 );
+
+		if ( empty( $handle ) ) {
+			return;
+		}
 
 		// Add styles for admin page
 		add_action( 'admin_print_styles-' . $handle, [ __CLASS__, 'enqueue_styles' ] );

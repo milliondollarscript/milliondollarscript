@@ -62,8 +62,13 @@ class WooCommerce {
 		add_action( 'woocommerce_payment_complete', [ __CLASS__, 'payment_complete' ] );
 		add_action( 'woocommerce_after_cart_item_quantity_update', [ __CLASS__, 'adjust_cart_item_quantity_after_update' ], 20, 4 );
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', [ __CLASS__, 'validate_checkout' ], 10, 2 );
+		// Classic (non-Blocks) checkout hook to persist MDS mapping early
+		add_action( 'woocommerce_checkout_create_order', [ __CLASS__, 'checkout_create_order' ], 10, 2 );
 		add_filter( 'woocommerce_add_error', [ __CLASS__, 'custom_wc_error_msg' ] );
 		add_action( 'woocommerce_new_order', [ __CLASS__, 'new_order' ], 10, 1 );
+
+		// Redirect after WooCommerce login based on MDS option
+		add_filter( 'woocommerce_login_redirect', [ __CLASS__, 'login_redirect' ], 10, 2 );
 
 		// Remove order again button
 		add_action( 'woocommerce_order_details_before_order_table', [ __CLASS__, 'maybe_remove_order_again_button' ] );
@@ -185,7 +190,7 @@ class WooCommerce {
 				Orders::renew( $mds_order_id );
 
 			} else {
-				if ( Options::get_option( 'auto-approve', 'no' ) == 'yes' ) {
+				if ( WooCommerceFunctions::is_manual_auto_complete_enabled() ) {
 					// Complete the order
 
 					$row = $wpdb->get_row( $wpdb->prepare(
@@ -516,8 +521,8 @@ class WooCommerce {
 		}
 
 		// Get current order status
-		$auto_complete = Options::get_option( 'wc-auto-complete', 'yes' ) == 'yes';
-		$auto_approve = Options::get_option( 'auto-approve', 'no' ) == 'yes';
+		$auto_complete         = Options::get_option( 'wc-auto-complete', 'yes' ) == 'yes';
+		$manual_auto_complete  = WooCommerceFunctions::is_manual_auto_complete_enabled();
 		
 		// Determine if we should complete the MDS order
 		$should_complete = false;
@@ -526,17 +531,15 @@ class WooCommerce {
 		// This handles manual completions by admin
 		if ($to === 'completed') {
 			$should_complete = true;
-		} elseif ($auto_complete && $auto_approve) {
-			// For automatic processing, both auto_complete and auto_approve must be enabled
-			// We should only auto-complete orders when they're in a state that indicates payment is confirmed
-			// For manual payment methods, they typically go to 'on-hold' until manually verified
-			if ($to === 'processing') {
-				// For processing status, only complete if it wasn't previously on-hold
-				// This prevents completing orders that are transitioning from on-hold to processing
-				// which typically happens with manual payment methods
-				if ($from !== 'on-hold') {
-					$should_complete = true;
-				}
+		} elseif ($auto_complete) {
+			// Respect WooCommerce auto-complete setting when payment is confirmed
+			if ($to === 'processing' && $from !== 'on-hold') {
+				$should_complete = true;
+			}
+		} elseif ( $manual_auto_complete && $to === 'processing' ) {
+			// Fallback for legacy/manual flows
+			if ( $from !== 'on-hold' ) {
+				$should_complete = true;
 			}
 		}
 
@@ -605,19 +608,44 @@ class WooCommerce {
 	}
 
 	/**
+	 * Classic (non-Blocks) checkout: persist MDS mapping early using CRUD, idempotently.
+	 *
+	 * @param \WC_Order $order
+	 * @param array $data
+	 *
+	 * @return void
+	 */
+	public static function checkout_create_order( $order, $data ): void {
+		if ( ! WooCommerceFunctions::is_mds_order( $order->get_id() ) ) {
+			return;
+		}
+		// Reuse logic that saves mds_order_id and adds the order note only if not already present.
+		self::new_order( $order->get_id() );
+	}
+
+	/**
 	 * Validates the checkout process for an order.
 	 *
-	 * @param $order \WC_Order The WooCommerce order object.
-	 * @param $request \WP_REST_Request The WordPress REST request object.
+	 * @param \WC_Order       $order   The WooCommerce order object.
+	 * @param \WP_REST_Request $request The WordPress REST request object.
 	 *
 	 * @return void
 	 */
 	public static function validate_checkout( \WC_Order $order, \WP_REST_Request $request ): void {
-		if ( WooCommerceFunctions::is_mds_order( $order->get_id() ) && ! WooCommerceFunctions::valid_mds_order() ) {
-			wc_add_notice( 'MDS_VALIDATION_ERROR', 'error' );
+		// For MDS orders created via WooCommerce Blocks (Store API), persist the MDS↔WC mapping
+		// early so that later status changes (e.g., Stripe webhook auto-complete) can find it.
+		if ( WooCommerceFunctions::is_mds_order( $order->get_id() ) ) {
+			// Idempotently add the mapping and note (re-uses existing logic in new_order()).
+			// This relies on the session key set during MDS Payment::handle_checkout.
+			self::new_order( $order->get_id() );
+
+			// Preserve existing validation behavior.
+			if ( ! WooCommerceFunctions::valid_mds_order() ) {
+				wc_add_notice( 'MDS_VALIDATION_ERROR', 'error' );
+			}
 		}
 	}
-
+	
 	/**
 	 * Custom error message for WooCommerce notice.
 	 *
@@ -636,5 +664,30 @@ class WooCommerce {
 		}
 
 		return $message;
+	}
+
+	/**
+	 * Filter WooCommerce login redirect when integration is enabled.
+	 *
+	 * @param string   $redirect Default redirect URL.
+	 * @param \WP_User $user     User logging in.
+	 *
+	 * @return string
+	 */
+	public static function login_redirect( string $redirect, $user ): string {
+		// Ensure integration toggle is enabled (use Carbon Fields-backed value)
+		if ( Options::get_option( 'woocommerce', 'no' ) !== 'yes' ) {
+			return $redirect;
+		}
+
+		$url = (string) Options::get_option( 'woocommerce-login-redirect', '' );
+		if ( empty( $url ) ) {
+			return $redirect;
+		}
+
+		$url = trim( $url );
+		// Validate and fall back to the original redirect if invalid
+		$safe = wp_validate_redirect( $url, $redirect );
+		return is_string( $safe ) ? $safe : $redirect;
 	}
 }

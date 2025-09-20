@@ -479,8 +479,21 @@ if ( $count > 0 ) {
 
 	$results = $wpdb->get_results( $sql, ARRAY_A );
 	if ( ! empty( $results ) ) { ?>
-        <div class="publish-grid">
-            <map name="main" id="main">
+        <div class="mds-grid-frame">
+            <div class="mds-grid-status">
+                <div class="mds-grid-preloader" data-loader-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/ajax-loader.gif' ); ?>"
+                     data-original-width="<?php echo $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH']; ?>"
+                     data-original-height="<?php echo $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT']; ?>"
+                     hidden>
+                    <span class="mds-grid-preloader__spinner" aria-hidden="true"></span>
+                </div>
+                <div class="mds-grid-feedback" role="alert" aria-live="polite" hidden>
+                    <p class="mds-grid-feedback__message"><?php Language::out( "We're having trouble loading the grid image right now. This can happen if the grid is very large or the server needs more time." ); ?></p>
+                    <button type="button" class="mds-grid-feedback__retry"><?php Language::out( 'Retry loading image' ); ?></button>
+                </div>
+            </div>
+            <div class="publish-grid">
+                <map name="main" id="main">
 				<?php
 				// Check if order locking is enabled
 				$order_locking_enabled = Options::get_option( 'order-locking', 'no' ) == 'yes';
@@ -538,7 +551,8 @@ if ( $count > 0 ) {
 
 			// Output img with specific class and data attributes for JS targeting
 			printf(
-				'<img id="publish-grid" class="mds-manage-grid" src="%s" width="%d" height="%d" usemap="#main" alt="" data-original-width="%d" data-original-height="%d"/>',
+				'<img id="publish-grid" class="mds-manage-grid" src="%s" data-grid-src="%s" width="%d" height="%d" usemap="#main" alt="" data-original-width="%d" data-original-height="%d"/>',
+				$src,
 				$src,
 				$width,
 				$height,
@@ -550,71 +564,186 @@ if ( $count > 0 ) {
 			<!-- Inline script for image map scaling to ensure alignment of clickable areas with the grid image -->
 			<script>
 			(function() {
-				// Function to scale image map coordinates based on image dimensions
+				const gridImage = document.getElementById('publish-grid');
+				const frame = gridImage ? gridImage.closest('.mds-grid-frame') : document.querySelector('.mds-grid-frame');
+				const preloader = frame ? frame.querySelector('.mds-grid-preloader') : null;
+				const feedback = frame ? frame.querySelector('.mds-grid-feedback') : null;
+				const retryButton = feedback ? feedback.querySelector('.mds-grid-feedback__retry') : null;
+				const preferredLoader = preloader ? preloader.getAttribute('data-loader-src') : null;
+				const resolvedLoader = (typeof window.MDSResolveLoaderUrl === 'function')
+					? window.MDSResolveLoaderUrl(preferredLoader)
+					: preferredLoader;
+				const baseSrc = gridImage ? (gridImage.getAttribute('data-grid-src') || gridImage.getAttribute('src')) : '';
+
+				const loaderSrc = resolvedLoader || (typeof window.MDS !== 'undefined' && window.MDS.MDS_BASE_URL
+					? window.MDS.MDS_BASE_URL + 'src/Assets/images/ajax-loader.gif'
+					: null);
+
+				function showPreloader(options) {
+					if (!preloader) {
+						return;
+					}
+					const spinnerMarkup = loaderSrc
+						? "<img class=\'mds-grid-preloader__spinner \' src=\'" + loaderSrc + "\' alt=\'\' aria-hidden=\'true\' width=\'32\' height=\'32\'/>"
+						: "<span class=\'mds-grid-preloader__spinner\' aria-hidden=\'true\'></span>";
+					preloader.setAttribute('data-loader-src', loaderSrc || '');
+					if (preloader.children.length === 0) {
+						preloader.innerHTML = spinnerMarkup;
+					}
+					preloader.removeAttribute('hidden');
+					preloader.dataset.mdsPreloaderActive = '1';
+					const opts = options || {};
+					if (opts.hideImage !== false) {
+						hideImage();
+					}
+				}
+
+				function hidePreloader() {
+					if (preloader) {
+						preloader.setAttribute('hidden', 'hidden');
+						preloader.innerHTML = '';
+						delete preloader.dataset.mdsPreloaderActive;
+					}
+				}
+
+				function hideImage() {
+					if (gridImage) {
+						gridImage.classList.add('mds-grid-image--hidden');
+					}
+				}
+
+				function showImage() {
+					if (gridImage) {
+						gridImage.classList.remove('mds-grid-image--hidden');
+					}
+				}
+
+				const controls = gridImage ? {
+					showPreloader: (opts) => showPreloader(opts),
+					hidePreloader: () => hidePreloader(),
+					showFeedback: () => toggleFeedback(true),
+					hideFeedback: () => toggleFeedback(false),
+					hideImage: () => hideImage(),
+					showImage: () => showImage(),
+				} : null;
+
+				if (gridImage && controls) {
+					gridImage.mdsGridControls = controls;
+				}
+
+				showPreloader();
+
+				function toggleFeedback(show) {
+					if (!feedback) {
+						return;
+					}
+					if (show) {
+						feedback.removeAttribute('hidden');
+						feedback.classList.add('is-visible');
+						hideImage();
+					} else {
+						feedback.setAttribute('hidden', 'hidden');
+						feedback.classList.remove('is-visible');
+						showImage();
+					}
+				}
+
 				function scaleImageMap() {
-					// Get image and map elements
 					var img = document.getElementById('publish-grid');
 					var map = document.querySelector('map[name="main"]');
-					
-					// Exit if either element is missing
-					if (!img || !map) return;
-					
-					// Get the area elements in the map
+				
+					if (!img || !map) {
+						return;
+					}
+				
 					var areas = map.querySelectorAll('area');
-					if (!areas.length) return;
-					
-					// Get original and current dimensions
+					if (!areas.length) {
+						return;
+					}
+				
 					var origWidth = <?php echo $width; ?>;
 					var origHeight = <?php echo $height; ?>;
 					var currentWidth = img.clientWidth || img.offsetWidth;
 					var currentHeight = img.clientHeight || img.offsetHeight;
-					
-					// Calculate scale factors
 					var scaleX = currentWidth / origWidth;
 					var scaleY = currentHeight / origHeight;
-					
-					// Store original coordinates if not done yet and scale them
+				
 					Array.prototype.forEach.call(areas, function(area) {
-						// Store original coords if not already stored
 						if (!area.hasAttribute('data-original-coords')) {
 							area.setAttribute('data-original-coords', area.getAttribute('coords'));
 						}
-						
-						// Get original coordinates and prepare for scaling
+
 						var originalCoords = area.getAttribute('data-original-coords');
 						var coordsArray = originalCoords.split(',');
 						var scaledCoords = [];
-						
-						// Scale each coordinate
+
 						for (var i = 0; i < coordsArray.length; i++) {
-							// Even indices (0, 2, 4...) are X coordinates, odd are Y
 							var scaled = i % 2 === 0 ?
 								Math.round(parseInt(coordsArray[i], 10) * scaleX) :
 								Math.round(parseInt(coordsArray[i], 10) * scaleY);
 							scaledCoords.push(scaled);
 						}
-						
-						// Set the new coordinates
+
 						area.setAttribute('coords', scaledCoords.join(','));
 					});
 				}
-				
-				// Call immediately
-				scaleImageMap();
-				
-				// Also call on window resize
+
+				function handleLoad() {
+					if (!gridImage) {
+						return;
+					}
+					if (gridImage.naturalWidth === 0 || gridImage.naturalHeight === 0) {
+						hidePreloader();
+						hideImage();
+						toggleFeedback(true);
+						return;
+					}
+					scaleImageMap();
+					hidePreloader();
+					showImage();
+					toggleFeedback(false);
+				}
+
+				function handleError() {
+					hidePreloader();
+					hideImage();
+					toggleFeedback(true);
+				}
+
+				if (gridImage) {
+					if (gridImage.complete) {
+						if (gridImage.naturalWidth === 0 || gridImage.naturalHeight === 0) {
+							handleError();
+						} else {
+							handleLoad();
+						}
+					} else {
+						toggleFeedback(false);
+						showPreloader();
+					}
+					gridImage.addEventListener('load', handleLoad);
+					gridImage.addEventListener('error', handleError);
+				}
+
+				if (retryButton && gridImage) {
+					retryButton.addEventListener('click', function(event) {
+						event.preventDefault();
+						toggleFeedback(false);
+						showPreloader();
+						var separator = baseSrc.indexOf('?') === -1 ? '?' : '&';
+						gridImage.src = baseSrc + separator + '_mds_retry=' + Date.now();
+					});
+				}
+
 				window.addEventListener('resize', function() {
-					// Use debounce to avoid excessive scaling
 					if (window.mapResizeTimer) {
 						clearTimeout(window.mapResizeTimer);
 					}
 					window.mapResizeTimer = setTimeout(scaleImageMap, 150);
 				});
-				
-				// Also call when image loads
-				document.getElementById('publish-grid').addEventListener('load', scaleImageMap);
 			})();
 			</script>
+		</div>
         </div>
 	<?php }
 } else {

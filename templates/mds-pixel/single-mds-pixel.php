@@ -26,14 +26,44 @@
  *
  */
 
-\MillionDollarScript\Classes\System\Utility::get_header();
+use MillionDollarScript\Classes\Ajax\Ajax;
+use MillionDollarScript\Classes\System\Utility;
+
+Utility::get_header();
 
 global $post;
+$post_id = $post instanceof WP_Post ? $post->ID : 0;
+
+$popup_markup = '';
+if ( $post_id ) {
+	$popup_markup = Ajax::get_ad( $post_id, true );
+}
+
+$popup_markup = apply_filters( 'mds_pixel_single_popup_markup', $popup_markup, $post_id, $post );
 
 ?>
-    <div class="mds-pixel-content">
-		<?php \MillionDollarScript\Classes\Ajax\Ajax::get_ad( $post->ID ); ?>
+    <div class="mds-pixel-content" data-mds-pixel-id="<?php echo esc_attr( $post_id ); ?>">
+        <?php do_action( 'mds_pixel_single_before_content', $post ); ?>
+
+        <?php
+        do_action( 'mds_pixel_single_before_popup', $post, $popup_markup, $post_id );
+
+        if ( ! empty( $popup_markup ) ) {
+            echo '<div class="mds-pixel-preview mds-pixel-preview-inline">';
+
+            // Mirror tooltip output while still letting developers filter the markup.
+            echo apply_filters( 'mds_pixel_single_popup_html', $popup_markup, $post_id, $post );
+
+            echo '</div>';
+        } else {
+            do_action( 'mds_pixel_single_empty', $post, $post_id );
+        }
+
+        do_action( 'mds_pixel_single_after_popup', $post, $popup_markup, $post_id );
+        ?>
+
+        <?php do_action( 'mds_pixel_single_after_content', $post, $popup_markup, $post_id ); ?>
     </div>
 <?php
 
-\MillionDollarScript\Classes\System\Utility::get_footer();
+Utility::get_footer();

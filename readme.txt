@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.6.1.14
+Stable tag: 2.6.2.0
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -21,6 +21,30 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 
 = 2.6.0 =
 * Feature: Extensions.
+
+= 2.5.15 =
+* Improvement: Cancelled blocks now appear as reserved on the ordering grid so it’s clear the area is temporarily unavailable. They’ll be cleaned up automatically based on your Order Timing settings.
+* Fix: Clear Orders not working correctly.
+* Chore: Update language file.
+* New: Added an “Auto-advance after Upload” option so advanced mode can jump users straight from uploading to confirming or paying, with smoother buttons and messages guiding them through the rest of the order.
+* Improvement: Grid images now show a friendly loading message with a retry button if they need extra time, so visitors aren’t left wondering what happened.
+* Improvement: Grid backgrounds automatically follow your light or dark theme colors when no custom color is saved, keeping the grid looking consistent.
+* Improvement: Oversized image uploads now get a friendly nudge with clear sizing tips on both the order and manage screens, so you stay in the flow without any guesswork.
+* Fix: Brought the Not For Sale admin page back so you can quickly reserve blocks without running into access errors.
+* Fix: Stop WooCommerce’s empty checkout redirect from hijacking MDS routes so grid images load reliably regardless of the checkout page slug.
+* Fix: Adjacent block selection works again and shows a friendly message if something needs fixing.
+* Fix: WordPress search now finds MDS Pixels by popup text and custom meta—even when the template is off—and keeps apostrophes exactly as customers entered them.
+* Improvement: Clarified WooCommerce versus manual payment auto-complete settings and linked per-grid messaging to the Pixels Awaiting Approval screen for quicker reviews.
+* Fix: Single MDS Pixel pages now mirror the popup layout and fall back to a 404 when pixels pages are disabled.
+* Fix: Grid image uploads now save consistently instead of reverting to the default artwork during edits.
+* Improvement: Polished the advertiser list styling so banner headings now stretch across every column and the layout stays readable on any screen.
+* New: Developers can fine-tune the advertiser list with fresh hooks (`mds_list_grid_tracks`, `mds_list_grid_template`, `mds_list_default_grid_tracks`, `mds_list_fallback_grid_track`) located in `src/Classes/Ajax/Ajax.php`.
+
+= 2.5.14 =
+* Perf: Faster block selection on the Order page.
+* Fix: Your selection now appears reliably on the grid after uploading.
+* Fix: Choosing the very first block on the grid did not work.
+* Fix: General stability improvements while ordering.
 
 = 2.5.13 =
 * Refactor: Migrate database interactions to $wpdb for improved security and performance.
@@ -60,6 +84,9 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: No more duplicate Manage Pixels pages; page creation runs after the Setup Wizard. Manage shortcode now uses width="100%" height="auto".
 * Fix: Migration notice is hidden on fresh installs until the wizard finishes or legacy pages exist.
 * Fix: Uninstall (Delete data = Yes) now removes plugin options and metadata tables; pages stay. Wizard will show after reinstall.
+* Feature: Added WooCommerce Login Redirect option (Options > Login) to control where users are sent after a successful WooCommerce login when integration is enabled.
+* Feature: Replaced Register button on the login form with a "Register Now" link placed directly under the Log In button.
+* Fix: Order pixel grid rescaling causing missing rows/columns.
 
 = 2.5.12 =
 * Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
