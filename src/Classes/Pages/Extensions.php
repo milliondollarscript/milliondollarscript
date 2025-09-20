@@ -1328,8 +1328,9 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             wp_send_json_error( [ 'message' => Language::get('Permission denied.') ], 403 );
         }
 
-        $extension_id = sanitize_text_field($_POST['extension_id'] ?? '');
-        
+        $extension_id  = sanitize_text_field($_POST['extension_id'] ?? '');
+        $extension_slug = sanitize_text_field($_POST['extension_slug'] ?? '');
+
         if (empty($extension_id)) {
             wp_send_json_error(['message' => Language::get('Extension ID is required.')]);
         }
@@ -1338,7 +1339,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
             // Fetch a license key if available for premium downloads (decrypt if needed)
             $license_key = '';
-            if (!empty($extension_slug)) {
+            if ($extension_slug !== '') {
                 if (class_exists('MillionDollarScript\\Classes\\Extension\\MDS_License_Manager')) {
                     $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
                     $lic = $lm->get_license($extension_slug);
@@ -1435,15 +1436,21 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                 $server_links = $detail['purchase']['links'];
             }
 
-            $abs = function($url) use ($working_base) {
+            $abs = static function($url) use ($working_base, $user_configured_url) {
                 if (!is_string($url) || $url === '') {
                     return null;
                 }
                 if (preg_match('#^https?://#i', $url)) {
                     return $url;
                 }
-                $base = is_string($extension_server_url) && $extension_server_url !== '' ? rtrim($extension_server_url, '/') : 'http://localhost:15346';
-                return $base . '/' . ltrim($url, '/');
+                $candidate_base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : '';
+                if ($candidate_base === '' && is_string($user_configured_url) && $user_configured_url !== '') {
+                    $candidate_base = rtrim($user_configured_url, '/');
+                }
+                if ($candidate_base === '') {
+                    $candidate_base = 'http://localhost:15346';
+                }
+                return rtrim($candidate_base, '/') . '/' . ltrim($url, '/');
             };
 
             if (!empty($server_links)) {
@@ -2309,25 +2316,29 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             $licensePayload = $json['license'] ?? ($json['data']['license'] ?? $json);
             $licenseKey = is_array($licensePayload) ? ($licensePayload['licenseKey'] ?? ($licensePayload['license_key'] ?? '')) : '';
             $expiresAt  = is_array($licensePayload) ? ($licensePayload['expiresAt'] ?? ($licensePayload['expires_at'] ?? '')) : '';
+            $licenseKey = is_string($licenseKey) ? sanitize_text_field($licenseKey) : '';
+            $expiresAt  = is_string($expiresAt) ? sanitize_text_field($expiresAt) : '';
 
             if (empty($licenseKey)) {
                 throw new \Exception('No license key returned from claim endpoint.');
             }
 
-            // Store in local DB
+            // Store in local DB (encrypt before persisting)
             $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
             $license = $license_manager->get_license( $extension_slug );
+            $encrypted_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact( $licenseKey );
             if ( $license ) {
                 $license_manager->update_license( (int)$license->id, [
-                    'license_key' => $licenseKey,
+                    'license_key' => $encrypted_key,
                     'status'      => 'active',
                     'expires_at'  => $expiresAt,
                 ] );
             } else {
-                $license_manager->add_license( $extension_slug, $licenseKey );
+                $license_manager->add_license( $extension_slug, $encrypted_key );
                 $license = $license_manager->get_license( $extension_slug );
                 if ($license) {
                     $license_manager->update_license( (int)$license->id, [
+                        'license_key' => $encrypted_key,
                         'status'     => 'active',
                         'expires_at' => $expiresAt,
                     ] );
@@ -2538,7 +2549,17 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             wp_send_json_error( [ 'message' => Language::get( 'License not found.' ) ] );
         }
 
-        $result = \MillionDollarScript\Classes\Extension\API::deactivate_license( $license->license_key, $extension_slug );
+        // decrypt locally stored license key before calling remote API
+        $plaintext_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact( (string) $license->license_key );
+        if ($plaintext_key === '') {
+            $plaintext_key = (string) $license->license_key;
+        }
+
+        if ($plaintext_key === '') {
+            wp_send_json_error( [ 'message' => Language::get( 'Stored license key is empty.' ) ] );
+        }
+
+        $result = \MillionDollarScript\Classes\Extension\API::deactivate_license( $plaintext_key, $extension_slug );
 
         if ( $result['success'] ) {
             $license_manager->update_license( $license->id, [ 'status' => 'inactive' ] );
