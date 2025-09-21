@@ -3,8 +3,9 @@
  * GPL-3.0
  */
 
-jQuery(document).ready(function ($) {
-	"use strict";
+;(function ($) {
+	$(function () {
+		"use strict";
 
 	// Ensure any notices that accidentally render inside the header are relocated
 	(function relocateHeaderNotices() {
@@ -81,6 +82,24 @@ jQuery(document).ready(function ($) {
 			.removeClass('mds-btn-loading');
 	}
 
+	// Inline license reveal toggle for card layouts
+	$(document).on('click', '.mds-card-license-toggle', function (event) {
+		event.preventDefault();
+		const $toggle = $(this);
+		const isExpanded = $toggle.attr('aria-expanded') === 'true';
+		const $card = $toggle.closest('.mds-extension-card');
+		const $licensePane = $card.find('.mds-card-license').first();
+		if (!$licensePane.length) {
+			return;
+		}
+		if (isExpanded) {
+			$licensePane.attr('hidden', true).addClass('is-collapsed');
+		} else {
+			$licensePane.removeAttr('hidden').removeClass('is-collapsed');
+		}
+		$toggle.attr('aria-expanded', isExpanded ? 'false' : 'true');
+	});
+
 	// Premium extensions UI gating on page load
 	(function gatePremiumInstallUI() {
 		try {
@@ -94,7 +113,8 @@ jQuery(document).ready(function ($) {
 					: 'http://localhost:15346'
 			).replace(/\/+$/, '');
 
-			const $premiumRows = $('table.widefat tbody tr[data-is-premium="true"]').filter(function () {
+			const premiumSelector = '.mds-extension-card[data-is-premium="true"], table.widefat tbody tr[data-is-premium="true"]';
+			const $premiumRows = $(premiumSelector).filter(function () {
 				return !$(this).attr('data-plugin-file');
 			});
 
@@ -182,7 +202,7 @@ jQuery(document).ready(function ($) {
 
 			next(0);
 		} catch (e) {
-			$('table.widefat tbody tr[data-is-premium="true"]').filter(function () {
+			$(premiumSelector).filter(function () {
 				return !$(this).attr('data-plugin-file');
 			}).each(function () {
 				const $row = $(this);
@@ -294,13 +314,16 @@ jQuery(document).ready(function ($) {
 		e.preventDefault();
 
 		const $button = $(this);
-		const $row = $button.closest("tr");
+		let $context = $button.closest('.mds-extension-card');
+		if (!$context.length) {
+			$context = $button.closest('tr');
+		}
 		const extensionId = $button.data("extension-id");
 		const extensionSlug = $button.data("extension-slug");
 
-		const isPremiumAttr = $row.data("is-premium");
+		const isPremiumAttr = $context.data("is-premium");
 		const isPremium = isPremiumAttr === true || isPremiumAttr === "true";
-		const licensedAttr = String($row.data("is-licensed") || '').toLowerCase() === 'true';
+		const licensedAttr = String($context.data("is-licensed") || '').toLowerCase() === 'true';
 		const hasLicense = licensedAttr || !!(MDS_EXTENSIONS_DATA.license_key && String(MDS_EXTENSIONS_DATA.license_key).trim());
 
 		if (isPremium && !hasLicense) {
@@ -967,5 +990,4 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
 			resetButton($btn, 'Activate');
 		});
 	});
-
-});
+})(window.jQuery);

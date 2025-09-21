@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.15.20\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.2.1\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-19 09:34:24\n"
-"PO-Revision-Date: 2025-09-19 09:34:24\n"
-"X-Generator: Million Dollar Script Two 2.5.15.20\n"
+"POT-Creation-Date: 2025-09-21 12:19:57\n"
+"PO-Revision-Date: 2025-09-21 12:19:57\n"
+"X-Generator: Million Dollar Script Two 2.6.2.1\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1119,7 +1119,7 @@ msgstr ""
 msgid "Checkout URL"
 msgstr ""
 
-msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
+msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. When “Auto-complete manual payments” is disabled the message will ask customers to wait for approval. When it's enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
 msgstr ""
 
 msgid "Thank-you Page URL"
@@ -1737,10 +1737,10 @@ msgstr ""
 msgid "Enable expiration of orders."
 msgstr ""
 
-msgid "Auto-approve"
+msgid "Auto-complete manual payments"
 msgstr ""
 
-msgid "Enabling this will automatically approve orders before payments are verified by an admin."
+msgid "Automatically mark manual/offline MDS checkout flows as completed so buyers see the thank-you page immediately. Pixel approval still follows each grid's “Approve Automatically?” setting and may require review on the <a href=\"%APPROVAL_URL%\">Pixels Awaiting Approval</a> screen. Leave this disabled when WooCommerce integration is handling payments."
 msgstr ""
 
 msgid "Currency"
@@ -1864,12 +1864,6 @@ msgid "Extension Server URL"
 msgstr ""
 
 msgid "The URL of the extension server for automatic updates and downloads. Use http://host.docker.internal:15346 or http://localhost:3000 for development or your production server URL. Default: https://extensions.milliondollarscript.com"
-msgstr ""
-
-msgid "License Key"
-msgstr ""
-
-msgid "Your license key for accessing premium extensions and updates from the extension server."
 msgstr ""
 
 msgid "Delete data on uninstall?"
@@ -2271,6 +2265,15 @@ msgstr ""
 msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
 msgstr ""
 
+msgid "Discover Extensions"
+msgstr ""
+
+msgid "Supercharge Million Dollar Script with powerful add-ons for custom fields, translations, analytics, automation, and more."
+msgstr ""
+
+msgid "Explore Extensions"
+msgstr ""
+
 msgid "Premium Installation Service"
 msgstr ""
 
@@ -2389,6 +2392,36 @@ msgid "Log file is empty or does not exist."
 msgstr ""
 
 msgid "Could not open log file for reading."
+msgstr ""
+
+msgid "Account"
+msgstr ""
+
+msgid "License Status"
+msgstr ""
+
+msgid "Add your license key on the System tab to enable premium downloads and updates."
+msgstr ""
+
+msgid "Open System tab"
+msgstr ""
+
+msgid "License Key (masked)"
+msgstr ""
+
+msgid "Expires At"
+msgstr ""
+
+msgid "No license details found for the configured license key."
+msgstr ""
+
+msgid "Error: "
+msgstr ""
+
+msgid "Manage Subscription"
+msgstr ""
+
+msgid "Customer portal is not configured. Ensure your Extension Server URL is set on the System tab."
 msgstr ""
 
 msgid "Pixels Awaiting Approval"
@@ -2742,46 +2775,43 @@ msgstr ""
 msgid "Supercharge your pixel advertising with powerful extensions"
 msgstr ""
 
+msgid "Purchase received. Activation will be available once payment clears. You may need to refresh in a minute."
+msgstr ""
+
+msgid "Purchase was cancelled."
+msgstr ""
+
 msgid "Could not connect to extension server: "
 msgstr ""
 
 msgid "You can only manage installed extensions at this time."
 msgstr ""
 
-msgid "🚀 Unlock Your Potential"
-msgstr ""
-
-msgid "Join thousands of successful marketers using MDS extensions to boost conversions and maximize revenue."
-msgstr ""
-
-msgid "Extensions Available"
-msgstr ""
-
-msgid "Active Users"
-msgstr ""
-
 msgid "Available Extensions"
+msgstr ""
+
+msgid "Purchased Extensions"
 msgstr ""
 
 msgid "Extension"
 msgstr ""
 
-msgid "Version"
+msgid "License"
 msgstr ""
 
-msgid "Type"
+msgid "Renews"
 msgstr ""
 
 msgid "Action"
 msgstr ""
 
-msgid "Premium"
-msgstr ""
-
-msgid "Free"
+msgid "Enter license key"
 msgstr ""
 
 msgid "Install"
+msgstr ""
+
+msgid "Manage"
 msgstr ""
 
 msgid "Installed Extensions"
@@ -2790,10 +2820,82 @@ msgstr ""
 msgid "No extensions installed."
 msgstr ""
 
+msgid "Version"
+msgstr ""
+
 msgid "Check for Updates"
 msgstr ""
 
 msgid "Check All for Updates"
+msgstr ""
+
+msgid "Some licenses are expiring soon:"
+msgstr ""
+
+msgid "days remaining"
+msgstr ""
+
+msgid "Go to System tab"
+msgstr ""
+
+msgid "Some extensions require a valid license. Enter your license key at Million Dollar Script → Options → System → License Key."
+msgstr ""
+
+msgid "Connected to the Extension Server using a fallback URL."
+msgstr ""
+
+msgid "Update your Extension Server URL in Million Dollar Script → Options → System to:"
+msgstr ""
+
+msgid "Renews automatically"
+msgstr ""
+
+msgid "Lifetime access"
+msgstr ""
+
+msgid "Purchased locally"
+msgstr ""
+
+msgid "License status: "
+msgstr ""
+
+msgid "Renews: "
+msgstr ""
+
+msgid "Pricing information will appear once Stripe plans are configured."
+msgstr ""
+
+msgid "Select a plan"
+msgstr ""
+
+msgid "Upload ZIP"
+msgstr ""
+
+msgid "Premium"
+msgstr ""
+
+msgid "Free"
+msgstr ""
+
+msgid "Manage license"
+msgstr ""
+
+msgid "Show license key"
+msgstr ""
+
+msgid "No license required"
+msgstr ""
+
+msgid "Monthly subscription"
+msgstr ""
+
+msgid "Yearly subscription"
+msgstr ""
+
+msgid "One-time purchase"
+msgstr ""
+
+msgid "Choose plan"
 msgstr ""
 
 msgid "Failed to fetch extensions from server."
@@ -2815,6 +2917,9 @@ msgid "Extension slug is required."
 msgstr ""
 
 msgid "Extension ID (UUID) is required."
+msgstr ""
+
+msgid "Extension server unreachable."
 msgstr ""
 
 msgid "PHP ZipArchive extension is missing on the server. This is required to install extensions. Please ask your hosting provider or system administrator to install/enable it."
@@ -2854,6 +2959,60 @@ msgid "Extension installed but failed to activate: "
 msgstr ""
 
 msgid "Extension installed and activated successfully."
+msgstr ""
+
+msgid "Purchase unavailable for this extension."
+msgstr ""
+
+msgid "Invalid response from extension server."
+msgstr ""
+
+msgid "Missing required fields."
+msgstr ""
+
+msgid "License claimed and saved."
+msgstr ""
+
+msgid "License activated and stored."
+msgstr ""
+
+msgid "License saved (pending validation)."
+msgstr ""
+
+msgid "Missing extension slug."
+msgstr ""
+
+msgid "No license found for this extension."
+msgstr ""
+
+msgid "Could not decrypt license key."
+msgstr ""
+
+msgid "Activation failed."
+msgstr ""
+
+msgid "License not found."
+msgstr ""
+
+msgid "Stored license key is empty."
+msgstr ""
+
+msgid "Failed to fetch subscription."
+msgstr ""
+
+msgid "Missing fields."
+msgstr ""
+
+msgid "Failed to change plan."
+msgstr ""
+
+msgid "Plan changed."
+msgstr ""
+
+msgid "Failed to cancel subscription."
+msgstr ""
+
+msgid "Auto-renew canceled."
 msgstr ""
 
 msgid "Error: You must be logged in to view this page"
@@ -3387,6 +3546,9 @@ msgstr ""
 msgid "Height of the iframe. Examples: 1000px or 100% or auto"
 msgstr ""
 
+msgid "Type"
+msgstr ""
+
 msgid "Type of MDS component to load."
 msgstr ""
 
@@ -3447,7 +3609,7 @@ msgstr ""
 msgid "Auto-complete Orders"
 msgstr ""
 
-msgid "Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab."
+msgid "Immediately mark the linked MDS order as completed when WooCommerce changes the order status out of \"on-hold\". For manual/offline checkouts that bypass WooCommerce entirely, use the “Auto-complete manual payments” option on the Orders tab (visible only when WooCommerce integration is disabled)."
 msgstr ""
 
 msgid "MDS Wizard: Failed to create default WooCommerce product because WooCommerce is not active or another error occurred."
@@ -3505,9 +3667,6 @@ msgid "Payment submitted and processing..."
 msgstr ""
 
 msgid "Expires in: %TIME%"
-msgstr ""
-
-msgid "Manage"
 msgstr ""
 
 msgid "Renew Now! %DAYS_TO_RENEW% days, %HOURS_TO_RENEW% hours, and %MINUTES_TO_RENEW% minutes left to renew"
@@ -4054,9 +4213,6 @@ msgid "Click Reports"
 msgstr ""
 
 msgid "System Information"
-msgstr ""
-
-msgid "License"
 msgstr ""
 
 msgid "Help"

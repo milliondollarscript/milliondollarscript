@@ -96,14 +96,22 @@
 }
 
 /* Extension Cards */
+.mds-available-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 28px;
+}
+
 .mds-extension-card {
-    background: white;
+    background: #ffffff;
     border: 1px solid #e1e5e9;
-    border-radius: 16px;
-    padding: 25px;
+    border-radius: 18px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .mds-extension-card::before {
@@ -120,7 +128,7 @@
 
 .mds-extension-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
     border-color: #667eea;
 }
 
@@ -131,7 +139,6 @@
 .mds-extension-card.loading {
     opacity: 0.7;
     pointer-events: none;
-    position: relative;
 }
 
 .mds-extension-card.loading::after {
@@ -146,6 +153,63 @@
     border-top: 3px solid #667eea;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+}
+
+.mds-extension-card--premium::before {
+    background: linear-gradient(90deg, #f472b6 0%, #c084fc 100%);
+}
+
+.mds-extension-card--installed {
+    border-color: #c7d2fe;
+}
+
+.mds-card-header {
+    padding: 26px 28px 18px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-bottom: 1px solid rgba(102, 126, 234, 0.12);
+}
+
+.mds-card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px 0;
+}
+
+.mds-card-title-heading {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.mds-card-title-version {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+html.dark .mds-card-header {
+    background: rgba(30, 41, 59, 0.7);
+    border-bottom-color: rgba(99, 102, 241, 0.25);
+}
+
+html.dark .mds-card-title-heading {
+    color: #e2e8f0;
+}
+
+html.dark .mds-card-title-version {
+    color: #cbd5f5;
+}
+
+.mds-card-body {
+    padding: 22px 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 /* Enhanced Buttons */
@@ -578,4 +642,244 @@ body.wp-admin .wrap > .notice .mds-go-to-system { pointer-events: auto; }
   font-style: italic;
   font-size: 12px;
   margin-left: 6px;
+}
+
+.mds-card-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.mds-card-description {
+  margin: 0;
+  color: #425466;
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.mds-card-pricing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.mds-card-pricing--empty {
+  background: #f8fafc;
+  border: 1px dashed #cbd5f5;
+  padding: 18px 20px;
+  border-radius: 12px;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.mds-plan-card {
+  flex: 1 1 240px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+html.dark .mds-plan-card {
+  background: #1f2937;
+  border-color: #334155;
+}
+
+.mds-plan-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+html.dark .mds-plan-title {
+  color: #e2e8f0;
+}
+
+.mds-plan-pricing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.mds-plan-price {
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.mds-plan-price--sale {
+  color: #be185d;
+}
+
+.mds-plan-price--compare {
+  font-size: 0.9rem;
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.mds-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(190, 24, 93, 0.12);
+  color: #9d174d;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.mds-plan-features {
+  margin: 0;
+  padding-left: 18px;
+  color: #4b5563;
+  font-size: 0.92rem;
+}
+
+html.dark .mds-plan-features {
+  color: #cbd5f5;
+}
+
+.mds-plan-features li {
+  margin-bottom: 4px;
+}
+
+.mds-plan-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.mds-plan-actions .button {
+  width: 100%;
+  text-align: center;
+}
+
+.mds-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.mds-card-actions .button,
+.mds-card-actions .mds-purchase-buttons .button {
+  min-width: 140px;
+}
+
+.mds-license-required-note {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.mds-license-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(226, 232, 240, 0.78);
+  color: #1f2937;
+}
+
+.mds-license-chip--active {
+  background: rgba(34, 197, 94, 0.18);
+  color: #166534;
+}
+
+.mds-license-chip--attention {
+  background: rgba(249, 115, 22, 0.18);
+  color: #9a3412;
+}
+
+.mds-license-chip--renewal {
+  background: rgba(59, 130, 246, 0.16);
+  color: #1d4ed8;
+}
+
+.mds-license-chip--purchased {
+  background: rgba(250, 204, 21, 0.18);
+  color: #92400e;
+}
+
+.mds-license-chip--free {
+  background: rgba(34, 197, 94, 0.12);
+  color: #047857;
+}
+
+html.dark .mds-license-chip {
+  background: rgba(148, 163, 184, 0.25);
+  color: #e2e8f0;
+}
+
+html.dark .mds-license-chip--renewal {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+html.dark .mds-card-pricing--empty {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: #334155;
+  color: #cbd5f5;
+}
+
+/* Inline license tray toggle styling for card layout */
+.mds-card-summary .mds-card-license-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #d0dbea;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.mds-card-summary .mds-card-license-toggle:hover,
+.mds-card-summary .mds-card-license-toggle:focus {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+html.dark .mds-card-summary .mds-card-license-toggle {
+  background: #1f2937;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html.dark .mds-card-summary .mds-card-license-toggle:hover,
+html.dark .mds-card-summary .mds-card-license-toggle:focus {
+  background: #273449;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+.mds-card-license {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+.mds-card-license.is-collapsed {
+  display: none;
+}
+
+html.dark .mds-card-license {
+  border-top: 1px solid #334155;
 }
