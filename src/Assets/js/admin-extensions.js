@@ -6,7 +6,6 @@
 ;(function ($) {
 	$(function () {
 		"use strict";
-
 	// Ensure any notices that accidentally render inside the header are relocated
 	(function relocateHeaderNotices() {
 		try {
@@ -82,6 +81,61 @@
 			.removeClass('mds-btn-loading');
 	}
 
+	const TEXT = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.text) || {};
+
+	function getText(key, fallback) {
+		if (TEXT && Object.prototype.hasOwnProperty.call(TEXT, key)) {
+			const value = TEXT[key];
+			if (typeof value === 'string' && value !== '') {
+				return value;
+			}
+		}
+		return fallback;
+	}
+
+	function setPlanFeedback($container, message = '', type = '') {
+		if (!$container || !$container.length) {
+			if (message) {
+				showNotice(type === 'error' ? 'error' : 'success', message, type !== 'error');
+			}
+			return;
+		}
+		$container.removeClass('is-error is-success');
+		if (!message) {
+			$container.text('');
+			return;
+		}
+		if (type === 'error') {
+			$container.addClass('is-error');
+		} else if (type === 'success') {
+			$container.addClass('is-success');
+		}
+		$container.text(message);
+	}
+
+	function highlightPlanCard($card, enable) {
+		// Toggle the hover/focus highlight class on plan cards
+		if (!$card || !$card.length) return;
+		$card.toggleClass('is-highlighted', !!enable);
+	}
+
+	$(document).on('mouseenter focusin', '.mds-plan-card', function () {
+		highlightPlanCard($(this), true);
+	});
+
+	$(document).on('mouseleave', '.mds-plan-card', function () {
+		highlightPlanCard($(this), false);
+	});
+
+	$(document).on('focusout', '.mds-plan-card', function (event) {
+		const $card = $(this);
+		const related = event.relatedTarget;
+		if (related && $card.has(related).length > 0) {
+			return;
+		}
+		highlightPlanCard($card, false);
+	});
+
 	// Inline license reveal toggle for card layouts
 	$(document).on('click', '.mds-card-license-toggle', function (event) {
 		event.preventDefault();
@@ -93,9 +147,9 @@
 			return;
 		}
 		if (isExpanded) {
-			$licensePane.attr('hidden', true).addClass('is-collapsed');
+			$licensePane.attr('hidden', true).attr('aria-hidden', 'true').addClass('is-collapsed');
 		} else {
-			$licensePane.removeAttr('hidden').removeClass('is-collapsed');
+			$licensePane.removeAttr('hidden').attr('aria-hidden', 'false').removeClass('is-collapsed');
 		}
 		$toggle.attr('aria-expanded', isExpanded ? 'false' : 'true');
 	});
@@ -119,10 +173,13 @@
 			});
 
 			function annotateBuy($row, text) {
-				const $purchase = $row.find('.mds-purchase-buttons');
-				if ($purchase.length && !$row.find('.mds-license-required-note').length) {
+				let $target = $row.find('.mds-card-actions');
+				if (!$target.length) {
+					$target = $row.find('.mds-purchase-buttons');
+				}
+				if ($target.length && !$row.find('.mds-license-required-note').length) {
 					$('<span class="mds-license-required-note" title="License required" style="margin-left:8px;color:#666;">' + (text || 'License required') + '</span>')
-						.appendTo($purchase);
+						.appendTo($target);
 				}
 			}
 
@@ -213,9 +270,12 @@
 						.attr('aria-disabled', 'true')
 						.attr('title', 'License required');
 				}
-				const $purchase = $row.find('.mds-purchase-buttons');
-				if ($purchase.length && !$row.find('.mds-license-required-note').length) {
-					$purchase.append('<span class="mds-license-required-note" title="License required" style="margin-left:8px;color:#666;">License required</span>');
+				let $target = $row.find('.mds-card-actions');
+				if (!$target.length) {
+					$target = $row.find('.mds-purchase-buttons');
+				}
+				if ($target.length && !$row.find('.mds-license-required-note').length) {
+					$target.append('<span class="mds-license-required-note" title="License required" style="margin-left:8px;color:#666;">License required</span>');
 				}
 			});
 		}
@@ -619,112 +679,64 @@ $(document).on('click', '.mds-cancel-subscription', function(){
         .fail(function(){ showNotice('error', 'Failed to cancel.', false); })
         .always(function(){ $btn.prop('disabled', false).text('Cancel auto-renew'); });
 });
-	function ensurePurchaseModal() {
-		if ($('#mds-purchase-modal').length) return;
-		const html = `
-			<div id="mds-purchase-modal" class="mds-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mds-purchase-title">
-				<div class="mds-modal">
-					<header><span id="mds-purchase-title">Select a plan</span></header>
-					<div class="mds-modal-body">
-						<div class="mds-plan-options"></div>
-						<div class="mds-plan-error" style="color:#b91c1c; display:none;"></div>
-					</div>
-					<footer>
-						<button type="button" class="button mds-modal-cancel">Cancel</button>
-						<button type="button" class="button button-primary mds-modal-continue" disabled>Continue</button>
-					</footer>
-				</div>
-			</div>`;
-		$('body').append(html);
-	}
-	function openPurchaseModal(extensionId, nonce, initialPlan) {
-		ensurePurchaseModal();
-		const $overlay = $('#mds-purchase-modal');
-		const $body = $overlay.find('.mds-plan-options');
-		const $error = $overlay.find('.mds-plan-error');
-		const $continue = $overlay.find('.mds-modal-continue');
-		$error.hide().text('');
-		$continue.prop('disabled', true).data('extension-id', extensionId).data('nonce', nonce).data('plan', '');
-		$body.html('<p>Loading plans…</p>');
-		$overlay.css('display','flex');
-		// Fetch extension details for purchase links
-		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
-			type: 'POST',
-			dataType: 'json',
-			data: { action: 'mds_fetch_extension', nonce: MDS_EXTENSIONS_DATA.nonce, extension_id: extensionId },
-			success: function(resp) {
-				if (!resp || !resp.success || !resp.data || !resp.data.extension) {
-					$error.text('Could not load plans.').show();
-					return;
-				}
-				const ext = resp.data.extension;
-				const links = (ext.purchase_links) || {};
-				const options = [];
-				if (links.one_time) options.push({key:'one_time', label:'One-time', url:links.one_time});
-				if (links.monthly) options.push({key:'monthly', label:'Monthly', url:links.monthly});
-				if (links.yearly) options.push({key:'yearly', label:'Yearly', url:links.yearly});
-				if (links.default && options.length === 0) options.push({key:'default', label:'Purchase', url:links.default});
-				if (options.length === 0) {
-					$body.html('<p>No plans available for purchase.</p>');
-					return;
-				}
-				const radios = options.map(o => `
-					<label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
-						<input type="radio" name="mds-plan" value="${o.key}">
-						<span>${o.label}</span>
-					</label>`).join('');
-				$body.html(radios);
-				if (initialPlan) {
-					$body.find(`input[value="${initialPlan}"]`).prop('checked', true);
-					$continue.prop('disabled', false).data('plan', initialPlan);
-				}
-				$body.off('change','input[name="mds-plan"]').on('change','input[name="mds-plan"]', function() {
-					const plan = $(this).val();
-					$continue.prop('disabled', !plan).data('plan', plan);
-				});
-			},
-			error: function(){ $error.text('Could not load plans.').show(); }
-		});
-	}
-	$(document).on('click', '#mds-purchase-modal .mds-modal-cancel', function(){ $('#mds-purchase-modal').hide(); });
-	$(document).on('click', '#mds-purchase-modal .mds-modal-continue', function(){
-		const $btn = $(this);
-		const extId = $btn.data('extension-id');
-		const nonce = $btn.data('nonce');
-		const plan  = $btn.data('plan');
-		if (!extId || !nonce) return;
-		$btn.prop('disabled', true).text('Continuing…');
-		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
-			type: 'POST',
-			dataType: 'json',
-			data: { action: 'mds_purchase_extension', nonce: nonce, extension_id: extId, plan: plan },
-			success: function(r){
-				if (r && r.success && r.data && r.data.checkout_url) {
-					window.location.href = r.data.checkout_url;
-				} else {
-					$('.mds-plan-error').text((r && r.data && r.data.message) || 'Failed to initiate purchase.').show();
-					$btn.prop('disabled', false).text('Continue');
-				}
-			},
-			error: function(){
-				$('.mds-plan-error').text('Failed to initiate purchase.').show();
-				$btn.prop('disabled', false).text('Continue');
-			}
-		});
-	});
-
 // Handle purchase extension button
-	$(document).on("click", ".mds-purchase-extension", function (e) {
+	$(document).on('click', '.mds-purchase-extension', function (e) {
 		e.preventDefault();
 
 		const $button = $(this);
-		const extensionId = $button.data("extension-id");
-		const nonce = $button.data("nonce");
+		if ($button.prop('disabled')) {
+			return;
+		}
 
-		// Open plan selection modal instead of immediate redirect
-		openPurchaseModal(extensionId, nonce, $button.data('plan') || null);
+		const extensionId = $button.data('extension-id');
+		const nonce = $button.data('nonce');
+		const plan = String($button.data('plan') || '').trim();
+
+		const $card = $button.closest('.mds-plan-card');
+		const $feedback = $card.find('.mds-plan-feedback');
+
+		setPlanFeedback($feedback, '', '');
+
+		if (!extensionId || !nonce) {
+			setPlanFeedback($feedback, getText('missing_parameters', 'Unable to start checkout. Please refresh and try again.'), 'error');
+			return;
+		}
+
+		if (!plan) {
+			setPlanFeedback($feedback, getText('missing_plan', 'Please choose a plan to continue.'), 'error');
+			return;
+		}
+
+		setButtonLoading($button, getText('processing_plan', 'Processing…'));
+
+		$.ajax({
+			url: MDS_EXTENSIONS_DATA.ajax_url,
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				action: 'mds_purchase_extension',
+				nonce: nonce,
+				extension_id: extensionId,
+				plan: plan,
+			},
+			success: function (resp) {
+				if (resp && resp.success && resp.data && resp.data.checkout_url) {
+					setPlanFeedback($feedback, getText('redirecting_checkout', 'Redirecting to checkout…'), 'success');
+					window.location.href = resp.data.checkout_url;
+					return;
+				}
+				const fallback = getText('purchase_failed', 'Failed to initiate purchase.');
+				const message = (resp && resp.data && resp.data.message) ? resp.data.message : fallback;
+				setPlanFeedback($feedback, message, 'error');
+				resetButton($button);
+				highlightPlanCard($card, false);
+			},
+			error: function () {
+				setPlanFeedback($feedback, getText('purchase_network_error', 'An error occurred while contacting the store. Please try again.'), 'error');
+				resetButton($button);
+				highlightPlanCard($card, false);
+			},
+		});
 	});
 
 	// Auto-claim license after purchase success
@@ -936,7 +948,8 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
 					$content.wrap('<div class="mds-license-manage-content" id="'+contentId+'" aria-hidden="true"></div>');
 				}
 				if (!$cell.find('.mds-manage-license-toggle').length) {
-					const $toggle = $('<button type="button" class="button-link mds-manage-license-toggle" aria-expanded="false" aria-controls="'+contentId+'">'+ (MDS_EXTENSIONS_DATA.text?.manage_license || 'Manage License') +'</button>');
+					const $toggle = $('<button type="button" class="button-link mds-manage-license-toggle" aria-expanded="false" aria-controls="'+contentId+'"></button>');
+					$toggle.text(getText('manage_license', 'Manage license'));
 					$cell.prepend($toggle);
 				}
 				$cell.attr('data-manage-init', '1');
@@ -953,10 +966,10 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
 		const open = $btn.attr('aria-expanded') === 'true';
 		if (open) {
 			$content.removeClass('is-open').attr('aria-hidden', 'true');
-			$btn.attr('aria-expanded', 'false').text(MDS_EXTENSIONS_DATA.text?.manage_license || 'Manage License');
+			$btn.attr('aria-expanded', 'false').text(getText('manage_license', 'Manage license'));
 		} else {
 			$content.addClass('is-open').attr('aria-hidden', 'false');
-			$btn.attr('aria-expanded', 'true').text(MDS_EXTENSIONS_DATA.text?.hide_license || 'Hide');
+			$btn.attr('aria-expanded', 'true').text(getText('hide_license', 'Hide'));
 		}
 	});
 
