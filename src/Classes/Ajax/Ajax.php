@@ -448,17 +448,50 @@ class Ajax {
 		require_once MDS_CORE_PATH . 'include/ads.inc.php';
 		global $wpdb;
 
-		$requested_bid = isset( $_REQUEST['BID'] ) ? absint( $_REQUEST['BID'] ) : 0;
-		$context       = [
-			'requested_bid' => $requested_bid,
-			'request'       => $_REQUEST,
+		$requested_bid        = isset( $_REQUEST['BID'] ) ? absint( $_REQUEST['BID'] ) : 0;
+		$is_ajax_request      = wp_doing_ajax();
+		$explicit_bid_request = isset( $_GET['BID'] ) || isset( $_POST['BID'] );
+		$list_show_all        = isset( $_REQUEST['mds_list_show_all'] )
+			? filter_var( wp_unslash( $_REQUEST['mds_list_show_all'] ), FILTER_VALIDATE_BOOLEAN )
+			: false;
+		$explicit_id          = isset( $_REQUEST['mds_explicit_id'] )
+			? filter_var( wp_unslash( $_REQUEST['mds_explicit_id'] ), FILTER_VALIDATE_BOOLEAN )
+			: false;
+		$shortcode_id         = isset( $_REQUEST['mds_shortcode_id'] ) ? absint( $_REQUEST['mds_shortcode_id'] ) : 0;
+		$requested_banner_ids = [];
+
+		if ( $requested_bid > 0 && ( $is_ajax_request || $explicit_bid_request ) && ! $list_show_all ) {
+			$requested_banner_ids[] = $requested_bid;
+		}
+
+		$context = [
+			'requested_bid'         => $requested_bid,
+			'request'               => $_REQUEST,
+			'is_ajax_request'       => $is_ajax_request,
+			'explicit_bid_request'  => $explicit_bid_request,
+			'list_show_all'         => $list_show_all,
+			'explicit_id'           => $explicit_id,
+			'shortcode_id'          => $shortcode_id,
 		];
+
+		// Allow extensions to adjust which banners appear before the query runs.
+		$requested_banner_ids = apply_filters( 'mds_list_requested_banner_ids', $requested_banner_ids, $context );
+		$requested_banner_ids = array_filter( array_map( 'absint', (array) $requested_banner_ids ) );
+		$requested_banner_ids = array_values( array_unique( $requested_banner_ids ) );
+
+		$context['requested_banner_ids'] = $requested_banner_ids;
 
 		$container_attributes = [
 			'class' => 'mds-container list-container',
 		];
-		if ( $requested_bid > 0 ) {
+		if ( $requested_bid > 0 && ( $is_ajax_request || $explicit_bid_request ) && ! $list_show_all ) {
 			$container_attributes['data-bid'] = (string) $requested_bid;
+		}
+		if ( ! empty( $requested_banner_ids ) ) {
+			$container_attributes['data-requested-bids'] = implode( ',', $requested_banner_ids );
+		}
+		if ( $list_show_all ) {
+			$container_attributes['data-list-show-all'] = '1';
 		}
 		$container_attributes = apply_filters( 'mds_list_container_attributes', $container_attributes, $context );
 
@@ -507,11 +540,10 @@ class Ajax {
 		);
 
 		$banners_sql = 'SELECT * FROM ' . MDS_DB_PREFIX . 'banners ORDER BY banner_id';
-		if ( $requested_bid > 0 ) {
-			$banners_sql = $wpdb->prepare(
-				'SELECT * FROM ' . MDS_DB_PREFIX . 'banners WHERE banner_id = %d',
-				$requested_bid
-			);
+		if ( ! empty( $requested_banner_ids ) ) {
+			$placeholders = implode( ', ', array_fill( 0, count( $requested_banner_ids ), '%d' ) );
+			$sql          = 'SELECT * FROM ' . MDS_DB_PREFIX . 'banners WHERE banner_id IN ( ' . $placeholders . ' ) ORDER BY banner_id';
+			$banners_sql  = $wpdb->prepare( $sql, $requested_banner_ids );
 		}
 		$banners_sql = apply_filters( 'mds_list_banners_sql', $banners_sql, $context );
 

@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.30
+Stable tag: 2.5.15.32
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -36,6 +36,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * Fix: Grid image uploads now save consistently instead of reverting to the default artwork during edits.
 * Improvement: Polished the advertiser list styling so banner headings now stretch across every column and the layout stays readable on any screen.
 * New: Developers can fine-tune the advertiser list with fresh hooks (`mds_list_grid_tracks`, `mds_list_grid_template`, `mds_list_default_grid_tracks`, `mds_list_fallback_grid_track`) located in `src/Classes/Ajax/Ajax.php`.
+* Fix: The advertiser list shortcode now shows every grid by default, making it easier for visitors to browse everything you offer.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.
