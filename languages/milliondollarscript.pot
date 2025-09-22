@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.15.20\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.15.29\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-19 09:34:24\n"
-"PO-Revision-Date: 2025-09-19 09:34:24\n"
-"X-Generator: Million Dollar Script Two 2.5.15.20\n"
+"POT-Creation-Date: 2025-09-22 12:35:27\n"
+"PO-Revision-Date: 2025-09-22 12:35:27\n"
+"X-Generator: Million Dollar Script Two 2.5.15.29\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1119,7 +1119,7 @@ msgstr ""
 msgid "Checkout URL"
 msgstr ""
 
-msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. If auto-approve is disabled the message will ask customers to wait for their order to be approved. If auto-approve is enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
+msgid "The URL to your checkout page. If left empty and WooCommerce integration is enabled (that option only appears if WooCommerce is installed), your customers will be automatically redirected to the WooCommerce checkout page. If you don't specify a URL and WooCommerce integration is disabled, a default message will be displayed. When “Auto-complete manual payments” is disabled the message will ask customers to wait for approval. When it's enabled, the message will inform them their order has been successfully submitted. Placeholders: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, %PIXELID%"
 msgstr ""
 
 msgid "Thank-you Page URL"
@@ -1737,10 +1737,10 @@ msgstr ""
 msgid "Enable expiration of orders."
 msgstr ""
 
-msgid "Auto-approve"
+msgid "Auto-complete manual payments"
 msgstr ""
 
-msgid "Enabling this will automatically approve orders before payments are verified by an admin."
+msgid "Automatically mark manual/offline MDS checkout flows as completed so buyers see the thank-you page immediately. Pixel approval still follows each grid's “Approve Automatically?” setting and may require review on the <a href=\"%APPROVAL_URL%\">Pixels Awaiting Approval</a> screen. Leave this disabled when WooCommerce integration is handling payments."
 msgstr ""
 
 msgid "Currency"
@@ -3285,7 +3285,7 @@ msgstr ""
 msgid "Auto-complete Orders"
 msgstr ""
 
-msgid "Auto-complete WooCommerce orders when a payment successfully completes. Note: If you want manual payments to be automatically approved you can enable the Auto-approve option on the Orders tab."
+msgid "Immediately mark the linked MDS order as completed when WooCommerce changes the order status out of \"on-hold\". For manual/offline checkouts that bypass WooCommerce entirely, use the “Auto-complete manual payments” option on the Orders tab (visible only when WooCommerce integration is disabled)."
 msgstr ""
 
 msgid "MDS Wizard: Failed to create default WooCommerce product because WooCommerce is not active or another error occurred."
