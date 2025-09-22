@@ -1114,6 +1114,15 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Setting to Yes will make the Popup Text field optional.' ) ),
 
+				// Use Rich Text Popup Field
+				Field::make( 'radio', MDS_PREFIX . 'popup-rich-text', Language::get( 'Use Rich Text Popup Field?' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'yes' => Language::get( 'Yes' ),
+						'no'  => Language::get( 'No' ),
+					] )
+					->set_help_text( Language::get( 'Switch to a compact WYSIWYG editor for Popup Text. Output is limited to paragraphs, line breaks, bold, and italics.' ) ),
+
 				// Make URL Optional
 				Field::make( 'radio', MDS_PREFIX . 'url-optional', Language::get( 'Make URL Optional' ) )
 					->set_default_value( 'no' )

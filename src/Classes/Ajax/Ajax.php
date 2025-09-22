@@ -326,7 +326,13 @@ class Ajax {
 			$value = apply_filters( 'mds_field_output_before', $value, $field, $post_id );
 
 			if ( $field_name === 'text' ) {
-				$value = '<span class="mds-popup-text">' . esc_html( $value ) . '</span>';
+				if ( $field->get_type() === 'rich_text' ) {
+					$value = FormFields::sanitize_rich_text_value( (string) $value );
+					$value = '<div class="mds-popup-text mds-popup-text--rich">' . $value . '</div>';
+				} else {
+					$value = FormFields::sanitize_plain_text_value( (string) $value, $field->get_base_name() );
+					$value = '<span class="mds-popup-text">' . esc_html( $value ) . '</span>';
+				}
 			} else if ( $field_name === 'url' ) {
 				$value = '<a class="mds-popup-url" target="_blank" href="' . esc_url( $value ) . '">' . esc_html( $value ) . '</a>';
 			} else if ( $field_name === 'image' ) {
