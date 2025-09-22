@@ -38,6 +38,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\Web\Permalinks;
 use WP_Error;
 
 defined( 'ABSPATH' ) or exit;
@@ -59,7 +60,7 @@ class FormFields {
 				'has_archive'         => false,
 				'searchable'          => true,
 				'exclude_from_search' => false,
-'rewrite'             => array( 'slug' => \MillionDollarScript\Classes\Web\Permalinks::get_base() ),
+				'rewrite'             => array( 'slug' => Permalinks::get_base() ),
 			)
 		);
 	}
@@ -417,10 +418,7 @@ class FormFields {
 						$post_id = wp_insert_post( $post_data );
 						// Apply configured slug pattern immediately after creation
 						if ( ! is_wp_error( $post_id ) && $post_id ) {
-							$slug = \MillionDollarScript\Classes\Web\Permalinks::build_slug_for_post( (int) $post_id );
-							if ( ! empty( $slug ) ) {
-								wp_update_post( [ 'ID' => $post_id, 'post_name' => $slug ] );
-							}
+							Permalinks::sync_post_slug( (int) $post_id );
 						}
 					}
 				}
@@ -641,6 +639,9 @@ class FormFields {
 			}
 
 			if ( empty( $errors ) ) {
+				if ( ! is_wp_error( $post_id ) ) {
+					Permalinks::sync_post_slug( (int) $post_id );
+				}
 				return $post_id;
 			}
 		}
