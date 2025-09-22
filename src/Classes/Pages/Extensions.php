@@ -53,6 +53,120 @@ class Extensions {
     public const ADMIN_EXTENSIONS_PAGE_SLUG = 'milliondollarscript_extensions';
 
     /**
+     * Normalize plan keys for consistent comparisons.
+     */
+    private static function normalize_plan_key(string $plan): string {
+        $plan = strtolower(trim($plan));
+        if ($plan === '') {
+            return '';
+        }
+        $plan = preg_replace('/[^a-z0-9]+/', '_', $plan);
+        return trim($plan, '_');
+    }
+
+    private static function canonicalize_plan_key(string $plan): string {
+        $normalized = self::normalize_plan_key($plan);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $direct = [
+            'monthly'      => 'monthly',
+            'yearly'       => 'yearly',
+            'annual'       => 'yearly',
+            'annually'     => 'yearly',
+            'one_time'     => 'one_time',
+            'lifetime'     => 'one_time',
+            'subscription' => 'subscription',
+            'recurring'    => 'subscription',
+        ];
+        if (isset($direct[$normalized])) {
+            return $direct[$normalized];
+        }
+
+        $segments = array_values(array_filter(
+            explode('_', $normalized),
+            static function ($segment) {
+                return $segment !== '';
+            }
+        ));
+
+        if (empty($segments)) {
+            return $normalized;
+        }
+
+        $allowedExtras = ['plan', 'plans', 'subscription', 'subscriptions', 'sub', 'subs', 'default', 'pricing', 'price', 'billing', 'renew', 'auto', 'standard'];
+
+        $isSubset = static function (array $segments, array $base, array $extras): bool {
+            $allowed = array_merge($base, $extras);
+            foreach ($segments as $segment) {
+                if (!in_array($segment, $allowed, true)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        if (in_array('monthly', $segments, true) && $isSubset($segments, ['monthly'], $allowedExtras)) {
+            return 'monthly';
+        }
+
+        if ((in_array('yearly', $segments, true) || in_array('annual', $segments, true) || in_array('annually', $segments, true))
+            && $isSubset($segments, ['yearly', 'annual', 'annually'], $allowedExtras)) {
+            return 'yearly';
+        }
+
+        if ((in_array('one', $segments, true) && in_array('time', $segments, true)) || in_array('lifetime', $segments, true)) {
+            if ($isSubset($segments, ['one', 'time', 'lifetime'], $allowedExtras)) {
+                return 'one_time';
+            }
+        }
+
+        if ((in_array('subscription', $segments, true) || in_array('recurring', $segments, true))
+            && $isSubset($segments, ['subscription', 'recurring'], $allowedExtras)) {
+            return 'subscription';
+        }
+
+        return $normalized;
+    }
+
+    private static function guess_plan_key_from_string(string $value): string {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return '';
+        }
+
+        if (strpos($value, 'one_time') !== false || (strpos($value, 'one') !== false && strpos($value, 'time') !== false) || strpos($value, 'lifetime') !== false) {
+            return 'one_time';
+        }
+        if (strpos($value, 'year') !== false || strpos($value, 'annual') !== false) {
+            return 'yearly';
+        }
+        if (strpos($value, 'month') !== false || strpos($value, 'monthly') !== false) {
+            return 'monthly';
+        }
+        if (strpos($value, 'subscription') !== false || strpos($value, 'recurring') !== false) {
+            return 'subscription';
+        }
+
+        return self::normalize_plan_key($value);
+    }
+
+    /**
+     * Stripe plan identifiers supported by the Extension Server metadata.
+     */
+    private const STRIPE_PRICE_PLANS = ['monthly', 'yearly', 'one_time'];
+
+    /**
+     * Metadata keys that store the fallback price ID for each plan.
+     */
+    private const STRIPE_PRICE_FALLBACK_KEYS = [
+        'one_time' => 'stripe_price_one_time',
+        'monthly'  => 'stripe_price_monthly',
+        'yearly'   => 'stripe_price_yearly',
+    ];
+
+    /**
      * Initializes the Extensions class.
      */
     public static function init(): void {
@@ -540,11 +654,11 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                         }
                         $plan_hint = '';
                         if (!empty($license_metadata['plan'])) {
-                            $plan_hint = strtolower((string) $license_metadata['plan']);
+                            $plan_hint = self::canonicalize_plan_key((string) $license_metadata['plan']);
                         } elseif (!empty($license_metadata['price_plan'])) {
-                            $plan_hint = strtolower((string) $license_metadata['price_plan']);
+                            $plan_hint = self::canonicalize_plan_key((string) $license_metadata['price_plan']);
                         } elseif (!empty($license_metadata['recurring'])) {
-                            $plan_hint = strtolower((string) $license_metadata['recurring']);
+                            $plan_hint = self::canonicalize_plan_key((string) $license_metadata['recurring']);
                         }
                         $renews_display = self::format_license_renewal_display(
                             $renews_raw !== '' ? $renews_raw : null,
@@ -717,6 +831,14 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                     'claim_token' => $claim_token_param,
                 ],
                 'text'        => [
+                    'manage_license'       => Language::get('Manage license'),
+                    'hide_license'         => Language::get('Hide'),
+                    'processing_plan'       => Language::get('Processing...'),
+                    'redirecting_checkout'  => Language::get('Redirecting to checkout...'),
+                    'purchase_failed'       => Language::get('Failed to initiate purchase.'),
+                    'purchase_network_error'=> Language::get('An error occurred while contacting the store. Please try again.'),
+                    'missing_plan'          => Language::get('Please choose a plan to continue.'),
+                    'missing_parameters'    => Language::get('Unable to start checkout. Please refresh and try again.'),
                 ]
             ];
             wp_localize_script( $script_handle, 'MDS_EXTENSIONS_DATA', $extensions_data );
@@ -805,6 +927,9 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         if ( $page !== 'mds-extensions' ) {
             return;
         }
+        if (self::site_has_any_active_license()) {
+            return;
+        }
         $settings_url = admin_url('admin.php?page=milliondollarscript_options#system');
         $link_label   = Language::get('Go to System tab');
         if ( empty( $link_label ) ) {
@@ -828,6 +953,9 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
      */
     public static function print_missing_license_notice_inline(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        if (self::site_has_any_active_license()) {
             return;
         }
         $settings_url = admin_url('admin.php?page=milliondollarscript_options#system');
@@ -1155,11 +1283,11 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
 
                     $plan_hint = '';
                     if (!empty($metadata['plan'])) {
-                        $plan_hint = strtolower((string) $metadata['plan']);
+                        $plan_hint = self::canonicalize_plan_key((string) $metadata['plan']);
                     } elseif (!empty($metadata['price_plan'])) {
-                        $plan_hint = strtolower((string) $metadata['price_plan']);
+                        $plan_hint = self::canonicalize_plan_key((string) $metadata['price_plan']);
                     } elseif (!empty($metadata['recurring'])) {
-                        $plan_hint = strtolower((string) $metadata['recurring']);
+                        $plan_hint = self::canonicalize_plan_key((string) $metadata['recurring']);
                     }
 
                     $license_map[$slug_val] = [
@@ -1258,68 +1386,504 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         $result = [];
 
         $merge = static function (array $source) use (&$result): void {
-            foreach ($source as $key => $value) {
-                if (is_string($key) && $key !== '') {
-                    if (isset($result[$key]) && is_array($result[$key]) && is_array($value)) {
-                        $result[$key] = array_merge($result[$key], $value);
-                    } else {
-                        $result[$key] = $value;
+            $result = self::merge_metadata_arrays($result, $source);
+        };
+
+        $process = static function ($value) use (&$process, $merge): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            if (is_string($value)) {
+                $unserialized = maybe_unserialize($value);
+                if ($unserialized !== $value) {
+                    $process($unserialized);
+                    return;
+                }
+
+                $decoded = json_decode($value, true);
+                if (is_array($decoded)) {
+                    $merge($decoded);
+                }
+                return;
+            }
+
+            if ($value instanceof \stdClass) {
+                $as_array = json_decode(wp_json_encode($value), true);
+                if (is_array($as_array)) {
+                    $merge($as_array);
+                }
+                return;
+            }
+
+            if (is_array($value)) {
+                $is_assoc = array_keys($value) !== range(0, count($value) - 1);
+                if ($is_assoc) {
+                    $merge($value);
+                } else {
+                    foreach ($value as $entry) {
+                        $process($entry);
                     }
                 }
             }
         };
 
-        if ($metadata === null || $metadata === '') {
-            return $result;
-        }
+        $process($metadata);
 
-        if (is_string($metadata)) {
-            $unserialized = maybe_unserialize($metadata);
-            if ($unserialized !== $metadata) {
-                return self::normalize_extension_metadata($unserialized);
+        $result = self::normalize_stripe_pricing_metadata($result);
+
+        return self::normalize_plan_features_metadata($result);
+    }
+
+    /**
+     * Recursively merge associative metadata arrays while preserving list-like values.
+     */
+    private static function merge_metadata_arrays(array $base, array $incoming): array {
+        foreach ($incoming as $key => $value) {
+            if (!is_string($key) || $key === '') {
+                continue;
             }
 
-            $decoded = json_decode($metadata, true);
-            if (is_array($decoded)) {
-                $merge($decoded);
-            }
-            return $result;
-        }
+            if (isset($base[$key]) && is_array($base[$key]) && is_array($value)) {
+                $baseIsList = array_keys($base[$key]) === range(0, count($base[$key]) - 1);
+                $incomingIsList = array_keys($value) === range(0, count($value) - 1);
 
-        if ($metadata instanceof \stdClass) {
-            $as_array = json_decode(wp_json_encode($metadata), true);
-            if (is_array($as_array)) {
-                $merge($as_array);
-            }
-            return $result;
-        }
-
-        if (is_array($metadata)) {
-            $is_assoc = array_keys($metadata) !== range(0, count($metadata) - 1);
-            if ($is_assoc) {
-                $merge($metadata);
+                if ($baseIsList && $incomingIsList) {
+                    $base[$key] = array_values(array_merge($base[$key], $value));
+                } else {
+                    $base[$key] = self::merge_metadata_arrays($base[$key], $value);
+                }
             } else {
-                foreach ($metadata as $entry) {
-                    if (is_string($entry) || $entry instanceof \stdClass || is_array($entry)) {
-                        $normalized = self::normalize_extension_metadata($entry);
-                        if (!empty($normalized)) {
-                            $merge($normalized);
-                        }
+                $base[$key] = $value;
+            }
+        }
+
+        return $base;
+    }
+
+    /**
+     * Normalizes Stripe plan pricing metadata to mirror the Extension Server helpers.
+     */
+    private static function normalize_stripe_pricing_metadata(array $meta): array {
+        $structure = [];
+        $source = isset($meta['stripe_prices']) && is_array($meta['stripe_prices']) ? $meta['stripe_prices'] : [];
+
+        foreach (self::STRIPE_PRICE_PLANS as $plan) {
+            $structure[$plan] = [];
+            if (isset($source[$plan]) && is_array($source[$plan])) {
+                foreach ($source[$plan] as $rawEntry) {
+                    $entry = self::create_stripe_price_entry($rawEntry);
+                    if ($entry !== null) {
+                        self::push_stripe_price_entry($structure[$plan], $entry);
                     }
                 }
             }
         }
 
-        if (isset($result['stripe_prices']) && is_array($result['stripe_prices'])) {
-            $plans = ['one_time', 'monthly', 'yearly'];
-            foreach ($plans as $plan) {
-                if (!isset($result['stripe_prices'][$plan]) || !is_array($result['stripe_prices'][$plan])) {
-                    $result['stripe_prices'][$plan] = [];
+        foreach (self::STRIPE_PRICE_PLANS as $plan) {
+            $fallbackKey = self::STRIPE_PRICE_FALLBACK_KEYS[$plan] ?? null;
+            if ($fallbackKey && isset($meta[$fallbackKey]) && is_string($meta[$fallbackKey])) {
+                $fallbackId = trim($meta[$fallbackKey]);
+                if ($fallbackId !== '') {
+                    self::push_stripe_price_entry($structure[$plan], [
+                        'price_id'   => $fallbackId,
+                        'label'      => 'Default',
+                        'status'     => 'active',
+                        'default'    => true,
+                        'created_at' => gmdate('c'),
+                        'metadata'   => [],
+                    ]);
+                }
+            }
+
+            self::ensure_stripe_price_default($structure[$plan]);
+            self::sort_stripe_price_entries($structure[$plan]);
+        }
+
+        $meta['stripe_prices'] = $structure;
+
+        foreach (self::STRIPE_PRICE_PLANS as $plan) {
+            $fallbackKey = self::STRIPE_PRICE_FALLBACK_KEYS[$plan] ?? null;
+            if (!$fallbackKey) {
+                continue;
+            }
+
+            $fallbackId = '';
+            foreach ($structure[$plan] as $entry) {
+                if (!empty($entry['default']) && (!isset($entry['status']) || $entry['status'] !== 'hidden')) {
+                    $fallbackId = (string) $entry['price_id'];
+                    break;
+                }
+            }
+
+            if ($fallbackId === '' && isset($structure[$plan][0]['price_id'])) {
+                $fallbackId = (string) $structure[$plan][0]['price_id'];
+            }
+
+            if ($fallbackId !== '') {
+                $meta[$fallbackKey] = $fallbackId;
+            } elseif (isset($meta[$fallbackKey])) {
+                unset($meta[$fallbackKey]);
+            }
+        }
+
+        return $meta;
+    }
+
+    /**
+     * Convert a raw Stripe price entry into the normalized structure used across the UI.
+     */
+    private static function create_stripe_price_entry($raw): ?array {
+        if ($raw instanceof \stdClass) {
+            $raw = json_decode(wp_json_encode($raw), true);
+        }
+
+        if (!is_array($raw)) {
+            return null;
+        }
+
+        $priceId = '';
+        foreach ([
+            $raw['price_id'] ?? null,
+            $raw['priceId'] ?? null,
+            $raw['id'] ?? null,
+        ] as $candidate) {
+            if (is_string($candidate)) {
+                $candidate = trim($candidate);
+                if ($candidate !== '') {
+                    $priceId = $candidate;
+                    break;
                 }
             }
         }
 
-        return $result;
+        if ($priceId === '') {
+            return null;
+        }
+
+        $label = '';
+        foreach ([
+            $raw['label'] ?? null,
+            $raw['nickname'] ?? null,
+            $raw['name'] ?? null,
+        ] as $candidate) {
+            if (is_string($candidate)) {
+                $candidate = trim($candidate);
+                if ($candidate !== '') {
+                    $label = $candidate;
+                    break;
+                }
+            }
+        }
+        if ($label === '') {
+            $label = 'Default';
+        }
+
+        $status = '';
+        if (isset($raw['status'])) {
+            $status = strtolower((string) $raw['status']);
+        } elseif (!empty($raw['hidden'])) {
+            $status = 'hidden';
+        }
+        if (!in_array($status, ['active', 'hidden', 'legacy'], true)) {
+            $status = 'active';
+        }
+
+        $createdAt = '';
+        foreach ([
+            $raw['created_at'] ?? null,
+            $raw['createdAt'] ?? null,
+            $raw['created'] ?? null,
+        ] as $candidate) {
+            if ($candidate instanceof \DateTimeInterface) {
+                $createdAt = $candidate->format('c');
+                break;
+            }
+            if (is_numeric($candidate)) {
+                $createdAt = gmdate('c', (int) $candidate);
+                break;
+            }
+            if (is_string($candidate)) {
+                $candidate = trim($candidate);
+                if ($candidate !== '') {
+                    $timestamp = strtotime($candidate);
+                    $createdAt = $timestamp ? gmdate('c', $timestamp) : $candidate;
+                    break;
+                }
+            }
+        }
+        if ($createdAt === '') {
+            $createdAt = gmdate('c');
+        }
+
+        $metadata = [];
+        if (isset($raw['metadata'])) {
+            $metaValue = $raw['metadata'];
+            if (is_string($metaValue)) {
+                $unserialized = maybe_unserialize($metaValue);
+                if ($unserialized !== $metaValue) {
+                    $metaValue = $unserialized;
+                } else {
+                    $decoded = json_decode($metaValue, true);
+                    if (is_array($decoded)) {
+                        $metaValue = $decoded;
+                    }
+                }
+            } elseif ($metaValue instanceof \stdClass) {
+                $metaValue = json_decode(wp_json_encode($metaValue), true);
+            }
+
+            if (is_array($metaValue)) {
+                $metadata = $metaValue;
+            }
+        }
+
+        return [
+            'price_id'   => $priceId,
+            'label'      => $label,
+            'status'     => $status,
+            'default'    => !empty($raw['default']),
+            'created_at' => $createdAt,
+            'metadata'   => $metadata,
+        ];
+    }
+
+    /**
+     * Merge an entry into the plan list, keeping metadata up to date.
+     */
+    private static function push_stripe_price_entry(array &$list, array $entry): void {
+        $priceId = isset($entry['price_id']) ? (string) $entry['price_id'] : '';
+        if ($priceId === '') {
+            return;
+        }
+
+        foreach ($list as $index => $existing) {
+            if ((string) ($existing['price_id'] ?? '') !== $priceId) {
+                continue;
+            }
+
+            $merged = $existing;
+            $merged['label'] = isset($entry['label']) && $entry['label'] !== '' ? $entry['label'] : ($existing['label'] ?? '');
+            $merged['status'] = isset($entry['status']) ? $entry['status'] : ($existing['status'] ?? 'active');
+            $merged['default'] = !empty($entry['default']) || !empty($existing['default']);
+            $merged['created_at'] = $entry['created_at'] ?? ($existing['created_at'] ?? gmdate('c'));
+
+            $existingMeta = is_array($existing['metadata'] ?? null) ? $existing['metadata'] : [];
+            $incomingMeta = is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [];
+            $merged['metadata'] = self::merge_metadata_arrays($existingMeta, $incomingMeta);
+
+            $list[$index] = $merged;
+            return;
+        }
+
+        if (!isset($entry['metadata']) || !is_array($entry['metadata'])) {
+            $entry['metadata'] = [];
+        }
+
+        $entry['default'] = !empty($entry['default']);
+        $list[] = $entry;
+    }
+
+    /**
+     * Ensure the plan list always has a single default entry promoted to active status.
+     */
+    private static function ensure_stripe_price_default(array &$list): void {
+        if (empty($list)) {
+            return;
+        }
+
+        $defaultIndex = null;
+        foreach ($list as $index => &$entry) {
+            $isDefault = !empty($entry['default']);
+            if ($isDefault && $defaultIndex === null) {
+                $defaultIndex = $index;
+                $entry['default'] = true;
+                if (($entry['status'] ?? 'active') === 'hidden') {
+                    $entry['status'] = 'active';
+                }
+            } elseif ($isDefault) {
+                $entry['default'] = false;
+            } else {
+                $entry['default'] = false;
+            }
+        }
+        unset($entry);
+
+        if ($defaultIndex !== null) {
+            return;
+        }
+
+        foreach ($list as $index => &$entry) {
+            if (($entry['status'] ?? 'active') === 'active') {
+                $entry['default'] = true;
+                $defaultIndex = $index;
+                break;
+            }
+        }
+        unset($entry);
+
+        if ($defaultIndex === null) {
+            $list[0]['default'] = true;
+            if (($list[0]['status'] ?? 'active') === 'hidden') {
+                $list[0]['status'] = 'active';
+            }
+        }
+    }
+
+    /**
+     * Sort entries so the default appears first, followed by active, hidden, and legacy tiers.
+     */
+    private static function sort_stripe_price_entries(array &$list): void {
+        if (count($list) <= 1) {
+            return;
+        }
+
+        usort($list, static function (array $a, array $b): int {
+            $aDefault = !empty($a['default']);
+            $bDefault = !empty($b['default']);
+            if ($aDefault !== $bDefault) {
+                return $aDefault ? -1 : 1;
+            }
+
+            $order = ['active' => 0, 'hidden' => 1, 'legacy' => 2];
+            $aRank = $order[$a['status'] ?? 'active'] ?? 3;
+            $bRank = $order[$b['status'] ?? 'active'] ?? 3;
+            if ($aRank !== $bRank) {
+                return $aRank <=> $bRank;
+            }
+
+            $aTime = self::determine_price_entry_timestamp($a);
+            $bTime = self::determine_price_entry_timestamp($b);
+            if ($aTime === $bTime) {
+                return 0;
+            }
+
+            return $aTime > $bTime ? -1 : 1;
+        });
+    }
+
+    /**
+     * Resolve a comparable timestamp for ordering price entries.
+     */
+    private static function determine_price_entry_timestamp(array $entry): int {
+        $candidates = [
+            $entry['created_at'] ?? null,
+            $entry['createdAt'] ?? null,
+        ];
+
+        $metadata = is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [];
+        if (isset($metadata['created_at'])) {
+            $candidates[] = $metadata['created_at'];
+        }
+        if (isset($metadata['createdAt'])) {
+            $candidates[] = $metadata['createdAt'];
+        }
+
+        foreach ($candidates as $candidate) {
+            if ($candidate instanceof \DateTimeInterface) {
+                return $candidate->getTimestamp();
+            }
+            if (is_numeric($candidate)) {
+                return (int) $candidate;
+            }
+            if (is_string($candidate)) {
+                $candidate = trim($candidate);
+                if ($candidate === '') {
+                    continue;
+                }
+                $timestamp = strtotime($candidate);
+                if ($timestamp) {
+                    return $timestamp;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Build feature arrays (`plan_features_array`) while preserving the original HTML payload.
+     */
+    private static function normalize_plan_features_metadata(array $meta): array {
+        if (isset($meta['release']) && is_array($meta['release'])) {
+            $release_meta = $meta['release'];
+            if (array_key_exists('show_sale_price', $release_meta)) {
+                $meta['show_sale_price'] = (bool) $release_meta['show_sale_price'];
+            }
+        }
+
+        if (!isset($meta['plan_features']) || !is_array($meta['plan_features'])) {
+            return $meta;
+        }
+
+        $parsed = [];
+        foreach (self::STRIPE_PRICE_PLANS as $plan) {
+            $raw = $meta['plan_features'][$plan] ?? null;
+            if ($raw === null) {
+                continue;
+            }
+
+            if (is_array($raw)) {
+                $items = array_values(array_filter(array_map('sanitize_text_field', $raw), static function ($item) {
+                    return trim((string) $item) !== '';
+                }));
+            } elseif (is_string($raw)) {
+                $items = self::parse_plan_features_to_array($raw);
+            } else {
+                continue;
+            }
+
+            if (!empty($items)) {
+                $parsed[$plan] = array_values(array_unique($items));
+            }
+        }
+
+        if (!empty($parsed)) {
+            $meta['plan_features_array'] = $parsed;
+        }
+
+        return $meta;
+    }
+
+    /**
+     * Convert HTML or newline-delimited plan features into an array of bullet points.
+     */
+    private static function parse_plan_features_to_array(string $value): array {
+        $value = trim($value);
+        if ($value === '') {
+            return [];
+        }
+
+        $items = [];
+
+        if (strpos($value, '<') !== false) {
+            if (preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $value, $matches) && isset($matches[1])) {
+                foreach ($matches[1] as $fragment) {
+                    $text = trim(wp_strip_all_tags($fragment));
+                    if ($text !== '') {
+                        $items[] = $text;
+                    }
+                }
+            }
+
+            if (!empty($items)) {
+                return $items;
+            }
+
+            $value = wp_strip_all_tags($value);
+        }
+
+        $lines = preg_split('/[\r\n]+/', $value);
+        if (is_array($lines)) {
+            foreach ($lines as $line) {
+                $text = trim($line);
+                if ($text !== '') {
+                    $items[] = $text;
+                }
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -1355,16 +1919,28 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
         $renews_at = is_string($renews_at) ? trim($renews_at) : '';
         $expires_at = is_string($expires_at) ? trim($expires_at) : '';
 
-        if ($renews_at !== '' && $renews_at !== '0000-00-00 00:00:00') {
+        $original_hint = strtolower($plan_hint);
+        $normalized_hint = self::canonicalize_plan_key($plan_hint);
+
+        $plan_is_subscription = in_array($normalized_hint, ['monthly', 'yearly', 'subscription'], true);
+        if (!$plan_is_subscription && $original_hint !== '') {
+            if (strpos($original_hint, 'month') !== false
+                || strpos($original_hint, 'year') !== false
+                || strpos($original_hint, 'subsc') !== false
+                || strpos($original_hint, 'recurr') !== false) {
+                $plan_is_subscription = true;
+            }
+        }
+        if ($normalized_hint === '' && $original_hint === '') {
+            $plan_is_subscription = true; // default when plan hint unknown
+        }
+
+        if ($renews_at !== '') {
             $timestamp = strtotime($renews_at);
             if ($timestamp && $timestamp > 0) {
                 return date_i18n(get_option('date_format'), $timestamp);
             }
-            return $renews_at;
-        }
-
-        if ($renews_at === '0000-00-00 00:00:00') {
-            return in_array($plan_hint, ['monthly', 'yearly'], true)
+            return $plan_is_subscription
                 ? Language::get('Renews automatically')
                 : Language::get('Lifetime access');
         }
@@ -1374,16 +1950,14 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             if ($timestamp && $timestamp > 0) {
                 return date_i18n(get_option('date_format'), $timestamp);
             }
-            return $expires_at;
+            return $plan_is_subscription
+                ? Language::get('Renews automatically')
+                : Language::get('Lifetime access');
         }
 
-        if (in_array($plan_hint, ['monthly', 'yearly'], true)) {
-            return Language::get('Renews automatically');
-        }
-
-        return '';
+        return $plan_is_subscription ? Language::get('Renews automatically') : '';
     }
-    
+
     /**
      * Build a map of catalog entries keyed by normalized pluginName (fallback to name).
      * Only used for UI decisions; does not affect server or database logic.
@@ -1474,14 +2048,28 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
 
         $summary_html = implode('', $chips);
 
+        $license_panel_id = '';
+        if ($is_premium) {
+            $normalized_slug = $slug !== '' ? sanitize_title($slug) : sanitize_title(uniqid('mds')); // ensure unique id
+            $license_panel_id = 'mds-card-license-' . $normalized_slug;
+        }
+
         $pricing_overview = is_array($extension['pricing_overview'] ?? null) ? $extension['pricing_overview'] : [];
         $purchase_links   = is_array($extension['purchase_links'] ?? null) ? $extension['purchase_links'] : [];
+        $metadata         = is_array($extension['metadata'] ?? null) ? $extension['metadata'] : [];
+
+        $current_plan_key = self::determine_current_plan_key($local_license, $extension, $metadata);
+        $plan_relations   = self::extract_plan_relations($metadata);
+
         $pricing_html = self::render_pricing_overview_html(
             $pricing_overview,
             $purchase_links,
+            $metadata,
             (string) ($extension['id'] ?? ''),
             $nonce,
-            $is_premium
+            $is_premium,
+            $current_plan_key,
+            $plan_relations
         );
 
         if ($pricing_html === '' && $is_premium) {
@@ -1501,41 +2089,78 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             if ($is_premium) {
                 if ($is_licensed) {
                     $action_primary = '<button class="button button-primary mds-install-extension" data-nonce="' . esc_attr($nonce) . '" data-extension-id="' . esc_attr($extension['id'] ?? '') . '" data-extension-slug="' . esc_attr($slug) . '">' . esc_html(Language::get('Install')) . '</button>';
-                } else {
-                    $purchase_button = '<button class="button button-primary mds-purchase-extension" data-extension-id="' . esc_attr($extension['id'] ?? '') . '" data-nonce="' . esc_attr($nonce) . '">' . esc_html(Language::get('Select a plan')) . '</button>';
-                    $action_primary = '<div class="mds-purchase-buttons">' . $purchase_button . '</div>';
-                    if ($extension_server_error) {
-                        $action_secondary = '<a class="button" href="' . esc_url(admin_url('plugin-install.php?tab=upload')) . '">' . esc_html(Language::get('Upload ZIP')) . '</a>';
-                    }
+                } elseif ($extension_server_error) {
+                    $action_secondary = '<a class="button" href="' . esc_url(admin_url('plugin-install.php?tab=upload')) . '">' . esc_html(Language::get('Upload ZIP')) . '</a>';
                 }
             } else {
                 $action_primary = '<button class="button button-primary mds-install-extension" data-nonce="' . esc_attr($nonce) . '" data-extension-id="' . esc_attr($extension['id'] ?? '') . '" data-extension-slug="' . esc_attr($slug) . '">' . esc_html(Language::get('Install')) . '</button>';
             }
         }
 
+        $header_action_parts = [];
+
+        $has_action_buttons = ($action_primary !== '' || $action_secondary !== '');
+        if ($has_action_buttons) {
+            $buttons_markup  = '<div class="mds-card-header-buttons">';
+            $buttons_markup .= $action_primary ? $action_primary : '';
+            $buttons_markup .= $action_secondary ? $action_secondary : '';
+            $buttons_markup .= '</div>';
+            $header_action_parts[] = $buttons_markup;
+        }
+
+        if ($is_premium) {
+            $header_action_parts[] = '<div class="mds-card-license-trigger">'
+                . '<button type="button" class="button-link mds-card-license-toggle" aria-expanded="false" aria-controls="' . esc_attr($license_panel_id) . '">' . esc_html(Language::get('Manage license')) . '</button>'
+                . '<div id="' . esc_attr($license_panel_id) . '" class="mds-card-license mds-card-license-popover is-collapsed" aria-hidden="true" hidden>'
+                    . '<div class="mds-inline-license" data-extension-slug="' . esc_attr($slug) . '">'
+                        . '<div class="mds-inline-license-row">'
+                            . '<input type="password" class="regular-text mds-inline-license-key" placeholder="' . esc_attr(Language::get('Enter license key')) . '">' 
+                        . '</div>'
+                        . '<div class="mds-inline-license-actions">'
+                            . '<button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="' . esc_attr($nonce) . '">' . esc_html(Language::get('Activate')) . '</button>'
+                            . '<button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="' . esc_attr(Language::get('Show license key')) . '">'
+                                . '<span class="dashicons dashicons-hidden"></span>'
+                            . '</button>'
+                        . '</div>'
+                    . '</div>'
+                . '</div>'
+            . '</div>';
+        }
+
+        $header_actions_html = implode('', $header_action_parts);
+        $show_footer_actions = !$has_action_buttons;
+
         ob_start();
         ?>
         <div class="<?php echo esc_attr(implode(' ', $card_classes)); ?>"<?php foreach ($data_attrs as $attr => $value) { if ($value === '' || $value === null) { continue; } echo ' ' . $attr . '="' . esc_attr($value) . '"'; } ?>>
             <div class="mds-card-header">
-                <div class="mds-card-title">
-                    <?php if ($is_premium) : ?>
-                        <span class="mds-chip mds-chip--premium"><?php echo esc_html(Language::get('Premium')); ?></span>
-                    <?php else : ?>
-                        <span class="mds-chip mds-chip--free"><?php echo esc_html(Language::get('Free')); ?></span>
-                    <?php endif; ?>
-                    <h3 class="mds-card-title-heading">
-                        <span class="mds-card-title-name"><?php echo esc_html($extension['name'] ?? ''); ?></span>
-                        <?php if (!empty($extension['version'])) : ?>
-                            <span class="mds-card-title-version">v<?php echo esc_html($extension['version']); ?></span>
+                <div class="mds-card-header-top">
+                    <div class="mds-card-title">
+                        <?php if ($is_premium) : ?>
+                            <span class="mds-chip mds-chip--premium"><?php echo esc_html(Language::get('Premium')); ?></span>
+                        <?php else : ?>
+                            <span class="mds-chip mds-chip--free"><?php echo esc_html(Language::get('Free')); ?></span>
                         <?php endif; ?>
-                    </h3>
-                </div>
-                <div class="mds-card-summary">
-                    <?php echo $summary_html ? wp_kses_post($summary_html) : ''; ?>
-                    <?php if ($is_premium) : ?>
-                        <button type="button" class="button-link mds-card-license-toggle" aria-expanded="false"><?php echo esc_html(Language::get('Manage license')); ?></button>
+                        <h3 class="mds-card-title-heading">
+                            <span class="mds-card-title-name"><?php echo esc_html($extension['name'] ?? ''); ?></span>
+                            <?php if (!empty($extension['version'])) : ?>
+                                <span class="mds-card-title-version">v<?php echo esc_html($extension['version']); ?></span>
+                            <?php endif; ?>
+                        </h3>
+                    </div>
+
+                    <?php if ($header_actions_html !== '') : ?>
+                        <div class="mds-card-header-actions">
+                            <?php echo $header_actions_html; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($summary_html !== '') : ?>
+                    <div class="mds-card-summary">
+                        <?php echo wp_kses_post($summary_html); ?>
+                    </div>
+                <?php endif; ?>
                 <?php if (!empty($extension['description'])) : ?>
                     <p class="mds-card-description"><?php echo esc_html(wp_trim_words((string) $extension['description'], 28)); ?></p>
                 <?php endif; ?>
@@ -1548,99 +2173,1201 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                     <div class="mds-card-pricing mds-card-pricing--empty"><?php echo esc_html(Language::get('Pricing information will appear once Stripe plans are configured.')); ?></div>
                 <?php endif; ?>
 
-                <?php if ($is_premium) : ?>
-                    <div class="mds-card-license is-collapsed" hidden>
-                        <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr($slug); ?>">
-                            <div class="mds-inline-license-row">
-                                <input type="password" class="regular-text mds-inline-license-key" placeholder="<?php echo esc_attr(Language::get('Enter license key')); ?>">
-                            </div>
-                            <div class="mds-inline-license-actions">
-                                <button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="<?php echo esc_attr($nonce); ?>"><?php echo esc_html(Language::get('Activate')); ?></button>
-                                <button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="<?php echo esc_attr(Language::get('Show license key')); ?>">
-                                    <span class="dashicons dashicons-hidden"></span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                <?php else : ?>
+                <?php if (!$is_premium) : ?>
                     <div class="mds-card-license">
                         <span class="mds-license-chip mds-license-chip--free"><?php echo esc_html(Language::get('No license required')); ?></span>
                     </div>
                 <?php endif; ?>
 
-                <div class="mds-card-actions">
-                    <?php echo $action_primary ? $action_primary : ''; ?>
-                    <?php echo $action_secondary ? $action_secondary : ''; ?>
-                </div>
+                <?php if ($show_footer_actions && ($action_primary !== '' || $action_secondary !== '')) : ?>
+                    <div class="mds-card-actions">
+                        <?php echo $action_primary ? $action_primary : ''; ?>
+                        <?php echo $action_secondary ? $action_secondary : ''; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
         <?php
         return (string) ob_get_clean();
     }
 
-    private static function render_pricing_overview_html(array $pricing_overview, array $purchase_links, string $extension_id, string $nonce, bool $is_premium): string {
-        $plans = isset($pricing_overview['plans']) && is_array($pricing_overview['plans'])
-            ? $pricing_overview['plans']
-            : [];
-        $order = isset($pricing_overview['plan_order']) && is_array($pricing_overview['plan_order'])
-            ? $pricing_overview['plan_order']
-            : ['monthly', 'yearly', 'one_time'];
+    private static function render_pricing_overview_html(
+        array $pricing_overview,
+        array $purchase_links,
+        array $metadata,
+        string $extension_id,
+        string $nonce,
+        bool $is_premium,
+        ?string $current_plan_key,
+        array $plan_relations
+    ): string {
+        $metadata = is_array($metadata) ? $metadata : [];
+        $planOrder = self::determine_plan_order($pricing_overview, $metadata);
+        $cards = [];
+        $metadataPrices = isset($metadata['stripe_prices']) && is_array($metadata['stripe_prices']) ? $metadata['stripe_prices'] : [];
+        $normalizedPlanOrder = self::build_plan_index_map($planOrder, true);
 
+        foreach ($planOrder as $planKey) {
+            $planKey = (string) $planKey;
+            if ($planKey === '') {
+                continue;
+            }
+
+            $entries = isset($metadataPrices[$planKey]) && is_array($metadataPrices[$planKey]) ? $metadataPrices[$planKey] : [];
+            if (!empty($entries)) {
+                $card = self::render_plan_card_from_entries(
+                    $planKey,
+                    $entries,
+                    $metadata,
+                    $pricing_overview,
+                    $purchase_links,
+                    $extension_id,
+                    $nonce,
+                    $current_plan_key,
+                    $plan_relations,
+                    $normalizedPlanOrder
+                );
+                if ($card !== '') {
+                    $cards[] = $card;
+                }
+                continue;
+            }
+
+            if (isset($pricing_overview['plans'][$planKey]) && is_array($pricing_overview['plans'][$planKey])) {
+                $card = self::render_legacy_plan_card(
+                    $planKey,
+                    $pricing_overview['plans'][$planKey],
+                    $purchase_links,
+                    $extension_id,
+                    $nonce,
+                    $current_plan_key,
+                    $plan_relations,
+                    $normalizedPlanOrder
+                );
+                if ($card !== '') {
+                    $cards[] = $card;
+                }
+            }
+        }
+
+        if (empty($cards) && isset($pricing_overview['plans']) && is_array($pricing_overview['plans'])) {
+            foreach ($pricing_overview['plans'] as $planKey => $planData) {
+                if (!is_array($planData)) {
+                    continue;
+                }
+                $card = self::render_legacy_plan_card(
+                    (string) $planKey,
+                    $planData,
+                    $purchase_links,
+                    $extension_id,
+                    $nonce,
+                    $current_plan_key,
+                    $plan_relations,
+                    $normalizedPlanOrder
+                );
+                if ($card !== '') {
+                    $cards[] = $card;
+                }
+            }
+        }
+
+        $cards = array_filter($cards);
+
+        if (empty($cards)) {
+            $fallback = self::render_minimal_plan_cards($current_plan_key, $plan_relations, $normalizedPlanOrder, $extension_id, $nonce);
+            if (empty($fallback)) {
+                return '';
+            }
+            return '<div class="mds-card-pricing">' . implode('', $fallback) . '</div>';
+        }
+
+        return '<div class="mds-card-pricing">' . implode('', $cards) . '</div>';
+    }
+
+    /**
+     * Determine the order plans should render in, defaulting to the marketing layout.
+     */
+    private static function determine_plan_order(array $pricing_overview, array $metadata): array {
+        $order = [];
+
+        if (isset($metadata['plan_order']) && is_array($metadata['plan_order'])) {
+            foreach ($metadata['plan_order'] as $plan) {
+                if (is_string($plan) && $plan !== '') {
+                    $order[] = $plan;
+                }
+            }
+        } elseif (isset($pricing_overview['plan_order']) && is_array($pricing_overview['plan_order'])) {
+            foreach ($pricing_overview['plan_order'] as $plan) {
+                if (is_string($plan) && $plan !== '') {
+                    $order[] = $plan;
+                }
+            }
+        }
+
+        $order = array_values(array_unique(array_merge($order, self::STRIPE_PRICE_PLANS)));
+
+        return $order;
+    }
+
+    /**
+     * Return a canonicalised plan order for the supplied extension context.
+     *
+     * @param array $extension
+     * @param array $metadata
+     */
+    private static function determine_canonical_plan_order(array $extension, array $metadata): array {
+        $pricing_overview = is_array($extension['pricing_overview'] ?? null) ? $extension['pricing_overview'] : [];
+        $planOrder = self::determine_plan_order($pricing_overview, $metadata);
+
+        $canonical = [];
+        foreach ($planOrder as $plan) {
+            if (!is_string($plan) || $plan === '') {
+                continue;
+            }
+            $normalized = self::canonicalize_plan_key($plan);
+            if ($normalized === '') {
+                continue;
+            }
+            if (!in_array($normalized, $canonical, true)) {
+                $canonical[] = $normalized;
+            }
+        }
+
+        return $canonical;
+    }
+
+    /**
+     * Render a plan card using Stripe metadata entries.
+     */
+    private static function render_plan_card_from_entries(
+        string $plan_key,
+        array $entries,
+        array $metadata,
+        array $pricing_overview,
+        array $purchase_links,
+        string $extension_id,
+        string $nonce,
+        ?string $current_plan_key,
+        array $plan_relations,
+        array $plan_order
+    ): string {
+        $defaultEntry = self::select_default_price_entry($entries);
+        if (!$defaultEntry) {
+            return '';
+        }
+
+        $defaultPrice = self::format_price_entry_amount($defaultEntry);
+        if ($defaultPrice === null || $defaultPrice === '') {
+            return '';
+        }
+
+        $saleEnabled = self::is_sale_display_enabled($metadata, $plan_key);
+        $compareEntry = null;
+        $comparePrice = null;
+        $badgeLabel = '';
+        if ($saleEnabled) {
+            $candidateCompare = self::find_compare_entry($entries, $defaultEntry);
+            if ($candidateCompare) {
+                $candidatePrice = self::format_price_entry_amount($candidateCompare);
+                if ($candidatePrice !== null && $candidatePrice !== '') {
+                    $compareEntry = $candidateCompare;
+                    $comparePrice = $candidatePrice;
+                    $badgeLabel = self::get_entry_badge_label($defaultEntry);
+                }
+            }
+        }
+        $tiers = self::build_plan_tiers($entries, $defaultEntry);
+        $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key);
+
+        $pricingHtml = '<div class="mds-plan-pricing">';
+        if ($comparePrice !== null && $comparePrice !== '') {
+            $pricingHtml .= '<span class="mds-plan-price mds-plan-price--sale">' . esc_html($defaultPrice) . '</span>';
+            $pricingHtml .= '<span class="mds-plan-price mds-plan-price--compare">' . esc_html($comparePrice) . '</span>';
+        } else {
+            $pricingHtml .= '<span class="mds-plan-price">' . esc_html($defaultPrice) . '</span>';
+        }
+        if ($badgeLabel !== '') {
+            $pricingHtml .= '<span class="mds-plan-badge">' . esc_html($badgeLabel) . '</span>';
+        }
+        $pricingHtml .= '</div>';
+
+        $tiersHtml = '';
+        if (!empty($tiers)) {
+            $tiersHtml .= '<ul class="mds-plan-tiers">';
+            foreach ($tiers as $tier) {
+                $tiersHtml .= '<li><span class="mds-plan-tier-label">' . esc_html($tier['label']) . '</span><span class="mds-plan-tier-price">' . esc_html($tier['price']) . '</span></li>';
+            }
+            $tiersHtml .= '</ul>';
+        }
+
+        $featuresHtml = '';
+        if (!empty($features)) {
+            $featuresHtml .= '<ul class="mds-plan-features">';
+            foreach ($features as $feature) {
+                $featuresHtml .= '<li>' . esc_html($feature) . '</li>';
+            }
+            $featuresHtml .= '</ul>';
+        }
+
+        $button = self::render_plan_action_markup($plan_key, $extension_id, $nonce, $current_plan_key, $plan_relations, $plan_order);
+        if ($button === '') {
+            return '';
+        }
+
+        return '<div class="mds-plan-card" data-plan="' . esc_attr($plan_key) . '">' .
+            '<h4 class="mds-plan-title">' . esc_html(self::get_plan_label($plan_key)) . '</h4>' .
+            $pricingHtml .
+            $tiersHtml .
+            $featuresHtml .
+            '<div class="mds-plan-feedback" aria-live="polite"></div>' .
+            '<div class="mds-plan-actions">' . $button . '</div>' .
+            '</div>';
+    }
+
+    /**
+     * Determine if sale pricing elements should display for a given plan.
+     */
+    private static function is_sale_display_enabled(array $metadata, string $plan_key): bool {
+        if (isset($metadata['show_sale_price'])) {
+            return (bool) $metadata['show_sale_price'];
+        }
+
+        if (isset($metadata['release']) && is_array($metadata['release'])) {
+            $releaseMeta = $metadata['release'];
+            if (array_key_exists('show_sale_price', $releaseMeta)) {
+                return (bool) $releaseMeta['show_sale_price'];
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Legacy fallback for older pricing_overview payloads.
+     */
+    private static function render_legacy_plan_card(
+        string $plan_key,
+        array $plan_data,
+        array $purchase_links,
+        string $extension_id,
+        string $nonce,
+        ?string $current_plan_key,
+        array $plan_relations,
+        array $plan_order
+    ): string {
+        $default_display = '';
+        if (!empty($plan_data['sale']['is_active']) && !empty($plan_data['sale']['formatted'])) {
+            $sale_price = $plan_data['sale']['formatted'];
+            $sale_label = $plan_data['sale']['label'] ?? '';
+            $compare = $plan_data['default']['formatted'] ?? '';
+            $default_display .= '<span class="mds-plan-price mds-plan-price--sale">' . esc_html($sale_price) . '</span>';
+            if ($compare) {
+                $default_display .= '<span class="mds-plan-price mds-plan-price--compare">' . esc_html($compare) . '</span>';
+            }
+            if ($sale_label) {
+                $default_display .= '<span class="mds-plan-badge">' . esc_html($sale_label) . '</span>';
+            }
+        } elseif (!empty($plan_data['default']['formatted'])) {
+            $default_display .= '<span class="mds-plan-price">' . esc_html($plan_data['default']['formatted']) . '</span>';
+        }
+
+        $feature_list = '';
+        if (!empty($plan_data['features']) && is_array($plan_data['features'])) {
+            $items = array_map('sanitize_text_field', array_filter($plan_data['features']));
+            if (!empty($items)) {
+                $feature_list = '<ul class="mds-plan-features">';
+                foreach ($items as $item) {
+                    $feature_list .= '<li>' . esc_html($item) . '</li>';
+                }
+                $feature_list .= '</ul>';
+            }
+        }
+
+        if ($default_display === '' && $feature_list === '') {
+            return '';
+        }
+
+        $button = self::render_plan_action_markup($plan_key, $extension_id, $nonce, $current_plan_key, $plan_relations, $plan_order);
+        if ($button === '') {
+            return '';
+        }
+
+        return '<div class="mds-plan-card" data-plan="' . esc_attr($plan_key) . '">' .
+            '<h4 class="mds-plan-title">' . esc_html(self::get_plan_label($plan_key)) . '</h4>' .
+            ($default_display !== '' ? '<div class="mds-plan-pricing">' . $default_display . '</div>' : '') .
+            $feature_list .
+            '<div class="mds-plan-feedback" aria-live="polite"></div>' .
+            '<div class="mds-plan-actions">' . $button . '</div>' .
+            '</div>';
+    }
+
+    private static function determine_current_plan_key(array $local_license, array $extension, array $metadata): string {
+        $planCandidates = [];
+        $priceCandidates = [];
+
+        $collectPlan = static function ($value) use (&$planCandidates): void {
+            if (is_array($value)) {
+                foreach ($value as $entry) {
+                    if (is_string($entry)) {
+                        $normalized = self::guess_plan_key_from_string($entry);
+                        if ($normalized !== '') {
+                            $planCandidates[] = $normalized;
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (is_string($value)) {
+                $normalized = self::guess_plan_key_from_string($value);
+                if ($normalized !== '') {
+                    $planCandidates[] = $normalized;
+                }
+            }
+        };
+
+        $collectPrice = static function ($value) use (&$priceCandidates): void {
+            $append = static function (string $candidate) use (&$priceCandidates): void {
+                $candidate = strtolower(trim($candidate));
+                if ($candidate !== '' && !in_array($candidate, $priceCandidates, true)) {
+                    $priceCandidates[] = $candidate;
+                }
+            };
+
+            if (is_array($value)) {
+                foreach ($value as $entry) {
+                    if (is_string($entry)) {
+                        $append($entry);
+                    }
+                }
+                return;
+            }
+
+            if (is_string($value)) {
+                $append($value);
+            }
+        };
+
+        $planKeys = ['plan_hint', 'plan', 'plan_key', 'price_plan', 'recurring'];
+        $priceKeys = ['price_id', 'priceId', 'stripe_price', 'stripe_price_id', 'stripePrice', 'stripePriceId', 'price'];
+
+        foreach ($planKeys as $key) {
+            if (isset($local_license[$key])) {
+                $collectPlan($local_license[$key]);
+            }
+        }
+        foreach ($priceKeys as $key) {
+            if (isset($local_license[$key])) {
+                $collectPrice($local_license[$key]);
+            }
+        }
+
+        if (isset($local_license['metadata']) && is_array($local_license['metadata'])) {
+            foreach ($planKeys as $key) {
+                if (isset($local_license['metadata'][$key])) {
+                    $collectPlan($local_license['metadata'][$key]);
+                }
+            }
+            foreach ($priceKeys as $key) {
+                if (isset($local_license['metadata'][$key])) {
+                    $collectPrice($local_license['metadata'][$key]);
+                }
+            }
+        }
+
+        foreach (['current_plan', 'currentPlan', 'active_plan', 'plan_key', 'plan'] as $key) {
+            if (isset($extension[$key])) {
+                $collectPlan($extension[$key]);
+            }
+        }
+
+        foreach (['current_plan', 'currentPlan', 'active_plan', 'plan_key', 'plan'] as $key) {
+            if (isset($metadata[$key])) {
+                $collectPlan($metadata[$key]);
+            }
+        }
+
+        foreach (['price_id', 'priceId', 'stripe_price', 'stripe_price_id', 'stripePrice', 'stripePriceId', 'price'] as $key) {
+            if (isset($metadata[$key])) {
+                $collectPrice($metadata[$key]);
+            }
+        }
+
+        if (!empty($planCandidates)) {
+            $firstCandidate = $planCandidates[0];
+            if ($firstCandidate === 'subscription') {
+                $subscriptionPlans = self::gather_subscription_plan_candidates($metadata, $extension);
+                $refined = array_values(array_filter($subscriptionPlans, static function ($plan) {
+                    return $plan !== 'subscription';
+                }));
+                if (count($refined) === 1) {
+                    return $refined[0];
+                }
+
+                $defaultPlan = '';
+                if (isset($metadata['default_plan']) && is_string($metadata['default_plan'])) {
+                    $defaultPlan = self::canonicalize_plan_key($metadata['default_plan']);
+                } elseif (isset($metadata['defaultPlan']) && is_string($metadata['defaultPlan'])) {
+                    $defaultPlan = self::canonicalize_plan_key($metadata['defaultPlan']);
+                } elseif (isset($extension['metadata']['default_plan']) && is_string($extension['metadata']['default_plan'])) {
+                    $defaultPlan = self::canonicalize_plan_key($extension['metadata']['default_plan']);
+                } elseif (isset($extension['metadata']['defaultPlan']) && is_string($extension['metadata']['defaultPlan'])) {
+                    $defaultPlan = self::canonicalize_plan_key($extension['metadata']['defaultPlan']);
+                }
+                if ($defaultPlan !== '' && in_array($defaultPlan, $refined, true)) {
+                    return $defaultPlan;
+                }
+
+                if (!empty($subscriptionPlans)) {
+                    foreach ($subscriptionPlans as $plan) {
+                        if ($plan !== 'subscription') {
+                            return $plan;
+                        }
+                    }
+                }
+            }
+
+            return $firstCandidate;
+        }
+
+        if (!empty($priceCandidates)) {
+            $matched = self::find_plan_by_price_ids($priceCandidates, $metadata, $extension);
+            if ($matched !== '') {
+                return $matched;
+            }
+        }
+
+        $planOrder = self::determine_canonical_plan_order($extension, $metadata);
+        if (self::license_suggests_subscription($local_license)) {
+            $subscriptionPlans = self::gather_subscription_plan_candidates($metadata, $extension);
+            $subscriptionPlans = array_values(array_filter($subscriptionPlans, static function ($plan) {
+                return $plan !== '';
+            }));
+
+            foreach ($subscriptionPlans as $plan) {
+                if ($plan !== 'subscription') {
+                    return $plan;
+                }
+            }
+
+            foreach ($planOrder as $candidate) {
+                if (in_array($candidate, ['monthly', 'yearly'], true)) {
+                    return $candidate;
+                }
+            }
+
+            if (in_array('subscription', $subscriptionPlans, true)) {
+                return 'subscription';
+            }
+        }
+
+        if (self::license_suggests_one_time($local_license)) {
+            foreach ($planOrder as $candidate) {
+                if ($candidate === 'one_time') {
+                    return $candidate;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    private static function gather_subscription_plan_candidates(array $metadata, array $extension): array {
+        $candidates = [];
+
+        $collect = function ($value) use (&$candidates): void {
+            if (is_array($value)) {
+                foreach ($value as $entry) {
+                    if (!is_string($entry)) {
+                        continue;
+                    }
+                    $canonical = self::canonicalize_plan_key($entry);
+                    if ($canonical === '' || !in_array($canonical, ['monthly', 'yearly', 'subscription'], true)) {
+                        continue;
+                    }
+                    $candidates[$canonical] = true;
+                }
+                return;
+            }
+
+            if (!is_string($value)) {
+                return;
+            }
+
+            $canonical = self::canonicalize_plan_key($value);
+            if ($canonical === '' || !in_array($canonical, ['monthly', 'yearly', 'subscription'], true)) {
+                return;
+            }
+            $candidates[$canonical] = true;
+        };
+
+        foreach (['plan_order', 'available_plans'] as $key) {
+            if (isset($metadata[$key])) {
+                $collect($metadata[$key]);
+            } elseif (isset($extension[$key])) {
+                $collect($extension[$key]);
+            }
+        }
+
+        if (isset($metadata['plan_relations']) && is_array($metadata['plan_relations'])) {
+            $collect(array_keys($metadata['plan_relations']));
+        }
+        if (isset($extension['metadata']['plan_relations']) && is_array($extension['metadata']['plan_relations'])) {
+            $collect(array_keys($extension['metadata']['plan_relations']));
+        }
+
+        if (isset($metadata['stripe_prices']) && is_array($metadata['stripe_prices'])) {
+            $collect(array_keys($metadata['stripe_prices']));
+        } elseif (isset($extension['metadata']['stripe_prices']) && is_array($extension['metadata']['stripe_prices'])) {
+            $collect(array_keys($extension['metadata']['stripe_prices']));
+        }
+
+        if (isset($metadata['pricing_overview']['plans']) && is_array($metadata['pricing_overview']['plans'])) {
+            $collect(array_keys($metadata['pricing_overview']['plans']));
+        } elseif (isset($extension['pricing_overview']['plans']) && is_array($extension['pricing_overview']['plans'])) {
+            $collect(array_keys($extension['pricing_overview']['plans']));
+        }
+
+        return array_keys($candidates);
+    }
+
+    private static function license_suggests_subscription(array $license): bool {
+        $fields = [
+            $license['renews_at'] ?? null,
+            $license['expires_at'] ?? null,
+        ];
+
+        if (isset($license['metadata']) && is_array($license['metadata'])) {
+            $metadata = $license['metadata'];
+            foreach (['renews_at', 'renewsAt', 'billing_period_end', 'billingPeriodEnd', 'stripe_subscription_id', 'subscription_id'] as $key) {
+                if (isset($metadata[$key])) {
+                    $fields[] = $metadata[$key];
+                }
+            }
+            if (isset($metadata['stripe_checkout_mode']) && is_string($metadata['stripe_checkout_mode'])) {
+                $mode = strtolower($metadata['stripe_checkout_mode']);
+                if (in_array($mode, ['subscription', 'recurring'], true)) {
+                    return true;
+                }
+            }
+        }
+
+        foreach ($fields as $value) {
+            if (is_string($value) && trim($value) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function license_suggests_one_time(array $license): bool {
+        if (self::license_suggests_subscription($license)) {
+            return false;
+        }
+
+        $metadata = isset($license['metadata']) && is_array($license['metadata']) ? $license['metadata'] : [];
+        $planCandidates = [];
+        foreach (['plan', 'plan_hint', 'planKey', 'price_plan', 'recurring'] as $key) {
+            if (isset($metadata[$key]) && is_string($metadata[$key])) {
+                $planCandidates[] = $metadata[$key];
+            }
+        }
+
+        foreach ($planCandidates as $candidate) {
+            if (self::canonicalize_plan_key($candidate) === 'one_time') {
+                return true;
+            }
+        }
+
+        return true;
+    }
+
+    private static function extract_plan_relations(array $metadata): array {
+        $source = [];
+        foreach (['plan_relations', 'planRelations', 'plan_relation', 'planRelation'] as $key) {
+            if (isset($metadata[$key]) && is_array($metadata[$key])) {
+                $source = $metadata[$key];
+                break;
+            }
+        }
+
+        $relations = [];
+        foreach ($source as $plan => $relation) {
+            $planKey = self::canonicalize_plan_key((string) $plan);
+            if ($planKey === '' || !is_array($relation)) {
+                continue;
+            }
+
+            $relations[$planKey] = [
+                'upgrade_to'   => self::normalize_plan_list($relation['upgrade_to'] ?? $relation['upgradeTo'] ?? $relation['upgrade'] ?? []),
+                'downgrade_to' => self::normalize_plan_list($relation['downgrade_to'] ?? $relation['downgradeTo'] ?? $relation['downgrade'] ?? []),
+                'switch_to'    => self::normalize_plan_list($relation['switch_to'] ?? $relation['switchTo'] ?? []),
+                'allow'        => self::normalize_plan_list($relation['allow'] ?? []),
+                'disallow'     => self::normalize_plan_list($relation['disallow'] ?? []),
+                'locked'       => !empty($relation['locked']),
+            ];
+        }
+
+        return $relations;
+    }
+
+    private static function normalize_plan_list($value): array {
+        $items = [];
+        if (is_string($value)) {
+            $items[] = $value;
+        } elseif (is_array($value)) {
+            $items = $value;
+        }
+
+        $normalized = [];
+        foreach ($items as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+            $plan = self::canonicalize_plan_key($item);
+            if ($plan !== '' && !in_array($plan, $normalized, true)) {
+                $normalized[] = $plan;
+            }
+        }
+        return $normalized;
+    }
+
+    private static function build_plan_index_map(array $plan_order, bool $return_list = false): array {
+        $map = [];
+        $list = [];
+        foreach ($plan_order as $plan) {
+            $normalized = self::canonicalize_plan_key((string) $plan);
+            if ($normalized === '' || isset($map[$normalized])) {
+                continue;
+            }
+            $map[$normalized] = count($list);
+            $list[] = $normalized;
+        }
+
+        return $return_list ? $list : $map;
+    }
+
+    private static function render_plan_action_markup(
+        string $plan_key,
+        string $extension_id,
+        string $nonce,
+        ?string $current_plan_key,
+        array $plan_relations,
+        array $plan_order
+    ): string {
+        $normalizedPlan = self::canonicalize_plan_key($plan_key);
+        if ($normalizedPlan === '') {
+            return '';
+        }
+
+        $current = self::canonicalize_plan_key($current_plan_key ?? '');
+        if ($current !== '' && $normalizedPlan === $current) {
+            $indicator = self::get_current_plan_indicator_label($current, $plan_key);
+            return '<span class="mds-plan-current" aria-disabled="true">' . esc_html($indicator) . '</span>';
+        }
+
+        if ($current !== '') {
+            if (!self::is_plan_transition_allowed($current, $normalizedPlan, $plan_relations, $plan_order)) {
+                return '<span class="mds-plan-locked" aria-disabled="true">' . esc_html(Language::get('Not available')) . '</span>';
+            }
+
+            $direction = self::compare_plan_positions($current, $normalizedPlan, $plan_order);
+            $labelKey = $normalizedPlan !== '' ? $normalizedPlan : $plan_key;
+            $plan_label = self::get_plan_label($labelKey);
+            if ($direction > 0) {
+                $text = sprintf(Language::get('Upgrade to %s'), $plan_label);
+            } elseif ($direction < 0) {
+                $text = sprintf(Language::get('Downgrade to %s'), $plan_label);
+            } else {
+                $text = sprintf(Language::get('Switch to %s'), $plan_label);
+            }
+        } else {
+            $text = Language::get('Choose plan');
+        }
+
+        return '<button class="button button-secondary mds-purchase-extension" data-extension-id="' . esc_attr($extension_id) . '" data-nonce="' . esc_attr($nonce) . '" data-plan="' . esc_attr($plan_key) . '">' . esc_html($text) . '</button>';
+    }
+
+    private static function is_plan_transition_allowed(string $current, string $target, array $plan_relations, array $plan_order): bool {
+        $current = self::canonicalize_plan_key($current);
+        $target = self::canonicalize_plan_key($target);
+
+        if ($current === '' || $target === '' || $current === $target) {
+            return false;
+        }
+
+        if (isset($plan_relations[$current])) {
+            $rel = $plan_relations[$current];
+            if (!empty($rel['locked'])) {
+                return false;
+            }
+            if (!empty($rel['disallow']) && in_array($target, $rel['disallow'], true)) {
+                return false;
+            }
+            $allowed = array_unique(array_merge($rel['upgrade_to'], $rel['downgrade_to'], $rel['switch_to'], $rel['allow']));
+            if (!empty($allowed)) {
+                return in_array($target, $allowed, true);
+            }
+        }
+
+        $indexMap = self::build_plan_index_map($plan_order);
+        $currentIndex = $indexMap[$current] ?? null;
+        $targetIndex = $indexMap[$target] ?? null;
+        if ($currentIndex === null || $targetIndex === null) {
+            return true;
+        }
+
+        return $targetIndex > $currentIndex;
+    }
+
+    private static function compare_plan_positions(string $current, string $target, array $plan_order): int {
+        $current = self::canonicalize_plan_key($current);
+        $target = self::canonicalize_plan_key($target);
+
+        $indexMap = self::build_plan_index_map($plan_order);
+        $currentIndex = $indexMap[$current] ?? null;
+        $targetIndex = $indexMap[$target] ?? null;
+        if ($currentIndex === null || $targetIndex === null) {
+            return 0;
+        }
+
+        return $targetIndex <=> $currentIndex;
+    }
+
+    private static function render_minimal_plan_cards(
+        ?string $current_plan_key,
+        array $plan_relations,
+        array $plan_order,
+        string $extension_id,
+        string $nonce
+    ): array {
+        $planSet = [];
+        foreach ($plan_order as $plan) {
+            $canonical = self::canonicalize_plan_key((string) $plan);
+            if ($canonical === '') {
+                continue;
+            }
+            $planSet[$canonical] = $canonical;
+        }
+
+        if (empty($planSet)) {
+            foreach (array_keys($plan_relations) as $plan) {
+                $canonical = self::canonicalize_plan_key((string) $plan);
+                if ($canonical === '') {
+                    continue;
+                }
+                $planSet[$canonical] = $canonical;
+            }
+        }
+
+        if ($current_plan_key !== null && $current_plan_key !== '') {
+            $canonicalCurrent = self::canonicalize_plan_key($current_plan_key);
+            if ($canonicalCurrent !== '') {
+                $planSet[$canonicalCurrent] = $canonicalCurrent;
+            }
+        }
+
+        if (empty($planSet)) {
+            return [];
+        }
+
+        $plans = array_values($planSet);
+
+        $cards = [];
+        foreach ($plans as $plan) {
+            $planKey = (string) $plan;
+            $action = self::render_plan_action_markup($planKey, $extension_id, $nonce, $current_plan_key, $plan_relations, $plan_order);
+            if ($action === '') {
+                continue;
+            }
+
+            $label = self::get_plan_label(self::canonicalize_plan_key($planKey) ?: $planKey);
+            $message = ($current_plan_key && self::canonicalize_plan_key($planKey) === self::canonicalize_plan_key($current_plan_key))
+                ? Language::get('Current plan pricing information is unavailable at the moment.')
+                : Language::get('Pricing details unavailable for this plan right now.');
+
+            $cards[] = '<div class="mds-plan-card" data-plan="' . esc_attr($planKey) . '">' .
+                '<h4 class="mds-plan-title">' . esc_html($label) . '</h4>' .
+                '<p class="mds-plan-placeholder">' . esc_html($message) . '</p>' .
+                '<div class="mds-plan-feedback" aria-live="polite"></div>' .
+                '<div class="mds-plan-actions">' . $action . '</div>' .
+                '</div>';
+        }
+
+        return $cards;
+    }
+
+    private static function find_plan_by_price_ids(array $price_candidates, array $metadata, array $extension): string {
+        if (empty($price_candidates)) {
+            return '';
+        }
+
+        $price_candidates = array_map(static function ($value) {
+            return strtolower(trim((string) $value));
+        }, $price_candidates);
+        $price_candidates = array_values(array_filter(array_unique($price_candidates), static function ($value) {
+            return $value !== '';
+        }));
+
+        if (empty($price_candidates)) {
+            return '';
+        }
+
+        $metadata_prices = [];
+
+        if (isset($metadata['stripe_prices']) && is_array($metadata['stripe_prices'])) {
+            $metadata_prices = $metadata['stripe_prices'];
+        } elseif (isset($extension['metadata']['stripe_prices']) && is_array($extension['metadata']['stripe_prices'])) {
+            $metadata_prices = $extension['metadata']['stripe_prices'];
+        }
+
+        if (!empty($metadata_prices)) {
+            foreach ($metadata_prices as $planKey => $entries) {
+                if (!is_array($entries)) {
+                    continue;
+                }
+                foreach ($entries as $entry) {
+                    $ids = self::extract_price_id_candidates($entry);
+                    if (!empty($ids) && array_intersect($ids, $price_candidates)) {
+                        return self::canonicalize_plan_key((string) $planKey);
+                    }
+                }
+            }
+        }
+
+        // Fallback: inspect pricing_overview legacy structures if available.
+        $pricing = [];
+        if (isset($extension['pricing_overview']) && is_array($extension['pricing_overview'])) {
+            $pricing = $extension['pricing_overview'];
+        } elseif (isset($metadata['pricing_overview']) && is_array($metadata['pricing_overview'])) {
+            $pricing = $metadata['pricing_overview'];
+        }
+
+        if (!empty($pricing['plans']) && is_array($pricing['plans'])) {
+            foreach ($pricing['plans'] as $planKey => $planData) {
+                if (!is_array($planData)) {
+                    continue;
+                }
+                $ids = [];
+                foreach (['price_id', 'priceId', 'stripe_price', 'stripe_price_id', 'stripePrice', 'stripePriceId', 'default_price', 'defaultPrice'] as $key) {
+                    if (isset($planData[$key])) {
+                        $extracted = self::extract_price_id_candidates($planData[$key]);
+                        if (!empty($extracted)) {
+                            $ids = array_merge($ids, $extracted);
+                        }
+                    }
+                }
+                if (!empty($ids) && array_intersect($ids, $price_candidates)) {
+                    return self::canonicalize_plan_key((string) $planKey);
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param mixed $entry
+     * @return array<int, string>
+     */
+    private static function extract_price_id_candidates($entry): array {
+        $candidates = [];
+
+        $append = static function ($value) use (&$candidates): void {
+            if (!is_string($value)) {
+                return;
+            }
+            $value = strtolower(trim($value));
+            if ($value !== '' && !in_array($value, $candidates, true)) {
+                $candidates[] = $value;
+            }
+        };
+
+        if (is_string($entry)) {
+            $append($entry);
+        } elseif (is_array($entry)) {
+            foreach (['price_id', 'priceId', 'stripe_price', 'stripe_price_id', 'stripePrice', 'stripePriceId', 'id', 'default_price', 'defaultPrice'] as $key) {
+                if (isset($entry[$key])) {
+                    $append($entry[$key]);
+                }
+            }
+            if (isset($entry['metadata']) && is_array($entry['metadata'])) {
+                foreach (['price_id', 'priceId', 'stripe_price', 'stripe_price_id', 'stripePrice', 'stripePriceId', 'id'] as $key) {
+                    if (isset($entry['metadata'][$key])) {
+                        $append($entry['metadata'][$key]);
+                    }
+                }
+            }
+        }
+
+        return $candidates;
+    }
+
+    private static function site_has_any_active_license(): bool {
+        try {
+            $manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            $licenses = method_exists($manager, 'get_all_licenses') ? $manager->get_all_licenses() : [];
+            if (empty($licenses)) {
+                return false;
+            }
+            foreach ($licenses as $license) {
+                $status = isset($license->status) ? strtolower((string) $license->status) : '';
+                if (in_array($status, ['active', 'valid', 'enabled', 'paid'], true)) {
+                    return true;
+                }
+            }
+        } catch (\Throwable $t) {
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
+     * Resolve a translated plan title.
+     */
+    private static function get_plan_label(string $plan_key): string {
         $labels = [
             'monthly'  => Language::get('Monthly subscription'),
             'yearly'   => Language::get('Yearly subscription'),
             'one_time' => Language::get('One-time purchase'),
         ];
 
-        $cards = [];
-        foreach ($order as $plan_key) {
-            if (!isset($plans[$plan_key]) || !is_array($plans[$plan_key])) {
+        return $labels[$plan_key] ?? ucfirst(str_replace('_', ' ', $plan_key));
+    }
+
+    private static function get_current_plan_indicator_label(string $normalized_plan_key, string $fallback_plan = ''): string {
+        $normalized = self::canonicalize_plan_key($normalized_plan_key);
+        if ($normalized === 'one_time') {
+            return Language::get('Purchased');
+        }
+
+        if (in_array($normalized, ['monthly', 'yearly', 'subscription'], true)) {
+            return Language::get('Currently subscribed');
+        }
+
+        if ($fallback_plan !== '') {
+            $guessed = self::guess_plan_key_from_string($fallback_plan);
+            if ($guessed === 'one_time') {
+                return Language::get('Purchased');
+            }
+            if (in_array($guessed, ['monthly', 'yearly', 'subscription'], true)) {
+                return Language::get('Currently subscribed');
+            }
+        }
+
+        return Language::get('Current plan');
+    }
+
+    /**
+     * Select the default entry from a Stripe plan list.
+     */
+    private static function select_default_price_entry(array $entries): ?array {
+        foreach ($entries as $entry) {
+            if (!empty($entry['default'])) {
+                return $entry;
+            }
+        }
+
+        return $entries[0] ?? null;
+    }
+
+    /**
+     * Locate a legacy entry to use as a compare-at price.
+     */
+    private static function find_compare_entry(array $entries, array $defaultEntry): ?array {
+        $defaultId = (string) ($defaultEntry['price_id'] ?? '');
+        foreach ($entries as $entry) {
+            if ((string) ($entry['price_id'] ?? '') === $defaultId) {
                 continue;
             }
-
-            $plan_data = $plans[$plan_key];
-            $default_display = '';
-            if (!empty($plan_data['sale']['is_active']) && !empty($plan_data['sale']['formatted'])) {
-                $sale_price = $plan_data['sale']['formatted'];
-                $sale_label = $plan_data['sale']['label'] ?? '';
-                $compare = $plan_data['default']['formatted'] ?? '';
-                $default_display .= '<span class="mds-plan-price mds-plan-price--sale">' . esc_html($sale_price) . '</span>';
-                if ($compare) {
-                    $default_display .= '<span class="mds-plan-price mds-plan-price--compare">' . esc_html($compare) . '</span>';
-                }
-                if ($sale_label) {
-                    $default_display .= '<span class="mds-plan-badge">' . esc_html($sale_label) . '</span>';
-                }
-            } elseif (!empty($plan_data['default']['formatted'])) {
-                $default_display .= '<span class="mds-plan-price">' . esc_html($plan_data['default']['formatted']) . '</span>';
+            $status = strtolower((string) ($entry['status'] ?? ''));
+            if ($status === 'legacy') {
+                return $entry;
             }
-
-            $feature_list = '';
-            if (!empty($plan_data['features']) && is_array($plan_data['features'])) {
-                $items = array_map('sanitize_text_field', array_filter($plan_data['features']));
-                if (!empty($items)) {
-                    $feature_list = '<ul class="mds-plan-features">';
-                    foreach ($items as $item) {
-                        $feature_list .= '<li>' . esc_html($item) . '</li>';
-                    }
-                    $feature_list .= '</ul>';
-                }
-            }
-
-            $button = '<button class="button button-secondary mds-purchase-extension" data-extension-id="' . esc_attr($extension_id) . '" data-nonce="' . esc_attr($nonce) . '" data-plan="' . esc_attr($plan_key) . '">' . esc_html(Language::get('Choose plan')) . '</button>';
-            $cards[] = '<div class="mds-plan-card" data-plan="' . esc_attr($plan_key) . '">' .
-                '<h4 class="mds-plan-title">' . esc_html($labels[$plan_key] ?? ucfirst($plan_key)) . '</h4>' .
-                ($default_display !== '' ? '<div class="mds-plan-pricing">' . $default_display . '</div>' : '') .
-                $feature_list .
-                '<div class="mds-plan-actions">' . $button . '</div>' .
-                '</div>';
         }
 
-        if (empty($cards)) {
+        return null;
+    }
+
+    /**
+     * Build additional tier listings for active, non-default entries.
+     *
+     * @return array<int, array{label:string, price:string}>
+     */
+    private static function build_plan_tiers(array $entries, array $defaultEntry): array {
+        $tiers = [];
+        $defaultId = (string) ($defaultEntry['price_id'] ?? '');
+
+        foreach ($entries as $entry) {
+            if ((string) ($entry['price_id'] ?? '') === $defaultId) {
+                continue;
+            }
+            $status = strtolower((string) ($entry['status'] ?? 'active'));
+            if ($status !== 'active') {
+                continue;
+            }
+            $amount = self::format_price_entry_amount($entry);
+            if ($amount === null || $amount === '') {
+                continue;
+            }
+            $label = trim((string) ($entry['label'] ?? ''));
+            if ($label === '' || strcasecmp($label, 'default') === 0) {
+                $label = Language::get('Additional tier');
+            }
+            $tiers[] = [
+                'label' => $label,
+                'price' => $amount,
+            ];
+        }
+
+        return $tiers;
+    }
+
+    /**
+     * Retrieve a sanitized list of plan features from metadata or legacy payloads.
+     *
+     * @return array<int, string>
+     */
+    private static function extract_plan_features(array $metadata, array $pricing_overview, string $plan_key): array {
+        if (isset($metadata['plan_features_array'][$plan_key]) && is_array($metadata['plan_features_array'][$plan_key])) {
+            $items = array_map('trim', $metadata['plan_features_array'][$plan_key]);
+            return array_values(array_filter($items, static function ($item) {
+                return $item !== '';
+            }));
+        }
+
+        if (isset($metadata['plan_features'][$plan_key]) && is_string($metadata['plan_features'][$plan_key])) {
+            return self::parse_plan_features_to_array($metadata['plan_features'][$plan_key]);
+        }
+
+        if (isset($pricing_overview['plans'][$plan_key]['features']) && is_array($pricing_overview['plans'][$plan_key]['features'])) {
+            $items = [];
+            foreach ($pricing_overview['plans'][$plan_key]['features'] as $feature) {
+                if (is_string($feature)) {
+                    $feature = trim($feature);
+                    if ($feature !== '') {
+                        $items[] = sanitize_text_field($feature);
+                    }
+                }
+            }
+            return $items;
+        }
+
+        return [];
+    }
+
+    /**
+     * Extract a badge-friendly label from a price entry.
+     */
+    private static function get_entry_badge_label(array $entry): string {
+        $label = isset($entry['label']) ? trim((string) $entry['label']) : '';
+        if ($label === '' || strcasecmp($label, 'default') === 0) {
             return '';
         }
+        return $label;
+    }
 
-        return '<div class="mds-card-pricing">' . implode('', $cards) . '</div>';
+    /**
+     * Format a price entry amount into a human-readable string.
+     */
+    private static function format_price_entry_amount(array $entry): ?string {
+        $derived = self::derive_price_amount($entry);
+        if ($derived === null) {
+            return null;
+        }
+
+        if (isset($derived['formatted']) && $derived['formatted'] !== '') {
+            return $derived['formatted'];
+        }
+
+        if (!isset($derived['amount'])) {
+            return null;
+        }
+
+        $currency = isset($derived['currency']) ? (string) $derived['currency'] : '';
+        return self::format_currency_amount((float) $derived['amount'], $currency);
+    }
+
+    /**
+     * Pull out the numeric amount and currency data from a price entry.
+     *
+     * @return array{amount?:float, currency?:string, formatted?:string}|null
+     */
+    private static function derive_price_amount(array $entry): ?array {
+        $metadata = is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [];
+
+        $currency = '';
+        if (isset($metadata['currency']) && is_string($metadata['currency'])) {
+            $currency = strtoupper($metadata['currency']);
+        } elseif (isset($entry['currency']) && is_string($entry['currency'])) {
+            $currency = strtoupper($entry['currency']);
+        }
+
+        $candidates = [
+            $metadata['amount_cents'] ?? null,
+            $metadata['amount'] ?? null,
+            $metadata['unit_amount'] ?? null,
+            $metadata['unitAmount'] ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate === null) {
+                continue;
+            }
+            if (is_numeric($candidate)) {
+                $numeric = (float) $candidate;
+                $asString = is_string($candidate) ? $candidate : (string) $candidate;
+                $hasDecimals = strpos($asString, '.') !== false || fmod($numeric, 1.0) !== 0.0;
+
+                $amount = $hasDecimals ? $numeric : ($numeric >= 100 ? ($numeric / 100) : $numeric);
+
+                return [
+                    'amount'   => round($amount, 2),
+                    'currency' => $currency,
+                ];
+            }
+        }
+
+        if (isset($metadata['formatted']) && is_string($metadata['formatted'])) {
+            return [
+                'formatted' => trim($metadata['formatted']),
+                'currency'  => $currency,
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Format a numeric amount using WooCommerce (if available) or fallback logic.
+     */
+    private static function format_currency_amount(float $amount, string $currency): string {
+        $normalizedCurrency = $currency !== '' ? strtoupper($currency) : (string) Options::get_option('currency', 'USD');
+
+        if (function_exists('wc_price')) {
+            $formatted = wc_price($amount, ['currency' => $normalizedCurrency]);
+            if (is_string($formatted)) {
+                return trim(wp_strip_all_tags($formatted));
+            }
+        }
+
+        $symbol = '';
+        if (function_exists('get_woocommerce_currency_symbol')) {
+            $symbol = get_woocommerce_currency_symbol($normalizedCurrency);
+        }
+        if ($symbol === '') {
+            $symbol = (string) Options::get_option('currency-symbol', '$');
+        }
+
+        $number = number_format($amount, 2, '.', ',');
+
+        if ($symbol !== '') {
+            return $symbol . $number;
+        }
+
+        return $normalizedCurrency . ' ' . $number;
     }
     
     // --- AJAX Handlers ---
