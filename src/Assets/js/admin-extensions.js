@@ -93,6 +93,10 @@
 		return fallback;
 	}
 
+	function escapeHtml(value) {
+		return $('<div>').text(value == null ? '' : String(value)).html();
+	}
+
 	function setPlanFeedback($container, message = '', type = '') {
 		if (!$container || !$container.length) {
 			if (message) {
@@ -606,6 +610,18 @@ $(document).on('click', '.mds-manage-subscription', function(){
             const current = sub.currentPlan || sub.plan || '';
             const currentDesc = sub.currentPlanDescription || '';
             const options = sub.availablePlans || [];
+            const planDetails = Array.isArray(sub.planDetails) ? sub.planDetails : [];
+            const detailMap = {};
+            planDetails.forEach((detail) => {
+                if (!detail || typeof detail !== 'object') {
+                    return;
+                }
+                const planKey = detail.plan || detail.key;
+                if (!planKey) {
+                    return;
+                }
+                detailMap[planKey] = detail;
+            });
 
             // Human-friendly plan description
             let descText = currentDesc;
@@ -620,13 +636,19 @@ $(document).on('click', '.mds-manage-subscription', function(){
 
             if (options.length) {
                 const labelMap = { one_time: 'One-time', monthly: 'Monthly subscription', yearly: 'Yearly subscription' };
-                const radios = options.map(o => {
-                    const isCurrent = o === current;
-                    const label = labelMap[o] || o;
+                const radios = options.map((planKey) => {
+                    const isCurrent = planKey === current;
+                    const detail = detailMap[planKey] || {};
+                    const label = detail.label || labelMap[planKey] || planKey;
                     const badge = isCurrent ? ' <em class=\"mds-current-plan-indicator\">(current)</em>' : '';
                     const checked = isCurrent ? ' checked' : '';
                     const disabled = isCurrent ? ' disabled aria-checked=\"true\"' : '';
-                    return `<label style=\"display:flex;align-items:center;gap:8px;margin:6px 0;\"><input type=\"radio\" name=\"mds-manage-plan\" value=\"${o}\"${checked}${disabled}><span>${label}${badge}</span></label>`;
+                    const features = Array.isArray(detail.features) ? detail.features : [];
+                    const featureItems = features.length
+                        ? `<ul class=\"mds-plan-features\">${features.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
+                        : '';
+                    const featureWrapper = featureItems ? `<div class=\"mds-plan-option-body\">${featureItems}</div>` : '';
+                    return `<div class=\"mds-plan-option\"><label class=\"mds-plan-option-header\"><input type=\"radio\" name=\"mds-manage-plan\" value=\"${planKey}\"${checked}${disabled}><span>${escapeHtml(label)}${badge}</span></label>${featureWrapper}</div>`;
                 }).join('');
                 $plans.html(radios);
                 $plans.off('change','input[name=\"mds-manage-plan\"]').on('change','input[name=\"mds-manage-plan\"]', function(){
@@ -867,7 +889,64 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 			.fail(function () {
 				showNotice('error', 'An error occurred during deactivation.', false);
 				resetButton($button, 'Deactivate');
+		});
+
+	$(document).on('click', '.mds-remove-license, .mds-inline-license-remove', function (e) {
+		e.preventDefault();
+		const $btn = $(this);
+		if (!confirm(getText('confirm_remove_license', 'Remove the stored license for this extension?'))) {
+			return;
+		}
+
+		let extensionSlug = '';
+		let nonce = '';
+		const $form = $btn.closest('.mds-license-form');
+		if ($form.length) {
+			extensionSlug = $form.data('extension-slug');
+			nonce = $form.find('input[name="nonce"]').val();
+		} else {
+			const $inline = $btn.closest('.mds-inline-license');
+			extensionSlug = $inline.data('extension-slug');
+			nonce = $btn.data('nonce') || $inline.data('licenseNonce');
+		}
+
+		if (!extensionSlug || !nonce) {
+			showNotice('error', getText('license_context_missing', 'Unable to locate license context.'), false);
+			return;
+		}
+
+		const isLinkStyle = $btn.hasClass('button-link') && !$btn.hasClass('button');
+		const originalHtml = $btn.html();
+		if (isLinkStyle) {
+			$btn.prop('disabled', true).text(getText('removing_license', 'Removing…'));
+		} else {
+			setButtonLoading($btn, getText('removing_license', 'Removing…'));
+		}
+
+		$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+			action: 'mds_delete_license',
+			extension_slug: extensionSlug,
+			nonce: nonce,
+		})
+			.done(function (resp) {
+				if (resp && resp.success) {
+					showNotice('success', (resp.data && resp.data.message) || getText('license_removed', 'License removed.'));
+					setTimeout(() => window.location.reload(), 800);
+				} else {
+					showNotice('error', (resp && resp.data && resp.data.message) || getText('license_remove_failed', 'Failed to remove license.'), false);
+				}
+			})
+			.fail(function () {
+				showNotice('error', getText('license_remove_failed', 'Failed to remove license.'), false);
+			})
+			.always(function () {
+				if (isLinkStyle) {
+					$btn.prop('disabled', false).html(originalHtml);
+				} else {
+					resetButton($btn);
+				}
 			});
+	});
 		});
 	});
 

@@ -1102,6 +1102,35 @@ html.dark .mds-plan-features li::before {
   color: #34d399;
 }
 
+.mds-plan-options .mds-plan-option {
+  background: #f8fafc;
+  border: 1px solid #d0dbea;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.mds-plan-option-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 6px;
+}
+
+.mds-plan-option-header input[type="radio"] {
+  margin: 0;
+}
+
+.mds-plan-option-body {
+  margin-left: 28px;
+}
+
+.mds-plan-option-body .mds-plan-features {
+  margin: 0;
+}
+
 .mds-plan-actions {
   display: flex;
   justify-content: flex-start;

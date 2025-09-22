@@ -230,8 +230,9 @@ class Extensions {
         add_action( 'wp_ajax_mds_claim_license', [ self::class, 'ajax_claim_license' ] );
         add_action( 'wp_ajax_mds_available_activate_license', [ self::class, 'ajax_available_activate_license' ] );
         add_action( 'wp_ajax_mds_get_license_plaintext', [ self::class, 'ajax_get_license_plaintext' ] );
-add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_license' ] );
+        add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_license' ] );
         add_action( 'wp_ajax_mds_deactivate_license', [ self::class, 'ajax_deactivate_license' ] );
+        add_action( 'wp_ajax_mds_delete_license', [ self::class, 'ajax_delete_license' ] );
         // Subscription management
         add_action( 'wp_ajax_mds_get_subscription', [ self::class, 'ajax_get_subscription' ] );
         add_action( 'wp_ajax_mds_change_subscription_plan', [ self::class, 'ajax_change_subscription_plan' ] );
@@ -679,12 +680,14 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                             <td><strong><?php echo esc_html($slug_val); ?></strong></td>
                             <td><?php echo esc_html($status ?: '-'); ?></td>
                             <td class="mds-license-cell">
-                                <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr($slug_val); ?>">
+                                <?php $license_nonce = wp_create_nonce( 'mds_license_nonce_' . $slug_val ); ?>
+                                <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr($slug_val); ?>" data-license-nonce="<?php echo esc_attr( $license_nonce ); ?>">
                                     <div class="mds-inline-license-row">
                                         <input type="password" class="regular-text mds-inline-license-key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>">
                                     </div>
                                     <div class="mds-inline-license-actions">
                                         <button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="<?php echo esc_attr( $nonce ); ?>"><?php echo esc_html( Language::get('Activate') ); ?></button>
+                                        <button type="button" class="button-link mds-inline-license-remove" data-nonce="<?php echo esc_attr( $license_nonce ); ?>"><?php echo esc_html( Language::get('Remove') ); ?></button>
                                         <button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="Show"><span class="dashicons dashicons-hidden"></span></button>
                                     </div>
                                 </div>
@@ -839,6 +842,11 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
                     'purchase_network_error'=> Language::get('An error occurred while contacting the store. Please try again.'),
                     'missing_plan'          => Language::get('Please choose a plan to continue.'),
                     'missing_parameters'    => Language::get('Unable to start checkout. Please refresh and try again.'),
+                    'confirm_remove_license'=> Language::get('Remove the stored license for this extension?'),
+                    'license_context_missing'=> Language::get('Unable to locate license context.'),
+                    'license_removed'       => Language::get('License removed.'),
+                    'license_remove_failed' => Language::get('Failed to remove license.'),
+                    'removing_license'      => Language::get('Removing…'),
                 ]
             ];
             wp_localize_script( $script_handle, 'MDS_EXTENSIONS_DATA', $extensions_data );
@@ -1985,6 +1993,7 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
 
         $is_licensed = !empty($extension['is_licensed']);
         $local_license = is_array($extension['local_license'] ?? null) ? $extension['local_license'] : [];
+        $license_nonce = $slug !== '' ? wp_create_nonce('mds_license_nonce_' . $slug) : wp_create_nonce('mds_extensions_nonce');
         if (!$is_licensed && !empty($local_license)) {
             $status = strtolower((string) ($local_license['status'] ?? ''));
             $is_licensed = $status === 'active';
@@ -2112,12 +2121,13 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
             $header_action_parts[] = '<div class="mds-card-license-trigger">'
                 . '<button type="button" class="button-link mds-card-license-toggle" aria-expanded="false" aria-controls="' . esc_attr($license_panel_id) . '">' . esc_html(Language::get('Manage license')) . '</button>'
                 . '<div id="' . esc_attr($license_panel_id) . '" class="mds-card-license mds-card-license-popover is-collapsed" aria-hidden="true" hidden>'
-                    . '<div class="mds-inline-license" data-extension-slug="' . esc_attr($slug) . '">'
+                    . '<div class="mds-inline-license" data-extension-slug="' . esc_attr($slug) . '" data-license-nonce="' . esc_attr($license_nonce) . '">'
                         . '<div class="mds-inline-license-row">'
                             . '<input type="password" class="regular-text mds-inline-license-key" placeholder="' . esc_attr(Language::get('Enter license key')) . '">' 
                         . '</div>'
                         . '<div class="mds-inline-license-actions">'
                             . '<button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="' . esc_attr($nonce) . '">' . esc_html(Language::get('Activate')) . '</button>'
+                            . '<button type="button" class="button-link mds-inline-license-remove" data-nonce="' . esc_attr($license_nonce) . '">' . esc_html(Language::get('Remove')) . '</button>'
                             . '<button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="' . esc_attr(Language::get('Show license key')) . '">'
                                 . '<span class="dashicons dashicons-hidden"></span>'
                             . '</button>'
@@ -2502,6 +2512,19 @@ add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_licens
     }
 
     private static function determine_current_plan_key(array $local_license, array $extension, array $metadata): string {
+        $has_active_license = false;
+        $status = isset($local_license['status']) ? strtolower((string) $local_license['status']) : '';
+        if (in_array($status, ['active', 'valid', 'enabled', 'paid'], true)) {
+            $has_active_license = true;
+        }
+        if (!$has_active_license && !empty($extension['is_licensed'])) {
+            $has_active_license = true;
+        }
+
+        if (!$has_active_license) {
+            return '';
+        }
+
         $planCandidates = [];
         $priceCandidates = [];
 
@@ -4291,8 +4314,9 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
      */
     protected static function render_license_form( array $extension ): void {
         $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-        $license = $license_manager->get_license( $extension['id'] );
-        $nonce = wp_create_nonce( 'mds_license_nonce_' . $extension['id'] );
+        $license_slug = $extension['slug'] ?? $extension['id'];
+        $license = $license_manager->get_license( (string) $license_slug );
+        $nonce = wp_create_nonce( 'mds_license_nonce_' . $license_slug );
         ?>
         <form class="mds-license-form" data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>">
             <input type="hidden" name="extension_slug" value="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>">
@@ -4303,8 +4327,11 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 <button type="button" class="button button-secondary mds-deactivate-license">
                     <?php echo esc_html( Language::get('Deactivate') ); ?>
                 </button>
+                <button type="button" class="button-link mds-remove-license">
+                    <?php echo esc_html( Language::get('Remove') ); ?>
+                </button>
             <?php else : ?>
-                <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>">
+                <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>" data-license-nonce="<?php echo esc_attr( $nonce ); ?>">
                     <div class="mds-inline-license-row">
                         <input type="password" class="regular-text mds-inline-license-key" name="license_key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>" value="<?php echo esc_attr( $license ? $license->license_key : '' ); ?>">
                     </div>
@@ -4312,6 +4339,11 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                         <button type="button" class="button button-primary mds-activate-license">
                             <?php echo esc_html( Language::get('Activate') ); ?>
                         </button>
+                        <?php if ( $license ) : ?>
+                            <button type="button" class="button-link mds-remove-license">
+                                <?php echo esc_html( Language::get('Remove') ); ?>
+                            </button>
+                        <?php endif; ?>
                         <button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="Show">
                             <span class="dashicons dashicons-hidden"></span>
                         </button>
@@ -4643,6 +4675,47 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             wp_send_json_error( [ 'message' => $result['message'] ] );
         }
     }
+
+    /**
+     * AJAX handler for removing a stored license entry.
+     */
+    public static function ajax_delete_license(): void {
+        $extension_slug = sanitize_text_field( $_POST['extension_slug'] ?? '' );
+        check_ajax_referer( 'mds_license_nonce_' . $extension_slug, 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ] );
+        }
+
+        if ( $extension_slug === '' ) {
+            wp_send_json_error( [ 'message' => Language::get( 'Missing required fields.' ) ] );
+        }
+
+        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        $license         = $license_manager->get_license( $extension_slug );
+
+        if ( ! $license ) {
+            wp_send_json_success( [ 'message' => Language::get( 'License removed.' ) ] );
+        }
+
+        $plaintext_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact( (string) $license->license_key );
+        if ( $plaintext_key === '' ) {
+            $plaintext_key = (string) $license->license_key;
+        }
+
+        if ( $plaintext_key !== '' ) {
+            try {
+                \MillionDollarScript\Classes\Extension\API::deactivate_license( $plaintext_key, $extension_slug );
+            } catch ( \Exception $e ) {
+                // Ignore remote errors; removing the local record should still proceed.
+            }
+        }
+
+        $license_manager->delete_license( (int) $license->id );
+        delete_transient( 'mds_license_check_' . $extension_slug );
+
+        wp_send_json_success( [ 'message' => Language::get( 'License removed.' ) ] );
+    }
     
         /**
          * Check if an extension is licensed.
@@ -4705,17 +4778,19 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             $body = wp_remote_retrieve_body($resp);
             $json = json_decode($body, true);
             if ($code !== 200 || !is_array($json)) { wp_send_json_error(['message' => Language::get('Failed to fetch subscription.')]); }
+            $payload = isset($json['data']) && is_array($json['data']) ? $json['data'] : $json;
             // Normalize
             $out = [
-                'currentPlan' => $json['currentPlan'] ?? ($json['plan'] ?? ''),
-                'availablePlans' => $json['availablePlans'] ?? [],
-                'status' => $json['status'] ?? '',
-                'renewsAt' => $json['renewsAt'] ?? ($json['expires_at'] ?? ''),
+                'currentPlan' => $payload['currentPlan'] ?? ($payload['plan'] ?? ''),
+                'availablePlans' => isset($payload['availablePlans']) && is_array($payload['availablePlans']) ? array_values($payload['availablePlans']) : [],
+                'status' => $payload['status'] ?? '',
+                'renewsAt' => $payload['renewsAt'] ?? ($payload['expires_at'] ?? ''),
+                'planDetails' => isset($payload['planDetails']) && is_array($payload['planDetails']) ? array_values($payload['planDetails']) : [],
             ];
             // Include a human-friendly description if provided by the server, otherwise derive one.
             $desc = '';
-            if (is_array($json)) {
-                $desc = $json['currentPlanDescription'] ?? ($json['planDescription'] ?? '');
+            if (is_array($payload)) {
+                $desc = $payload['currentPlanDescription'] ?? ($payload['planDescription'] ?? '');
             }
             if ($desc === '' && is_string($out['currentPlan']) && $out['currentPlan'] !== '') {
                 $map = [
