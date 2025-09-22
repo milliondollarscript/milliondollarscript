@@ -4,7 +4,7 @@ Donate link: https://milliondollarscript.com
 Tags: million dollar script,mds,pixels,advertising,pixel ads
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 2.5.15.33
+Stable tag: 2.5.15.34
 Requires PHP: 8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -38,6 +38,7 @@ Visit the [Million Dollar Script WordPress Plugin](https://milliondollarscript.c
 * New: Developers can fine-tune the advertiser list with fresh hooks (`mds_list_grid_tracks`, `mds_list_grid_template`, `mds_list_default_grid_tracks`, `mds_list_fallback_grid_track`) located in `src/Classes/Ajax/Ajax.php`.
 * Fix: The advertiser list shortcode now shows every grid by default, making it easier for visitors to browse everything you offer.
 * Dev: Pixel permalinks now enforce RFC-friendly lengths and expose new filters (`mds_pixels_max_url_length`, `mds_pixels_max_slug_length`, `mds_permalink_token_value*`, `mds_permalink_final_slug`) so you can clamp or customize any token—including `%text%` and `%meta:field%`—before the slug is saved.
+* Fix: Pixel post titles now mirror the Popup Text a user enters instead of falling back to usernames.
 
 = 2.5.14 =
 * Perf: Faster block selection on the Order page.

@@ -640,6 +640,11 @@ class FormFields {
 
 			if ( empty( $errors ) ) {
 				if ( ! is_wp_error( $post_id ) ) {
+					$resolved_title = $post_title !== '' ? $post_title : $current_user->user_login;
+					wp_update_post( [
+						'ID'         => $post_id,
+						'post_title' => $resolved_title,
+					] );
 					Permalinks::sync_post_slug( (int) $post_id );
 				}
 				return $post_id;
