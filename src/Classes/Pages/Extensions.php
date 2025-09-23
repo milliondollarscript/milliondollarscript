@@ -1342,33 +1342,12 @@ class Extensions {
                         continue;
                     }
 
-                    $metadata = self::normalize_license_metadata($row->metadata ?? null);
-                    $renews_at = '';
-                    if (!empty($metadata['renews_at'])) {
-                        $renews_at = (string) $metadata['renews_at'];
-                    } elseif (!empty($metadata['renewsAt'])) {
-                        $renews_at = (string) $metadata['renewsAt'];
-                    } elseif (!empty($row->renews_at)) {
-                        $renews_at = (string) $row->renews_at;
+                    $snapshot = self::build_license_snapshot_from_row($row);
+                    if (empty($snapshot)) {
+                        continue;
                     }
 
-                    $plan_hint = '';
-                    if (!empty($metadata['plan'])) {
-                        $plan_hint = self::canonicalize_plan_key((string) $metadata['plan']);
-                    } elseif (!empty($metadata['price_plan'])) {
-                        $plan_hint = self::canonicalize_plan_key((string) $metadata['price_plan']);
-                    } elseif (!empty($metadata['recurring'])) {
-                        $plan_hint = self::canonicalize_plan_key((string) $metadata['recurring']);
-                    }
-
-                    $license_map[$slug_val] = [
-                        'id'         => isset($row->id) ? (int) $row->id : 0,
-                        'status'     => isset($row->status) ? (string) $row->status : '',
-                        'expires_at' => isset($row->expires_at) ? (string) $row->expires_at : '',
-                        'metadata'   => $metadata,
-                        'renews_at'  => $renews_at,
-                        'plan_hint'  => $plan_hint,
-                    ];
+                    $license_map[$slug_val] = $snapshot;
                 }
             }
         } catch (\Throwable $t) {
@@ -1381,7 +1360,7 @@ class Extensions {
                 if ($slug !== '' && isset($license_map[$slug])) {
                     $extension['purchased_locally'] = true;
                     $extension['local_license'] = $license_map[$slug];
-                    $extension['is_licensed'] = true;
+                    $extension['is_licensed'] = self::is_active_license_status($license_map[$slug]['status'] ?? '');
                 } else {
                     $extension['purchased_locally'] = false;
                     $extension['local_license'] = null;
@@ -1986,6 +1965,68 @@ class Extensions {
         return [];
     }
 
+    private static function is_active_license_status($status): bool {
+        if (!is_string($status) || $status === '') {
+            return false;
+        }
+
+        $normalized = strtolower(trim($status));
+
+        return in_array($normalized, ['active', 'valid', 'enabled', 'paid'], true);
+    }
+
+    private static function build_license_snapshot_from_row($row): array {
+        if (!is_object($row)) {
+            return [];
+        }
+
+        $metadata = self::normalize_license_metadata($row->metadata ?? null);
+
+        $renews_at = '';
+        if (!empty($metadata['renews_at'])) {
+            $renews_at = (string) $metadata['renews_at'];
+        } elseif (!empty($metadata['renewsAt'])) {
+            $renews_at = (string) $metadata['renewsAt'];
+        } elseif (!empty($row->renews_at)) {
+            $renews_at = (string) $row->renews_at;
+        }
+
+        $plan_hint = '';
+        if (!empty($metadata['plan'])) {
+            $plan_hint = self::canonicalize_plan_key((string) $metadata['plan']);
+        } elseif (!empty($metadata['price_plan'])) {
+            $plan_hint = self::canonicalize_plan_key((string) $metadata['price_plan']);
+        } elseif (!empty($metadata['recurring'])) {
+            $plan_hint = self::canonicalize_plan_key((string) $metadata['recurring']);
+        }
+
+        return [
+            'id'         => isset($row->id) ? (int) $row->id : 0,
+            'status'     => isset($row->status) ? (string) $row->status : '',
+            'expires_at' => isset($row->expires_at) ? (string) $row->expires_at : '',
+            'metadata'   => $metadata,
+            'renews_at'  => $renews_at,
+            'plan_hint'  => $plan_hint,
+        ];
+    }
+
+    private static function refresh_license_snapshot(string $slug, array $fallback = []): array {
+        if ($slug === '') {
+            return $fallback;
+        }
+
+        try {
+            $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            $row = $lm->get_license($slug);
+            if ($row) {
+                return self::build_license_snapshot_from_row($row);
+            }
+            return [];
+        } catch (\Throwable $t) {
+            return $fallback;
+        }
+    }
+
     private static function format_license_renewal_display(?string $renews_at, ?string $expires_at, string $plan_hint): string {
         $renews_at = is_string($renews_at) ? trim($renews_at) : '';
         $expires_at = is_string($expires_at) ? trim($expires_at) : '';
@@ -2054,15 +2095,24 @@ class Extensions {
         $is_active    = !empty($extension['is_active']);
         $slug         = (string) ($extension['slug'] ?? '');
 
-        $is_licensed = !empty($extension['is_licensed']);
         $local_license = is_array($extension['local_license'] ?? null) ? $extension['local_license'] : [];
+        $local_status = $local_license['status'] ?? '';
+        $is_licensed = self::is_active_license_status($local_status) || !empty($extension['is_licensed']);
+
         $license_nonce = $slug !== '' ? wp_create_nonce('mds_license_nonce_' . $slug) : wp_create_nonce('mds_extensions_nonce');
-        if (!$is_licensed && !empty($local_license)) {
-            $status = strtolower((string) ($local_license['status'] ?? ''));
-            $is_licensed = $status === 'active';
+
+        $should_check_remote = $is_premium && $slug !== '' && !empty($local_license);
+        if ($should_check_remote) {
+            $is_licensed = self::is_extension_licensed($slug, self::is_active_license_status($local_status));
+            $local_license = self::refresh_license_snapshot($slug, $local_license);
+            $local_status = $local_license['status'] ?? '';
         }
-        if ($is_premium && !$is_licensed && $slug !== '') {
-            $is_licensed = self::is_extension_licensed($slug);
+
+        // Keep extension snapshot aligned with the latest license evaluation so downstream helpers stay consistent.
+        $extension['local_license'] = $local_license;
+        $extension['is_licensed'] = $is_licensed;
+        if (empty($local_license) && !empty($extension['purchased_locally'])) {
+            $extension['purchased_locally'] = false;
         }
 
         $card_classes = ['mds-extension-card'];
@@ -2094,10 +2144,11 @@ class Extensions {
         }
 
         if ($is_premium) {
-            $status = isset($local_license['status']) ? strtolower((string) $local_license['status']) : '';
+            $status_raw = $local_license['status'] ?? '';
+            $status = is_string($status_raw) ? strtolower($status_raw) : '';
             if ($status !== '') {
                 $chip_class = 'mds-license-chip';
-                if ($status === 'active') {
+                if (self::is_active_license_status($status_raw)) {
                     $chip_class .= ' mds-license-chip--active';
                 } else {
                     $chip_class .= ' mds-license-chip--attention';
@@ -2580,11 +2631,7 @@ class Extensions {
     }
 
     private static function determine_current_plan_key(array $local_license, array $extension, array $metadata): string {
-        $has_active_license = false;
-        $status = isset($local_license['status']) ? strtolower((string) $local_license['status']) : '';
-        if (in_array($status, ['active', 'valid', 'enabled', 'paid'], true)) {
-            $has_active_license = true;
-        }
+        $has_active_license = self::is_active_license_status($local_license['status'] ?? '');
         if (!$has_active_license && !empty($extension['is_licensed'])) {
             $has_active_license = true;
         }
@@ -4799,17 +4846,15 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
          * @param string $extension_id The ID of the extension.
          * @return bool True if the extension has an active license, false otherwise.
          */
-        protected static function is_extension_licensed(string $extension_slug): bool {
+        protected static function is_extension_licensed(string $extension_slug, bool $force_refresh = false): bool {
             // If the license manager class doesn't exist, we can't check.
             if (!class_exists('\MillionDollarScript\Classes\Extension\MDS_License_Manager')) {
                 return false;
             }
-    
+
             try {
                 $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-                $license = $license_manager->get_license($extension_slug);
-    
-                return $license && $license->status === 'active';
+                return $license_manager->is_extension_licensed($extension_slug, $force_refresh);
             } catch (\Exception $e) {
                 // If the table doesn't exist or another DB error occurs, assume not licensed.
                 error_log('Error checking license status for extension ' . $extension_slug . ': ' . $e->getMessage());

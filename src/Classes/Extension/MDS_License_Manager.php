@@ -175,7 +175,7 @@ class MDS_License_Manager {
      * @param string $extension_slug
      * @return bool
      */
-    public function is_extension_licensed( string $extension_slug ): bool {
+    public function is_extension_licensed( string $extension_slug, bool $force_refresh = false ): bool {
         if ( ! $this->table_exists() ) {
             return false;
         }
@@ -186,26 +186,42 @@ class MDS_License_Manager {
             return false;
         }
 
-        if ( $license->status === 'active' ) {
-            if ( get_transient( 'mds_license_check_' . $extension_slug ) ) {
-                return true;
-            }
+        $status = isset($license->status) ? strtolower((string) $license->status) : '';
+        $transient_key = 'mds_license_check_' . $extension_slug;
 
-            // Decrypt license key (handles plaintext transparently as well)
-            $plaintext = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact( (string) $license->license_key );
-            if ($plaintext === '') {
-                return false;
-            }
-            $validation = API::validate_license( $plaintext, $extension_slug );
-
-            if ( is_array( $validation ) && ! empty( $validation['success'] ) && ! empty( $validation['valid'] ) ) {
-                set_transient( 'mds_license_check_' . $extension_slug, 'valid', DAY_IN_SECONDS );
-                return true;
-            } else {
-                $this->update_license( (int) $license->id, [ 'status' => 'inactive' ] );
-                return false;
-            }
+        if ($status !== 'active' && !$force_refresh) {
+            return false;
         }
+
+        if ($status === 'active' && !$force_refresh && get_transient($transient_key)) {
+            return true;
+        }
+
+        $plaintext = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact( (string) $license->license_key );
+        if ($plaintext === '') {
+            $plaintext = (string) $license->license_key;
+        }
+
+        if ($plaintext === '') {
+            $this->update_license( (int) $license->id, [ 'status' => 'inactive' ] );
+            delete_transient( $transient_key );
+            return false;
+        }
+
+        $validation = API::validate_license( $plaintext, $extension_slug );
+
+        if ( is_array( $validation ) && ! empty( $validation['success'] ) && ! empty( $validation['valid'] ) ) {
+            set_transient( $transient_key, 'valid', DAY_IN_SECONDS );
+
+            if ( $status !== 'active' ) {
+                $this->update_license( (int) $license->id, [ 'status' => 'active' ] );
+            }
+
+            return true;
+        }
+
+        $this->update_license( (int) $license->id, [ 'status' => 'inactive' ] );
+        delete_transient( $transient_key );
 
         return false;
     }

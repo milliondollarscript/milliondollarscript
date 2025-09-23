@@ -923,7 +923,9 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 			.fail(function () {
 				showNotice('error', 'An error occurred during deactivation.', false);
 				resetButton($button, 'Deactivate');
-		});
+			});
+
+	});
 
 	$(document).on('click', '.mds-remove-license, .mds-inline-license-remove', function (e) {
 		e.preventDefault();
@@ -973,8 +975,6 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 					resetButton($btn);
 				}
 			});
-	});
-		});
 	});
 
 // Inline license activation in Available Extensions
@@ -1108,5 +1108,6 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
 		}).always(function () {
 			resetButton($btn, 'Activate');
 		});
+	});
 	});
 })(window.jQuery);
