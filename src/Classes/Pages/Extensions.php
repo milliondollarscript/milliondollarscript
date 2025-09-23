@@ -1216,6 +1216,7 @@ class Extensions {
                 'monthly'  => null,
                 'yearly'   => null,
                 'default'  => null,
+                'options'  => [],
             ];
             $server_links = [];
             if (isset($extension['purchase']) && is_array($extension['purchase']) && isset($extension['purchase']['links']) && is_array($extension['purchase']['links'])) {
@@ -1238,6 +1239,30 @@ class Extensions {
                 $purchase_links['monthly']  = isset($server_links['monthly']) ? $abs($server_links['monthly']) : null;
                 $purchase_links['yearly']   = isset($server_links['yearly']) ? $abs($server_links['yearly']) : null;
                 $purchase_links['default']  = isset($server_links['default']) ? $abs($server_links['default']) : null;
+                if (isset($server_links['options']) && is_array($server_links['options'])) {
+                    foreach ($server_links['options'] as $planKey => $optionList) {
+                        if (!is_array($optionList)) {
+                            continue;
+                        }
+                        $normalizedOptions = [];
+                        foreach ($optionList as $option) {
+                            if (!is_array($option)) {
+                                continue;
+                            }
+                            $checkout = isset($option['checkout']) ? $abs($option['checkout']) : null;
+                            $normalizedOptions[] = [
+                                'priceId' => isset($option['priceId']) ? (string) $option['priceId'] : '',
+                                'label'   => isset($option['label']) ? (string) $option['label'] : '',
+                                'status'  => isset($option['status']) ? (string) $option['status'] : '',
+                                'default' => !empty($option['default']),
+                                'checkout'=> $checkout,
+                            ];
+                        }
+                        if (!empty($normalizedOptions)) {
+                            $purchase_links['options'][$planKey] = $normalizedOptions;
+                        }
+                    }
+                }
             }
 
             $normalized_meta = self::normalize_extension_metadata($extension['metadata'] ?? []);
@@ -1269,6 +1294,7 @@ class Extensions {
                 // New: pass through purchase availability and normalized links for WP UI
                 'purchase'     => [
                     'anyAvailable' => (bool) ( $extension['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) ),
+                    'options'      => $purchase_links['options'],
                 ],
                 'purchase_links' => $purchase_links,
                 'can_purchase'   => (bool) ( $extension['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) ),
@@ -1862,34 +1888,147 @@ class Extensions {
             }
         }
 
-        if (!isset($meta['plan_features']) || !is_array($meta['plan_features'])) {
-            return $meta;
+        $collectStringMap = static function ($source) {
+            $result = [];
+            if (!is_array($source)) {
+                return $result;
+            }
+            foreach ($source as $key => $value) {
+                if (!is_string($key) || $key === '') {
+                    continue;
+                }
+                if (is_array($value)) {
+                    $value = implode("\n", array_map('trim', array_filter($value, static function ($item) {
+                        return is_string($item) && trim($item) !== '';
+                    })));
+                }
+                if (!is_string($value)) {
+                    continue;
+                }
+                $trimmed = trim($value);
+                if ($trimmed === '') {
+                    continue;
+                }
+                $result[$key] = $trimmed;
+            }
+            return $result;
+        };
+
+        $planFeatureMap = [];
+        foreach (['plan_feature_map', 'planFeatureMap'] as $mapKey) {
+            if (isset($meta[$mapKey])) {
+                $planFeatureMap = array_replace($planFeatureMap, $collectStringMap($meta[$mapKey]));
+            }
+        }
+        if (isset($meta['release']['plan_feature_map'])) {
+            $planFeatureMap = array_replace(
+                $planFeatureMap,
+                $collectStringMap($meta['release']['plan_feature_map'])
+            );
         }
 
-        $parsed = [];
-        foreach (self::STRIPE_PRICE_PLANS as $plan) {
-            $raw = $meta['plan_features'][$plan] ?? null;
-            if ($raw === null) {
-                continue;
+        $planFeaturesByPlan = [];
+        foreach (['plan_features', 'planFeatures'] as $planKey) {
+            if (isset($meta[$planKey])) {
+                $planFeaturesByPlan = array_replace($planFeaturesByPlan, $collectStringMap($meta[$planKey]));
             }
+        }
+        if (isset($meta['release']['plan_features'])) {
+            $planFeaturesByPlan = array_replace(
+                $planFeaturesByPlan,
+                $collectStringMap($meta['release']['plan_features'])
+            );
+        }
 
-            if (is_array($raw)) {
-                $items = array_values(array_filter(array_map('sanitize_text_field', $raw), static function ($item) {
-                    return trim((string) $item) !== '';
-                }));
-            } elseif (is_string($raw)) {
-                $items = self::parse_plan_features_to_array($raw);
-            } else {
-                continue;
+        $stripePrices = isset($meta['stripe_prices']) && is_array($meta['stripe_prices'])
+            ? $meta['stripe_prices']
+            : [];
+
+        // Promote plan-level features to map using default price IDs when no map is present.
+        if (empty($planFeatureMap) && !empty($planFeaturesByPlan)) {
+            foreach ($stripePrices as $planKey => $entries) {
+                if (!is_array($entries)) {
+                    continue;
+                }
+                $defaultEntry = null;
+                foreach ($entries as $entry) {
+                    if (!is_array($entry)) {
+                        continue;
+                    }
+                    if (!isset($entry['price_id'])) {
+                        continue;
+                    }
+                    if (!empty($entry['default'])) {
+                        $defaultEntry = $entry;
+                        break;
+                    }
+                    if ($defaultEntry === null) {
+                        $defaultEntry = $entry;
+                    }
+                }
+                if ($defaultEntry && isset($defaultEntry['price_id'], $planFeaturesByPlan[$planKey])) {
+                    $planFeatureMap[(string) $defaultEntry['price_id']] = $planFeaturesByPlan[$planKey];
+                }
             }
+        }
 
+        // Populate plan-level features from map if missing.
+        if (!empty($planFeatureMap) && is_array($stripePrices)) {
+            foreach ($stripePrices as $planKey => $entries) {
+                if (!is_array($entries) || isset($planFeaturesByPlan[$planKey])) {
+                    continue;
+                }
+                foreach ($entries as $entry) {
+                    if (!is_array($entry) || empty($entry['price_id'])) {
+                        continue;
+                    }
+                    $priceId = (string) $entry['price_id'];
+                    if (isset($planFeatureMap[$priceId])) {
+                        $planFeaturesByPlan[$planKey] = $planFeatureMap[$priceId];
+                        break;
+                    }
+                }
+            }
+        }
+
+        $planFeaturesArray = [];
+        foreach ($planFeaturesByPlan as $plan => $value) {
+            $items = self::parse_plan_features_to_array($value);
             if (!empty($items)) {
-                $parsed[$plan] = array_values(array_unique($items));
+                $planFeaturesArray[$plan] = $items;
             }
         }
 
-        if (!empty($parsed)) {
-            $meta['plan_features_array'] = $parsed;
+        $planFeaturesArrayByPrice = [];
+        foreach ($planFeatureMap as $priceId => $value) {
+            $items = self::parse_plan_features_to_array($value);
+            if (!empty($items)) {
+                $planFeaturesArrayByPrice[$priceId] = $items;
+            }
+        }
+
+        if (!empty($planFeatureMap)) {
+            $meta['plan_feature_map'] = $planFeatureMap;
+        } else {
+            unset($meta['plan_feature_map']);
+        }
+
+        if (!empty($planFeaturesByPlan)) {
+            $meta['plan_features'] = $planFeaturesByPlan;
+        } else {
+            unset($meta['plan_features']);
+        }
+
+        if (!empty($planFeaturesArray)) {
+            $meta['plan_features_array'] = $planFeaturesArray;
+        } else {
+            unset($meta['plan_features_array']);
+        }
+
+        if (!empty($planFeaturesArrayByPrice)) {
+            $meta['plan_features_array_by_price'] = $planFeaturesArrayByPrice;
+        } else {
+            unset($meta['plan_features_array_by_price']);
         }
 
         return $meta;
@@ -2332,9 +2471,23 @@ class Extensions {
     ): string {
         $metadata = is_array($metadata) ? $metadata : [];
         $planOrder = self::determine_plan_order($pricing_overview, $metadata);
+        $normalizedPlanOrder = self::build_plan_index_map($planOrder, true);
+        $planGroups = self::build_plan_groups($metadata, $pricing_overview, $purchase_links, $planOrder);
+
+        if (!empty($planGroups)) {
+            return self::render_plan_groups_markup(
+                $planGroups,
+                $extension_id,
+                $nonce,
+                $current_plan_key,
+                $plan_relations,
+                $normalizedPlanOrder
+            );
+        }
+
+        // Fallback to legacy rendering when no Stripe price entries are available.
         $cards = [];
         $metadataPrices = isset($metadata['stripe_prices']) && is_array($metadata['stripe_prices']) ? $metadata['stripe_prices'] : [];
-        $normalizedPlanOrder = self::build_plan_index_map($planOrder, true);
 
         foreach ($planOrder as $planKey) {
             $planKey = (string) $planKey;
@@ -2411,6 +2564,291 @@ class Extensions {
         }
 
         return '<div class="mds-card-pricing">' . implode('', $cards) . '</div>';
+    }
+
+    private static function build_plan_groups(
+        array $metadata,
+        array $pricing_overview,
+        array $purchase_links,
+        array $plan_order
+    ): array {
+        $stripe_prices = isset($metadata['stripe_prices']) && is_array($metadata['stripe_prices'])
+            ? $metadata['stripe_prices']
+            : [];
+        $options = isset($purchase_links['options']) && is_array($purchase_links['options'])
+            ? $purchase_links['options']
+            : [];
+
+        $groups = [];
+        $seen_plans = [];
+
+        $appendGroup = static function (array $group, array &$groups, array &$seen_plans): void {
+            if (empty($group['entries'])) {
+                return;
+            }
+            if (!in_array($group['key'], $seen_plans, true)) {
+                $seen_plans[] = $group['key'];
+                $groups[] = $group;
+            }
+        };
+
+        foreach ($plan_order as $plan_key_raw) {
+            $plan_key = self::canonicalize_plan_key((string) $plan_key_raw);
+            if ($plan_key === '' || !isset($stripe_prices[$plan_key]) || !is_array($stripe_prices[$plan_key])) {
+                continue;
+            }
+            $entries = self::build_plan_group_entries(
+                $plan_key,
+                $stripe_prices[$plan_key],
+                $metadata,
+                $pricing_overview,
+                $options[$plan_key] ?? []
+            );
+            $appendGroup([
+                'key'     => $plan_key,
+                'label'   => self::get_plan_label($plan_key),
+                'entries' => $entries,
+            ], $groups, $seen_plans);
+        }
+
+        // Include any remaining plan keys not covered by plan_order.
+        foreach ($stripe_prices as $plan_key => $price_entries) {
+            $plan_key_canonical = self::canonicalize_plan_key((string) $plan_key);
+            if ($plan_key_canonical === '' || in_array($plan_key_canonical, $seen_plans, true)) {
+                continue;
+            }
+            if (!is_array($price_entries)) {
+                continue;
+            }
+            $entries = self::build_plan_group_entries(
+                $plan_key_canonical,
+                $price_entries,
+                $metadata,
+                $pricing_overview,
+                $options[$plan_key_canonical] ?? []
+            );
+            $appendGroup([
+                'key'     => $plan_key_canonical,
+                'label'   => self::get_plan_label($plan_key_canonical),
+                'entries' => $entries,
+            ], $groups, $seen_plans);
+        }
+
+        return $groups;
+    }
+
+    private static function build_plan_group_entries(
+        string $plan_key,
+        array $price_entries,
+        array $metadata,
+        array $pricing_overview,
+        array $purchase_options
+    ): array {
+        $entries = [];
+        $sale_enabled = self::is_sale_display_enabled($metadata, $plan_key);
+
+        foreach ($price_entries as $entry) {
+            if (!is_array($entry) || empty($entry['price_id'])) {
+                continue;
+            }
+            $price_id = (string) $entry['price_id'];
+            $label = isset($entry['label']) && is_string($entry['label']) && trim($entry['label']) !== ''
+                ? trim($entry['label'])
+                : self::get_plan_label($plan_key);
+            $amount = self::format_price_entry_amount($entry);
+
+            $compare_price = null;
+            $badge_label = '';
+            if ($sale_enabled) {
+                $compare_entry = self::find_compare_entry($price_entries, $entry);
+                if ($compare_entry) {
+                    $compare_candidate = self::format_price_entry_amount($compare_entry);
+                    if ($compare_candidate !== null && $compare_candidate !== '') {
+                        $compare_price = $compare_candidate;
+                        $badge_label = self::get_entry_badge_label($entry);
+                    }
+                }
+            }
+
+            $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key, $price_id);
+
+            $purchase_option = [];
+            if (!empty($purchase_options) && is_array($purchase_options)) {
+                foreach ($purchase_options as $option) {
+                    if (isset($option['priceId']) && (string) $option['priceId'] === $price_id) {
+                        $purchase_option = $option;
+                        break;
+                    }
+                }
+            }
+
+            $entries[] = [
+                'plan_key'      => $plan_key,
+                'plan_label'    => self::get_plan_label($plan_key),
+                'price_id'      => $price_id,
+                'label'         => $label,
+                'amount'        => $amount,
+                'compare_price' => $compare_price,
+                'badge_label'   => $badge_label,
+                'status'        => isset($entry['status']) ? (string) $entry['status'] : 'active',
+                'is_default'    => !empty($entry['default']),
+                'features'      => $features,
+                'purchase'      => $purchase_option,
+            ];
+        }
+
+        return $entries;
+    }
+
+    private static function render_plan_groups_markup(
+        array $plan_groups,
+        string $extension_id,
+        string $nonce,
+        ?string $current_plan_key,
+        array $plan_relations,
+        array $plan_order
+    ): string {
+        if (empty($plan_groups)) {
+            return '';
+        }
+
+        $current_plan_canonical = self::canonicalize_plan_key($current_plan_key ?? '');
+        $active_index = 0;
+        foreach ($plan_groups as $index => $group) {
+            if ($group['key'] === $current_plan_canonical) {
+                $active_index = $index;
+                break;
+            }
+        }
+
+        $tabs = [];
+        $panels = [];
+
+        foreach ($plan_groups as $index => $group) {
+            $is_active = $index === $active_index;
+            $tab_classes = 'mds-plan-tab' . ($is_active ? ' is-active' : '');
+            $aria_selected = $is_active ? 'true' : 'false';
+            $tabs[] = '<button type="button" class="' . esc_attr($tab_classes) . '" data-plan-tab="' . esc_attr($group['key']) . '" role="tab" aria-selected="' . esc_attr($aria_selected) . '">' . esc_html($group['label']) . '</button>';
+
+            $panel_classes = 'mds-plan-tabpanel' . ($is_active ? ' is-active' : '');
+            $cards = [];
+            foreach ($group['entries'] as $entry) {
+                $cards[] = self::render_plan_entry_card(
+                    $entry,
+                    $extension_id,
+                    $nonce,
+                    $current_plan_key,
+                    $plan_relations,
+                    $plan_order
+                );
+            }
+            $panel_body = !empty($cards)
+                ? implode('', $cards)
+                : '<div class="mds-plan-features-empty">' . esc_html(Language::get('No plans available for this billing cadence.')) . '</div>';
+            $panels[] = '<section class="' . esc_attr($panel_classes) . '" data-plan-panel="' . esc_attr($group['key']) . '" role="tabpanel">' . $panel_body . '</section>';
+        }
+
+        return '<div class="mds-plan-tabs">'
+            . '<div class="mds-plan-tablist" role="tablist">' . implode('', $tabs) . '</div>'
+            . '<div class="mds-plan-tabpanels">' . implode('', $panels) . '</div>'
+            . '</div>';
+    }
+
+    private static function render_plan_entry_card(
+        array $entry,
+        string $extension_id,
+        string $nonce,
+        ?string $current_plan_key,
+        array $plan_relations,
+        array $plan_order
+    ): string {
+        $plan_key = isset($entry['plan_key']) ? self::canonicalize_plan_key((string) $entry['plan_key']) : '';
+        $price_id = isset($entry['price_id']) ? (string) $entry['price_id'] : '';
+        if ($plan_key === '' || $price_id === '') {
+            return '';
+        }
+
+        $label = isset($entry['label']) ? (string) $entry['label'] : self::get_plan_label($plan_key);
+        $plan_label = isset($entry['plan_label']) ? (string) $entry['plan_label'] : self::get_plan_label($plan_key);
+        $amount = isset($entry['amount']) ? (string) $entry['amount'] : '';
+        $compare_price = isset($entry['compare_price']) ? (string) $entry['compare_price'] : '';
+        $badge_label = isset($entry['badge_label']) ? (string) $entry['badge_label'] : '';
+        $status = isset($entry['status']) ? strtolower((string) $entry['status']) : 'active';
+        $is_default = !empty($entry['is_default']);
+        $features = isset($entry['features']) && is_array($entry['features']) ? $entry['features'] : [];
+
+        $card_classes = ['mds-plan-card'];
+        if ($is_default) {
+            $card_classes[] = 'is-highlighted';
+        }
+        if ($status === 'hidden') {
+            $card_classes[] = 'is-muted';
+        }
+
+        $pricing_html = '';
+        if ($amount !== '') {
+            $pricing_html .= '<div class="mds-plan-pricing">';
+            if ($compare_price !== '' && $compare_price !== $amount) {
+                $pricing_html .= '<span class="mds-plan-price mds-plan-price--sale">' . esc_html($amount) . '</span>';
+                $pricing_html .= '<span class="mds-plan-price mds-plan-price--compare">' . esc_html($compare_price) . '</span>';
+            } else {
+                $pricing_html .= '<span class="mds-plan-price">' . esc_html($amount) . '</span>';
+            }
+            if ($badge_label !== '') {
+                $pricing_html .= '<span class="mds-plan-badge">' . esc_html($badge_label) . '</span>';
+            }
+            $pricing_html .= '</div>';
+        }
+
+        $status_badges = [];
+        if ($is_default) {
+            $status_badges[] = '<span class="mds-plan-chip mds-plan-chip--primary">' . esc_html(Language::get('Default')) . '</span>';
+        }
+        if ($status === 'hidden') {
+            $status_badges[] = '<span class="mds-plan-chip">' . esc_html(Language::get('Hidden')) . '</span>';
+        } elseif ($status === 'legacy') {
+            $status_badges[] = '<span class="mds-plan-chip">' . esc_html(Language::get('Legacy')) . '</span>';
+        }
+        $status_html = '';
+        if (!empty($status_badges)) {
+            $status_html = '<div class="mds-plan-chipset">' . implode('', $status_badges) . '</div>';
+        }
+
+        $features_html = '';
+        if (!empty($features)) {
+            $features_html .= '<ul class="mds-plan-features">';
+            foreach ($features as $feature) {
+                $features_html .= '<li>' . esc_html($feature) . '</li>';
+            }
+            $features_html .= '</ul>';
+        }
+
+        $action_markup = self::render_plan_action_markup(
+            $plan_key,
+            $extension_id,
+            $nonce,
+            $current_plan_key,
+            $plan_relations,
+            $plan_order,
+            $price_id,
+            $label
+        );
+
+        $card_body = '<div class="' . esc_attr(implode(' ', $card_classes)) . '" data-plan="' . esc_attr($plan_key) . '" data-price-id="' . esc_attr($price_id) . '">';
+        $card_body .= '<header class="mds-plan-card__header">'
+            . '<div class="mds-plan-card__heading">'
+            . '<span class="mds-plan-card__plan">' . esc_html($plan_label) . '</span>'
+            . '<h4 class="mds-plan-title">' . esc_html($label) . '</h4>'
+            . '</div>'
+            . $status_html
+            . '</header>';
+        $card_body .= $pricing_html;
+        $card_body .= $features_html !== '' ? $features_html : '';
+        $card_body .= '<div class="mds-plan-feedback" aria-live="polite"></div>';
+        $card_body .= '<div class="mds-plan-actions">' . $action_markup . '</div>';
+        $card_body .= '</div>';
+
+        return $card_body;
     }
 
     /**
@@ -2506,7 +2944,7 @@ class Extensions {
             }
         }
         $tiers = self::build_plan_tiers($entries, $defaultEntry);
-        $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key);
+        $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key, null);
 
         $pricingHtml = '<div class="mds-plan-pricing">';
         if ($comparePrice !== null && $comparePrice !== '') {
@@ -2538,7 +2976,16 @@ class Extensions {
             $featuresHtml .= '</ul>';
         }
 
-        $button = self::render_plan_action_markup($plan_key, $extension_id, $nonce, $current_plan_key, $plan_relations, $plan_order);
+        $button = self::render_plan_action_markup(
+            $plan_key,
+            $extension_id,
+            $nonce,
+            $current_plan_key,
+            $plan_relations,
+            $plan_order,
+            '',
+            self::get_plan_label($plan_key)
+        );
         if ($button === '') {
             return '';
         }
@@ -2616,7 +3063,16 @@ class Extensions {
             return '';
         }
 
-        $button = self::render_plan_action_markup($plan_key, $extension_id, $nonce, $current_plan_key, $plan_relations, $plan_order);
+        $button = self::render_plan_action_markup(
+            $plan_key,
+            $extension_id,
+            $nonce,
+            $current_plan_key,
+            $plan_relations,
+            $plan_order,
+            '',
+            self::get_plan_label($plan_key)
+        );
         if ($button === '') {
             return '';
         }
@@ -2992,7 +3448,9 @@ class Extensions {
         string $nonce,
         ?string $current_plan_key,
         array $plan_relations,
-        array $plan_order
+        array $plan_order,
+        string $price_id = '',
+        string $display_label = ''
     ): string {
         $normalizedPlan = self::canonicalize_plan_key($plan_key);
         if ($normalizedPlan === '') {
@@ -3012,7 +3470,12 @@ class Extensions {
 
             $direction = self::compare_plan_positions($current, $normalizedPlan, $plan_order);
             $labelKey = $normalizedPlan !== '' ? $normalizedPlan : $plan_key;
-            $plan_label = self::get_plan_label($labelKey);
+            $base_label = self::get_plan_label($labelKey);
+            if ($display_label !== '' && strcasecmp($display_label, $base_label) !== 0) {
+                $plan_label = sprintf('%s (%s)', $display_label, $base_label);
+            } else {
+                $plan_label = $display_label !== '' ? $display_label : $base_label;
+            }
             if ($direction > 0) {
                 $text = sprintf(Language::get('Upgrade to %s'), $plan_label);
             } elseif ($direction < 0) {
@@ -3021,10 +3484,16 @@ class Extensions {
                 $text = sprintf(Language::get('Switch to %s'), $plan_label);
             }
         } else {
-            $text = Language::get('Choose plan');
+            $labelKey = $normalizedPlan !== '' ? $normalizedPlan : $plan_key;
+            $base_label = self::get_plan_label($labelKey);
+            $plan_label = $display_label !== '' ? $display_label : $base_label;
+            if ($display_label !== '' && strcasecmp($display_label, $base_label) !== 0) {
+                $plan_label = sprintf('%s (%s)', $display_label, $base_label);
+            }
+            $text = sprintf(Language::get('Choose %s'), $plan_label);
         }
 
-        return '<button class="button button-secondary mds-purchase-extension" data-extension-id="' . esc_attr($extension_id) . '" data-nonce="' . esc_attr($nonce) . '" data-plan="' . esc_attr($plan_key) . '">' . esc_html($text) . '</button>';
+        return '<button class="button button-secondary mds-purchase-extension" data-extension-id="' . esc_attr($extension_id) . '" data-nonce="' . esc_attr($nonce) . '" data-plan="' . esc_attr($plan_key) . '" data-price-id="' . esc_attr($price_id) . '">' . esc_html($text) . '</button>';
     }
 
     private static function is_plan_transition_allowed(string $current, string $target, array $plan_relations, array $plan_order): bool {
@@ -3115,7 +3584,16 @@ class Extensions {
         $cards = [];
         foreach ($plans as $plan) {
             $planKey = (string) $plan;
-            $action = self::render_plan_action_markup($planKey, $extension_id, $nonce, $current_plan_key, $plan_relations, $plan_order);
+            $action = self::render_plan_action_markup(
+                $planKey,
+                $extension_id,
+                $nonce,
+                $current_plan_key,
+                $plan_relations,
+                $plan_order,
+                '',
+                self::get_plan_label($planKey)
+            );
             if ($action === '') {
                 continue;
             }
@@ -3368,12 +3846,29 @@ class Extensions {
      *
      * @return array<int, string>
      */
-    private static function extract_plan_features(array $metadata, array $pricing_overview, string $plan_key): array {
+    private static function extract_plan_features(array $metadata, array $pricing_overview, string $plan_key, ?string $price_id = null): array {
+        if ($price_id !== null
+            && isset($metadata['plan_features_array_by_price'][$price_id])
+            && is_array($metadata['plan_features_array_by_price'][$price_id])
+        ) {
+            $items = array_map('trim', $metadata['plan_features_array_by_price'][$price_id]);
+            return array_values(array_filter($items, static function ($item) {
+                return $item !== '';
+            }));
+        }
+
         if (isset($metadata['plan_features_array'][$plan_key]) && is_array($metadata['plan_features_array'][$plan_key])) {
             $items = array_map('trim', $metadata['plan_features_array'][$plan_key]);
             return array_values(array_filter($items, static function ($item) {
                 return $item !== '';
             }));
+        }
+
+        if ($price_id !== null
+            && isset($metadata['plan_feature_map'][$price_id])
+            && is_string($metadata['plan_feature_map'][$price_id])
+        ) {
+            return self::parse_plan_features_to_array($metadata['plan_feature_map'][$price_id]);
         }
 
         if (isset($metadata['plan_features'][$plan_key]) && is_string($metadata['plan_features'][$plan_key])) {
@@ -4236,6 +4731,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
         $extension_id = isset($_POST['extension_id']) ? sanitize_text_field(wp_unslash($_POST['extension_id'])) : '';
         $plan_raw     = isset($_POST['plan']) ? sanitize_text_field(wp_unslash($_POST['plan'])) : '';
+        $price_raw    = isset($_POST['price_id']) ? sanitize_text_field(wp_unslash($_POST['price_id'])) : '';
 
         if (empty($extension_id)) {
             wp_send_json_error(['message' => Language::get('Extension ID is required.')], 400);
@@ -4245,6 +4741,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         // Constrain plan to allowed values; optional
         $allowed_plans = ['one_time', 'monthly', 'yearly'];
         $plan = in_array($plan_raw, $allowed_plans, true) ? $plan_raw : null;
+        $price_id = $price_raw !== '' ? $price_raw : null;
 
         try {
             // Reuse base resolution pattern from fetch_available_extensions()
@@ -4325,6 +4822,17 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
             }
 
+            $abs = static function ($url, $base) {
+                if (!is_string($url) || $url === '') {
+                    return null;
+                }
+                if (preg_match('#^https?://#i', $url)) {
+                    return $url;
+                }
+                $prefix = is_string($base) && $base !== '' ? rtrim($base, '/') : 'http://localhost:15346';
+                return $prefix . '/' . ltrim($url, '/');
+            };
+
             // Plan key mapping and selection priority
             $planKeyMap = [
                 'one_time' => 'oneTime',
@@ -4334,6 +4842,20 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
             $selected = null;
             $planKey = $plan && isset($planKeyMap[$plan]) ? $planKeyMap[$plan] : null;
+
+            if ($price_id && $planKey && isset($links['options'][$plan]) && is_array($links['options'][$plan])) {
+                foreach ($links['options'][$plan] as $option) {
+                    if (!is_array($option)) {
+                        continue;
+                    }
+                    if (isset($option['priceId']) && (string) $option['priceId'] === $price_id) {
+                        if (!empty($option['checkout'])) {
+                            $selected = $abs($option['checkout'], $working_base);
+                        }
+                        break;
+                    }
+                }
+            }
 
             if ($planKey && !empty($links[$planKey]) && is_string($links[$planKey])) {
                 $selected = $links[$planKey];
@@ -4356,18 +4878,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             }
 
             // Normalize to absolute URL
-            $abs = function ($url) use ($working_base) {
-                if (!is_string($url) || $url === '') {
-                    return null;
-                }
-                if (preg_match('#^https?://#i', $url)) {
-                    return $url;
-                }
-                $base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : 'http://localhost:15346';
-                return $base . '/' . ltrim($url, '/');
-            };
-
-            $absolute = $abs($selected);
+            $absolute = $abs($selected, $working_base);
             if (!$absolute) {
                 wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
             }

@@ -174,6 +174,22 @@
 		highlightPlanCard($card, false);
 	});
 
+	$(document).on('click', '.mds-plan-tab', function () {
+		const $tab = $(this);
+		const key = String($tab.data('plan-tab') || '').trim();
+		if (!key) {
+			return;
+		}
+		const $wrapper = $tab.closest('.mds-plan-tabs');
+		if (!$wrapper.length) {
+			return;
+		}
+		$wrapper.find('.mds-plan-tab').removeClass('is-active').attr('aria-selected', 'false');
+		$tab.addClass('is-active').attr('aria-selected', 'true');
+		$wrapper.find('.mds-plan-tabpanel').removeClass('is-active');
+		$wrapper.find('.mds-plan-tabpanel[data-plan-panel="' + key + '"]').addClass('is-active');
+	});
+
 	// Inline license reveal toggle for card layouts
 	$(document).on('click', '.mds-card-license-toggle', function (event) {
 		event.preventDefault();
@@ -736,20 +752,21 @@ $(document).on('click', '.mds-cancel-subscription', function(){
         .always(function(){ $btn.prop('disabled', false).text('Cancel auto-renew'); });
 });
 // Handle purchase extension button
-	$(document).on('click', '.mds-purchase-extension', function (e) {
-		e.preventDefault();
+$(document).on('click', '.mds-purchase-extension', function (e) {
+	e.preventDefault();
 
-		const $button = $(this);
-		if ($button.prop('disabled')) {
-			return;
-		}
+	const $button = $(this);
+	if ($button.prop('disabled')) {
+		return;
+	}
 
-		const extensionId = $button.data('extension-id');
-		const nonce = $button.data('nonce');
-		const plan = String($button.data('plan') || '').trim();
+	const extensionId = $button.data('extension-id');
+	const nonce = $button.data('nonce');
+	const plan = String($button.data('plan') || '').trim();
+	const priceId = String($button.data('price-id') || '').trim();
 
-		const $card = $button.closest('.mds-plan-card');
-		const $feedback = $card.find('.mds-plan-feedback');
+	const $card = $button.closest('.mds-plan-card');
+	const $feedback = $card.find('.mds-plan-feedback');
 
 		setPlanFeedback($feedback, '', '');
 
@@ -774,6 +791,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 				nonce: nonce,
 				extension_id: extensionId,
 				plan: plan,
+				price_id: priceId,
 			},
 			success: function (resp) {
 				if (resp && resp.success && resp.data && resp.data.checkout_url) {
