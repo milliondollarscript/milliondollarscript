@@ -4,27 +4,32 @@
  */
 
 ;(function ($) {
+	const AJAX_URL = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.ajax_url)
+		? String(MDS_EXTENSIONS_DATA.ajax_url)
+		: (typeof window.ajaxurl === 'string' ? window.ajaxurl : '');
+
 	$(function () {
 		"use strict";
-	// Ensure any notices that accidentally render inside the header are relocated
-	(function relocateHeaderNotices() {
-		try {
-			const $anchor = $('#mds-extensions-notices');
-			const $headerNotices = $('#mds-extensions-page .mds-extensions-header .notice');
-			if ($headerNotices.length) {
-				if ($anchor.length) {
-					$headerNotices.detach().appendTo($anchor);
-				} else {
-					const $avail = $('#mds-extensions-page .mds-extensions-container').first();
-					if ($avail.length) {
-						$headerNotices.detach().insertBefore($avail);
+
+		// Ensure any notices that accidentally render inside the header are relocated
+		(function relocateHeaderNotices() {
+			try {
+				const $anchor = $('#mds-extensions-notices');
+				const $headerNotices = $('#mds-extensions-page .mds-extensions-header .notice');
+				if ($headerNotices.length) {
+					if ($anchor.length) {
+						$headerNotices.detach().appendTo($anchor);
+					} else {
+						const $avail = $('#mds-extensions-page .mds-extensions-container').first();
+						if ($avail.length) {
+							$headerNotices.detach().insertBefore($avail);
+						}
 					}
 				}
-			}
-		} catch (e) { /* noop */ }
-	})();
+			} catch (e) { /* noop */ }
+		})();
 
-	// Enhanced notice system with better UX and non-animated injection
+		// Enhanced notice system with better UX and non-animated injection
 	function showNotice(type, message, autoHide = true) {
 		const noticeClass = type === "error" ? "notice-error" : (type === "warning" ? "notice-warning" : "notice-success");
 		const icon = type === "error" ? "❌" : (type === "warning" ? "⚠️" : "✅");
@@ -95,6 +100,35 @@
 
 	function escapeHtml(value) {
 		return $('<div>').text(value == null ? '' : String(value)).html();
+	}
+
+	function resolveRemoveContext($btn) {
+		let slug = $btn.attr('data-extension-slug') || $btn.data('extensionSlug') || '';
+		let nonce = $btn.attr('data-nonce') || $btn.data('nonce') || '';
+
+		const $form = $btn.closest('.mds-license-form');
+		if ($form.length) {
+			slug = slug || $form.data('extension-slug');
+			nonce = nonce || $form.find('input[name="nonce"]').val();
+		}
+
+		const $inline = $btn.closest('.mds-inline-license');
+		if ($inline.length) {
+			slug = slug || $inline.data('extension-slug');
+			nonce = nonce || $inline.data('licenseNonce');
+		}
+
+		if (!slug) {
+			const $context = $btn.closest('[data-extension-slug]');
+			if ($context.length) {
+				slug = $context.data('extension-slug') || '';
+			}
+		}
+
+		return {
+			slug: slug ? String(slug) : '',
+			nonce: nonce ? String(nonce) : ''
+		};
 	}
 
 	function setPlanFeedback($container, message = '', type = '') {
@@ -298,7 +332,7 @@
 		setButtonLoading($button, 'Checking...');
 
 		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
+			url: AJAX_URL,
 			type: "POST",
 			data: {
 				action: "mds_check_extension_updates",
@@ -345,7 +379,7 @@
 		setButtonLoading($button, 'Updating...');
 
 		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
+			url: AJAX_URL,
 			type: "POST",
 			data: {
 				action: "mds_install_extension_update",
@@ -403,7 +437,7 @@
 		setButtonLoading($button, 'Installing...');
 
 		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
+			url: AJAX_URL,
 			type: "POST",
 			data: {
 				action: "mds_install_extension",
@@ -445,7 +479,7 @@
 		setButtonLoading($button, (MDS_EXTENSIONS_DATA.i18n?.activating || 'Activating...'));
 
 		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
+			url: AJAX_URL,
 			type: "POST",
 			data: {
 				action: "mds_activate_extension",
@@ -600,7 +634,7 @@ $(document).on('click', '.mds-manage-subscription', function(){
     $loading.show();
     $overlay.css('display','flex');
 
-    $.post(MDS_EXTENSIONS_DATA.ajax_url, { action: 'mds_get_subscription', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug })
+    $.post(AJAX_URL, { action: 'mds_get_subscription', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug })
         .done(function(resp){
             if (!resp || !resp.success || !resp.data) {
                 $error.text((resp && resp.data && resp.data.message) || 'Could not load subscription.').show();
@@ -672,7 +706,7 @@ $(document).on('click', '.mds-apply-plan', function(){
     const plan = $btn.data('plan');
     if (!slug || !plan) return;
     $btn.prop('disabled', true).text('Applying…');
-    $.post(MDS_EXTENSIONS_DATA.ajax_url, { action: 'mds_change_subscription_plan', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug, plan: plan })
+    $.post(AJAX_URL, { action: 'mds_change_subscription_plan', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug, plan: plan })
         .done(function(resp){
             if (resp && resp.success) {
                 showNotice('success', (resp.data && resp.data.message) || 'Plan changed.');
@@ -689,7 +723,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
     if (!confirm('Cancel automatic renewal for this subscription?')) return;
     const $btn = $(this).prop('disabled', true).text('Canceling…');
     const slug = $btn.data('extension-slug');
-    $.post(MDS_EXTENSIONS_DATA.ajax_url, { action: 'mds_cancel_subscription', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug })
+    $.post(AJAX_URL, { action: 'mds_cancel_subscription', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug })
         .done(function(resp){
             if (resp && resp.success) {
                 showNotice('success', (resp.data && resp.data.message) || 'Auto-renew canceled.');
@@ -732,7 +766,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 		setButtonLoading($button, getText('processing_plan', 'Processing…'));
 
 		$.ajax({
-			url: MDS_EXTENSIONS_DATA.ajax_url,
+			url: AJAX_URL,
 			type: 'POST',
 			dataType: 'json',
 			data: {
@@ -780,7 +814,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 					showNotice('success', 'Finalizing your purchase (claiming license)...', false);
 				}
 				$.ajax({
-					url: MDS_EXTENSIONS_DATA.ajax_url,
+					url: AJAX_URL,
 					type: 'POST',
 					data: {
 						action: 'mds_claim_license',
@@ -827,7 +861,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 
 		const proceed = () => {
 			setButtonLoading($button, 'Activating...');
-			$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+			$.post(AJAX_URL, {
 			action: 'mds_activate_license',
 			extension_slug: extension_slug,
 			license_key: license_key,
@@ -848,7 +882,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 			});
 		};
 		if (!license_key) {
-			$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+			$.post(AJAX_URL, {
 				action: 'mds_get_license_plaintext',
 				nonce: MDS_EXTENSIONS_DATA.nonce,
 				extension_slug: extension_slug,
@@ -872,7 +906,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 
 		setButtonLoading($button, 'Deactivating...');
 
-		$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+		$.post(AJAX_URL, {
 			action: 'mds_deactivate_license',
 			extension_slug: extension_slug,
 			nonce: nonce,
@@ -894,21 +928,14 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 	$(document).on('click', '.mds-remove-license, .mds-inline-license-remove', function (e) {
 		e.preventDefault();
 		const $btn = $(this);
+
 		if (!confirm(getText('confirm_remove_license', 'Remove the stored license for this extension?'))) {
 			return;
 		}
 
-		let extensionSlug = '';
-		let nonce = '';
-		const $form = $btn.closest('.mds-license-form');
-		if ($form.length) {
-			extensionSlug = $form.data('extension-slug');
-			nonce = $form.find('input[name="nonce"]').val();
-		} else {
-			const $inline = $btn.closest('.mds-inline-license');
-			extensionSlug = $inline.data('extension-slug');
-			nonce = $btn.data('nonce') || $inline.data('licenseNonce');
-		}
+		const context = resolveRemoveContext($btn);
+		const extensionSlug = context.slug;
+		const nonce = context.nonce;
 
 		if (!extensionSlug || !nonce) {
 			showNotice('error', getText('license_context_missing', 'Unable to locate license context.'), false);
@@ -923,7 +950,7 @@ $(document).on('click', '.mds-cancel-subscription', function(){
 			setButtonLoading($btn, getText('removing_license', 'Removing…'));
 		}
 
-		$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+		$.post(AJAX_URL, {
 			action: 'mds_delete_license',
 			extension_slug: extensionSlug,
 			nonce: nonce,
@@ -960,7 +987,7 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
     if (!slug) { showNotice('error', 'Missing extension identifier.', false); return; }
     if (!key) { showNotice('warning', 'Please enter a license key.', false); return; }
     setButtonLoading($btn, 'Activating...');
-    $.post(MDS_EXTENSIONS_DATA.ajax_url, {
+    $.post(AJAX_URL, {
         action: 'mds_available_activate_license',
         nonce: MDS_EXTENSIONS_DATA.nonce,
         extension_slug: slug,
@@ -989,7 +1016,7 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
 		if ($input.attr('type') === 'password') {
 			// If installed license input is empty, attempt to fetch plaintext for convenience
 			if (!$input.val()) {
-				$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+				$.post(AJAX_URL, {
 					action: 'mds_get_license_plaintext',
 					nonce: MDS_EXTENSIONS_DATA.nonce,
 					extension_slug: extSlug,
@@ -1064,7 +1091,7 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
 		}
 		const $btn = $(this);
 		setButtonLoading($btn, 'Validating...');
-		$.post(MDS_EXTENSIONS_DATA.ajax_url, {
+		$.post(AJAX_URL, {
 			action: 'mds_available_activate_license',
 			nonce: MDS_EXTENSIONS_DATA.nonce,
 			extension_slug: extSlug,

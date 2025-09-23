@@ -71,6 +71,8 @@ class Shortcode {
 			return '';
 		}
 
+		$provided_atts = is_array( $atts ) ? $atts : [];
+
 		$atts = shortcode_atts(
 			self::defaults(),
 			$atts,
@@ -78,6 +80,9 @@ class Shortcode {
 		);
 
 		$atts = Functions::maybe_set_dimensions( $atts );
+
+		$explicit_id = array_key_exists( 'id', $provided_atts );
+		$list_show_all = ( 'list' === strtolower( (string) $atts['type'] ) ) && ! $explicit_id;
 
 		$container_id = uniqid( sanitize_title( $atts['type'] ) . '-' );
 
@@ -102,12 +107,14 @@ class Shortcode {
 
 		// Add inline function call to each MDS iframe in the AJAX response
 		$mds_data = array(
-			'type'         => $mds_params['mds_type'],
-			'container_id' => $mds_params['mds_container_id'],
-			'align'        => $atts['align'],
-			'width'        => $mds_params['mds_width'],
-			'height'       => $mds_params['mds_height'],
-			'id'           => $atts['id']
+			'type'           => $mds_params['mds_type'],
+			'container_id'   => $mds_params['mds_container_id'],
+			'align'          => $atts['align'],
+			'width'          => $mds_params['mds_width'],
+			'height'         => $mds_params['mds_height'],
+			'id'             => $atts['id'],
+			'list_show_all'  => $list_show_all,
+			'explicit_id'    => $explicit_id,
 		);
 
 		// mds_shortcode action

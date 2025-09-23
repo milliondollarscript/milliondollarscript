@@ -737,6 +737,22 @@ html.dark .mds-card-title-version {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.mds-inline-license-actions .mds-inline-license-remove {
+    margin-left: auto;
+}
+
+.mds-license-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.mds-license-actions .mds-remove-license {
+    margin-left: auto;
 }
 
 .mds-inline-license .mds-inline-license-key,

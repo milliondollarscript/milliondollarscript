@@ -775,6 +775,10 @@ class WooCommerceFunctions {
 
 		$order = \wc_get_order( $id );
 
+		if ( ! ( $order instanceof \WC_Order ) ) {
+			return false;
+		}
+
 		$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
 
 		if ( $mds_order_id == null ) {
@@ -828,6 +832,10 @@ class WooCommerceFunctions {
 	public static function is_mds_order( $id ): bool {
 
 		$order = \wc_get_order( $id );
+
+		if ( ! ( $order instanceof \WC_Order ) ) {
+			return false;
+		}
 
 		// Check if there is an MDS item in the order
 		foreach ( $order->get_items() as $item ) {

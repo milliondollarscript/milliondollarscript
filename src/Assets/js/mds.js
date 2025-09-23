@@ -278,6 +278,7 @@ function mds_load_ajax() {
 						mds_data.width,
 						mds_data.height,
 						mds_data.id,
+						mds_data,
 					);
 				}
 			}
@@ -844,6 +845,7 @@ window.mds_ajax = function (
 	mds_width,
 	mds_height,
 	grid_id,
+	options,
 ) {
 	var container = jQuery("#" + mds_container_id);
 
@@ -865,6 +867,17 @@ window.mds_ajax = function (
 	if (container.length > 0) {
 		add_ajax_loader(container);
 
+		const opts = options || {};
+		const listShowAll = Boolean(opts.list_show_all);
+		const explicitId = Boolean(opts.explicit_id);
+		let requestBid = typeof grid_id !== "undefined" && grid_id !== null ? grid_id : opts.id;
+		if (requestBid === undefined || requestBid === null || requestBid === "") {
+			requestBid = 0;
+		}
+		if (listShowAll && !explicitId) {
+			requestBid = 0;
+		}
+
 		// strip "json" parameter from URL
 		const url = new URL(window.location);
 		const params = new URLSearchParams(url.search);
@@ -875,17 +888,31 @@ window.mds_ajax = function (
 			window.history.replaceState({}, "", url.toString());
 		}
 
+		const requestData = {
+			BID: requestBid,
+			action: "mds_ajax",
+			type: mds_type,
+			mds_nonce: MDS.mds_nonce,
+			get_params: JSON.stringify(
+				Object.fromEntries(new URLSearchParams(window.location.search)),
+			),
+		};
+
+		if (Object.prototype.hasOwnProperty.call(opts, "id")) {
+			requestData.mds_shortcode_id = opts.id;
+		}
+
+		if (listShowAll) {
+			requestData.mds_list_show_all = "1";
+		}
+
+		if (explicitId) {
+			requestData.mds_explicit_id = "1";
+		}
+
 		window.mds_ajax_request = jQuery.ajax({
 			url: MDS.ajaxurl,
-			data: {
-				BID: grid_id,
-				action: "mds_ajax",
-				type: mds_type,
-				mds_nonce: MDS.mds_nonce,
-				get_params: JSON.stringify(
-					Object.fromEntries(new URLSearchParams(window.location.search)),
-				),
-			},
+			data: requestData,
 			type: "POST",
 			dataType: "html",
 			success: function (data) {
@@ -1034,6 +1061,7 @@ function mds_load_ajax() {
 						mds_data.width,
 						mds_data.height,
 						mds_data.id,
+						mds_data,
 					);
 				}
 			}

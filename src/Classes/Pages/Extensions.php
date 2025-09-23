@@ -204,12 +204,13 @@ class Extensions {
             'manage_options',
             'mds-extensions',
             [__CLASS__, 'render'],
-            30
+            99
         );
 
         if ( $hook_suffix ) {
             $registered = true;
             add_action( "admin_print_styles-$hook_suffix", [ self::class, 'enqueue_assets' ] );
+            add_action( 'admin_head', [ self::class, 'print_admin_menu_styles' ] );
         }
         // Late hook to normalize/deduplicate submenu entries
         add_action( 'admin_menu', [ self::class, 'dedupe_submenu' ], 999 );
@@ -683,12 +684,15 @@ class Extensions {
                                 <?php $license_nonce = wp_create_nonce( 'mds_license_nonce_' . $slug_val ); ?>
                                 <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr($slug_val); ?>" data-license-nonce="<?php echo esc_attr( $license_nonce ); ?>">
                                     <div class="mds-inline-license-row">
-                                        <input type="password" class="regular-text mds-inline-license-key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>">
+                                        <input type="password" class="regular-text mds-inline-license-key" name="license_key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>">
                                     </div>
                                     <div class="mds-inline-license-actions">
                                         <button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="<?php echo esc_attr( $nonce ); ?>"><?php echo esc_html( Language::get('Activate') ); ?></button>
-                                        <button type="button" class="button-link mds-inline-license-remove" data-nonce="<?php echo esc_attr( $license_nonce ); ?>"><?php echo esc_html( Language::get('Remove') ); ?></button>
                                         <button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="Show"><span class="dashicons dashicons-hidden"></span></button>
+                                        <button type="button"
+                                                class="button-link mds-remove-license mds-inline-license-remove"
+                                                data-extension-slug="<?php echo esc_attr($slug_val); ?>"
+                                                data-nonce="<?php echo esc_attr( $license_nonce ); ?>"><?php echo esc_html( Language::get('Remove') ); ?></button>
                                     </div>
                                 </div>
                             </td>
@@ -1027,6 +1031,7 @@ class Extensions {
         }
         $filtered = [];
         $seenMdsExt = false;
+        $extensionsItem = null;
         foreach ($submenu[$parent] as $item) {
             $slug = isset($item[2]) ? (string) $item[2] : '';
             // Prefer index 3 (page title) per WP structure; fall back to index 0 (menu title)
@@ -1044,7 +1049,7 @@ class Extensions {
                     continue;
                 }
                 $seenMdsExt = true;
-                $filtered[] = $item;
+                $extensionsItem = $item;
                 continue;
             }
             // If another entry uses the same label "MDS Extensions" or "Extensions" but a different slug, drop it
@@ -1053,7 +1058,65 @@ class Extensions {
             }
             $filtered[] = $item;
         }
+        if ($extensionsItem !== null) {
+            $filtered[] = $extensionsItem;
+        }
         $submenu[$parent] = $filtered;
+    }
+
+    /**
+     * Inject admin menu styling to highlight the Extensions entry.
+     */
+    public static function print_admin_menu_styles(): void {
+        if (!is_admin() || !current_user_can('manage_options')) {
+            return;
+        }
+
+        static $printed = false;
+        if ($printed) {
+            return;
+        }
+        $printed = true;
+        ?>
+        <style id="mds-extensions-admin-menu-button">
+            #adminmenu #toplevel_page_milliondollarscript ul.wp-submenu a[href*="page=mds-extensions"] {
+                display: block;
+                margin: 8px 12px 12px;
+                padding: 10px 16px;
+                border-radius: 6px;
+                background: #ff6b35;
+                color: #1d2327;
+                font-weight: 600;
+                font-size: 14px;
+                line-height: 1.4;
+                text-align: center;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+                text-decoration: none;
+                white-space: normal;
+            }
+
+            #adminmenu #toplevel_page_milliondollarscript ul.wp-submenu li.current a[href*="page=mds-extensions"] {
+                background: #ff8a45;
+                color: #1d2327;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            }
+
+            #adminmenu #toplevel_page_milliondollarscript ul.wp-submenu a[href*="page=mds-extensions"]:hover,
+            #adminmenu #toplevel_page_milliondollarscript ul.wp-submenu a[href*="page=mds-extensions"]:focus,
+            #adminmenu #toplevel_page_milliondollarscript ul.wp-submenu a[href*="page=mds-extensions"]:active {
+                background: #00c896 !important;
+                color: #1d2327 !important;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2) !important;
+                transform: translateY(-1px);
+            }
+
+            #adminmenu #toplevel_page_milliondollarscript ul.wp-submenu a[href*="page=mds-extensions"]:focus-visible {
+                outline: 2px solid #1d2327;
+                outline-offset: 0;
+            }
+        </style>
+        <?php
     }
     
     /**
@@ -2057,10 +2120,13 @@ class Extensions {
 
         $summary_html = implode('', $chips);
 
+        $has_local_license = !empty($local_license);
         $license_panel_id = '';
+        $license_input_id = '';
         if ($is_premium) {
             $normalized_slug = $slug !== '' ? sanitize_title($slug) : sanitize_title(uniqid('mds')); // ensure unique id
             $license_panel_id = 'mds-card-license-' . $normalized_slug;
+            $license_input_id = $license_panel_id . '-key';
         }
 
         $pricing_overview = is_array($extension['pricing_overview'] ?? null) ? $extension['pricing_overview'] : [];
@@ -2123,14 +2189,16 @@ class Extensions {
                 . '<div id="' . esc_attr($license_panel_id) . '" class="mds-card-license mds-card-license-popover is-collapsed" aria-hidden="true" hidden>'
                     . '<div class="mds-inline-license" data-extension-slug="' . esc_attr($slug) . '" data-license-nonce="' . esc_attr($license_nonce) . '">'
                         . '<div class="mds-inline-license-row">'
-                            . '<input type="password" class="regular-text mds-inline-license-key" placeholder="' . esc_attr(Language::get('Enter license key')) . '">' 
+                            . '<input type="password" id="' . esc_attr($license_input_id !== '' ? $license_input_id : 'mds-license-key-' . sanitize_title(uniqid('mds'))) . '" name="license_key" class="regular-text mds-inline-license-key" placeholder="' . esc_attr(Language::get('Enter license key')) . '">' 
                         . '</div>'
                         . '<div class="mds-inline-license-actions">'
                             . '<button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="' . esc_attr($nonce) . '">' . esc_html(Language::get('Activate')) . '</button>'
-                            . '<button type="button" class="button-link mds-inline-license-remove" data-nonce="' . esc_attr($license_nonce) . '">' . esc_html(Language::get('Remove')) . '</button>'
                             . '<button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="' . esc_attr(Language::get('Show license key')) . '">'
                                 . '<span class="dashicons dashicons-hidden"></span>'
                             . '</button>'
+                            . ($has_local_license
+                                ? '<button type="button" class="button-link mds-remove-license mds-inline-license-remove" data-extension-slug="' . esc_attr($slug) . '" data-nonce="' . esc_attr($license_nonce) . '">' . esc_html(Language::get('Remove')) . '</button>'
+                                : '' )
                         . '</div>'
                     . '</div>'
                 . '</div>'
@@ -4323,13 +4391,18 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             <input type="hidden" name="nonce" value="<?php echo esc_attr( $nonce ); ?>">
 
             <?php if ( $license && $license->status === 'active' ) : ?>
-                <span class="mds-license-status-active"><?php echo esc_html( Language::get('Active') ); ?></span>
-                <button type="button" class="button button-secondary mds-deactivate-license">
-                    <?php echo esc_html( Language::get('Deactivate') ); ?>
-                </button>
-                <button type="button" class="button-link mds-remove-license">
-                    <?php echo esc_html( Language::get('Remove') ); ?>
-                </button>
+                <div class="mds-license-actions mds-license-actions--active">
+                    <span class="mds-license-status-active"><?php echo esc_html( Language::get('Active') ); ?></span>
+                    <button type="button" class="button button-secondary mds-deactivate-license">
+                        <?php echo esc_html( Language::get('Deactivate') ); ?>
+                    </button>
+                    <button type="button"
+                            class="button-link mds-remove-license mds-inline-license-remove"
+                            data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>"
+                            data-nonce="<?php echo esc_attr( $nonce ); ?>">
+                        <?php echo esc_html( Language::get('Remove') ); ?>
+                    </button>
+                </div>
             <?php else : ?>
                 <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>" data-license-nonce="<?php echo esc_attr( $nonce ); ?>">
                     <div class="mds-inline-license-row">
@@ -4339,14 +4412,17 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                         <button type="button" class="button button-primary mds-activate-license">
                             <?php echo esc_html( Language::get('Activate') ); ?>
                         </button>
-                        <?php if ( $license ) : ?>
-                            <button type="button" class="button-link mds-remove-license">
-                                <?php echo esc_html( Language::get('Remove') ); ?>
-                            </button>
-                        <?php endif; ?>
                         <button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="Show">
                             <span class="dashicons dashicons-hidden"></span>
                         </button>
+                        <?php if ( $license ) : ?>
+                            <button type="button"
+                                    class="button-link mds-remove-license mds-inline-license-remove"
+                                    data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>"
+                                    data-nonce="<?php echo esc_attr( $nonce ); ?>">
+                                <?php echo esc_html( Language::get('Remove') ); ?>
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endif; ?>

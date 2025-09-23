@@ -38,6 +38,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\Web\Permalinks;
 use WP_Error;
 
 defined( 'ABSPATH' ) or exit;
@@ -47,6 +48,7 @@ class FormFields {
 	public static string $post_type = 'mds-pixel';
 	protected static array $fields;
 	protected static array $searchable_meta_keys = [];
+	protected static bool $editor_assets_enqueued = false;
 
 	public static function register_post_type(): void {
 		register_post_type( self::$post_type,
@@ -59,7 +61,7 @@ class FormFields {
 				'has_archive'         => false,
 				'searchable'          => true,
 				'exclude_from_search' => false,
-'rewrite'             => array( 'slug' => \MillionDollarScript\Classes\Web\Permalinks::get_base() ),
+				'rewrite'             => array( 'slug' => Permalinks::get_base() ),
 			)
 		);
 	}
@@ -118,6 +120,22 @@ class FormFields {
 	}
 
 	public static function get_fields(): array {
+		$use_rich_text = Options::get_option( 'popup-rich-text', 'no' ) === 'yes';
+
+		$text_field = $use_rich_text
+			? Field::make( 'rich_text', MDS_PREFIX . 'text', Language::get( 'Popup Text' ) )
+				->set_default_value( '' )
+				->set_help_text( Language::get( 'Text to display in the popup that shows when the block is interacted with.' ) )
+				->set_settings( [
+					'toolbar'        => 'bold italic removeformat',
+					'media_buttons'  => false,
+					'quicktags'      => false,
+					'drag_drop_upload' => false,
+				] )
+			: Field::make( 'text', MDS_PREFIX . 'text', Language::get( 'Popup Text' ) )
+				->set_default_value( '' )
+				->set_help_text( Language::get( 'Text to display in the popup that shows when the block is interacted with.' ) );
+
 		$fields = [
 			// Order ID
 			Field::make( 'text', MDS_PREFIX . 'order', Language::get( 'Order ID' ) )
@@ -128,9 +146,7 @@ class FormFields {
 			     ->set_attribute( 'readOnly', true ),
 
 			// Text
-			Field::make( 'text', MDS_PREFIX . 'text', Language::get( 'Popup Text' ) )
-			     ->set_default_value( '' )
-			     ->set_help_text( Language::get( 'Text to display in the popup that shows when the block is interacted with.' ) ),
+			$text_field,
 
 			// URL
 			Field::make( 'text', MDS_PREFIX . 'url', Language::get( 'URL' ) )
@@ -182,6 +198,10 @@ class FormFields {
 	 */
 	public static function display_fields(): bool {
 		$post_id = 0;
+		$use_rich_text = Options::get_option( 'popup-rich-text', 'no' ) === 'yes';
+		if ( $use_rich_text ) {
+			self::enqueue_frontend_editor_assets();
+		}
 		if ( isset( $_REQUEST['aid'] ) ) {
 			$post = get_post( $_REQUEST['aid'] );
 			if ( $post != null ) {
@@ -242,9 +262,14 @@ class FormFields {
 
 			$value = "";
 
-			if ( $field->get_type() === 'text' ) {
+			$field_type = $field->get_type();
+			if ( $field_type === 'text' ) {
 				if ( ! empty( $post_id ) ) {
 					$value = carbon_get_post_meta( $post_id, $field_name );
+				}
+
+				if ( $field_name === MDS_PREFIX . 'text' ) {
+					$value = self::sanitize_plain_text_value( (string) $value, $field_name );
 				}
 
 				if ( $field_name == MDS_PREFIX . 'order' ) {
@@ -256,6 +281,31 @@ class FormFields {
 				} else {
 					echo '<input type="text" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( $value ) . '">';
 				}
+			} else if ( $field_type === 'rich_text' ) {
+				if ( ! empty( $post_id ) ) {
+					$value = carbon_get_post_meta( $post_id, $field_name );
+				}
+
+				$editor_settings = [
+					'tinymce' => [
+						'toolbar1'              => 'bold italic | removeformat',
+						'toolbar2'              => '',
+						'menubar'               => false,
+						'statusbar'             => false,
+						'branding'              => false,
+						'paste_as_text'         => true,
+						'block_formats'         => 'Paragraph=p;',
+						'forced_root_block'     => 'p',
+						'valid_elements'        => 'p,strong/b,em/i,br',
+						'valid_children'        => '+body[p]',
+						'extended_valid_elements'=> 'p,strong/b,em/i,br',
+						'content_style'        => 'body{margin:0;padding:8px;font-size:14px;line-height:1.4;}',
+					],
+					'quicktags' => false,
+				];
+
+				echo '<textarea class="mds-popup-rich-text" id="' . esc_attr( $field_name ) . '" name="' . esc_attr( $field_name ) . '" rows="6">' . esc_textarea( $value ) . '</textarea>';
+				self::print_rich_text_initializer( $field_name, $editor_settings );
 			} else if ( $field->get_type() === 'image' ) {
 				if ( ! empty( $post_id ) ) {
 					$image_id = carbon_get_post_meta( $post_id, $field_name );
@@ -418,10 +468,7 @@ class FormFields {
 						$post_id = wp_insert_post( $post_data );
 						// Apply configured slug pattern immediately after creation
 						if ( ! is_wp_error( $post_id ) && $post_id ) {
-							$slug = \MillionDollarScript\Classes\Web\Permalinks::build_slug_for_post( (int) $post_id );
-							if ( ! empty( $slug ) ) {
-								wp_update_post( [ 'ID' => $post_id, 'post_name' => $slug ] );
-							}
+							Permalinks::sync_post_slug( (int) $post_id );
 						}
 					}
 				}
@@ -440,7 +487,8 @@ class FormFields {
 				}
 
 				if ( isset( $_POST[ $field_name ] ) || isset( $_FILES[ $field_name ] ) ) {
-					if ( $field->get_type() === 'text' ) {
+					$field_type = $field->get_type();
+					if ( in_array( $field_type, [ 'text', 'textarea', 'rich_text' ], true ) ) {
 						if ( ! empty( $value ) ) {
 
 							// If post already has an order and grid don't set them again.
@@ -489,7 +537,13 @@ class FormFields {
 						if ( $field_name != MDS_PREFIX . 'order' && $field_name != MDS_PREFIX . 'grid' ) {
 							// Update other fields besides order and grid if it's new or not.
 							if ( is_string( $value ) ) {
-								$value = sanitize_text_field( $value );
+								$raw_value = $value;
+								if ( $field_type === 'rich_text' ) {
+									$value = self::sanitize_rich_text_value( $value );
+								} else {
+									$value = self::sanitize_plain_text_value( $value, $field_name );
+								}
+								$value = self::filter_field_value( $field_name, $value, $field_type, (int) $post_id, $raw_value );
 							}
 							carbon_set_post_meta( $post_id, $field_name, $value );
 							}
@@ -642,6 +696,14 @@ class FormFields {
 			}
 
 			if ( empty( $errors ) ) {
+				if ( ! is_wp_error( $post_id ) ) {
+					$resolved_title = $post_title !== '' ? $post_title : $current_user->user_login;
+					wp_update_post( [
+						'ID'         => $post_id,
+						'post_title' => $resolved_title,
+					] );
+					Permalinks::sync_post_slug( (int) $post_id );
+				}
 				return $post_id;
 			}
 		}
@@ -1336,6 +1398,82 @@ class FormFields {
 		return self::$searchable_meta_keys;
 	}
 
+	protected static function filter_field_value( string $field_name, string $value, string $field_type, int $post_id, string $raw_value ): string {
+		$value = apply_filters( 'mds_form_field_sanitize', $value, $field_name, $field_type, $post_id, $raw_value );
+		$field_key = self::normalize_field_filter_key( $field_name );
+		$value = apply_filters( 'mds_form_field_sanitize_' . $field_key, $value, $field_name, $field_type, $post_id, $raw_value );
+
+		return $value;
+	}
+
+	public static function sanitize_rich_text_value( string $value ): string {
+		$allowed = self::get_allowed_rich_text_tags();
+		$sanitized = wp_kses( $value, $allowed );
+
+		return trim( $sanitized );
+	}
+
+	public static function sanitize_plain_text_value( string $value, string $field_name = '' ): string {
+		$value = wp_unslash( $value );
+		$value = wp_specialchars_decode( $value, ENT_QUOTES );
+		$value = wp_strip_all_tags( $value, true );
+		$value = preg_replace( '/\s+/u', ' ', $value );
+		$value = trim( $value );
+
+		return (string) apply_filters( 'mds_plain_text_value', $value, $field_name );
+	}
+
+	protected static function get_allowed_rich_text_tags(): array {
+		$allowed = [
+			'p'      => [],
+			'br'     => [],
+			'strong' => [],
+			'em'     => [],
+			'b'      => [],
+			'i'      => [],
+		];
+
+		return apply_filters( 'mds_rich_text_allowed_tags', $allowed );
+	}
+
+	protected static function print_rich_text_initializer( string $field_name, array $settings ): void {
+		$settings = apply_filters( 'mds_rich_text_editor_settings', $settings, $field_name );
+		$settings_json = wp_json_encode( $settings );
+		$field_id = esc_js( $field_name );
+		?>
+		<script>
+		(function(){
+			function initMdsEditor() {
+				if ( typeof wp === 'undefined' || ! wp.editor || ! wp.editor.initialize ) {
+					return;
+				}
+				try {
+					if ( wp.editor.get && wp.editor.get('<?php echo $field_id; ?>') ) {
+						wp.editor.remove('<?php echo $field_id; ?>');
+					}
+					wp.editor.initialize('<?php echo $field_id; ?>', <?php echo $settings_json; ?>);
+				} catch (e) {
+					console.error('MDS editor init failed', e);
+				}
+			}
+			if ( document.readyState === 'complete' || document.readyState === 'interactive' ) {
+				setTimeout(initMdsEditor, 0);
+			} else {
+				document.addEventListener('DOMContentLoaded', initMdsEditor);
+			}
+		})();
+		</script>
+		<?php
+	}
+
+	protected static function normalize_field_filter_key( string $field_name ): string {
+		$key = preg_replace( '/^' . preg_quote( MDS_PREFIX, '/' ) . '/', '', $field_name );
+		$key = preg_replace( '/[^a-z0-9_]+/i', '_', (string) $key );
+		$key = trim( (string) $key, '_' );
+
+		return $key !== '' ? strtolower( $key ) : 'field';
+	}
+
 	protected static function normalize_raw_input( $value ): string {
 		if ( ! is_string( $value ) ) {
 			return '';
@@ -1369,4 +1507,29 @@ class FormFields {
 
 		return $variants;
 	}
+
+	public static function enqueue_frontend_editor_assets(): void {
+		if ( self::$editor_assets_enqueued ) {
+			return;
+		}
+		if ( Options::get_option( 'popup-rich-text', 'no' ) !== 'yes' ) {
+			return;
+		}
+		if ( ! function_exists( 'wp_enqueue_editor' ) ) {
+			return;
+		}
+
+		self::$editor_assets_enqueued = true;
+
+		wp_enqueue_editor();
+		wp_enqueue_script( 'jquery' );
+		wp_enqueue_script( 'editor' );
+		wp_enqueue_script( 'quicktags' );
+		wp_enqueue_style( 'editor-buttons' );
+		wp_enqueue_style( 'dashicons' );
+	}
+}
+
+if ( ! \is_admin() ) {
+	\add_action( 'wp_enqueue_scripts', [ FormFields::class, 'enqueue_frontend_editor_assets' ] );
 }
