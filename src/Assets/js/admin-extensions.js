@@ -367,12 +367,36 @@ function sanitizeFeatureHtml(value) {
 				$row.find('.mds-license-required-note').remove();
 			}
 
+			function truthyFlag(val) {
+				if (typeof val === 'boolean') {
+					return val;
+				}
+				if (typeof val === 'number') {
+					return val !== 0;
+				}
+				if (typeof val === 'string') {
+					const normalized = val.trim().toLowerCase();
+					return normalized === 'true' || normalized === '1' || normalized === 'yes';
+				}
+				return !!val;
+			}
+
+			function rowHasLocalPurchase($row) {
+				return truthyFlag($row.data('purchased'))
+					|| truthyFlag($row.data('purchasedLocally'))
+					|| truthyFlag($row.data('hasLocalLicense'));
+			}
+
 			if (!$premiumRows.length) return;
 
 			// If we don't have a license key localized, trust the server-rendered row state
 			if (!licenseKey) {
 				$premiumRows.each(function () {
 					const $row = $(this);
+					if (rowHasLocalPurchase($row)) {
+						enableInstall($row);
+						return;
+					}
 					const licensed = String($row.data('is-licensed') || '').toLowerCase() === 'true';
 					if (licensed) {
 						enableInstall($row);
@@ -388,6 +412,10 @@ function sanitizeFeatureHtml(value) {
 			function next(i) {
 				if (i >= rows.length) return;
 				const $row = $(rows[i]);
+				if (rowHasLocalPurchase($row)) {
+					enableInstall($row);
+					return next(i + 1);
+				}
 				const extensionId = $row.data('extension-id');
 
 				disableInstall($row, 'Validating license...');
@@ -427,6 +455,10 @@ function sanitizeFeatureHtml(value) {
 				return !$(this).attr('data-plugin-file');
 			}).each(function () {
 				const $row = $(this);
+				if (rowHasLocalPurchase($row)) {
+					enableInstall($row);
+					return;
+				}
 				const $btn = $row.find('.mds-install-extension');
 				if ($btn.length) {
 					$btn.prop('disabled', true)

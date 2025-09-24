@@ -2323,6 +2323,9 @@ class Extensions {
             $extension['purchased_locally'] = false;
         }
 
+        $has_local_license = !empty($local_license);
+        $was_purchased = !empty($extension['purchased_locally']) || $has_local_license;
+
         $card_classes = ['mds-extension-card'];
         $card_classes[] = $is_premium ? 'mds-extension-card--premium' : 'mds-extension-card--free';
         if ($is_installed) {
@@ -2341,6 +2344,8 @@ class Extensions {
             'data-version'        => $extension['version'] ?? '',
             'data-is-premium'     => $is_premium ? 'true' : 'false',
             'data-is-licensed'    => $is_licensed ? 'true' : 'false',
+            'data-has-local-license' => $has_local_license ? 'true' : 'false',
+            'data-purchased'      => $was_purchased ? 'true' : 'false',
         ];
         if ($is_installed && !empty($extension['installed_plugin_file'])) {
             $data_attrs['data-plugin-file'] = $extension['installed_plugin_file'];
@@ -2413,6 +2418,8 @@ class Extensions {
         $action_primary = '';
         $action_secondary = '';
 
+        $can_install_after_purchase = $was_purchased && !$is_installed;
+
         if ($is_installed) {
             if ($is_active) {
                 $action_primary = '<span class="button button-secondary mds-ext-active" disabled="disabled">' . esc_html(Language::get('Active')) . '</span>';
@@ -2421,7 +2428,7 @@ class Extensions {
             }
         } else {
             if ($is_premium) {
-                if ($is_licensed) {
+                if ($is_licensed || $can_install_after_purchase) {
                     $action_primary = '<button class="button button-primary mds-install-extension" data-nonce="' . esc_attr($nonce) . '" data-extension-id="' . esc_attr($extension['id'] ?? '') . '" data-extension-slug="' . esc_attr($slug) . '">' . esc_html(Language::get('Install')) . '</button>';
                 } elseif ($extension_server_error) {
                     $action_secondary = '<a class="button" href="' . esc_url(admin_url('plugin-install.php?tab=upload')) . '">' . esc_html(Language::get('Upload ZIP')) . '</a>';
