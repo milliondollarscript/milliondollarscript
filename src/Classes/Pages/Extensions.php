@@ -2037,6 +2037,74 @@ class Extensions {
     /**
      * Convert HTML or newline-delimited plan features into an array of bullet points.
      */
+    private static function get_plan_feature_allowed_tags(): array
+    {
+        return [
+            'strong' => [],
+            'em'     => [],
+            'b'      => [],
+            'i'      => [],
+            'u'      => [],
+            'code'   => [],
+            'br'     => [],
+        ];
+    }
+
+    /**
+     * Normalize simple inline span/font styling to semantic tags we allow.
+     */
+    private static function normalize_plan_feature_styles(string $value): string
+    {
+        if (stripos($value, '<span') === false && stripos($value, '<font') === false) {
+            return $value;
+        }
+
+        $pattern = '/<(span|font)\b([^>]*)>(.*?)<\/\1>/is';
+
+        $normalized = preg_replace_callback($pattern, function (array $matches) {
+            $attributes = $matches[2] ?? '';
+            $content = $matches[3] ?? '';
+
+            $style = '';
+            if (preg_match('/style\s*=\s*("|")(.*?)\1/i', $attributes, $styleMatch)) {
+                $style = strtolower($styleMatch[2]);
+            }
+
+            $isBold = $style !== '' && preg_match('/font-weight\s*:\s*(bold|[6-9]00)/i', $style);
+            $isItalic = $style !== '' && preg_match('/font-style\s*:\s*italic/i', $style);
+
+            $content = self::normalize_plan_feature_styles($content);
+
+            if ($isBold && $isItalic) {
+                return '<strong><em>' . $content . '</em></strong>';
+            }
+            if ($isBold) {
+                return '<strong>' . $content . '</strong>';
+            }
+            if ($isItalic) {
+                return '<em>' . $content . '</em>';
+            }
+
+            return $matches[0];
+        }, $value);
+
+        return $normalized === null ? $value : $normalized;
+    }
+
+    private static function sanitize_plan_feature_markup(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $value = self::normalize_plan_feature_styles($value);
+
+        $sanitized = wp_kses($value, self::get_plan_feature_allowed_tags());
+
+        return trim($sanitized);
+    }
+
     private static function parse_plan_features_to_array(string $value): array {
         $value = trim($value);
         if ($value === '') {
@@ -2044,11 +2112,12 @@ class Extensions {
         }
 
         $items = [];
+        $allowedTags = self::get_plan_feature_allowed_tags();
 
         if (strpos($value, '<') !== false) {
             if (preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $value, $matches) && isset($matches[1])) {
                 foreach ($matches[1] as $fragment) {
-                    $text = trim(wp_strip_all_tags($fragment));
+                    $text = self::sanitize_plan_feature_markup($fragment);
                     if ($text !== '') {
                         $items[] = $text;
                     }
@@ -2059,13 +2128,13 @@ class Extensions {
                 return $items;
             }
 
-            $value = wp_strip_all_tags($value);
+            $value = wp_kses($value, $allowedTags);
         }
 
         $lines = preg_split('/[\r\n]+/', $value);
         if (is_array($lines)) {
             foreach ($lines as $line) {
-                $text = trim($line);
+                $text = self::sanitize_plan_feature_markup($line);
                 if ($text !== '') {
                     $items[] = $text;
                 }
@@ -2646,12 +2715,30 @@ class Extensions {
     ): array {
         $entries = [];
         $sale_enabled = self::is_sale_display_enabled($metadata, $plan_key);
+        $default_entry = self::select_default_price_entry($price_entries);
+        $default_price_text = ($default_entry !== null) ? self::format_price_entry_amount($default_entry) : null;
+        $sale_context = null;
+        if ($sale_enabled && $default_entry && $default_price_text !== null && $default_price_text !== '') {
+            $sale_context = self::resolve_plan_sale_context(
+                $metadata,
+                $plan_key,
+                $default_entry,
+                $default_price_text,
+                $price_entries
+            );
+        }
+        if ($sale_enabled && $sale_context === null) {
+            $sale_enabled = false;
+        }
 
         foreach ($price_entries as $entry) {
             if (!is_array($entry) || empty($entry['price_id'])) {
                 continue;
             }
             $price_id = (string) $entry['price_id'];
+            $base_price_id = $price_id;
+            $status = isset($entry['status']) ? strtolower((string) $entry['status']) : 'active';
+            $skip_render = false;
             $label = isset($entry['label']) && is_string($entry['label']) && trim($entry['label']) !== ''
                 ? trim($entry['label'])
                 : self::get_plan_label($plan_key);
@@ -2659,18 +2746,25 @@ class Extensions {
 
             $compare_price = null;
             $badge_label = '';
-            if ($sale_enabled) {
-                $compare_entry = self::find_compare_entry($price_entries, $entry);
-                if ($compare_entry) {
-                    $compare_candidate = self::format_price_entry_amount($compare_entry);
-                    if ($compare_candidate !== null && $compare_candidate !== '') {
-                        $compare_price = $compare_candidate;
-                        $badge_label = self::get_entry_badge_label($entry);
-                    }
+
+            if ($sale_enabled && $sale_context !== null && !empty($entry['default'])) {
+                if (!empty($sale_context['price_id'])) {
+                    $price_id = (string) $sale_context['price_id'];
                 }
+                if (!empty($sale_context['sale_price'])) {
+                    $amount = $sale_context['sale_price'];
+                }
+                if (!empty($sale_context['compare_price'])) {
+                    $compare_price = $sale_context['compare_price'];
+                }
+                if ($badge_label === '' && !empty($sale_context['badge_label'])) {
+                    $badge_label = $sale_context['badge_label'];
+                }
+            } elseif ($sale_enabled && $sale_context !== null && $sale_context['base_price_id'] !== '' && $sale_context['base_price_id'] === $price_id) {
+                $skip_render = true;
             }
 
-            $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key, $price_id);
+            $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key, $base_price_id);
 
             $purchase_option = [];
             if (!empty($purchase_options) && is_array($purchase_options)) {
@@ -2682,6 +2776,14 @@ class Extensions {
                 }
             }
 
+            if ($status === 'hidden' && empty($entry['default'])) {
+                $skip_render = true;
+            }
+
+            if ($skip_render) {
+                continue;
+            }
+
             $entries[] = [
                 'plan_key'      => $plan_key,
                 'plan_label'    => self::get_plan_label($plan_key),
@@ -2690,7 +2792,7 @@ class Extensions {
                 'amount'        => $amount,
                 'compare_price' => $compare_price,
                 'badge_label'   => $badge_label,
-                'status'        => isset($entry['status']) ? (string) $entry['status'] : 'active',
+                'status'        => $status,
                 'is_default'    => !empty($entry['default']),
                 'features'      => $features,
                 'purchase'      => $purchase_option,
@@ -2818,7 +2920,10 @@ class Extensions {
         if (!empty($features)) {
             $features_html .= '<ul class="mds-plan-features">';
             foreach ($features as $feature) {
-                $features_html .= '<li>' . esc_html($feature) . '</li>';
+                $feature_markup = self::sanitize_plan_feature_markup((string) $feature);
+                if ($feature_markup !== '') {
+                    $features_html .= '<li>' . $feature_markup . '</li>';
+                }
             }
             $features_html .= '</ul>';
         }
@@ -2929,18 +3034,24 @@ class Extensions {
         }
 
         $saleEnabled = self::is_sale_display_enabled($metadata, $plan_key);
-        $compareEntry = null;
+        $saleContext = null;
+        if ($saleEnabled) {
+            $saleContext = self::resolve_plan_sale_context($metadata, $plan_key, $defaultEntry, $defaultPrice, $entries);
+            if ($saleContext === null) {
+                $saleEnabled = false;
+            }
+        }
         $comparePrice = null;
         $badgeLabel = '';
-        if ($saleEnabled) {
-            $candidateCompare = self::find_compare_entry($entries, $defaultEntry);
-            if ($candidateCompare) {
-                $candidatePrice = self::format_price_entry_amount($candidateCompare);
-                if ($candidatePrice !== null && $candidatePrice !== '') {
-                    $compareEntry = $candidateCompare;
-                    $comparePrice = $candidatePrice;
-                    $badgeLabel = self::get_entry_badge_label($defaultEntry);
-                }
+        if ($saleEnabled && $saleContext !== null) {
+            if (!empty($saleContext['compare_price'])) {
+                $comparePrice = $saleContext['compare_price'];
+            }
+            if (!empty($saleContext['sale_price'])) {
+                $defaultPrice = $saleContext['sale_price'];
+            }
+            if (!empty($saleContext['badge_label'])) {
+                $badgeLabel = $saleContext['badge_label'];
             }
         }
         $tiers = self::build_plan_tiers($entries, $defaultEntry);
@@ -3790,21 +3901,295 @@ class Extensions {
     }
 
     /**
-     * Locate a legacy entry to use as a compare-at price.
+     * Fetch the plan_sales map from metadata (prefer release scope).
      */
-    private static function find_compare_entry(array $entries, array $defaultEntry): ?array {
-        $defaultId = (string) ($defaultEntry['price_id'] ?? '');
-        foreach ($entries as $entry) {
-            if ((string) ($entry['price_id'] ?? '') === $defaultId) {
+    private static function normalize_plan_sale_entries($value): array
+    {
+        if ($value instanceof \stdClass) {
+            $value = json_decode(wp_json_encode($value), true);
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $isList = array_keys($value) === range(0, count($value) - 1);
+        if ($isList) {
+            $entries = [];
+            foreach ($value as $item) {
+                $entries = array_merge($entries, self::normalize_plan_sale_entries($item));
+            }
+            return $entries;
+        }
+
+        return [$value];
+    }
+
+    private static function get_plan_sales_map(array $metadata): array
+    {
+        $maps = [];
+
+        if (isset($metadata['release']) && is_array($metadata['release'])
+            && isset($metadata['release']['plan_sales']) && is_array($metadata['release']['plan_sales'])
+        ) {
+            $maps[] = $metadata['release']['plan_sales'];
+        }
+
+        if (isset($metadata['plan_sales']) && is_array($metadata['plan_sales'])) {
+            $maps[] = $metadata['plan_sales'];
+        }
+
+        $result = [];
+        foreach ($maps as $map) {
+            foreach ($map as $key => $sale) {
+                if (!is_string($key) || $key === '') {
+                    continue;
+                }
+                $planKey = self::canonicalize_plan_key($key);
+                if ($planKey === '') {
+                    continue;
+                }
+                $entries = self::normalize_plan_sale_entries($sale);
+                if (empty($entries)) {
+                    continue;
+                }
+                if (!isset($result[$planKey])) {
+                    $result[$planKey] = [];
+                }
+                $result[$planKey] = array_merge($result[$planKey], $entries);
+            }
+        }
+
+        return $result;
+    }
+
+    private static function parse_plan_sale_boundary($value): ?int
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->getTimestamp();
+        }
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value === '') {
+                return null;
+            }
+            $timestamp = strtotime($value);
+            return $timestamp ? $timestamp : null;
+        }
+        return null;
+    }
+
+    private static function is_plan_sale_active(array $sale): bool
+    {
+        $now = function_exists('current_time') ? (int) current_time('timestamp', true) : time();
+
+        $start = self::parse_plan_sale_boundary($sale['starts_at'] ?? ($sale['startsAt'] ?? null));
+        if ($start !== null && $now < $start) {
+            return false;
+        }
+
+        $end = self::parse_plan_sale_boundary($sale['ends_at'] ?? ($sale['endsAt'] ?? null));
+        if ($end !== null && $now > $end) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function get_plan_sale_amount_value(array $sale): ?float
+    {
+        if (isset($sale['amount_cents'])) {
+            $cents = $sale['amount_cents'];
+            if (is_numeric($cents)) {
+                $amount = (float) $cents / 100;
+                return $amount > 0 ? $amount : null;
+            }
+        }
+
+        foreach (['amount', 'price'] as $key) {
+            if (!isset($sale[$key])) {
                 continue;
             }
-            $status = strtolower((string) ($entry['status'] ?? ''));
-            if ($status === 'legacy') {
-                return $entry;
+            $value = $sale[$key];
+            if (is_numeric($value)) {
+                $amount = (float) $value;
+                return $amount > 0 ? $amount : null;
+            }
+            if (is_string($value)) {
+                $clean = trim($value);
+                if ($clean === '') {
+                    continue;
+                }
+                $normalized = preg_replace('/[^0-9,\.\-]/', '', $clean);
+                if ($normalized === '' || $normalized === '-' || $normalized === '.') {
+                    continue;
+                }
+                if (strpos($normalized, ',') !== false && strpos($normalized, '.') === false) {
+                    $normalized = str_replace(',', '.', $normalized);
+                } else {
+                    $normalized = str_replace(',', '', $normalized);
+                }
+                $amount = (float) $normalized;
+                if ($amount > 0) {
+                    return $amount;
+                }
             }
         }
 
         return null;
+    }
+
+    private static function resolve_plan_sale_context(
+        array $metadata,
+        string $plan_key,
+        array $defaultEntry,
+        string $defaultPrice,
+        array $price_entries
+    ): ?array
+    {
+        $planSales = self::get_plan_sales_map($metadata);
+        if (empty($planSales[$plan_key]) || !is_array($planSales[$plan_key])) {
+            return null;
+        }
+
+        $selectedSale = null;
+        $selectedStart = null;
+
+        foreach ($planSales[$plan_key] as $saleCandidate) {
+            if (!is_array($saleCandidate)) {
+                continue;
+            }
+            $saleAmount = self::get_plan_sale_amount_value($saleCandidate);
+            if ($saleAmount === null || $saleAmount <= 0) {
+                continue;
+            }
+            if (!self::is_plan_sale_active($saleCandidate)) {
+                continue;
+            }
+            $startBoundary = self::parse_plan_sale_boundary($saleCandidate['starts_at'] ?? ($saleCandidate['startsAt'] ?? null));
+            $start = $startBoundary ?? PHP_INT_MIN;
+            if ($selectedSale === null || $start > $selectedStart) {
+                $selectedSale = $saleCandidate;
+                $selectedStart = $start;
+            }
+        }
+
+        if ($selectedSale === null) {
+            return null;
+        }
+
+        $saleAmount = self::get_plan_sale_amount_value($selectedSale);
+        if ($saleAmount === null || $saleAmount <= 0) {
+            return null;
+        }
+
+        $derivedDefault = self::derive_price_amount($defaultEntry);
+        $currency = '';
+        $originalAmount = null;
+        if (is_array($derivedDefault)) {
+            if (!empty($derivedDefault['currency'])) {
+                $currency = (string) $derivedDefault['currency'];
+            }
+            if (isset($derivedDefault['amount'])) {
+                $originalAmount = (float) $derivedDefault['amount'];
+            }
+        }
+
+        if ($originalAmount !== null && abs($originalAmount - $saleAmount) < 0.0001) {
+            return null;
+        }
+
+        $saleMapping = [];
+        if (
+            isset($metadata['sale_price_map']) &&
+            is_array($metadata['sale_price_map']) &&
+            isset($metadata['sale_price_map'][$plan_key]) &&
+            is_array($metadata['sale_price_map'][$plan_key])
+        ) {
+            $saleMapping = $metadata['sale_price_map'][$plan_key];
+        }
+
+        $defaultEntryMeta = is_array($defaultEntry['metadata'] ?? null)
+            ? $defaultEntry['metadata']
+            : [];
+        if (
+            empty($saleMapping) &&
+            !empty($defaultEntryMeta['base_price_id']) &&
+            is_string($defaultEntryMeta['base_price_id'])
+        ) {
+            $saleMapping = [
+                'price_id'      => (string) ($defaultEntry['price_id'] ?? ''),
+                'base_price_id' => (string) $defaultEntryMeta['base_price_id'],
+            ];
+        }
+
+        $baseEntry = null;
+        if (!empty($saleMapping['base_price_id'])) {
+            foreach ($price_entries as $entry) {
+                if ((string) ($entry['price_id'] ?? '') === (string) $saleMapping['base_price_id']) {
+                    $baseEntry = $entry;
+                    break;
+                }
+            }
+        }
+
+        $baseDerived = $baseEntry ? self::derive_price_amount($baseEntry) : null;
+        $defaultDerived = self::derive_price_amount($defaultEntry);
+        $derivedSource = $baseDerived ?? $defaultDerived;
+
+        $currency = '';
+        $originalAmount = null;
+        if (is_array($derivedSource)) {
+            if (!empty($derivedSource['currency'])) {
+                $currency = (string) $derivedSource['currency'];
+            }
+            if (isset($derivedSource['amount'])) {
+                $originalAmount = (float) $derivedSource['amount'];
+            }
+        }
+
+        if ($baseDerived === null && $defaultDerived && $originalAmount === null && isset($defaultDerived['amount'])) {
+            $originalAmount = (float) $defaultDerived['amount'];
+        }
+
+        if ($baseDerived !== null && $originalAmount !== null && abs($originalAmount - $saleAmount) < 0.0001) {
+            return null;
+        }
+
+        $salePrice = self::format_currency_amount($saleAmount, $currency);
+        if ($salePrice === '') {
+            return null;
+        }
+
+        $badge = '';
+        if (isset($selectedSale['label'])) {
+            $badge = sanitize_text_field((string) $selectedSale['label']);
+        }
+        if ($badge === '') {
+            $badge = Language::get('Sale');
+        }
+
+        $comparePriceText = '';
+        if ($baseEntry) {
+            $formattedBase = self::format_price_entry_amount($baseEntry);
+            if ($formattedBase !== null && $formattedBase !== '') {
+                $comparePriceText = $formattedBase;
+            }
+        }
+        if ($comparePriceText === '') {
+            $comparePriceText = $defaultPrice;
+        }
+
+        return [
+            'sale_price'    => $salePrice,
+            'compare_price' => $comparePriceText,
+            'badge_label'   => $badge,
+            'price_id'      => isset($saleMapping['price_id']) ? (string) $saleMapping['price_id'] : '',
+            'base_price_id' => isset($saleMapping['base_price_id']) ? (string) $saleMapping['base_price_id'] : '',
+        ];
     }
 
     /**
