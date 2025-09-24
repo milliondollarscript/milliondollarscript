@@ -4098,10 +4098,6 @@ class Extensions {
             }
         }
 
-        if ($originalAmount !== null && abs($originalAmount - $saleAmount) < 0.0001) {
-            return null;
-        }
-
         $saleMapping = [];
         if (
             isset($metadata['sale_price_map']) &&
