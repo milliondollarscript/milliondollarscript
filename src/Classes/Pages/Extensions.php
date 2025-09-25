@@ -1603,6 +1603,25 @@ class Extensions {
         $structure = [];
         $source_raw = $meta['stripe_prices'] ?? [];
         $source = [];
+        $legacyLookup = [];
+
+        $collectLegacyIds = static function ($value) use (&$legacyLookup): void {
+            $decoded = self::decode_metadata_fragment($value);
+            if (!is_array($decoded)) {
+                return;
+            }
+            $list = array_keys($decoded) === range(0, count($decoded) - 1) ? $decoded : array_values($decoded);
+            foreach ($list as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $priceId = isset($entry['price_id']) ? (string) $entry['price_id'] : '';
+                if ($priceId === '') {
+                    continue;
+                }
+                $legacyLookup[$priceId] = true;
+            }
+        };
 
         $source_raw = self::decode_metadata_fragment($source_raw);
         if (!is_array($source_raw) || empty(array_filter($source_raw))) {
@@ -1611,9 +1630,23 @@ class Extensions {
             $source_raw = self::decode_metadata_fragment($source_raw);
         }
 
+        if (isset($meta['stripe_legacy_prices'])) {
+            $collectLegacyIds($meta['stripe_legacy_prices']);
+        }
+        if (isset($meta['stripe_removed_prices'])) {
+            $collectLegacyIds($meta['stripe_removed_prices']);
+        }
+
         if (is_array($source_raw)) {
             foreach ($source_raw as $plan => $entries) {
                 $source[self::canonicalize_plan_key((string) $plan)] = $entries;
+            }
+
+            if (isset($source_raw['stripe_legacy_prices'])) {
+                $collectLegacyIds($source_raw['stripe_legacy_prices']);
+            }
+            if (isset($source_raw['stripe_removed_prices'])) {
+                $collectLegacyIds($source_raw['stripe_removed_prices']);
             }
         }
 
@@ -1627,6 +1660,11 @@ class Extensions {
                 foreach ($entries as $rawEntry) {
                     $entry = self::create_stripe_price_entry(self::decode_metadata_fragment($rawEntry));
                     if ($entry !== null) {
+                        $priceId = $entry['price_id'] ?? '';
+                        if ($priceId !== '' && isset($legacyLookup[$priceId])) {
+                            $entry['status'] = 'legacy';
+                            $entry['default'] = false;
+                        }
                         self::push_stripe_price_entry($structure[$plan], $entry);
                     }
                 }
@@ -1638,16 +1676,26 @@ class Extensions {
             if ($fallbackKey && isset($meta[$fallbackKey]) && is_string($meta[$fallbackKey])) {
                 $fallbackId = trim($meta[$fallbackKey]);
                 if ($fallbackId !== '') {
+                    $status = isset($legacyLookup[$fallbackId]) ? 'legacy' : 'active';
                     self::push_stripe_price_entry($structure[$plan], [
                         'price_id'   => $fallbackId,
                         'label'      => 'Default',
-                        'status'     => 'active',
+                        'status'     => $status,
                         'default'    => true,
                         'created_at' => gmdate('c'),
                         'metadata'   => [],
                     ]);
                 }
             }
+
+            foreach ($structure[$plan] as &$entry) {
+                $priceId = isset($entry['price_id']) ? (string) $entry['price_id'] : '';
+                if ($priceId !== '' && isset($legacyLookup[$priceId])) {
+                    $entry['status'] = 'legacy';
+                    $entry['default'] = false;
+                }
+            }
+            unset($entry);
 
             self::ensure_stripe_price_default($structure[$plan]);
             self::sort_stripe_price_entries($structure[$plan]);
@@ -3251,6 +3299,10 @@ class Extensions {
                 }
             }
 
+            if ($status === 'legacy') {
+                $skip_render = true;
+            }
+
             if ($status === 'hidden' && empty($entry['default'])) {
                 $skip_render = true;
             }
@@ -4816,7 +4868,19 @@ class Extensions {
      */
     private static function select_default_price_entry(array $entries): ?array {
         foreach ($entries as $entry) {
+            if (!empty($entry['default']) && strtolower((string) ($entry['status'] ?? 'active')) !== 'legacy') {
+                return $entry;
+            }
+        }
+
+        foreach ($entries as $entry) {
             if (!empty($entry['default'])) {
+                return $entry;
+            }
+        }
+
+        foreach ($entries as $entry) {
+            if (strtolower((string) ($entry['status'] ?? 'active')) !== 'legacy') {
                 return $entry;
             }
         }
