@@ -405,6 +405,34 @@ html.dark .mds-card-header-buttons .mds-activate-extension.mds-btn-loading {
     color: rgba(255, 255, 255, 0.92);
 }
 
+html.dark .mds-inline-license-actions .mds-inline-license-activate {
+    background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
+    box-shadow: 0 12px 28px rgba(22, 163, 74, 0.42);
+}
+
+html.dark .mds-inline-license-actions .mds-inline-license-activate:hover,
+html.dark .mds-inline-license-actions .mds-inline-license-activate:focus {
+    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+    box-shadow: 0 16px 34px rgba(22, 163, 74, 0.52);
+}
+
+html.dark .mds-inline-license-actions .mds-inline-license-remove {
+    background: linear-gradient(135deg, #ea580c 0%, #9a3412 100%);
+    box-shadow: 0 12px 28px rgba(234, 88, 12, 0.42);
+}
+
+html.dark .mds-inline-license-actions .mds-inline-license-remove:hover,
+html.dark .mds-inline-license-actions .mds-inline-license-remove:focus {
+    background: linear-gradient(135deg, #c2410c 0%, #7c2d12 100%);
+    box-shadow: 0 16px 34px rgba(194, 65, 12, 0.52);
+}
+
+html.dark .mds-inline-license-actions .mds-inline-license-remove:disabled,
+html.dark .mds-inline-license-actions .mds-inline-license-remove[disabled] {
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    color: rgba(255, 255, 255, 0.85);
+}
+
 html.dark .mds-card-license-buttons .button {
     background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
     color: #e0e7ff;
@@ -416,6 +444,26 @@ html.dark .mds-card-license-buttons .button:focus {
     background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
     color: #f8fafc;
     box-shadow: 0 16px 36px rgba(30, 64, 175, 0.55);
+}
+
+html.dark .mds-cancel-auto-renew {
+    background: rgba(148, 163, 184, 0.18);
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    color: #e2e8f0;
+}
+
+html.dark .mds-cancel-auto-renew:hover,
+html.dark .mds-cancel-auto-renew:focus {
+    background: rgba(148, 163, 184, 0.32);
+    border-color: rgba(148, 163, 184, 0.65);
+    color: #f8fafc;
+}
+
+html.dark .mds-cancel-auto-renew:disabled,
+html.dark .mds-cancel-auto-renew[disabled] {
+    background: rgba(148, 163, 184, 0.16);
+    border-color: rgba(148, 163, 184, 0.35);
+    color: rgba(226, 232, 240, 0.65);
 }
 
 html.dark .mds-card-license-popover {
@@ -787,6 +835,43 @@ html.dark .mds-card-title-version {
     margin: 0;
 }
 
+.mds-plan-current-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.mds-plan-current-wrap .mds-plan-current {
+    flex: 1 1 180px;
+    width: auto;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 10px 16px;
+}
+
+.mds-plan-current-wrap .mds-cancel-auto-renew {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+@media (max-width: 640px) {
+  .mds-plan-current-wrap {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mds-plan-current-wrap .mds-plan-current {
+    text-align: center;
+    justify-content: center;
+  }
+
+  .mds-plan-current-wrap .mds-cancel-auto-renew {
+    width: 100%;
+  }
+}
+
 .mds-status-active {
     color: #00a32a;
     font-weight: bold;
@@ -969,6 +1054,33 @@ html.dark .mds-card-title-version {
 
 .mds-inline-license-actions .mds-inline-license-activate.mds-btn-loading {
     color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.mds-inline-license-actions .mds-inline-license-remove {
+    background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+    border: none;
+    border-radius: 999px;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 8px 18px;
+    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mds-inline-license-actions .mds-inline-license-remove:hover,
+.mds-inline-license-actions .mds-inline-license-remove:focus {
+    background: linear-gradient(135deg, #ea580c 0%, #9a3412 100%);
+    box-shadow: 0 14px 32px rgba(234, 88, 12, 0.45);
+    transform: translateY(-1px);
+    color: #ffffff;
+}
+
+.mds-inline-license-actions .mds-inline-license-remove:disabled,
+.mds-inline-license-actions .mds-inline-license-remove[disabled] {
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    box-shadow: none;
+    color: rgba(255, 255, 255, 0.85);
+    transform: none;
 }
 
 .mds-inline-license-actions .mds-inline-license-remove {
@@ -1215,6 +1327,31 @@ body.wp-admin .wrap > .notice .mds-go-to-system { pointer-events: auto; }
   color: #64748b;
   cursor: not-allowed;
   opacity: 0.75;
+}
+
+.mds-cancel-auto-renew {
+  background: #f8fafc;
+  border: 1px solid #d7e3f8;
+  border-radius: 999px;
+  color: #1f2937;
+  font-weight: 600;
+  padding: 10px 20px;
+  box-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.mds-cancel-auto-renew:hover,
+.mds-cancel-auto-renew:focus {
+  background: #ecf2ff;
+  border-color: #c3d4f7;
+  color: #1f2937;
+}
+
+.mds-cancel-auto-renew:disabled,
+.mds-cancel-auto-renew[disabled] {
+  background: #f1f5f9;
+  border-color: #d7e3f8;
+  color: rgba(31, 41, 55, 0.6);
 }
 
 .mds-plan-placeholder {

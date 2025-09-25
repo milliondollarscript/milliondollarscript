@@ -953,7 +953,7 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
     const key = String($wrap.find('.mds-inline-license-key').val() || '').trim();
     if (!slug) { showNotice('error', 'Missing extension identifier.', false); return; }
     if (!key) { showNotice('warning', 'Please enter a license key.', false); return; }
-    setButtonLoading($btn, 'Activating...');
+    setButtonLoading($btn, getText('saving_license', 'Applying...'));
     $.post(AJAX_URL, {
         action: 'mds_available_activate_license',
         nonce: MDS_EXTENSIONS_DATA.nonce,
@@ -961,15 +961,15 @@ $(document).on('click', '.mds-inline-license-activate', function (e) {
         license_key: key
     }).done(function(resp){
         if (resp && resp.success) {
-            showNotice('success', (resp.data && resp.data.message) || 'License activated.');
+            showNotice('success', (resp.data && resp.data.message) || getText('license_saved', 'License saved.'));
             setTimeout(() => window.location.reload(), 800);
         } else {
-            showNotice('error', (resp && resp.data && resp.data.message) || 'Activation failed.', false);
-            resetButton($btn, 'Activate');
+            showNotice('error', (resp && resp.data && resp.data.message) || getText('license_save_failed', 'Failed to save license.'), false);
+            resetButton($btn, getText('apply_license', 'Apply license'));
         }
     }).fail(function(){
-        showNotice('error', 'Activation failed.', false);
-        resetButton($btn, 'Activate');
+        showNotice('error', getText('license_save_failed', 'Failed to save license.'), false);
+        resetButton($btn, getText('apply_license', 'Apply license'));
     });
 });
 

@@ -944,6 +944,10 @@ class Extensions {
                     'license_removed'       => Language::get('License removed.'),
                     'license_remove_failed' => Language::get('Failed to remove license.'),
                     'removing_license'      => Language::get('Removing…'),
+                    'apply_license'         => Language::get('Apply license'),
+                    'saving_license'        => Language::get('Applying...'),
+                    'license_saved'         => Language::get('License saved.'),
+                    'license_save_failed'   => Language::get('Failed to save license.'),
                 ]
             ];
             wp_localize_script( $script_handle, 'MDS_EXTENSIONS_DATA', $extensions_data );
@@ -3100,7 +3104,9 @@ class Extensions {
             $nonce,
             $is_premium,
             $current_plan_key,
-            $plan_relations
+            $plan_relations,
+            $can_cancel_auto,
+            $slug
         );
 
         if ($pricing_html === '' && $is_premium) {
@@ -3183,7 +3189,7 @@ class Extensions {
                             <button type="button"
                                     class="button button-secondary mds-inline-license-activate"
                                     data-nonce="<?php echo esc_attr($nonce); ?>">
-                                <?php echo esc_html(Language::get('Activate')); ?>
+                                <?php echo esc_html(Language::get('Apply license')); ?>
                             </button>
                             <button type="button"
                                     class="button-link mds-visibility-toggle mds-inline-license-visibility"
@@ -3192,7 +3198,7 @@ class Extensions {
                             </button>
                             <?php if ($has_local_license) : ?>
                                 <button type="button"
-                                        class="button-link mds-remove-license mds-inline-license-remove"
+                                        class="button mds-remove-license mds-inline-license-remove"
                                         data-extension-slug="<?php echo esc_attr($slug); ?>"
                                         data-nonce="<?php echo esc_attr($license_nonce); ?>">
                                     <?php echo esc_html(Language::get('Remove')); ?>
@@ -3200,15 +3206,6 @@ class Extensions {
                             <?php endif; ?>
                         </div>
                     </div>
-                    <?php if ($can_cancel_auto) : ?>
-                        <div class="mds-card-license-actions">
-                            <button type="button"
-                                    class="button button-link mds-cancel-auto-renew"
-                                    data-extension-slug="<?php echo esc_attr($slug); ?>">
-                                <?php echo esc_html(Language::get('Cancel Auto-renewal')); ?>
-                            </button>
-                        </div>
-                    <?php endif; ?>
                 </div>
             </div>
             <?php
@@ -3291,7 +3288,9 @@ class Extensions {
         string $nonce,
         bool $is_premium,
         ?string $current_plan_key,
-        array $plan_relations
+        array $plan_relations,
+        bool $can_cancel_auto,
+        string $extension_slug
     ): string {
         $metadata = is_array($metadata) ? $metadata : [];
         $planOrder = self::determine_plan_order($pricing_overview, $metadata);
@@ -3305,7 +3304,9 @@ class Extensions {
                 $nonce,
                 $current_plan_key,
                 $plan_relations,
-                $normalizedPlanOrder
+                $normalizedPlanOrder,
+                $can_cancel_auto,
+                $extension_slug
             );
         }
 
@@ -3331,7 +3332,9 @@ class Extensions {
                     $nonce,
                     $current_plan_key,
                     $plan_relations,
-                    $normalizedPlanOrder
+                    $normalizedPlanOrder,
+                    $can_cancel_auto,
+                    $extension_slug
                 );
                 if ($card !== '') {
                     $cards[] = $card;
@@ -3348,7 +3351,9 @@ class Extensions {
                     $nonce,
                     $current_plan_key,
                     $plan_relations,
-                    $normalizedPlanOrder
+                    $normalizedPlanOrder,
+                    $can_cancel_auto,
+                    $extension_slug
                 );
                 if ($card !== '') {
                     $cards[] = $card;
@@ -3369,7 +3374,9 @@ class Extensions {
                     $nonce,
                     $current_plan_key,
                     $plan_relations,
-                    $normalizedPlanOrder
+                    $normalizedPlanOrder,
+                    $can_cancel_auto,
+                    $extension_slug
                 );
                 if ($card !== '') {
                     $cards[] = $card;
@@ -3380,7 +3387,7 @@ class Extensions {
         $cards = array_filter($cards);
 
         if (empty($cards)) {
-            $fallback = self::render_minimal_plan_cards($current_plan_key, $plan_relations, $normalizedPlanOrder, $extension_id, $nonce);
+            $fallback = self::render_minimal_plan_cards($current_plan_key, $plan_relations, $normalizedPlanOrder, $extension_id, $nonce, $can_cancel_auto, $extension_slug);
             if (empty($fallback)) {
                 return '';
             }
@@ -4025,7 +4032,9 @@ class Extensions {
         string $nonce,
         ?string $current_plan_key,
         array $plan_relations,
-        array $plan_order
+        array $plan_order,
+        bool $can_cancel_auto,
+        string $extension_slug
     ): string {
         if (empty($plan_groups)) {
             return '';
@@ -4058,7 +4067,9 @@ class Extensions {
                     $nonce,
                     $current_plan_key,
                     $plan_relations,
-                    $plan_order
+                    $plan_order,
+                    $can_cancel_auto,
+                    $extension_slug
                 );
             }
             $panel_body = !empty($cards)
@@ -4079,7 +4090,9 @@ class Extensions {
         string $nonce,
         ?string $current_plan_key,
         array $plan_relations,
-        array $plan_order
+        array $plan_order,
+        bool $can_cancel_auto,
+        string $extension_slug
     ): string {
         $plan_key = isset($entry['plan_key']) ? self::canonicalize_plan_key((string) $entry['plan_key']) : '';
         $price_id = isset($entry['price_id']) ? (string) $entry['price_id'] : '';
@@ -4153,7 +4166,9 @@ class Extensions {
             $plan_relations,
             $plan_order,
             $price_id,
-            $label
+            $label,
+            $can_cancel_auto,
+            $extension_slug
         );
 
         $card_body = '<div class="' . esc_attr(implode(' ', $card_classes)) . '" data-plan="' . esc_attr($plan_key) . '" data-price-id="' . esc_attr($price_id) . '">';
@@ -4238,7 +4253,9 @@ class Extensions {
         string $nonce,
         ?string $current_plan_key,
         array $plan_relations,
-        array $plan_order
+        array $plan_order,
+        bool $can_cancel_auto,
+        string $extension_slug
     ): string {
         $defaultEntry = self::select_default_price_entry($entries);
         if (!$defaultEntry) {
@@ -4312,7 +4329,9 @@ class Extensions {
             $plan_relations,
             $plan_order,
             '',
-            self::get_plan_label($plan_key)
+            self::get_plan_label($plan_key),
+            $can_cancel_auto,
+            $extension_slug
         );
         if ($button === '') {
             return '';
@@ -4357,7 +4376,9 @@ class Extensions {
         string $nonce,
         ?string $current_plan_key,
         array $plan_relations,
-        array $plan_order
+        array $plan_order,
+        bool $can_cancel_auto,
+        string $extension_slug
     ): string {
         $default_display = '';
         if (!empty($plan_data['sale']['is_active']) && !empty($plan_data['sale']['formatted'])) {
@@ -4399,7 +4420,9 @@ class Extensions {
             $plan_relations,
             $plan_order,
             '',
-            self::get_plan_label($plan_key)
+            self::get_plan_label($plan_key),
+            $can_cancel_auto,
+            $extension_slug
         );
         if ($button === '') {
             return '';
@@ -4778,7 +4801,9 @@ class Extensions {
         array $plan_relations,
         array $plan_order,
         string $price_id = '',
-        string $display_label = ''
+        string $display_label = '',
+        bool $can_cancel_auto = false,
+        string $extension_slug = ''
     ): string {
         $normalizedPlan = self::canonicalize_plan_key($plan_key);
         if ($normalizedPlan === '') {
@@ -4788,7 +4813,13 @@ class Extensions {
         $current = self::canonicalize_plan_key($current_plan_key ?? '');
         if ($current !== '' && $normalizedPlan === $current) {
             $indicator = self::get_current_plan_indicator_label($current, $plan_key);
-            return '<span class="mds-plan-current" aria-disabled="true">' . esc_html($indicator) . '</span>';
+            $indicator_markup = '<span class="mds-plan-current" aria-disabled="true">' . esc_html($indicator) . '</span>';
+            if ($can_cancel_auto && $extension_slug !== '') {
+                $cancel_button = '<button type="button" class="button mds-cancel-auto-renew mds-plan-cancel" data-extension-slug="' . esc_attr($extension_slug) . '">' . esc_html(Language::get('Cancel Auto-renewal')) . '</button>';
+                return '<div class="mds-plan-current-wrap">' . $indicator_markup . $cancel_button . '</div>';
+            }
+
+            return $indicator_markup;
         }
 
         if ($current !== '') {
@@ -4875,7 +4906,9 @@ class Extensions {
         array $plan_relations,
         array $plan_order,
         string $extension_id,
-        string $nonce
+        string $nonce,
+        bool $can_cancel_auto,
+        string $extension_slug
     ): array {
         $planSet = [];
         foreach ($plan_order as $plan) {
@@ -4920,7 +4953,9 @@ class Extensions {
                 $plan_relations,
                 $plan_order,
                 '',
-                self::get_plan_label($planKey)
+                self::get_plan_label($planKey),
+                $can_cancel_auto,
+                $extension_slug
             );
             if ($action === '') {
                 continue;

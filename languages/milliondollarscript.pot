@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.2.19\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.2.20\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-24 23:37:23\n"
-"PO-Revision-Date: 2025-09-24 23:37:23\n"
-"X-Generator: Million Dollar Script Two 2.6.2.19\n"
+"POT-Creation-Date: 2025-09-25 00:47:46\n"
+"PO-Revision-Date: 2025-09-25 00:47:46\n"
+"X-Generator: Million Dollar Script Two 2.6.2.20\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -2832,6 +2832,18 @@ msgstr ""
 msgid "Removing…"
 msgstr ""
 
+msgid "Apply license"
+msgstr ""
+
+msgid "Applying..."
+msgstr ""
+
+msgid "License saved."
+msgstr ""
+
+msgid "Failed to save license."
+msgstr ""
+
 msgid "Some licenses are expiring soon:"
 msgstr ""
 
@@ -2886,9 +2898,6 @@ msgstr ""
 msgid "Remove"
 msgstr ""
 
-msgid "Cancel Auto-renewal"
-msgstr ""
-
 msgid "Premium"
 msgstr ""
 
@@ -2914,6 +2923,9 @@ msgid "Hidden"
 msgstr ""
 
 msgid "Legacy"
+msgstr ""
+
+msgid "Cancel Auto-renewal"
 msgstr ""
 
 msgid "Not available"
