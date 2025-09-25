@@ -39,6 +39,7 @@ if (!function_exists('get_plugin_data')) {
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Extension\ExtensionUpdater;
+use MillionDollarScript\Classes\Extension\MDS_License_Manager;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
 
@@ -2251,6 +2252,347 @@ class Extensions {
         return [];
     }
 
+    /**
+     * Merge remote payload data into a license update array while preserving metadata.
+     *
+     * @param object|null $existing Existing license row, if any.
+     * @param array<string,mixed> $base_update
+     * @param array<string,mixed>|null $payload Remote payload to merge
+     * @param string|null $fallback_expires Optional fallback expiry value
+     * @return array<string,mixed>
+     */
+    private static function compose_license_update_payload($existing, array $base_update, ?array $payload, ?string $fallback_expires = null): array {
+        $existing_metadata = [];
+        if (is_object($existing)) {
+            $existing_metadata = MDS_License_Manager::decode_metadata_value($existing->metadata ?? null);
+        }
+
+        $prepared = is_array($payload)
+            ? MDS_License_Manager::prepare_payload_metadata($payload, $existing_metadata)
+            : ['metadata' => $existing_metadata];
+
+        if (empty($prepared['metadata'])) {
+            $prepared['metadata'] = $existing_metadata;
+        }
+
+        if (empty($prepared['expires_at']) && is_string($fallback_expires) && $fallback_expires !== '') {
+            $fallback = MDS_License_Manager::prepare_payload_metadata(
+                ['expires_at' => $fallback_expires],
+                $prepared['metadata']
+            );
+            if (!empty($fallback['expires_at'])) {
+                $prepared['expires_at'] = $fallback['expires_at'];
+                $prepared['metadata'] = $fallback['metadata'];
+            }
+        }
+
+        if (!empty($prepared['metadata'])) {
+            $encoded = wp_json_encode($prepared['metadata']);
+            if (is_string($encoded)) {
+                $base_update['metadata'] = $encoded;
+            }
+        }
+
+        if (!empty($prepared['expires_at'])) {
+            $base_update['expires_at'] = $prepared['expires_at'];
+        }
+
+        if (!isset($base_update['status'])) {
+            $payload_status = self::extract_license_status_from_payload($payload ?? null);
+            if ($payload_status !== null) {
+                $base_update['status'] = $payload_status;
+            }
+        }
+
+        return $base_update;
+    }
+
+    private static function extract_license_status_from_payload($payload): ?string {
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        $candidates = [];
+
+        if (isset($payload['status']) && is_string($payload['status'])) {
+            $candidates[] = $payload['status'];
+        }
+
+        if (isset($payload['license']) && is_array($payload['license'])) {
+            $license = $payload['license'];
+            if (isset($license['status']) && is_string($license['status'])) {
+                $candidates[] = $license['status'];
+            }
+        }
+
+        if (isset($payload['subscription']) && is_array($payload['subscription'])) {
+            $subscription = $payload['subscription'];
+            if (isset($subscription['status']) && is_string($subscription['status'])) {
+                $candidates[] = $subscription['status'];
+            }
+        }
+
+        foreach ($candidates as $candidate) {
+            $normalized = strtolower(trim($candidate));
+            if ($normalized === '') {
+                continue;
+            }
+
+            if (in_array($normalized, ['active', 'valid', 'paid', 'trialing', 'grace'], true)) {
+                return 'active';
+            }
+
+            if (in_array($normalized, ['inactive', 'expired', 'cancelled', 'canceled', 'past_due', 'unpaid'], true)) {
+                return 'inactive';
+            }
+
+            return $normalized;
+        }
+
+        return null;
+    }
+
+    private static function should_enrich_license_snapshot(string $slug, array $snapshot): bool {
+        if ($slug === '' || empty($snapshot)) {
+            return false;
+        }
+
+        if (self::recently_failed_license_enrichment($slug)) {
+            return false;
+        }
+
+        $renews = isset($snapshot['renews_at']) ? trim((string) $snapshot['renews_at']) : '';
+        $expires = isset($snapshot['expires_at']) ? trim((string) $snapshot['expires_at']) : '';
+
+        $hasRenewal = ($renews !== '' && $renews !== '0000-00-00 00:00:00');
+        $hasExpiration = ($expires !== '' && $expires !== '0000-00-00 00:00:00');
+
+        $status_value = is_string($snapshot['status'] ?? null) ? strtolower(trim((string) $snapshot['status'])) : '';
+        $needs_status_refresh = $status_value === '' || !self::is_active_license_status($status_value);
+
+        if ($hasRenewal || $hasExpiration) {
+            return $needs_status_refresh;
+        }
+
+        if ($needs_status_refresh) {
+            return true;
+        }
+
+        $looks_subscription = self::license_suggests_subscription($snapshot);
+
+        if (!$looks_subscription) {
+            if (in_array($status_value, ['active', 'valid', 'enabled', 'paid'], true)) {
+                $looks_subscription = true;
+            }
+        }
+
+        return $looks_subscription;
+    }
+
+    private static function attempt_remote_license_enrichment(string $slug, $existing_row) {
+        if (!is_object($existing_row)) {
+            return null;
+        }
+
+        $payload = self::fetch_remote_license_payload($slug, $existing_row);
+        if (!is_array($payload) || empty($payload)) {
+            self::record_license_enrichment_failure($slug);
+            return null;
+        }
+
+        $fallback_expires = '';
+        if (isset($payload['license']) && is_array($payload['license'])) {
+            $fallback_expires = (string) ($payload['license']['expires_at'] ?? ($payload['license']['expiresAt'] ?? ''));
+        }
+        if ($fallback_expires === '' && isset($payload['expires_at'])) {
+            $fallback_expires = (string) $payload['expires_at'];
+        }
+        if ($fallback_expires === '' && isset($payload['expiresAt'])) {
+            $fallback_expires = (string) $payload['expiresAt'];
+        }
+        if ($fallback_expires === '' && isset($payload['subscription']) && is_array($payload['subscription'])) {
+            $fallback_expires = (string) ($payload['subscription']['current_period_end'] ?? ($payload['subscription']['currentPeriodEnd'] ?? ''));
+        }
+
+        $update_data = self::compose_license_update_payload(
+            $existing_row,
+            [],
+            $payload,
+            $fallback_expires !== '' ? $fallback_expires : null
+        );
+
+        if (empty($update_data)) {
+            self::record_license_enrichment_failure($slug);
+            return null;
+        }
+
+        try {
+            $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            $lm->update_license((int) $existing_row->id, $update_data);
+            $refreshed = $lm->get_license($slug);
+            if ($refreshed) {
+                delete_transient(self::license_enrichment_failure_key($slug));
+            }
+            return $refreshed ?: null;
+        } catch (\Throwable $t) {
+            self::record_license_enrichment_failure($slug);
+            return null;
+        }
+    }
+
+    private static function fetch_remote_license_payload(string $slug, $license_row): ?array {
+        if (!is_object($license_row) || empty($license_row->license_key)) {
+            return null;
+        }
+
+        $plaintext = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact((string) $license_row->license_key);
+        if ($plaintext === '') {
+            $plaintext = (string) $license_row->license_key;
+        }
+
+        if ($plaintext === '') {
+            return null;
+        }
+
+        $base = self::resolve_extension_server_base();
+        if ($base === null) {
+            return null;
+        }
+
+        $response = wp_remote_post(rtrim($base, '/') . '/api/public/subscriptions/get', [
+            'timeout' => 20,
+            'sslverify' => !Utility::is_development_environment(),
+            'headers' => [ 'Content-Type' => 'application/json' ],
+            'body'    => wp_json_encode([
+                'licenseKey' => $plaintext,
+                'productIdentifier' => $slug,
+            ]),
+        ]);
+
+        if (is_wp_error($response)) {
+            return null;
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $json = json_decode($body, true);
+
+        if ($code !== 200 || !is_array($json)) {
+            return null;
+        }
+
+        if (isset($json['data']) && is_array($json['data'])) {
+            return $json['data'];
+        }
+
+        return $json;
+    }
+
+    private static function resolve_extension_server_base(): ?string {
+        static $cached_base = null;
+        if ($cached_base !== null) {
+            return $cached_base;
+        }
+
+        $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
+        $candidates = [
+            rtrim((string) $user_configured_url, '/'),
+            'http://extension-server:3000',
+            'http://extension-server-dev:3000',
+            'http://host.docker.internal:15346',
+            'http://localhost:15346',
+        ];
+
+        $probes = [
+            '/api/public/ping',
+            '/api/extensions',
+            '/health',
+        ];
+
+        foreach ($candidates as $base) {
+            if (empty($base)) {
+                continue;
+            }
+
+            foreach ($probes as $probe) {
+                $url = rtrim($base, '/') . $probe;
+                $response = wp_remote_get($url, [
+                    'timeout'   => 10,
+                    'sslverify' => !Utility::is_development_environment(),
+                ]);
+
+                if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                    $cached_base = rtrim($base, '/');
+                    return $cached_base;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function recently_failed_license_enrichment(string $slug): bool {
+        return get_transient(self::license_enrichment_failure_key($slug)) !== false;
+    }
+
+    private static function record_license_enrichment_failure(string $slug): void {
+        set_transient(self::license_enrichment_failure_key($slug), 1, MINUTE_IN_SECONDS * 15);
+    }
+
+    private static function license_enrichment_failure_key(string $slug): string {
+        return 'mds_license_enrich_fail_' . md5($slug);
+    }
+
+    private static function format_timezone_suffix(int $timestamp): string {
+        try {
+            $timezone = wp_timezone();
+        } catch (\Throwable $t) {
+            $timezone = new \DateTimeZone('UTC');
+        }
+
+        if (!$timezone instanceof \DateTimeZone) {
+            $timezone = new \DateTimeZone('UTC');
+        }
+
+        $date = new \DateTime('@' . $timestamp);
+        $date->setTimezone($timezone);
+
+        $timezone_string = wp_timezone_string();
+        $offset = $date->format('P');
+        $abbreviation = $date->format('T');
+
+        if ($timezone_string === '') {
+            if ($offset === '+00:00') {
+                return '(UTC)';
+            }
+
+            return '(UTC' . $offset . ')';
+        }
+
+        if ($timezone_string === 'UTC' || strtoupper($timezone_string) === 'UTC') {
+            return '(UTC)';
+        }
+
+        $label = $timezone_string;
+        if ($abbreviation !== ''
+            && strtoupper($abbreviation) !== 'GMT'
+            && strtoupper($abbreviation) !== 'UTC'
+            && stripos($label, $abbreviation) === false
+        ) {
+            $label .= ' ' . $abbreviation;
+        }
+
+        if ($offset === '+00:00') {
+            if (stripos($label, 'UTC') !== false) {
+                return '(' . $label . ')';
+            }
+
+            return sprintf('(%s, UTC%s)', $label, $offset);
+        }
+
+        return sprintf('(%s, UTC%s)', $label, $offset);
+    }
+
     private static function is_active_license_status($status): bool {
         if (!is_string($status) || $status === '') {
             return false;
@@ -2305,7 +2647,16 @@ class Extensions {
             $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
             $row = $lm->get_license($slug);
             if ($row) {
-                return self::build_license_snapshot_from_row($row);
+                $snapshot = self::build_license_snapshot_from_row($row);
+
+                if (self::should_enrich_license_snapshot($slug, $snapshot)) {
+                    $enriched = self::attempt_remote_license_enrichment($slug, $row);
+                    if ($enriched) {
+                        $snapshot = self::build_license_snapshot_from_row($enriched);
+                    }
+                }
+
+                return $snapshot;
             }
             return [];
         } catch (\Throwable $t) {
@@ -2334,9 +2685,24 @@ class Extensions {
         }
 
         if ($renews_at !== '') {
-            $timestamp = strtotime($renews_at);
+            $timestamp = false;
+            if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $renews_at)) {
+                $timestamp = strtotime($renews_at . ' UTC');
+            }
+            if ($timestamp === false) {
+                $timestamp = strtotime($renews_at);
+            }
             if ($timestamp && $timestamp > 0) {
-                return date_i18n(get_option('date_format'), $timestamp);
+                $format = trim((string) get_option('date_format') . ' ' . (string) get_option('time_format'));
+                if ($format === '') {
+                    $format = 'Y-m-d H:i';
+                }
+                $display = date_i18n($format, $timestamp);
+                $timezone_suffix = self::format_timezone_suffix($timestamp);
+                if ($timezone_suffix !== '') {
+                    $display .= ' ' . $timezone_suffix;
+                }
+                return $display;
             }
             return $plan_is_subscription
                 ? Language::get('Renews automatically')
@@ -2344,9 +2710,24 @@ class Extensions {
         }
 
         if ($expires_at !== '') {
-            $timestamp = strtotime($expires_at);
+            $timestamp = false;
+            if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $expires_at)) {
+                $timestamp = strtotime($expires_at . ' UTC');
+            }
+            if ($timestamp === false) {
+                $timestamp = strtotime($expires_at);
+            }
             if ($timestamp && $timestamp > 0) {
-                return date_i18n(get_option('date_format'), $timestamp);
+                $format = trim((string) get_option('date_format') . ' ' . (string) get_option('time_format'));
+                if ($format === '') {
+                    $format = 'Y-m-d H:i';
+                }
+                $display = date_i18n($format, $timestamp);
+                $timezone_suffix = self::format_timezone_suffix($timestamp);
+                if ($timezone_suffix !== '') {
+                    $display .= ' ' . $timezone_suffix;
+                }
+                return $display;
             }
             return $plan_is_subscription
                 ? Language::get('Renews automatically')
@@ -5980,9 +6361,9 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             // Extract license payload
             $licensePayload = $json['license'] ?? ($json['data']['license'] ?? $json);
             $licenseKey = is_array($licensePayload) ? ($licensePayload['licenseKey'] ?? ($licensePayload['license_key'] ?? '')) : '';
-            $expiresAt  = is_array($licensePayload) ? ($licensePayload['expiresAt'] ?? ($licensePayload['expires_at'] ?? '')) : '';
+            $fallbackExpires = is_array($licensePayload) ? ($licensePayload['expiresAt'] ?? ($licensePayload['expires_at'] ?? '')) : '';
             $licenseKey = is_string($licenseKey) ? sanitize_text_field($licenseKey) : '';
-            $expiresAt  = is_string($expiresAt) ? sanitize_text_field($expiresAt) : '';
+            $fallbackExpires = is_string($fallbackExpires) ? trim((string) $fallbackExpires) : '';
 
             if (empty($licenseKey)) {
                 throw new \Exception('No license key returned from claim endpoint.');
@@ -5993,20 +6374,32 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             $license = $license_manager->get_license( $extension_slug );
             $encrypted_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact( $licenseKey );
             if ( $license ) {
-                $license_manager->update_license( (int)$license->id, [
-                    'license_key' => $encrypted_key,
-                    'status'      => 'active',
-                    'expires_at'  => $expiresAt,
-                ] );
+                $update_data = self::compose_license_update_payload(
+                    $license,
+                    [
+                        'license_key' => $encrypted_key,
+                        'status'      => 'active',
+                    ],
+                    is_array($licensePayload) ? $licensePayload : null,
+                    $fallbackExpires
+                );
+
+                $license_manager->update_license( (int) $license->id, $update_data );
             } else {
                 $license_manager->add_license( $extension_slug, $encrypted_key );
                 $license = $license_manager->get_license( $extension_slug );
                 if ($license) {
-                    $license_manager->update_license( (int)$license->id, [
-                        'license_key' => $encrypted_key,
-                        'status'     => 'active',
-                        'expires_at' => $expiresAt,
-                    ] );
+                    $update_data = self::compose_license_update_payload(
+                        $license,
+                        [
+                            'license_key' => $encrypted_key,
+                            'status'      => 'active',
+                        ],
+                        is_array($licensePayload) ? $licensePayload : null,
+                        $fallbackExpires
+                    );
+
+                    $license_manager->update_license( (int) $license->id, $update_data );
                 }
             }
 
@@ -6032,7 +6425,8 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
         // Attempt activation via extension server; on failure store as pending locally
         $activated = false;
-        $expires_at = null;
+        $fallback_expires = '';
+        $remote_payload = null;
         try {
             $user_configured_url = \MillionDollarScript\Classes\Data\Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
             $candidates = [
@@ -6068,10 +6462,11 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                     $json = json_decode(wp_remote_retrieve_body($resp), true);
                     $activated = is_array($json) && (!empty($json['success']) || !empty($json['activated']) || !empty($json['valid']));
                     if (is_array($json)) {
-                        if (isset($json['license']['expires_at'])) { $expires_at = $json['license']['expires_at']; }
-                        elseif (isset($json['license']['expiresAt'])) { $expires_at = $json['license']['expiresAt']; }
-                        elseif (isset($json['expires_at'])) { $expires_at = $json['expires_at']; }
-                        elseif (isset($json['expiresAt'])) { $expires_at = $json['expiresAt']; }
+                        $remote_payload = $json['license'] ?? ($json['data']['license'] ?? null);
+                        if (isset($json['license']['expires_at'])) { $fallback_expires = (string) $json['license']['expires_at']; }
+                        elseif (isset($json['license']['expiresAt'])) { $fallback_expires = (string) $json['license']['expiresAt']; }
+                        elseif (isset($json['expires_at'])) { $fallback_expires = (string) $json['expires_at']; }
+                        elseif (isset($json['expiresAt'])) { $fallback_expires = (string) $json['expiresAt']; }
                     }
                 }
             }
@@ -6084,20 +6479,35 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         $existing = $license_manager->get_license( $extension_slug );
         $enc = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact($license_key);
 
+        $fallback_expires = is_string($fallback_expires) ? trim($fallback_expires) : '';
+
         if ( $existing ) {
-            $license_manager->update_license( (int)$existing->id, [
-                'license_key' => $enc,
-                'status'      => $activated ? 'active' : 'inactive',
-                'expires_at'  => $expires_at,
-            ] );
+            $update_data = self::compose_license_update_payload(
+                $existing,
+                [
+                    'license_key' => $enc,
+                    'status'      => $activated ? 'active' : 'inactive',
+                ],
+                is_array($remote_payload) ? $remote_payload : null,
+                $fallback_expires
+            );
+
+            $license_manager->update_license( (int) $existing->id, $update_data );
         } else {
             $license_manager->add_license( $extension_slug, $enc );
             $license = $license_manager->get_license( $extension_slug );
             if ($license) {
-                $license_manager->update_license( (int)$license->id, [
-                    'status'     => $activated ? 'active' : 'inactive',
-                    'expires_at' => $expires_at,
-                ] );
+                $update_data = self::compose_license_update_payload(
+                    $license,
+                    [
+                        'status'      => $activated ? 'active' : 'inactive',
+                        'license_key' => $enc,
+                    ],
+                    is_array($remote_payload) ? $remote_payload : null,
+                    $fallback_expires
+                );
+
+                $license_manager->update_license( (int) $license->id, $update_data );
             }
         }
 
@@ -6152,12 +6562,14 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         try {
             $activation = \MillionDollarScript\Classes\Extension\API::activate_license( $license_key, $extension_slug );
             $ok = is_array($activation) && (!empty($activation['success']) || !empty($activation['activated']) || !empty($activation['valid']));
-            $expires_at = '';
+            $fallback_expires = '';
+            $remote_payload = null;
             if (is_array($activation)) {
-                if (isset($activation['license']['expires_at'])) { $expires_at = (string)$activation['license']['expires_at']; }
-                elseif (isset($activation['license']['expiresAt'])) { $expires_at = (string)$activation['license']['expiresAt']; }
-                elseif (isset($activation['expires_at'])) { $expires_at = (string)$activation['expires_at']; }
-                elseif (isset($activation['expiresAt'])) { $expires_at = (string)$activation['expiresAt']; }
+                $remote_payload = $activation['license'] ?? ($activation['data']['license'] ?? null);
+                if (isset($activation['license']['expires_at'])) { $fallback_expires = (string) $activation['license']['expires_at']; }
+                elseif (isset($activation['license']['expiresAt'])) { $fallback_expires = (string) $activation['license']['expiresAt']; }
+                elseif (isset($activation['expires_at'])) { $fallback_expires = (string) $activation['expires_at']; }
+                elseif (isset($activation['expiresAt'])) { $fallback_expires = (string) $activation['expiresAt']; }
             }
 
             if (!$ok) {
@@ -6169,20 +6581,35 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             $existing = $license_manager->get_license( $extension_slug );
             $enc_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::encryptToCompact($license_key);
 
+            $fallback_expires = is_string($fallback_expires) ? trim($fallback_expires) : '';
+
             if ( $existing ) {
-                $license_manager->update_license( (int)$existing->id, [
-                    'license_key' => $enc_key,
-                    'status'      => 'active',
-                    'expires_at'  => $expires_at,
-                ] );
+                $update_data = self::compose_license_update_payload(
+                    $existing,
+                    [
+                        'license_key' => $enc_key,
+                        'status'      => 'active',
+                    ],
+                    is_array($remote_payload) ? $remote_payload : null,
+                    $fallback_expires
+                );
+
+                $license_manager->update_license( (int) $existing->id, $update_data );
             } else {
                 $license_manager->add_license( $extension_slug, $enc_key );
                 $license = $license_manager->get_license( $extension_slug );
                 if ($license) {
-                    $license_manager->update_license( (int)$license->id, [
-                        'status'     => 'active',
-                        'expires_at' => $expires_at,
-                    ] );
+                    $update_data = self::compose_license_update_payload(
+                        $license,
+                        [
+                            'status'      => 'active',
+                            'license_key' => $enc_key,
+                        ],
+                        is_array($remote_payload) ? $remote_payload : null,
+                        $fallback_expires
+                    );
+
+                    $license_manager->update_license( (int) $license->id, $update_data );
                 }
             }
 

@@ -216,8 +216,31 @@ class MDS_License_Manager {
         if ( is_array( $validation ) && ! empty( $validation['success'] ) && ! empty( $validation['valid'] ) ) {
             set_transient( $transient_key, 'valid', DAY_IN_SECONDS );
 
+            $update_data = [];
+
+            $existing_metadata = self::decode_metadata_value( $license->metadata ?? null );
+
+            if ( ! empty( $validation['license'] ) && is_array( $validation['license'] ) ) {
+                $prepared = self::prepare_payload_metadata( $validation['license'], $existing_metadata );
+
+                if ( ! empty( $prepared['metadata'] ) ) {
+                    $encoded = wp_json_encode( $prepared['metadata'] );
+                    if ( is_string( $encoded ) ) {
+                        $update_data['metadata'] = $encoded;
+                    }
+                }
+
+                if ( ! empty( $prepared['expires_at'] ) ) {
+                    $update_data['expires_at'] = $prepared['expires_at'];
+                }
+            }
+
             if ( $status !== 'active' ) {
-                $this->update_license( (int) $license->id, [ 'status' => 'active' ] );
+                $update_data['status'] = 'active';
+            }
+
+            if ( ! empty( $update_data ) ) {
+                $this->update_license( (int) $license->id, $update_data );
             }
 
             return true;
@@ -240,5 +263,318 @@ class MDS_License_Manager {
         }
         $rows = $wpdb->get_results( "SELECT * FROM {$this->table_name} ORDER BY id DESC" );
         return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Decode a stored metadata value into an array.
+     */
+    public static function decode_metadata_value( $metadata ): array {
+        if ( $metadata === null || $metadata === '' ) {
+            return [];
+        }
+
+        if ( is_string( $metadata ) ) {
+            $unserialized = maybe_unserialize( $metadata );
+            if ( $unserialized !== $metadata ) {
+                return self::decode_metadata_value( $unserialized );
+            }
+
+            $decoded = json_decode( $metadata, true );
+            return is_array( $decoded ) ? $decoded : [];
+        }
+
+        if ( $metadata instanceof \stdClass ) {
+            return json_decode( wp_json_encode( $metadata ), true ) ?: [];
+        }
+
+        if ( is_array( $metadata ) ) {
+            return $metadata;
+        }
+
+        return [];
+    }
+
+    /**
+     * Merge metadata and date fields from a remote license payload.
+     */
+    public static function prepare_payload_metadata( array $payload, array $existing_metadata = [] ): array {
+        $metadata = $existing_metadata;
+
+        $renews_at = self::extract_datetime_from_payload(
+            $payload,
+            [
+                ['renews_at'],
+                ['renewsAt'],
+                ['renewal_at'],
+                ['renewalAt'],
+                ['billing_period_end'],
+                ['billingPeriodEnd'],
+                ['next_billing_at'],
+                ['nextBillingAt'],
+                ['next_payment_attempt'],
+                ['nextPaymentAttempt'],
+                ['subscription', 'current_period_end'],
+                ['subscription', 'currentPeriodEnd'],
+                ['subscription', 'billing_period_end'],
+                ['subscription', 'billingPeriodEnd'],
+                ['subscription', 'next_billing_at'],
+                ['subscription', 'nextBillingAt'],
+                ['stripe_subscription', 'current_period_end'],
+                ['stripeSubscription', 'currentPeriodEnd'],
+                ['stripe', 'subscription', 'current_period_end'],
+                ['stripe', 'subscription', 'currentPeriodEnd'],
+                ['stripe', 'subscription', 'billing_period_end'],
+                ['stripe', 'upcoming_invoice', 'period_end'],
+            ],
+            ['renew', 'billingperiod', 'nextbilling', 'nextpayment', 'periodend']
+        );
+
+        if ( $renews_at !== null ) {
+            $metadata['renews_at'] = $renews_at;
+        }
+
+        $expires_at = self::extract_datetime_from_payload(
+            $payload,
+            [
+                ['expires_at'],
+                ['expiresAt'],
+                ['expiration'],
+                ['expirationDate'],
+                ['subscription', 'expires_at'],
+                ['subscription', 'expiresAt'],
+                ['subscription', 'current_period_end'],
+                ['subscription', 'currentPeriodEnd'],
+                ['stripe_subscription', 'cancel_at'],
+                ['stripeSubscription', 'cancelAt'],
+                ['stripe', 'subscription', 'cancel_at'],
+                ['stripe', 'subscription', 'cancelAt'],
+            ],
+            ['expire', 'expiration', 'periodend', 'cancelat']
+        );
+
+        if ( $expires_at !== null ) {
+            $metadata['expires_at'] = $expires_at;
+        }
+
+        $plan = self::find_scalar_value_by_keys( $payload, ['plan', 'planKey', 'plan_key', 'planSlug'] );
+        if ( $plan !== null ) {
+            $metadata['plan'] = $plan;
+        }
+
+        $price_plan = self::find_scalar_value_by_keys( $payload, ['price_plan', 'pricePlan', 'planPrice', 'plan_price'] );
+        if ( $price_plan !== null ) {
+            $metadata['price_plan'] = $price_plan;
+        }
+
+        $recurring = self::find_scalar_value_by_keys( $payload, ['recurring', 'interval', 'billing_interval', 'billingInterval'] );
+        if ( $recurring !== null ) {
+            $metadata['recurring'] = $recurring;
+        }
+
+        $billing_period = self::find_scalar_value_by_keys( $payload, ['billing_period', 'billingPeriod'] );
+        if ( $billing_period !== null ) {
+            $metadata['billing_period'] = $billing_period;
+        }
+
+        $subscription_id = self::find_scalar_value_by_keys( $payload, ['subscription_id', 'subscriptionId'] );
+        if ( $subscription_id !== null ) {
+            $metadata['subscription_id'] = $subscription_id;
+        }
+
+        $stripe_subscription_id = self::find_scalar_value_by_keys( $payload, ['stripe_subscription_id', 'stripeSubscriptionId'] );
+        if ( $stripe_subscription_id !== null ) {
+            $metadata['stripe_subscription_id'] = $stripe_subscription_id;
+        }
+
+        $stripe_price_id = self::find_scalar_value_by_keys( $payload, ['stripe_price_id', 'stripePriceId', 'price_id', 'priceId'] );
+        if ( $stripe_price_id !== null ) {
+            $metadata['stripe_price_id'] = $stripe_price_id;
+        }
+
+        $metadata = self::cleanup_metadata_array( $metadata );
+
+        $result = [ 'metadata' => $metadata ];
+
+        if ( $renews_at !== null ) {
+            $result['renews_at'] = $renews_at;
+        }
+
+        if ( $expires_at !== null ) {
+            $result['expires_at'] = $expires_at;
+        }
+
+        return $result;
+    }
+
+    private static function cleanup_metadata_array( array $metadata ): array {
+        $clean = [];
+        foreach ( $metadata as $key => $value ) {
+            if ( $value === null ) {
+                continue;
+            }
+            if ( is_string( $value ) ) {
+                $trimmed = trim( $value );
+                if ( $trimmed === '' ) {
+                    continue;
+                }
+                $clean[ $key ] = $trimmed;
+                continue;
+            }
+            if ( is_array( $value ) ) {
+                $nested = self::cleanup_metadata_array( $value );
+                if ( ! empty( $nested ) ) {
+                    $clean[ $key ] = $nested;
+                }
+                continue;
+            }
+            if ( $value instanceof \DateTimeInterface ) {
+                $clean[ $key ] = $value->format( 'c' );
+                continue;
+            }
+            if ( is_scalar( $value ) ) {
+                $clean[ $key ] = $value;
+            }
+        }
+
+        return $clean;
+    }
+
+    private static function find_scalar_value_by_keys( array $payload, array $keys ): ?string {
+        $normalized_keys = array_map(
+            static function ( $key ) {
+                return strtolower( preg_replace( '/[^a-z0-9]/', '', $key ) );
+            },
+            $keys
+        );
+
+        return self::recursive_find_scalar( $payload, $normalized_keys );
+    }
+
+    private static function recursive_find_scalar( $value, array $normalized_keys ): ?string {
+        if ( is_array( $value ) ) {
+            foreach ( $value as $key => $child ) {
+                if ( is_string( $key ) ) {
+                    $normalized = strtolower( preg_replace( '/[^a-z0-9]/', '', $key ) );
+                    if ( in_array( $normalized, $normalized_keys, true ) ) {
+                        if ( is_scalar( $child ) && $child !== '' ) {
+                            return trim( (string) $child );
+                        }
+                        if ( $child instanceof \DateTimeInterface ) {
+                            return $child->format( 'c' );
+                        }
+                    }
+                }
+
+                $found = self::recursive_find_scalar( $child, $normalized_keys );
+                if ( $found !== null ) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function extract_datetime_from_payload( array $payload, array $preferred_paths, array $hints ): ?string {
+        foreach ( $preferred_paths as $path ) {
+            $value = self::value_by_path( $payload, $path );
+            $normalized = self::normalize_datetime_value( $value );
+            if ( $normalized !== null ) {
+                return $normalized;
+            }
+        }
+
+        return self::find_datetime_by_hints( $payload, $hints );
+    }
+
+    private static function value_by_path( array $payload, array $path ) {
+        $cursor = $payload;
+        foreach ( $path as $segment ) {
+            if ( ! is_array( $cursor ) ) {
+                return null;
+            }
+
+            if ( array_key_exists( $segment, $cursor ) ) {
+                $cursor = $cursor[ $segment ];
+                continue;
+            }
+
+            $found = null;
+            $needle = strtolower( $segment );
+            foreach ( $cursor as $key => $value ) {
+                if ( is_string( $key ) && strtolower( $key ) === $needle ) {
+                    $found = $value;
+                    break;
+                }
+            }
+
+            if ( $found === null ) {
+                return null;
+            }
+
+            $cursor = $found;
+        }
+
+        return $cursor;
+    }
+
+    private static function find_datetime_by_hints( $payload, array $hints ): ?string {
+        if ( is_array( $payload ) ) {
+            foreach ( $payload as $key => $value ) {
+                if ( is_string( $key ) ) {
+                    $normalized_key = strtolower( preg_replace( '/[^a-z0-9]/', '', $key ) );
+                    foreach ( $hints as $hint ) {
+                        if ( strpos( $normalized_key, $hint ) !== false ) {
+                            $normalized = self::normalize_datetime_value( $value );
+                            if ( $normalized !== null ) {
+                                return $normalized;
+                            }
+                        }
+                    }
+                }
+
+                $nested = self::find_datetime_by_hints( $value, $hints );
+                if ( $nested !== null ) {
+                    return $nested;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function normalize_datetime_value( $value ): ?string {
+        if ( $value === null ) {
+            return null;
+        }
+
+        if ( is_numeric( $value ) ) {
+            $timestamp = (int) $value;
+            if ( $timestamp <= 0 ) {
+                return null;
+            }
+            if ( $timestamp > 9999999999 ) { // Likely milliseconds
+                $timestamp = (int) round( $timestamp / 1000 );
+            }
+            return gmdate( 'Y-m-d H:i:s', $timestamp );
+        }
+
+        if ( is_string( $value ) ) {
+            $trimmed = trim( $value );
+            if ( $trimmed === '' || $trimmed === '0000-00-00 00:00:00' ) {
+                return null;
+            }
+            $timestamp = strtotime( $trimmed );
+            if ( $timestamp && $timestamp > 0 ) {
+                return gmdate( 'Y-m-d H:i:s', $timestamp );
+            }
+            return null;
+        }
+
+        if ( $value instanceof \DateTimeInterface ) {
+            return gmdate( 'Y-m-d H:i:s', $value->getTimestamp() );
+        }
+
+        return null;
     }
 }
