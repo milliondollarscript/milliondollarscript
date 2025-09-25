@@ -104,6 +104,26 @@ function escapeHtml(value) {
 
 const FEATURE_ALLOWED_TAGS = new Set(['STRONG', 'EM', 'B', 'I', 'U', 'CODE', 'BR']);
 
+function truthyFlag(val) {
+	if (typeof val === 'boolean') {
+		return val;
+	}
+	if (typeof val === 'number') {
+		return val !== 0;
+	}
+	if (typeof val === 'string') {
+		const normalized = val.trim().toLowerCase();
+		return normalized === 'true' || normalized === '1' || normalized === 'yes';
+	}
+	return !!val;
+}
+
+function rowHasLocalPurchase($row) {
+	return truthyFlag($row.data('purchased'))
+		|| truthyFlag($row.data('purchasedLocally'))
+		|| truthyFlag($row.data('hasLocalLicense'));
+}
+
 function normalizeFeatureFormatting(template) {
 	const replacements = [];
 	const walker = document.createTreeWalker(
@@ -367,26 +387,6 @@ function sanitizeFeatureHtml(value) {
 				$row.find('.mds-license-required-note').remove();
 			}
 
-			function truthyFlag(val) {
-				if (typeof val === 'boolean') {
-					return val;
-				}
-				if (typeof val === 'number') {
-					return val !== 0;
-				}
-				if (typeof val === 'string') {
-					const normalized = val.trim().toLowerCase();
-					return normalized === 'true' || normalized === '1' || normalized === 'yes';
-				}
-				return !!val;
-			}
-
-			function rowHasLocalPurchase($row) {
-				return truthyFlag($row.data('purchased'))
-					|| truthyFlag($row.data('purchasedLocally'))
-					|| truthyFlag($row.data('hasLocalLicense'));
-			}
-
 			if (!$premiumRows.length) return;
 
 			// If we don't have a license key localized, trust the server-rendered row state
@@ -580,7 +580,11 @@ function sanitizeFeatureHtml(value) {
 		const isPremiumAttr = $context.data("is-premium");
 		const isPremium = isPremiumAttr === true || isPremiumAttr === "true";
 		const licensedAttr = String($context.data("is-licensed") || '').toLowerCase() === 'true';
-		const hasLicense = licensedAttr || !!(MDS_EXTENSIONS_DATA.license_key && String(MDS_EXTENSIONS_DATA.license_key).trim());
+		const hasLocalLicense = truthyFlag($context.data('hasLocalLicense'));
+		const purchased = truthyFlag($context.data('purchased'))
+			|| truthyFlag($context.data('purchasedLocally'));
+		const hasSiteLicense = !!(MDS_EXTENSIONS_DATA.license_key && String(MDS_EXTENSIONS_DATA.license_key).trim());
+		const hasLicense = licensedAttr || hasLocalLicense || purchased || hasSiteLicense;
 
 		if (isPremium && !hasLicense) {
 			const settingsUrl = MDS_EXTENSIONS_DATA.settings_url || '#';

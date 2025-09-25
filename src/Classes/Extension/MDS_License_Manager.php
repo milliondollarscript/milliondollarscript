@@ -188,13 +188,16 @@ class MDS_License_Manager {
 
         $status = isset($license->status) ? strtolower((string) $license->status) : '';
         $transient_key = 'mds_license_check_' . $extension_slug;
+        $cached = get_transient($transient_key);
 
-        if ($status !== 'active' && !$force_refresh) {
-            return false;
-        }
+        if (!$force_refresh) {
+            if ($status === 'active' && $cached === 'valid') {
+                return true;
+            }
 
-        if ($status === 'active' && !$force_refresh && get_transient($transient_key)) {
-            return true;
+            if ($cached === 'invalid') {
+                return false;
+            }
         }
 
         $plaintext = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact( (string) $license->license_key );
@@ -204,7 +207,7 @@ class MDS_License_Manager {
 
         if ($plaintext === '') {
             $this->update_license( (int) $license->id, [ 'status' => 'inactive' ] );
-            delete_transient( $transient_key );
+            set_transient( $transient_key, 'invalid', HOUR_IN_SECONDS );
             return false;
         }
 
@@ -221,7 +224,7 @@ class MDS_License_Manager {
         }
 
         $this->update_license( (int) $license->id, [ 'status' => 'inactive' ] );
-        delete_transient( $transient_key );
+        set_transient( $transient_key, 'invalid', HOUR_IN_SECONDS );
 
         return false;
     }

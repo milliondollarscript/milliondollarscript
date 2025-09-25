@@ -167,6 +167,76 @@ class Extensions {
     ];
 
     /**
+     * Attempt to coerce remote metadata fragments into arrays by repeatedly
+     * handling serialized or JSON-encoded payloads.
+     */
+    private static function decode_metadata_fragment($value)
+    {
+        $attempts = 0;
+
+        while (is_string($value) && $attempts < 5) {
+            $attempts++;
+
+            $maybe_unserialized = maybe_unserialize($value);
+            if ($maybe_unserialized !== $value) {
+                $value = $maybe_unserialized;
+                continue;
+            }
+
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && $decoded !== null) {
+                $value = $decoded;
+                continue;
+            }
+
+            break;
+        }
+
+        if ($value instanceof \stdClass) {
+            $value = json_decode(wp_json_encode($value), true) ?: [];
+        }
+
+        return $value;
+    }
+
+    private static function extract_stripe_price_blocks($value): array
+    {
+        $value = self::decode_metadata_fragment($value);
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        if (isset($value['stripe_prices']) && is_array($value['stripe_prices'])) {
+            $candidate = $value['stripe_prices'];
+            $nonEmpty = false;
+            foreach ($candidate as $entries) {
+                $decoded = self::decode_metadata_fragment($entries);
+                if (is_array($decoded) && !empty($decoded)) {
+                    $nonEmpty = true;
+                    break;
+                }
+                if (is_string($decoded) && trim($decoded) !== '') {
+                    $nonEmpty = true;
+                    break;
+                }
+            }
+            if ($nonEmpty) {
+                return $candidate;
+            }
+        }
+
+        foreach ($value as $entry) {
+            $candidate = self::extract_stripe_price_blocks($entry);
+            if (!empty($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * Initializes the Extensions class.
      */
     public static function init(): void {
@@ -1465,48 +1535,36 @@ class Extensions {
             $result = self::merge_metadata_arrays($result, $source);
         };
 
-        $process = static function ($value) use (&$process, $merge): void {
+        $process = static function ($value) use (&$result, &$process, $merge): void {
             if ($value === null || $value === '') {
                 return;
             }
 
-            if (is_string($value)) {
-                $unserialized = maybe_unserialize($value);
-                if ($unserialized !== $value) {
-                    $process($unserialized);
-                    return;
-                }
-
-                $decoded = json_decode($value, true);
-                if (is_array($decoded)) {
-                    $merge($decoded);
-                }
-                return;
-            }
+            $value = self::decode_metadata_fragment($value);
 
             if ($value instanceof \stdClass) {
-                $as_array = json_decode(wp_json_encode($value), true);
-                if (is_array($as_array)) {
-                    $merge($as_array);
-                }
-                return;
+                $value = json_decode(wp_json_encode($value), true) ?: [];
             }
 
             if (is_array($value)) {
                 $is_assoc = array_keys($value) !== range(0, count($value) - 1);
                 if ($is_assoc) {
                     $merge($value);
+                    foreach ($value as $entry) {
+                        $process($entry);
+                    }
                 } else {
                     foreach ($value as $entry) {
                         $process($entry);
                     }
                 }
+                return;
             }
         };
 
         $process($metadata);
 
-        $result = self::normalize_stripe_pricing_metadata($result);
+        $result = self::normalize_stripe_pricing_metadata($result, $metadata);
 
         return self::normalize_plan_features_metadata($result);
     }
@@ -1540,15 +1598,33 @@ class Extensions {
     /**
      * Normalizes Stripe plan pricing metadata to mirror the Extension Server helpers.
      */
-    private static function normalize_stripe_pricing_metadata(array $meta): array {
+    private static function normalize_stripe_pricing_metadata(array $meta, $raw_source = null): array {
         $structure = [];
-        $source = isset($meta['stripe_prices']) && is_array($meta['stripe_prices']) ? $meta['stripe_prices'] : [];
+        $source_raw = $meta['stripe_prices'] ?? [];
+        $source = [];
+
+        $source_raw = self::decode_metadata_fragment($source_raw);
+        if (!is_array($source_raw) || empty(array_filter($source_raw))) {
+            $fallback_source = $raw_source ?? [];
+            $source_raw = self::extract_stripe_price_blocks($fallback_source);
+            $source_raw = self::decode_metadata_fragment($source_raw);
+        }
+
+        if (is_array($source_raw)) {
+            foreach ($source_raw as $plan => $entries) {
+                $source[self::canonicalize_plan_key((string) $plan)] = $entries;
+            }
+        }
 
         foreach (self::STRIPE_PRICE_PLANS as $plan) {
             $structure[$plan] = [];
-            if (isset($source[$plan]) && is_array($source[$plan])) {
-                foreach ($source[$plan] as $rawEntry) {
-                    $entry = self::create_stripe_price_entry($rawEntry);
+            if (isset($source[$plan])) {
+                $entries = self::decode_metadata_fragment($source[$plan]);
+                if (!is_array($entries)) {
+                    $entries = [$entries];
+                }
+                foreach ($entries as $rawEntry) {
+                    $entry = self::create_stripe_price_entry(self::decode_metadata_fragment($rawEntry));
                     if ($entry !== null) {
                         self::push_stripe_price_entry($structure[$plan], $entry);
                     }
@@ -1610,6 +1686,8 @@ class Extensions {
      * Convert a raw Stripe price entry into the normalized structure used across the UI.
      */
     private static function create_stripe_price_entry($raw): ?array {
+        $raw = self::decode_metadata_fragment($raw);
+
         if ($raw instanceof \stdClass) {
             $raw = json_decode(wp_json_encode($raw), true);
         }
@@ -2710,7 +2788,16 @@ class Extensions {
             ], $groups, $seen_plans);
         }
 
-        return $groups;
+        if (!empty($groups)) {
+            return $groups;
+        }
+
+        return self::build_plan_groups_from_pricing_overview(
+            $metadata,
+            $pricing_overview,
+            $purchase_links,
+            $plan_order
+        );
     }
 
     private static function build_plan_group_entries(
@@ -2807,6 +2894,455 @@ class Extensions {
         }
 
         return $entries;
+    }
+
+    private static function build_plan_groups_from_pricing_overview(
+        array $metadata,
+        array $pricing_overview,
+        array $purchase_links,
+        array $plan_order
+    ): array {
+        $plans = isset($pricing_overview['plans']) && is_array($pricing_overview['plans'])
+            ? $pricing_overview['plans']
+            : [];
+
+        $options = [];
+        if (isset($purchase_links['options']) && is_array($purchase_links['options'])) {
+            foreach ($purchase_links['options'] as $option_key => $option_list) {
+                $normalized_key = self::canonicalize_plan_key((string) $option_key);
+                if ($normalized_key === '') {
+                    continue;
+                }
+                $options[$normalized_key] = is_array($option_list) ? $option_list : [];
+            }
+        }
+
+        $groups = [];
+        $seen = [];
+
+        $plan_candidates = self::determine_fallback_plan_keys(
+            $plan_order,
+            $plans,
+            $options
+        );
+
+        foreach ($plan_candidates as $plan_key) {
+            if ($plan_key === '' || isset($seen[$plan_key])) {
+                continue;
+            }
+            $plan_lookup = self::locate_pricing_plan_data($plans, $plan_key);
+            $plan_data = $plan_lookup['data'];
+            $plan_source_key = $plan_lookup['source_key'];
+            $entry = self::build_pricing_overview_fallback_entry(
+                $plan_key,
+                $plan_data,
+                $plan_source_key,
+                $metadata,
+                $pricing_overview,
+                $options[$plan_key] ?? []
+            );
+            if ($entry !== null) {
+                $groups[] = [
+                    'key'     => $plan_key,
+                    'label'   => self::get_plan_label($plan_key),
+                    'entries' => [$entry],
+                ];
+                $seen[$plan_key] = true;
+            }
+        }
+
+        return $groups;
+    }
+
+    private static function determine_fallback_plan_keys(array $plan_order, array $plans, array $options): array
+    {
+        $candidates = [];
+
+        foreach ($plan_order as $plan) {
+            $normalized = self::canonicalize_plan_key((string) $plan);
+            if ($normalized !== '') {
+                $candidates[] = $normalized;
+            }
+        }
+
+        foreach ($plans as $plan_key => $_) {
+            $normalized = self::canonicalize_plan_key((string) $plan_key);
+            if ($normalized !== '') {
+                $candidates[] = $normalized;
+            }
+        }
+
+        foreach ($options as $plan_key => $_) {
+            $normalized = self::canonicalize_plan_key((string) $plan_key);
+            if ($normalized !== '') {
+                $candidates[] = $normalized;
+            }
+        }
+
+        if (empty($candidates)) {
+            $candidates = self::STRIPE_PRICE_PLANS;
+        }
+
+        $unique = [];
+        foreach ($candidates as $plan) {
+            if ($plan === '' || isset($unique[$plan])) {
+                continue;
+            }
+            $unique[$plan] = true;
+        }
+
+        return array_keys($unique);
+    }
+
+    private static function build_pricing_overview_fallback_entry(
+        string $plan_key,
+        ?array $plan_data,
+        string $plan_source_key,
+        array $metadata,
+        array $pricing_overview,
+        array $plan_options
+    ): ?array {
+        $plan_data = is_array($plan_data) ? $plan_data : [];
+
+        $price_id = self::resolve_plan_price_id_fallback($plan_key, $metadata, $plan_data, $plan_options);
+        if ($price_id === '') {
+            $price_id = 'plan-' . $plan_key;
+        }
+
+        $pricing = self::resolve_plan_pricing_from_overview($plan_data, $metadata, $plan_key);
+
+        $features = self::extract_features_from_pricing_plan($plan_data);
+        if (empty($features)) {
+            $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key, $price_id);
+        }
+
+        if ($pricing['amount'] === '' && empty($features)) {
+            $features = [Language::get('Pricing details unavailable for this plan right now.')];
+        }
+
+        $purchase_option = self::resolve_purchase_option_for_entry($plan_options, $price_id);
+        $label = self::resolve_plan_entry_label($plan_key, $plan_data, $purchase_option);
+
+        return [
+            'plan_key'      => $plan_key,
+            'plan_label'    => self::get_plan_label($plan_key),
+            'price_id'      => $price_id,
+            'label'         => $label,
+            'amount'        => $pricing['amount'],
+            'compare_price' => $pricing['compare'],
+            'badge_label'   => $pricing['badge'],
+            'status'        => 'active',
+            'is_default'    => true,
+            'features'      => $features,
+            'purchase'      => $purchase_option,
+        ];
+    }
+
+    private static function locate_pricing_plan_data(array $plans, string $plan_key): array
+    {
+        if (isset($plans[$plan_key]) && is_array($plans[$plan_key])) {
+            return [
+                'data'       => $plans[$plan_key],
+                'source_key' => $plan_key,
+            ];
+        }
+
+        foreach ($plans as $candidate_key => $plan_data) {
+            if (self::canonicalize_plan_key((string) $candidate_key) === $plan_key && is_array($plan_data)) {
+                return [
+                    'data'       => $plan_data,
+                    'source_key' => (string) $candidate_key,
+                ];
+            }
+        }
+
+        return [
+            'data'       => [],
+            'source_key' => '',
+        ];
+    }
+
+    private static function resolve_plan_pricing_from_overview(array $plan_data, array $metadata, string $plan_key): array
+    {
+        $result = [
+            'amount' => '',
+            'compare' => '',
+            'badge' => '',
+        ];
+
+        $sale_data = isset($plan_data['sale']) && is_array($plan_data['sale']) ? $plan_data['sale'] : [];
+        $default_data = isset($plan_data['default']) && is_array($plan_data['default']) ? $plan_data['default'] : [];
+
+        $sale_active = !empty($sale_data['is_active']) || !empty($sale_data['isActive']);
+        $sale_amount = $sale_active ? self::format_pricing_overview_amount($sale_data) : '';
+        $default_amount = self::format_pricing_overview_amount($default_data);
+
+        if ($sale_amount !== '' && $sale_amount !== $default_amount) {
+            $result['amount'] = $sale_amount;
+            $result['compare'] = $default_amount;
+            $label = '';
+            if (isset($sale_data['label']) && is_string($sale_data['label'])) {
+                $label = trim($sale_data['label']);
+            } elseif (isset($sale_data['badge']) && is_string($sale_data['badge'])) {
+                $label = trim($sale_data['badge']);
+            }
+            if ($label === '') {
+                $label = Language::get('Sale');
+            }
+            $result['badge'] = $label;
+        } elseif ($default_amount !== '') {
+            $result['amount'] = $default_amount;
+        }
+
+        return $result;
+    }
+
+    private static function extract_features_from_pricing_plan(array $plan_data): array
+    {
+        $features = [];
+
+        $ingest = function ($value) use (&$features): void {
+            if (is_array($value)) {
+                $isList = array_keys($value) === range(0, count($value) - 1);
+                if ($isList) {
+                    foreach ($value as $item) {
+                        if (!is_string($item)) {
+                            continue;
+                        }
+                        $item = trim($item);
+                        if ($item !== '') {
+                            $features[] = sanitize_text_field($item);
+                        }
+                    }
+                } else {
+                    foreach ($value as $entry) {
+                        if (is_string($entry)) {
+                            $items = self::parse_plan_features_to_array($entry);
+                            if (!empty($items)) {
+                                $features = array_merge($features, $items);
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (is_string($value)) {
+                $items = self::parse_plan_features_to_array($value);
+                if (!empty($items)) {
+                    $features = array_merge($features, $items);
+                }
+            }
+        };
+
+        if (isset($plan_data['features'])) {
+            $ingest($plan_data['features']);
+        }
+
+        if (isset($plan_data['default']) && is_array($plan_data['default'])) {
+            if (isset($plan_data['default']['features'])) {
+                $ingest($plan_data['default']['features']);
+            }
+        }
+
+        foreach (['feature_summary', 'featureSummary', 'feature_details', 'featureDetails'] as $key) {
+            if (isset($plan_data[$key])) {
+                $ingest($plan_data[$key]);
+            }
+        }
+
+        if (empty($features) && isset($plan_data['summary']) && is_string($plan_data['summary'])) {
+            $items = self::parse_plan_features_to_array($plan_data['summary']);
+            if (!empty($items)) {
+                $features = array_merge($features, $items);
+            }
+        }
+
+        $features = array_values(array_filter(array_map('trim', $features), static function ($item) {
+            return $item !== '';
+        }));
+
+        return $features;
+    }
+
+    private static function format_pricing_overview_amount(?array $price): string
+    {
+        if (!is_array($price)) {
+            return '';
+        }
+
+        if (isset($price['formatted']) && is_string($price['formatted'])) {
+            $formatted = trim($price['formatted']);
+            if ($formatted !== '') {
+                return $formatted;
+            }
+        }
+
+        $amount = null;
+        foreach (['amount', 'amount_value', 'amountValue'] as $key) {
+            if (isset($price[$key]) && is_numeric($price[$key])) {
+                $amount = (float) $price[$key];
+                break;
+            }
+        }
+        if ($amount === null) {
+            foreach (['amount_cents', 'amountCents'] as $key) {
+                if (isset($price[$key]) && is_numeric($price[$key])) {
+                    $amount = (float) $price[$key];
+                    $amount = $amount >= 100 ? $amount / 100 : $amount;
+                    break;
+                }
+            }
+        }
+
+        $currency = '';
+        foreach (['currency', 'currency_code', 'currencyCode'] as $key) {
+            if (isset($price[$key]) && is_string($price[$key])) {
+                $currency = (string) $price[$key];
+                break;
+            }
+        }
+
+        if ($amount !== null) {
+            return self::format_currency_amount($amount, $currency);
+        }
+
+        if (isset($price['label']) && is_string($price['label'])) {
+            $label = trim($price['label']);
+            if ($label !== '') {
+                return $label;
+            }
+        }
+
+        return '';
+    }
+
+    private static function resolve_plan_price_id_fallback(
+        string $plan_key,
+        array $metadata,
+        array $plan_data,
+        array $plan_options
+    ): string {
+        $candidates = [];
+
+        $fallback_key = self::STRIPE_PRICE_FALLBACK_KEYS[$plan_key] ?? null;
+        if ($fallback_key && isset($metadata[$fallback_key]) && is_string($metadata[$fallback_key])) {
+            $candidates[] = (string) $metadata[$fallback_key];
+        }
+
+        $candidates = array_merge($candidates, self::collect_price_ids_from_plan_data($plan_data));
+
+        foreach ($plan_options as $option) {
+            if (isset($option['priceId']) && is_string($option['priceId'])) {
+                $candidate = trim($option['priceId']);
+                if ($candidate !== '') {
+                    $candidates[] = $candidate;
+                }
+            }
+        }
+
+        foreach ($candidates as $candidate) {
+            $candidate = trim((string) $candidate);
+            if ($candidate !== '') {
+                return $candidate;
+            }
+        }
+
+        return '';
+    }
+
+    private static function collect_price_ids_from_plan_data(array $plan_data): array
+    {
+        $results = [];
+
+        $extract = static function ($source) use (&$results): void {
+            if (!is_array($source)) {
+                return;
+            }
+            foreach (['price_id', 'priceId', 'id', 'stripe_price', 'stripePrice', 'default_price', 'defaultPrice'] as $key) {
+                if (isset($source[$key]) && is_string($source[$key])) {
+                    $candidate = trim($source[$key]);
+                    if ($candidate !== '' && !in_array($candidate, $results, true)) {
+                        $results[] = $candidate;
+                    }
+                }
+            }
+        };
+
+        $extract($plan_data);
+
+        foreach (['default', 'sale', 'base', 'price'] as $key) {
+            if (isset($plan_data[$key]) && is_array($plan_data[$key])) {
+                $extract($plan_data[$key]);
+            }
+        }
+
+        foreach (['tiers', 'prices', 'options'] as $key) {
+            if (isset($plan_data[$key]) && is_array($plan_data[$key])) {
+                foreach ($plan_data[$key] as $entry) {
+                    if (is_array($entry)) {
+                        $extract($entry);
+                    }
+                }
+            }
+        }
+
+        return $results;
+    }
+
+    private static function resolve_purchase_option_for_entry(array $plan_options, string $price_id): array
+    {
+        foreach ($plan_options as $option) {
+            if (isset($option['priceId']) && (string) $option['priceId'] === $price_id) {
+                return is_array($option) ? $option : [];
+            }
+        }
+
+        foreach ($plan_options as $option) {
+            if (!empty($option['default'])) {
+                return is_array($option) ? $option : [];
+            }
+        }
+
+        return isset($plan_options[0]) && is_array($plan_options[0]) ? $plan_options[0] : [];
+    }
+
+    private static function resolve_plan_entry_label(string $plan_key, array $plan_data, array $purchase_option): string
+    {
+        $candidates = [];
+
+        foreach (['label', 'title', 'name'] as $key) {
+            if (isset($plan_data[$key]) && is_string($plan_data[$key])) {
+                $value = trim($plan_data[$key]);
+                if ($value !== '') {
+                    $candidates[] = $value;
+                }
+            }
+        }
+
+        foreach (['label', 'name'] as $key) {
+            if (isset($plan_data['default'][$key]) && is_string($plan_data['default'][$key])) {
+                $value = trim($plan_data['default'][$key]);
+                if ($value !== '') {
+                    $candidates[] = $value;
+                }
+            }
+        }
+
+        if (!empty($purchase_option['label']) && is_string($purchase_option['label'])) {
+            $value = trim($purchase_option['label']);
+            if ($value !== '') {
+                $candidates[] = $value;
+            }
+        }
+
+        foreach ($candidates as $value) {
+            if (strcasecmp($value, 'default') !== 0) {
+                return $value;
+            }
+        }
+
+        return self::get_plan_label($plan_key);
     }
 
     private static function render_plan_groups_markup(
