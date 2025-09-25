@@ -580,6 +580,53 @@ html.dark .mds-card-title-version {
     margin: 5px 0;
 }
 
+.mds-card-update-panel {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.mds-card-update-panel .mds-update-available {
+    margin: 0;
+    border: 1px solid #dbeafe;
+    background: #eff6ff;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.mds-card-update-panel .mds-update-available p {
+    margin: 0 0 8px 0;
+}
+
+.mds-card-update-panel .mds-update-available p:last-child {
+    margin-bottom: 0;
+}
+
+.mds-card-update-panel .mds-no-updates {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+.mds-card-header-updates .button {
+    min-width: 140px;
+}
+
+.mds-card-license-actions {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mds-card-license-actions .button {
+    margin: 0;
+}
+
 .mds-status-active {
     color: #00a32a;
     font-weight: bold;
@@ -592,14 +639,6 @@ html.dark .mds-card-title-version {
 .mds-status-installed {
     color: #00a32a;
     font-weight: bold;
-}
-
-.mds-update-cell {
-    min-width: 200px;
-}
-
-.mds-action-cell {
-    min-width: 120px;
 }
 
 .mds-type-premium {

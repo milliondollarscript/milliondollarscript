@@ -482,12 +482,22 @@ function sanitizeFeatureHtml(value) {
 		e.preventDefault();
 
 		const $button = $(this);
-		const $row = $button.closest("tr");
-		const extensionId = $row.data("extension-id");
-		const currentVersion = $row.data("version");
-		const pluginFile = $row.data("plugin-file");
+		const $card = $button.closest(".mds-extension-card");
+		if (!$card.length) {
+			return;
+		}
 
-		setButtonLoading($button, 'Checking...');
+		const extensionId = $button.data("extension-id") || $card.data("extension-id");
+		const currentVersion = $button.data("current-version") || $card.data("version");
+		const pluginFile = $button.data("plugin-file") || $card.data("plugin-file");
+		const extensionSlug = $button.data("extension-slug") || $card.data("extension-slug");
+
+		if (!extensionId || !pluginFile) {
+			showNotice("error", getText("update_check_missing_params", "Unable to check updates for this extension."), false);
+			return;
+		}
+
+		setButtonLoading($button, getText("checking_updates", "Checking..."));
 
 		$.ajax({
 			url: AJAX_URL,
@@ -496,21 +506,25 @@ function sanitizeFeatureHtml(value) {
 				action: "mds_check_extension_updates",
 				nonce: MDS_EXTENSIONS_DATA.nonce,
 				extension_id: extensionId,
-				current_version: currentVersion,
+				current_version: currentVersion || "",
 				plugin_file: pluginFile,
+				extension_slug: extensionSlug || "",
 			},
 			dataType: "json",
 			success: function (response) {
-				if (response.success) {
-					handleUpdateResponse(response.data, $row);
+				if (response && response.success) {
+					handleUpdateResponse(response.data || {}, $card, $button);
 				} else {
-					showNotice("error", response.data.message || "Failed to check for updates.");
-					resetButton($button);
+					const message = response && response.data && response.data.message
+						? response.data.message
+						: getText("update_check_failed", "Failed to check for updates.");
+					showNotice("error", message);
+					resetButton($button, getText("check_updates", "Check for Updates"));
 				}
 			},
 			error: function () {
-				showNotice("error", "An error occurred while checking for updates.");
-				resetButton($button);
+				showNotice("error", getText("update_check_error", "An error occurred while checking for updates."));
+				resetButton($button, getText("check_updates", "Check for Updates"));
 			},
 		});
 	});
@@ -520,21 +534,21 @@ function sanitizeFeatureHtml(value) {
 		e.preventDefault();
 
 		const $button = $(this);
-		const $row = $button.closest("tr");
-		const extensionId = $button.data("extension-id") || $row.data("extension-id");
-		const extensionSlug = $button.data("extension-slug") || '';
+		const $card = $button.closest(".mds-extension-card");
+		const extensionId = $button.data("extension-id") || ($card.length ? $card.data("extension-id") : "");
+		const extensionSlug = $button.data("extension-slug") || ($card.length ? $card.data("extension-slug") : "");
 		const downloadUrl = $button.data("download-url");
 
 		if (!downloadUrl || !extensionId) {
-			showNotice("error", "Missing update package information.");
+			showNotice("error", getText("missing_update_package", "Missing update package information."));
 			return;
 		}
 
-		if (!confirm("Install this update now?")) {
+		if (!confirm(getText("confirm_install_update", "Install this update now?"))) {
 			return;
 		}
 
-		setButtonLoading($button, 'Updating...');
+		setButtonLoading($button, getText("updating_extension", "Updating..."));
 
 		$.ajax({
 			url: AJAX_URL,
@@ -548,19 +562,22 @@ function sanitizeFeatureHtml(value) {
 			},
 			dataType: "json",
 			success: function (response) {
-				if (response.success) {
-					showNotice("success", response.data.message || "Update installed successfully.");
-					if (response.data.reload) {
+				if (response && response.success) {
+					showNotice("success", (response.data && response.data.message) || getText("update_install_success", "Update installed successfully."));
+					if (response.data && response.data.reload) {
 						setTimeout(() => window.location.reload(), 2000);
+					} else {
+						resetButton($button, getText("update_install_success_short", "Updated"));
+						$button.prop("disabled", true);
 					}
 				} else {
-					showNotice("error", response.data.message || "Failed to install update.");
-					resetButton($button);
+					showNotice("error", (response && response.data && response.data.message) || getText("update_install_failed", "Failed to install update."));
+					resetButton($button, getText("update_now", "Update Now"));
 				}
 			},
 			error: function () {
-				showNotice("error", "An error occurred while installing the update.");
-				resetButton($button);
+				showNotice("error", getText("update_install_error", "An error occurred while installing the update."));
+				resetButton($button, getText("update_now", "Update Now"));
 			},
 		});
 	});
@@ -669,83 +686,45 @@ function sanitizeFeatureHtml(value) {
 			},
 		});
 	});
-
-	// Handle Check All for Updates button
-	$(document).on("click", ".mds-check-all-updates", function (e) {
-		e.preventDefault();
-
-		const $button = $(this);
-		const $rows = $("tr[data-extension-id]");
-		let completed = 0;
-		let hasUpdates = false;
-
-		setButtonLoading($button, 'Checking All...');
-
-		$rows.each(function () {
-			const $row = $(this);
-			const $updateButton = $row.find(".mds-check-updates");
-
-			if ($updateButton.prop("disabled")) {
-				completed++;
-				checkAllComplete();
-				return;
-			}
-
-			$updateButton.trigger("click");
-
-			$row.off("mds-update-checked").on("mds-update-checked", function () {
-				completed++;
-				if ($row.find(".mds-update-available").length) {
-					hasUpdates = true;
-				}
-				checkAllComplete();
-			});
-		});
-
-		function checkAllComplete() {
-			if (completed >= $rows.length) {
-				resetButton($button);
-
-				if (hasUpdates) {
-					showNotice("success", "Finished checking for updates. Some extensions have updates available.");
-				} else {
-					showNotice("success", "All extensions are up to date.");
-				}
-			}
-		}
-	});
-
 	// Handle the update check response
-	function handleUpdateResponse(updateInfo, $row) {
-		const $updateCell = $row.find(".mds-update-cell");
-		const $button = $row.find(".mds-check-updates");
+	function handleUpdateResponse(updateInfo, $card, $button) {
+		const $panel = $card.find('.mds-card-update-panel');
+		if (!$panel.length) {
+			resetButton($button, getText('check_updates', 'Check for Updates'));
+			return;
+		}
 
 		const latestVersion = updateInfo.latest_version || updateInfo.new_version || updateInfo.version || '';
 		const downloadUrl = updateInfo.download_url || updateInfo.package_url || '';
-		const extensionId = $row.data('extension-id') || '';
+		const extensionId = $card.data('extension-id') || '';
+		const extensionSlug = $card.data('extension-slug') || '';
+		const pluginFile = $card.data('plugin-file') || '';
 
 		if (updateInfo.update_available) {
+			const changelog = updateInfo.changelog ? `<div class="mds-changelog">${updateInfo.changelog}</div>` : '';
+			const installButton = downloadUrl
+				? `<button class="button button-primary mds-install-update"
+					data-download-url="${escapeHtml(downloadUrl)}"
+					data-extension-id="${escapeHtml(extensionId)}"
+					data-extension-slug="${escapeHtml(extensionSlug)}"
+					data-plugin-file="${escapeHtml(pluginFile)}">${getText('update_now', 'Update Now')}</button>`
+				: '';
 			const html = `
 				<div class="mds-update-available">
-					<p><strong>Version ${latestVersion} is available!</strong></p>
-					${updateInfo.changelog ? `<div class="mds-changelog">${updateInfo.changelog}</div>` : ""}
-					<p>
-						<button class="button button-primary mds-install-update"
-								data-download-url="${downloadUrl}"
-								data-extension-id="${extensionId}">
-							Update Now
-						</button>
-					</p>
+					<p><strong>${getText('update_version_available', 'Version')} ${escapeHtml(latestVersion)} ${getText('update_is_available', 'is available!')}</strong></p>
+					${changelog}
+					${installButton ? `<p>${installButton}</p>` : ''}
 				</div>
 			`;
-			$updateCell.html(html);
-			resetButton($button, "Check Again");
+			$panel.html(html).attr('data-has-update', 'true');
+			resetButton($button, getText('check_again', 'Check Again'));
 		} else {
-			$updateCell.html('<span class="mds-no-updates">You have the latest version.</span>');
-			resetButton($button, "Check for Updates");
+			$panel.html(`<span class="mds-no-updates">${getText('latest_version_installed', 'You have the latest version.')}</span>`)
+				.attr('data-has-update', 'false');
+			resetButton($button, getText('check_updates', 'Check for Updates'));
 		}
 
-		$row.trigger("mds-update-checked");
+		$card.trigger('mds-update-checked');
 	}
 
 // Simple modal factory for plan selection
@@ -772,7 +751,6 @@ function ensureManageModal() {
                 </div>
                 <footer>
                     <button type="button" class="button mds-modal-cancel">Close</button>
-                    <button type="button" class="button mds-cancel-subscription">Cancel auto-renew</button>
                     <button type="button" class="button button-primary mds-apply-plan" disabled>Apply</button>
                 </footer>
             </div>
@@ -789,7 +767,6 @@ $(document).on('click', '.mds-manage-subscription', function(){
     const $details = $overlay.find('.mds-manage-details');
     const $plans = $overlay.find('.mds-plan-options');
     const $apply = $overlay.find('.mds-apply-plan').prop('disabled', true).data('extension-slug', slug);
-    const $cancelBtn = $overlay.find('.mds-cancel-subscription').data('extension-slug', slug);
 
     $error.hide().text('');
     $details.hide();
@@ -887,22 +864,47 @@ $(document).on('click', '.mds-apply-plan', function(){
         .always(function(){ $btn.prop('disabled', false).text('Apply'); });
 });
 
-$(document).on('click', '.mds-cancel-subscription', function(){
-    if (!confirm('Cancel automatic renewal for this subscription?')) return;
-    const $btn = $(this).prop('disabled', true).text('Canceling…');
-    const slug = $btn.data('extension-slug');
-    $.post(AJAX_URL, { action: 'mds_cancel_subscription', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug })
-        .done(function(resp){
-            if (resp && resp.success) {
-                showNotice('success', (resp.data && resp.data.message) || 'Auto-renew canceled.');
-                setTimeout(() => window.location.reload(), 800);
-            } else {
-                showNotice('error', (resp && resp.data && resp.data.message) || 'Failed to cancel.', false);
-            }
-        })
-        .fail(function(){ showNotice('error', 'Failed to cancel.', false); })
-        .always(function(){ $btn.prop('disabled', false).text('Cancel auto-renew'); });
+$(document).on('click', '.mds-cancel-auto-renew', function(e){
+	e.preventDefault();
+
+	const $button = $(this);
+	if ($button.prop('disabled')) {
+		return;
+	}
+
+	const slug = $button.data('extension-slug');
+	if (!slug) {
+		showNotice('error', getText('auto_cancel_missing_slug', 'Unable to cancel auto-renew for this extension.'), false);
+		return;
+	}
+
+	if (!confirm(getText('confirm_cancel_auto', 'Cancel automatic renewal for this subscription?'))) {
+		return;
+	}
+
+	setButtonLoading($button, getText('canceling_auto', 'Canceling...'));
+
+	$.post(AJAX_URL, { action: 'mds_cancel_subscription', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug })
+		.done(function(resp){
+			if (resp && resp.success) {
+				showNotice('success', (resp.data && resp.data.message) || getText('auto_cancel_success', 'Auto-renew canceled.'));
+				resetButton($button, getText('auto_canceled', 'Auto-renew canceled'));
+				$button.prop('disabled', true);
+				const $card = $button.closest('.mds-extension-card');
+				if ($card.length) {
+					$card.attr('data-auto-renewing', 'false');
+				}
+			} else {
+				showNotice('error', (resp && resp.data && resp.data.message) || getText('auto_cancel_failed', 'Failed to cancel auto-renew.'), false);
+				resetButton($button, getText('cancel_auto_renewal', 'Cancel Auto-renewal'));
+			}
+		})
+		.fail(function(){
+			showNotice('error', getText('auto_cancel_error', 'Failed to cancel auto-renew.'), false);
+			resetButton($button, getText('cancel_auto_renewal', 'Cancel Auto-renewal'));
+		});
 });
+
 // Handle purchase extension button
 $(document).on('click', '.mds-purchase-extension', function (e) {
 	e.preventDefault();

@@ -621,26 +621,218 @@ class Extensions {
         
         // Get installed extensions
         $installed_extensions = self::get_installed_extensions();
-        
+
+        // Preload license data for downstream UI decisions
+        $license_map = self::get_license_snapshot_map();
+        $license_lookup = self::build_license_lookup_index($license_map);
+
         // Try to get available extensions from server
         $available_extensions = [];
         $extension_server_error = null;
-        
+
         try {
-            $available_extensions = self::fetch_available_extensions();
+            $available_extensions = self::fetch_available_extensions($license_map);
         } catch (\Exception $e) {
             $extension_server_error = $e->getMessage();
         }
-        
+
+        // Merge installed extensions into the catalog so everything renders from a unified grid
+        $display_extensions = is_array($available_extensions) ? $available_extensions : [];
+
+        $available_by_slug = [];
+        $available_by_normalized = [];
+        $available_by_plugin = [];
+
+        foreach ($display_extensions as $index => $extension) {
+            if (!is_array($extension)) {
+                continue;
+            }
+
+            $slug = isset($extension['slug']) ? (string) $extension['slug'] : '';
+            if ($slug !== '') {
+                $available_by_slug[$slug] = $index;
+                $normalized_slug = self::normalize_extension_name($slug);
+                if ($normalized_slug !== '') {
+                    $available_by_normalized[$normalized_slug] = $index;
+                }
+            }
+
+            $plugin_name = isset($extension['pluginName']) ? (string) $extension['pluginName'] : '';
+            if ($plugin_name !== '') {
+                $normalized_name = self::normalize_extension_name($plugin_name);
+                if ($normalized_name !== '') {
+                    $available_by_normalized[$normalized_name] = $index;
+                }
+            }
+
+            if (!empty($extension['name'])) {
+                $normalized_name = self::normalize_extension_name((string) $extension['name']);
+                if ($normalized_name !== '') {
+                    $available_by_normalized[$normalized_name] = $index;
+                }
+            }
+
+            if (!empty($extension['installed_plugin_file'])) {
+                $plugin_file = (string) $extension['installed_plugin_file'];
+                if ($plugin_file !== '') {
+                    $available_by_plugin[$plugin_file] = $index;
+                }
+            }
+        }
+
+        foreach ($installed_extensions as $installed) {
+            if (!is_array($installed)) {
+                continue;
+            }
+
+            $plugin_file = isset($installed['plugin_file']) ? (string) $installed['plugin_file'] : '';
+            $matched_index = null;
+
+            if ($plugin_file !== '' && isset($available_by_plugin[$plugin_file])) {
+                $matched_index = $available_by_plugin[$plugin_file];
+            }
+
+            $normalized_candidates = [];
+            $slug_candidates = [];
+
+            if (isset($installed['text_domain'])) {
+                $text_domain = (string) $installed['text_domain'];
+                if ($text_domain !== '') {
+                    $slug_candidates[] = sanitize_title($text_domain);
+                    $normalized_candidates[] = self::normalize_extension_name($text_domain);
+                }
+            }
+
+            if (isset($installed['id'])) {
+                $id_value = (string) $installed['id'];
+                if ($id_value !== '') {
+                    $slug_candidates[] = sanitize_title($id_value);
+                    $normalized_candidates[] = self::normalize_extension_name($id_value);
+                }
+            }
+
+            if (isset($installed['name'])) {
+                $name_value = (string) $installed['name'];
+                if ($name_value !== '') {
+                    $slug_candidates[] = sanitize_title($name_value);
+                    $normalized_candidates[] = self::normalize_extension_name($name_value);
+                }
+            }
+
+            if ($plugin_file !== '') {
+                $plugin_dir = dirname($plugin_file);
+                if ($plugin_dir !== '' && $plugin_dir !== '.') {
+                    $slug_candidates[] = sanitize_title($plugin_dir);
+                    $normalized_candidates[] = self::normalize_extension_name($plugin_dir);
+                }
+                $plugin_basename = basename($plugin_file, '.php');
+                if ($plugin_basename !== '') {
+                    $slug_candidates[] = sanitize_title($plugin_basename);
+                    $normalized_candidates[] = self::normalize_extension_name($plugin_basename);
+                }
+            }
+
+            $slug_candidates = array_values(array_filter(array_unique($slug_candidates)));
+            $normalized_candidates = array_values(array_filter(array_unique($normalized_candidates)));
+
+            if ($matched_index === null) {
+                foreach ($slug_candidates as $candidate) {
+                    if ($candidate !== '' && isset($available_by_slug[$candidate])) {
+                        $matched_index = $available_by_slug[$candidate];
+                        break;
+                    }
+                }
+            }
+
+            if ($matched_index === null) {
+                foreach ($normalized_candidates as $candidate) {
+                    if ($candidate !== '' && isset($available_by_normalized[$candidate])) {
+                        $matched_index = $available_by_normalized[$candidate];
+                        break;
+                    }
+                }
+            }
+
+            if ($matched_index !== null && isset($display_extensions[$matched_index])) {
+                $display_extensions[$matched_index]['installed_plugin_file'] = $plugin_file;
+                $display_extensions[$matched_index]['is_installed'] = true;
+                $display_extensions[$matched_index]['is_active'] = !empty($installed['active']);
+                if (empty($display_extensions[$matched_index]['version']) && !empty($installed['version'])) {
+                    $display_extensions[$matched_index]['version'] = $installed['version'];
+                }
+                continue;
+            }
+
+            $synthetic_candidates = [];
+            if (!empty($installed['text_domain'])) {
+                $synthetic_candidates[] = (string) $installed['text_domain'];
+            }
+            if (!empty($installed['id'])) {
+                $synthetic_candidates[] = (string) $installed['id'];
+            }
+            if (!empty($installed['name'])) {
+                $synthetic_candidates[] = (string) $installed['name'];
+            }
+            if ($plugin_file !== '') {
+                $plugin_dir = dirname($plugin_file);
+                if ($plugin_dir !== '' && $plugin_dir !== '.') {
+                    $synthetic_candidates[] = $plugin_dir;
+                }
+                $synthetic_candidates[] = basename($plugin_file, '.php');
+            }
+            $synthetic_candidates = array_values(array_filter(array_unique($synthetic_candidates)));
+
+            $slug_value = '';
+            foreach ($synthetic_candidates as $candidate) {
+                $candidate_slug = sanitize_title($candidate);
+                if ($candidate_slug !== '') {
+                    $slug_value = $candidate_slug;
+                    break;
+                }
+            }
+            if ($slug_value === '') {
+                $slug_value = sanitize_title('mds-' . md5($plugin_file . ($installed['name'] ?? uniqid('ext', true))));
+            }
+
+            $license_snapshot = self::find_license_snapshot($license_lookup, $synthetic_candidates);
+
+            $display_extensions[] = [
+                'id'                    => $installed['id'] ?? $slug_value,
+                'name'                  => $installed['name'] ?? $slug_value,
+                'description'           => $installed['description'] ?? '',
+                'version'               => $installed['version'] ?? '',
+                'slug'                  => $slug_value,
+                'pluginName'            => $installed['name'] ?? '',
+                'isPremium'             => $license_snapshot !== null,
+                'is_installed'          => true,
+                'is_active'             => !empty($installed['active']),
+                'installed_plugin_file' => $plugin_file,
+                'purchased_locally'     => $license_snapshot !== null,
+                'local_license'         => $license_snapshot,
+                'is_licensed'           => $license_snapshot !== null ? self::is_active_license_status($license_snapshot['status'] ?? '') : false,
+                'metadata'              => [],
+                'pricing_overview'      => [],
+                'purchase'              => ['anyAvailable' => false, 'options' => []],
+                'purchase_links'        => [
+                    'one_time' => null,
+                    'monthly'  => null,
+                    'yearly'   => null,
+                    'default'  => null,
+                    'options'  => [],
+                ],
+            ];
+
+            $new_index = count($display_extensions) - 1;
+            $available_by_slug[$slug_value] = $new_index;
+            $available_by_normalized[self::normalize_extension_name($slug_value)] = $new_index;
+            if ($plugin_file !== '') {
+                $available_by_plugin[$plugin_file] = $new_index;
+            }
+        }
+
         // Add nonce for security
         $nonce = wp_create_nonce( 'mds_extensions_nonce' );
-        
-        // Build catalog map keyed by normalized Plugin Name for quick lookups
-        $catalogByName = [];
-        if (!empty($available_extensions) && is_array($available_extensions)) {
-            $catalogByName = self::build_catalog_by_name($available_extensions);
-        }
-        
+
         ?>
         <div class="wrap mds-extensions-page" id="mds-extensions-page">
             <div class="mds-extensions-header">
@@ -651,7 +843,7 @@ class Extensions {
             <!-- In-page notices anchor: All notices render below header, above content -->
             <div id="mds-extensions-notices" class="mds-extensions-notices" aria-live="polite" aria-atomic="true">
             <?php
-            // Show purchase/fallback notices positioned below the header, above the Available Extensions section
+            // Show purchase/fallback notices positioned below the header, above the extensions grid
             self::print_license_expiry_notices();
             $purchase = isset($_GET['purchase']) ? sanitize_text_field($_GET['purchase']) : '';
             $ext_param = isset($_GET['ext']) ? sanitize_text_field($_GET['ext']) : '';
@@ -675,189 +867,21 @@ class Extensions {
             <?php endif; ?>
             </div>
             
-            <!-- Available Extensions Section -->
-            <?php if (!empty($available_extensions)) : ?>
             <div class="mds-extensions-container">
-                <h2><?php echo esc_html( Language::get('Available Extensions') ); ?></h2>
-
+                <?php if (!empty($display_extensions)) : ?>
                 <div class="mds-available-grid">
                     <?php
-                    foreach ($available_extensions as $extension) {
+                    foreach ($display_extensions as $extension) {
                         echo self::render_available_extension_card($extension, $nonce, $extension_server_error);
                     }
                     ?>
                 </div>
-            </div>
-            <?php endif; ?>
-            
-            <!-- Purchased Extensions Section -->
-            <?php 
-            // Render local purchased licenses (if any)
-            try {
-                $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-                $licenses = method_exists($lm,'get_all_licenses') ? $lm->get_all_licenses() : [];
-            } catch (\Throwable $t) { $licenses = []; }
-            if (!empty($licenses)) : ?>
-            <div class="mds-extensions-container">
-                <h2><?php echo esc_html( Language::get('Purchased Extensions') ); ?></h2>
-                <table class="wp-list-table widefat fixed striped">
-                    <thead>
-                        <tr>
-                            <th><?php echo esc_html( Language::get('Extension') ); ?></th>
-                            <th><?php echo esc_html( Language::get('Status') ); ?></th>
-                            <th><?php echo esc_html( Language::get('License') ); ?></th>
-                            <th><?php echo esc_html( Language::get('Renews') ); ?></th>
-                            <th><?php echo esc_html( Language::get('Action') ); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($licenses as $licRow): 
-                        $slug_col = property_exists($licRow, 'plugin_name') && !empty($licRow->plugin_name) ? 'plugin_name' : (property_exists($licRow,'extension_slug') ? 'extension_slug' : null);
-                        if (!$slug_col) continue;
-                        $slug_val = (string)$licRow->{$slug_col};
-                        $status   = isset($licRow->status) ? (string)$licRow->status : '';
-                        $license_metadata = self::normalize_license_metadata($licRow->metadata ?? null);
-                        $renews_raw = '';
-                        if (!empty($license_metadata['renews_at'])) {
-                            $renews_raw = (string) $license_metadata['renews_at'];
-                        } elseif (!empty($license_metadata['renewsAt'])) {
-                            $renews_raw = (string) $license_metadata['renewsAt'];
-                        } elseif (!empty($licRow->renews_at)) {
-                            $renews_raw = (string) $licRow->renews_at;
-                        }
-                        $plan_hint = '';
-                        if (!empty($license_metadata['plan'])) {
-                            $plan_hint = self::canonicalize_plan_key((string) $license_metadata['plan']);
-                        } elseif (!empty($license_metadata['price_plan'])) {
-                            $plan_hint = self::canonicalize_plan_key((string) $license_metadata['price_plan']);
-                        } elseif (!empty($license_metadata['recurring'])) {
-                            $plan_hint = self::canonicalize_plan_key((string) $license_metadata['recurring']);
-                        }
-                        $renews_display = self::format_license_renewal_display(
-                            $renews_raw !== '' ? $renews_raw : null,
-                            isset($licRow->expires_at) ? (string) $licRow->expires_at : null,
-                            $plan_hint
-                        );
-                        if ($renews_display === '') {
-                            $renews_display = '-';
-                        }
-                        $match = null;
-                        if (!empty($available_extensions)) {
-                            foreach ($available_extensions as $ext) {
-                                if (!empty($ext['slug']) && $ext['slug'] === $slug_val) { $match = $ext; break; }
-                            }
-                        }
-                    ?>
-                        <tr data-lic-slug="<?php echo esc_attr($slug_val); ?>">
-                            <td><strong><?php echo esc_html($slug_val); ?></strong></td>
-                            <td><?php echo esc_html($status ?: '-'); ?></td>
-                            <td class="mds-license-cell">
-                                <?php $license_nonce = wp_create_nonce( 'mds_license_nonce_' . $slug_val ); ?>
-                                <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr($slug_val); ?>" data-license-nonce="<?php echo esc_attr( $license_nonce ); ?>">
-                                    <div class="mds-inline-license-row">
-                                        <input type="password" class="regular-text mds-inline-license-key" name="license_key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>">
-                                    </div>
-                                    <div class="mds-inline-license-actions">
-                                        <button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="<?php echo esc_attr( $nonce ); ?>"><?php echo esc_html( Language::get('Activate') ); ?></button>
-                                        <button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="Show"><span class="dashicons dashicons-hidden"></span></button>
-                                        <button type="button"
-                                                class="button-link mds-remove-license mds-inline-license-remove"
-                                                data-extension-slug="<?php echo esc_attr($slug_val); ?>"
-                                                data-nonce="<?php echo esc_attr( $license_nonce ); ?>"><?php echo esc_html( Language::get('Remove') ); ?></button>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><?php echo esc_html($renews_display); ?></td>
-                            <td>
-                                <?php if ($match && empty($match['is_installed'])): ?>
-                                    <button class="button button-primary mds-install-extension" data-nonce="<?php echo esc_attr($nonce); ?>" data-extension-id="<?php echo esc_attr($match['id']); ?>" data-extension-slug="<?php echo esc_attr($match['slug']); ?>"><?php echo esc_html(Language::get('Install')); ?></button>
-                                <?php endif; ?>
-                                <button class="button mds-manage-subscription" data-extension-slug="<?php echo esc_attr($slug_val); ?>"><?php echo esc_html( Language::get('Manage') ); ?></button>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            <?php endif; ?>
-
-            <!-- Installed Extensions Section -->
-            <div class="mds-extensions-container">
-                <h2><?php echo esc_html( Language::get('Installed Extensions') ); ?></h2>
-                
-                <?php if ( empty( $installed_extensions ) ) : ?>
+                <?php else : ?>
                     <div class="notice notice-info">
                         <p><?php echo esc_html( Language::get('No extensions installed.') ); ?></p>
                     </div>
-                <?php else : ?>
-                    <table class="wp-list-table widefat fixed striped">
-                        <thead>
-                            <tr>
-                                <th><?php echo esc_html( Language::get('Extension') ); ?></th>
-                                <th><?php echo esc_html( Language::get('Version') ); ?></th>
-                                <th><?php echo esc_html( Language::get('Status') ); ?></th>
-                                <th><?php echo esc_html( Language::get('License') ); ?></th>
-                                <th><?php echo esc_html( Language::get('Update') ); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ( $installed_extensions as $extension ) : ?>
-                                <tr data-extension-id="<?php echo esc_attr( $extension['id'] ); ?>" data-version="<?php echo esc_attr( $extension['version'] ); ?>" data-plugin-file="<?php echo esc_attr( $extension['plugin_file'] ); ?>">
-                                    <td class="mds-extension-name">
-                                        <strong><?php echo esc_html( $extension['name'] ); ?></strong>
-                                        <?php if (!empty($extension['description'])) : ?>
-                                            <br><span class="description"><?php echo esc_html( wp_trim_words($extension['description'], 20) ); ?></span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="mds-extension-version">
-                                        <?php echo esc_html( $extension['version'] ); ?>
-                                    </td>
-                                    <td class="mds-extension-status">
-                                        <?php if ( $extension['active'] ) : ?>
-                                            <span class="mds-status-active"><?php echo esc_html( Language::get('Active') ); ?></span>
-                                        <?php else : ?>
-                                            <span class="mds-status-inactive"><?php echo esc_html( Language::get('Inactive') ); ?></span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="mds-license-cell">
-                                        <?php
-                                        // Default to hiding license UI unless catalog says this is premium
-                                        $hide_license_ui = true;
-                                        if (!empty($catalogByName)) {
-                                            $installed_name_key = self::normalize_extension_name($extension['name'] ?? '');
-                                            if ($installed_name_key !== '' && isset($catalogByName[$installed_name_key])) {
-                                                $matched = $catalogByName[$installed_name_key];
-                                                if (is_array($matched) && array_key_exists('isPremium', $matched)) {
-                                                    // Show license UI only for premium
-                                                    $hide_license_ui = ($matched['isPremium'] === false);
-                                                }
-                                            }
-                                        }
-                                        if (!$hide_license_ui) {
-                                            self::render_license_form($extension);
-                                        }
-                                        ?>
-                                    </td>
-                                    <td class="mds-update-cell">
-                                        <button class="button mds-check-updates"
-                                                data-nonce="<?php echo esc_attr( $nonce ); ?>">
-                                            <?php echo esc_html( Language::get('Check for Updates') ); ?>
-                                        </button>
-                                        <div class="mds-update-info"></div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    
-                    <div class="mds-extension-actions">
-                        <button type="button" class="button button-primary mds-check-all-updates">
-                            <?php echo esc_html( Language::get('Check All for Updates') ); ?>
-                        </button>
-                    </div>
                 <?php endif; ?>
             </div>
-            
         </div>
         <?php
     }
@@ -1196,7 +1220,7 @@ class Extensions {
      * @return array List of available extensions
      * @throws \Exception If the API request fails
      */
-    protected static function fetch_available_extensions(): array {
+    protected static function fetch_available_extensions(?array $license_map = null): array {
         $user_configured_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
         $license_key = ''; // This is deprecated
 
@@ -1422,45 +1446,36 @@ class Extensions {
             $transformed_extensions[$key]['is_active'] = $is_active;
         }
 
-        $license_map = [];
-        try {
-            $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-            $licenses = method_exists($lm,'get_all_licenses') ? $lm->get_all_licenses() : [];
-            if (!empty($licenses)) {
-                foreach ($licenses as $row) {
-                    $slug_col = property_exists($row, 'plugin_name') && !empty($row->plugin_name)
-                        ? 'plugin_name'
-                        : (property_exists($row,'extension_slug') ? 'extension_slug' : null);
-                    if (!$slug_col) {
-                        continue;
-                    }
-                    $slug_val = (string) $row->{$slug_col};
-                    if ($slug_val === '') {
-                        continue;
-                    }
-
-                    $snapshot = self::build_license_snapshot_from_row($row);
-                    if (empty($snapshot)) {
-                        continue;
-                    }
-
-                    $license_map[$slug_val] = $snapshot;
-                }
-            }
-        } catch (\Throwable $t) {
-            // ignore fetch errors; leave map empty
-        }
+        $license_map = is_array($license_map) ? $license_map : self::get_license_snapshot_map();
+        $license_lookup = self::build_license_lookup_index($license_map);
 
         if (!empty($transformed_extensions)) {
             foreach ($transformed_extensions as &$extension) {
+                $slug_candidates = [];
+
                 $slug = isset($extension['slug']) ? (string) $extension['slug'] : '';
-                if ($slug !== '' && isset($license_map[$slug])) {
+                if ($slug !== '') {
+                    $slug_candidates[] = $slug;
+                }
+
+                if (!empty($extension['pluginName'])) {
+                    $slug_candidates[] = (string) $extension['pluginName'];
+                }
+
+                if (!empty($extension['name'])) {
+                    $slug_candidates[] = (string) $extension['name'];
+                }
+
+                $snapshot = self::find_license_snapshot($license_lookup, $slug_candidates);
+
+                if ($snapshot !== null) {
                     $extension['purchased_locally'] = true;
-                    $extension['local_license'] = $license_map[$slug];
-                    $extension['is_licensed'] = self::is_active_license_status($license_map[$slug]['status'] ?? '');
+                    $extension['local_license'] = $snapshot;
+                    $extension['is_licensed'] = self::is_active_license_status($snapshot['status'] ?? '');
                 } else {
                     $extension['purchased_locally'] = false;
                     $extension['local_license'] = null;
+                    $extension['is_licensed'] = false;
                 }
             }
             unset($extension);
@@ -2712,6 +2727,175 @@ class Extensions {
         }
     }
 
+    private static function get_license_snapshot_map(): array {
+        if (!class_exists('MillionDollarScript\\Classes\\Extension\\MDS_License_Manager')) {
+            return [];
+        }
+
+        try {
+            $map = [];
+            $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            $licenses = method_exists($lm, 'get_all_licenses') ? $lm->get_all_licenses() : [];
+
+            if (!empty($licenses)) {
+                foreach ($licenses as $row) {
+                    if (!is_object($row)) {
+                        continue;
+                    }
+
+                    $slug_column = null;
+                    if (property_exists($row, 'plugin_name') && !empty($row->plugin_name)) {
+                        $slug_column = 'plugin_name';
+                    } elseif (property_exists($row, 'extension_slug') && !empty($row->extension_slug)) {
+                        $slug_column = 'extension_slug';
+                    }
+
+                    if ($slug_column === null) {
+                        continue;
+                    }
+
+                    $slug_value = (string) $row->{$slug_column};
+                    if ($slug_value === '') {
+                        continue;
+                    }
+
+                    $snapshot = self::build_license_snapshot_from_row($row);
+                    if (empty($snapshot)) {
+                        continue;
+                    }
+
+                    $map[$slug_value] = $snapshot;
+                }
+            }
+
+            return $map;
+        } catch (\Throwable $t) {
+            return [];
+        }
+    }
+
+    private static function build_license_lookup_index(array $license_map): array {
+        $index = [
+            'raw'        => [],
+            'slug'       => [],
+            'normalized' => [],
+        ];
+
+        foreach ($license_map as $key => $snapshot) {
+            if (!is_string($key) || $key === '') {
+                continue;
+            }
+
+            $raw_key = strtolower($key);
+            if ($raw_key !== '' && !isset($index['raw'][$raw_key])) {
+                $index['raw'][$raw_key] = $snapshot;
+            }
+
+            $slug_key = sanitize_title($key);
+            if ($slug_key !== '' && !isset($index['slug'][$slug_key])) {
+                $index['slug'][$slug_key] = $snapshot;
+            }
+
+            $normalized = self::normalize_extension_name($key);
+            if ($normalized !== '' && !isset($index['normalized'][$normalized])) {
+                $index['normalized'][$normalized] = $snapshot;
+            }
+        }
+
+        return $index;
+    }
+
+    private static function find_license_snapshot(array $license_lookup, array $candidates): ?array {
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || $candidate === '') {
+                continue;
+            }
+
+            $raw = strtolower($candidate);
+            if ($raw !== '' && isset($license_lookup['raw'][$raw])) {
+                return $license_lookup['raw'][$raw];
+            }
+
+            $slug = sanitize_title($candidate);
+            if ($slug !== '' && isset($license_lookup['slug'][$slug])) {
+                return $license_lookup['slug'][$slug];
+            }
+
+            $normalized = self::normalize_extension_name($candidate);
+            if ($normalized !== '' && isset($license_lookup['normalized'][$normalized])) {
+                return $license_lookup['normalized'][$normalized];
+            }
+        }
+
+        return null;
+    }
+
+    private static function license_is_auto_renewing(?array $license): bool {
+        if (!is_array($license) || empty($license)) {
+            return false;
+        }
+
+        $status = isset($license['status']) ? strtolower((string) $license['status']) : '';
+        if ($status !== '' && in_array($status, ['cancelled', 'canceled', 'expired', 'inactive', 'disabled'], true)) {
+            return false;
+        }
+
+        $renews_at = isset($license['renews_at']) ? (string) $license['renews_at'] : '';
+        if ($renews_at !== '') {
+            return true;
+        }
+
+        $plan_hint = isset($license['plan_hint']) ? self::canonicalize_plan_key((string) $license['plan_hint']) : '';
+        if ($plan_hint !== '' && !in_array($plan_hint, ['one_time', 'lifetime', 'lifetime_access', 'lifetime-license'], true)) {
+            return true;
+        }
+
+        $metadata = isset($license['metadata']) && is_array($license['metadata']) ? $license['metadata'] : [];
+        $metadata_plan = '';
+        if (isset($metadata['plan'])) {
+            $metadata_plan = self::canonicalize_plan_key((string) $metadata['plan']);
+        } elseif (isset($metadata['price_plan'])) {
+            $metadata_plan = self::canonicalize_plan_key((string) $metadata['price_plan']);
+        } elseif (isset($metadata['recurring'])) {
+            $metadata_plan = self::canonicalize_plan_key((string) $metadata['recurring']);
+        }
+
+        if ($metadata_plan !== '' && !in_array($metadata_plan, ['one_time', 'lifetime', 'lifetime_access', 'lifetime-license'], true)) {
+            return true;
+        }
+
+        $flag_keys = ['auto_renew', 'autoRenew', 'is_recurring', 'recurring', 'subscription'];
+        foreach ($flag_keys as $flag_key) {
+            if (!array_key_exists($flag_key, $metadata)) {
+                continue;
+            }
+            $value = $metadata[$flag_key];
+            if (is_bool($value)) {
+                if ($value) {
+                    return true;
+                }
+                continue;
+            }
+            if (is_numeric($value)) {
+                if ((int) $value === 1) {
+                    return true;
+                }
+                continue;
+            }
+            if (is_string($value)) {
+                $normalized = strtolower(trim($value));
+                if (in_array($normalized, ['1', 'true', 'yes', 'active', 'enabled'], true)) {
+                    return true;
+                }
+                if (in_array($normalized, ['monthly', 'yearly', 'annual', 'subscription', 'recurring'], true)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static function format_license_renewal_display(?string $renews_at, ?string $expires_at, string $plan_hint): string {
         $renews_at = is_string($renews_at) ? trim($renews_at) : '';
         $expires_at = is_string($expires_at) ? trim($expires_at) : '';
@@ -2832,6 +3016,10 @@ class Extensions {
 
         $has_local_license = !empty($local_license);
         $was_purchased = !empty($extension['purchased_locally']) || $has_local_license;
+        $auto_renews = self::license_is_auto_renewing($local_license);
+        $can_manage_subscription = $was_purchased && $slug !== '';
+        $can_cancel_auto = $can_manage_subscription && $auto_renews;
+        $can_check_updates = $is_installed && !empty($extension['installed_plugin_file']);
 
         $card_classes = ['mds-extension-card'];
         $card_classes[] = $is_premium ? 'mds-extension-card--premium' : 'mds-extension-card--free';
@@ -2853,6 +3041,8 @@ class Extensions {
             'data-is-licensed'    => $is_licensed ? 'true' : 'false',
             'data-has-local-license' => $has_local_license ? 'true' : 'false',
             'data-purchased'      => $was_purchased ? 'true' : 'false',
+            'data-has-subscription' => $can_manage_subscription ? 'true' : 'false',
+            'data-auto-renewing'  => $can_cancel_auto ? 'true' : 'false',
         ];
         if ($is_installed && !empty($extension['installed_plugin_file'])) {
             $data_attrs['data-plugin-file'] = $extension['installed_plugin_file'];
@@ -2891,7 +3081,6 @@ class Extensions {
 
         $summary_html = implode('', $chips);
 
-        $has_local_license = !empty($local_license);
         $license_panel_id = '';
         $license_input_id = '';
         if ($is_premium) {
@@ -2956,26 +3145,82 @@ class Extensions {
             $header_action_parts[] = $buttons_markup;
         }
 
+        if ($can_check_updates) {
+            $update_button  = '<button type="button" class="button button-secondary mds-check-updates"';
+            $update_button .= ' data-nonce="' . esc_attr($nonce) . '"';
+            $update_button .= ' data-extension-id="' . esc_attr($extension['id'] ?? '') . '"';
+            $update_button .= ' data-extension-slug="' . esc_attr($slug) . '"';
+            $update_button .= ' data-plugin-file="' . esc_attr($extension['installed_plugin_file'] ?? '') . '"';
+            $update_button .= ' data-current-version="' . esc_attr($extension['version'] ?? '') . '">';
+            $update_button .= esc_html(Language::get('Check for Updates'));
+            $update_button .= '</button>';
+            $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . '</div>';
+        }
+
         if ($is_premium) {
-            $header_action_parts[] = '<div class="mds-card-license-trigger">'
-                . '<button type="button" class="button-link mds-card-license-toggle" aria-expanded="false" aria-controls="' . esc_attr($license_panel_id) . '">' . esc_html(Language::get('Manage license')) . '</button>'
-                . '<div id="' . esc_attr($license_panel_id) . '" class="mds-card-license mds-card-license-popover is-collapsed" aria-hidden="true" hidden>'
-                    . '<div class="mds-inline-license" data-extension-slug="' . esc_attr($slug) . '" data-license-nonce="' . esc_attr($license_nonce) . '">'
-                        . '<div class="mds-inline-license-row">'
-                            . '<input type="password" id="' . esc_attr($license_input_id !== '' ? $license_input_id : 'mds-license-key-' . sanitize_title(uniqid('mds'))) . '" name="license_key" class="regular-text mds-inline-license-key" placeholder="' . esc_attr(Language::get('Enter license key')) . '">' 
-                        . '</div>'
-                        . '<div class="mds-inline-license-actions">'
-                            . '<button type="button" class="button button-secondary mds-inline-license-activate" data-nonce="' . esc_attr($nonce) . '">' . esc_html(Language::get('Activate')) . '</button>'
-                            . '<button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="' . esc_attr(Language::get('Show license key')) . '">'
-                                . '<span class="dashicons dashicons-hidden"></span>'
-                            . '</button>'
-                            . ($has_local_license
-                                ? '<button type="button" class="button-link mds-remove-license mds-inline-license-remove" data-extension-slug="' . esc_attr($slug) . '" data-nonce="' . esc_attr($license_nonce) . '">' . esc_html(Language::get('Remove')) . '</button>'
-                                : '' )
-                        . '</div>'
-                    . '</div>'
-                . '</div>'
-            . '</div>';
+            ob_start();
+            ?>
+            <div class="mds-card-license-trigger">
+                <button type="button" class="button-link mds-card-license-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr($license_panel_id); ?>">
+                    <?php echo esc_html(Language::get('Manage license')); ?>
+                </button>
+                <div id="<?php echo esc_attr($license_panel_id); ?>"
+                     class="mds-card-license mds-card-license-popover is-collapsed"
+                     aria-hidden="true"
+                     hidden>
+                    <div class="mds-inline-license"
+                         data-extension-slug="<?php echo esc_attr($slug); ?>"
+                         data-license-nonce="<?php echo esc_attr($license_nonce); ?>">
+                        <div class="mds-inline-license-row">
+                            <input type="password"
+                                   id="<?php echo esc_attr($license_input_id !== '' ? $license_input_id : 'mds-license-key-' . sanitize_title(uniqid('mds'))); ?>"
+                                   name="license_key"
+                                   class="regular-text mds-inline-license-key"
+                                   placeholder="<?php echo esc_attr(Language::get('Enter license key')); ?>">
+                        </div>
+                        <div class="mds-inline-license-actions">
+                            <button type="button"
+                                    class="button button-secondary mds-inline-license-activate"
+                                    data-nonce="<?php echo esc_attr($nonce); ?>">
+                                <?php echo esc_html(Language::get('Activate')); ?>
+                            </button>
+                            <button type="button"
+                                    class="button-link mds-visibility-toggle mds-inline-license-visibility"
+                                    aria-label="<?php echo esc_attr(Language::get('Show license key')); ?>">
+                                <span class="dashicons dashicons-hidden"></span>
+                            </button>
+                            <?php if ($has_local_license) : ?>
+                                <button type="button"
+                                        class="button-link mds-remove-license mds-inline-license-remove"
+                                        data-extension-slug="<?php echo esc_attr($slug); ?>"
+                                        data-nonce="<?php echo esc_attr($license_nonce); ?>">
+                                    <?php echo esc_html(Language::get('Remove')); ?>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php if ($can_manage_subscription || $can_cancel_auto) : ?>
+                        <div class="mds-card-license-actions">
+                            <?php if ($can_manage_subscription) : ?>
+                                <button type="button"
+                                        class="button button-secondary mds-manage-subscription"
+                                        data-extension-slug="<?php echo esc_attr($slug); ?>">
+                                    <?php echo esc_html(Language::get('Manage Subscription')); ?>
+                                </button>
+                            <?php endif; ?>
+                            <?php if ($can_cancel_auto) : ?>
+                                <button type="button"
+                                        class="button button-link mds-cancel-auto-renew"
+                                        data-extension-slug="<?php echo esc_attr($slug); ?>">
+                                    <?php echo esc_html(Language::get('Cancel Auto-renewal')); ?>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php
+            $header_action_parts[] = ob_get_clean();
         }
 
         $header_actions_html = implode('', $header_action_parts);
@@ -3028,6 +3273,10 @@ class Extensions {
                     <div class="mds-card-license">
                         <span class="mds-license-chip mds-license-chip--free"><?php echo esc_html(Language::get('No license required')); ?></span>
                     </div>
+                <?php endif; ?>
+
+                <?php if ($can_check_updates) : ?>
+                    <div class="mds-card-update-panel" aria-live="polite"></div>
                 <?php endif; ?>
 
                 <?php if ($show_footer_actions && ($action_primary !== '' || $action_secondary !== '')) : ?>
@@ -6301,60 +6550,6 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
         }
     }
-
-    /**
-     * Render the license form for an extension.
-     *
-     * @param array $extension
-     */
-    protected static function render_license_form( array $extension ): void {
-        $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-        $license_slug = $extension['slug'] ?? $extension['id'];
-        $license = $license_manager->get_license( (string) $license_slug );
-        $nonce = wp_create_nonce( 'mds_license_nonce_' . $license_slug );
-        ?>
-        <form class="mds-license-form" data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>">
-            <input type="hidden" name="extension_slug" value="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>">
-            <input type="hidden" name="nonce" value="<?php echo esc_attr( $nonce ); ?>">
-
-            <?php if ( $license && $license->status === 'active' ) : ?>
-                <div class="mds-license-actions mds-license-actions--active">
-                    <span class="mds-license-status-active"><?php echo esc_html( Language::get('Active') ); ?></span>
-                    <button type="button" class="button button-secondary mds-deactivate-license">
-                        <?php echo esc_html( Language::get('Deactivate') ); ?>
-                    </button>
-                    <button type="button"
-                            class="button-link mds-remove-license mds-inline-license-remove"
-                            data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>"
-                            data-nonce="<?php echo esc_attr( $nonce ); ?>">
-                        <?php echo esc_html( Language::get('Remove') ); ?>
-                    </button>
-                </div>
-            <?php else : ?>
-                <div class="mds-inline-license" data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>" data-license-nonce="<?php echo esc_attr( $nonce ); ?>">
-                    <div class="mds-inline-license-row">
-                        <input type="password" class="regular-text mds-inline-license-key" name="license_key" placeholder="<?php echo esc_attr( Language::get('Enter license key') ); ?>" value="<?php echo esc_attr( $license ? $license->license_key : '' ); ?>">
-                    </div>
-                    <div class="mds-inline-license-actions">
-                        <button type="button" class="button button-primary mds-activate-license">
-                            <?php echo esc_html( Language::get('Activate') ); ?>
-                        </button>
-                        <button type="button" class="button-link mds-visibility-toggle mds-inline-license-visibility" aria-label="Show">
-                            <span class="dashicons dashicons-hidden"></span>
-                        </button>
-                        <?php if ( $license ) : ?>
-                            <button type="button"
-                                    class="button-link mds-remove-license mds-inline-license-remove"
-                                    data-extension-slug="<?php echo esc_attr( $extension['slug'] ?? $extension['id'] ); ?>"
-                                    data-nonce="<?php echo esc_attr( $nonce ); ?>">
-                                <?php echo esc_html( Language::get('Remove') ); ?>
-                            </button>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </form>
-    <?php }
 
     /**
      * AJAX handler for activating a license.
