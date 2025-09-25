@@ -3155,7 +3155,7 @@ class Extensions {
             $update_button .= esc_html(Language::get('Check for Updates'));
             $update_button .= '</button>';
 
-            $update_status = '<div class="mds-check-updates-status" aria-live="polite"></div>';
+            $update_status = '<div class="mds-check-updates-status" aria-live="polite" aria-hidden="true"></div>';
 
             $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . $update_status . '</div>';
         }

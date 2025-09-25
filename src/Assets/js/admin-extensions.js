@@ -103,12 +103,14 @@
 		const text = message == null ? '' : String(message);
 		const hasMessage = text.trim() !== '';
 
-		$status.removeClass('is-success is-warning is-error is-info');
+		$status.removeClass('is-success is-warning is-error is-info has-message');
 
 		if (hasMessage) {
-			$status.addClass('is-' + variant).text(text);
+			$status.addClass('is-' + variant + ' has-message').text(text);
+			$status.attr('aria-hidden', 'false');
 		} else {
 			$status.text('');
+			$status.attr('aria-hidden', 'true');
 		}
 	}
 

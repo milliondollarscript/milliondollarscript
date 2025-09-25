@@ -616,46 +616,53 @@ html.dark .mds-card-title-version {
 
 .mds-card-header-updates {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: flex-end;
     gap: 10px;
-    width: 100%;
+    flex-wrap: wrap;
 }
 
 .mds-check-updates-status {
-    align-self: flex-end;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    border-radius: 999px;
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
-    color: #0f172a;
-    display: inline-flex;
-    font-size: 13px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.4;
+    color: #334155;
+    background: #f1f5f9;
+    border-radius: 999px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
     max-width: 320px;
-    padding: 7px 18px;
     text-align: center;
-    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mds-check-updates-status.has-message {
+    display: inline-flex;
 }
 
 .mds-check-updates-status.is-success {
-    border-color: rgba(16, 185, 129, 0.25);
+    background: #dcfce7;
+    border-color: rgba(16, 185, 129, 0.35);
     color: #047857;
 }
 
 .mds-check-updates-status.is-warning {
-    border-color: rgba(234, 179, 8, 0.28);
+    background: #fef3c7;
+    border-color: rgba(234, 179, 8, 0.35);
     color: #b45309;
 }
 
 .mds-check-updates-status.is-error {
-    border-color: rgba(248, 113, 113, 0.32);
+    background: #fee2e2;
+    border-color: rgba(248, 113, 113, 0.35);
     color: #b91c1c;
 }
 
 .mds-check-updates-status.is-info {
-    border-color: rgba(59, 130, 246, 0.3);
+    background: #e0f2fe;
+    border-color: rgba(59, 130, 246, 0.35);
     color: #1d4ed8;
 }
 
@@ -702,13 +709,11 @@ html.dark .mds-card-title-version {
 @media (prefers-color-scheme: dark) {
     .mds-card-header-updates .mds-check-updates {
         background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
-        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.3);
     }
 
     .mds-card-header-updates .mds-check-updates:hover,
     .mds-card-header-updates .mds-check-updates:focus {
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        box-shadow: 0 16px 36px rgba(37, 99, 235, 0.5);
     }
 
     .mds-card-header-updates .mds-check-updates:disabled,
@@ -719,30 +724,33 @@ html.dark .mds-card-title-version {
     }
 
     .mds-check-updates-status {
-        background: rgba(15, 23, 42, 0.85);
-        border-color: rgba(96, 165, 250, 0.42);
-        box-shadow: 0 8px 22px rgba(2, 6, 23, 0.55);
+        background: rgba(30, 41, 59, 0.8);
+        border-color: rgba(148, 163, 184, 0.35);
         color: #e2e8f0;
     }
 
     .mds-check-updates-status.is-success {
+        background: rgba(22, 101, 52, 0.55);
         border-color: rgba(16, 185, 129, 0.45);
-        color: #34d399;
+        color: #bbf7d0;
     }
 
     .mds-check-updates-status.is-warning {
-        border-color: rgba(250, 204, 21, 0.45);
-        color: #facc15;
+        background: rgba(113, 63, 18, 0.6);
+        border-color: rgba(234, 179, 8, 0.45);
+        color: #fde68a;
     }
 
     .mds-check-updates-status.is-error {
-        border-color: rgba(239, 68, 68, 0.45);
-        color: #fca5a5;
+        background: rgba(127, 29, 29, 0.6);
+        border-color: rgba(248, 113, 113, 0.45);
+        color: #fecaca;
     }
 
     .mds-check-updates-status.is-info {
-        border-color: rgba(147, 197, 253, 0.45);
-        color: #bfdbfe;
+        background: rgba(30, 64, 175, 0.55);
+        border-color: rgba(96, 165, 250, 0.45);
+        color: #dbeafe;
     }
 }
 
