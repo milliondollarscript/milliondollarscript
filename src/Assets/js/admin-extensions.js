@@ -130,135 +130,27 @@ function escapeHtml(value) {
 	return $('<div>').text(value == null ? '' : String(value)).html();
 }
 
-const FEATURE_ALLOWED_TAGS = new Set(['STRONG', 'EM', 'B', 'I', 'U', 'CODE', 'BR']);
 
-function truthyFlag(val) {
-	if (typeof val === 'boolean') {
-		return val;
+	function truthyFlag(val) {
+		if (typeof val === 'boolean') {
+			return val;
+		}
+		if (typeof val === 'number') {
+			return val !== 0;
+		}
+		if (typeof val === 'string') {
+			const normalized = val.trim().toLowerCase();
+			return normalized === 'true' || normalized === '1' || normalized === 'yes';
+		}
+		return !!val;
 	}
-	if (typeof val === 'number') {
-		return val !== 0;
-	}
-	if (typeof val === 'string') {
-		const normalized = val.trim().toLowerCase();
-		return normalized === 'true' || normalized === '1' || normalized === 'yes';
-	}
-	return !!val;
-}
 
-function rowHasLocalPurchase($row) {
-	return truthyFlag($row.data('purchased'))
-		|| truthyFlag($row.data('purchasedLocally'))
-		|| truthyFlag($row.data('hasLocalLicense'));
-}
+	function rowHasLocalPurchase($row) {
+		return truthyFlag($row.data('purchased'))
+			|| truthyFlag($row.data('purchasedLocally'))
+			|| truthyFlag($row.data('hasLocalLicense'));
+	}
 
-function normalizeFeatureFormatting(template) {
-	const replacements = [];
-	const walker = document.createTreeWalker(
-		template.content,
-		NodeFilter.SHOW_ELEMENT,
-		null,
-		false,
-	);
-	while (walker.nextNode()) {
-		const el = walker.currentNode;
-		if (!el) {
-			continue;
-		}
-		const tag = el.nodeName;
-		if (tag !== 'SPAN' && tag !== 'FONT') {
-			continue;
-		}
-		const style = (el.getAttribute('style') || '').toLowerCase();
-		if (!style) {
-			continue;
-		}
-		const isBold = /font-weight\s*:\s*(bold|[6-9]00)/.test(style);
-		const isItalic = /font-style\s*:\s*italic/.test(style);
-		if (!isBold && !isItalic) {
-			continue;
-		}
-		replacements.push({ el, isBold, isItalic });
-	}
-	replacements.forEach(({ el, isBold, isItalic }) => {
-		const parent = el.parentNode;
-		const doc = el.ownerDocument;
-		if (!parent || !doc) {
-			return;
-		}
-		let replacement;
-		let target;
-		if (isBold && isItalic) {
-			const strong = doc.createElement('strong');
-			const em = doc.createElement('em');
-			strong.appendChild(em);
-			replacement = strong;
-			target = em;
-		} else if (isBold) {
-			replacement = doc.createElement('strong');
-			target = replacement;
-		} else if (isItalic) {
-			replacement = doc.createElement('em');
-			target = replacement;
-		} else {
-			return;
-		}
-		while (el.firstChild) {
-			target.appendChild(el.firstChild);
-		}
-		parent.replaceChild(replacement, el);
-	});
-}
-
-function sanitizeFeatureHtml(value) {
-	if (value == null) {
-		return '';
-	}
-	const template = document.createElement('template');
-	template.innerHTML = String(value);
-	normalizeFeatureFormatting(template);
-	const walker = document.createTreeWalker(
-		template.content,
-		NodeFilter.SHOW_ELEMENT,
-		{
-			acceptNode(node) {
-				return FEATURE_ALLOWED_TAGS.has(node.nodeName)
-					? NodeFilter.FILTER_SKIP
-					: NodeFilter.FILTER_ACCEPT;
-			},
-		},
-	);
-	const disallowed = [];
-	while (walker.nextNode()) {
-		disallowed.push(walker.currentNode);
-	}
-	disallowed.forEach((node) => {
-		const parent = node.parentNode;
-		if (!parent) {
-			return;
-		}
-		while (node.firstChild) {
-			parent.insertBefore(node.firstChild, node);
-		}
-		parent.removeChild(node);
-	});
-	const allowedWalker = document.createTreeWalker(
-		template.content,
-		NodeFilter.SHOW_ELEMENT,
-		null,
-		false,
-	);
-	while (allowedWalker.nextNode()) {
-		const el = allowedWalker.currentNode;
-		if (!FEATURE_ALLOWED_TAGS.has(el.nodeName)) {
-			continue;
-		}
-		Array.from(el.attributes).forEach((attr) => {
-			el.removeAttribute(attr.name);
-		});
-	}
-	return template.innerHTML.trim();
-}
 
 	function resolveRemoveContext($btn) {
 		let slug = $btn.attr('data-extension-slug') || $btn.data('extensionSlug') || '';
@@ -766,143 +658,6 @@ function sanitizeFeatureHtml(value) {
 
 		$card.trigger('mds-update-checked');
 	}
-
-// Simple modal factory for plan selection
-
-// Manage subscription modal
-function ensureManageModal() {
-    if ($('#mds-manage-modal').length) return;
-    const html = `
-        <div id="mds-manage-modal" class="mds-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mds-manage-title">
-            <div class="mds-modal">
-                <header><span id="mds-manage-title">Manage subscription</span></header>
-                <div class="mds-modal-body">
-                    <div class="mds-manage-content">
-                        <p class="mds-manage-loading">Loading…</p>
-                        <div class="mds-manage-error" style="color:#b91c1c; display:none;"></div>
-                        <div class="mds-manage-details" style="display:none;">
-                            <div class="mds-current-plan"></div>
-                            <fieldset class="mds-plan-change" style="margin-top:10px;">
-                                <legend>Change plan</legend>
-                                <div class="mds-plan-options"></div>
-                            </fieldset>
-                        </div>
-                    </div>
-                </div>
-                <footer>
-                    <button type="button" class="button mds-modal-cancel">Close</button>
-                    <button type="button" class="button button-primary mds-apply-plan" disabled>Apply</button>
-                </footer>
-            </div>
-        </div>`;
-    $('body').append(html);
-}
-
-$(document).on('click', '.mds-manage-subscription', function(){
-    const slug = $(this).data('extension-slug');
-    ensureManageModal();
-    const $overlay = $('#mds-manage-modal');
-    const $loading = $overlay.find('.mds-manage-loading');
-    const $error = $overlay.find('.mds-manage-error');
-    const $details = $overlay.find('.mds-manage-details');
-    const $plans = $overlay.find('.mds-plan-options');
-    const $apply = $overlay.find('.mds-apply-plan').prop('disabled', true).data('extension-slug', slug);
-
-    $error.hide().text('');
-    $details.hide();
-    $loading.show();
-    $overlay.css('display','flex');
-
-    $.post(AJAX_URL, { action: 'mds_get_subscription', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug })
-        .done(function(resp){
-            if (!resp || !resp.success || !resp.data) {
-                $error.text((resp && resp.data && resp.data.message) || 'Could not load subscription.').show();
-                return;
-            }
-            const sub = resp.data;
-            const current = sub.currentPlan || sub.plan || '';
-            const currentDesc = sub.currentPlanDescription || '';
-            const options = sub.availablePlans || [];
-            const planDetails = Array.isArray(sub.planDetails) ? sub.planDetails : [];
-            const detailMap = {};
-            planDetails.forEach((detail) => {
-                if (!detail || typeof detail !== 'object') {
-                    return;
-                }
-                const planKey = detail.plan || detail.key;
-                if (!planKey) {
-                    return;
-                }
-                detailMap[planKey] = detail;
-            });
-
-            // Human-friendly plan description
-            let descText = currentDesc;
-            if (!descText) {
-                const map = { one_time: 'One-time (no renewals)', monthly: 'Monthly subscription', yearly: 'Yearly subscription' };
-                descText = map[current] || current || '';
-                if ((current === 'monthly' || current === 'yearly') && sub.renewsAt) {
-                    try { descText += ' (renews ' + new Date(sub.renewsAt).toLocaleDateString() + ')'; } catch {}
-                }
-            }
-            $overlay.find('.mds-current-plan').text(descText ? ('Current plan: ' + descText) : '');
-
-            if (options.length) {
-                const labelMap = { one_time: 'One-time', monthly: 'Monthly subscription', yearly: 'Yearly subscription' };
-                const radios = options.map((planKey) => {
-                    const isCurrent = planKey === current;
-                    const detail = detailMap[planKey] || {};
-                    const label = detail.label || labelMap[planKey] || planKey;
-                    const badge = isCurrent ? ' <em class=\"mds-current-plan-indicator\">(current)</em>' : '';
-                    const checked = isCurrent ? ' checked' : '';
-                    const disabled = isCurrent ? ' disabled aria-checked=\"true\"' : '';
-                    const features = Array.isArray(detail.features) ? detail.features : [];
-				const featureItems = features.length
-					? `<ul class=\"mds-plan-features\">${features
-							.map((item) => {
-								const sanitized = sanitizeFeatureHtml(item);
-								return sanitized ? `<li>${sanitized}</li>` : '';
-							})
-							.filter(Boolean)
-							.join('')}</ul>`
-					: '';
-                    const featureWrapper = featureItems ? `<div class=\"mds-plan-option-body\">${featureItems}</div>` : '';
-                    return `<div class=\"mds-plan-option\"><label class=\"mds-plan-option-header\"><input type=\"radio\" name=\"mds-manage-plan\" value=\"${planKey}\"${checked}${disabled}><span>${escapeHtml(label)}${badge}</span></label>${featureWrapper}</div>`;
-                }).join('');
-                $plans.html(radios);
-                $plans.off('change','input[name=\"mds-manage-plan\"]').on('change','input[name=\"mds-manage-plan\"]', function(){
-                    const chosen = $(this).val();
-                    $apply.prop('disabled', !chosen || chosen === current).data('plan', chosen);
-                });
-            } else {
-                $plans.html('<p>No alternative plans available.</p>');
-            }
-            $details.show();
-        })
-        .fail(function(){ $error.text('Could not load subscription.').show(); })
-        .always(function(){ $loading.hide(); });
-});
-
-$(document).on('click', '#mds-manage-modal .mds-modal-cancel', function(){ $('#mds-manage-modal').hide(); });
-
-$(document).on('click', '.mds-apply-plan', function(){
-    const $btn = $(this);
-    const slug = $btn.data('extension-slug');
-    const plan = $btn.data('plan');
-    if (!slug || !plan) return;
-    $btn.prop('disabled', true).text('Applying…');
-    $.post(AJAX_URL, { action: 'mds_change_subscription_plan', nonce: MDS_EXTENSIONS_DATA.nonce, extension_slug: slug, plan: plan })
-        .done(function(resp){
-            if (resp && resp.success) {
-                showNotice('success', (resp.data && resp.data.message) || 'Plan changed.');
-                setTimeout(() => window.location.reload(), 800);
-            } else {
-                showNotice('error', (resp && resp.data && resp.data.message) || 'Failed to change plan.', false);
-            }
-        })
-        .fail(function(){ showNotice('error', 'Failed to change plan.', false); })
-        .always(function(){ $btn.prop('disabled', false).text('Apply'); });
-});
 
 $(document).on('click', '.mds-cancel-auto-renew', function(e){
 	e.preventDefault();

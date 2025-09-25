@@ -210,6 +210,8 @@
     text-align: center;
     border-radius: 999px;
     padding: 8px 18px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .mds-card-header-buttons .button.button-primary {
@@ -223,21 +225,49 @@
 .mds-card-header-buttons .button.button-primary:focus {
     background: linear-gradient(135deg, #0f9f7c 0%, #036d5f 100%);
     color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(16, 185, 129, 0.45);
 }
 
-.mds-card-header-buttons .button.button-secondary,
-.mds-card-header-buttons .button.button-secondary:disabled,
-.mds-card-header-buttons .button.button-secondary[disabled] {
+.mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension),
+.mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension):disabled,
+.mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension)[disabled] {
     background: #f8fafc;
     border: 1px solid #d7e3f8;
     color: #0f172a;
 }
 
-.mds-card-header-buttons .button.button-secondary:hover,
-.mds-card-header-buttons .button.button-secondary:focus {
+.mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension):hover,
+.mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension):focus {
     background: #e2e8f0;
     border-color: #cbd5f5;
     color: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.mds-card-header-buttons .mds-activate-extension {
+    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    border: none;
+    color: #ffffff;
+    box-shadow: 0 12px 28px rgba(34, 197, 94, 0.32);
+}
+
+.mds-card-header-buttons .mds-activate-extension:hover,
+.mds-card-header-buttons .mds-activate-extension:focus {
+    background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+    box-shadow: 0 16px 34px rgba(22, 163, 74, 0.48);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.mds-card-header-buttons .mds-activate-extension:disabled,
+.mds-card-header-buttons .mds-activate-extension[disabled],
+.mds-card-header-buttons .mds-activate-extension.mds-btn-loading {
+    background: linear-gradient(135deg, #86efac 0%, #22c55e 100%);
+    color: rgba(255, 255, 255, 0.9);
+    box-shadow: none;
+    transform: none;
 }
 
 .mds-card-header-buttons .mds-ext-active {
@@ -262,33 +292,24 @@
     gap: 8px;
 }
 
-.mds-card-header-actions .mds-card-license-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    border: 1px solid #d0dbea;
-    background: #f8fafc;
-    color: #0f172a;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-    white-space: nowrap;
+
+.mds-card-license-buttons {
+    display: flex;
+    justify-content: flex-end;
 }
 
-.mds-card-header-actions .mds-card-license-toggle:hover,
-.mds-card-header-actions .mds-card-license-toggle:focus {
-    background: #e2e8f0;
-    border-color: #94a3b8;
-    color: #0f172a;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+.mds-card-license-buttons .button {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border: none;
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.28);
 }
 
-.mds-card-header-actions .mds-card-license-toggle:focus-visible {
-    outline: 3px solid rgba(99, 102, 241, 0.45);
-    outline-offset: 2px;
+.mds-card-license-buttons .button:hover,
+.mds-card-license-buttons .button:focus {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    box-shadow: 0 14px 32px rgba(37, 99, 235, 0.45);
+    color: #ffffff;
 }
 
 .mds-card-license-popover {
@@ -351,17 +372,50 @@ html.dark .mds-card-header {
     border-bottom-color: rgba(99, 102, 241, 0.25);
 }
 
-html.dark .mds-card-header-actions .mds-card-license-toggle {
-    background: #1f2937;
-    border-color: #334155;
-    color: #e2e8f0;
+html.dark .mds-card-header-buttons .button.button-primary {
+    box-shadow: 0 12px 28px rgba(20, 184, 166, 0.4);
 }
 
-html.dark .mds-card-header-actions .mds-card-license-toggle:hover,
-html.dark .mds-card-header-actions .mds-card-license-toggle:focus {
-    background: #273449;
-    border-color: #475569;
+html.dark .mds-card-header-buttons .button.button-primary:hover,
+html.dark .mds-card-header-buttons .button.button-primary:focus {
+    box-shadow: 0 18px 36px rgba(20, 184, 166, 0.55);
+}
+
+html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension,
+html.dark .mds-card-header-buttons .mds-activate-extension {
+    background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
+    box-shadow: 0 12px 28px rgba(22, 163, 74, 0.42);
+}
+
+html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension:hover,
+html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension:focus,
+html.dark .mds-card-header-buttons .mds-activate-extension:hover,
+html.dark .mds-card-header-buttons .mds-activate-extension:focus {
+    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+    box-shadow: 0 16px 34px rgba(22, 163, 74, 0.52);
+}
+
+html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension:disabled,
+html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension[disabled],
+html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension.mds-btn-loading,
+html.dark .mds-card-header-buttons .mds-activate-extension:disabled,
+html.dark .mds-card-header-buttons .mds-activate-extension[disabled],
+html.dark .mds-card-header-buttons .mds-activate-extension.mds-btn-loading {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    color: rgba(255, 255, 255, 0.92);
+}
+
+html.dark .mds-card-license-buttons .button {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+    color: #e0e7ff;
+    box-shadow: 0 12px 30px rgba(30, 64, 175, 0.45);
+}
+
+html.dark .mds-card-license-buttons .button:hover,
+html.dark .mds-card-license-buttons .button:focus {
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
     color: #f8fafc;
+    box-shadow: 0 16px 36px rgba(30, 64, 175, 0.55);
 }
 
 html.dark .mds-card-license-popover {
@@ -540,38 +594,6 @@ html.dark .mds-card-title-version {
     }
 }
 
-/* Modal */
-.mds-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100000; /* over admin */
-}
-.mds-modal {
-    background: #fff;
-    border-radius: 8px;
-    max-width: 560px;
-    width: 95%;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-.mds-modal header {
-    padding: 14px 16px;
-    border-bottom: 1px solid #e5e7eb;
-    font-weight: 600;
-}
-.mds-modal .mds-modal-body {
-    padding: 16px;
-}
-.mds-modal footer {
-    padding: 12px 16px;
-    border-top: 1px solid #e5e7eb;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
 
 /* Table compatibility for existing functionality */
 .mds-extensions-container {
@@ -915,6 +937,38 @@ html.dark .mds-card-title-version {
     gap: 8px;
     flex-wrap: wrap;
     align-items: center;
+}
+
+.mds-inline-license-actions .mds-inline-license-activate {
+    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    border: none;
+    border-radius: 999px;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 8px 18px;
+    box-shadow: 0 10px 24px rgba(34, 197, 94, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.mds-inline-license-actions .mds-inline-license-activate:hover,
+.mds-inline-license-actions .mds-inline-license-activate:focus {
+    background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+    box-shadow: 0 14px 32px rgba(22, 163, 74, 0.45);
+    transform: translateY(-1px);
+    color: #ffffff;
+}
+
+.mds-inline-license-actions .mds-inline-license-activate:disabled,
+.mds-inline-license-actions .mds-inline-license-activate[disabled] {
+    background: linear-gradient(135deg, #86efac 0%, #22c55e 100%);
+    box-shadow: none;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: default;
+    transform: none;
+}
+
+.mds-inline-license-actions .mds-inline-license-activate.mds-btn-loading {
+    color: rgba(255, 255, 255, 0.88) !important;
 }
 
 .mds-inline-license-actions .mds-inline-license-remove {

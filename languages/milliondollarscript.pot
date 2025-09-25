@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.2.17\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.2.19\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-24 22:57:33\n"
-"PO-Revision-Date: 2025-09-24 22:57:33\n"
-"X-Generator: Million Dollar Script Two 2.6.2.17\n"
+"POT-Creation-Date: 2025-09-24 23:37:23\n"
+"PO-Revision-Date: 2025-09-24 23:37:23\n"
+"X-Generator: Million Dollar Script Two 2.6.2.19\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -3054,16 +3054,7 @@ msgstr ""
 msgid "Stored license key is empty."
 msgstr ""
 
-msgid "Failed to fetch subscription."
-msgstr ""
-
 msgid "Missing fields."
-msgstr ""
-
-msgid "Failed to change plan."
-msgstr ""
-
-msgid "Plan changed."
 msgstr ""
 
 msgid "Failed to cancel subscription."

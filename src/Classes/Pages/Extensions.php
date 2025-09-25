@@ -305,9 +305,7 @@ class Extensions {
         add_action( 'wp_ajax_mds_activate_license', [ self::class, 'ajax_activate_license' ] );
         add_action( 'wp_ajax_mds_deactivate_license', [ self::class, 'ajax_deactivate_license' ] );
         add_action( 'wp_ajax_mds_delete_license', [ self::class, 'ajax_delete_license' ] );
-        // Subscription management
-        add_action( 'wp_ajax_mds_get_subscription', [ self::class, 'ajax_get_subscription' ] );
-        add_action( 'wp_ajax_mds_change_subscription_plan', [ self::class, 'ajax_change_subscription_plan' ] );
+        // Subscription cancellation
         add_action( 'wp_ajax_mds_cancel_subscription', [ self::class, 'ajax_cancel_subscription' ] );
     }
     
@@ -3017,8 +3015,7 @@ class Extensions {
         $has_local_license = !empty($local_license);
         $was_purchased = !empty($extension['purchased_locally']) || $has_local_license;
         $auto_renews = self::license_is_auto_renewing($local_license);
-        $can_manage_subscription = $was_purchased && $slug !== '';
-        $can_cancel_auto = $can_manage_subscription && $auto_renews;
+        $can_cancel_auto = $was_purchased && $slug !== '' && $auto_renews;
         $can_check_updates = $is_installed && !empty($extension['installed_plugin_file']);
 
         $card_classes = ['mds-extension-card'];
@@ -3041,7 +3038,6 @@ class Extensions {
             'data-is-licensed'    => $is_licensed ? 'true' : 'false',
             'data-has-local-license' => $has_local_license ? 'true' : 'false',
             'data-purchased'      => $was_purchased ? 'true' : 'false',
-            'data-has-subscription' => $can_manage_subscription ? 'true' : 'false',
             'data-auto-renewing'  => $can_cancel_auto ? 'true' : 'false',
         ];
         if ($is_installed && !empty($extension['installed_plugin_file'])) {
@@ -3164,9 +3160,11 @@ class Extensions {
             ob_start();
             ?>
             <div class="mds-card-license-trigger">
-                <button type="button" class="button-link mds-card-license-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr($license_panel_id); ?>">
-                    <?php echo esc_html(Language::get('Manage license')); ?>
-                </button>
+                <div class="mds-card-header-buttons mds-card-license-buttons">
+                    <button type="button" class="button button-secondary mds-card-license-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr($license_panel_id); ?>">
+                        <?php echo esc_html(Language::get('Manage license')); ?>
+                    </button>
+                </div>
                 <div id="<?php echo esc_attr($license_panel_id); ?>"
                      class="mds-card-license mds-card-license-popover is-collapsed"
                      aria-hidden="true"
@@ -3202,22 +3200,13 @@ class Extensions {
                             <?php endif; ?>
                         </div>
                     </div>
-                    <?php if ($can_manage_subscription || $can_cancel_auto) : ?>
+                    <?php if ($can_cancel_auto) : ?>
                         <div class="mds-card-license-actions">
-                            <?php if ($can_manage_subscription) : ?>
-                                <button type="button"
-                                        class="button button-secondary mds-manage-subscription"
-                                        data-extension-slug="<?php echo esc_attr($slug); ?>">
-                                    <?php echo esc_html(Language::get('Manage Subscription')); ?>
-                                </button>
-                            <?php endif; ?>
-                            <?php if ($can_cancel_auto) : ?>
-                                <button type="button"
-                                        class="button button-link mds-cancel-auto-renew"
-                                        data-extension-slug="<?php echo esc_attr($slug); ?>">
-                                    <?php echo esc_html(Language::get('Cancel Auto-renewal')); ?>
-                                </button>
-                            <?php endif; ?>
+                            <button type="button"
+                                    class="button button-link mds-cancel-auto-renew"
+                                    data-extension-slug="<?php echo esc_attr($slug); ?>">
+                                <?php echo esc_html(Language::get('Cancel Auto-renewal')); ?>
+                            </button>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -6984,95 +6973,6 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 error_log('Error checking license status for extension ' . $extension_slug . ': ' . $e->getMessage());
                 return false;
             }
-        }
-
-        // --- Subscription management AJAX ---
-        public static function ajax_get_subscription(): void {
-            check_ajax_referer( 'mds_extensions_nonce', 'nonce' );
-            if (!current_user_can('manage_options')) {
-                wp_send_json_error(['message' => Language::get('Permission denied.')]);
-            }
-            $slug = sanitize_text_field($_POST['extension_slug'] ?? '');
-            if ($slug === '') { wp_send_json_error(['message' => Language::get('Missing extension slug.')]); }
-            $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-            $lic = $lm->get_license($slug);
-            if (!$lic || empty($lic->license_key)) {
-                wp_send_json_error(['message' => Language::get('No license found for this extension.')]);
-            }
-            $key = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact((string)$lic->license_key);
-            if ($key === '') { wp_send_json_error(['message' => Language::get('Could not decrypt license key.')]); }
-            // Resolve base
-            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-            $candidates = [ rtrim((string)$user_configured_url, '/'), 'http://extension-server:3000', 'http://extension-server-dev:3000', 'http://host.docker.internal:15346', 'http://localhost:15346' ];
-            $base = null;
-            foreach ($candidates as $b) {
-                if (!$b) continue; $probe = rtrim($b,'/') . '/api/public/ping';
-                $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
-                if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) { $base = $b; break; }
-            }
-            if (!$base) { wp_send_json_error(['message' => Language::get('Extension server unreachable.')]); }
-            $url = rtrim($base,'/') . '/api/public/subscriptions/get';
-            $resp = wp_remote_post($url, [
-                'timeout' => 20,
-                'sslverify' => !Utility::is_development_environment(),
-                'headers' => [ 'Content-Type' => 'application/json' ],
-                'body' => wp_json_encode(['licenseKey' => $key, 'productIdentifier' => $slug]),
-            ]);
-            if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message() ]); }
-            $code = wp_remote_retrieve_response_code($resp);
-            $body = wp_remote_retrieve_body($resp);
-            $json = json_decode($body, true);
-            if ($code !== 200 || !is_array($json)) { wp_send_json_error(['message' => Language::get('Failed to fetch subscription.')]); }
-            $payload = isset($json['data']) && is_array($json['data']) ? $json['data'] : $json;
-            // Normalize
-            $out = [
-                'currentPlan' => $payload['currentPlan'] ?? ($payload['plan'] ?? ''),
-                'availablePlans' => isset($payload['availablePlans']) && is_array($payload['availablePlans']) ? array_values($payload['availablePlans']) : [],
-                'status' => $payload['status'] ?? '',
-                'renewsAt' => $payload['renewsAt'] ?? ($payload['expires_at'] ?? ''),
-                'planDetails' => isset($payload['planDetails']) && is_array($payload['planDetails']) ? array_values($payload['planDetails']) : [],
-            ];
-            // Include a human-friendly description if provided by the server, otherwise derive one.
-            $desc = '';
-            if (is_array($payload)) {
-                $desc = $payload['currentPlanDescription'] ?? ($payload['planDescription'] ?? '');
-            }
-            if ($desc === '' && is_string($out['currentPlan']) && $out['currentPlan'] !== '') {
-                $map = [
-                    'one_time' => 'One-time (no renewals)',
-                    'monthly'  => 'Monthly subscription',
-                    'yearly'   => 'Yearly subscription',
-                ];
-                $desc = $map[$out['currentPlan']] ?? $out['currentPlan'];
-            }
-            $out['currentPlanDescription'] = $desc;
-            wp_send_json_success($out);
-        }
-
-        public static function ajax_change_subscription_plan(): void {
-            check_ajax_referer( 'mds_extensions_nonce', 'nonce' );
-            if (!current_user_can('manage_options')) {
-                wp_send_json_error(['message' => Language::get('Permission denied.')]);
-            }
-            $slug = sanitize_text_field($_POST['extension_slug'] ?? '');
-            $plan = sanitize_text_field($_POST['plan'] ?? '');
-            if ($slug === '' || $plan === '') { wp_send_json_error(['message' => Language::get('Missing fields.')]); }
-            $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-            $lic = $lm->get_license($slug);
-            if (!$lic || empty($lic->license_key)) { wp_send_json_error(['message' => Language::get('No license found for this extension.')]); }
-            $key = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact((string)$lic->license_key);
-            if ($key === '') { wp_send_json_error(['message' => Language::get('Could not decrypt license key.')]); }
-            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-            $candidates = [ rtrim((string)$user_configured_url, '/'), 'http://extension-server:3000', 'http://extension-server-dev:3000', 'http://host.docker.internal:15346', 'http://localhost:15346' ];
-            $base = null;
-            foreach ($candidates as $b) { if (!$b) continue; $probe = rtrim($b,'/') . '/api/public/ping'; $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]); if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) { $base = $b; break; } }
-            if (!$base) { wp_send_json_error(['message' => Language::get('Extension server unreachable.')]); }
-            $url = rtrim($base,'/') . '/api/public/subscriptions/change-plan';
-            $resp = wp_remote_post($url, [ 'timeout' => 20, 'sslverify' => !Utility::is_development_environment(), 'headers' => [ 'Content-Type' => 'application/json' ], 'body' => wp_json_encode(['licenseKey' => $key, 'productIdentifier' => $slug, 'plan' => $plan]) ]);
-            if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message()]); }
-            $code = wp_remote_retrieve_response_code($resp); $body = wp_remote_retrieve_body($resp); $json = json_decode($body, true);
-            if ($code !== 200 || !is_array($json)) { wp_send_json_error(['message' => Language::get('Failed to change plan.')]); }
-            wp_send_json_success(['message' => $json['message'] ?? Language::get('Plan changed.')]);
         }
 
         public static function ajax_cancel_subscription(): void {
