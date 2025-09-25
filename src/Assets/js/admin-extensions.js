@@ -145,6 +145,67 @@ function escapeHtml(value) {
 		return !!val;
 	}
 
+	function pruneEmptyCadenceTabs($pricing) {
+		$pricing.find('.mds-plan-tabs').each(function () {
+			const $tabs = $(this);
+			const surviving = [];
+			$tabs.find('.mds-plan-tab').each(function () {
+				const $tab = $(this);
+				const key = String($tab.data('plan-tab') || '').trim();
+				if (!key) {
+					return;
+				}
+				const selector = '.mds-plan-tabpanel[data-plan-panel="' + key + '"]';
+				const $panel = $tabs.find(selector);
+				const hasPlans = $panel.length && $panel.find('.mds-plan-card').length > 0;
+				if (!hasPlans) {
+					$panel.remove();
+					$tab.remove();
+					return;
+				}
+				surviving.push({ tab: $tab, key: key });
+			});
+			if (!surviving.length) {
+				$tabs.remove();
+				return;
+			}
+			const hasActive = surviving.some(entry => entry.tab.hasClass('is-active'));
+			if (!hasActive) {
+				const primary = surviving[0];
+				primary.tab.addClass('is-active').attr('aria-selected', 'true');
+				$tabs.find('.mds-plan-tabpanel').removeClass('is-active');
+				if (primary.key) {
+					const selector = '.mds-plan-tabpanel[data-plan-panel="' + primary.key + '"]';
+					$tabs.find(selector).addClass('is-active');
+				}
+			}
+		});
+	}
+
+	function sanitizeCadenceCards($scope) {
+		const $cards = $scope && $scope.length ? $scope : $('.mds-extension-card');
+		$cards.each(function () {
+			const $card = $(this);
+			const isPremium = truthyFlag($card.data('isPremium')) || truthyFlag($card.attr('data-is-premium'));
+			$card.find('.mds-card-pricing').each(function () {
+				const $pricing = $(this);
+				if (!isPremium) {
+					$pricing.remove();
+					return;
+				}
+				pruneEmptyCadenceTabs($pricing);
+				const hasPlanCards = $pricing.find('.mds-plan-card').length > 0;
+				if (!hasPlanCards) {
+					$pricing.remove();
+				} else {
+					$pricing.removeClass('mds-card-pricing--empty');
+				}
+			});
+		});
+	}
+
+	sanitizeCadenceCards($('.mds-extension-card'));
+
 	function rowHasLocalPurchase($row) {
 		return truthyFlag($row.data('purchased'))
 			|| truthyFlag($row.data('purchasedLocally'))
@@ -688,6 +749,7 @@ $(document).on('click', '.mds-cancel-auto-renew', function(e){
 				const $card = $button.closest('.mds-extension-card');
 				if ($card.length) {
 					$card.attr('data-auto-renewing', 'false');
+					$card.attr('data-auto-renew-cancelled', 'true');
 				}
 			} else {
 				showNotice('error', (resp && resp.data && resp.data.message) || getText('auto_cancel_failed', 'Failed to cancel auto-renew.'), false);

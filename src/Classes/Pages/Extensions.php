@@ -646,6 +646,10 @@ class Extensions {
                 continue;
             }
 
+            if (!array_key_exists('is_extension_server_item', $display_extensions[$index])) {
+                $display_extensions[$index]['is_extension_server_item'] = true;
+            }
+
             $slug = isset($extension['slug']) ? (string) $extension['slug'] : '';
             if ($slug !== '') {
                 $available_by_slug[$slug] = $index;
@@ -2372,6 +2376,107 @@ class Extensions {
         return $base_update;
     }
 
+    private static function remove_metadata_keys_recursive(array $metadata, array $keys): array
+    {
+        if (empty($metadata) || empty($keys)) {
+            return $metadata;
+        }
+
+        $normalized = array_map(
+            static function ($key) {
+                return strtolower(preg_replace('/[^a-z0-9]/', '', (string) $key));
+            },
+            $keys
+        );
+
+        foreach ($metadata as $metaKey => $metaValue) {
+            $normalizedKey = is_string($metaKey)
+                ? strtolower(preg_replace('/[^a-z0-9]/', '', $metaKey))
+                : '';
+
+            if ($normalizedKey !== '' && in_array($normalizedKey, $normalized, true)) {
+                unset($metadata[$metaKey]);
+                continue;
+            }
+
+            if (is_array($metaValue)) {
+                $metadata[$metaKey] = self::remove_metadata_keys_recursive($metaValue, $keys);
+            }
+        }
+
+        return $metadata;
+    }
+
+    private static function flag_metadata_auto_renew_cancelled(array $metadata, array $payload = []): array
+    {
+        $metadata = is_array($metadata) ? $metadata : [];
+
+        $metadata = self::remove_metadata_keys_recursive(
+            $metadata,
+            [
+                'renews_at',
+                'renewsAt',
+                'next_billing_at',
+                'nextBillingAt',
+                'next_payment_attempt',
+                'nextPaymentAttempt',
+                'next_payment_date',
+                'nextPaymentDate',
+            ]
+        );
+
+        $metadata['auto_renew'] = false;
+        $metadata['autoRenew'] = false;
+        $metadata['auto_renew_cancelled'] = true;
+        $metadata['auto_renew_canceled'] = true;
+        $metadata['autoRenewCancelled'] = true;
+        $metadata['autoRenewCanceled'] = true;
+        $metadata['cancel_at_period_end'] = true;
+        $metadata['cancelAtPeriodEnd'] = true;
+        $metadata['subscription_status'] = 'cancelled';
+        $metadata['subscriptionStatus'] = 'cancelled';
+
+        if (!isset($metadata['subscription']) || !is_array($metadata['subscription'])) {
+            $metadata['subscription'] = [];
+        }
+
+        $metadata['subscription']['cancel_at_period_end'] = true;
+        $metadata['subscription']['cancelAtPeriodEnd'] = true;
+        $metadata['subscription']['status'] = 'canceled';
+
+        if (isset($payload['subscription']) && is_array($payload['subscription'])) {
+            $subscription_payload = $payload['subscription'];
+
+            foreach (['current_period_end', 'currentPeriodEnd', 'period_end', 'periodEnd'] as $key) {
+                if (!empty($subscription_payload[$key])) {
+                    $metadata['subscription']['current_period_end'] = (string) $subscription_payload[$key];
+                    break;
+                }
+            }
+
+            if (!empty($subscription_payload['status'])) {
+                $metadata['subscription']['status'] = strtolower((string) $subscription_payload['status']);
+            }
+        }
+
+        if (isset($payload['license']) && is_array($payload['license'])) {
+            $license_payload = $payload['license'];
+            if (!empty($license_payload['expires_at'])) {
+                $metadata['expires_at'] = (string) $license_payload['expires_at'];
+            } elseif (!empty($license_payload['expiresAt'])) {
+                $metadata['expires_at'] = (string) $license_payload['expiresAt'];
+            }
+        }
+
+        if (!empty($payload['expires_at']) && empty($metadata['expires_at'])) {
+            $metadata['expires_at'] = (string) $payload['expires_at'];
+        } elseif (!empty($payload['expiresAt']) && empty($metadata['expires_at'])) {
+            $metadata['expires_at'] = (string) $payload['expiresAt'];
+        }
+
+        return $metadata;
+    }
+
     private static function extract_license_status_from_payload($payload): ?string {
         if (!is_array($payload)) {
             return null;
@@ -2832,13 +2937,19 @@ class Extensions {
         return null;
     }
 
-    private static function license_is_auto_renewing(?array $license): bool {
+    private static function license_is_auto_renewing(?array $license): bool
+    {
         if (!is_array($license) || empty($license)) {
             return false;
         }
 
         $status = isset($license['status']) ? strtolower((string) $license['status']) : '';
         if ($status !== '' && in_array($status, ['cancelled', 'canceled', 'expired', 'inactive', 'disabled'], true)) {
+            return false;
+        }
+
+        $metadata = isset($license['metadata']) && is_array($license['metadata']) ? $license['metadata'] : [];
+        if (self::metadata_signals_auto_renew_cancelled($metadata)) {
             return false;
         }
 
@@ -2852,7 +2963,6 @@ class Extensions {
             return true;
         }
 
-        $metadata = isset($license['metadata']) && is_array($license['metadata']) ? $license['metadata'] : [];
         $metadata_plan = '';
         if (isset($metadata['plan'])) {
             $metadata_plan = self::canonicalize_plan_key((string) $metadata['plan']);
@@ -2872,25 +2982,76 @@ class Extensions {
                 continue;
             }
             $value = $metadata[$flag_key];
-            if (is_bool($value)) {
-                if ($value) {
-                    return true;
-                }
-                continue;
+            if (self::value_flag_truthy($value)) {
+                return true;
             }
-            if (is_numeric($value)) {
-                if ((int) $value === 1) {
+        }
+
+        return false;
+    }
+
+    private static function license_auto_renew_cancelled(array $license): bool
+    {
+        if (empty($license)) {
+            return false;
+        }
+
+        $status = isset($license['status']) ? (string) $license['status'] : '';
+        if ($status !== '' && !self::is_active_license_status($status)) {
+            return false;
+        }
+
+        $metadata = isset($license['metadata']) && is_array($license['metadata']) ? $license['metadata'] : [];
+        return self::metadata_signals_auto_renew_cancelled($metadata);
+    }
+
+    private static function metadata_signals_auto_renew_cancelled(array $metadata): bool
+    {
+        if (empty($metadata)) {
+            return false;
+        }
+
+        $stack = [[$metadata, '']];
+
+        while (!empty($stack)) {
+            [$node, $path] = array_pop($stack);
+            foreach ($node as $key => $value) {
+                if (!is_string($key)) {
+                    continue;
+                }
+
+                $normalizedKey = strtolower(preg_replace('/[^a-z0-9]/', '', $key));
+                $nextPath = $path === '' ? $normalizedKey : $path . '.' . $normalizedKey;
+
+                if (is_array($value)) {
+                    $stack[] = [$value, $nextPath];
+                    continue;
+                }
+
+                if (in_array($normalizedKey, ['autorenewcancelled', 'autorenewcanceled', 'autorenewcancelledflag'], true)
+                    && self::value_flag_truthy($value)) {
                     return true;
                 }
-                continue;
-            }
-            if (is_string($value)) {
-                $normalized = strtolower(trim($value));
-                if (in_array($normalized, ['1', 'true', 'yes', 'active', 'enabled'], true)) {
+
+                if (in_array($normalizedKey, ['autorenew', 'autorenewal', 'autorenewenabled', 'isrecurring', 'recurring', 'subscription'], true)
+                    && self::value_flag_falsey($value)) {
                     return true;
                 }
-                if (in_array($normalized, ['monthly', 'yearly', 'annual', 'subscription', 'recurring'], true)) {
+
+                if (strpos($normalizedKey, 'cancel') !== false) {
+                    if (strpos($normalizedKey, 'period') !== false && self::value_flag_truthy($value)) {
+                        return true;
+                    }
+                }
+
+                if (in_array($normalizedKey, ['subscriptionstatus'], true) && self::value_flag_falsey($value)) {
                     return true;
+                }
+
+                if ($normalizedKey === 'status' && self::value_flag_falsey($value)) {
+                    if (strpos($nextPath, 'subscription') !== false || strpos($nextPath, 'stripe') !== false) {
+                        return true;
+                    }
                 }
             }
         }
@@ -2898,7 +3059,48 @@ class Extensions {
         return false;
     }
 
-    private static function format_license_renewal_display(?string $renews_at, ?string $expires_at, string $plan_hint): string {
+    private static function value_flag_truthy($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value !== 0;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+            return in_array($normalized, ['1', 'true', 'yes', 'on', 'enabled', 'active'], true);
+        }
+
+        return false;
+    }
+
+    private static function value_flag_falsey($value): bool
+    {
+        if (is_bool($value)) {
+            return $value === false;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 0;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+            if ($normalized === '') {
+                return false;
+            }
+
+            return in_array($normalized, ['0', 'false', 'no', 'off', 'cancelled', 'canceled', 'inactive', 'disabled', 'ended', 'expired', 'paused'], true);
+        }
+
+        return false;
+    }
+
+    private static function format_license_renewal_display(?string $renews_at, ?string $expires_at, string $plan_hint): ?array
+    {
         $renews_at = is_string($renews_at) ? trim($renews_at) : '';
         $expires_at = is_string($expires_at) ? trim($expires_at) : '';
 
@@ -2936,11 +3138,22 @@ class Extensions {
                 if ($timezone_suffix !== '') {
                     $display .= ' ' . $timezone_suffix;
                 }
-                return $display;
+                return [
+                    'label' => Language::get('Renews'),
+                    'value' => $display,
+                    'type'  => 'renews',
+                ];
             }
-            return $plan_is_subscription
-                ? Language::get('Renews automatically')
-                : Language::get('Lifetime access');
+
+            if ($plan_is_subscription) {
+                return [
+                    'label' => Language::get('Renews'),
+                    'value' => Language::get('Renews automatically'),
+                    'type'  => 'renews',
+                ];
+            }
+
+            return null;
         }
 
         if ($expires_at !== '') {
@@ -2961,14 +3174,33 @@ class Extensions {
                 if ($timezone_suffix !== '') {
                     $display .= ' ' . $timezone_suffix;
                 }
-                return $display;
+                return [
+                    'label' => Language::get('Expires'),
+                    'value' => $display,
+                    'type'  => 'expires',
+                ];
             }
-            return $plan_is_subscription
-                ? Language::get('Renews automatically')
-                : Language::get('Lifetime access');
+
+            if ($plan_is_subscription) {
+                return [
+                    'label' => Language::get('Renews'),
+                    'value' => Language::get('Renews automatically'),
+                    'type'  => 'renews',
+                ];
+            }
+
+            return null;
         }
 
-        return $plan_is_subscription ? Language::get('Renews automatically') : '';
+        if (!$plan_is_subscription) {
+            return null;
+        }
+
+        return [
+            'label' => Language::get('Renews'),
+            'value' => Language::get('Renews automatically'),
+            'type'  => 'renews',
+        ];
     }
 
     /**
@@ -2991,10 +3223,12 @@ class Extensions {
     }
 
     private static function render_available_extension_card(array $extension, string $nonce, ?string $extension_server_error = null): string {
-        $is_premium   = !empty($extension['isPremium']);
-        $is_installed = !empty($extension['is_installed']);
-        $is_active    = !empty($extension['is_active']);
-        $slug         = (string) ($extension['slug'] ?? '');
+        $is_premium               = !empty($extension['isPremium']);
+        $is_installed             = !empty($extension['is_installed']);
+        $is_active                = !empty($extension['is_active']);
+        $slug                     = (string) ($extension['slug'] ?? '');
+        $is_extension_server_item = !empty($extension['is_extension_server_item']);
+        $is_unlisted_extension    = $is_installed && !$is_extension_server_item;
 
         $local_license = is_array($extension['local_license'] ?? null) ? $extension['local_license'] : [];
         $local_status = $local_license['status'] ?? '';
@@ -3019,6 +3253,10 @@ class Extensions {
         $has_local_license = !empty($local_license);
         $was_purchased = !empty($extension['purchased_locally']) || $has_local_license;
         $auto_renews = self::license_is_auto_renewing($local_license);
+        $auto_renew_cancelled = $was_purchased
+            && !$auto_renews
+            && self::license_auto_renew_cancelled($local_license)
+            && self::is_active_license_status($local_status);
         $can_cancel_auto = $was_purchased && $slug !== '' && $auto_renews;
         $can_check_updates = $is_installed && !empty($extension['installed_plugin_file']);
 
@@ -3043,6 +3281,7 @@ class Extensions {
             'data-has-local-license' => $has_local_license ? 'true' : 'false',
             'data-purchased'      => $was_purchased ? 'true' : 'false',
             'data-auto-renewing'  => $can_cancel_auto ? 'true' : 'false',
+            'data-auto-renew-cancelled' => $auto_renew_cancelled ? 'true' : 'false',
         ];
         if ($is_installed && !empty($extension['installed_plugin_file'])) {
             $data_attrs['data-plugin-file'] = $extension['installed_plugin_file'];
@@ -3067,16 +3306,33 @@ class Extensions {
             }
         }
 
-        $renew_text = '';
+        if ($auto_renew_cancelled) {
+            $chips[] = '<span class="mds-license-chip mds-license-chip--attention">' . esc_html(Language::get('Auto-renewal cancelled')) . '</span>';
+        }
+
+        $renewal_chip = null;
         if (!empty($local_license)) {
-            $renew_text = self::format_license_renewal_display(
+            $renewal_chip = self::format_license_renewal_display(
                 $local_license['renews_at'] ?? null,
                 $local_license['expires_at'] ?? null,
                 isset($local_license['plan_hint']) ? (string) $local_license['plan_hint'] : ''
             );
         }
-        if ($renew_text !== '') {
-            $chips[] = '<span class="mds-license-chip mds-license-chip--renewal">' . esc_html(Language::get('Renews: ') . $renew_text) . '</span>';
+        if (is_array($renewal_chip) && !empty($renewal_chip['value'])) {
+            $label = isset($renewal_chip['label']) && $renewal_chip['label'] !== ''
+                ? (string) $renewal_chip['label']
+                : Language::get('Renews');
+
+            if ($auto_renew_cancelled) {
+                $label = Language::get('Expires');
+            }
+
+            $chip_text = $label . ': ' . $renewal_chip['value'];
+            $chip_class = 'mds-license-chip mds-license-chip--renewal';
+            if (($renewal_chip['type'] ?? '') === 'expires') {
+                $chip_class .= ' mds-license-chip--attention';
+            }
+            $chips[] = '<span class="' . esc_attr($chip_class) . '">' . esc_html($chip_text) . '</span>';
         }
 
         $summary_html = implode('', $chips);
@@ -3092,25 +3348,32 @@ class Extensions {
         $pricing_overview = is_array($extension['pricing_overview'] ?? null) ? $extension['pricing_overview'] : [];
         $purchase_links   = is_array($extension['purchase_links'] ?? null) ? $extension['purchase_links'] : [];
         $metadata         = is_array($extension['metadata'] ?? null) ? $extension['metadata'] : [];
+        $has_pricing_data = $is_premium ? self::extension_has_pricing_entries($metadata, $pricing_overview) : false;
 
         $current_plan_key = self::determine_current_plan_key($local_license, $extension, $metadata);
         $plan_relations   = self::extract_plan_relations($metadata);
 
-        $pricing_html = self::render_pricing_overview_html(
-            $pricing_overview,
-            $purchase_links,
-            $metadata,
-            (string) ($extension['id'] ?? ''),
-            $nonce,
-            $is_premium,
-            $current_plan_key,
-            $plan_relations,
-            $can_cancel_auto,
-            $slug
-        );
+        $should_render_pricing = $is_premium && !$is_unlisted_extension;
+        $pricing_html = '';
 
-        if ($pricing_html === '' && $is_premium) {
-            $pricing_html = '<div class="mds-card-pricing mds-card-pricing--empty">' . esc_html(Language::get('Pricing information will appear once Stripe plans are configured.')) . '</div>';
+        if ($should_render_pricing) {
+            $pricing_html = self::render_pricing_overview_html(
+                $pricing_overview,
+                $purchase_links,
+                $metadata,
+                (string) ($extension['id'] ?? ''),
+                $nonce,
+                $is_premium,
+                $current_plan_key,
+                $plan_relations,
+                $can_cancel_auto,
+                $auto_renew_cancelled,
+                $slug
+            );
+
+            if ($pricing_html === '' && $is_premium && $has_pricing_data) {
+                $pricing_html = '<div class="mds-card-pricing mds-card-pricing--empty">' . esc_html(Language::get('Pricing information will appear once Stripe plans are configured.')) . '</div>';
+            }
         }
 
         $action_primary = '';
@@ -3254,7 +3517,7 @@ class Extensions {
             <div class="mds-card-body">
                 <?php if ($pricing_html !== '') : ?>
                     <?php echo $pricing_html; ?>
-                <?php elseif ($is_premium) : ?>
+                <?php elseif ($is_premium && $should_render_pricing) : ?>
                     <div class="mds-card-pricing mds-card-pricing--empty"><?php echo esc_html(Language::get('Pricing information will appear once Stripe plans are configured.')); ?></div>
                 <?php endif; ?>
 
@@ -3290,10 +3553,12 @@ class Extensions {
         ?string $current_plan_key,
         array $plan_relations,
         bool $can_cancel_auto,
+        bool $auto_renew_cancelled,
         string $extension_slug
     ): string {
         $metadata = is_array($metadata) ? $metadata : [];
         $planOrder = self::determine_plan_order($pricing_overview, $metadata);
+        $has_pricing_data = self::extension_has_pricing_entries($metadata, $pricing_overview);
         $normalizedPlanOrder = self::build_plan_index_map($planOrder, true);
         $planGroups = self::build_plan_groups($metadata, $pricing_overview, $purchase_links, $planOrder);
 
@@ -3306,6 +3571,7 @@ class Extensions {
                 $plan_relations,
                 $normalizedPlanOrder,
                 $can_cancel_auto,
+                $auto_renew_cancelled,
                 $extension_slug
             );
         }
@@ -3334,6 +3600,7 @@ class Extensions {
                     $plan_relations,
                     $normalizedPlanOrder,
                     $can_cancel_auto,
+                    $auto_renew_cancelled,
                     $extension_slug
                 );
                 if ($card !== '') {
@@ -3353,6 +3620,7 @@ class Extensions {
                     $plan_relations,
                     $normalizedPlanOrder,
                     $can_cancel_auto,
+                    $auto_renew_cancelled,
                     $extension_slug
                 );
                 if ($card !== '') {
@@ -3387,7 +3655,10 @@ class Extensions {
         $cards = array_filter($cards);
 
         if (empty($cards)) {
-            $fallback = self::render_minimal_plan_cards($current_plan_key, $plan_relations, $normalizedPlanOrder, $extension_id, $nonce, $can_cancel_auto, $extension_slug);
+            if (!$has_pricing_data) {
+                return '';
+            }
+            $fallback = self::render_minimal_plan_cards($current_plan_key, $plan_relations, $normalizedPlanOrder, $extension_id, $nonce, $can_cancel_auto, $auto_renew_cancelled, $extension_slug);
             if (empty($fallback)) {
                 return '';
             }
@@ -3395,6 +3666,47 @@ class Extensions {
         }
 
         return '<div class="mds-card-pricing">' . implode('', $cards) . '</div>';
+    }
+
+    /**
+     * Determine if any pricing payload is available for rendering cadence cards.
+     */
+    private static function extension_has_pricing_entries(array $metadata, array $pricing_overview): bool
+    {
+        if (isset($metadata['stripe_prices']) && is_array($metadata['stripe_prices'])) {
+            foreach ($metadata['stripe_prices'] as $planEntries) {
+                if (!is_array($planEntries)) {
+                    continue;
+                }
+                foreach ($planEntries as $entry) {
+                    if (!is_array($entry)) {
+                        continue;
+                    }
+                    $amount = self::format_price_entry_amount($entry);
+                    if ($amount !== null && $amount !== '') {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if (isset($pricing_overview['plans']) && is_array($pricing_overview['plans'])) {
+            foreach ($pricing_overview['plans'] as $planData) {
+                if (!is_array($planData)) {
+                    continue;
+                }
+                $defaultBlock = isset($planData['default']) && is_array($planData['default']) ? $planData['default'] : [];
+                if (self::format_pricing_overview_amount($defaultBlock) !== '') {
+                    return true;
+                }
+                $saleBlock = isset($planData['sale']) && is_array($planData['sale']) ? $planData['sale'] : [];
+                if (self::format_pricing_overview_amount($saleBlock) !== '') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static function build_plan_groups(
@@ -3532,6 +3844,10 @@ class Extensions {
                     $badge_label = $sale_context['badge_label'];
                 }
             } elseif ($sale_enabled && $sale_context !== null && $sale_context['base_price_id'] !== '' && $sale_context['base_price_id'] === $price_id) {
+                $skip_render = true;
+            }
+
+            if ($amount === null || $amount === '') {
                 $skip_render = true;
             }
 
@@ -3691,14 +4007,13 @@ class Extensions {
         }
 
         $pricing = self::resolve_plan_pricing_from_overview($plan_data, $metadata, $plan_key);
+        if ($pricing['amount'] === '') {
+            return null;
+        }
 
         $features = self::extract_features_from_pricing_plan($plan_data);
         if (empty($features)) {
             $features = self::extract_plan_features($metadata, $pricing_overview, $plan_key, $price_id);
-        }
-
-        if ($pricing['amount'] === '' && empty($features)) {
-            $features = [Language::get('Pricing details unavailable for this plan right now.')];
         }
 
         $purchase_option = self::resolve_purchase_option_for_entry($plan_options, $price_id);
@@ -3854,7 +4169,7 @@ class Extensions {
 
         if (isset($price['formatted']) && is_string($price['formatted'])) {
             $formatted = trim($price['formatted']);
-            if ($formatted !== '') {
+            if ($formatted !== '' && self::formatted_price_has_value($formatted)) {
                 return $formatted;
             }
         }
@@ -4034,6 +4349,7 @@ class Extensions {
         array $plan_relations,
         array $plan_order,
         bool $can_cancel_auto,
+        bool $auto_renew_cancelled,
         string $extension_slug
     ): string {
         if (empty($plan_groups)) {
@@ -4069,6 +4385,7 @@ class Extensions {
                     $plan_relations,
                     $plan_order,
                     $can_cancel_auto,
+                    $auto_renew_cancelled,
                     $extension_slug
                 );
             }
@@ -4092,6 +4409,7 @@ class Extensions {
         array $plan_relations,
         array $plan_order,
         bool $can_cancel_auto,
+        bool $auto_renew_cancelled,
         string $extension_slug
     ): string {
         $plan_key = isset($entry['plan_key']) ? self::canonicalize_plan_key((string) $entry['plan_key']) : '';
@@ -4168,6 +4486,7 @@ class Extensions {
             $price_id,
             $label,
             $can_cancel_auto,
+            $auto_renew_cancelled,
             $extension_slug
         );
 
@@ -4255,6 +4574,7 @@ class Extensions {
         array $plan_relations,
         array $plan_order,
         bool $can_cancel_auto,
+        bool $auto_renew_cancelled,
         string $extension_slug
     ): string {
         $defaultEntry = self::select_default_price_entry($entries);
@@ -4331,6 +4651,7 @@ class Extensions {
             '',
             self::get_plan_label($plan_key),
             $can_cancel_auto,
+            $auto_renew_cancelled,
             $extension_slug
         );
         if ($button === '') {
@@ -4408,7 +4729,7 @@ class Extensions {
             }
         }
 
-        if ($default_display === '' && $feature_list === '') {
+        if ($default_display === '') {
             return '';
         }
 
@@ -4422,6 +4743,7 @@ class Extensions {
             '',
             self::get_plan_label($plan_key),
             $can_cancel_auto,
+            $auto_renew_cancelled,
             $extension_slug
         );
         if ($button === '') {
@@ -4803,6 +5125,7 @@ class Extensions {
         string $price_id = '',
         string $display_label = '',
         bool $can_cancel_auto = false,
+        bool $auto_renew_cancelled = false,
         string $extension_slug = ''
     ): string {
         $normalizedPlan = self::canonicalize_plan_key($plan_key);
@@ -4812,6 +5135,17 @@ class Extensions {
 
         $current = self::canonicalize_plan_key($current_plan_key ?? '');
         if ($current !== '' && $normalizedPlan === $current) {
+            if ($auto_renew_cancelled) {
+                if ($price_id === '') {
+                    return '<span class="mds-plan-current" aria-disabled="true">' . esc_html(Language::get('Auto-renewal cancelled')) . '</span>';
+                }
+
+                $button_text = Language::get('Resubscribe');
+                $button = '<button class="button button-primary mds-purchase-extension" data-extension-id="' . esc_attr($extension_id) . '" data-nonce="' . esc_attr($nonce) . '" data-plan="' . esc_attr($plan_key) . '" data-price-id="' . esc_attr($price_id) . '" data-resubscribe="true">' . esc_html($button_text) . '</button>';
+                $notice = '<span class="mds-plan-current-note">' . esc_html(Language::get('Auto-renewal cancelled')) . '</span>';
+                return '<div class="mds-plan-current-wrap">' . $button . $notice . '</div>';
+            }
+
             $indicator = self::get_current_plan_indicator_label($current, $plan_key);
             $indicator_markup = '<span class="mds-plan-current" aria-disabled="true">' . esc_html($indicator) . '</span>';
             if ($can_cancel_auto && $extension_slug !== '') {
@@ -4908,6 +5242,7 @@ class Extensions {
         string $extension_id,
         string $nonce,
         bool $can_cancel_auto,
+        bool $auto_renew_cancelled,
         string $extension_slug
     ): array {
         $planSet = [];
@@ -4955,6 +5290,7 @@ class Extensions {
                 '',
                 self::get_plan_label($planKey),
                 $can_cancel_auto,
+                $auto_renew_cancelled,
                 $extension_slug
             );
             if ($action === '') {
@@ -5557,7 +5893,7 @@ class Extensions {
         }
 
         if (isset($derived['formatted']) && $derived['formatted'] !== '') {
-            return $derived['formatted'];
+            return self::formatted_price_has_value($derived['formatted']) ? $derived['formatted'] : null;
         }
 
         if (!isset($derived['amount'])) {
@@ -5566,6 +5902,24 @@ class Extensions {
 
         $currency = isset($derived['currency']) ? (string) $derived['currency'] : '';
         return self::format_currency_amount((float) $derived['amount'], $currency);
+    }
+
+    private static function formatted_price_has_value(string $value): bool {
+        $value = trim($value);
+        if ($value === '') {
+            return false;
+        }
+
+        if (preg_match('/\d/', $value)) {
+            return true;
+        }
+
+        $normalized = strtolower($value);
+        if (strpos($normalized, 'free') !== false) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -6988,49 +7342,173 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         wp_send_json_success( [ 'message' => Language::get( 'License removed.' ) ] );
     }
     
-        /**
-         * Check if an extension is licensed.
-         *
-         * @param string $extension_id The ID of the extension.
-         * @return bool True if the extension has an active license, false otherwise.
-         */
-        protected static function is_extension_licensed(string $extension_slug, bool $force_refresh = false): bool {
-            // If the license manager class doesn't exist, we can't check.
-            if (!class_exists('\MillionDollarScript\Classes\Extension\MDS_License_Manager')) {
-                return false;
-            }
+    /**
+     * Check if an extension is licensed.
+     *
+     * @param string $extension_slug The extension slug.
+     * @param bool   $force_refresh  Force a remote validation check.
+     */
+    protected static function is_extension_licensed(string $extension_slug, bool $force_refresh = false): bool
+    {
+        if (!class_exists('\MillionDollarScript\Classes\Extension\MDS_License_Manager')) {
+            return false;
+        }
 
+        try {
+            $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+            return $license_manager->is_extension_licensed($extension_slug, $force_refresh);
+        } catch (\Exception $e) {
+            error_log('Error checking license status for extension ' . $extension_slug . ': ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private static function sync_license_after_auto_cancel(string $slug, $license_row, array $response_payload = []): void
+    {
+        if ($slug === '' || !is_object($license_row)) {
+            return;
+        }
+
+        try {
+            $manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        } catch (\Throwable $t) {
+            return;
+        }
+
+        $payload = [];
+        if (isset($response_payload['data']) && is_array($response_payload['data'])) {
+            $payload = $response_payload['data'];
+        } elseif (!empty($response_payload)) {
+            $payload = $response_payload;
+        }
+
+        if (!is_array($payload) || empty($payload)) {
+            $fetched = self::fetch_remote_license_payload($slug, $license_row);
+            if (is_array($fetched)) {
+                $payload = $fetched;
+            }
+        }
+
+        $fallback_expires = '';
+        if (isset($payload['license']) && is_array($payload['license'])) {
+            $license_payload = $payload['license'];
+            $fallback_expires = (string) ($license_payload['expires_at'] ?? ($license_payload['expiresAt'] ?? ''));
+        }
+        if ($fallback_expires === '' && isset($payload['subscription']) && is_array($payload['subscription'])) {
+            $subscription_payload = $payload['subscription'];
+            $fallback_expires = (string) ($subscription_payload['current_period_end'] ?? ($subscription_payload['currentPeriodEnd'] ?? ($subscription_payload['expires_at'] ?? '')));
+        }
+        if ($fallback_expires === '' && isset($payload['expires_at'])) {
+            $fallback_expires = (string) $payload['expires_at'];
+        }
+        if ($fallback_expires === '' && isset($payload['expiresAt'])) {
+            $fallback_expires = (string) $payload['expiresAt'];
+        }
+        if ($fallback_expires === '' && isset($license_row->expires_at)) {
+            $fallback_expires = (string) $license_row->expires_at;
+        }
+
+        $update_data = self::compose_license_update_payload(
+            $license_row,
+            [],
+            !empty($payload) ? $payload : null,
+            $fallback_expires !== '' ? $fallback_expires : null
+        );
+
+        $metadata = [];
+        if (isset($update_data['metadata'])) {
+            $decoded_metadata = json_decode($update_data['metadata'], true);
+            if (is_array($decoded_metadata)) {
+                $metadata = $decoded_metadata;
+            }
+            unset($update_data['metadata']);
+        } else {
+            $metadata = \MillionDollarScript\Classes\Extension\MDS_License_Manager::decode_metadata_value($license_row->metadata ?? null);
+        }
+
+        $metadata = self::flag_metadata_auto_renew_cancelled($metadata, $payload);
+
+        if (!empty($metadata)) {
+            $encoded = wp_json_encode($metadata);
+            if (is_string($encoded)) {
+                $update_data['metadata'] = $encoded;
+            }
+        }
+
+        if ($fallback_expires !== '' && empty($update_data['expires_at'])) {
+            $update_data['expires_at'] = $fallback_expires;
+        }
+
+        if (!empty($update_data)) {
             try {
-                $license_manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-                return $license_manager->is_extension_licensed($extension_slug, $force_refresh);
-            } catch (\Exception $e) {
-                // If the table doesn't exist or another DB error occurs, assume not licensed.
-                error_log('Error checking license status for extension ' . $extension_slug . ': ' . $e->getMessage());
-                return false;
+                $manager->update_license((int) $license_row->id, $update_data);
+            } catch (\Throwable $t) {
+                // Ignore write failures so the AJAX flow can continue.
             }
+        }
+    }
+
+    public static function ajax_cancel_subscription(): void
+    {
+        check_ajax_referer('mds_extensions_nonce', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => Language::get('Permission denied.')]);
         }
 
-        public static function ajax_cancel_subscription(): void {
-            check_ajax_referer( 'mds_extensions_nonce', 'nonce' );
-            if (!current_user_can('manage_options')) {
-                wp_send_json_error(['message' => Language::get('Permission denied.')]);
-            }
-            $slug = sanitize_text_field($_POST['extension_slug'] ?? '');
-            if ($slug === '') { wp_send_json_error(['message' => Language::get('Missing fields.')]); }
-            $lm = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
-            $lic = $lm->get_license($slug);
-            if (!$lic || empty($lic->license_key)) { wp_send_json_error(['message' => Language::get('No license found for this extension.')]); }
-            $key = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact((string)$lic->license_key);
-            if ($key === '') { wp_send_json_error(['message' => Language::get('Could not decrypt license key.')]); }
-            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-            $candidates = [ rtrim((string)$user_configured_url, '/'), 'http://extension-server:3000', 'http://extension-server-dev:3000', 'http://host.docker.internal:15346', 'http://localhost:15346' ];
-            $base = null; foreach ($candidates as $b) { if (!$b) continue; $probe = rtrim($b,'/') . '/api/public/ping'; $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]); if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) { $base = $b; break; } }
-            if (!$base) { wp_send_json_error(['message' => Language::get('Extension server unreachable.')]); }
-            $url = rtrim($base,'/') . '/api/public/subscriptions/cancel';
-            $resp = wp_remote_post($url, [ 'timeout' => 20, 'sslverify' => !Utility::is_development_environment(), 'headers' => [ 'Content-Type' => 'application/json' ], 'body' => wp_json_encode(['licenseKey' => $key, 'productIdentifier' => $slug]) ]);
-            if (is_wp_error($resp)) { wp_send_json_error(['message' => $resp->get_error_message()]); }
-            $code = wp_remote_retrieve_response_code($resp); $body = wp_remote_retrieve_body($resp); $json = json_decode($body, true);
-            if ($code !== 200 || !is_array($json)) { wp_send_json_error(['message' => Language::get('Failed to cancel subscription.')]); }
-            wp_send_json_success(['message' => $json['message'] ?? Language::get('Auto-renew canceled.')]);
+        $slug = sanitize_text_field($_POST['extension_slug'] ?? '');
+        if ($slug === '') {
+            wp_send_json_error(['message' => Language::get('Missing fields.')]);
         }
+
+        $manager = new \MillionDollarScript\Classes\Extension\MDS_License_Manager();
+        $license_row = $manager->get_license($slug);
+        if (!$license_row || empty($license_row->license_key)) {
+            wp_send_json_error(['message' => Language::get('No license found for this extension.')]);
+        }
+
+        $plaintext_key = \MillionDollarScript\Classes\Extension\LicenseCrypto::decryptFromCompact((string) $license_row->license_key);
+        if ($plaintext_key === '') {
+            wp_send_json_error(['message' => Language::get('Could not decrypt license key.')]);
+        }
+
+        $base = self::resolve_extension_server_base();
+        if ($base === null) {
+            wp_send_json_error(['message' => Language::get('Extension server unreachable.')]);
+        }
+
+        $url = rtrim($base, '/') . '/api/public/subscriptions/cancel';
+        $response = wp_remote_post(
+            $url,
+            [
+                'timeout'   => 20,
+                'sslverify' => !Utility::is_development_environment(),
+                'headers'   => [ 'Content-Type' => 'application/json' ],
+                'body'      => wp_json_encode([
+                    'licenseKey'        => $plaintext_key,
+                    'productIdentifier' => $slug,
+                ]),
+            ]
+        );
+
+        if (is_wp_error($response)) {
+            wp_send_json_error(['message' => $response->get_error_message()]);
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        $decoded = json_decode($response_body, true);
+        if ($response_code !== 200 || !is_array($decoded)) {
+            wp_send_json_error(['message' => Language::get('Failed to cancel subscription.')]);
+        }
+
+        self::sync_license_after_auto_cancel($slug, $license_row, $decoded);
+        delete_transient('mds_license_check_' . $slug);
+
+        $message = $decoded['message'] ?? Language::get('Auto-renew canceled.');
+
+        wp_send_json_success([
+            'message'        => $message,
+            'auto_canceled'  => true,
+        ]);
+    }
 }
