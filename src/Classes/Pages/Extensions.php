@@ -3154,7 +3154,10 @@ class Extensions {
             $update_button .= ' data-current-version="' . esc_attr($extension['version'] ?? '') . '">';
             $update_button .= esc_html(Language::get('Check for Updates'));
             $update_button .= '</button>';
-            $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . '</div>';
+
+            $update_status = '<div class="mds-check-updates-status" aria-live="polite"></div>';
+
+            $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . $update_status . '</div>';
         }
 
         if ($is_premium) {

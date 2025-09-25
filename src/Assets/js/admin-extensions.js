@@ -86,6 +86,32 @@
 			.removeClass('mds-btn-loading');
 	}
 
+	function setUpdateStatus($context, type, message) {
+		const $card = $context.hasClass('mds-extension-card') ? $context : $context.closest('.mds-extension-card');
+		if (!$card.length) {
+			return;
+		}
+
+		const $status = $card.find('.mds-check-updates-status');
+		if (!$status.length) {
+			return;
+		}
+
+		const variants = ['success', 'warning', 'error', 'info'];
+		const normalized = typeof type === 'string' ? type.toLowerCase() : 'info';
+		const variant = variants.includes(normalized) ? normalized : 'info';
+		const text = message == null ? '' : String(message);
+		const hasMessage = text.trim() !== '';
+
+		$status.removeClass('is-success is-warning is-error is-info');
+
+		if (hasMessage) {
+			$status.addClass('is-' + variant).text(text);
+		} else {
+			$status.text('');
+		}
+	}
+
 const TEXT = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.text) || {};
 
 function getText(key, fallback) {
@@ -493,10 +519,13 @@ function sanitizeFeatureHtml(value) {
 		const extensionSlug = $button.data("extension-slug") || $card.data("extension-slug");
 
 		if (!extensionId || !pluginFile) {
-			showNotice("error", getText("update_check_missing_params", "Unable to check updates for this extension."), false);
+			const message = getText("update_check_missing_params", "Unable to check updates for this extension.");
+			showNotice("error", message, false);
+			setUpdateStatus($card, 'error', message);
 			return;
 		}
 
+		setUpdateStatus($card, 'info', getText("checking_updates", "Checking..."));
 		setButtonLoading($button, getText("checking_updates", "Checking..."));
 
 		$.ajax({
@@ -519,11 +548,14 @@ function sanitizeFeatureHtml(value) {
 						? response.data.message
 						: getText("update_check_failed", "Failed to check for updates.");
 					showNotice("error", message);
+					setUpdateStatus($card, 'error', message);
 					resetButton($button, getText("check_updates", "Check for Updates"));
 				}
 			},
 			error: function () {
-				showNotice("error", getText("update_check_error", "An error occurred while checking for updates."));
+				const message = getText("update_check_error", "An error occurred while checking for updates.");
+				showNotice("error", message);
+				setUpdateStatus($card, 'error', message);
 				resetButton($button, getText("check_updates", "Check for Updates"));
 			},
 		});
@@ -709,6 +741,9 @@ function sanitizeFeatureHtml(value) {
 					data-extension-slug="${escapeHtml(extensionSlug)}"
 					data-plugin-file="${escapeHtml(pluginFile)}">${getText('update_now', 'Update Now')}</button>`
 				: '';
+			const availableStatus = latestVersion
+				? `${getText('update_version_available', 'Version')} ${latestVersion} ${getText('update_is_available', 'is available!')}`
+				: getText('update_available_short', 'Update available!');
 			const html = `
 				<div class="mds-update-available">
 					<p><strong>${getText('update_version_available', 'Version')} ${escapeHtml(latestVersion)} ${getText('update_is_available', 'is available!')}</strong></p>
@@ -717,10 +752,12 @@ function sanitizeFeatureHtml(value) {
 				</div>
 			`;
 			$panel.html(html).attr('data-has-update', 'true');
+			setUpdateStatus($card, 'warning', availableStatus);
 			resetButton($button, getText('check_again', 'Check Again'));
 		} else {
-			$panel.html(`<span class="mds-no-updates">${getText('latest_version_installed', 'You have the latest version.')}</span>`)
-				.attr('data-has-update', 'false');
+			const latestText = getText('latest_version_installed', 'You have the latest version.');
+			$panel.empty().attr('data-has-update', 'false');
+			setUpdateStatus($card, 'success', latestText);
 			resetButton($button, getText('check_updates', 'Check for Updates'));
 		}
 
