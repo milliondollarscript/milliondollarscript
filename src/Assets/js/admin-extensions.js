@@ -759,7 +759,8 @@ function sanitizeFeatureHtml(value) {
 		} else {
 			const latestText = getText('latest_version_installed', 'You have the latest version.');
 			$panel.empty().attr('data-has-update', 'false');
-			setUpdateStatus($card, 'success', latestText);
+			setUpdateStatus($card, null, '');
+			showNotice('success', latestText, false);
 			resetButton($button, getText('check_updates', 'Check for Updates'));
 		}
 
