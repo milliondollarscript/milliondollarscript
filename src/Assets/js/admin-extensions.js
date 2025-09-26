@@ -92,26 +92,40 @@
 			return;
 		}
 
-		const $status = $card.find('.mds-check-updates-status');
-		if (!$status.length) {
+		const $panel = $card.find('.mds-card-update-panel');
+		if (!$panel.length) {
 			return;
 		}
 
 		const variants = ['success', 'warning', 'error', 'info'];
-		const normalized = typeof type === 'string' ? type.toLowerCase() : 'info';
+		const normalized = typeof type === 'string' ? type.toLowerCase() : '';
 		const variant = variants.includes(normalized) ? normalized : 'info';
-		const text = message == null ? '' : String(message);
-		const hasMessage = text.trim() !== '';
+		const text = typeof message === 'string' ? message.trim() : '';
+		const $existingStatus = $panel.find('.mds-update-status').first();
 
-		$status.removeClass('is-success is-warning is-error is-info has-message');
-
-		if (hasMessage) {
-			$status.addClass('is-' + variant + ' has-message').text(text);
-			$status.attr('aria-hidden', 'false');
-		} else {
-			$status.text('');
-			$status.attr('aria-hidden', 'true');
+		if (!text) {
+			if ($existingStatus.length) {
+				$existingStatus.remove();
+			}
+			if ($panel.data('has-update') !== 'true' && $panel.children().length === 0) {
+				$panel.removeAttr('data-status-variant').removeClass('mds-update-status-visible').empty();
+			} else {
+				$panel.removeAttr('data-status-variant').removeClass('mds-update-status-visible');
+			}
+			return;
 		}
+
+		const statusHtml = `<div class="mds-update-status is-${variant}" role="status">${escapeHtml(text)}</div>`;
+
+		if ($existingStatus.length) {
+			$existingStatus.replaceWith(statusHtml);
+		} else if ($panel.data('has-update') === 'true') {
+			$panel.prepend(statusHtml);
+		} else {
+			$panel.html(statusHtml);
+		}
+
+		$panel.attr('data-status-variant', variant).addClass('mds-update-status-visible');
 	}
 
 const TEXT = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.text) || {};
@@ -472,6 +486,15 @@ function escapeHtml(value) {
 		const currentVersion = $button.data("current-version") || $card.data("version");
 		const pluginFile = $button.data("plugin-file") || $card.data("plugin-file");
 		const extensionSlug = $button.data("extension-slug") || $card.data("extension-slug");
+		const requiresLicense = truthyFlag($card.data('is-premium'));
+		const canCheck = truthyFlag($card.data('can-check-updates')) || !requiresLicense;
+
+		if (!canCheck) {
+			const message = getText('update_check_requires_license', 'A valid license is required to check for updates.');
+			showNotice('warning', message, false);
+			setUpdateStatus($card, 'warning', message);
+			return;
+		}
 
 		if (!extensionId || !pluginFile) {
 			const message = getText("update_check_missing_params", "Unable to check updates for this extension.");
@@ -480,7 +503,6 @@ function escapeHtml(value) {
 			return;
 		}
 
-		setUpdateStatus($card, 'info', getText("checking_updates", "Checking..."));
 		setButtonLoading($button, getText("checking_updates", "Checking..."));
 
 		$.ajax({
@@ -493,6 +515,7 @@ function escapeHtml(value) {
 				current_version: currentVersion || "",
 				plugin_file: pluginFile,
 				extension_slug: extensionSlug || "",
+				requires_license: requiresLicense ? '1' : '',
 			},
 			dataType: "json",
 			success: function (response) {
@@ -696,9 +719,6 @@ function escapeHtml(value) {
 					data-extension-slug="${escapeHtml(extensionSlug)}"
 					data-plugin-file="${escapeHtml(pluginFile)}">${getText('update_now', 'Update Now')}</button>`
 				: '';
-			const availableStatus = latestVersion
-				? `${getText('update_version_available', 'Version')} ${latestVersion} ${getText('update_is_available', 'is available!')}`
-				: getText('update_available_short', 'Update available!');
 			const html = `
 				<div class="mds-update-available">
 					<p><strong>${getText('update_version_available', 'Version')} ${escapeHtml(latestVersion)} ${getText('update_is_available', 'is available!')}</strong></p>
@@ -707,7 +727,6 @@ function escapeHtml(value) {
 				</div>
 			`;
 			$panel.html(html).attr('data-has-update', 'true');
-			setUpdateStatus($card, 'warning', availableStatus);
 			resetButton($button, getText('check_again', 'Check Again'));
 		} else {
 			const latestText = getText('latest_version_installed', 'You have the latest version.');

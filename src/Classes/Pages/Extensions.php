@@ -39,6 +39,7 @@ if (!function_exists('get_plugin_data')) {
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Extension\ExtensionUpdater;
+use MillionDollarScript\Classes\Extension\LicenseCrypto;
 use MillionDollarScript\Classes\Extension\MDS_License_Manager;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
@@ -333,13 +334,73 @@ class Extensions {
         $extension_id = sanitize_text_field($_POST['extension_id'] ?? '');
         $current_version = sanitize_text_field($_POST['current_version'] ?? '');
         $plugin_file = sanitize_text_field($_POST['plugin_file'] ?? '');
-        
+        $extension_slug = sanitize_text_field($_POST['extension_slug'] ?? '');
+        $requires_license = !empty($_POST['requires_license']);
+
         if (empty($extension_id) || empty($current_version) || empty($plugin_file)) {
             wp_send_json_error(['message' => Language::get('Missing required parameters.')]);
         }
-        
+
+        $license_key = '';
+        $has_active_license = false;
+
+        $license_manager = null;
+        $license_row = null;
+
+        if ($extension_slug !== '' && class_exists(MDS_License_Manager::class)) {
+            try {
+                $license_manager = new MDS_License_Manager();
+                $license_row = $license_manager->get_license($extension_slug);
+            } catch (\Throwable $e) {
+                $license_manager = null;
+                $license_row = null;
+            }
+        }
+
+        if (!$requires_license && $license_row) {
+            $requires_license = true;
+        }
+
+        if ($license_row) {
+            $license_key = LicenseCrypto::decryptFromCompact((string) ($license_row->license_key ?? ''));
+            if ($license_key === '') {
+                $license_key = (string) ($license_row->license_key ?? '');
+            }
+
+            $status = isset($license_row->status) ? strtolower((string) $license_row->status) : '';
+            if ($status === 'active' && $license_key !== '') {
+                $has_active_license = true;
+            }
+        }
+
+        if ($requires_license && !$has_active_license && $license_manager && $extension_slug !== '') {
+            try {
+                $has_active_license = $license_manager->is_extension_licensed($extension_slug, true);
+            } catch (\Throwable $e) {
+                $has_active_license = false;
+            }
+
+            if ($has_active_license) {
+                try {
+                    $license_row = $license_manager->get_license($extension_slug);
+                    if ($license_row) {
+                        $license_key = LicenseCrypto::decryptFromCompact((string) ($license_row->license_key ?? ''));
+                        if ($license_key === '') {
+                            $license_key = (string) ($license_row->license_key ?? '');
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // If we cannot refresh the license row, consider the key unavailable.
+                }
+            }
+        }
+
+        if ($requires_license && (!$has_active_license || $license_key === '')) {
+            wp_send_json_error(['message' => Language::get('A valid license is required to check for updates.')]);
+        }
+
         try {
-            $updater = new ExtensionUpdater();
+            $updater = $requires_license ? new ExtensionUpdater('', $license_key) : new ExtensionUpdater();
             $update = $updater->checkForUpdate($extension_id, $current_version, $plugin_file);
             
             if ($update && is_object($update)) {
@@ -954,6 +1015,7 @@ class Extensions {
                     'purchase_network_error'=> Language::get('An error occurred while contacting the store. Please try again.'),
                     'missing_plan'          => Language::get('Please choose a plan to continue.'),
                     'missing_parameters'    => Language::get('Unable to start checkout. Please refresh and try again.'),
+                    'update_check_requires_license' => Language::get('A valid license is required to check for updates.'),
                     'confirm_remove_license'=> Language::get('Remove the stored license for this extension?'),
                     'license_context_missing'=> Language::get('Unable to locate license context.'),
                     'license_removed'       => Language::get('License removed.'),
@@ -3283,6 +3345,9 @@ class Extensions {
             && self::is_active_license_status($local_status);
         $can_cancel_auto = $was_purchased && $slug !== '' && $auto_renews;
         $can_check_updates = $is_installed && !empty($extension['installed_plugin_file']);
+        if ($is_premium && !$is_licensed) {
+            $can_check_updates = false;
+        }
 
         $card_classes = ['mds-extension-card'];
         $card_classes[] = $is_premium ? 'mds-extension-card--premium' : 'mds-extension-card--free';
@@ -3306,6 +3371,7 @@ class Extensions {
             'data-purchased'      => $was_purchased ? 'true' : 'false',
             'data-auto-renewing'  => $can_cancel_auto ? 'true' : 'false',
             'data-auto-renew-cancelled' => $auto_renew_cancelled ? 'true' : 'false',
+            'data-can-check-updates' => $can_check_updates ? 'true' : 'false',
         ];
         if ($is_installed && !empty($extension['installed_plugin_file'])) {
             $data_attrs['data-plugin-file'] = $extension['installed_plugin_file'];
@@ -3444,9 +3510,7 @@ class Extensions {
             $update_button .= esc_html(Language::get('Check for Updates'));
             $update_button .= '</button>';
 
-            $update_status = '<div class="mds-check-updates-status" aria-live="polite" aria-hidden="true"></div>';
-
-            $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . $update_status . '</div>';
+            $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . '</div>';
         }
 
         if ($is_premium) {
