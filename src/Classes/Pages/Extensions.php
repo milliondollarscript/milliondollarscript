@@ -159,6 +159,17 @@ class Extensions {
     private const STRIPE_PRICE_PLANS = ['monthly', 'yearly', 'one_time'];
 
     /**
+     * Friendly backup labels for plans when metadata does not include a nickname.
+     */
+    private const STRIPE_PLAN_LABEL_FALLBACKS = [
+        'monthly'  => 'Monthly Plan',
+        'yearly'   => 'Annual Plan',
+        'one_time' => 'Lifetime Access',
+    ];
+
+    private const STRIPE_GENERIC_PLAN_LABEL_FALLBACK = 'Recommended Plan';
+
+    /**
      * Metadata keys that store the fallback price ID for each plan.
      */
     private const STRIPE_PRICE_FALLBACK_KEYS = [
@@ -1679,7 +1690,10 @@ class Extensions {
                     $entries = [$entries];
                 }
                 foreach ($entries as $rawEntry) {
-                    $entry = self::create_stripe_price_entry(self::decode_metadata_fragment($rawEntry));
+                    $entry = self::create_stripe_price_entry(
+                        self::decode_metadata_fragment($rawEntry),
+                        $plan
+                    );
                     if ($entry !== null) {
                         $priceId = $entry['price_id'] ?? '';
                         if ($priceId !== '' && isset($legacyLookup[$priceId])) {
@@ -1700,7 +1714,7 @@ class Extensions {
                     $status = isset($legacyLookup[$fallbackId]) ? 'legacy' : 'active';
                     self::push_stripe_price_entry($structure[$plan], [
                         'price_id'   => $fallbackId,
-                        'label'      => 'Default',
+                        'label'      => self::determine_plan_label_fallback($plan),
                         'status'     => $status,
                         'default'    => true,
                         'created_at' => gmdate('c'),
@@ -1755,7 +1769,7 @@ class Extensions {
     /**
      * Convert a raw Stripe price entry into the normalized structure used across the UI.
      */
-    private static function create_stripe_price_entry($raw): ?array {
+    private static function create_stripe_price_entry($raw, string $plan = ''): ?array {
         $raw = self::decode_metadata_fragment($raw);
 
         if ($raw instanceof \stdClass) {
@@ -1799,8 +1813,8 @@ class Extensions {
                 }
             }
         }
-        if ($label === '') {
-            $label = 'Default';
+        if ($label === '' || strtolower($label) === 'default') {
+            $label = self::determine_plan_label_fallback($plan);
         }
 
         $status = '';
@@ -1870,6 +1884,16 @@ class Extensions {
             'created_at' => $createdAt,
             'metadata'   => $metadata,
         ];
+    }
+
+    private static function determine_plan_label_fallback(string $plan): string
+    {
+        $plan = trim($plan);
+        if ($plan !== '' && isset(self::STRIPE_PLAN_LABEL_FALLBACKS[$plan])) {
+            return self::STRIPE_PLAN_LABEL_FALLBACKS[$plan];
+        }
+
+        return self::STRIPE_GENERIC_PLAN_LABEL_FALLBACK;
     }
 
     /**
