@@ -265,7 +265,7 @@ class Extensions {
             if (!empty($url)) {
                 return $url;
             }
-            $base = Options::get_option('extension_server_url', 'http://localhost:15346');
+        $base = Options::get_option('extension_server_url', 'http://localhost:3030');
             return rtrim($base, '/') . '/store';
         });
     }
@@ -421,7 +421,7 @@ class Extensions {
             wp_send_json_error(['message' => Language::get('An error occurred while checking for updates.')]);
         }
     }
-    
+
     /**
      * Get all installed MDS extensions
      * 
@@ -997,8 +997,8 @@ class Extensions {
                 'nonce'       => wp_create_nonce( 'mds_extensions_nonce' ),
                 'license_key' => '',
                 'settings_url'=> admin_url('admin.php?page=milliondollarscript_options#system'),
-                'extension_server_url' => Options::get_option('extension_server_url', 'http://localhost:15346'),
-                'extension_server_public_url' => Options::get_option('mds_extension_server_public_url', 'http://localhost:15346'),
+                'extension_server_url' => (string) Options::get_option('extension_server_url', 'http://localhost:3030'),
+                'extension_server_public_url' => (string) Options::get_option('mds_extension_server_public_url', 'http://localhost:3030'),
                 'site_id'     => $site_id,
                 'purchase'    => [
                     'status'   => $purchase,
@@ -1185,7 +1185,7 @@ class Extensions {
             <p><?php echo esc_html( Language::get('Connected to the Extension Server using a fallback URL.') ); ?></p>
             <p>
                 <?php echo esc_html( Language::get('Update your Extension Server URL in Million Dollar Script → Options → System to:') ); ?>
-                <code><?php echo esc_html( is_string($resolved_url) && !empty($resolved_url) ? (string)$resolved_url : 'http://localhost:15346' ); ?></code>.
+                <code><?php echo esc_html( is_string($resolved_url) && !empty($resolved_url) ? (string)$resolved_url : 'http://localhost:3030' ); ?></code>.
                 <a class="mds-go-to-system" href="<?php echo esc_url( $settings_url ); ?>">
                     <?php echo esc_html( Language::get('Open System tab') ); ?>
                 </a>
@@ -1300,7 +1300,7 @@ class Extensions {
      * @throws \Exception If the API request fails
      */
     protected static function fetch_available_extensions(?array $license_map = null): array {
-        $user_configured_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+        $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
         $license_key = ''; // This is deprecated
 
         $args = [
@@ -1316,23 +1316,15 @@ class Extensions {
             $args['headers']['x-license-key'] = $license_key;
         }
 
-        $candidates = [
-            rtrim((string)$user_configured_url, '/'),
-            'http://extension-server:3000',
-            'http://extension-server-dev:3000',
-            'http://host.docker.internal:15346',
-            'http://localhost:15346',
-        ];
-
         $response = null;
         $working_base = null;
         $errors = [];
 
-        foreach ($candidates as $base) {
+        foreach (self::extension_server_candidates($user_configured_url) as $base) {
             if (empty($base)) {
                 continue;
             }
-            $api_url = rtrim($base, '/') . '/api/extensions';
+            $api_url = rtrim($base, '/') . '/api/public/extensions';
             $res = wp_remote_get($api_url, $args);
 
             if (is_wp_error($res)) {
@@ -1404,7 +1396,7 @@ class Extensions {
                 if (preg_match('#^https?://#i', $url)) {
                     return $url;
                 }
-                $base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : 'http://localhost:15346';
+                $base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : 'http://localhost:3030';
                 return $base . '/' . ltrim($url, '/');
             };
 
@@ -1565,14 +1557,14 @@ class Extensions {
 
     /**
      * Get the browser-facing base URL for the Extension Server.
-     * Prefers a configurable public URL; falls back to localhost:15346 for dev.
+     * Prefers a configurable public URL; falls back to localhost:3030 for dev.
      */
     private static function get_browser_extension_server_base_url(): string {
         $public = \MillionDollarScript\Classes\Data\Options::get_option('mds_extension_server_public_url', '');
         if (is_string($public) && $public !== '') {
             return rtrim($public, '/');
         }
-        return 'http://localhost:15346';
+        return 'http://localhost:3030';
     }
 
     /**
@@ -1594,7 +1586,9 @@ class Extensions {
             $host = strtolower($parsed['host']);
             $port = isset($parsed['port']) ? (int) $parsed['port'] : null;
             // Map internal dev host/port to the browser-facing base
-            if ($host === 'extension-server-dev' || $host === 'extension-server' || $port === 3000) {
+            $knownHosts = ['extension-server-go', 'extension-server-dev', 'extension-server'];
+            $knownPorts = [3030, 3000];
+            if (in_array($host, $knownHosts, true) || ($port !== null && in_array((int) $port, $knownPorts, true))) {
                 $publicBase = rtrim(self::get_browser_extension_server_base_url(), '/');
                 $path     = isset($parsed['path']) && is_string($parsed['path']) ? $parsed['path'] : '';
                 $query    = isset($parsed['query']) && $parsed['query'] !== '' ? ('?' . $parsed['query']) : '';
@@ -2744,28 +2738,45 @@ class Extensions {
         return $json;
     }
 
+    private static function extension_server_candidates(?string $user_configured_url = null): array {
+        $candidates = [
+            $user_configured_url,
+            'http://extension-server-go:3030',
+            'http://extension-server:3030',
+            'http://host.docker.internal:3030',
+            'http://localhost:3030',
+            'http://extension-server-dev:3000',
+            'http://extension-server:3000',
+            'http://host.docker.internal:15346',
+            'http://localhost:15346',
+        ];
+
+        $normalized = [];
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || $candidate === '') {
+                continue;
+            }
+            $normalized[] = rtrim($candidate, '/');
+        }
+
+        return array_values(array_unique($normalized));
+    }
+
     private static function resolve_extension_server_base(): ?string {
         static $cached_base = null;
         if ($cached_base !== null) {
             return $cached_base;
         }
 
-        $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-        $candidates = [
-            rtrim((string) $user_configured_url, '/'),
-            'http://extension-server:3000',
-            'http://extension-server-dev:3000',
-            'http://host.docker.internal:15346',
-            'http://localhost:15346',
-        ];
+        $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
 
         $probes = [
             '/api/public/ping',
-            '/api/extensions',
+            '/api/public/extensions',
             '/health',
         ];
 
-        foreach ($candidates as $base) {
+        foreach (self::extension_server_candidates($user_configured_url) as $base) {
             if (empty($base)) {
                 continue;
             }
@@ -4787,6 +4798,7 @@ class Extensions {
         array $plan_relations,
         array $plan_order,
         bool $can_cancel_auto,
+        bool $auto_renew_cancelled,
         string $extension_slug
     ): string {
         $default_display = '';
@@ -6131,7 +6143,7 @@ class Extensions {
         }
 
         try {
-            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
+            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
             // Fetch a license key if available for premium downloads (decrypt if needed)
             $license_key = '';
             if ($extension_slug !== '') {
@@ -6160,20 +6172,11 @@ class Extensions {
                 $args['headers']['x-license-key'] = $license_key;
             }
             
-            // Resolve a working base using same candidate logic as fetch_available_extensions()
-            $candidates = [
-                rtrim((string)$user_configured_url, '/'),
-                'http://extension-server:3000',
-                'http://extension-server-dev:3000',
-                'http://host.docker.internal:15346',
-                'http://localhost:15346',
-            ];
-            
             $response = null;
             $working_base = null;
-            foreach ($candidates as $base) {
+            foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) { continue; }
-                $api_url = rtrim($base, '/') . '/api/extensions/' . urlencode($extension_id);
+                $api_url = rtrim($base, '/') . '/api/public/extensions/' . urlencode($extension_id);
                 $res = wp_remote_get($api_url, $args);
                 if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
                     $response = $res;
@@ -6243,7 +6246,7 @@ class Extensions {
                     $candidate_base = rtrim($user_configured_url, '/');
                 }
                 if ($candidate_base === '') {
-                    $candidate_base = 'http://localhost:15346';
+                    $candidate_base = 'http://localhost:3030';
                 }
                 return rtrim($candidate_base, '/') . '/' . ltrim($url, '/');
             };
@@ -6299,7 +6302,7 @@ class Extensions {
         try {
             // Default to the service name and internal port for Docker environments.
             // The user can override this in MDS settings if their setup is different.
-            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
+            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
             // Fetch a license key if available for premium downloads
             $license_key = '';
             if (!empty($extension_slug)) {
@@ -6319,16 +6322,8 @@ class Extensions {
             error_log('[MDS Extension Install] Retrieved Extension Server URL: ' . $user_configured_url);
             error_log('[MDS Extension Install] Retrieved License Key: ' . (empty($license_key) ? 'EMPTY' : $license_key));
             
-            // Resolve a working base using same candidate logic as fetch_available_extensions()
-            $candidates = [
-                rtrim((string)$user_configured_url, '/'),
-                'http://extension-server:3000',
-                'http://extension-server-dev:3000',
-                'http://host.docker.internal:15346',
-                'http://localhost:15346',
-            ];
             $working_base = null;
-            foreach ($candidates as $base) {
+            foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) { continue; }
                 // Try /api/public/ping first
                 $probe = rtrim($base, '/') . '/api/public/ping';
@@ -6346,8 +6341,8 @@ class Extensions {
                     $working_base = $base;
                     break;
                 }
-                // Fallback to a simple GET on /api/extensions
-                $probe3 = rtrim($base, '/') . '/api/extensions';
+                // Fallback to a simple GET on /api/public/extensions
+                $probe3 = rtrim($base, '/') . '/api/public/extensions';
                 $probe3_res = wp_remote_get($probe3, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
                 $code3 = !is_wp_error($probe3_res) ? wp_remote_retrieve_response_code($probe3_res) : 0;
                 if ($code3 === 200) {
@@ -6832,7 +6827,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
         try {
             // Reuse base resolution pattern from fetch_available_extensions()
-            $user_configured_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
 
             $args = [
                 'timeout' => 15, // short timeout
@@ -6843,23 +6838,15 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 'sslverify' => !Utility::is_development_environment(),
             ];
 
-            $candidates = [
-                rtrim((string)$user_configured_url, '/'),
-                'http://extension-server:3000',
-                'http://extension-server-dev:3000',
-                'http://host.docker.internal:15346',
-                'http://localhost:15346',
-            ];
-
             $response = null;
             $working_base = null;
             $errors = [];
 
-            foreach ($candidates as $base) {
+            foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) {
                     continue;
                 }
-                $api_url = rtrim($base, '/') . '/api/extensions/' . urlencode($extension_id);
+                $api_url = rtrim($base, '/') . '/api/public/extensions/' . urlencode($extension_id);
                 $res = wp_remote_get($api_url, $args);
 
                 if (is_wp_error($res)) {
@@ -6916,7 +6903,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 if (preg_match('#^https?://#i', $url)) {
                     return $url;
                 }
-                $prefix = is_string($base) && $base !== '' ? rtrim($base, '/') : 'http://localhost:15346';
+                $prefix = is_string($base) && $base !== '' ? rtrim($base, '/') : 'http://localhost:3030';
                 return $prefix . '/' . ltrim($url, '/');
             };
 
@@ -7041,18 +7028,11 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
         try {
             // Resolve working base for server-to-server call
-            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-            $candidates = [
-                rtrim((string)$user_configured_url, '/'),
-                'http://extension-server:3000',
-                'http://extension-server-dev:3000',
-                'http://host.docker.internal:15346',
-                'http://localhost:15346',
-            ];
+            $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
             $working_base = null;
-            foreach ($candidates as $base) {
+            foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) { continue; }
-                $probe = rtrim($base, '/') . '/api/extensions';
+                $probe = rtrim($base, '/') . '/api/public/extensions';
                 $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
                 if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
                     $working_base = $base;
@@ -7156,16 +7136,9 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         $fallback_expires = '';
         $remote_payload = null;
         try {
-            $user_configured_url = \MillionDollarScript\Classes\Data\Options::get_option('extension_server_url', 'http://extension-server-dev:3000');
-            $candidates = [
-                rtrim((string)$user_configured_url, '/'),
-                'http://extension-server:3000',
-                'http://extension-server-dev:3000',
-                'http://host.docker.internal:15346',
-                'http://localhost:15346',
-            ];
+            $user_configured_url = \MillionDollarScript\Classes\Data\Options::get_option('extension_server_url', 'http://extension-server-go:3030');
             $working_base = null;
-            foreach ($candidates as $base) {
+            foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) { continue; }
                 $probe = rtrim($base, '/') . '/api/public/ping';
                 $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment() ]);

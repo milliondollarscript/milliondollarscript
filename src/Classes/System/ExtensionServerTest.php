@@ -26,7 +26,7 @@ class ExtensionServerTest {
 
         // Get server configuration
         $default_server_url = defined('WP_DEBUG') && WP_DEBUG 
-            ? 'http://host.docker.internal:15346'
+            ? 'http://extension-server-go:3030'
             : 'https://extensions.milliondollarscript.com';
         $server_url = Options::get_option('extension_server_url', $default_server_url);
         $api_key = Options::get_option('extension_server_api_key', '');
@@ -90,7 +90,7 @@ class ExtensionServerTest {
 
         // Test 3: Extension Loading
         try {
-            $response = wp_remote_get($server_url . '/api/extensions', [
+            $response = wp_remote_get($server_url . '/api/public/extensions', [
                 'timeout' => 10,
                 'sslverify' => strpos($server_url, 'localhost') === false,
                 'headers' => [

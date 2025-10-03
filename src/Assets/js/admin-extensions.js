@@ -343,7 +343,7 @@ function escapeHtml(value) {
 			const extServerBase = (
 				window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.extension_server_url
 					? MDS_EXTENSIONS_DATA.extension_server_url
-					: 'http://localhost:15346'
+					: 'http://localhost:3030'
 			).replace(/\/+$/, '');
 
 			const premiumSelector = '.mds-extension-card[data-is-premium="true"], table.widefat tbody tr[data-is-premium="true"]';

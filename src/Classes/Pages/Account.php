@@ -41,7 +41,7 @@ class Account
         settings_errors('mds_account_notices');
 
         $license_key = ''; // This is deprecated
-        $configured_base = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+        $configured_base = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
         $admin_email = get_option('admin_email', '');
 
         $resolved_base = null;

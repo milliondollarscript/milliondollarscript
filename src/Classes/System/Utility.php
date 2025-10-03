@@ -1914,7 +1914,7 @@ class Utility {
      * @return bool True if development environment
      */
     public static function is_development_environment(): bool {
-        $extension_server_url = Options::get_option('extension_server_url', 'http://host.docker.internal:15346');
+        $extension_server_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
         return strpos($extension_server_url, 'localhost') !== false || 
                strpos($extension_server_url, '127.0.0.1') !== false ||
                strpos($extension_server_url, 'host.docker.internal') !== false ||

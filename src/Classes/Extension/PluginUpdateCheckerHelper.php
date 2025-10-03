@@ -80,7 +80,7 @@ class PluginUpdateCheckerHelper {
                 $sslverify = !Utility::is_development_environment();
                 
                 $response = wp_remote_post(
-                    $this->serverUrl . '/api/extensions/check-update',
+                    $this->serverUrl . '/api/public/v1/extensions/check-update',
                     [
                         'headers' => [
                             'Content-Type' => 'application/json',
