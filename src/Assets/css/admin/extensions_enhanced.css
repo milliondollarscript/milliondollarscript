@@ -198,6 +198,50 @@
     flex-shrink: 0;
 }
 
+.mds-card-version-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 14px;
+}
+
+.mds-version-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 6px 12px;
+    line-height: 1.2;
+}
+
+.mds-version-pill .mds-version-label {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 11px;
+    opacity: 0.75;
+}
+
+.mds-card-version-meta.is-outdated .mds-version-installed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.mds-card-version-meta.is-outdated .mds-version-available {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.mds-update-hint {
+    font-size: 12px;
+    color: #4b5563;
+    margin: 8px 0 0;
+}
+
 .mds-card-header-buttons {
     display: flex;
     flex-wrap: wrap;

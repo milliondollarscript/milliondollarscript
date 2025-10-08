@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.2.27\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.2.28\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-10-03 08:34:59\n"
-"PO-Revision-Date: 2025-10-03 08:34:59\n"
-"X-Generator: Million Dollar Script Two 2.6.2.27\n"
+"POT-Creation-Date: 2025-10-07 21:14:32\n"
+"PO-Revision-Date: 2025-10-07 21:14:32\n"
+"X-Generator: Million Dollar Script Two 2.6.2.28\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -2742,22 +2742,34 @@ msgstr ""
 msgid "Setup wizard completed successfully!"
 msgstr ""
 
+msgid "A valid license is required to check for updates."
+msgstr ""
+
 msgid "Million Dollar Script Extensions"
 msgstr ""
 
 msgid "Extensions"
 msgstr ""
 
+msgid "Check for Updates"
+msgstr ""
+
+msgid "Extension not found."
+msgstr ""
+
+msgid "Security check failed. Please try again."
+msgstr ""
+
+msgid "Update information fetched for %s."
+msgstr ""
+
+msgid "No newer version found for %s."
+msgstr ""
+
 msgid "You do not have permission to check for updates."
 msgstr ""
 
 msgid "Missing required parameters."
-msgstr ""
-
-msgid "A valid license is required to check for updates."
-msgstr ""
-
-msgid "An error occurred while checking for updates."
 msgstr ""
 
 msgid "You do not have sufficient permissions to perform this action."
@@ -2847,6 +2859,36 @@ msgstr ""
 msgid "Failed to save license."
 msgstr ""
 
+msgid "Check Again"
+msgstr ""
+
+msgid "Update Now"
+msgstr ""
+
+msgid "You have the latest version."
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "is available!"
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+msgid "Available"
+msgstr ""
+
+msgid "Not installed"
+msgstr ""
+
+msgid "Update available"
+msgstr ""
+
+msgid "Installed version is current."
+msgstr ""
+
 msgid "Some licenses are expiring soon:"
 msgstr ""
 
@@ -2892,9 +2934,6 @@ msgstr ""
 msgid "Upload ZIP"
 msgstr ""
 
-msgid "Check for Updates"
-msgstr ""
-
 msgid "Enter license key"
 msgstr ""
 
@@ -2911,6 +2950,12 @@ msgid "Free"
 msgstr ""
 
 msgid "No license required"
+msgstr ""
+
+msgid "Update available: %s"
+msgstr ""
+
+msgid "Click Check for Updates to retrieve the latest package."
 msgstr ""
 
 msgid "Sale"
@@ -2980,9 +3025,6 @@ msgid "Failed to fetch extensions from server."
 msgstr ""
 
 msgid "Extension ID is required."
-msgstr ""
-
-msgid "Extension not found."
 msgstr ""
 
 msgid "Failed to fetch extension from server."

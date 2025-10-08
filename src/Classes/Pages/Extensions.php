@@ -39,6 +39,7 @@ if (!function_exists('get_plugin_data')) {
 
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Extension\ExtensionUpdater;
+use MillionDollarScript\Classes\Extension\PluginUpdateCheckerHelper;
 use MillionDollarScript\Classes\Extension\LicenseCrypto;
 use MillionDollarScript\Classes\Extension\MDS_License_Manager;
 use MillionDollarScript\Classes\Data\Options;
@@ -55,6 +56,13 @@ class Extensions {
     public const ADMIN_EXTENSIONS_PAGE_SLUG = 'milliondollarscript_extensions';
 
     /**
+     * Tracks whether plugin action links have been registered to avoid duplicate filters.
+     *
+     * @var bool
+     */
+    private static $pluginActionLinksRegistered = false;
+
+    /**
      * Normalize plan keys for consistent comparisons.
      */
     private static function normalize_plan_key(string $plan): string {
@@ -64,6 +72,138 @@ class Extensions {
         }
         $plan = preg_replace('/[^a-z0-9]+/', '_', $plan);
         return trim($plan, '_');
+    }
+
+    private static function build_license_candidate_list(array $data, string $plugin_file = ''): array {
+        $candidates = [];
+        foreach (['slug', 'id', 'text_domain', 'pluginName', 'name', 'extension_slug'] as $key) {
+            if (!empty($data[$key]) && is_string($data[$key])) {
+                $candidates[] = (string) $data[$key];
+            }
+        }
+
+        if ($plugin_file !== '') {
+            $directory = dirname($plugin_file);
+            if ($directory !== '' && $directory !== '.') {
+                $candidates[] = $directory;
+            }
+            $candidates[] = basename($plugin_file, '.php');
+        }
+
+        $expanded = [];
+        foreach ($candidates as $candidate) {
+            $candidate = trim($candidate);
+            if ($candidate === '') {
+                continue;
+            }
+            $expanded[] = $candidate;
+            $sanitized = sanitize_title($candidate);
+            if ($sanitized !== '' && $sanitized !== $candidate) {
+                $expanded[] = $sanitized;
+            }
+        }
+
+        return array_values(array_unique(array_filter($expanded)));
+    }
+
+    private static function perform_extension_update_lookup(
+        string $extension_id,
+        string $current_version,
+        string $plugin_file,
+        array $license_candidates = [],
+        bool $requires_license = false
+    ): array {
+        $result = [
+            'update_available' => false,
+            'new_version'      => '',
+            'package_url'      => '',
+            'requires'         => '',
+            'requires_php'     => '',
+            'tested'           => '',
+            'changelog'        => '',
+            'raw_update'       => null,
+            'license_key_used' => false,
+        ];
+
+        $license_key = '';
+        $has_active_license = false;
+
+        if (!empty($license_candidates) && class_exists(MDS_License_Manager::class)) {
+            try {
+                $manager = new MDS_License_Manager();
+                foreach ($license_candidates as $candidate) {
+                    if (!is_string($candidate) || $candidate === '') {
+                        continue;
+                    }
+                    $license_row = $manager->get_license($candidate);
+                    if (!$license_row || empty($license_row->license_key)) {
+                        continue;
+                    }
+
+                    $decrypted = LicenseCrypto::decryptFromCompact((string) $license_row->license_key);
+                    $license_key = $decrypted !== '' ? $decrypted : (string) $license_row->license_key;
+
+                    $status = isset($license_row->status) ? strtolower((string) $license_row->status) : '';
+                    if ($status === '' || self::is_active_license_status($status)) {
+                        $has_active_license = true;
+                        break;
+                    }
+                }
+            } catch (\Throwable $e) {
+                $license_key = '';
+                $has_active_license = false;
+            }
+        }
+
+        if ($requires_license && (!$has_active_license || $license_key === '')) {
+            return $result + ['error' => Language::get('A valid license is required to check for updates.')];
+        }
+
+        $use_license = $license_key !== '' && ($has_active_license || $requires_license);
+        $server_url = Options::get_option('extension_server_url', 'https://extensions.milliondollarscript.com');
+        $slug = self::resolve_extension_identifier(
+            [
+                'id' => $extension_id,
+                'slug' => $extension['slug'] ?? '',
+                'extension_slug' => $extension['extension_slug'] ?? '',
+                'name' => $extension['name'] ?? '',
+            ],
+            $plugin_file
+        );
+
+        $update = PluginUpdateCheckerHelper::requestUpdate(
+            $server_url,
+            $extension_id,
+            $current_version,
+            $use_license ? $license_key : '',
+            $plugin_file,
+            $slug
+        );
+
+        if ($update && is_object($update)) {
+            $new_version = isset($update->version) ? (string) $update->version : '';
+            $effective_version = $new_version !== '' ? $new_version : (isset($update->new_version) ? (string) $update->new_version : '');
+            if ($effective_version !== '' && version_compare($effective_version, $current_version, '>')) {
+                $download = '';
+                if (!empty($update->download_url)) {
+                    $download = (string) $update->download_url;
+                } elseif (!empty($update->package)) {
+                    $download = (string) $update->package;
+                }
+
+                $result['update_available'] = true;
+                $result['new_version'] = $effective_version;
+                $result['package_url'] = $download;
+                $result['requires'] = isset($update->requires) ? (string) $update->requires : '';
+                $result['requires_php'] = isset($update->requires_php) ? (string) $update->requires_php : '';
+                $result['tested'] = isset($update->tested) ? (string) $update->tested : '';
+                $result['changelog'] = isset($update->changelog) ? (string) $update->changelog : '';
+                $result['raw_update'] = $update;
+                $result['license_key_used'] = $use_license;
+            }
+        }
+
+        return $result;
     }
 
     private static function canonicalize_plan_key(string $plan): string {
@@ -259,6 +399,10 @@ class Extensions {
         // Fallback notice will be printed inline within render() for proper placement
         add_action('admin_init', [self::class, 'schedule_license_cron']);
         add_action('mds_check_license_expirations', [self::class, 'license_expiry_cron']);
+        add_action('admin_init', [self::class, 'register_plugin_list_hooks']);
+        add_action('load-plugins.php', [self::class, 'handle_plugin_list_requests']);
+        add_action('admin_notices', [self::class, 'render_plugin_update_notices']);
+        add_action('network_admin_notices', [self::class, 'render_plugin_update_notices']);
 
         // Default Purchase URL filter for admin UI if not provided elsewhere
         add_filter('mds_license_purchase_url', function($url) {
@@ -320,6 +464,308 @@ class Extensions {
         // Subscription cancellation
         add_action( 'wp_ajax_mds_cancel_subscription', [ self::class, 'ajax_cancel_subscription' ] );
     }
+
+    public static function register_plugin_list_hooks(): void {
+        if (self::$pluginActionLinksRegistered) {
+            return;
+        }
+
+        $extensions = self::get_installed_extensions();
+        if (empty($extensions)) {
+            return;
+        }
+
+        foreach ($extensions as $extension) {
+            if (empty($extension['plugin_file']) || !is_string($extension['plugin_file'])) {
+                continue;
+            }
+
+            $plugin_file = $extension['plugin_file'];
+            $label = Language::get('Check for Updates');
+
+            $callback = static function(array $links) use ($plugin_file, $label): array {
+                $base = is_network_admin() ? network_admin_url('plugins.php') : admin_url('plugins.php');
+                $url = add_query_arg(
+                    [
+                        'mds-check-extension-update' => 1,
+                        'plugin' => rawurlencode($plugin_file),
+                    ],
+                    $base
+                );
+                $url = wp_nonce_url($url, 'mds_check_extension_update_' . $plugin_file);
+                $links[] = '<a href="' . esc_url($url) . '">' . esc_html($label) . '</a>';
+                return $links;
+            };
+
+            add_filter("plugin_action_links_{$plugin_file}", $callback);
+            add_filter("network_admin_plugin_action_links_{$plugin_file}", $callback);
+        }
+
+        self::$pluginActionLinksRegistered = true;
+
+        add_filter('plugins_api', [self::class, 'filter_plugin_information'], 20, 3);
+    }
+
+    /**
+     * Inject plugin information for MDS extensions when users click "View details" on the Plugins screen.
+     *
+     * @param mixed       $result Existing result.
+     * @param string      $action Requested action (e.g. plugin_information).
+     * @param object|null $args   Request arguments.
+     *
+     * @return mixed
+     */
+    public static function filter_plugin_information($result, $action, $args) {
+        if ($action !== 'plugin_information' || empty($args) || !is_object($args)) {
+            return $result;
+        }
+
+        $requested_slug = '';
+        if (!empty($args->slug)) {
+            $requested_slug = sanitize_title((string) $args->slug);
+        }
+        if ($requested_slug === '') {
+            return $result;
+        }
+
+        $extensions = self::get_installed_extensions();
+        if (empty($extensions)) {
+            return $result;
+        }
+
+        foreach ($extensions as $extension) {
+            $plugin_file = isset($extension['plugin_file']) ? (string) $extension['plugin_file'] : '';
+            if ($plugin_file === '') {
+                continue;
+            }
+
+            $candidate_slug = sanitize_title((string) ($extension['slug'] ?? $extension['id'] ?? basename($plugin_file, '.php')));
+            if ($candidate_slug !== $requested_slug) {
+                continue;
+            }
+
+            $catalog_entry = self::find_extension_catalog_entry($candidate_slug);
+            if ($catalog_entry === null) {
+                continue;
+            }
+
+            $installed_version = isset($extension['version']) ? (string) $extension['version'] : '';
+            $license_candidates = self::build_license_candidate_list($extension, $plugin_file);
+            $requires_license = !empty($extension['isPremium']) || !empty($extension['is_premium']);
+            $lookup = self::perform_extension_update_lookup(
+                $candidate_slug,
+                $installed_version,
+                $plugin_file,
+                $license_candidates,
+                $requires_license
+            );
+
+            $info = self::build_plugin_information_response($catalog_entry, $extension, $lookup);
+            if ($info !== null) {
+                return $info;
+            }
+        }
+
+        return $result;
+    }
+
+    public static function handle_plugin_list_requests(): void {
+        if (!current_user_can('update_plugins')) {
+            return;
+        }
+
+        if (empty($_GET['mds-check-extension-update'])) {
+            return;
+        }
+
+        $raw_plugin = isset($_GET['plugin']) ? sanitize_text_field(wp_unslash((string) $_GET['plugin'])) : '';
+        $plugin = rawurldecode($raw_plugin);
+        if ($plugin === '') {
+            self::queue_plugin_notice('error', Language::get('Extension not found.'));
+            self::redirect_to_plugins();
+            return;
+        }
+
+        $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash((string) $_GET['_wpnonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'mds_check_extension_update_' . $plugin)) {
+            wp_die(esc_html(Language::get('Security check failed. Please try again.')));
+        }
+
+        $extensions = self::get_installed_extensions();
+        $target = null;
+        foreach ($extensions as $extension) {
+            if (!empty($extension['plugin_file']) && $extension['plugin_file'] === $plugin) {
+                $target = $extension;
+                break;
+            }
+        }
+
+        if (!$target) {
+            self::queue_plugin_notice('error', Language::get('Extension not found.'));
+            self::redirect_to_plugins();
+            return;
+        }
+
+        $installed_version = isset($target['version']) ? (string) $target['version'] : '';
+        $extension_slug = isset($target['slug']) ? (string) $target['slug'] : '';
+        $extension_id = self::resolve_extension_identifier($target, $plugin);
+
+        $candidates = self::build_license_candidate_list(
+            array_merge($target, ['extension_slug' => $extension_slug !== '' ? $extension_slug : $extension_id]),
+            $plugin
+        );
+
+        $lookup = self::perform_extension_update_lookup(
+            $extension_id,
+            $installed_version,
+            $plugin,
+            $candidates,
+            false
+        );
+
+        $name = isset($target['name']) ? (string) $target['name'] : $plugin;
+
+        if (!empty($lookup['error'])) {
+            self::queue_plugin_notice('error', $lookup['error']);
+            self::redirect_to_plugins();
+        }
+
+        if (!empty($lookup['update_available'])) {
+            if (!function_exists('plugin_basename')) {
+                require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            }
+
+            $update_obj = $lookup['raw_update'];
+            if (!$update_obj || !is_object($update_obj)) {
+                $update_obj = (object) [];
+            }
+
+            $plugin_basename = plugin_basename($plugin);
+            $slug = $extension_slug !== '' ? sanitize_title($extension_slug) : sanitize_title(dirname($plugin_basename));
+            $slug = $slug !== '' ? $slug : $plugin_basename;
+
+            $update_obj->plugin = $plugin_basename;
+            $update_obj->slug = $slug;
+
+            if (!empty($lookup['new_version'])) {
+                $update_obj->new_version = (string) $lookup['new_version'];
+                if (empty($update_obj->version)) {
+                    $update_obj->version = $update_obj->new_version;
+                }
+            }
+
+            if (!empty($lookup['package_url'])) {
+                $package_url = (string) $lookup['package_url'];
+                $update_obj->package = $package_url;
+                $update_obj->download_url = $package_url;
+                $update_obj->download_link = $package_url;
+            }
+
+            if (!empty($target['plugin_uri'])) {
+                $update_obj->url = (string) $target['plugin_uri'];
+            } elseif (!empty($target['homepage_url'])) {
+                $update_obj->url = (string) $target['homepage_url'];
+            }
+
+            if (!empty($lookup['requires'])) {
+                $update_obj->requires = (string) $lookup['requires'];
+            }
+
+            if (!empty($lookup['requires_php'])) {
+                $update_obj->requires_php = (string) $lookup['requires_php'];
+            }
+
+            if (!empty($lookup['tested'])) {
+                $update_obj->tested = (string) $lookup['tested'];
+            }
+
+            $transient = get_site_transient('update_plugins');
+            if (!is_object($transient)) {
+                $transient = (object) [
+                    'response' => [],
+                    'checked'  => [],
+                ];
+            }
+            if (!isset($transient->response) || !is_array($transient->response)) {
+                $transient->response = [];
+            }
+            if (!isset($transient->checked) || !is_array($transient->checked)) {
+                $transient->checked = [];
+            }
+
+            if (isset($transient->no_update) && is_array($transient->no_update) && isset($transient->no_update[$plugin])) {
+                unset($transient->no_update[$plugin]);
+            }
+            $transient->response[$plugin] = $update_obj;
+            $transient->checked[$plugin] = $installed_version;
+            $transient->last_checked = time();
+            set_site_transient('update_plugins', $transient);
+
+            self::queue_plugin_notice('success', sprintf(Language::get('Update information fetched for %s.'), $name));
+            self::redirect_to_plugins();
+        } else {
+            self::queue_plugin_notice('info', sprintf(Language::get('No newer version found for %s.'), $name));
+            wp_clean_plugins_cache(true);
+            self::redirect_to_plugins();
+        }
+    }
+
+    private static function queue_plugin_notice(string $type, string $message): void {
+        $key = 'mds_extension_update_notice_' . get_current_user_id();
+        set_transient(
+            $key,
+            [
+                'type'    => $type,
+                'message' => $message,
+            ],
+            MINUTE_IN_SECONDS
+        );
+    }
+
+    public static function render_plugin_update_notices(): void {
+        if (!current_user_can('update_plugins')) {
+            return;
+        }
+
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if ($screen && !in_array($screen->id, ['plugins', 'plugins-network'], true)) {
+            return;
+        }
+
+        $key = 'mds_extension_update_notice_' . get_current_user_id();
+        $notice = get_transient($key);
+        if (!is_array($notice) || empty($notice['message'])) {
+            return;
+        }
+
+        delete_transient($key);
+
+        $type = isset($notice['type']) ? (string) $notice['type'] : 'info';
+        $class = 'notice-info';
+        if ($type === 'success') {
+            $class = 'notice-success';
+        } elseif ($type === 'error') {
+            $class = 'notice-error';
+        } elseif ($type === 'warning') {
+            $class = 'notice-warning';
+        }
+
+        printf(
+            '<div class="notice %1$s is-dismissible"><p>%2$s</p></div>',
+            esc_attr($class),
+            esc_html($notice['message'])
+        );
+    }
+
+    private static function redirect_to_plugins(): void {
+        $target = wp_get_referer();
+        if (!$target) {
+            $target = is_network_admin() ? network_admin_url('plugins.php') : admin_url('plugins.php');
+        }
+        $target = remove_query_arg(['mds-check-extension-update', 'plugin', '_wpnonce'], $target);
+        wp_safe_redirect($target);
+        exit;
+    }
     
     /**
      * AJAX handler for checking extension updates.
@@ -337,89 +783,43 @@ class Extensions {
         $extension_slug = sanitize_text_field($_POST['extension_slug'] ?? '');
         $requires_license = !empty($_POST['requires_license']);
 
-        if (empty($extension_id) || empty($current_version) || empty($plugin_file)) {
+        if (($extension_id === '' && $extension_slug === '') || $current_version === '' || $plugin_file === '') {
             wp_send_json_error(['message' => Language::get('Missing required parameters.')]);
         }
 
-        $license_key = '';
-        $has_active_license = false;
+        $candidates = self::build_license_candidate_list(
+            [
+                'id' => $extension_id,
+                'slug' => $extension_slug,
+                'extension_slug' => $extension_slug,
+            ],
+            $plugin_file
+        );
 
-        $license_manager = null;
-        $license_row = null;
+        $identifier = self::resolve_extension_identifier(
+            [
+                'id' => $extension_id,
+                'slug' => $extension_slug,
+            ],
+            $plugin_file
+        );
 
-        if ($extension_slug !== '' && class_exists(MDS_License_Manager::class)) {
-            try {
-                $license_manager = new MDS_License_Manager();
-                $license_row = $license_manager->get_license($extension_slug);
-            } catch (\Throwable $e) {
-                $license_manager = null;
-                $license_row = null;
-            }
+        $lookup = self::perform_extension_update_lookup(
+            $identifier,
+            $current_version,
+            $plugin_file,
+            $candidates,
+            (bool) $requires_license
+        );
+
+        if (!empty($lookup['error'])) {
+            wp_send_json_error(['message' => $lookup['error']]);
         }
 
-        if (!$requires_license && $license_row) {
-            $requires_license = true;
-        }
+        $response = $lookup;
+        unset($response['raw_update'], $response['license_key_used']);
 
-        if ($license_row) {
-            $license_key = LicenseCrypto::decryptFromCompact((string) ($license_row->license_key ?? ''));
-            if ($license_key === '') {
-                $license_key = (string) ($license_row->license_key ?? '');
-            }
-
-            $status = isset($license_row->status) ? strtolower((string) $license_row->status) : '';
-            if ($status === 'active' && $license_key !== '') {
-                $has_active_license = true;
-            }
-        }
-
-        if ($requires_license && !$has_active_license && $license_manager && $extension_slug !== '') {
-            try {
-                $has_active_license = $license_manager->is_extension_licensed($extension_slug, true);
-            } catch (\Throwable $e) {
-                $has_active_license = false;
-            }
-
-            if ($has_active_license) {
-                try {
-                    $license_row = $license_manager->get_license($extension_slug);
-                    if ($license_row) {
-                        $license_key = LicenseCrypto::decryptFromCompact((string) ($license_row->license_key ?? ''));
-                        if ($license_key === '') {
-                            $license_key = (string) ($license_row->license_key ?? '');
-                        }
-                    }
-                } catch (\Throwable $e) {
-                    // If we cannot refresh the license row, consider the key unavailable.
-                }
-            }
-        }
-
-        if ($requires_license && (!$has_active_license || $license_key === '')) {
-            wp_send_json_error(['message' => Language::get('A valid license is required to check for updates.')]);
-        }
-
-        try {
-            $updater = $requires_license ? new ExtensionUpdater('', $license_key) : new ExtensionUpdater();
-            $update = $updater->checkForUpdate($extension_id, $current_version, $plugin_file);
-            
-            if ($update && is_object($update)) {
-                wp_send_json_success([
-                    'update_available' => true,
-                    'new_version' => $update->version ?? '',
-                    'package_url' => $update->download_url ?? '',
-                    'requires' => $update->requires ?? '',
-                    'requires_php' => $update->requires_php ?? '',
-                    'tested' => $update->tested ?? ''
-                ]);
-            } else {
-                wp_send_json_success(['update_available' => false]);
-            }
-        } catch (\Exception $e) {
-            // Log the error for debugging
-            error_log('Error checking for extension updates: ' . $e->getMessage());
-            wp_send_json_error(['message' => Language::get('An error occurred while checking for updates.')]);
-        }
+        wp_send_json_success($response);
     }
 
     /**
@@ -831,8 +1231,15 @@ class Extensions {
                 $display_extensions[$matched_index]['installed_plugin_file'] = $plugin_file;
                 $display_extensions[$matched_index]['is_installed'] = true;
                 $display_extensions[$matched_index]['is_active'] = !empty($installed['active']);
+                if (!empty($installed['version'])) {
+                    $display_extensions[$matched_index]['installed_version'] = (string) $installed['version'];
+                }
+                if (empty($display_extensions[$matched_index]['available_version']) && !empty($display_extensions[$matched_index]['version'])) {
+                    $display_extensions[$matched_index]['available_version'] = (string) $display_extensions[$matched_index]['version'];
+                }
                 if (empty($display_extensions[$matched_index]['version']) && !empty($installed['version'])) {
                     $display_extensions[$matched_index]['version'] = $installed['version'];
+                    $display_extensions[$matched_index]['available_version'] = (string) $installed['version'];
                 }
                 continue;
             }
@@ -875,6 +1282,8 @@ class Extensions {
                 'name'                  => $installed['name'] ?? $slug_value,
                 'description'           => $installed['description'] ?? '',
                 'version'               => $installed['version'] ?? '',
+                'installed_version'     => $installed['version'] ?? '',
+                'available_version'     => $installed['version'] ?? '',
                 'slug'                  => $slug_value,
                 'pluginName'            => $installed['name'] ?? '',
                 'isPremium'             => $license_snapshot !== null,
@@ -903,6 +1312,8 @@ class Extensions {
                 $available_by_plugin[$plugin_file] = $new_index;
             }
         }
+
+        self::annotate_extension_update_states($display_extensions);
 
         // Add nonce for security
         $nonce = wp_create_nonce( 'mds_extensions_nonce' );
@@ -1025,6 +1436,18 @@ class Extensions {
                     'saving_license'        => Language::get('Applying...'),
                     'license_saved'         => Language::get('License saved.'),
                     'license_save_failed'   => Language::get('Failed to save license.'),
+                    'check_updates'         => Language::get('Check for Updates'),
+                    'check_again'           => Language::get('Check Again'),
+                    'update_now'            => Language::get('Update Now'),
+                    'latest_version_installed' => Language::get('You have the latest version.'),
+                    'update_version_available' => Language::get('Version'),
+                    'update_is_available'   => Language::get('is available!'),
+                    'installed_version_label'=> Language::get('Installed'),
+                    'available_version_label'=> Language::get('Available'),
+                    'version_unknown'        => Language::get('Unknown'),
+                    'version_not_installed'  => Language::get('Not installed'),
+                    'update_status_available'=> Language::get('Update available'),
+                    'update_status_current'  => Language::get('Installed version is current.'),
                 ]
             ];
             wp_localize_script( $script_handle, 'MDS_EXTENSIONS_DATA', $extensions_data );
@@ -1440,11 +1863,15 @@ class Extensions {
                 $pricing_overview = $extension['pricingOverview'];
             }
 
+            $available_version = isset($extension['version']) ? (string) $extension['version'] : '';
+
             $transformed_extensions[] = [
                 'id'           => $extension['id'] ?? '',
                 'name'         => $extension['name'] ?? '',
                 'pluginName'   => $extension['plugin_name'] ?? ($extension['pluginName'] ?? ($extension['name'] ?? '')),
-                'version'      => $extension['version'] ?? '',
+                'version'      => $available_version,
+                'available_version' => $available_version,
+                'installed_version' => '',
                 'description'  => $extension['description'] ?? '',
                 'isPremium'    => $extension['is_premium'] ?? false,
                 'file_name'    => $extension['file_name'] ?? '',
@@ -1555,6 +1982,79 @@ class Extensions {
         return $transformed_extensions;
     }
 
+    private static function annotate_extension_update_states(array &$extensions): void {
+        if (empty($extensions)) {
+            return;
+        }
+
+        $checked = [];
+
+        foreach ($extensions as $index => $extension) {
+            if (empty($extension['is_installed']) || empty($extension['installed_plugin_file'])) {
+                $extensions[$index]['update_available'] = false;
+                continue;
+            }
+
+            $installed_version = isset($extension['installed_version']) ? (string) $extension['installed_version'] : '';
+            $available_version = isset($extension['available_version']) ? (string) $extension['available_version'] : (string) ($extension['version'] ?? '');
+
+            if ($installed_version === '') {
+                $extensions[$index]['update_available'] = false;
+                continue;
+            }
+
+            if ($available_version === '' || !version_compare($available_version, $installed_version, '>')) {
+                $extensions[$index]['update_available'] = false;
+                continue;
+            }
+
+            $plugin_file = (string) $extension['installed_plugin_file'];
+            if ($plugin_file === '') {
+                $extensions[$index]['update_available'] = false;
+                continue;
+            }
+
+            $cache_key = md5($plugin_file . '|' . $installed_version);
+            $extension_id = self::resolve_extension_identifier($extension, $plugin_file);
+
+            $license_candidates = self::build_license_candidate_list($extension, $plugin_file);
+            $requires_license = !empty($extension['isPremium']) || !empty($extension['is_premium']);
+
+            if (!array_key_exists($cache_key, $checked)) {
+                $checked[$cache_key] = self::perform_extension_update_lookup(
+                    $extension_id,
+                    $installed_version,
+                    $plugin_file,
+                    $license_candidates,
+                    $requires_license
+                );
+            }
+
+            $lookup = $checked[$cache_key];
+            if (is_array($lookup) && empty($lookup['error']) && !empty($lookup['update_available'])) {
+                $extensions[$index]['update_available'] = true;
+                $extensions[$index]['update_new_version'] = (string) ($lookup['new_version'] ?? '');
+                $extensions[$index]['update_package_url'] = (string) ($lookup['package_url'] ?? '');
+                if (!empty($lookup['new_version'])) {
+                    $extensions[$index]['available_version'] = (string) $lookup['new_version'];
+                }
+                if (!empty($lookup['requires'])) {
+                    $extensions[$index]['update_requires'] = (string) $lookup['requires'];
+                }
+                if (!empty($lookup['requires_php'])) {
+                    $extensions[$index]['update_requires_php'] = (string) $lookup['requires_php'];
+                }
+                if (!empty($lookup['tested'])) {
+                    $extensions[$index]['update_tested'] = (string) $lookup['tested'];
+                }
+            } else {
+                $extensions[$index]['update_available'] = false;
+                $extensions[$index]['update_new_version'] = '';
+                $extensions[$index]['update_package_url'] = '';
+            }
+        }
+    }
+
     /**
      * Get the browser-facing base URL for the Extension Server.
      * Prefers a configurable public URL; falls back to localhost:3030 for dev.
@@ -1612,6 +2112,258 @@ class Extensions {
             return '';
         }
         return strtolower($clean);
+    }
+
+    /**
+     * Locate an extension entry from the remote catalog by slug or ID.
+     */
+    private static function find_extension_catalog_entry(string $identifier): ?array {
+        $index = self::load_extension_catalog_index();
+        $key = sanitize_title($identifier);
+        if ($key !== '' && isset($index['by_slug'][$key])) {
+            return $index['by_slug'][$key];
+        }
+
+        $lower_id = strtolower($identifier);
+        if ($lower_id !== '' && isset($index['by_id'][$lower_id])) {
+            return $index['by_id'][$lower_id];
+        }
+
+        return null;
+    }
+
+    /**
+     * Build the plugin information response returned to WordPress core when viewing extension details.
+     */
+    private static function build_plugin_information_response(array $entry, array $installedExtension, ?array $lookup): ?\stdClass {
+        $name = $entry['display_name'] ?? ($entry['name'] ?? ($installedExtension['name'] ?? ''));
+        $slug = '';
+        if (!empty($entry['metadata']['slug'])) {
+            $slug = sanitize_title((string) $entry['metadata']['slug']);
+        }
+        if ($slug === '' && !empty($entry['name'])) {
+            $slug = sanitize_title((string) $entry['name']);
+        }
+        if ($slug === '' && !empty($installedExtension['slug'])) {
+            $slug = sanitize_title((string) $installedExtension['slug']);
+        }
+        if ($slug === '') {
+            $slug = sanitize_title($name);
+        }
+        if ($slug === '') {
+            return null;
+        }
+
+        $version = (string) ($entry['version'] ?? ($lookup['new_version'] ?? ($installedExtension['version'] ?? '')));
+        $requires = (string) ($entry['metadata']['requires'] ?? ($entry['requires'] ?? ($lookup['requires'] ?? '')));
+        $requires_php = (string) ($entry['metadata']['requires_php'] ?? ($entry['requires_php'] ?? ($lookup['requires_php'] ?? '')));
+        $tested = (string) ($entry['metadata']['tested'] ?? ($entry['tested'] ?? ($lookup['tested'] ?? '')));
+
+        $download_link = '';
+        if (!empty($lookup['package_url'])) {
+            $download_link = (string) $lookup['package_url'];
+        } else {
+            $download_link = self::build_extension_download_url($entry);
+        }
+
+        $description = (string) ($entry['description'] ?? '');
+        $author = (string) ($entry['author'] ?? ($installedExtension['author'] ?? ''));
+        $author_profile = (string) ($entry['metadata']['wp']['author_uri'] ?? ($entry['author_url'] ?? ($installedExtension['author_uri'] ?? '')));
+        $homepage = (string) ($entry['homepage_url'] ?? ($installedExtension['plugin_uri'] ?? ''));
+
+        $sections = [
+            'description' => $description !== '' ? wpautop($description) : '',
+        ];
+
+        if (!empty($lookup['changelog'])) {
+            $sections['changelog'] = wpautop((string) $lookup['changelog']);
+        } elseif (!empty($entry['metadata']['changelog'])) {
+            $sections['changelog'] = wpautop((string) $entry['metadata']['changelog']);
+        }
+
+        $banners = [];
+        if (!empty($entry['metadata']['banners']) && is_array($entry['metadata']['banners'])) {
+            foreach ($entry['metadata']['banners'] as $key => $value) {
+                if (!is_string($key) || !is_string($value) || trim($value) === '') {
+                    continue;
+                }
+                $banners[$key] = trim($value);
+            }
+        }
+
+        $info = new \stdClass();
+        $info->name = $name;
+        $info->slug = $slug;
+        $info->version = $version;
+        $info->author = $author;
+        $info->author_profile = $author_profile;
+        $info->homepage = $homepage;
+        $info->short_description = $description;
+        $info->sections = $sections;
+        $info->requires = $requires;
+        $info->requires_php = $requires_php;
+        $info->tested = $tested;
+        $info->download_link = $download_link;
+        $info->package = $download_link;
+        $info->last_updated = isset($entry['updated_at']) ? (string) $entry['updated_at'] : '';
+        $info->added = isset($entry['created_at']) ? (string) $entry['created_at'] : '';
+        $info->banners = $banners;
+        $info->banners_rtl = [];
+        $info->rating = 0;
+        $info->num_ratings = 0;
+        $info->downloaded = 0;
+        $info->active_installs = 0;
+        $info->external = true;
+
+        return $info;
+    }
+
+    /**
+     * Build the download URL for an extension entry returned by the server catalog.
+     */
+    private static function build_extension_download_url(array $entry): string {
+        $server = Options::get_option('extension_server_url', 'https://extensions.milliondollarscript.com');
+        $server = is_string($server) ? trim($server) : '';
+        $id = isset($entry['id']) ? trim((string) $entry['id']) : '';
+        if ($server === '' || $id === '') {
+            return '';
+        }
+
+        return rtrim($server, '/') . '/api/extensions/' . rawurlencode($id) . '/download';
+    }
+
+    /**
+     * Load and index the remote extension catalog from the extension server.
+     *
+     * @return array{by_slug: array<string, array>, by_id: array<string, array>}
+     */
+    private static function load_extension_catalog_index(): array {
+        static $catalog = null;
+        if ($catalog !== null) {
+            return $catalog;
+        }
+
+        $catalog = [
+            'by_slug' => [],
+            'by_id'   => [],
+        ];
+
+        $server = Options::get_option('extension_server_url', 'https://extensions.milliondollarscript.com');
+        $server = is_string($server) ? trim($server) : '';
+        if ($server === '') {
+            return $catalog;
+        }
+
+        $sslverify = !Utility::is_development_environment();
+        $response = wp_remote_get(
+            rtrim($server, '/') . '/api/public/extensions',
+            [
+                'timeout'   => 15,
+                'sslverify' => $sslverify,
+            ]
+        );
+
+        if (is_wp_error($response)) {
+            return $catalog;
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        if ($code !== 200) {
+            return $catalog;
+        }
+
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+        if (!is_array($data) || empty($data['data']) || !is_array($data['data'])) {
+            return $catalog;
+        }
+
+        foreach ($data['data'] as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            if (!empty($entry['id'])) {
+                $catalog['by_id'][strtolower((string) $entry['id'])] = $entry;
+            }
+
+            $slugCandidates = [];
+            if (!empty($entry['metadata']['slug'])) {
+                $slugCandidates[] = (string) $entry['metadata']['slug'];
+            }
+            if (!empty($entry['name'])) {
+                $slugCandidates[] = (string) $entry['name'];
+            }
+            if (!empty($entry['display_name'])) {
+                $slugCandidates[] = (string) $entry['display_name'];
+            }
+            if (!empty($entry['metadata']['wp']['text_domain'])) {
+                $slugCandidates[] = (string) $entry['metadata']['wp']['text_domain'];
+            }
+            if (!empty($entry['metadata']['wp']['plugin_name'])) {
+                $slugCandidates[] = (string) $entry['metadata']['wp']['plugin_name'];
+            }
+
+            foreach ($slugCandidates as $candidate) {
+                $key = sanitize_title($candidate);
+                if ($key === '') {
+                    continue;
+                }
+                if (!isset($catalog['by_slug'][$key])) {
+                    $catalog['by_slug'][$key] = $entry;
+                }
+            }
+        }
+
+        return $catalog;
+    }
+
+    /**
+     * Determine the identifier used when querying the extension server for updates.
+     * Prefers the known slug/name values and only falls back to internal IDs if needed.
+     */
+    private static function resolve_extension_identifier(array $extension, string $plugin_file = ''): string {
+        $candidates = [];
+
+        if (!empty($extension['slug'])) {
+            $candidates[] = sanitize_title((string) $extension['slug']);
+        }
+        if (!empty($extension['extension_slug'])) {
+            $candidates[] = sanitize_title((string) $extension['extension_slug']);
+        }
+        if (!empty($extension['name'])) {
+            $candidates[] = sanitize_title((string) $extension['name']);
+        }
+        if (!empty($extension['pluginName'])) {
+            $candidates[] = sanitize_title((string) $extension['pluginName']);
+        }
+        if (!empty($extension['text_domain'])) {
+            $candidates[] = (string) $extension['text_domain'];
+        }
+        if (!empty($extension['id'])) {
+            $candidates[] = (string) $extension['id'];
+        }
+
+        if ($plugin_file !== '') {
+            $dir = dirname($plugin_file);
+            if ($dir !== '.' && $dir !== '') {
+                $candidates[] = sanitize_title($dir);
+            }
+            $candidates[] = sanitize_title(basename($plugin_file, '.php'));
+            $candidates[] = $plugin_file;
+        }
+
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate)) {
+                continue;
+            }
+            $value = trim($candidate);
+            if ($value === '') {
+                continue;
+            }
+            return $value;
+        }
+
+        return '';
     }
 
     /**
@@ -3347,6 +4099,12 @@ class Extensions {
             $extension['purchased_locally'] = false;
         }
 
+        $installed_version = isset($extension['installed_version']) ? (string) $extension['installed_version'] : '';
+        $available_version = isset($extension['available_version']) ? (string) $extension['available_version'] : (string) ($extension['version'] ?? '');
+        $update_available = !empty($extension['update_available']);
+        $update_new_version = isset($extension['update_new_version']) ? (string) $extension['update_new_version'] : ($available_version ?: $installed_version);
+        $update_package_url = isset($extension['update_package_url']) ? (string) $extension['update_package_url'] : '';
+
         $has_local_license = !empty($local_license);
         $was_purchased = !empty($extension['purchased_locally']) || $has_local_license;
         $auto_renews = self::license_is_auto_renewing($local_license);
@@ -3375,7 +4133,11 @@ class Extensions {
         $data_attrs = [
             'data-extension-id'   => $extension['id'] ?? '',
             'data-extension-slug' => $slug,
-            'data-version'        => $extension['version'] ?? '',
+            'data-version'        => $installed_version,
+            'data-installed-version' => $installed_version,
+            'data-available-version' => $available_version,
+            'data-update-available' => $update_available ? 'true' : 'false',
+            'data-update-version'  => $update_new_version,
             'data-is-premium'     => $is_premium ? 'true' : 'false',
             'data-is-licensed'    => $is_licensed ? 'true' : 'false',
             'data-has-local-license' => $has_local_license ? 'true' : 'false',
@@ -3384,6 +4146,9 @@ class Extensions {
             'data-auto-renew-cancelled' => $auto_renew_cancelled ? 'true' : 'false',
             'data-can-check-updates' => $can_check_updates ? 'true' : 'false',
         ];
+        if ($update_package_url !== '') {
+            $data_attrs['data-update-download'] = $update_package_url;
+        }
         if ($is_installed && !empty($extension['installed_plugin_file'])) {
             $data_attrs['data-plugin-file'] = $extension['installed_plugin_file'];
         }
@@ -3503,26 +4268,26 @@ class Extensions {
         $header_action_parts = [];
 
         $has_action_buttons = ($action_primary !== '' || $action_secondary !== '');
-        if ($has_action_buttons) {
-            $buttons_markup  = '<div class="mds-card-header-buttons">';
-            $buttons_markup .= $action_primary ? $action_primary : '';
-            $buttons_markup .= $action_secondary ? $action_secondary : '';
-            $buttons_markup .= '</div>';
-            $header_action_parts[] = $buttons_markup;
-        }
+            if ($has_action_buttons) {
+                $buttons_markup  = '<div class="mds-card-header-buttons">';
+                $buttons_markup .= $action_primary ? $action_primary : '';
+                $buttons_markup .= $action_secondary ? $action_secondary : '';
+                $buttons_markup .= '</div>';
+                $header_action_parts[] = $buttons_markup;
+            }
 
-        if ($can_check_updates) {
-            $update_button  = '<button type="button" class="button button-secondary mds-check-updates"';
-            $update_button .= ' data-nonce="' . esc_attr($nonce) . '"';
-            $update_button .= ' data-extension-id="' . esc_attr($extension['id'] ?? '') . '"';
-            $update_button .= ' data-extension-slug="' . esc_attr($slug) . '"';
-            $update_button .= ' data-plugin-file="' . esc_attr($extension['installed_plugin_file'] ?? '') . '"';
-            $update_button .= ' data-current-version="' . esc_attr($extension['version'] ?? '') . '">';
-            $update_button .= esc_html(Language::get('Check for Updates'));
-            $update_button .= '</button>';
+            if ($can_check_updates) {
+                $update_button  = '<button type="button" class="button button-secondary mds-check-updates"';
+                $update_button .= ' data-nonce="' . esc_attr($nonce) . '"';
+                $update_button .= ' data-extension-id="' . esc_attr($extension['id'] ?? '') . '"';
+                $update_button .= ' data-extension-slug="' . esc_attr($slug) . '"';
+                $update_button .= ' data-plugin-file="' . esc_attr($extension['installed_plugin_file'] ?? '') . '"';
+                $update_button .= ' data-current-version="' . esc_attr($installed_version) . '">';
+                $update_button .= esc_html(Language::get('Check for Updates'));
+                $update_button .= '</button>';
 
-            $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . '</div>';
-        }
+                $header_action_parts[] = '<div class="mds-card-header-updates">' . $update_button . '</div>';
+            }
 
         if ($is_premium) {
             ob_start();
@@ -3590,8 +4355,8 @@ class Extensions {
                         <?php endif; ?>
                         <h3 class="mds-card-title-heading">
                             <span class="mds-card-title-name"><?php echo esc_html($extension['name'] ?? ''); ?></span>
-                            <?php if (!empty($extension['version'])) : ?>
-                                <span class="mds-card-title-version">v<?php echo esc_html($extension['version']); ?></span>
+                            <?php if ($available_version !== '') : ?>
+                                <span class="mds-card-title-version">v<?php echo esc_html($available_version); ?></span>
                             <?php endif; ?>
                         </h3>
                     </div>
@@ -3611,6 +4376,24 @@ class Extensions {
                 <?php if (!empty($extension['description'])) : ?>
                     <p class="mds-card-description"><?php echo esc_html(wp_trim_words((string) $extension['description'], 28)); ?></p>
                 <?php endif; ?>
+                <?php
+                $version_meta_classes = ['mds-card-version-meta'];
+                if ($update_available) {
+                    $version_meta_classes[] = 'is-outdated';
+                }
+                $installed_display = $installed_version !== '' ? 'v' . $installed_version : Language::get('Not installed');
+                $available_display = $available_version !== '' ? 'v' . $available_version : Language::get('Unknown');
+                ?>
+                <div class="<?php echo esc_attr(implode(' ', $version_meta_classes)); ?>">
+                    <span class="mds-version-pill mds-version-installed">
+                        <span class="mds-version-label"><?php echo esc_html(Language::get('Installed')); ?></span>
+                        <span class="mds-version-value"><?php echo esc_html($installed_display); ?></span>
+                    </span>
+                    <span class="mds-version-pill mds-version-available">
+                        <span class="mds-version-label"><?php echo esc_html(Language::get('Available')); ?></span>
+                        <span class="mds-version-value"><?php echo esc_html($available_display); ?></span>
+                    </span>
+                </div>
             </div>
 
             <div class="mds-card-body">
@@ -3627,7 +4410,34 @@ class Extensions {
                 <?php endif; ?>
 
                 <?php if ($can_check_updates) : ?>
-                    <div class="mds-card-update-panel" aria-live="polite"></div>
+                    <div class="mds-card-update-panel" aria-live="polite"<?php echo $update_available ? ' data-has-update="true"' : ''; ?>>
+                        <?php if ($update_available) : ?>
+                            <div class="mds-update-status is-warning" role="status">
+                                <?php
+                                $update_message = sprintf(
+                                    Language::get('Update available: %s'),
+                                    'v' . esc_html($update_new_version)
+                                );
+                                echo esc_html($update_message);
+                                ?>
+                            </div>
+                            <?php if ($update_package_url !== '') : ?>
+                                <p>
+                                    <button class="button button-primary mds-install-update"
+                                            data-download-url="<?php echo esc_attr($update_package_url); ?>"
+                                            data-extension-id="<?php echo esc_attr($extension['id'] ?? ''); ?>"
+                                            data-extension-slug="<?php echo esc_attr($slug); ?>"
+                                            data-plugin-file="<?php echo esc_attr($extension['installed_plugin_file'] ?? ''); ?>">
+                                        <?php echo esc_html(Language::get('Update Now')); ?>
+                                    </button>
+                                </p>
+                            <?php else : ?>
+                                <p class="mds-update-hint">
+                                    <?php echo esc_html(Language::get('Click Check for Updates to retrieve the latest package.')); ?>
+                                </p>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
 
                 <?php if ($show_footer_actions && ($action_primary !== '' || $action_secondary !== '')) : ?>

@@ -7,6 +7,7 @@
 	const AJAX_URL = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.ajax_url)
 		? String(MDS_EXTENSIONS_DATA.ajax_url)
 		: (typeof window.ajaxurl === 'string' ? window.ajaxurl : '');
+	const TEXT = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.text) || {};
 
 	$(function () {
 		"use strict";
@@ -28,6 +29,10 @@
 				}
 			} catch (e) { /* noop */ }
 		})();
+
+		$('.mds-extension-card').each(function () {
+			refreshVersionMeta($(this));
+		});
 
 		// Enhanced notice system with better UX and non-animated injection
 	function showNotice(type, message, autoHide = true) {
@@ -128,8 +133,6 @@
 		$panel.attr('data-status-variant', variant).addClass('mds-update-status-visible');
 	}
 
-const TEXT = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.text) || {};
-
 function getText(key, fallback) {
 	if (TEXT && Object.prototype.hasOwnProperty.call(TEXT, key)) {
 		const value = TEXT[key];
@@ -157,6 +160,30 @@ function escapeHtml(value) {
 			return normalized === 'true' || normalized === '1' || normalized === 'yes';
 		}
 		return !!val;
+	}
+
+	function refreshVersionMeta($card) {
+		const $meta = $card.find('.mds-card-version-meta');
+		if (!$meta.length) {
+			return;
+		}
+
+		const installedVersion = String($card.data('installed-version') || '').trim();
+		const availableVersion = String($card.data('available-version') || '').trim();
+		const updateAvailable = truthyFlag($card.data('update-available'));
+
+		const installedValue = installedVersion
+			? `v${installedVersion}`
+			: getText('version_not_installed', 'Not installed');
+		const availableValue = availableVersion
+			? `v${availableVersion}`
+			: (installedVersion
+				? `v${installedVersion}`
+				: getText('version_unknown', 'Unknown'));
+
+		$meta.toggleClass('is-outdated', updateAvailable);
+		$meta.find('.mds-version-installed .mds-version-value').text(installedValue);
+		$meta.find('.mds-version-available .mds-version-value').text(availableValue);
 	}
 
 	function pruneEmptyCadenceTabs($pricing) {
@@ -709,6 +736,16 @@ function escapeHtml(value) {
 		const extensionId = $card.data('extension-id') || '';
 		const extensionSlug = $card.data('extension-slug') || '';
 		const pluginFile = $card.data('plugin-file') || '';
+		const installedVersion = String($card.data('installed-version') || '').trim();
+
+		if (latestVersion) {
+			$card.attr('data-available-version', latestVersion);
+		}
+		if (downloadUrl) {
+			$card.attr('data-update-download', downloadUrl);
+		} else {
+			$card.removeAttr('data-update-download');
+		}
 
 		if (updateInfo.update_available) {
 			const changelog = updateInfo.changelog ? `<div class="mds-changelog">${updateInfo.changelog}</div>` : '';
@@ -727,15 +764,21 @@ function escapeHtml(value) {
 				</div>
 			`;
 			$panel.html(html).attr('data-has-update', 'true');
+			$card.attr('data-update-available', 'true');
 			resetButton($button, getText('check_again', 'Check Again'));
 		} else {
 			const latestText = getText('latest_version_installed', 'You have the latest version.');
 			$panel.empty().attr('data-has-update', 'false');
 			setUpdateStatus($card, null, '');
 			showNotice('success', latestText, false);
+			$card.attr('data-update-available', 'false');
+			if (!latestVersion && installedVersion) {
+				$card.attr('data-available-version', installedVersion);
+			}
 			resetButton($button, getText('check_updates', 'Check for Updates'));
 		}
 
+		refreshVersionMeta($card);
 		$card.trigger('mds-update-checked');
 	}
 

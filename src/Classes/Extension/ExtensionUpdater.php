@@ -47,7 +47,8 @@ class ExtensionUpdater {
             $this->extensionServerUrl,
             $extensionId,
             $currentVersion,
-            $this->licenseKey
+            $this->licenseKey,
+            $pluginFile
         );
         
         $updateChecker = PluginUpdateCheckerHelper::createUpdateChecker(
@@ -59,22 +60,16 @@ class ExtensionUpdater {
         if (!$updateChecker) {
             return null;
         }
-        // Set authentication headers for download
-        $updateChecker->setAuthentication([
-            'headers' => [
-                'x-license-key' => $this->licenseKey,
-            ]
-        ]);
-
-        // Set authentication headers for download
-        $updateChecker->setAuthentication([
-            'headers' => [
-                'x-license-key' => $this->licenseKey,
-            ]
-        ]);
-
-        // Set how often to check for updates (in hours)
-        $updateChecker->setCheckPeriod(12);
+        if (method_exists($updateChecker, 'setAuthentication')) {
+            $updateChecker->setAuthentication([
+                'headers' => [
+                    'x-license-key' => $this->licenseKey,
+                ],
+            ]);
+        }
+        if (property_exists($updateChecker, 'scheduler') && $updateChecker->scheduler !== null) {
+            $updateChecker->scheduler->checkPeriod = 12;
+        }
         
         return $updateChecker;
     }
@@ -152,6 +147,17 @@ class ExtensionUpdater {
             
             // Only cache valid updates
             if ($update) {
+                if (!function_exists('plugin_basename')) {
+                    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+                }
+                $pluginBasename = plugin_basename($pluginFile);
+                if (!empty($pluginBasename)) {
+                    $update->plugin = $pluginBasename;
+                }
+                $update->slug = $this->determineSlug($extensionId, $pluginFile);
+                if (!isset($update->package) && isset($update->download_url)) {
+                    $update->package = $update->download_url;
+                }
                 $this->updateCache[$cacheKey] = $update;
                 error_log("Extension update found for {$extensionId}: version {$update->version}");
             } else {
@@ -164,5 +170,24 @@ class ExtensionUpdater {
             error_log("Extension update check failed for {$extensionId}: " . $e->getMessage());
             return null;
         }
+    }
+
+    private function determineSlug(string $extensionId, string $pluginFile): string {
+        if ($pluginFile !== '') {
+            $directory = dirname($pluginFile);
+            if ($directory !== '.' && $directory !== '') {
+                return sanitize_title($directory);
+            }
+            $basename = basename($pluginFile, '.php');
+            if ($basename !== '') {
+                return sanitize_title($basename);
+            }
+        }
+
+        if ($extensionId !== '') {
+            return sanitize_title($extensionId);
+        }
+
+        return '';
     }
 }
