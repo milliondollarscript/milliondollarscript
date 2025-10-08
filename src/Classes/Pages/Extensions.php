@@ -8579,4 +8579,302 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             'auto_canceled'  => true,
         ]);
     }
+
+    /**
+     * Build a snapshot of the current WordPress-side extension update state for parity checks.
+     *
+     * @param string $identifier  Extension slug, plugin file, or text domain.
+     * @param array  $args        Optional args: include_transient(bool), refresh_transient(bool).
+     *
+     * @return array<string,mixed>
+     */
+    public static function build_update_parity_snapshot(string $identifier, array $args = []): array
+    {
+        $identifier = trim($identifier);
+        if ($identifier === '') {
+            throw new \InvalidArgumentException('Extension identifier is required.');
+        }
+
+        $includeTransient = isset($args['include_transient']) ? (bool) $args['include_transient'] : true;
+        $refreshTransient = !empty($args['refresh_transient']);
+
+        if ($refreshTransient && function_exists('wp_clean_plugins_cache')) {
+            wp_clean_plugins_cache(false);
+        }
+        if ($refreshTransient && function_exists('wp_update_plugins')) {
+            wp_update_plugins();
+        }
+
+        $extensions = self::get_installed_extensions();
+        $targetVariants = self::collect_identifier_variants_from_value($identifier);
+
+        $matchedExtension = null;
+        foreach ($extensions as $extension) {
+            $pluginFile = isset($extension['plugin_file']) ? (string) $extension['plugin_file'] : '';
+            $candidates = self::collect_extension_identifier_candidates($extension, $pluginFile);
+            if (!empty(array_intersect($targetVariants, $candidates))) {
+                $matchedExtension = $extension;
+                break;
+            }
+        }
+
+        if ($matchedExtension === null) {
+            throw new \InvalidArgumentException(sprintf('Extension not found for identifier %s', $identifier));
+        }
+
+        $pluginFile = isset($matchedExtension['plugin_file']) ? (string) $matchedExtension['plugin_file'] : '';
+        $installedVersion = isset($matchedExtension['version']) ? (string) $matchedExtension['version'] : '';
+        $updateIdentifier = self::resolve_extension_identifier($matchedExtension, $pluginFile);
+
+        $catalogEntry = self::find_extension_catalog_entry($updateIdentifier);
+        if ($catalogEntry === null) {
+            $fallbackIdentifier = sanitize_title($matchedExtension['slug'] ?? '');
+            if ($fallbackIdentifier !== '' && $fallbackIdentifier !== $updateIdentifier) {
+                $catalogEntry = self::find_extension_catalog_entry($fallbackIdentifier);
+            }
+        }
+
+        $licenseCandidates = self::build_license_candidate_list($matchedExtension, $pluginFile);
+        $requiresLicense = self::extension_requires_license($matchedExtension, $catalogEntry);
+
+        $lookup = self::perform_extension_update_lookup(
+            $updateIdentifier,
+            $installedVersion,
+            $pluginFile,
+            $licenseCandidates,
+            $requiresLicense
+        );
+
+        $lookupSanitized = self::sanitize_snapshot_value(null, $lookup);
+        $lookupDownload = isset($lookup['package_url']) && is_string($lookup['package_url']) ? $lookup['package_url'] : '';
+        [$lookupTokenHashFull, $lookupTokenHashShort] = self::extract_token_hash($lookupDownload);
+
+        $pluginSlug = sanitize_title($matchedExtension['slug'] ?? '');
+        if ($pluginSlug === '' && isset($catalogEntry['metadata']['slug'])) {
+            $pluginSlug = sanitize_title((string) $catalogEntry['metadata']['slug']);
+        }
+        if ($pluginSlug === '' && $updateIdentifier !== '') {
+            $pluginSlug = sanitize_title($updateIdentifier);
+        }
+        if ($pluginSlug === '' && $pluginFile !== '') {
+            $pluginSlug = sanitize_title(basename($pluginFile, '.php'));
+        }
+
+        $pluginInfo = null;
+        $pluginInfoSanitized = null;
+        $pluginInfoTokenHashFull = null;
+        $pluginInfoTokenHashShort = null;
+        if ($catalogEntry !== null) {
+            $pluginInfo = self::build_plugin_information_response($catalogEntry, $matchedExtension, $lookup);
+            if ($pluginInfo instanceof \stdClass) {
+                $pluginInfoSanitized = self::sanitize_snapshot_value(null, $pluginInfo);
+                $pluginInfoDownload = '';
+                if (isset($pluginInfo->download_link) && is_string($pluginInfo->download_link)) {
+                    $pluginInfoDownload = $pluginInfo->download_link;
+                } elseif (is_array($pluginInfoSanitized) && isset($pluginInfoSanitized['download_link'])) {
+                    $pluginInfoDownload = (string) $pluginInfoSanitized['download_link'];
+                }
+                [$pluginInfoTokenHashFull, $pluginInfoTokenHashShort] = self::extract_token_hash($pluginInfoDownload);
+            }
+        }
+
+        $transientSnapshot = null;
+        if ($includeTransient) {
+            $transient = get_site_transient('update_plugins');
+            if (is_object($transient) && isset($transient->response) && is_array($transient->response)) {
+                $key = $pluginFile !== '' ? $pluginFile : null;
+                if ($key !== null && isset($transient->response[$key])) {
+                    $transientSnapshot = self::sanitize_snapshot_value(null, $transient->response[$key]);
+                }
+            }
+        }
+
+        $metadataKeys = [];
+        if (is_array($catalogEntry) && isset($catalogEntry['metadata']) && is_array($catalogEntry['metadata'])) {
+            $metadataKeys = array_values(array_filter(array_map(
+                static function ($key) {
+                    return is_string($key) && $key !== '' ? $key : null;
+                },
+                array_keys($catalogEntry['metadata'])
+            )));
+        }
+
+        return [
+            'captured_at'               => gmdate('c'),
+            'identifier'                => $updateIdentifier,
+            'slug'                      => $pluginSlug,
+            'plugin_file'               => $pluginFile,
+            'installed_version'         => $installedVersion,
+            'requires_license'          => $requiresLicense,
+            'license_candidates'        => $licenseCandidates,
+            'catalog_entry_id'          => $catalogEntry['id'] ?? null,
+            'catalog_display_name'      => $catalogEntry['display_name'] ?? ($catalogEntry['name'] ?? null),
+            'catalog_metadata_keys'     => $metadataKeys,
+            'lookup'                    => $lookupSanitized,
+            'lookup_token_hash_full'    => $lookupTokenHashFull,
+            'lookup_token_hash'         => $lookupTokenHashShort,
+            'plugin_info'               => $pluginInfoSanitized,
+            'plugin_info_token_hash_full' => $pluginInfoTokenHashFull,
+            'plugin_info_token_hash'    => $pluginInfoTokenHashShort,
+            'transient_entry'           => $transientSnapshot,
+        ];
+    }
+
+    private static function collect_extension_identifier_candidates(array $extension, string $pluginFile = ''): array
+    {
+        $values = [];
+        foreach (['slug', 'extension_slug', 'id', 'name', 'text_domain', 'pluginName'] as $key) {
+            if (!empty($extension[$key]) && is_string($extension[$key])) {
+                $values[] = $extension[$key];
+            }
+        }
+        if ($pluginFile !== '') {
+            $values[] = $pluginFile;
+            $values[] = basename($pluginFile, '.php');
+            $dir = dirname($pluginFile);
+            if ($dir !== '' && $dir !== '.') {
+                $values[] = $dir;
+            }
+        }
+
+        $set = [];
+        foreach ($values as $value) {
+            $trimmed = trim((string) $value);
+            if ($trimmed === '') {
+                continue;
+            }
+            $set[] = strtolower($trimmed);
+            $sanitized = sanitize_title($trimmed);
+            if ($sanitized !== '') {
+                $set[] = $sanitized;
+            }
+            $normalized = strtolower(str_replace('\\', '/', $trimmed));
+            if ($normalized !== '' && $normalized !== $trimmed) {
+                $set[] = $normalized;
+            }
+        }
+
+        return array_values(array_unique(array_filter($set)));
+    }
+
+    private static function collect_identifier_variants_from_value(string $value): array
+    {
+        $variants = [];
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return $variants;
+        }
+
+        $variants[] = strtolower($trimmed);
+        $normalized = strtolower(str_replace('\\', '/', $trimmed));
+        if ($normalized !== '' && $normalized !== strtolower($trimmed)) {
+            $variants[] = $normalized;
+        }
+
+        $sanitized = sanitize_title($trimmed);
+        if ($sanitized !== '') {
+            $variants[] = $sanitized;
+        }
+
+        return array_values(array_unique(array_filter($variants)));
+    }
+
+    private static function extension_requires_license(array $extension, ?array $catalogEntry): bool
+    {
+        if (!empty($extension['isPremium']) || !empty($extension['is_premium'])) {
+            return true;
+        }
+        if ($catalogEntry !== null) {
+            if (!empty($catalogEntry['is_premium']) || !empty($catalogEntry['isPremium'])) {
+                return true;
+            }
+            if (isset($catalogEntry['metadata']['requires_license'])) {
+                return (bool) $catalogEntry['metadata']['requires_license'];
+            }
+            if (isset($catalogEntry['metadata']['license_required'])) {
+                return (bool) $catalogEntry['metadata']['license_required'];
+            }
+        }
+        return false;
+    }
+
+    private static function sanitize_snapshot_value($key, $value)
+    {
+        if ($value instanceof \stdClass) {
+            $value = json_decode(wp_json_encode($value), true);
+        }
+
+        if (is_array($value)) {
+            $sanitized = [];
+            foreach ($value as $childKey => $childValue) {
+                $sanitized[$childKey] = self::sanitize_snapshot_value($childKey, $childValue);
+            }
+            return $sanitized;
+        }
+
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        $lowerKey = is_string($key) ? strtolower($key) : '';
+        $urlKeys = ['package_url', 'package', 'download_url', 'download_link', 'zip_url'];
+        if ($lowerKey !== '' && in_array($lowerKey, $urlKeys, true)) {
+            return self::redact_sensitive_url($value);
+        }
+
+        if (strpos($value, 'token=') !== false || strpos($value, 'license_key=') !== false) {
+            return self::redact_sensitive_url($value);
+        }
+
+        return $value;
+    }
+
+    private static function redact_sensitive_url(string $url): string
+    {
+        if ($url === '') {
+            return $url;
+        }
+
+        $patterns = [
+            '/(token=)[^&#]+/i',
+            '/(license_key=)[^&#]+/i',
+            '/(licenseKey=)[^&#]+/i',
+            '/(x-license-key=)[^&#]+/i',
+        ];
+
+        $sanitised = $url;
+        foreach ($patterns as $pattern) {
+            $sanitised = preg_replace($pattern, '$1[redacted]', $sanitised);
+        }
+
+        return is_string($sanitised) ? $sanitised : $url;
+    }
+
+    /**
+     * @return array{0:string|null,1:string|null}
+     */
+    private static function extract_token_hash(?string $url): array
+    {
+        if (!is_string($url) || $url === '') {
+            return [null, null];
+        }
+
+        $matches = [];
+        if (!preg_match('/[?&]token=([^&#]+)/i', $url, $matches)) {
+            return [null, null];
+        }
+
+        $token = rawurldecode($matches[1]);
+        if ($token === '') {
+            return [null, null];
+        }
+
+        $hash = hash('sha256', $token);
+        if (!is_string($hash) || $hash === '') {
+            return [null, null];
+        }
+
+        $short = substr($hash, 0, 12);
+        return [$hash, $short !== false ? $short : null];
+    }
 }
