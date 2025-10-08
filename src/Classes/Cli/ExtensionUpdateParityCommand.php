@@ -13,6 +13,17 @@ use function WP_CLI\Utils\get_flag_value;
 class ExtensionUpdateParityCommand extends WP_CLI_Command
 {
     /**
+     * Default handler so `wp mds extension update-snapshot` maps to update_snapshot().
+     *
+     * @param array $args Positional arguments.
+     * @param array $assoc_args Associative arguments.
+     */
+    public function __invoke($args, $assoc_args): void
+    {
+        $this->update_snapshot($args, $assoc_args);
+    }
+
+    /**
      * Generate a sanitized snapshot of the WordPress-side update data for an MDS extension.
      *
      * ## OPTIONS
