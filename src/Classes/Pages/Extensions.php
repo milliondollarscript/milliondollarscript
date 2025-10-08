@@ -191,13 +191,20 @@ class Extensions {
                     $download = (string) $update->package;
                 }
 
+                $normalized_download = self::normalize_update_download_url($download, $extension_id, $plugin_file);
+
                 $result['update_available'] = true;
                 $result['new_version'] = $effective_version;
-                $result['package_url'] = $download;
+                $result['package_url'] = $normalized_download;
                 $result['requires'] = isset($update->requires) ? (string) $update->requires : '';
                 $result['requires_php'] = isset($update->requires_php) ? (string) $update->requires_php : '';
                 $result['tested'] = isset($update->tested) ? (string) $update->tested : '';
                 $result['changelog'] = isset($update->changelog) ? (string) $update->changelog : '';
+                if ($normalized_download !== '') {
+                    $update->download_url = $normalized_download;
+                    $update->package = $normalized_download;
+                    $update->download_link = $normalized_download;
+                }
                 $result['raw_update'] = $update;
                 $result['license_key_used'] = $use_license;
             }
@@ -403,6 +410,8 @@ class Extensions {
         add_action('load-plugins.php', [self::class, 'handle_plugin_list_requests']);
         add_action('admin_notices', [self::class, 'render_plugin_update_notices']);
         add_action('network_admin_notices', [self::class, 'render_plugin_update_notices']);
+        add_filter('http_request_host_is_external', [self::class, 'allow_extension_server_host'], 10, 3);
+        add_filter('http_allowed_safe_ports', [self::class, 'allow_extension_server_ports'], 10, 3);
 
         // Default Purchase URL filter for admin UI if not provided elsewhere
         add_filter('mds_license_purchase_url', function($url) {
@@ -1046,25 +1055,42 @@ class Extensions {
         require_once ABSPATH . 'wp-admin/includes/file.php';
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
         
-        // Get the license key for authentication
-        $license_key = ''; // This is deprecated
-        
-        // Set up the upgrader
-        $upgrader = new \Plugin_Upgrader( new \Plugin_Upgrader_Skin( [ 'plugin' => $extension_id ] ) );
-        
-        // Add authentication headers
-        add_filter( 'http_request_args', function( $args, $url ) use ( $download_url, $license_key ) {
-            if ( strpos( $url, $download_url ) === 0 ) {
+        $license_key = ''; // Deprecated auth pathway retained for backwards compatibility.
+
+        $skin = new class(['plugin' => $extension_id]) extends \Plugin_Upgrader_Skin {
+            public function feedback($string, ...$args) {}
+            public function header() {}
+            public function footer() {}
+        };
+
+        $upgrader = new \Plugin_Upgrader($skin);
+
+        $request_filter = static function ($args, $url) use ($download_url, $license_key) {
+            if ($license_key !== '' && strpos($url, $download_url) === 0) {
                 $args['headers']['x-license-key'] = $license_key;
             }
             return $args;
-        }, 10, 2 );
-        
-        // Install the update
-        $result = $upgrader->install( $download_url, [ 'overwrite_package' => true ] );
-        
-        if ( is_wp_error( $result ) ) {
-            throw new \Exception( $result->get_error_message() );
+        };
+
+        add_filter('http_request_args', $request_filter, 10, 2);
+
+        try {
+            ob_start();
+            $result = $upgrader->install($download_url, ['overwrite_package' => true]);
+            ob_end_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            remove_filter('http_request_args', $request_filter, 10);
+            throw $e;
+        }
+
+        remove_filter('http_request_args', $request_filter, 10);
+
+        if (is_wp_error($result)) {
+            throw new \Exception($result->get_error_message());
+        }
+        if ($result === false) {
+            throw new \Exception(Language::get('The extension update could not be completed.'));
         }
         
         // Clear plugin cache
@@ -3548,6 +3574,177 @@ class Extensions {
         }
 
         return null;
+    }
+
+    public static function allow_extension_server_host(bool $is_external, string $host, string $url): bool {
+        $normalized_host = strtolower(trim($host));
+        if ($normalized_host === '') {
+            return $is_external;
+        }
+
+        if (in_array($normalized_host, self::extension_server_allowed_hosts(), true)) {
+            return true;
+        }
+
+        return $is_external;
+    }
+
+    public static function allow_extension_server_ports(array $ports, string $host, string $url): array {
+        $normalized = [];
+        foreach ($ports as $port) {
+            $normalized[] = (int) $port;
+        }
+
+        foreach (self::extension_server_allowed_ports() as $port) {
+            $normalized[] = $port;
+        }
+
+        $normalized = array_values(array_unique(array_filter($normalized, static function ($port) {
+            return is_int($port) && $port > 0 && $port < 65536;
+        })));
+
+        return $normalized;
+    }
+
+    private static function normalize_update_download_url(string $download_url, string $extension_id = '', string $plugin_file = ''): string {
+        $trimmed = trim($download_url);
+        if ($trimmed === '') {
+            return '';
+        }
+
+        $parsed = wp_parse_url($trimmed);
+        if ($parsed === false) {
+            return $trimmed;
+        }
+
+        $host = isset($parsed['host']) ? strtolower((string) $parsed['host']) : '';
+        $scheme = isset($parsed['scheme']) ? strtolower((string) $parsed['scheme']) : '';
+
+        $local_hosts = [
+            'localhost',
+            '127.0.0.1',
+            '::1',
+            '0.0.0.0',
+            'host.docker.internal',
+        ];
+
+        $needs_rewrite = false;
+        if ($host === '' || in_array($host, $local_hosts, true)) {
+            $needs_rewrite = true;
+        }
+
+        if (!$needs_rewrite) {
+            return $trimmed;
+        }
+
+        $base = self::resolve_extension_server_base();
+        if ($base === null) {
+            return $trimmed;
+        }
+
+        $base_parts = wp_parse_url($base);
+        if (!is_array($base_parts) || empty($base_parts['host'])) {
+            return $trimmed;
+        }
+
+        $base_scheme = isset($base_parts['scheme']) ? $base_parts['scheme'] : ($scheme !== '' ? $scheme : 'http');
+        $base_host = $base_parts['host'];
+        $base_port = isset($base_parts['port']) ? ':' . $base_parts['port'] : '';
+
+        $path = isset($parsed['path']) ? $parsed['path'] : '';
+        if ($path === '') {
+            $path = '/';
+        }
+        if ($path[0] !== '/') {
+            $path = '/' . ltrim($path, '/');
+        }
+
+        $query = isset($parsed['query']) ? '?' . $parsed['query'] : '';
+        $fragment = isset($parsed['fragment']) ? '#' . $parsed['fragment'] : '';
+
+        return $base_scheme . '://' . $base_host . $base_port . $path . $query . $fragment;
+    }
+
+    private static function extension_server_allowed_hosts(): array {
+        static $hosts = null;
+        if ($hosts !== null) {
+            return $hosts;
+        }
+
+        $hosts = [];
+        $collect = static function ($value) use (&$hosts): void {
+            if (!is_string($value) || $value === '') {
+                return;
+            }
+
+            $parts = wp_parse_url($value);
+            if (!is_array($parts) || empty($parts['host'])) {
+                return;
+            }
+
+            $host = strtolower(trim($parts['host']));
+            if ($host === '' || in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+                return;
+            }
+
+            $hosts[] = $host;
+        };
+
+        $collect(Options::get_option('extension_server_url', 'http://extension-server-go:3030'));
+        $collect(Options::get_option('mds_extension_server_public_url', ''));
+
+        foreach (self::extension_server_candidates(null) as $candidate) {
+            $collect($candidate);
+        }
+
+        $hosts = array_values(array_unique($hosts));
+        return $hosts;
+    }
+
+    private static function extension_server_allowed_ports(): array {
+        static $ports = null;
+        if ($ports !== null) {
+            return $ports;
+        }
+
+        $ports = [];
+        $collect = static function ($value) use (&$ports): void {
+            if (!is_string($value) || $value === '') {
+                return;
+            }
+
+            $parts = wp_parse_url($value);
+            if (!is_array($parts)) {
+                return;
+            }
+
+            if (isset($parts['port']) && is_numeric($parts['port'])) {
+                $ports[] = (int) $parts['port'];
+                return;
+            }
+
+            if (!isset($parts['port']) && isset($parts['scheme'])) {
+                $scheme = strtolower((string) $parts['scheme']);
+                if ($scheme === 'https') {
+                    $ports[] = 443;
+                } elseif ($scheme === 'http') {
+                    $ports[] = 80;
+                }
+            }
+        };
+
+        $collect(Options::get_option('extension_server_url', 'http://extension-server-go:3030'));
+        $collect(Options::get_option('mds_extension_server_public_url', ''));
+
+        foreach (self::extension_server_candidates(null) as $candidate) {
+            $collect($candidate);
+        }
+
+        $ports = array_values(array_unique(array_filter($ports, static function ($port) {
+            return is_int($port) && $port > 0 && $port < 65536;
+        })));
+
+        return $ports;
     }
 
     private static function recently_failed_license_enrichment(string $slug): bool {
