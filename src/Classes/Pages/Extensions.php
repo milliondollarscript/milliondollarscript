@@ -207,10 +207,29 @@ class Extensions {
                 }
                 $result['raw_update'] = $update;
                 $result['license_key_used'] = $use_license;
+                self::store_update_transient($plugin_file, $update);
             }
         }
 
         return $result;
+    }
+
+    private static function store_update_transient(string $pluginFile, object $update): void
+    {
+        if ($pluginFile === '' || ! function_exists('get_site_transient') || ! function_exists('set_site_transient')) {
+            return;
+        }
+
+        $transient = get_site_transient('update_plugins');
+        if (! is_object($transient)) {
+            $transient = (object) [];
+        }
+        if (! isset($transient->response) || ! is_array($transient->response)) {
+            $transient->response = [];
+        }
+
+        $transient->response[$pluginFile] = clone $update;
+        set_site_transient('update_plugins', $transient);
     }
 
     private static function canonicalize_plan_key(string $plan): string {
