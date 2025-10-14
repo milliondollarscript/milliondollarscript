@@ -2728,6 +2728,57 @@ class Extensions {
                 $metadata = $metaValue;
             }
         }
+        if (!is_array($metadata)) {
+            $metadata = [];
+        }
+
+        $currency = '';
+        foreach ([
+            $raw['currency'] ?? null,
+            $raw['Currency'] ?? null,
+            $metadata['currency'] ?? null,
+        ] as $candidate) {
+            if (is_string($candidate)) {
+                $candidate = trim($candidate);
+                if ($candidate !== '') {
+                    $currency = strtoupper($candidate);
+                    break;
+                }
+            }
+        }
+
+        $amount = null;
+        $amountCandidates = [
+            $raw['amount'] ?? null,
+            $raw['unit_amount'] ?? null,
+            $raw['unitAmount'] ?? null,
+            $metadata['amount_cents'] ?? null,
+            $metadata['amount'] ?? null,
+            $metadata['unit_amount'] ?? null,
+        ];
+        foreach ($amountCandidates as $candidate) {
+            if (is_numeric($candidate)) {
+                $amount = (int) round((float) $candidate);
+                break;
+            }
+        }
+
+        if ($currency !== '') {
+            if (!isset($metadata['currency']) || $metadata['currency'] === '') {
+                $metadata['currency'] = strtolower($currency);
+            }
+        }
+        if ($amount !== null) {
+            if (!isset($metadata['amount_cents']) || !is_numeric($metadata['amount_cents'])) {
+                $metadata['amount_cents'] = $amount;
+            }
+            if (!isset($metadata['amount']) || !is_numeric($metadata['amount'])) {
+                $metadata['amount'] = $amount;
+            }
+            if (!isset($metadata['unit_amount']) || !is_numeric($metadata['unit_amount'])) {
+                $metadata['unit_amount'] = $amount;
+            }
+        }
 
         return [
             'price_id'   => $priceId,
@@ -2735,6 +2786,8 @@ class Extensions {
             'status'     => $status,
             'default'    => !empty($raw['default']),
             'created_at' => $createdAt,
+            'currency'   => $currency,
+            'amount'     => $amount,
             'metadata'   => $metadata,
         ];
     }
