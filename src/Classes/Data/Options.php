@@ -1058,7 +1058,7 @@ class Options {
 				// Currency
 				Field::make( 'text', MDS_PREFIX . 'currency', Language::get( 'Currency' ) )
 					->set_conditional_logic( $woocommerce_logic )
-					->set_default_value( 'USD' )
+					->set_default_value( 'CAD' )
 					->set_help_text( Language::get( 'The currency to use for orders and payments when WooCommerce isn\'t enabled. If WooCommerce is enabled then it will use the setting from it\'s settings. If WooCommerce Payments plugin is enabled then it will use those settings.' ) ),
 
 				// Currency Symbol

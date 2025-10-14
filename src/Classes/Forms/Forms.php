@@ -959,7 +959,7 @@ class Forms {
 					$banner_id = isset($_POST['BID']) ? intval($_POST['BID']) : 0;
 					$description = isset($_POST['description']) ? sanitize_text_field($_POST['description']) : '';
 					$price = isset($_POST['price']) ? sanitize_text_field($_POST['price']) : '0'; // Keep as string for number_format later if needed
-					$currency = isset($_POST['currency']) ? sanitize_text_field($_POST['currency']) : 'USD';
+					$currency = isset($_POST['currency']) ? sanitize_text_field($_POST['currency']) : 'CAD';
 					$days_expire = isset($_POST['days_expire']) ? intval($_POST['days_expire']) : 0;
 					$max_orders = isset($_POST['max_orders']) ? intval($_POST['max_orders']) : 0;
 

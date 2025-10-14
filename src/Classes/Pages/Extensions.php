@@ -7155,7 +7155,7 @@ class Extensions {
      * Format a numeric amount using WooCommerce (if available) or fallback logic.
      */
     private static function format_currency_amount(float $amount, string $currency): string {
-        $normalizedCurrency = $currency !== '' ? strtoupper($currency) : (string) Options::get_option('currency', 'USD');
+        $normalizedCurrency = $currency !== '' ? strtoupper($currency) : (string) Options::get_option('currency', 'CAD');
 
         if (function_exists('wc_price')) {
             $formatted = wc_price($amount, ['currency' => $normalizedCurrency]);

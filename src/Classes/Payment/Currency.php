@@ -67,8 +67,8 @@ class Currency {
 			$currency        = get_option( 'woocommerce_currency' );
 			$currency_symbol = get_woocommerce_currency_symbol( $currency );
 		} else {
-			$currency = Options::get_option( 'currency', 'USD' );
-			if ( $currency == 'USD' ) {
+			$currency = Options::get_option( 'currency', 'CAD' );
+			if ( in_array( $currency, [ 'USD', 'CAD' ], true ) ) {
 				$currency_symbol = '$';
 			} else {
 				$currency_symbol = Options::get_option( 'currency-symbol', '$' );
@@ -94,7 +94,7 @@ class Currency {
 		}
 
 		// Fall back to MDS default currency
-		return Options::get_option( 'currency', 'USD' );
+		return Options::get_option( 'currency', 'CAD' );
 	}
 
 	public static function convert_to_default_currency( $cur_code, $amount ) {

@@ -977,7 +977,7 @@ class MDSPageCreatorInterface {
             
             // Get pricing information from grid
             $pixel_price = floatval( $grid['pixel_price'] ?? 1.00 );
-            $currency = $grid['currency'] ?? 'USD';
+            $currency = $grid['currency'] ?? 'CAD';
             $min_order = intval( $grid['min_order'] ?? 10 );
             
             $response_data = [
