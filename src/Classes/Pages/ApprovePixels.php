@@ -4,6 +4,7 @@ namespace MillionDollarScript\Classes\Pages;
 
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\Language\Language;
+use function wp_strip_all_tags;
 
 class ApprovePixels {
 
@@ -404,12 +405,14 @@ class ApprovePixels {
                                 <?php
                                 if ( $results ) {
                                     foreach ( $results as $row ) {
-                                        $order_id = intval( $row['order_id'] );
+                                        $order_id    = intval( $row['order_id'] );
+                                        $title_plain = wp_strip_all_tags( $row['title'] ?? '' );
+                                        $title_plain = trim( $title_plain );
                                         ?>
                                         <tr id="post-<?php echo $order_id; ?>" class="iedit author-self level-0 post-<?php echo $order_id; ?> type-post status-publish format-standard hentry category-uncategorized">
                                             <th scope="row" class="check-column">
                                                 <label class="screen-reader-text" for="cb-select-<?php echo $order_id; ?>">
-                                                    <?php printf( Language::get( 'Select %s' ), $row['title'] ?? '' ); ?>
+                                                    <?php printf( esc_html( Language::get( 'Select %s' ) ), esc_html( $title_plain ) ); ?>
                                                 </label>
                                                 <input id="cb-select-<?php echo $order_id; ?>" type="checkbox" name="orders[]" value="<?php echo $order_id; ?>">
                                             </th>
@@ -476,14 +479,14 @@ class ApprovePixels {
                                                 }
                                                 ?>
                                             </td>
-                                            <td class="column-title"><?php echo esc_html( $row['title'] ?? '' ); ?></td>
+                                            <td class="column-title"><?php echo esc_html( $title_plain ); ?></td>
                                             <td class="column-block_coords"><div class="block-coords-wrapper"><?php echo esc_html( $row['block_coords'] ?? '' ); ?></div></td>
                                             <td class="column-image">
                                                 <?php
                                                 if ( ! empty( $row['ad_id'] ) && ! empty( $row['banner_id'] ) ) {
                                                     $image_url = esc_url( Utility::get_page_url( 'get-order-image' ) . '?BID=' . $row['banner_id'] . '&aid=' . $row['ad_id'] );
                                                     ?>
-                                                    <img src="<?php echo $image_url; ?>" width="50" height="50" alt="<?php echo esc_attr( $row['title'] ?? '' ); ?>"/>
+                                                    <img src="<?php echo $image_url; ?>" width="50" height="50" alt="<?php echo esc_attr( $title_plain ); ?>"/>
                                                     <?php
                                                 } else {
                                                     echo Language::get( 'No Image' );
