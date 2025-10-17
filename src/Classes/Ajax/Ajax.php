@@ -702,7 +702,7 @@ class Ajax {
 			],
 			[
 				'key'               => 'ads',
-				'label'             => Language::get( 'Ads(s)' ),
+				'label'             => Language::get( 'Popup Text' ),
 				'render_callback'   => [ __CLASS__, 'render_list_ads_cell' ],
 				'cell_attributes'   => [ 'class' => 'list-cell' ],
 				'heading_attributes' => [ 'class' => 'list-heading' ],
@@ -742,7 +742,8 @@ class Ajax {
 		$first_block = ! empty( $blocks ) ? intval( reset( $blocks ) ) : 0;
 
 		$alt_text      = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' ) ?? '';
-		$alt_text_trim = str_replace( [ "'", "\"" ], '', $alt_text );
+		$alt_text_trim = wp_strip_all_tags( $alt_text );
+		$alt_text_trim = str_replace( [ "'", '"' ], '', $alt_text_trim );
 
 		$url = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' ) ?: '';
 
@@ -840,6 +841,8 @@ class Ajax {
 		if ( '' === $link_text ) {
 			$link_text = $row_context['url'] ?? '';
 		}
+		$link_text = wp_strip_all_tags( $link_text );
+
 		$link_text = apply_filters( 'mds_list_link_text', $link_text, $row_context, $column );
 
 		return '<br /><a' . self::stringify_attributes( $attributes ) . '>' . esc_html( $link_text ) . '</a>';

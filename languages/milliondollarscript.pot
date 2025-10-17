@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.5.15.34\n"
+"Project-Id-Version: Million Dollar Script Two 2.5.15.36\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-22 17:36:45\n"
-"PO-Revision-Date: 2025-09-22 17:36:45\n"
-"X-Generator: Million Dollar Script Two 2.5.15.34\n"
+"POT-Creation-Date: 2025-10-17 18:37:29\n"
+"PO-Revision-Date: 2025-10-17 18:37:29\n"
+"X-Generator: Million Dollar Script Two 2.5.15.36\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -3181,9 +3181,6 @@ msgid "<b>Available:</b> <span class=\"status_text\">%AVAILABLE%</span><br/>"
 msgstr ""
 
 msgid "Date of Purchase"
-msgstr ""
-
-msgid "Ads(s)"
 msgstr ""
 
 msgid "Stats box"
