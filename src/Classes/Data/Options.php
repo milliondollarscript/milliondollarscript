@@ -1209,6 +1209,15 @@ class Options {
 					->set_default_value( 'https://extensions.milliondollarscript.com' )
 					->set_help_text( Language::get( 'The URL of the extension server for automatic updates and downloads. Use http://extension-server-go:3030 or http://localhost:3030 for development or your production server URL. Default: https://extensions.milliondollarscript.com' ) ),
 
+				// Portal auto-account creation
+				Field::make( 'radio', MDS_PREFIX . 'extension_portal_auto_accounts', Language::get( 'Automatically create client portal accounts for extension purchases?' ) )
+					->set_default_value( 'yes' )
+					->set_options( [
+						'yes' => Language::get( 'Yes - store buyer emails, create portal accounts, and sync licenses' ),
+						'no'  => Language::get( 'No - do not store buyer emails or create client portal accounts' ),
+					] )
+					->set_help_text( Language::get( 'Recommended: keep this enabled so license purchases automatically create a client portal account tied to the buyer\'s email and display that email in the Extension Server. Disabling this means emails will not be stored with licenses and portal accounts will not be created. If you disable it and later lose site access, you must cancel auto-renewals directly in Stripe or contact support.' ) ),
+
 
 				// Delete data on uninstall?
 				Field::make( 'radio', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )

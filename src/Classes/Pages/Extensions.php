@@ -1133,6 +1133,17 @@ class Extensions {
 
         // Display settings errors/notices
         settings_errors('mds_extensions_notices');
+
+        $portal_auto_accounts = Options::get_option('extension_portal_auto_accounts', 'yes');
+        if (is_string($portal_auto_accounts)) {
+            $normalized = strtolower(trim((string) $portal_auto_accounts));
+            if (in_array($normalized, ['no', 'disabled', 'disable', 'off', 'false', '0'], true)) {
+                printf(
+                    '<div class="notice notice-warning"><p>%s</p></div>',
+                    esc_html(Language::get('Automatic client portal syncing is currently disabled. New purchases will not create portal accounts or store buyer emails. Enable it under Options → System to keep license ownership in sync.'))
+                );
+            }
+        }
         
         // Get installed extensions
         $installed_extensions = self::get_installed_extensions();
@@ -8078,6 +8089,14 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 ],
                 $checkout_url
             );
+
+            $portal_auto_accounts = Options::get_option('extension_portal_auto_accounts', 'yes');
+            if (is_string($portal_auto_accounts)) {
+                $normalized = strtolower(trim((string) $portal_auto_accounts));
+                if (in_array($normalized, ['no', 'disabled', 'disable', 'off', 'false', '0'], true)) {
+                    $checkout_url = add_query_arg('portalAccount', 'disabled', $checkout_url);
+                }
+            }
 
             wp_send_json_success(['checkout_url' => $checkout_url], 200);
         } catch (\Exception $e) {

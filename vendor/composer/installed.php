@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'milliondollarscript/milliondollarscript-two',
-        'pretty_version' => '2.5.12.79',
-        'version' => '2.5.12.79',
+        'pretty_version' => '2.5.15.37',
+        'version' => '2.5.15.37',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -38,8 +38,8 @@
             'dev_requirement' => false,
         ),
         'milliondollarscript/milliondollarscript-two' => array(
-            'pretty_version' => '2.5.12.79',
-            'version' => '2.5.12.79',
+            'pretty_version' => '2.5.15.37',
+            'version' => '2.5.15.37',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'nikic/php-parser' => array(
-            'pretty_version' => 'v5.5.0',
-            'version' => '5.5.0.0',
-            'reference' => 'ae59794362fe85e051a58ad36b289443f57be7a9',
+            'pretty_version' => 'v5.6.1',
+            'version' => '5.6.1.0',
+            'reference' => 'f103601b29efebd7ff4a1ca7b3eeea9e3336a2a2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../nikic/php-parser',
             'aliases' => array(),
