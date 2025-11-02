@@ -455,15 +455,60 @@ div.milliondollarscript-license p {
 }
 
 ul.milliondollarscript-menu {
-	display: flex;
-	justify-content: center;
-	flex-direction: row;
-	background: transparent;
-	color: #fff;
-	margin: 0;
-	list-style: none;
-	z-index: 999;
-	position: relative;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap; /* wrap to new lines when too wide */
+    gap: 6px 10px;
+    width: 100%;
+    background: transparent;
+    color: #fff;
+    margin: 0;
+    list-style: none;
+    z-index: 999;
+    position: relative;
+}
+
+/* Dropdown behavior for hero menu */
+.milliondollarscript-menu li {
+    position: relative;
+}
+
+.milliondollarscript-menu li > ul {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    display: none;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: rgba(50, 55, 60, 0.95);
+    min-width: 220px;
+    z-index: 1000;
+    border-bottom-right-radius: 8px;
+}
+
+.milliondollarscript-menu li:focus-within > ul {
+    display: block;
+}
+
+.milliondollarscript-menu li > ul li a {
+    display: block;
+    padding: 10px 14px;
+    font-size: 14px;
+    text-shadow: none;
+    text-align: left;
+    line-height: 1.4;
+}
+
+.milliondollarscript-menu li > ul li a:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Third-level positioning for hero menu */
+.milliondollarscript-menu li ul ul {
+    left: 100%;
+    top: 0;
 }
 
 @media screen and (max-width: 750px) {
@@ -491,33 +536,39 @@ ul.milliondollarscript-menu {
 }
 
 .milliondollarscript-menu li {
-	margin-bottom: 0;
-	text-align: center;
-	background: transparent;
-	-webkit-animation: milliondollarscript 3s linear infinite alternate;
-	animation: milliondollarscript 3s linear infinite alternate;
-	-webkit-animation-delay: calc(var(--milliondollarscript-menu) * 1400ms);
-	animation-delay: calc(var(--milliondollarscript-menu) * 1400ms);
-}
-
-.milliondollarscript-menu li:hover {
-	-webkit-animation: milliondollarscript 700ms linear 1 forwards;
-	animation: milliondollarscript 700ms linear 1 forwards;
-	-webkit-animation-delay: 0ms;
-	animation-delay: 0ms;
+    margin-bottom: 0;
+    text-align: center;
+    background: transparent;
+    /* Remove animated background to improve dropdown reliability */
+    -webkit-animation: none;
+    animation: none;
 }
 
 div.mds-main-page .milliondollarscript-menu a {
-	display: block;
-	padding: 20px;
-	color: #fff;
-	font-weight: bold;
-	font-size: 1.4rem;
-	text-decoration: none;
-	text-shadow: -1px -1px 2px #000,
-	1px -1px 2px #000,
-	-1px 1px 2px #000,
-	1px 1px 2px #000;
+    display: block;
+    padding: 20px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.4rem;
+    line-height: 1.35;
+    text-decoration: none;
+    text-shadow: -1px -1px 2px #000,
+    1px -1px 2px #000,
+    -1px 1px 2px #000,
+    1px 1px 2px #000;
+}
+
+/* Top-level hero menu hover/active highlight */
+div.mds-main-page .milliondollarscript-menu > li > a {
+    border-bottom: 3px solid transparent;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+div.mds-main-page .milliondollarscript-menu > li:hover > a,
+div.mds-main-page .milliondollarscript-menu > li > a:hover,
+div.mds-main-page .milliondollarscript-menu > li > a.mds-active-submenu {
+    background: rgba(114, 174, 230, 0.12);
+    border-bottom-color: #72aee6;
+    color: #72aee6;
 }
 
 div.milliondollarscript-fire {
@@ -527,7 +578,7 @@ div.milliondollarscript-fire {
 	display: block;
 	background: #07010a;
 	width: calc(100% + 2rem);
-	overflow: hidden;
+	overflow: visible; /* allow hero dropdowns to overflow */
 	margin: -1rem -1rem 0 -1rem;
 	border-bottom-right-radius: 20px;
 }

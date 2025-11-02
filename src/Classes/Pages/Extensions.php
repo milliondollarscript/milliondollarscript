@@ -469,7 +469,36 @@ class Extensions {
         }
         // Late hook to normalize/deduplicate submenu entries
         add_action( 'admin_menu', [ self::class, 'dedupe_submenu' ], 999 );
+
+        // Note: Do not mutate global $submenu to hide items; it can lead to confusing access state.
+        // Visual hiding is handled via CSS/JS in print_admin_menu_styles().
     }
+
+    /**
+     * Prune MDS submenus in the WP sidebar to keep only the Extensions entry visible.
+     * Non-destructive: the pages still exist and can be accessed via URL and in-page navigation.
+     */
+    public static function hide_other_submenus(): void {
+        global $submenu;
+        $parent = 'milliondollarscript';
+        if ( ! isset( $submenu[ $parent ] ) || ! is_array( $submenu[ $parent ] ) ) {
+            return;
+        }
+
+        $keep_slugs = [ 'mds-extensions' ];
+        $filtered   = [];
+
+        foreach ( $submenu[ $parent ] as $item ) {
+            $slug = $item[2] ?? '';
+            if ( in_array( $slug, $keep_slugs, true ) ) {
+                $filtered[] = $item;
+            }
+        }
+
+        $submenu[ $parent ] = $filtered;
+    }
+
+    // Intentionally no remove_submenu_page. Visibility is handled with CSS/JS.
     
     /**
      * Register AJAX handlers. This must be called early during WordPress initialization.
@@ -1769,6 +1798,23 @@ class Extensions {
                 outline-offset: 0;
             }
         </style>
+        <script>
+        (function(){
+            if (!window.jQuery) return;
+            jQuery(function($){
+                var $sub = $('#toplevel_page_milliondollarscript .wp-submenu');
+                if (!$sub.length) return;
+                // Hide all submenu items except Extensions
+                $sub.find('li').each(function(){
+                    var $li = $(this);
+                    var isExt = $li.find('a[href*="page=mds-extensions"]').length > 0;
+                    if (!isExt) {
+                        $li.hide();
+                    }
+                });
+            });
+        })();
+        </script>
         <?php
     }
     

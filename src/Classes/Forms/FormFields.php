@@ -32,7 +32,6 @@ namespace MillionDollarScript\Classes\Forms;
 use Carbon_Fields\Container\Container;
 use Carbon_Fields\Field\Field;
 use Imagine\Image\Box;
-use MillionDollarScript\Classes\Data\Config;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;

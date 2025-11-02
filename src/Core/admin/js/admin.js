@@ -59,6 +59,12 @@ function checkBoxes(name) {
 
 jQuery(document).ready(function ($) {
 	const $mds_admin_menu = $(".mds-admin-menu");
+	const MENU_ITEM_SELECTOR = ".mds-admin-menu li, .milliondollarscript-menu li";
+	const MENU_LINK_SELECTOR = ".mds-admin-menu li > a, .milliondollarscript-menu li > a";
+	const HOVER_OPEN_DELAY = 140;
+	const HOVER_CLOSE_DELAY = 400;
+	const SUBMENU_ANIMATION_DURATION = 140;
+	let isDesktop = false;
 
 	$('a[href="#"]').on('click', function (e) {
 		e.preventDefault();
@@ -68,45 +74,164 @@ jQuery(document).ready(function ($) {
 		e.preventDefault();
 	})
 
-	function showSubmenu() {
-		$(this).children('ul').slideDown(100);
-		$(this).children('a').addClass('mds-active-submenu');
-	}
-
-	function hideSubmenu() {
-		$(this).children('ul').slideUp(100);
-		$(this).children('a').removeClass('mds-active-submenu');
-	}
-
-	$(".mds-admin-menu li").hoverIntent({
-		over: showSubmenu,
-		out: hideSubmenu,
-		timeout: 400,
-	});
-
-	function toggleSubmenu($this) {
-		const $parent = $this.parent();
-		const $menu = $parent.children('ul');
-
-		if ($this.hasClass('mds-active-submenu')) {
-			if (!$menu.is(':animated')) {
-				$menu.slideUp(100);
-				$this.removeClass('mds-active-submenu');
-			}
-		} else {
-			$parent.siblings().find('ul:visible').slideUp(100);
-			$parent.siblings().find('a.mds-active-submenu').removeClass('mds-active-submenu');
-
-			if (!$menu.is(':animated')) {
-				$menu.slideDown(100);
-				$this.addClass('mds-active-submenu');
-			}
+	function clearOpenTimer($li) {
+		const timer = $li.data('mdsHoverOpenTimer');
+		if (timer) {
+			clearTimeout(timer);
+			$li.removeData('mdsHoverOpenTimer');
 		}
 	}
 
-	$(document).on("click", 'a', function (e) {
-		toggleSubmenu($(this));
+	function clearCloseTimer($li) {
+		const timer = $li.data('mdsHoverCloseTimer');
+		if (timer) {
+			clearTimeout(timer);
+			$li.removeData('mdsHoverCloseTimer');
+		}
+	}
+
+	function clearIntentTimers($li) {
+		clearOpenTimer($li);
+		clearCloseTimer($li);
+
+		// Clean up legacy key used by previous implementation.
+		const legacyTimer = $li.data('mds-hover-timeout');
+		if (legacyTimer) {
+			clearTimeout(legacyTimer);
+			$li.removeData('mds-hover-timeout');
+		}
+	}
+
+	function closeSubmenu($li, options = {}) {
+		const $submenu = $li.children('ul');
+		if ($submenu.length === 0) {
+			return;
+		}
+
+		clearIntentTimers($li);
+
+		const speed = options.immediate ? 0 : SUBMENU_ANIMATION_DURATION;
+		$submenu.stop(true, true).slideUp(speed);
+		$li.children('a').removeClass('mds-active-submenu');
+
+		// Reset any nested items to avoid lingering active states.
+		$submenu.find('a.mds-active-submenu').removeClass('mds-active-submenu');
+		$submenu.find('ul').hide();
+	}
+
+	function closeSiblingSubmenus($li) {
+		$li.siblings('li').each(function () {
+			closeSubmenu($(this), { immediate: true });
+		});
+	}
+
+	function openSubmenu($li, options = {}) {
+		const $submenu = $li.children('ul');
+		if ($submenu.length === 0) {
+			return;
+		}
+
+		if (!options.skipSiblingClose) {
+			closeSiblingSubmenus($li);
+		}
+
+		clearIntentTimers($li);
+
+		const speed = options.immediate ? 0 : SUBMENU_ANIMATION_DURATION;
+		$submenu.stop(true, true).slideDown(speed);
+		$li.children('a').addClass('mds-active-submenu');
+	}
+
+	function handleHoverOver() {
+		const $li = $(this);
+		if (!isDesktop || $li.children('ul').length === 0) {
+			return;
+		}
+
+		clearCloseTimer($li);
+		clearOpenTimer($li);
+
+		const timer = setTimeout(function () {
+			openSubmenu($li);
+		}, HOVER_OPEN_DELAY);
+
+		$li.data('mdsHoverOpenTimer', timer);
+	}
+
+	function handleHoverOut() {
+		const $li = $(this);
+		if (!isDesktop || $li.children('ul').length === 0) {
+			return;
+		}
+
+		clearOpenTimer($li);
+		clearCloseTimer($li);
+
+		const timer = setTimeout(function () {
+			closeSubmenu($li);
+		}, HOVER_CLOSE_DELAY);
+
+		$li.data('mdsHoverCloseTimer', timer);
+	}
+
+	function toggleSubmenu($link) {
+		const $parent = $link.parent();
+		const $submenu = $parent.children('ul');
+
+		if ($submenu.length === 0) {
+			return;
+		}
+
+		clearIntentTimers($parent);
+
+		const isActive = $link.hasClass('mds-active-submenu') || $submenu.is(':visible');
+
+		if (isActive) {
+			closeSubmenu($parent);
+		} else {
+			openSubmenu($parent, { immediate: true });
+		}
+	}
+
+	// Click handler - works on both mobile and desktop
+	$(document).on("click", MENU_LINK_SELECTOR, function (e) {
+		const $link = $(this);
+		const $parent = $link.parent();
+
+		// Only handle if this link has a submenu
+		if ($parent.children('ul').length > 0) {
+			if (!isDesktop) {
+				e.preventDefault();
+				toggleSubmenu($link);
+			}
+		}
 	});
+
+	$(document).on('focus', MENU_LINK_SELECTOR, function () {
+		const $link = $(this);
+		const $parent = $link.parent();
+
+		if ($parent.children('ul').length === 0) {
+			closeSiblingSubmenus($parent);
+			return;
+		}
+
+		clearIntentTimers($parent);
+		openSubmenu($parent, { immediate: true });
+	});
+
+	$(document).on('focusout', MENU_ITEM_SELECTOR, function () {
+		const $item = $(this);
+
+		setTimeout(function () {
+			if (!$item.is(':focus-within') && !$item.is(':hover')) {
+				closeSubmenu($item);
+			}
+		}, 0);
+	});
+
+	$(document).on('mouseenter.mdsMenuHover', MENU_ITEM_SELECTOR, handleHoverOver);
+	$(document).on('mouseleave.mdsMenuHover', MENU_ITEM_SELECTOR, handleHoverOut);
 
 	const $mds_menu_toggle = $(".mds-menu-toggle");
 
@@ -119,15 +244,22 @@ jQuery(document).ready(function ($) {
 		$mds_admin_menu.slideToggle();
 	});
 
-	$mds_admin_menu.find('a').keypress(function (event) {
-		if (event.which === 13) {
-			console.log("Enter key was pressed");
-			toggleSubmenu($(this));
-		}
-	});
+	function clearAllTimers() {
+		$(MENU_ITEM_SELECTOR).each(function () {
+			clearIntentTimers($(this));
+		});
+	}
+
+	function closeAllMenus(options = {}) {
+		$(MENU_ITEM_SELECTOR).each(function () {
+			closeSubmenu($(this), options);
+		});
+	}
 
 	function updateMenuDisplay() {
-		if ($(window).width() > 999) {
+		isDesktop = $(window).width() > 999;
+
+		if (isDesktop) {
 			$mds_admin_menu.css('display', '').addClass('mds-desktop-menu');
 			$mds_menu_toggle.hide();
 		} else {
@@ -136,6 +268,11 @@ jQuery(document).ready(function ($) {
 				$mds_admin_menu.hide();
 			}
 			$mds_menu_toggle.show();
+
+			clearAllTimers();
+			closeAllMenus({ immediate: true });
 		}
 	}
+
+	clearAllTimers();
 });

@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.2.44\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.2.47\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-11-01 21:02:33\n"
-"PO-Revision-Date: 2025-11-01 21:02:33\n"
-"X-Generator: Million Dollar Script Two 2.6.2.44\n"
+"POT-Creation-Date: 2025-11-02 01:23:59\n"
+"PO-Revision-Date: 2025-11-02 01:23:59\n"
+"X-Generator: Million Dollar Script Two 2.6.2.47\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -2217,10 +2217,94 @@ msgstr ""
 msgid "Million Dollar Script Logo"
 msgstr ""
 
-msgid "Main"
+msgid "Admin"
 msgstr ""
 
-msgid "Admin"
+msgid "Pixel Management"
+msgstr ""
+
+msgid "Grids"
+msgstr ""
+
+msgid "Packages"
+msgstr ""
+
+msgid "Price Zones"
+msgstr ""
+
+msgid "Not For Sale"
+msgstr ""
+
+msgid "Backgrounds"
+msgstr ""
+
+msgid "Shortcodes"
+msgstr ""
+
+msgid "Process Pixels"
+msgstr ""
+
+msgid "Waiting"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Reserved"
+msgstr ""
+
+msgid "Expired"
+msgstr ""
+
+msgid "Denied"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Deleted"
+msgstr ""
+
+msgid "Map"
+msgstr ""
+
+msgid "Clear Orders"
+msgstr ""
+
+msgid "Pixel Approval"
+msgstr ""
+
+msgid "Awaiting Approval"
+msgstr ""
+
+msgid "Approved"
+msgstr ""
+
+msgid "Reports"
+msgstr ""
+
+msgid "Transaction Log"
+msgstr ""
+
+msgid "Top Customers"
+msgstr ""
+
+msgid "Outgoing Email"
+msgstr ""
+
+msgid "Clicks"
+msgstr ""
+
+msgid "Top Clicks"
+msgstr ""
+
+msgid "Click Reports"
+msgstr ""
+
+msgid "System Information"
+msgstr ""
+
+msgid "License"
 msgstr ""
 
 msgid "Options"
@@ -2233,6 +2317,9 @@ msgid "Changelog"
 msgstr ""
 
 msgid "Logs"
+msgstr ""
+
+msgid "Extensions"
 msgstr ""
 
 msgid "View Site"
@@ -2766,9 +2853,6 @@ msgstr ""
 msgid "Million Dollar Script Extensions"
 msgstr ""
 
-msgid "Extensions"
-msgstr ""
-
 msgid "Check for Updates"
 msgstr ""
 
@@ -3204,13 +3288,7 @@ msgstr ""
 msgid "Expiry Date"
 msgstr ""
 
-msgid "Approved"
-msgstr ""
-
 msgid "Published"
-msgstr ""
-
-msgid "Expired"
 msgstr ""
 
 msgid "Not Yet Published"
@@ -3888,22 +3966,10 @@ msgstr ""
 msgid "Pending"
 msgstr ""
 
-msgid "Completed"
-msgstr ""
-
-msgid "Cancelled"
-msgstr ""
-
 msgid "Confirmed"
 msgstr ""
 
 msgid "New"
-msgstr ""
-
-msgid "Denied"
-msgstr ""
-
-msgid "Deleted"
 msgstr ""
 
 msgid "Renew Now"
@@ -4282,75 +4348,6 @@ msgid "Selected Grid:"
 msgstr ""
 
 msgid "Million Dollar Script logo"
-msgstr ""
-
-msgid "Pixel Management"
-msgstr ""
-
-msgid "Grids"
-msgstr ""
-
-msgid "Packages"
-msgstr ""
-
-msgid "Price Zones"
-msgstr ""
-
-msgid "Not For Sale"
-msgstr ""
-
-msgid "Backgrounds"
-msgstr ""
-
-msgid "Shortcodes"
-msgstr ""
-
-msgid "Process Pixels"
-msgstr ""
-
-msgid "Waiting"
-msgstr ""
-
-msgid "Reserved"
-msgstr ""
-
-msgid "Map"
-msgstr ""
-
-msgid "Clear Orders"
-msgstr ""
-
-msgid "Pixel Approval"
-msgstr ""
-
-msgid "Awaiting Approval"
-msgstr ""
-
-msgid "Reports"
-msgstr ""
-
-msgid "Transaction Log"
-msgstr ""
-
-msgid "Top Customers"
-msgstr ""
-
-msgid "Outgoing Email"
-msgstr ""
-
-msgid "Clicks"
-msgstr ""
-
-msgid "Top Clicks"
-msgstr ""
-
-msgid "Click Reports"
-msgstr ""
-
-msgid "System Information"
-msgstr ""
-
-msgid "License"
 msgstr ""
 
 msgid "Help"

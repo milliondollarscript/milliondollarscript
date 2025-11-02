@@ -37,7 +37,7 @@ defined( 'ABSPATH' ) or exit;
 
 class MillionDollarScript {
 	public static function menu(): void {
-		$handle = \add_menu_page( 'MillionDollarScript', Language::get( 'Million Dollar Script' ), 'manage_options', 'milliondollarscript', array( __CLASS__, 'html' ), 'dashicons-grid-view' );
+		$handle = \add_menu_page( 'MillionDollarScript', Language::get( 'Million Dollar Script' ), 'manage_options', 'milliondollarscript', array( __CLASS__, 'html' ), 'dashicons-grid-view', 26 );
 
 		// Add styles for admin page
 		add_action( 'admin_print_styles-' . $handle, [ __CLASS__, 'styles' ] );
@@ -62,6 +62,11 @@ class MillionDollarScript {
 			true
 		);
 
+			// Ensure the shared admin menu controller is available so the hero menu matches admin behavior
+			if ( class_exists( \MillionDollarScript\Classes\Admin\Admin::class ) ) {
+				\MillionDollarScript\Classes\Admin\Admin::enqueue_admin_scripts();
+			}
+
 		// Load fire.js
 		// @link https://gpfault.net/posts/webgl2-particles.txt.html
 		wp_enqueue_script( 'fire', MDS_BASE_URL . 'src/Assets/js/fire/fire.min.js', [ MDS_PREFIX . 'admin-js' ], filemtime( MDS_BASE_PATH . 'src/Assets/js/fire/fire.min.js' ), true );
@@ -75,33 +80,99 @@ class MillionDollarScript {
             <div class="milliondollarscript-fire">
                 <canvas id="milliondollarscript-fire" data-particle-src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/spark.png' ); ?>"></canvas>
 
-                <div class="milliondollarscript-header">
-                    <img src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/milliondollarscript-transparent.png' ); ?>" class="milliondollarscript-logo" alt="<?php Language::out( 'Million Dollar Script Logo' ); ?>"/>
-                </div>
+				<div class="milliondollarscript-header">
+					<img src="<?php echo esc_url( MDS_BASE_URL . 'src/Assets/images/milliondollarscript-transparent.png' ); ?>" class="milliondollarscript-logo" alt="<?php Language::out( 'Million Dollar Script Logo' ); ?>"/>
+				</div>
 
                 <ul class="milliondollarscript-menu">
                     <li style="--milliondollarscript-menu: 1">
-                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript' ) ); ?>"><?php Language::out( 'Main' ); ?></a>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_wizard' ) ); ?>"><?php Language::out( 'Setup Wizard' ); ?></a>
                     </li>
                     <li style="--milliondollarscript-menu: 2">
                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_admin' ) ); ?>"><?php Language::out( 'Admin' ); ?></a>
+                        <ul>
+                            <li>
+                                <a href="#"><?php Language::out( 'Pixel Management' ); ?></a>
+                                <ul>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>"><?php Language::out( 'Grids' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-packages' ) ); ?>"><?php Language::out( 'Packages' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-price-zones' ) ); ?>"><?php Language::out( 'Price Zones' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-not-for-sale' ) ); ?>"><?php Language::out( 'Not For Sale' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-backgrounds' ) ); ?>"><?php Language::out( 'Backgrounds' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-get-shortcodes' ) ); ?>"><?php Language::out( 'Shortcodes' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-process-pixels' ) ); ?>"><?php Language::out( 'Process Pixels' ); ?></a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="#"><?php Language::out( 'Orders' ); ?></a>
+                                <ul>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-waiting' ) ); ?>"><?php Language::out( 'Waiting' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-completed' ) ); ?>"><?php Language::out( 'Completed' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-reserved' ) ); ?>"><?php Language::out( 'Reserved' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-expired' ) ); ?>"><?php Language::out( 'Expired' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-denied' ) ); ?>"><?php Language::out( 'Denied' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-cancelled' ) ); ?>"><?php Language::out( 'Cancelled' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-orders-deleted' ) ); ?>"><?php Language::out( 'Deleted' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-map-of-orders' ) ); ?>"><?php Language::out( 'Map' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-clear-orders' ) ); ?>"><?php Language::out( 'Clear Orders' ); ?></a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="#"><?php Language::out( 'Pixel Approval' ); ?></a>
+                                <ul>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=N' ) ); ?>"><?php Language::out( 'Awaiting Approval' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-approve-pixels&app=Y' ) ); ?>"><?php Language::out( 'Approved' ); ?></a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="#"><?php Language::out( 'Reports' ); ?></a>
+                                <ul>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-transaction-log' ) ); ?>"><?php Language::out( 'Transaction Log' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-top-customers' ) ); ?>"><?php Language::out( 'Top Customers' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-outgoing-email' ) ); ?>"><?php Language::out( 'Outgoing Email' ); ?></a></li>
+                                    <li>
+                                        <a href="#"><?php Language::out( 'Clicks' ); ?></a>
+                                        <ul>
+                                            <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-top-clicks' ) ); ?>"><?php Language::out( 'Top Clicks' ); ?></a></li>
+                                            <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-click-reports' ) ); ?>"><?php Language::out( 'Click Reports' ); ?></a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="#"><?php Language::out( 'System' ); ?></a>
+                                <ul>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-system-information' ) ); ?>"><?php Language::out( 'System Information' ); ?></a></li>
+                                    <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-license' ) ); ?>"><?php Language::out( 'License' ); ?></a></li>
+                                </ul>
+                            </li>
+                            <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-compatibility' ) ); ?>"><?php Language::out( 'Compatibility' ); ?></a></li>
+                            <?php do_action('mds_main_menu_admin_submenu'); ?>
+                        </ul>
                     </li>
                     <li style="--milliondollarscript-menu: 3">
                         <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_options' ) ); ?>"><?php Language::out( 'Options' ); ?></a>
+                        <ul>
+                            <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_emails' ) ); ?>"><?php Language::out( 'Emails' ); ?></a></li>
+                        </ul>
                     </li>
-                    <li style="--milliondollarscript-menu: 4">
-                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_emails' ) ); ?>"><?php Language::out( 'Emails' ); ?></a>
-                    </li>
-                    <li style="--milliondollarscript-menu: 5">
-                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_changelog' ) ); ?>"><?php Language::out( 'Changelog' ); ?></a>
-                    </li>
-                    <li style="--milliondollarscript-menu: 6">
-                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_logs' ) ); ?>"><?php Language::out( 'Logs' ); ?></a>
-                    </li>
+					<li style="--milliondollarscript-menu: 5">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_changelog' ) ); ?>"><?php Language::out( 'Changelog' ); ?></a>
+					</li>
+					<li style="--milliondollarscript-menu: 6">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=milliondollarscript_logs' ) ); ?>"><?php Language::out( 'Logs' ); ?></a>
+					</li>
                     <li style="--milliondollarscript-menu: 7">
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-extensions' ) ); ?>"><?php Language::out( 'Extensions' ); ?></a>
+                        <ul>
+                            <?php do_action('mds_main_menu_extensions_submenu'); ?>
+                        </ul>
+                    </li>
+                    <?php do_action('mds_main_menu_top'); ?>
+                    <li style="--milliondollarscript-menu: 8">
                         <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php Language::out( 'View Site' ); ?></a>
                     </li>
-                    <li style="--milliondollarscript-menu: 8">
+                    <li style="--milliondollarscript-menu: 9">
                         <a target="_blank" href="https://milliondollarscript.com/"><?php Language::out( 'MDS' ); ?></a>
                     </li>
                 </ul>
@@ -231,6 +302,7 @@ class MillionDollarScript {
 							<a href="https://hostinger.com?REFERRALCODE=MILLIONDOLLARS" target="_blank" class="button button-secondary"><?php Language::out('Check out Hostinger Deals'); ?></a>
 						</p>
 					</div>
+
 				</div>
 
 				<div class="milliondollarscript-version milliondollarscript-section">

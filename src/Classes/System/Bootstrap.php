@@ -34,11 +34,9 @@ use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Forms\Forms;
 use MillionDollarScript\Classes\Web\Routes;
-use MillionDollarScript\Classes\Web\Permalinks;
 use MillionDollarScript\Classes\WooCommerce\WooCommerce;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceOptions;
-use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Pages\ApprovePixels;
 use MillionDollarScript\Classes\Pages\NFS;
 
@@ -224,7 +222,7 @@ class Bootstrap {
 		// Initialize metadata system and WordPress integration
 		add_action( 'init', [ '\MillionDollarScript\Classes\Data\MDSPageWordPressIntegration', 'initializeStatic' ] );
 
-// Initialize Grid Image Switcher for theme mode automation
+		// Initialize Grid Image Switcher for theme mode automation
 		add_action( 'init', [ '\\MillionDollarScript\\Classes\\Services\\GridImageSwitcher', 'init' ] );
 
 		// Initialize MDS Pixels Permalinks and old-base redirects
@@ -314,7 +312,8 @@ class Bootstrap {
 		// Load Admin AJAX
 		add_action( 'wp_ajax_mds_admin_ajax', [ Admin::class, 'ajax' ] );
 
-add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Admin\\Admin', 'update_language' ] );
+		add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Admin\\Admin', 'update_language' ] );
+
 		// Register slug migration AJAX explicitly so it works on Options page
 		add_action( 'wp_ajax_mds_migrate_slugs', [ '\\MillionDollarScript\\Classes\\Data\\Options', 'ajax_migrate_slugs' ] );
 
@@ -436,7 +435,6 @@ add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Ad
 
 		// Hook for when loaded
 		do_action( 'mds-loaded', $this );
-
 
 		// phpcs:disable
 		return $this;
