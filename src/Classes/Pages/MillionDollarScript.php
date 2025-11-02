@@ -146,6 +146,8 @@ class MillionDollarScript {
                                     <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-license' ) ); ?>"><?php Language::out( 'License' ); ?></a></li>
                                 </ul>
                             </li>
+							<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-page-management' ) ); ?>"><?php Language::out( 'Manage Pages' ); ?></a></li>
+							<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-create-pages' ) ); ?>"><?php Language::out( 'Create Pages' ); ?></a></li>
                             <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-compatibility' ) ); ?>"><?php Language::out( 'Compatibility' ); ?></a></li>
                             <?php do_action('mds_main_menu_admin_submenu'); ?>
                         </ul>
