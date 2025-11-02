@@ -15,6 +15,10 @@
     margin-top: 12px;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
 }
 
 .mds-extensions-header::before {
@@ -42,6 +46,59 @@
     margin: 0;
     position: relative;
     z-index: 1;
+}
+
+.mds-extensions-header-main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mds-extensions-portal-link {
+    position: relative;
+    z-index: 1;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.mds-extensions-portal-link:hover,
+.mds-extensions-portal-link:focus {
+    background: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    transform: translateY(-1px);
+}
+
+.mds-extensions-portal-link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.7);
+    outline-offset: 3px;
+}
+
+@media (min-width: 768px) {
+    .mds-extensions-header {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .mds-extensions-header-main {
+        max-width: 70%;
+    }
+
+    .mds-extensions-portal-link {
+        margin-left: auto;
+    }
 }
 
 /* Discovery Banner */
@@ -1172,7 +1229,7 @@ html.dark .mds-card-title-version {
 .mds-extensions-page .mds-discovery-banner .mds-banner-text h2 { color: #ffffff; font-weight: 700; margin-bottom: 8px; }
 .mds-extensions-page .mds-discovery-banner .mds-banner-text p { color: #e5e7eb; }
 .mds-extensions-page .mds-discovery-banner a,
-.mds-extensions-page .mds-extensions-header a { color: #ffffff; text-decoration: underline; }
+.mds-extensions-page .mds-extensions-header a { color: #ffffff; text-decoration: none; }
 
 /* Full-width CTA styling (used on main admin page) */
 .mds-cta-full { display: block; width: 100%; padding: 16px 20px; border-radius: 6px; background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%); color: #fff; }

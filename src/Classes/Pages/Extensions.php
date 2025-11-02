@@ -1427,8 +1427,13 @@ class Extensions {
         ?>
         <div class="wrap mds-extensions-page" id="mds-extensions-page">
             <div class="mds-extensions-header">
-                <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
-                <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
+                <div class="mds-extensions-header-main">
+                    <h1><?php echo esc_html( Language::get('Million Dollar Script Extensions') ); ?></h1>
+                    <p class="mds-extensions-subtitle"><?php echo esc_html( Language::get('Supercharge your pixel advertising with powerful extensions') ); ?></p>
+                </div>
+                <a class="mds-extensions-portal-link" href="<?php echo esc_url( 'https://milliondollarscript.com/portal/login' ); ?>" target="_blank" rel="noopener noreferrer">
+                    <?php echo esc_html( Language::get('Client Portal') ); ?>
+                </a>
             </div>
 
             <!-- In-page notices anchor: All notices render below header, above content -->
