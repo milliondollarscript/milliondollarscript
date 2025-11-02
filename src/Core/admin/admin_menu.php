@@ -26,7 +26,6 @@
  *
  */
 
-use MillionDollarScript\Classes\Forms\FormFields;
 use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
