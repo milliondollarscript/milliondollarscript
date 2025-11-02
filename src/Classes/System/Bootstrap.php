@@ -322,9 +322,8 @@ add_action( 'wp_ajax_mds_update_language', [ '\\MillionDollarScript\\Classes\\Ad
 		add_action( 'wp_ajax_mds_load_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'load_click_report_view_type' ] );
 		add_action( 'wp_ajax_mds_save_click_report_view_type', [ '\MillionDollarScript\Classes\Admin\Admin', 'save_click_report_view_type' ] );
 
-		// Disable admin email
+		// Disable admin email (admin-only)
 		add_action( 'wp_ajax_mds_disable_admin_email', [ 'MillionDollarScript\Classes\Email\Mail', 'handle_disable_admin_email' ] );
-		add_action( 'wp_ajax_nopriv_mds_disable_admin_email', [ 'MillionDollarScript\Classes\Email\Mail', 'handle_disable_admin_email' ] );
 
 		// Load Block Editor JS
 		add_action( 'enqueue_block_editor_assets', [ '\MillionDollarScript\Classes\Admin\Admin', 'block_editor_scripts' ] );

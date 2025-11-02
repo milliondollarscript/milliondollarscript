@@ -242,4 +242,24 @@ class Mail {
 
 		return $mail_result !== false;
 	}
+
+	/**
+	 * AJAX: Disable admin email notifications for this site (placeholder).
+	 * Requires administrator capability and a valid nonce.
+	 */
+	public static function handle_disable_admin_email(): void {
+		// Expect a standard admin nonce field named 'nonce' with action 'mds_admin_nonce'
+		$nonce = isset( $_REQUEST['nonce'] ) ? (string) $_REQUEST['nonce'] : '';
+		if ( ! wp_verify_nonce( $nonce, 'mds_admin_nonce' ) ) {
+			wp_send_json_error( [ 'message' => Language::get( 'Security check failed.' ) ], 403 );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => Language::get( 'Insufficient permissions' ) ], 403 );
+		}
+
+		// For now, just acknowledge the request without changing global WP settings.
+		// If a dedicated option is introduced later, toggle it here.
+		wp_send_json_success( [ 'message' => Language::get( 'Admin email notifications are managed via site settings.' ) ] );
+	}
 }

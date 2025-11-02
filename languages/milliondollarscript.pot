@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.2.42\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.2.44\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-10-29 17:53:07\n"
-"PO-Revision-Date: 2025-10-29 17:53:07\n"
-"X-Generator: Million Dollar Script Two 2.6.2.42\n"
+"POT-Creation-Date: 2025-11-01 21:02:33\n"
+"PO-Revision-Date: 2025-11-01 21:02:33\n"
+"X-Generator: Million Dollar Script Two 2.6.2.44\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -3280,6 +3280,9 @@ msgid "Now you should <a href=\"%PROCESS_PIXELS_URL%\">Process Pixels</a> to reg
 msgstr ""
 
 msgid "Invalid package data submitted. Please check the fields and try again."
+msgstr ""
+
+msgid "Admin email notifications are managed via site settings."
 msgstr ""
 
 msgid "Order Confirmed"
