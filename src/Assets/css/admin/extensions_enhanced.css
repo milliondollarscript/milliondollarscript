@@ -276,9 +276,9 @@
 .mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension),
 .mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension):disabled,
 .mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension)[disabled] {
-    background: #f8fafc;
+    background: #f8fafc !important;
     border: 1px solid #d7e3f8;
-    color: #0f172a;
+    color: #0f172a !important;
 }
 
 .mds-card-header-buttons:not(.mds-card-license-buttons) > .button.button-secondary:not(.mds-activate-extension):hover,
