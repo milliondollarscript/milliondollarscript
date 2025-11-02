@@ -403,8 +403,8 @@ function validate_block_size( $image_name, $BID ): bool {
 		return true;
 	}
 
-	$block_w = $_REQUEST['block_width'];
-	$block_h = $_REQUEST['block_height'];
+        $block_w = absint( $_REQUEST['block_width'] ?? 0 );
+        $block_h = absint( $_REQUEST['block_height'] ?? 0 );
 
 	if ( $b_row[ $image_name ] == '' ) {
 		// no data, assume that the default image will be loaded..

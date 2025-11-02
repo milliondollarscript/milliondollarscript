@@ -1437,11 +1437,11 @@ class Orders {
 		$result = $wpdb->get_results( $sql );
 
 		if ( ! empty( $result ) ) {
-			// Security hardening: disallow object instantiation during unserialize
-			$block_info = @unserialize( $result[0]->block_info, [ 'allowed_classes' => false ] );
-			if ( ! is_array( $block_info ) ) {
-				$block_info = [];
-			}
+                // Security hardening: disallow object instantiation during unserialize
+                $block_info = unserialize( $result[0]->block_info, [ 'allowed_classes' => false ] );
+                if ( $block_info === false || ! is_array( $block_info ) ) {
+                    $block_info = [];
+                }
 		}
 
 		$init = false;
@@ -2618,10 +2618,10 @@ class Orders {
 
 		if ( ! empty( $row ) ) {
 			// Security hardening: disallow object instantiation during unserialize
-			$block_info = @unserialize( $row['block_info'], [ 'allowed_classes' => false ] );
-			if ( ! is_array( $block_info ) ) {
-				$block_info = [];
-			}
+            $block_info = unserialize( $row['block_info'], [ 'allowed_classes' => false ] );
+            if ( ! is_array( $block_info ) ) {
+                $block_info = [];
+            }
 		}
 
 		$in_str = $temp_order_row['blocks'];

@@ -71,7 +71,7 @@ if ( $row['status'] == "sold" ) {
 
 		# hard coded above file to save a file read...
 
-		$mime_type = "image/x-png";
+        $mime_type = "image/png";
 
 		$data = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAABGdBTUEAALGPC/xhBQAAABdJREFUKFNjvHLlCgMeAJT+jxswjFBpAOAoCvbvqFc9AAAAAElFTkSuQmCC";
 		//$data = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAABGdBTUEAALGPC/xhBQAAABZJREFUKFNj/N/gwIAHAKXxIIYRKg0AB3qe55E8bNQAAAAASUVORK5CYII=";
@@ -84,12 +84,15 @@ if ( $row['status'] == "sold" ) {
 } else {
 
 	$file_name = MDS_CORE_PATH . "images/block.png";
-	$mime_type = "image/x-png";
+    $mime_type = "image/png";
 
 	# hard coded above file to save a file read...
 
 	$data = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAABGdBTUEAALGPC/xhBQAAABdJREFUKFNjvHLlCgMeAJT+jxswjFBpAOAoCvbvqFc9AAAAAElFTkSuQmCC";
 }
 
-header( "Content-type: $mime_type" );
+// Enforce MIME allowlist to prevent header abuse
+$allowed_mimes = [ 'image/png', 'image/jpeg', 'image/gif' ];
+$safe_mime = in_array( $mime_type, $allowed_mimes, true ) ? $mime_type : 'image/png';
+header( "Content-Type: $safe_mime" );
 echo base64_decode( $data );

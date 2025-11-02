@@ -40,8 +40,6 @@ if ( $image == '' ) {
 }
 
 header( "Cache-Control: max-age=60, must-revalidate" ); // HTTP/1.1
-
 header( "Expires: " . wp_date( 'r', time() + 60 ) ); // Date in the past
-
-header( "Content-type: image/x-png" );
+header( "Content-Type: image/png" );
 echo base64_decode( $image );

@@ -62,5 +62,5 @@ if ( isset($row['image_data']) && $row['image_data'] == '' ) {
 	//$row['image_data'] =  "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAABGdBTUEAALGPC/xhBQAAABZJREFUKFNj/N/gwIAHAKXxIIYRKg0AB3qe55E8bNQAAAAASUVORK5CYII=";
 }
 
-header( "Content-type: image/x-png" );
+header( "Content-Type: image/png" );
 echo base64_decode( $row['image_data'] );

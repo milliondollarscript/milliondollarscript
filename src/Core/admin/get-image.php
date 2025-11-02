@@ -57,13 +57,16 @@ if ( $row['image_data'] == '' ) {
 	#$file_name = "block.png";
 	$data = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAABGdBTUEAALGPC/xhBQAAABdJREFUKFNjvHLlCgMeAJT+jxswjFBpAOAoCvbvqFc9AAAAAElFTkSuQmCC";
 
-	header( "Content-type: image/png" );
+    header( "Content-Type: image/png" );
 	#$file = fopen ($file_name, 'r');
 	#$data = fread ($file, filesize($file_name));
 	echo base64_decode( $data );
 	#fclose($file);
 
 } else {
-	header( "Content-type: " . $row['mime_type'] );
-	echo base64_decode( $row['image_data'] );
+    // Enforce image MIME allowlist to prevent header abuse
+    $allowed_mimes = [ 'image/png', 'image/jpeg', 'image/gif' ];
+    $mime = in_array( $row['mime_type'], $allowed_mimes, true ) ? $row['mime_type'] : 'image/png';
+    header( "Content-Type: {$mime}" );
+    echo base64_decode( $row['image_data'] );
 }

@@ -80,9 +80,12 @@ if ( $row['image_data'] == '' ) {
 
 		$data = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAABGdBTUEAALGPC/xhBQAAABdJREFUKFNjvHLlCgMeAJT+jxswjFBpAOAoCvbvqFc9AAAAAElFTkSuQmCC";
 	}
-	header( "Content-type: image/x-png" );
-	echo base64_decode( $data );
+    header( "Content-Type: image/png" );
+    echo base64_decode( $data );
 } else {
-	header( "Content-type: " . $row['mime_type'] );
-	echo base64_decode( $row['image_data'] );
+    // Enforce image MIME allowlist to prevent header abuse
+    $allowed_mimes = [ 'image/png', 'image/jpeg', 'image/gif' ];
+    $mime = in_array( $row['mime_type'], $allowed_mimes, true ) ? $row['mime_type'] : 'image/png';
+    header( "Content-Type: {$mime}" );
+    echo base64_decode( $row['image_data'] );
 }
