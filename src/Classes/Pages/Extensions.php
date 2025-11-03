@@ -2011,6 +2011,7 @@ class Extensions {
                 'installed_version' => '',
                 'description'  => $extension['description'] ?? '',
                 'isPremium'    => $extension['is_premium'] ?? false,
+                'product_type' => $extension['product_type'] ?? '',
                 'file_name'    => $extension['file_name'] ?? '',
                 'file_path'    => $extension['file_path'] ?? '',
                 'created_at'   => $extension['created_at'] ?? '',
@@ -4758,7 +4759,7 @@ class Extensions {
             </div>
 
             <div class="mds-card-body">
-                <?php if ($pricing_html !== '') : ?>
+                <?php if ($pricing_html !== '' && $is_premium) : ?>
                     <?php echo $pricing_html; ?>
                 <?php elseif ($is_premium && $should_render_pricing) : ?>
                     <div class="mds-card-pricing mds-card-pricing--empty"><?php echo esc_html(Language::get('Pricing information will appear once Stripe plans are configured.')); ?></div>
@@ -5907,7 +5908,10 @@ class Extensions {
         if (!empty($features)) {
             $featuresHtml .= '<ul class="mds-plan-features">';
             foreach ($features as $feature) {
-                $featuresHtml .= '<li>' . esc_html($feature) . '</li>';
+                $feature_markup = self::sanitize_plan_feature_markup((string) $feature);
+                if ($feature_markup !== '') {
+                    $featuresHtml .= '<li>' . $feature_markup . '</li>';
+                }
             }
             $featuresHtml .= '</ul>';
         }
@@ -5991,11 +5995,14 @@ class Extensions {
 
         $feature_list = '';
         if (!empty($plan_data['features']) && is_array($plan_data['features'])) {
-            $items = array_map('sanitize_text_field', array_filter($plan_data['features']));
+            $items = array_filter($plan_data['features']);
             if (!empty($items)) {
                 $feature_list = '<ul class="mds-plan-features">';
                 foreach ($items as $item) {
-                    $feature_list .= '<li>' . esc_html($item) . '</li>';
+                    $feature_markup = self::sanitize_plan_feature_markup((string) $item);
+                    if ($feature_markup !== '') {
+                        $feature_list .= '<li>' . $feature_markup . '</li>';
+                    }
                 }
                 $feature_list .= '</ul>';
             }
@@ -8079,6 +8086,16 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 } else {
                     $detail = $data;
                 }
+            }
+
+            // Check if this is a service product - services require form submission first
+            $product_type = isset($detail['product_type']) ? strtolower(trim((string) $detail['product_type'])) : '';
+            if ($product_type === 'service' || $product_type === 'hosted_service') {
+                wp_send_json_error([
+                    'message' => Language::get('Services require consultation. Please contact us to discuss your requirements.'),
+                    'type' => 'service_consultation_required'
+                ], 400);
+                return;
             }
 
             $links = [];

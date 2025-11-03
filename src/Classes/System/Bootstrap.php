@@ -77,7 +77,7 @@ class Bootstrap {
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Wizard', 'menu' ], 12 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Extensions', 'menu' ], 13 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Account', 'menu' ], 14 );
-		
+
 		// Add server test page (only in development or when WP_DEBUG is enabled)
 		if (defined('WP_DEBUG') && WP_DEBUG) {
 			add_action( 'admin_menu', [ '\MillionDollarScript\Classes\System\ExtensionServerTest', 'add_admin_menu' ], 14 );
