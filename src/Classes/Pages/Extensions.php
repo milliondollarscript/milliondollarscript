@@ -1916,6 +1916,24 @@ class Extensions {
             $extensions = $data['extensions'];
         }
 
+        // Fetch Products (premium plugins) and merge with Extensions
+        // Products API already returns Extensions-compatible schema via server-side transformation
+        try {
+            $products = \MillionDollarScript\Classes\Products\ProductsClient::list_products([
+                'type'      => 'plugin',
+                'published' => true,
+                'limit'     => 100,
+            ]);
+
+            if (is_array($products) && !empty($products)) {
+                // Merge products into extensions array
+                $extensions = array_merge($extensions, $products);
+            }
+        } catch (\Exception $e) {
+            // Log error but continue with extensions only
+            error_log('fetch_available_extensions() - Failed to fetch products: ' . $e->getMessage());
+        }
+
         $transformed_extensions = [];
         foreach ($extensions as $extension) {
             // Normalize purchase links (server may return relative /store/checkout or absolute URLs)
@@ -3671,8 +3689,8 @@ class Extensions {
             'http://localhost:3030',
             'http://extension-server-dev:3000',
             'http://extension-server:3000',
-            'http://host.docker.internal:15346',
-            'http://localhost:15346',
+            'http://host.docker.internal:3030',
+            'http://localhost:3030',
         ];
 
         $normalized = [];
@@ -8000,12 +8018,22 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 if (empty($base)) {
                     continue;
                 }
+
+                // Try extensions endpoint first
                 $api_url = rtrim($base, '/') . '/api/public/extensions/' . urlencode($extension_id);
                 $res = wp_remote_get($api_url, $args);
 
                 if (is_wp_error($res)) {
-                    $errors[] = $base . ' => ' . $res->get_error_message();
-                    continue;
+                    $errors[] = $base . ' extensions => ' . $res->get_error_message();
+
+                    // Try products endpoint as fallback
+                    $api_url = rtrim($base, '/') . '/api/public/products/' . urlencode($extension_id);
+                    $res = wp_remote_get($api_url, $args);
+
+                    if (is_wp_error($res)) {
+                        $errors[] = $base . ' products => ' . $res->get_error_message();
+                        continue;
+                    }
                 }
 
                 $code = wp_remote_retrieve_response_code($res);
@@ -8013,6 +8041,18 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                     $response = $res;
                     $working_base = $base;
                     break;
+                } elseif ($code === 404) {
+                    // Try products endpoint as fallback for 404s
+                    $api_url = rtrim($base, '/') . '/api/public/products/' . urlencode($extension_id);
+                    $res = wp_remote_get($api_url, $args);
+
+                    if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
+                        $response = $res;
+                        $working_base = $base;
+                        break;
+                    }
+
+                    $errors[] = $base . ' => HTTP ' . $code . ' (tried both endpoints)';
                 } else {
                     $errors[] = $base . ' => HTTP ' . $code;
                 }

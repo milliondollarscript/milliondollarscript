@@ -22,7 +22,7 @@ class API {
         if (defined('MDS_EXTENSION_SERVER_URL')) {
             return rtrim((string) MDS_EXTENSION_SERVER_URL, '/');
         }
-        return 'http://localhost:15346';
+        return 'http://localhost:3030';
     }
 
     /**
