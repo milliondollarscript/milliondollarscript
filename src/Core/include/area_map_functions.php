@@ -270,6 +270,15 @@ WHERE (published = 'Y')
 
 	fwrite( $fh, "</map>" );
 	fclose( $fh );
+
+	// Ensure file metadata and opcode caches reflect the freshly generated map.
+	clearstatcache( false, $map_file );
+	if ( function_exists( 'opcache_invalidate' ) ) {
+		@opcache_invalidate( $map_file, true );
+	}
+	if ( function_exists( 'opcache_compile_file' ) ) {
+		@opcache_compile_file( $map_file );
+	}
 }
 
 function get_map_file_name( $BID ) {
