@@ -292,6 +292,72 @@ function updateTippyPosition() {
 	}
 }
 
+/**
+ * Safely parse the data payload stored on an <area> element.
+ *
+ * Some grids include legacy popup text that contains raw backslashes which
+ * aren't valid JSON escape sequences (for example "\WP_Post"). When that
+ * happens, jQuery leaves the raw string untouched and our tooltip logic never
+ * receives the structured data it expects. This helper falls back to the
+ * original attribute value, sanitises unsupported escape sequences, and caches
+ * the parsed object for reuse.
+ *
+ * @param {jQuery} $element area element wrapped in jQuery
+ * @returns {object|null} decoded data payload or null if parsing fails
+ */
+function mdsParseAreaData($element) {
+	if (!$element || $element.length === 0) {
+		return null;
+	}
+
+	let data = $element.data("data");
+
+	if (data && typeof data === "object") {
+		return data;
+	}
+
+	let raw = "";
+	if (typeof data === "string" && data.trim().length > 0) {
+		raw = data;
+	} else {
+		raw = $element.attr("data-data") || "";
+	}
+
+	if (!raw || typeof raw !== "string") {
+		return null;
+	}
+
+	const tryParse = (candidate) => {
+		try {
+			return JSON.parse(candidate);
+		} catch (error) {
+			return null;
+		}
+	};
+
+	let parsed = tryParse(raw);
+
+	if (!parsed) {
+		const sanitised = raw.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+		parsed = tryParse(sanitised);
+
+		if (!parsed) {
+			console.error(
+				"MDS Tooltip: Unable to parse data-data payload for tooltip",
+				{ raw },
+			);
+			return null;
+		}
+	}
+
+	if (parsed && typeof parsed === "object") {
+		$element.data("data", parsed);
+		return parsed;
+	}
+
+	return null;
+}
+
 function add_tippy() {
 	const defaultContent =
 		"<div class='ajax-loader' role='status' aria-live='polite'><span class='ajax-loader__spinner' aria-hidden='true'></span></div>";
@@ -326,7 +392,7 @@ function add_tippy() {
 
 				// Check for valid data attributes that are needed for tooltips
 				const $this = jQuery(this);
-				let tippyData = $this.data("data");
+				let tippyData = mdsParseAreaData($this);
 
 				// If data attributes are missing, try to extract them from attributes
 				if (!tippyData || !tippyData.banner_id || !tippyData.block_id) {
@@ -445,7 +511,7 @@ function add_tippy() {
 
 				// Get the data from the area element
 				const $reference = jQuery(instance.reference);
-				const data = $reference.data("data");
+				const data = mdsParseAreaData($reference);
 
 				// Check if we have valid data
 				if (!data || !data.banner_id || !data.block_id) {
@@ -613,11 +679,20 @@ function mds_load_tippy(tippy, $el, scalemap, type, isgrid) {
 }
 
 function mds_handle_mouseenter() {
-	window.click_data = jQuery(this).data("data");
+	const data = mdsParseAreaData(jQuery(this));
+	if (data) {
+		window.click_data = data;
+	}
 }
 
 function mds_handle_click() {
-	window.click_data = jQuery(this).data("data");
+	const data = mdsParseAreaData(jQuery(this));
+	if (!data) {
+		console.error("MDS Tooltip: Click handler missing area data payload.");
+		return;
+	}
+
+	window.click_data = data;
 
 	if (MDS.ENABLE_MOUSEOVER === "NO") {
 		const ajax_data = {
