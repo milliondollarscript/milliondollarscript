@@ -1,0 +1,64 @@
+[changelog]
+body = """
+{% if version %}## {{ version }}{% endif %}
+{% if commits %}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}
+- {{ commit.message | split(pat="\\n") | first | trim }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+"""
+
+[git]
+conventional = true
+filter_untracked = true
+sort_commits = "newest"
+
+tag_pattern = "^[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+
+[[git.commit_parsers]]
+message = "^feat"
+group = "Added"
+
+[[git.commit_parsers]]
+message = "^fix"
+group = "Fixed"
+
+[[git.commit_parsers]]
+message = "^perf"
+group = "Performance"
+
+[[git.commit_parsers]]
+message = "^refactor"
+group = "Changed"
+
+[[git.commit_parsers]]
+message = "^docs"
+group = "Documentation"
+
+[[git.commit_parsers]]
+message = "^test"
+group = "Tests"
+
+[[git.commit_parsers]]
+message = "^build"
+group = "Build"
+
+[[git.commit_parsers]]
+message = "^ci"
+group = "CI"
+
+[[git.commit_parsers]]
+message = "^chore"
+group = "Chore"
+
+[[git.commit_parsers]]
+message = "security"
+body = "security"
+group = "Security"
+
+[[git.commit_parsers]]
+message = ".*"
+group = "Other"
