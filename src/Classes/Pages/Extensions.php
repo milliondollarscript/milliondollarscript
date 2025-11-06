@@ -437,7 +437,7 @@ class Extensions {
             if (!empty($url)) {
                 return $url;
             }
-        $base = Options::get_option('extension_server_url', 'http://localhost:3030');
+        $base = Options::get_option('extension_server_url', 'https://milliondollarscript.com');
             return rtrim($base, '/') . '/store';
         });
     }
@@ -1519,8 +1519,8 @@ class Extensions {
                 'nonce'       => wp_create_nonce( 'mds_extensions_nonce' ),
                 'license_key' => '',
                 'settings_url'=> admin_url('admin.php?page=milliondollarscript_options#system'),
-                'extension_server_url' => (string) Options::get_option('extension_server_url', 'http://localhost:3030'),
-                'extension_server_public_url' => (string) Options::get_option('mds_extension_server_public_url', 'http://localhost:3030'),
+                'extension_server_url' => (string) Options::get_option('extension_server_url', 'https://milliondollarscript.com'),
+                'extension_server_public_url' => (string) Options::get_option('mds_extension_server_public_url', 'https://milliondollarscript.com'),
                 'site_id'     => $site_id,
                 'purchase'    => [
                     'status'   => $purchase,
@@ -1719,7 +1719,7 @@ class Extensions {
             <p><?php echo esc_html( Language::get('Connected to the Extension Server using a fallback URL.') ); ?></p>
             <p>
                 <?php echo esc_html( Language::get('Update your Extension Server URL in Million Dollar Script → Options → System to:') ); ?>
-                <code><?php echo esc_html( is_string($resolved_url) && !empty($resolved_url) ? (string)$resolved_url : 'http://localhost:3030' ); ?></code>.
+                <code><?php echo esc_html( is_string($resolved_url) && !empty($resolved_url) ? (string)$resolved_url : 'https://milliondollarscript.com' ); ?></code>.
                 <a class="mds-go-to-system" href="<?php echo esc_url( $settings_url ); ?>">
                     <?php echo esc_html( Language::get('Open System tab') ); ?>
                 </a>
@@ -1956,7 +1956,7 @@ class Extensions {
                 if (preg_match('#^https?://#i', $url)) {
                     return $url;
                 }
-                $base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : 'http://localhost:3030';
+                $base = is_string($working_base) && $working_base !== '' ? rtrim($working_base, '/') : 'https://milliondollarscript.com';
                 return $base . '/' . ltrim($url, '/');
             };
 
@@ -2202,7 +2202,8 @@ class Extensions {
         if (is_string($public) && $public !== '') {
             return rtrim($public, '/');
         }
-        return 'http://localhost:3030';
+        // Default to production URL; override with MDS_EXTENSION_SERVER_URL constant or wp-config for dev
+        return 'https://milliondollarscript.com';
     }
 
     /**
@@ -3687,11 +3688,11 @@ class Extensions {
             'http://extension-server-go:3030',
             'http://extension-server:3030',
             'http://host.docker.internal:3030',
-            'http://localhost:3030',
+            'https://milliondollarscript.com',
             'http://extension-server-dev:3000',
             'http://extension-server:3000',
             'http://host.docker.internal:3030',
-            'http://localhost:3030',
+            'https://milliondollarscript.com',
         ];
 
         $normalized = [];
@@ -7425,7 +7426,7 @@ class Extensions {
                     $candidate_base = rtrim($user_configured_url, '/');
                 }
                 if ($candidate_base === '') {
-                    $candidate_base = 'http://localhost:3030';
+                    $candidate_base = 'https://milliondollarscript.com';
                 }
                 return rtrim($candidate_base, '/') . '/' . ltrim($url, '/');
             };
@@ -8114,7 +8115,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 if (preg_match('#^https?://#i', $url)) {
                     return $url;
                 }
-                $prefix = is_string($base) && $base !== '' ? rtrim($base, '/') : 'http://localhost:3030';
+                $prefix = is_string($base) && $base !== '' ? rtrim($base, '/') : 'https://milliondollarscript.com';
                 return $prefix . '/' . ltrim($url, '/');
             };
 

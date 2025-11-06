@@ -14,7 +14,7 @@ class API {
      * @return string
      */
     private static function get_base_url(): string {
-        // Prefer option set in MDS settings; fallback to constant; then to local dev default
+        // Prefer option set in MDS settings; fallback to constant; then to production default
         $opt = is_callable([Options::class, 'get_option']) ? Options::get_option('extension_server_url', '') : '';
         if (is_string($opt) && $opt !== '') {
             return rtrim($opt, '/');
@@ -22,7 +22,8 @@ class API {
         if (defined('MDS_EXTENSION_SERVER_URL')) {
             return rtrim((string) MDS_EXTENSION_SERVER_URL, '/');
         }
-        return 'http://localhost:3030';
+        // Default to production URL; override with MDS_EXTENSION_SERVER_URL constant or wp-config for dev
+        return 'https://milliondollarscript.com';
     }
 
     /**

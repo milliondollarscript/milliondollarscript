@@ -28,7 +28,8 @@ class ProductsClient {
         if (defined('MDS_EXTENSION_SERVER_URL')) {
             return rtrim((string) MDS_EXTENSION_SERVER_URL, '/');
         }
-        return 'http://localhost:3030';
+        // Default to production URL; override with MDS_EXTENSION_SERVER_URL constant or wp-config for dev
+        return 'https://milliondollarscript.com';
     }
 
     /**

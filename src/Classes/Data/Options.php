@@ -1206,8 +1206,8 @@ class Options {
 
 				// Extension Server URL
 				Field::make( 'text', MDS_PREFIX . 'extension_server_url', Language::get( 'Extension Server URL' ) )
-					->set_default_value( 'https://extensions.milliondollarscript.com' )
-					->set_help_text( Language::get( 'The URL of the extension server for automatic updates and downloads. Use http://extension-server-go:3030 or http://localhost:3030 for development or your production server URL. Default: https://extensions.milliondollarscript.com' ) ),
+					->set_default_value( 'https://milliondollarscript.com' )
+					->set_help_text( Language::get( 'The URL of the extension server for automatic updates and downloads. Use http://extension-server-go:8080 or http://localhost:8080 for development or your production server URL. Default: https://milliondollarscript.com' ) ),
 
 				// Portal auto-account creation
 				Field::make( 'radio', MDS_PREFIX . 'extension_portal_auto_accounts', Language::get( 'Automatically create client portal accounts for extension purchases?' ) )

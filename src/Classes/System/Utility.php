@@ -1910,15 +1910,17 @@ class Utility {
 
     /**
      * Check if we're in a development environment
-     * 
+     *
      * @return bool True if development environment
      */
     public static function is_development_environment(): bool {
-        $extension_server_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
-        return strpos($extension_server_url, 'localhost') !== false || 
+        $extension_server_url = Options::get_option('extension_server_url', 'https://milliondollarscript.com');
+        // Check if URL contains development indicators or uses unencrypted HTTP
+        return strpos($extension_server_url, 'localhost') !== false ||
                strpos($extension_server_url, '127.0.0.1') !== false ||
                strpos($extension_server_url, 'host.docker.internal') !== false ||
-               strpos($extension_server_url, 'http://') === 0;
+               strpos($extension_server_url, 'extension-server-go') !== false ||
+               (strpos($extension_server_url, 'http://') === 0 && strpos($extension_server_url, 'milliondollarscript.com') === false);
     }
 
 	/**
