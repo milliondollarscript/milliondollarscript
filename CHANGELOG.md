@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.4 - 2025-11-08
+
+### Chore
+
+- update extension server URL defaults to production
+
+
 ## 2.6.3 - 2025-11-05
 
 - Automated SemVer bump + git-cliff changelog generation now runs in the release hook so future releases stay in sync with GitHub notes.
