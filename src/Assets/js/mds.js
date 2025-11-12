@@ -890,18 +890,42 @@ function mds_init(el, scalemap, tippy, type, isgrid) {
 			console.error("[MDS ERROR] ImageMap function is not defined!");
 			return;
 		}
-		ImageMap(el, scalemap); // Pass scalemap parameter
 
-		mds_loaded_event($el, scalemap, tippy, type, isgrid);
+		// Initialize ImageMap after image loads to ensure proper dimensions
+		const initImageMap = function() {
+			ImageMap(el, scalemap); // Pass scalemap parameter
+			mds_loaded_event($el, scalemap, tippy, type, isgrid);
 
-		// Handle Tippy loading
-		const tooltips_deferred = mds_load_tippy(
-			tippy,
-			$el,
-			scalemap,
-			type,
-			isgrid,
-		);
+			// Handle Tippy loading
+			const tooltips_deferred = mds_load_tippy(
+				tippy,
+				$el,
+				scalemap,
+				type,
+				isgrid,
+			);
+		};
+
+		// Check if image is already loaded
+		if (domEl && domEl.tagName === 'IMG') {
+			if (domEl.complete && domEl.naturalWidth > 0) {
+				// Image already loaded, initialize immediately
+				initImageMap();
+			} else {
+				// Wait for image to load
+				$el.on('load', function() {
+					initImageMap();
+				});
+				// Also set error handler to prevent hanging
+				$el.on('error', function() {
+					console.warn('[MDS WARN] Image failed to load, initializing ImageMap anyway');
+					initImageMap();
+				});
+			}
+		} else {
+			// Not an image element, initialize immediately
+			initImageMap();
+		}
 	} catch (error) {
 		console.error(
 			"[MDS ERROR] Error during mds_init:",

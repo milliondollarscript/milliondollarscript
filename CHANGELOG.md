@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.6 - 2025-11-12
+
+### Added
+
+- update extension server URLs to production and implement new update channel system
+
+
 ## 2.6.4 - 2025-11-08
 
 ### Chore

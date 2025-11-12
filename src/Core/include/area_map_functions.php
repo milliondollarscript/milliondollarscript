@@ -87,7 +87,8 @@ function render_map_area( $fh, $data, $b_row ) {
 	 */
 	$data_values = apply_filters( 'mds_pixel_area_data_values', $data_values, $data, $b_row, $BID );
 
-	fwrite( $fh, '<area href="" data-data="' . htmlspecialchars( json_encode( $data_values, JSON_HEX_QUOT | JSON_HEX_APOS ), ENT_QUOTES, 'UTF-8' ) . '" coords="' . $data['x1'] . ',' . $data['y1'] . ',' . ( $x2 + $b_row['block_width'] ) . ',' . ( $y2 + $b_row['block_height'] ) . '"' );
+	$coords = $data['x1'] . ',' . $data['y1'] . ',' . ( $x2 + $b_row['block_width'] ) . ',' . ( $y2 + $b_row['block_height'] );
+	fwrite( $fh, '<area href="" data-data="' . htmlspecialchars( json_encode( $data_values, JSON_HEX_QUOT | JSON_HEX_APOS ), ENT_QUOTES, 'UTF-8' ) . '" coords="' . $coords . '" data-coords="' . $coords . '"' );
 	if ( $ENABLE_MOUSEOVER == 'NO' ) {
 		fwrite( $fh, " title=\"" . htmlspecialchars( $data['alt_text'], ENT_QUOTES, 'UTF-8' ) . "\" alt=\"" . htmlspecialchars( $data['alt_text'], ENT_QUOTES, 'UTF-8' ) . "\"" );
 	}
