@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.6.7 - 2025-11-12
+
+### Added
+
+- update extension server URLs to production and implement new update channel system
+
+
+### Fixed
+
+- ensure ImageMap initialization after image load
+
+
 ## 2.6.6 - 2025-11-12
 
 ### Added

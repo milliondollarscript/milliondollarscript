@@ -171,7 +171,7 @@ class CorePluginUpdateVcsApi {
 
 		// Make request to extension server
 		$response = wp_remote_post(
-			$serverUrl . '/api/public/v1/core-plugin/check-update',
+			$serverUrl . '/api/public/core-plugin/v1/check-update',
 			[
 				'headers'   => [
 					'Content-Type' => 'application/json',

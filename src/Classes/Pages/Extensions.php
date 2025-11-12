@@ -1442,8 +1442,8 @@ class Extensions {
             // Show purchase/fallback notices positioned below the header, above the extensions grid
             self::print_license_expiry_notices();
             $purchase = isset($_GET['purchase']) ? sanitize_text_field($_GET['purchase']) : '';
-            $ext_param = isset($_GET['ext']) ? sanitize_text_field($_GET['ext']) : '';
-            if ($purchase === 'success' && $ext_param !== '') : ?>
+            $session_param = isset($_GET['session']) ? sanitize_key($_GET['session']) : '';
+            if ($purchase === 'success' && $session_param !== '') : ?>
                 <div class="notice notice-success">
                     <p><?php echo esc_html( Language::get('Purchase received. Activation will be available once payment clears. You may need to refresh in a minute.') ); ?></p>
                 </div>
@@ -1509,10 +1509,39 @@ class Extensions {
             
             // Create the data to be passed to JavaScript
             $purchase = isset($_GET['purchase']) ? sanitize_text_field($_GET['purchase']) : '';
-            $ext_param = isset($_GET['ext']) ? sanitize_text_field($_GET['ext']) : '';
-            $ext_slug_param = isset($_GET['extSlug']) ? sanitize_text_field($_GET['extSlug']) : '';
-            $claim_token_param = isset($_GET['claimToken']) ? sanitize_text_field($_GET['claimToken']) : '';
             $site_id = home_url();
+
+            // Initialize purchase data with default status
+            $purchase_data = [
+                'status'       => $purchase,
+                'ext_id'       => '',
+                'ext_slug'     => '',
+                'claim_token'  => '',
+            ];
+
+            // Handle secure session-based claim token retrieval
+            if ($purchase === 'success' && !empty($_GET['session'])) {
+                $session_id = sanitize_key($_GET['session']);
+                $claim_key = 'mds_claim_' . $session_id;
+
+                // Retrieve claim data from transient
+                $claim_data = get_transient($claim_key);
+
+                if ($claim_data && is_array($claim_data)) {
+                    // SUCCESS: Token retrieved securely from server-side storage
+                    $purchase_data['status']      = 'success';
+                    $purchase_data['claim_token'] = isset($claim_data['claim_token']) ? $claim_data['claim_token'] : '';
+                    $purchase_data['ext_slug']    = isset($claim_data['ext_slug']) ? $claim_data['ext_slug'] : '';
+                    $purchase_data['ext_id']      = isset($claim_data['ext_id']) ? $claim_data['ext_id'] : '';
+
+                    // Delete transient immediately (one-time use for security)
+                    delete_transient($claim_key);
+                } else {
+                    // EXPIRED or INVALID: Show session expired status
+                    $purchase_data['status']  = 'session_expired';
+                    $purchase_data['message'] = Language::get('Your claim session has expired. Please claim your license manually using the license key from your email.');
+                }
+            }
 
             $extensions_data = [
                 'ajax_url'    => admin_url( 'admin-ajax.php' ),
@@ -1522,12 +1551,7 @@ class Extensions {
                 'extension_server_url' => (string) Options::get_option('extension_server_url', 'https://milliondollarscript.com'),
                 'extension_server_public_url' => (string) Options::get_option('mds_extension_server_public_url', 'https://milliondollarscript.com'),
                 'site_id'     => $site_id,
-                'purchase'    => [
-                    'status'   => $purchase,
-                    'ext_id'   => $ext_param,
-                    'ext_slug' => $ext_slug_param,
-                    'claim_token' => $claim_token_param,
-                ],
+                'purchase'    => $purchase_data,
                 'text'        => [
                     'manage_license'       => Language::get('Manage license'),
                     'hide_license'         => Language::get('Hide'),
@@ -8028,6 +8052,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
         $plan_raw     = isset($_POST['plan']) ? sanitize_text_field(wp_unslash($_POST['plan'])) : '';
         $price_raw    = isset($_POST['price_id']) ? sanitize_text_field(wp_unslash($_POST['price_id'])) : '';
 
+
         if (empty($extension_id)) {
             wp_send_json_error(['message' => Language::get('Extension ID is required.')], 400);
             return;
@@ -8103,6 +8128,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
             }
 
+
             $response_body = wp_remote_retrieve_body($response);
             $data = json_decode($response_body, true);
 
@@ -8136,6 +8162,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             if (isset($detail['purchase']) && is_array($detail['purchase']) && isset($detail['purchase']['links']) && is_array($detail['purchase']['links'])) {
                 $links = $detail['purchase']['links'];
             }
+
 
             if (empty($links)) {
                 wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
@@ -8196,13 +8223,30 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
             }
 
+
             // Normalize to absolute URL
             $absolute = $abs($selected, $working_base);
             if (!$absolute) {
                 wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
             }
 
-            $checkout_url = self::normalize_public_checkout_url($absolute);
+
+            // DON'T normalize - we need the Docker-internal URL for wp_remote_post
+            // normalize_public_checkout_url would convert extension-server-go:3030 → localhost:3030
+            // which won't work from inside the WordPress container
+            $checkout_endpoint = $absolute;
+
+            // Ensure /api/public prefix is in the path
+            $parsed_checkout_url = wp_parse_url($checkout_endpoint);
+            if (isset($parsed_checkout_url['path']) && strpos($parsed_checkout_url['path'], '/api/public/') !== 0) {
+                // Add /api/public prefix to path
+                $path = ltrim($parsed_checkout_url['path'], '/');
+                $checkout_endpoint = $parsed_checkout_url['scheme'] . '://' . $parsed_checkout_url['host']
+                    . (isset($parsed_checkout_url['port']) ? ':' . $parsed_checkout_url['port'] : '')
+                    . '/api/public/' . $path
+                    . (isset($parsed_checkout_url['query']) ? '?' . $parsed_checkout_url['query'] : '');
+            }
+
 
             // Derive a stable site ID and a one-time claim token
             $site_id = home_url();
@@ -8214,14 +8258,26 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 $ext_slug_for_claim = sanitize_title($detail['name']);
             }
 
-            // Append return URLs so Stripe redirects back to the WP admin Extensions page
+            // Generate a separate random session ID (NOT derived from claim token)
+            $session_id = bin2hex(random_bytes(16)); // 32-char hex, cryptographically random
+
+            // Store claim data in transient (expires in 1 hour)
+            $claim_data = [
+                'claim_token' => $claim_token,
+                'ext_slug'    => $ext_slug_for_claim,
+                'ext_id'      => $extension_id,
+                'created_at'  => time(),
+            ];
+            $claim_key = 'mds_claim_' . $session_id;
+            set_transient($claim_key, $claim_data, HOUR_IN_SECONDS);
+
+            // Build return URLs so Stripe redirects back to the WP admin Extensions page
+            // Only pass session ID (NOT claim token) in URL
             $success_url = add_query_arg(
                 [
                     'page'     => 'mds-extensions',
                     'purchase' => 'success',
-                    'ext'      => $extension_id,
-                    'extSlug'  => $ext_slug_for_claim,
-                    'claimToken' => $claim_token,
+                    'session'  => $session_id,
                 ],
                 admin_url('admin.php')
             );
@@ -8233,28 +8289,86 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 ],
                 admin_url('admin.php')
             );
-            $checkout_url = add_query_arg(
-                [
-                    'successUrl' => rawurlencode($success_url),
-                    'cancelUrl'  => rawurlencode($cancel_url),
-                    // Pass-through metadata for Stripe checkout session
-                    'siteId'     => rawurlencode($site_id),
-                    'claimToken' => rawurlencode($claim_token),
-                    'extensionSlug' => rawurlencode($ext_slug_for_claim),
-                ],
-                $checkout_url
-            );
 
-            $portal_auto_accounts = Options::get_option('extension_portal_auto_accounts', 'yes');
-            if (is_string($portal_auto_accounts)) {
-                $normalized = strtolower(trim((string) $portal_auto_accounts));
-                if (in_array($normalized, ['no', 'disabled', 'disable', 'off', 'false', '0'], true)) {
-                    $checkout_url = add_query_arg('portalAccount', 'disabled', $checkout_url);
-                }
+            // Parse the checkout endpoint URL to extract price/plan info from query params
+            $parsed_checkout = wp_parse_url($checkout_endpoint);
+            $checkout_query_params = [];
+            if (isset($parsed_checkout['query'])) {
+                parse_str($parsed_checkout['query'], $checkout_query_params);
+            }
+            $checkout_base = isset($parsed_checkout['scheme']) && isset($parsed_checkout['host'])
+                ? $parsed_checkout['scheme'] . '://' . $parsed_checkout['host']
+                    . (isset($parsed_checkout['port']) ? ':' . $parsed_checkout['port'] : '')
+                    . (isset($parsed_checkout['path']) ? $parsed_checkout['path'] : '')
+                : $checkout_endpoint;
+
+            // Remove query string from base URL if present
+            if (strpos($checkout_base, '?') !== false) {
+                $checkout_base = substr($checkout_base, 0, strpos($checkout_base, '?'));
             }
 
-            wp_send_json_success(['checkout_url' => $checkout_url], 200);
+            // Build metadata to be passed to Stripe (claim token goes in metadata, NOT in URL)
+            $checkout_metadata = [
+                'site_id'        => $site_id,
+                'claim_token'    => $claim_token,
+                'extension_slug' => $ext_slug_for_claim,
+                'extension_id'   => $extension_id,
+            ];
+
+            // Build JSON payload for POST request to extension server
+            $checkout_payload = [
+                'priceId'        => isset($checkout_query_params['priceId']) ? $checkout_query_params['priceId'] : '',
+                'successUrl'     => $success_url,
+                'cancelUrl'      => $cancel_url,
+                'plan'           => isset($checkout_query_params['plan']) ? $checkout_query_params['plan'] : $plan,
+                'extensionSlug'  => $ext_slug_for_claim,
+                'metadata'       => $checkout_metadata,
+                'allowPromotion' => true,
+            ];
+
+
+            // Make POST request to extension server to create Stripe checkout session
+            $checkout_response = wp_remote_post($checkout_base, [
+                'timeout'   => 15,
+                'headers'   => [
+                    'Content-Type' => 'application/json',
+                    'User-Agent'   => 'MDS-WordPress-Plugin/' . MDS_VERSION,
+                ],
+                'body'      => wp_json_encode($checkout_payload),
+                'sslverify' => !Utility::is_development_environment(),
+            ]);
+
+
+            if (is_wp_error($checkout_response)) {
+                wp_send_json_error(['message' => Language::get('Failed to create checkout session: ') . $checkout_response->get_error_message()], 500);
+                return;
+            }
+
+
+            $checkout_code = wp_remote_retrieve_response_code($checkout_response);
+            if ($checkout_code !== 200) {
+                $error_body = wp_remote_retrieve_body($checkout_response);
+                $error_data = json_decode($error_body, true);
+                $error_message = isset($error_data['message']) ? $error_data['message'] : 'Failed to create checkout session';
+                wp_send_json_error(['message' => Language::get($error_message)], $checkout_code);
+                return;
+            }
+
+            $checkout_body = wp_remote_retrieve_body($checkout_response);
+            $checkout_data = json_decode($checkout_body, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE ||
+                empty($checkout_data['session']) ||
+                empty($checkout_data['session']['url'])) {
+                wp_send_json_error(['message' => Language::get('Invalid checkout response from extension server.')], 500);
+                return;
+            }
+
+            // Return Stripe checkout URL (NOT our checkout endpoint)
+            // This URL is safe - it's from Stripe and contains NO claim token
+            wp_send_json_success(['checkout_url' => $checkout_data['session']['url']], 200);
         } catch (\Exception $e) {
+            // Log the exception for debugging
             // Keep logs minimal; do not expose internal details
             wp_send_json_error(['message' => Language::get('Purchase unavailable for this extension.')], 400);
         }
