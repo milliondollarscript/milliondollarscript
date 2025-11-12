@@ -12,8 +12,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-11-11 23:00:41\n"
-"PO-Revision-Date: 2025-11-11 23:00:41\n"
+"POT-Creation-Date: 2025-11-12 14:38:49\n"
+"PO-Revision-Date: 2025-11-12 14:38:49\n"
 "X-Generator: Million Dollar Script Two 2.6.6\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
@@ -2922,6 +2922,9 @@ msgstr ""
 msgid "No extensions installed."
 msgstr ""
 
+msgid "Your claim session has expired. Please claim your license manually using the license key from your email."
+msgstr ""
+
 msgid "Manage license"
 msgstr ""
 
@@ -3199,6 +3202,12 @@ msgid "Invalid response from extension server."
 msgstr ""
 
 msgid "Services require consultation. Please contact us to discuss your requirements."
+msgstr ""
+
+msgid "Failed to create checkout session: "
+msgstr ""
+
+msgid "Invalid checkout response from extension server."
 msgstr ""
 
 msgid "Missing required fields."

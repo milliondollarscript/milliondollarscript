@@ -890,6 +890,15 @@ $(document).on('click', '.mds-purchase-extension', function (e) {
 	(function autoClaimAfterPurchase() {
 		try {
 			const p = (window.MDS_EXTENSIONS_DATA && MDS_EXTENSIONS_DATA.purchase) || {};
+
+			// Handle session expiration
+			if (p.status === 'session_expired') {
+				const message = p.message || 'Your claim session has expired. Please claim your license manually using the license key from your email.';
+				showNotice('warning', message, false);
+				return;
+			}
+
+			// Handle successful purchase with claim token (token from PHP, NOT from URL)
 			if (!p || p.status !== 'success') return;
 			const claimToken = String(p.claim_token || '').trim();
 			const extSlug = String(p.ext_slug || '').trim();
@@ -918,7 +927,7 @@ $(document).on('click', '.mds-purchase-extension', function (e) {
 					success: function (resp) {
 						if (resp && resp.success) {
 							showNotice('success', 'License claimed. You can now install the extension.');
-							setTimeout(() => window.location.replace(window.location.href.replace(/([?&])purchase=success[^&]*/,'$1')), 1500);
+							setTimeout(() => window.location.replace(window.location.href.replace(/([?&])(purchase|session)=[^&]*/g,'$1').replace(/[?&]$/,'')), 1500);
 						} else {
 							if (attempts < maxAttempts) {
 								setTimeout(attemptClaim, 5000);
