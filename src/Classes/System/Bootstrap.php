@@ -71,6 +71,9 @@ class Bootstrap {
 		// Initialize theme hooks for dark mode support
 		add_action( 'init', [ '\MillionDollarScript\Classes\Web\Styles', 'init_theme_hooks' ] );
 
+		// Register dashboard menu items
+		add_action( 'mds_register_dashboard_menu', [ '\MillionDollarScript\Classes\Admin\Core_Dashboard_Menu', 'register' ] );
+
 		// Register admin pages
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\MillionDollarScript', 'menu' ], 9 );
 		add_action( 'admin_menu', [ '\MillionDollarScript\Classes\Pages\Logs', 'menu' ], 11 );

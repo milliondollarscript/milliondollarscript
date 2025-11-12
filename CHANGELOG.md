@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.6.9 - 2025-11-12
+
+### Added
+
+- update extension server URLs to production and implement new update channel system
+
+
+### Fixed
+
+- improve session expiration UX and URL cleanup
+
+- fix update checker endpoint and purchase flow for Docker networking
+
+- ensure ImageMap initialization after image load
+
+
 ## 2.6.8 - 2025-11-12
 
 ### Added
