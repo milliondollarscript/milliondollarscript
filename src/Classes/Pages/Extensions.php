@@ -1843,7 +1843,6 @@ class Extensions {
      */
     protected static function fetch_available_extensions(?array $license_map = null): array {
         $user_configured_url = Options::get_option('extension_server_url', 'http://extension-server-go:3030');
-        $license_key = ''; // This is deprecated
 
         $args = [
             'timeout' => 30,
@@ -1853,10 +1852,6 @@ class Extensions {
             ],
             'sslverify' => !Utility::is_development_environment(),
         ];
-
-        if (!empty($license_key)) {
-            $args['headers']['x-license-key'] = $license_key;
-        }
 
         $response = null;
         $working_base = null;
@@ -1944,9 +1939,18 @@ class Extensions {
                 'default'  => null,
                 'options'  => [],
             ];
+            $purchase_data = is_array($extension['purchase'] ?? null) ? $extension['purchase'] : [];
             $server_links = [];
-            if (isset($extension['purchase']) && is_array($extension['purchase']) && isset($extension['purchase']['links']) && is_array($extension['purchase']['links'])) {
-                $server_links = $extension['purchase']['links'];
+            $purchase_options = [];
+
+            if (isset($purchase_data['links']) && is_array($purchase_data['links'])) {
+                $server_links = $purchase_data['links'];
+            }
+            if (isset($purchase_data['options']) && is_array($purchase_data['options'])) {
+                $purchase_options = $purchase_data['options'];
+            }
+            if (empty($server_links) && isset($extension['purchase_links']) && is_array($extension['purchase_links'])) {
+                $server_links = $extension['purchase_links'];
             }
 
             $abs = function($url) use ($working_base) {
@@ -1961,10 +1965,20 @@ class Extensions {
             };
 
             if (!empty($server_links)) {
-                $purchase_links['one_time'] = isset($server_links['oneTime']) ? $abs($server_links['oneTime']) : null;
-                $purchase_links['monthly']  = isset($server_links['monthly']) ? $abs($server_links['monthly']) : null;
-                $purchase_links['yearly']   = isset($server_links['yearly']) ? $abs($server_links['yearly']) : null;
-                $purchase_links['default']  = isset($server_links['default']) ? $abs($server_links['default']) : null;
+                if (isset($server_links['one_time'])) {
+                    $purchase_links['one_time'] = $abs($server_links['one_time']);
+                } elseif (isset($server_links['oneTime'])) {
+                    $purchase_links['one_time'] = $abs($server_links['oneTime']);
+                }
+                if (isset($server_links['monthly'])) {
+                    $purchase_links['monthly'] = $abs($server_links['monthly']);
+                }
+                if (isset($server_links['yearly'])) {
+                    $purchase_links['yearly'] = $abs($server_links['yearly']);
+                }
+                if (isset($server_links['default'])) {
+                    $purchase_links['default'] = $abs($server_links['default']);
+                }
                 if (isset($server_links['options']) && is_array($server_links['options'])) {
                     foreach ($server_links['options'] as $planKey => $optionList) {
                         if (!is_array($optionList)) {
@@ -1986,12 +2000,22 @@ class Extensions {
                         }
                         if (!empty($normalizedOptions)) {
                             $purchase_links['options'][$planKey] = $normalizedOptions;
+                            $purchase_options[$planKey] = $normalizedOptions;
                         }
                     }
                 }
             }
 
             $normalized_meta = self::normalize_extension_metadata($extension['metadata'] ?? []);
+
+            $has_purchase_links = !empty($purchase_links['one_time']) ||
+                !empty($purchase_links['monthly']) ||
+                !empty($purchase_links['yearly']) ||
+                !empty($purchase_links['default']);
+            $purchase_any_available = !empty($purchase_data['anyAvailable']) || $has_purchase_links || !empty($extension['can_purchase']);
+            $can_purchase_flag = !empty($extension['can_purchase']) || $purchase_any_available;
+            $explicit_is_premium = !empty($extension['is_premium']) || !empty($extension['isPremium']);
+            $is_premium = $explicit_is_premium || $purchase_any_available;
 
             $pricing_overview = [];
             if (!empty($extension['pricing_overview']) && is_array($extension['pricing_overview'])) {
@@ -2010,7 +2034,8 @@ class Extensions {
                 'available_version' => $available_version,
                 'installed_version' => '',
                 'description'  => $extension['description'] ?? '',
-                'isPremium'    => $extension['is_premium'] ?? false,
+                'isPremium'    => $is_premium,
+                'is_premium'   => $is_premium,
                 'product_type' => $extension['product_type'] ?? '',
                 'file_name'    => $extension['file_name'] ?? '',
                 'file_path'    => $extension['file_path'] ?? '',
@@ -2024,11 +2049,11 @@ class Extensions {
                 'pricing_overview' => $pricing_overview,
                 // New: pass through purchase availability and normalized links for WP UI
                 'purchase'     => [
-                    'anyAvailable' => (bool) ( $extension['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) ),
-                    'options'      => $purchase_links['options'],
+                    'anyAvailable' => $purchase_any_available,
+                    'options'      => $purchase_options,
                 ],
                 'purchase_links' => $purchase_links,
-                'can_purchase'   => (bool) ( $extension['purchase']['anyAvailable'] ?? ( $purchase_links['one_time'] || $purchase_links['monthly'] || $purchase_links['yearly'] || $purchase_links['default'] ) ),
+                'can_purchase'   => $can_purchase_flag,
             ];
         }
 
@@ -2202,7 +2227,16 @@ class Extensions {
         if (is_string($public) && $public !== '') {
             return rtrim($public, '/');
         }
-        // Default to production URL; override with MDS_EXTENSION_SERVER_URL constant or wp-config for dev
+
+        $configured = Options::get_option('extension_server_url', '');
+        if (is_string($configured) && $configured !== '') {
+            return rtrim($configured, '/');
+        }
+
+        if (defined('MDS_EXTENSION_SERVER_URL')) {
+            return rtrim((string) MDS_EXTENSION_SERVER_URL, '/');
+        }
+
         return 'https://milliondollarscript.com';
     }
 
@@ -3687,11 +3721,10 @@ class Extensions {
             $user_configured_url,
             'http://extension-server-go:3030',
             'http://extension-server:3030',
-            'http://host.docker.internal:3030',
-            'https://milliondollarscript.com',
             'http://extension-server-dev:3000',
             'http://extension-server:3000',
             'http://host.docker.internal:3030',
+            'http://host.docker.internal:3000',
             'https://milliondollarscript.com',
         ];
 

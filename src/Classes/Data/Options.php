@@ -1230,14 +1230,14 @@ class Options {
 
 				// Plugin updates
 				Field::make( 'select', MDS_PREFIX . 'updates', Language::get( 'Plugin updates' ) )
-					->set_default_value( 'yes' )
+					->set_default_value( 'stable' )
 					->set_options( [
-						'yes'      => Language::get( 'Update' ),
-						'no'       => Language::get( 'Don\'t update' ),
-						'snapshot' => Language::get( 'Snapshot' ),
-						'dev'      => Language::get( 'Development' )
+						'no'     => Language::get( 'Don\'t update' ),
+						'stable' => Language::get( 'Stable' ),
+						'beta'   => Language::get( 'Beta' ),
+						'alpha'  => Language::get( 'Alpha' )
 					] )
-					->set_help_text( Language::get( '<strong>Update</strong> - Updates will be done normally like all other plugins. An update will be found when a new stable version is released on the "main" branch. Code from the other branches will eventually make it\'s way here when it\'s deemed to be stable enough.<br /><br /><strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin at all. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Snapshot</strong> - Updates will be checked for in the "snapshot" branch. These are lightly tested development snapshots. These snapshots are created periodically at points in the "dev" branch while working towards the next release when it\'s thought to be somewhat more stable and new features are finished and ready for testing.<br /><br /><strong>Development</strong> - This is the "dev" branch. This is where the development happens. This branch contains new and untested code for the next release. There are almost certainly bugs, and it may not work at all and could completely break your site. Only use this if you know what you\'re doing. You should never use this branch on a live site.<br /><br /><span style="color: red">As with any update there could be undiscovered bugs so please backup your files and database before updating anything. Please test thoroughly and report any issues you find.</span>' ) ),
+					->set_help_text( Language::get( '<strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Stable</strong> - Production-ready releases with thoroughly tested code. Updates are checked against the "stable" release branch. Recommended for all live sites. Updates occur when new stable versions are released, typically after features have been tested in beta and deemed production-ready.<br /><br /><strong>Beta</strong> - Pre-release testing builds from the "beta" branch. These are feature-complete snapshots created periodically during development when new features are ready for testing. Lightly tested and suitable for staging environments. May contain minor bugs but generally stable.<br /><br /><strong>Alpha</strong> - Cutting-edge development builds from the "alpha" branch. This is the active development branch containing new, untested code for upcoming releases. Expect bugs and potential breaking changes. Only use this in development environments if you understand the risks. Never use on a live site.<br /><br /><span style="color: red">Always backup your files and database before updating. Test thoroughly and report any issues you find.</span>' ) ),
 
 				// Enable Logging
 				Field::make( 'radio', MDS_PREFIX . 'log-enable', Language::get( 'Enable Logging' ) )

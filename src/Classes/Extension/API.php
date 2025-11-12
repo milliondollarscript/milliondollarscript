@@ -41,7 +41,7 @@ class API {
             'body' => json_encode( [
                 'licenseKey'        => $license_key,
                 'productIdentifier' => $extension_slug,
-                // deviceId not strictly needed for our activation; omit or use site host if required later
+                'deviceId'          => md5( site_url() ), // Required: unique site identifier for activation tracking
             ] ),
             'headers' => [
                 'Content-Type' => 'application/json',
@@ -119,6 +119,7 @@ class API {
             'body' => json_encode( [
                 'licenseKey'        => $license_key,
                 'productIdentifier' => $extension_slug,
+                'deviceId'          => md5( site_url() ), // Required: unique site identifier for deactivation tracking
             ] ),
             'headers' => [
                 'Content-Type' => 'application/json',

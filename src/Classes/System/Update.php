@@ -37,30 +37,52 @@ defined( 'ABSPATH' ) or exit;
 class Update {
 	public static function checker(): void {
 		global $MDSUpdateChecker;
-		$updates = Options::get_option( 'updates' );
-		if ( $updates == 'yes' ) {
-			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
-				'https://gitlab.com/MillionDollarScript/milliondollarscript-two/',
-				MDS_BASE_FILE,
-				'milliondollarscript-two'
-			);
-			$MDSUpdateChecker->setBranch('main');
-
-		} else if ( $updates == 'dev' ) {
-			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
-				'https://gitlab.com/MillionDollarScript/milliondollarscript-two/',
-				MDS_BASE_FILE,
-				'milliondollarscript-two-dev'
-			);
-			$MDSUpdateChecker->setBranch('dev');
-
-		} else if ( $updates == 'snapshot' ) {
-			$MDSUpdateChecker = PucFactory::buildUpdateChecker(
-				'https://gitlab.com/MillionDollarScript/milliondollarscript-two/',
-				MDS_BASE_FILE,
-				'milliondollarscript-two-snapshot'
-			);
-			$MDSUpdateChecker->setBranch('snapshot');
+		$updates = Options::get_option( 'updates', 'stable' );
+		
+		// Skip update checks if disabled
+		if ( $updates === 'no' ) {
+			return;
 		}
+		
+		// Get extension server URL from option or constant
+		$extension_server_url = Options::get_option( 'extension_server_url', '' );
+		if ( empty( $extension_server_url ) && defined( 'MDS_EXTENSION_SERVER_URL' ) ) {
+			$extension_server_url = MDS_EXTENSION_SERVER_URL;
+		}
+		if ( empty( $extension_server_url ) ) {
+			$extension_server_url = 'https://milliondollarscript.com';
+		}
+		
+		// Create VCS API shim for extension server
+		$vcs_api = CorePluginUpdateVcsApi::create( $extension_server_url, $updates );
+		
+		if ( $vcs_api === null ) {
+			// Fallback: Plugin Update Checker library not available
+			Logs::log(
+				'Plugin Update Checker library not available for core plugin updates',
+				'error'
+			);
+			return;
+		}
+		
+		// Directly instantiate the VCS plugin update checker (bypass factory)
+		$checker_class = '\\YahnisElsts\\PluginUpdateChecker\\v5p6\\Vcs\\PluginUpdateChecker';
+		
+		if ( ! class_exists( $checker_class ) ) {
+			Logs::log(
+				'VCS PluginUpdateChecker class not available',
+				'error'
+			);
+			return;
+		}
+		
+		$MDSUpdateChecker = new $checker_class(
+			$vcs_api,              // VCS API object
+			MDS_BASE_FILE,         // Plugin file path
+			'milliondollarscript-two',  // Slug
+			12,                    // Check period (hours)
+			'',                    // Option name (auto-generated)
+			''                     // MU plugin file (none)
+		);
 	}
 }
