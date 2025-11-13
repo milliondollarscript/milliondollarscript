@@ -82,32 +82,59 @@ class Menu_Item {
 	public ?string $target;
 
 	/**
+	 * Dashicon class name for icon display (e.g., 'dashicons-admin-tools')
+	 *
+	 * @var string|null
+	 */
+	public ?string $icon;
+
+	/**
+	 * Whether to display as icon-only (text hidden, shown on hover)
+	 *
+	 * @var bool
+	 */
+	public bool $icon_only;
+
+	/**
+	 * Whether this item is a visual separator (non-clickable divider)
+	 *
+	 * @var bool
+	 */
+	public bool $is_separator;
+
+	/**
 	 * Constructor
 	 *
 	 * @param array $args Menu item configuration.
 	 */
 	public function __construct( array $args ) {
 		$defaults = array(
-			'slug'       => '',
-			'title'      => '',
-			'url'        => null,
-			'parent'     => null,
-			'position'   => 10,
-			'capability' => 'manage_options',
-			'section'    => null,
-			'target'     => null,
+			'slug'         => '',
+			'title'        => '',
+			'url'          => null,
+			'parent'       => null,
+			'position'     => 10,
+			'capability'   => 'manage_options',
+			'section'      => null,
+			'target'       => null,
+			'icon'         => null,
+			'icon_only'    => false,
+			'is_separator' => false,
 		);
 
 		$args = wp_parse_args( $args, $defaults );
 
-		$this->slug       = $args['slug'];
-		$this->title      = $args['title'];
-		$this->url        = $args['url'];
-		$this->parent     = $args['parent'];
-		$this->position   = $args['position'];
-		$this->capability = $args['capability'];
-		$this->section    = $args['section'];
-		$this->target     = $args['target'];
+		$this->slug         = $args['slug'];
+		$this->title        = $args['title'];
+		$this->url          = $args['url'];
+		$this->parent       = $args['parent'];
+		$this->position     = $args['position'];
+		$this->capability   = $args['capability'];
+		$this->section      = $args['section'];
+		$this->target       = $args['target'];
+		$this->icon         = $args['icon'];
+		$this->icon_only    = $args['icon_only'];
+		$this->is_separator = $args['is_separator'];
 	}
 
 	/**
@@ -166,28 +193,53 @@ class Menu_Item {
 
 		$html = '';
 
+		// Handle separators.
+		if ( $this->is_separator ) {
+			return '<li class="mds-menu-separator" role="separator"></li>';
+		}
+
+		// Build CSS classes.
+		$classes = array();
+		if ( $this->icon_only ) {
+			$classes[] = 'mds-menu-icon-only';
+		}
+		$class_attr = ! empty( $classes ) ? sprintf( ' class="%s"', esc_attr( implode( ' ', $classes ) ) ) : '';
+
 		// Only top-level items get the style attribute.
 		if ( 0 === $depth && null === $this->parent ) {
-			$html .= sprintf( '<li style="--milliondollarscript-menu: %d">', absint( $this->position ) );
+			$html .= sprintf( '<li%s style="--milliondollarscript-menu: %d">', $class_attr, absint( $this->position ) );
 		} else {
-			$html .= '<li>';
+			$html .= sprintf( '<li%s>', $class_attr );
 		}
+
+		// Build link content.
+		$link_content = '';
+
+		// Add icon if specified.
+		if ( null !== $this->icon ) {
+			$link_content .= sprintf( '<span class="dashicons %s mds-menu-icon" aria-hidden="true"></span>', esc_attr( $this->icon ) );
+		}
+
+		// Add text (always included for accessibility).
+		$link_content .= sprintf( '<span class="mds-menu-text">%s</span>', esc_html( Language::get( $this->title ) ) );
 
 		// Generate link.
 		if ( null !== $this->url ) {
 			$target_attr = $this->target ? sprintf( ' target="%s"', esc_attr( $this->target ) ) : '';
-			$html       .= sprintf(
-				'<a href="%s"%s>%s</a>',
+			$title_attr  = $this->icon_only ? sprintf( ' title="%s"', esc_attr( Language::get( $this->title ) ) ) : '';
+			$aria_label  = $this->icon_only ? sprintf( ' aria-label="%s"', esc_attr( Language::get( $this->title ) ) ) : '';
+
+			$html .= sprintf(
+				'<a href="%s"%s%s%s>%s</a>',
 				esc_url( $this->url ),
 				$target_attr,
-				esc_html( Language::get( $this->title ) )
+				$title_attr,
+				$aria_label,
+				$link_content
 			);
 		} else {
 			// Parent item without URL (used for grouping).
-			$html .= sprintf(
-				'<a href="#">%s</a>',
-				esc_html( Language::get( $this->title ) )
-			);
+			$html .= sprintf( '<a href="#">%s</a>', $link_content );
 		}
 
 		// Add children if any.

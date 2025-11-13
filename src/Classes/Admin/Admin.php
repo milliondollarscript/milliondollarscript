@@ -332,7 +332,7 @@ class Admin {
 					?>
                     <div id="mds-top"></div>
                     <div class="admin-container">
-						<?php require MDS_CORE_PATH . "admin/admin_menu.php"; ?>
+						<?php echo \MillionDollarScript\Classes\Admin\Menu_Registry::render(); ?>
                         <div class="admin-content">
                             <div class="admin-content-inner">
                                 <?php \MillionDollarScript\Classes\Admin\Notices::display_notices(); ?>

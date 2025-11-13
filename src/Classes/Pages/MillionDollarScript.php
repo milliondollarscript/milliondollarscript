@@ -95,6 +95,8 @@ class MillionDollarScript {
 				<div class="milliondollarscript-description milliondollarscript-section">
 					<p><?php Language::out( 'Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience.' ); ?></p>
 					<p><?php Language::out( 'Visit the <a target="_blank" href="https://milliondollarscript.com/million-dollar-script-wordpress-plugin/">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation.' ); ?></p>
+					<p><?php Language::out_replace( 'Need to create or configure pages? Use the <a href="%s">Setup Wizard</a> (the wrench icon in the menu above) to get started quickly.', '%s', esc_url( admin_url( 'admin.php?page=milliondollarscript_wizard' ) ) ); ?></p>
+					<p><?php Language::out( 'For advanced page management, use <a href="' . esc_url( admin_url( 'admin.php?page=mds-page-management' ) ) . '">Manage Pages</a> or <a href="' . esc_url( admin_url( 'admin.php?page=mds-create-pages' ) ) . '">Create Pages</a> from the System menu.' ); ?></p>
 				</div>
 
 				<?php

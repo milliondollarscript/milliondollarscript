@@ -2223,6 +2223,9 @@ msgstr ""
 msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
 msgstr ""
 
+msgid "Need to create or configure pages? Use the <a href=\"%s\">Setup Wizard</a> (the wrench icon in the menu above) to get started quickly."
+msgstr ""
+
 msgid "Last Updated: %s"
 msgstr ""
 

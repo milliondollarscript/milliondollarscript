@@ -61,7 +61,7 @@ jQuery(document).ready(function ($) {
 	const $mds_admin_menu = $(".mds-admin-menu");
 	const MENU_ITEM_SELECTOR = ".mds-admin-menu li, .milliondollarscript-menu li";
 	const MENU_LINK_SELECTOR = ".mds-admin-menu li > a, .milliondollarscript-menu li > a";
-	const HOVER_OPEN_DELAY = 140;
+	const HOVER_OPEN_DELAY = 400;
 	const HOVER_CLOSE_DELAY = 400;
 	const SUBMENU_ANIMATION_DURATION = 140;
 	let isDesktop = false;

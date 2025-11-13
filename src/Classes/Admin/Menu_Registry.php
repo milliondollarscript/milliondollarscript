@@ -75,6 +75,30 @@ class Menu_Registry {
 	}
 
 	/**
+	 * Register a visual separator (for submenu grouping)
+	 *
+	 * Convenience method for creating a non-clickable visual divider
+	 * to separate groups of items within a submenu.
+	 *
+	 * @param string $slug     Unique slug for the separator.
+	 * @param string $parent   Parent menu slug.
+	 * @param int    $position Position for the separator.
+	 * @return Menu_Item The created separator item.
+	 */
+	public static function register_separator( string $slug, string $parent, int $position ): Menu_Item {
+		return self::register(
+			array(
+				'slug'         => $slug,
+				'title'        => '',
+				'url'          => null,
+				'parent'       => $parent,
+				'position'     => $position,
+				'is_separator' => true,
+			)
+		);
+	}
+
+	/**
 	 * Get a menu item by slug
 	 *
 	 * @param string $slug Menu item slug.
@@ -158,7 +182,13 @@ class Menu_Registry {
 			self::init();
 		}
 
-		$html = '<ul class="milliondollarscript-menu">';
+		$html = '<div class="milliondollarscript-menu-wrapper">';
+		$html .= '<button class="milliondollarscript-menu-toggle" aria-label="Toggle menu" aria-expanded="false">';
+		$html .= '<span class="hamburger-line"></span>';
+		$html .= '<span class="hamburger-line"></span>';
+		$html .= '<span class="hamburger-line"></span>';
+		$html .= '</button>';
+		$html .= '<ul class="milliondollarscript-menu">';
 
 		$top_level = self::get_top_level_items();
 
@@ -171,6 +201,7 @@ class Menu_Registry {
 		}
 
 		$html .= '</ul>';
+		$html .= '</div>';
 
 		return $html;
 	}

@@ -45,6 +45,14 @@
 	flex-direction: column;
 }
 
+/* Dark background for menu in legacy admin pages */
+.admin-container .milliondollarscript-menu {
+	background: #07010a;
+	padding: 0 !important;
+	margin: 0 !important;
+	width: 100%;
+}
+
 .mds-menu-toggle {
 	background-color: #1d2327;
 	display: none;
@@ -109,6 +117,9 @@
 	background-color: #32373c;
 	width: 200px;
 	z-index: 1000;
+	max-height: calc(100vh - 150px);
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 .mds-admin-menu ul ul {
@@ -486,22 +497,50 @@ ul.milliondollarscript-menu {
     min-width: 220px;
     z-index: 1000;
     border-bottom-right-radius: 8px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Webkit scrollbar styling for submenus */
+.milliondollarscript-menu li > ul::-webkit-scrollbar {
+    width: 6px;
+}
+
+.milliondollarscript-menu li > ul::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.milliondollarscript-menu li > ul::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.milliondollarscript-menu li > ul::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .milliondollarscript-menu li:focus-within > ul {
     display: block;
 }
 
-.milliondollarscript-menu li > ul li a {
+/* Submenu items - more specific to override div.mds-main-page styles */
+.milliondollarscript-menu li > ul li a,
+div.mds-main-page .milliondollarscript-menu li > ul li a,
+.admin-container .milliondollarscript-menu li > ul li a {
     display: block;
-    padding: 10px 14px;
-    font-size: 14px;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
     text-shadow: none;
     text-align: left;
-    line-height: 1.4;
+    line-height: 1.3 !important;
 }
 
-.milliondollarscript-menu li > ul li a:hover {
+.milliondollarscript-menu li > ul li a:hover,
+div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
+.admin-container .milliondollarscript-menu li > ul li a:hover {
     background: rgba(255, 255, 255, 0.06);
 }
 
@@ -509,11 +548,132 @@ ul.milliondollarscript-menu {
 .milliondollarscript-menu li ul ul {
     left: 100%;
     top: 0;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+}
+
+/* Mobile menu toggle button */
+.milliondollarscript-menu-toggle {
+	display: none;
+	background: rgba(0, 0, 0, 0.8);
+	border: 2px solid rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+	padding: 8px 10px;
+	cursor: pointer;
+	flex-direction: column;
+	gap: 4px;
+	z-index: 1001;
+	margin-bottom: 10px;
+}
+
+.hamburger-line {
+	width: 24px;
+	height: 3px;
+	background: #fff;
+	border-radius: 2px;
+	transition: all 0.3s ease;
+}
+
+/* Animate hamburger to X when open */
+.milliondollarscript-menu-toggle[aria-expanded="true"] .hamburger-line:nth-child(1) {
+	transform: rotate(45deg) translateY(7px);
+}
+
+.milliondollarscript-menu-toggle[aria-expanded="true"] .hamburger-line:nth-child(2) {
+	opacity: 0;
+}
+
+.milliondollarscript-menu-toggle[aria-expanded="true"] .hamburger-line:nth-child(3) {
+	transform: rotate(-45deg) translateY(-7px);
 }
 
 @media screen and (max-width: 750px) {
+	.milliondollarscript-menu-toggle {
+		display: flex;
+	}
+
 	ul.milliondollarscript-menu {
+		display: none;
 		flex-direction: column;
+		width: 100%;
+		gap: 0;
+	}
+
+	ul.milliondollarscript-menu.menu-open {
+		display: flex;
+	}
+
+	/* Mobile menu items take full width */
+	.milliondollarscript-menu > li {
+		width: 100%;
+	}
+
+	.milliondollarscript-menu > li > a {
+		width: 100%;
+		text-align: left;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	/* Mobile submenu positioning */
+	.milliondollarscript-menu li > ul {
+		position: static;
+		display: none;
+		width: 100%;
+		background: rgba(30, 35, 40, 0.95);
+		border-radius: 0;
+		max-height: none;
+		overflow-y: visible;
+	}
+
+	.milliondollarscript-menu li.submenu-open > ul {
+		display: block;
+	}
+
+	/* Third-level mobile submenus */
+	.milliondollarscript-menu li ul ul {
+		position: static;
+		left: 0;
+		background: rgba(20, 25, 30, 0.95);
+		margin-left: 15px;
+	}
+
+	/* Mobile submenu items with indent */
+	.milliondollarscript-menu li > ul li a {
+		padding-left: 24px !important;
+	}
+
+	.milliondollarscript-menu li ul ul li a {
+		padding-left: 36px !important;
+	}
+
+	/* Add submenu indicator for mobile */
+	.milliondollarscript-menu li.has-submenu > a::after {
+		content: '▼';
+		float: right;
+		font-size: 10px;
+		transition: transform 0.3s ease;
+	}
+
+	.milliondollarscript-menu li.has-submenu.submenu-open > a::after {
+		transform: rotate(180deg);
+	}
+
+	/* Adjust icon-only items for mobile */
+	.milliondollarscript-menu .mds-menu-icon-only .mds-menu-text {
+		position: static;
+		display: inline;
+		padding: 0;
+		margin: 0 0 0 8px;
+		background: none;
+		font-size: inherit;
+		color: inherit;
+		width: auto;
+		height: auto;
+	}
+
+	.milliondollarscript-menu .mds-menu-icon-only .mds-menu-text::after {
+		display: none;
 	}
 }
 
@@ -544,7 +704,8 @@ ul.milliondollarscript-menu {
     animation: none;
 }
 
-div.mds-main-page .milliondollarscript-menu a {
+div.mds-main-page .milliondollarscript-menu a,
+.admin-container .milliondollarscript-menu a {
     display: block;
     padding: 20px;
     color: #fff;
@@ -559,16 +720,128 @@ div.mds-main-page .milliondollarscript-menu a {
 }
 
 /* Top-level hero menu hover/active highlight */
-div.mds-main-page .milliondollarscript-menu > li > a {
+div.mds-main-page .milliondollarscript-menu > li > a,
+.admin-container .milliondollarscript-menu > li > a {
     border-bottom: 3px solid transparent;
     transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 div.mds-main-page .milliondollarscript-menu > li:hover > a,
 div.mds-main-page .milliondollarscript-menu > li > a:hover,
-div.mds-main-page .milliondollarscript-menu > li > a.mds-active-submenu {
+div.mds-main-page .milliondollarscript-menu > li > a.mds-active-submenu,
+.admin-container .milliondollarscript-menu > li:hover > a,
+.admin-container .milliondollarscript-menu > li > a:hover,
+.admin-container .milliondollarscript-menu > li > a.mds-active-submenu {
     background: rgba(114, 174, 230, 0.12);
     border-bottom-color: #72aee6;
     color: #72aee6;
+}
+
+/* === Icon-only menu items === */
+.milliondollarscript-menu .mds-menu-icon-only > a,
+div.mds-main-page .milliondollarscript-menu .mds-menu-icon-only > a,
+.admin-container .milliondollarscript-menu .mds-menu-icon-only > a {
+    min-width: 40px;
+    padding: 20px 8px !important;
+    text-align: center;
+    position: relative;
+}
+
+/* Hide text by default on icon-only items (but keep accessible) */
+.milliondollarscript-menu .mds-menu-icon-only .mds-menu-text {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+/* Show text as floating tooltip on hover/focus */
+.milliondollarscript-menu .mds-menu-icon-only:hover .mds-menu-text,
+.milliondollarscript-menu .mds-menu-icon-only:focus-within .mds-menu-text {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Tooltip arrow */
+.milliondollarscript-menu .mds-menu-icon-only:hover .mds-menu-text::after,
+.milliondollarscript-menu .mds-menu-icon-only:focus-within .mds-menu-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+/* For admin-container pages, show tooltips below instead of above */
+.admin-container .milliondollarscript-menu .mds-menu-icon-only:hover .mds-menu-text,
+.admin-container .milliondollarscript-menu .mds-menu-icon-only:focus-within .mds-menu-text {
+    bottom: auto;
+    top: 100%;
+    margin-bottom: 0;
+    margin-top: 8px;
+}
+
+.admin-container .milliondollarscript-menu .mds-menu-icon-only:hover .mds-menu-text::after,
+.admin-container .milliondollarscript-menu .mds-menu-icon-only:focus-within .mds-menu-text::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Icon spacing */
+.milliondollarscript-menu .mds-menu-icon {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* === Separator styling for submenus === */
+.milliondollarscript-menu li.mds-menu-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 8px 0;
+    padding: 0;
+    border: none;
+    pointer-events: none;
+}
+
+.milliondollarscript-menu li.mds-menu-separator:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-bottom: none;
+    box-shadow: none;
+}
+
+/* Mobile adjustments - always show text on small screens */
+@media screen and (max-width: 750px) {
+    .milliondollarscript-menu .mds-menu-icon-only .mds-menu-text {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        margin-left: 4px;
+    }
 }
 
 div.milliondollarscript-fire {

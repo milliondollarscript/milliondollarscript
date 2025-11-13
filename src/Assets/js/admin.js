@@ -75,4 +75,65 @@ jQuery(document).ready(function () {
 		row.addClass("mds-highlight-row");
 		row[0].scrollIntoView();
 	}
+
+	// Mobile menu toggle functionality
+	const menuToggle = document.querySelector('.milliondollarscript-menu-toggle');
+	const menu = document.querySelector('ul.milliondollarscript-menu');
+
+	if (menuToggle && menu) {
+		// Toggle main menu
+		menuToggle.addEventListener('click', function() {
+			const isExpanded = this.getAttribute('aria-expanded') === 'true';
+			this.setAttribute('aria-expanded', !isExpanded);
+			menu.classList.toggle('menu-open');
+		});
+
+		// Add has-submenu class and click handlers for items with submenus
+		const menuItems = menu.querySelectorAll('li');
+		menuItems.forEach(item => {
+			const submenu = item.querySelector(':scope > ul');
+			if (submenu) {
+				item.classList.add('has-submenu');
+
+				// Toggle submenu on click (mobile only)
+				const link = item.querySelector(':scope > a');
+				if (link) {
+					link.addEventListener('click', function(e) {
+						// Only toggle on mobile (when menu toggle is visible)
+						if (window.innerWidth <= 750) {
+							// If link has a URL and submenu is already open, allow navigation
+							if (this.getAttribute('href') && this.getAttribute('href') !== '#' && item.classList.contains('submenu-open')) {
+								return true;
+							}
+
+							// Otherwise toggle the submenu
+							e.preventDefault();
+							item.classList.toggle('submenu-open');
+						}
+					});
+				}
+			}
+		});
+
+		// Close menu when clicking outside
+		document.addEventListener('click', function(e) {
+			if (window.innerWidth <= 750 && menu.classList.contains('menu-open')) {
+				if (!e.target.closest('.milliondollarscript-menu-wrapper')) {
+					menuToggle.setAttribute('aria-expanded', 'false');
+					menu.classList.remove('menu-open');
+				}
+			}
+		});
+
+		// Reset submenu states on window resize
+		window.addEventListener('resize', function() {
+			if (window.innerWidth > 750) {
+				menuToggle.setAttribute('aria-expanded', 'false');
+				menu.classList.remove('menu-open');
+				menuItems.forEach(item => {
+					item.classList.remove('submenu-open');
+				});
+			}
+		});
+	}
 });

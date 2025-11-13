@@ -523,7 +523,7 @@ class NFS {
 	public static function html(): void {
 		?>
         <div class="admin-container">
-			<?php require_once MDS_CORE_PATH . "admin/admin_menu.php"; ?>
+			<?php echo \MillionDollarScript\Classes\Admin\Menu_Registry::render(); ?>
             <div class="admin-content">
                 <div class="admin-content-inner">
 					<?php require_once MDS_BASE_PATH . "src/Html/NFS.php"; ?>

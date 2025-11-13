@@ -22,38 +22,54 @@ class Core_Dashboard_Menu {
 	 * Hooked into 'mds_register_dashboard_menu'.
 	 */
 	public static function register(): void {
-		// Setup Wizard.
+		// 1. Setup Wizard (icon-only).
 		Menu_Registry::register(
 			array(
-				'slug'     => 'milliondollarscript_wizard',
-				'title'    => 'Setup Wizard',
-				'url'      => admin_url( 'admin.php?page=milliondollarscript_wizard' ),
-				'position' => 1,
+				'slug'      => 'milliondollarscript_wizard',
+				'title'     => 'Setup Wizard',
+				'url'       => admin_url( 'admin.php?page=milliondollarscript_wizard' ),
+				'position'  => 1,
+				'icon'      => 'dashicons-admin-tools',
+				'icon_only' => true,
 			)
 		);
 
-		// Admin - top level.
+		// 2. View Site (icon-only).
 		Menu_Registry::register(
 			array(
-				'slug'     => 'milliondollarscript_admin',
-				'title'    => 'Admin',
-				'url'      => admin_url( 'admin.php?page=milliondollarscript_admin' ),
-				'position' => 2,
+				'slug'      => 'view-site',
+				'title'     => 'View Site',
+				'url'       => home_url( '/' ),
+				'position'  => 2,
+				'icon'      => 'dashicons-external',
+				'icon_only' => true,
 			)
 		);
 
-		// Admin > Pixel Management (parent group).
+		// 3. MDS Website (icon-only, external link).
+		Menu_Registry::register(
+			array(
+				'slug'      => 'mds-external',
+				'title'     => 'MDS Website',
+				'url'       => 'https://milliondollarscript.com/',
+				'position'  => 3,
+				'target'    => '_blank',
+				'icon'      => 'dashicons-admin-site-alt3',
+				'icon_only' => true,
+			)
+		);
+
+		// 4. Pixel Management (top-level parent).
 		Menu_Registry::register(
 			array(
 				'slug'     => 'pixel-management',
 				'title'    => 'Pixel Management',
 				'url'      => null,
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 1,
+				'position' => 4,
 			)
 		);
 
-		// Admin > Pixel Management > Grids.
+		// Pixel Management > Grids.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-manage-grids',
@@ -64,7 +80,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Pixel Management > Packages.
+		// Pixel Management > Packages.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-packages',
@@ -75,7 +91,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Pixel Management > Price Zones.
+		// Pixel Management > Price Zones.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-price-zones',
@@ -86,7 +102,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Pixel Management > Not For Sale.
+		// Pixel Management > Not For Sale.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-not-for-sale',
@@ -97,51 +113,53 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Pixel Management > Backgrounds.
+		// Separator.
+		Menu_Registry::register_separator( 'pm-sep-1', 'pixel-management', 5 );
+
+		// Pixel Management > Backgrounds.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-backgrounds',
 				'title'    => 'Backgrounds',
 				'url'      => admin_url( 'admin.php?page=mds-backgrounds' ),
 				'parent'   => 'pixel-management',
-				'position' => 5,
+				'position' => 6,
 			)
 		);
 
-		// Admin > Pixel Management > Shortcodes.
+		// Pixel Management > Shortcodes.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-get-shortcodes',
 				'title'    => 'Shortcodes',
 				'url'      => admin_url( 'admin.php?page=mds-get-shortcodes' ),
 				'parent'   => 'pixel-management',
-				'position' => 6,
+				'position' => 7,
 			)
 		);
 
-		// Admin > Pixel Management > Process Pixels.
+		// Pixel Management > Process Pixels.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-process-pixels',
 				'title'    => 'Process Pixels',
 				'url'      => admin_url( 'admin.php?page=mds-process-pixels' ),
 				'parent'   => 'pixel-management',
-				'position' => 7,
+				'position' => 8,
 			)
 		);
 
-		// Admin > Orders (parent group).
+		// 5. Orders (top-level parent).
 		Menu_Registry::register(
 			array(
 				'slug'     => 'orders',
 				'title'    => 'Orders',
 				'url'      => null,
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 2,
+				'position' => 5,
 			)
 		);
 
-		// Admin > Orders > Waiting.
+		// Orders > Waiting.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-orders-waiting',
@@ -152,7 +170,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Orders > Completed.
+		// Orders > Completed.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-orders-completed',
@@ -163,7 +181,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Orders > Reserved.
+		// Orders > Reserved.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-orders-reserved',
@@ -174,7 +192,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Orders > Expired.
+		// Orders > Expired.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-orders-expired',
@@ -185,73 +203,78 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Orders > Denied.
+		// Separator.
+		Menu_Registry::register_separator( 'orders-sep-1', 'orders', 5 );
+
+		// Orders > Denied.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-orders-denied',
 				'title'    => 'Denied',
 				'url'      => admin_url( 'admin.php?page=mds-orders-denied' ),
 				'parent'   => 'orders',
-				'position' => 5,
+				'position' => 6,
 			)
 		);
 
-		// Admin > Orders > Cancelled.
+		// Orders > Cancelled.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-orders-cancelled',
 				'title'    => 'Cancelled',
 				'url'      => admin_url( 'admin.php?page=mds-orders-cancelled' ),
 				'parent'   => 'orders',
-				'position' => 6,
+				'position' => 7,
 			)
 		);
 
-		// Admin > Orders > Deleted.
+		// Orders > Deleted.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-orders-deleted',
 				'title'    => 'Deleted',
 				'url'      => admin_url( 'admin.php?page=mds-orders-deleted' ),
 				'parent'   => 'orders',
-				'position' => 7,
+				'position' => 8,
 			)
 		);
 
-		// Admin > Orders > Map.
+		// Separator.
+		Menu_Registry::register_separator( 'orders-sep-2', 'orders', 9 );
+
+		// Orders > Map.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-map-of-orders',
 				'title'    => 'Map',
 				'url'      => admin_url( 'admin.php?page=mds-map-of-orders' ),
 				'parent'   => 'orders',
-				'position' => 8,
+				'position' => 10,
 			)
 		);
 
-		// Admin > Orders > Clear Orders.
+		// Orders > Clear Orders.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-clear-orders',
 				'title'    => 'Clear Orders',
 				'url'      => admin_url( 'admin.php?page=mds-clear-orders' ),
 				'parent'   => 'orders',
-				'position' => 9,
+				'position' => 11,
 			)
 		);
 
-		// Admin > Pixel Approval (parent group).
+		// 6. Pixel Approval (top-level parent).
 		Menu_Registry::register(
 			array(
 				'slug'     => 'pixel-approval',
 				'title'    => 'Pixel Approval',
 				'url'      => null,
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 3,
+				'position' => 6,
 			)
 		);
 
-		// Admin > Pixel Approval > Awaiting Approval.
+		// Pixel Approval > Awaiting Approval.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-approve-pixels-awaiting',
@@ -262,7 +285,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Pixel Approval > Approved.
+		// Pixel Approval > Approved.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-approve-pixels-approved',
@@ -273,18 +296,17 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Reports (parent group).
+		// 7. Reports (top-level parent).
 		Menu_Registry::register(
 			array(
 				'slug'     => 'reports',
 				'title'    => 'Reports',
 				'url'      => null,
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 4,
+				'position' => 7,
 			)
 		);
 
-		// Admin > Reports > Transaction Log.
+		// Reports > Transaction Log.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-transaction-log',
@@ -295,7 +317,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Reports > Top Customers.
+		// Reports > Top Customers.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-top-customers',
@@ -306,7 +328,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Reports > Outgoing Email.
+		// Reports > Outgoing Email.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-outgoing-email',
@@ -317,18 +339,21 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Reports > Clicks (parent group).
+		// Separator.
+		Menu_Registry::register_separator( 'reports-sep-1', 'reports', 4 );
+
+		// Reports > Clicks (parent group).
 		Menu_Registry::register(
 			array(
 				'slug'     => 'clicks',
 				'title'    => 'Clicks',
 				'url'      => null,
 				'parent'   => 'reports',
-				'position' => 4,
+				'position' => 5,
 			)
 		);
 
-		// Admin > Reports > Clicks > Top Clicks.
+		// Reports > Clicks > Top Clicks.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-top-clicks',
@@ -339,7 +364,7 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > Reports > Clicks > Click Reports.
+		// Reports > Clicks > Click Reports.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-click-reports',
@@ -350,79 +375,13 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Admin > System (parent group).
-		Menu_Registry::register(
-			array(
-				'slug'     => 'system',
-				'title'    => 'System',
-				'url'      => null,
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 5,
-			)
-		);
-
-		// Admin > System > System Information.
-		Menu_Registry::register(
-			array(
-				'slug'     => 'mds-system-information',
-				'title'    => 'System Information',
-				'url'      => admin_url( 'admin.php?page=mds-system-information' ),
-				'parent'   => 'system',
-				'position' => 1,
-			)
-		);
-
-		// Admin > System > License.
-		Menu_Registry::register(
-			array(
-				'slug'     => 'mds-license',
-				'title'    => 'License',
-				'url'      => admin_url( 'admin.php?page=mds-license' ),
-				'parent'   => 'system',
-				'position' => 2,
-			)
-		);
-
-		// Admin > Manage Pages.
-		Menu_Registry::register(
-			array(
-				'slug'     => 'mds-page-management',
-				'title'    => 'Manage Pages',
-				'url'      => admin_url( 'admin.php?page=mds-page-management' ),
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 6,
-			)
-		);
-
-		// Admin > Create Pages.
-		Menu_Registry::register(
-			array(
-				'slug'     => 'mds-create-pages',
-				'title'    => 'Create Pages',
-				'url'      => admin_url( 'admin.php?page=mds-create-pages' ),
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 7,
-			)
-		);
-
-		// Admin > Compatibility.
-		Menu_Registry::register(
-			array(
-				'slug'     => 'mds-compatibility',
-				'title'    => 'Compatibility',
-				'url'      => admin_url( 'admin.php?page=mds-compatibility' ),
-				'parent'   => 'milliondollarscript_admin',
-				'position' => 8,
-			)
-		);
-
-		// Options - top level.
+		// 8. Options (top-level).
 		Menu_Registry::register(
 			array(
 				'slug'     => 'milliondollarscript_options',
 				'title'    => 'Options',
 				'url'      => admin_url( 'admin.php?page=milliondollarscript_options' ),
-				'position' => 3,
+				'position' => 8,
 			)
 		);
 
@@ -437,54 +396,106 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// Changelog.
+		// 9. System (top-level parent).
 		Menu_Registry::register(
 			array(
-				'slug'     => 'milliondollarscript_changelog',
-				'title'    => 'Changelog',
-				'url'      => admin_url( 'admin.php?page=milliondollarscript_changelog' ),
+				'slug'     => 'system',
+				'title'    => 'System',
+				'url'      => null,
+				'position' => 9,
+			)
+		);
+
+		// System > System Information.
+		Menu_Registry::register(
+			array(
+				'slug'     => 'mds-system-information',
+				'title'    => 'System Information',
+				'url'      => admin_url( 'admin.php?page=mds-system-information' ),
+				'parent'   => 'system',
+				'position' => 1,
+			)
+		);
+
+		// System > License.
+		Menu_Registry::register(
+			array(
+				'slug'     => 'mds-license',
+				'title'    => 'License',
+				'url'      => admin_url( 'admin.php?page=mds-license' ),
+				'parent'   => 'system',
+				'position' => 2,
+			)
+		);
+
+		// Separator.
+		Menu_Registry::register_separator( 'system-sep-1', 'system', 3 );
+
+		// System > Manage Pages.
+		Menu_Registry::register(
+			array(
+				'slug'     => 'mds-page-management',
+				'title'    => 'Manage Pages',
+				'url'      => admin_url( 'admin.php?page=mds-page-management' ),
+				'parent'   => 'system',
+				'position' => 4,
+			)
+		);
+
+		// System > Create Pages.
+		Menu_Registry::register(
+			array(
+				'slug'     => 'mds-create-pages',
+				'title'    => 'Create Pages',
+				'url'      => admin_url( 'admin.php?page=mds-create-pages' ),
+				'parent'   => 'system',
 				'position' => 5,
 			)
 		);
 
-		// Logs.
+		// System > Compatibility.
+		Menu_Registry::register(
+			array(
+				'slug'     => 'mds-compatibility',
+				'title'    => 'Compatibility',
+				'url'      => admin_url( 'admin.php?page=mds-compatibility' ),
+				'parent'   => 'system',
+				'position' => 6,
+			)
+		);
+
+		// Separator.
+		Menu_Registry::register_separator( 'system-sep-2', 'system', 7 );
+
+		// System > Logs.
 		Menu_Registry::register(
 			array(
 				'slug'     => 'milliondollarscript_logs',
 				'title'    => 'Logs',
 				'url'      => admin_url( 'admin.php?page=milliondollarscript_logs' ),
-				'position' => 6,
+				'parent'   => 'system',
+				'position' => 8,
 			)
 		);
 
-		// Extensions - top level.
+		// System > Changelog.
+		Menu_Registry::register(
+			array(
+				'slug'     => 'milliondollarscript_changelog',
+				'title'    => 'Changelog',
+				'url'      => admin_url( 'admin.php?page=milliondollarscript_changelog' ),
+				'parent'   => 'system',
+				'position' => 9,
+			)
+		);
+
+		// 10. Extensions (top-level).
 		Menu_Registry::register(
 			array(
 				'slug'     => 'mds-extensions',
 				'title'    => 'Extensions',
 				'url'      => admin_url( 'admin.php?page=mds-extensions' ),
-				'position' => 7,
-			)
-		);
-
-		// View Site.
-		Menu_Registry::register(
-			array(
-				'slug'     => 'view-site',
-				'title'    => 'View Site',
-				'url'      => home_url( '/' ),
-				'position' => 8,
-			)
-		);
-
-		// MDS (external link).
-		Menu_Registry::register(
-			array(
-				'slug'     => 'mds-external',
-				'title'    => 'MDS',
-				'url'      => 'https://milliondollarscript.com/',
-				'position' => 9,
-				'target'   => '_blank',
+				'position' => 10,
 			)
 		);
 	}

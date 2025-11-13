@@ -35,7 +35,7 @@ $mds_site_url = get_site_url();
 ?>
 <div id="mds-top"></div>
 <div class="admin-container">
-    <?php require __DIR__ . "/admin_menu.php"; ?>
+    <?php echo \MillionDollarScript\Classes\Admin\Menu_Registry::render(); ?>
     <div class="admin-content">
         <?php require __DIR__ . "/manage-grids.php"; ?>
     </div>
