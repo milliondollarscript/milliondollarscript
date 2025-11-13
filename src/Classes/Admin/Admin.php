@@ -385,16 +385,15 @@ class Admin {
 			true
 		);
 
-		wp_register_script(
-			MDS_PREFIX . 'admin-core-js',
-			MDS_CORE_URL . 'admin/js/admin.min.js',
-			[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form', 'hoverIntent' ],
-			filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
+		// Enqueue admin.min.js for menu functionality on legacy admin pages
+		wp_enqueue_script(
+			MDS_PREFIX . 'admin-js',
+			MDS_BASE_URL . 'src/Assets/js/admin.min.js',
+			[ 'jquery', 'hoverIntent' ],
+			filemtime( MDS_BASE_PATH . 'src/Assets/js/admin.min.js' ),
 			true
 		);
 
-		wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
-		
 		// Enqueue error resolution script on compatibility page
 		$current_screen = get_current_screen();
 		if ( $current_screen && strpos( $current_screen->id, 'mds-compatibility' ) !== false ) {
@@ -426,26 +425,12 @@ class Admin {
 	 * Enqueue admin scripts for MDS admin pages.
 	 *
 	 * @return void
+	 * @deprecated Legacy method - admin scripts now loaded globally via MillionDollarScript.php
 	 */
 	public static function enqueue_admin_scripts(): void {
-		if ( is_admin() ) {
-			// Use the existing registered script from Admin::scripts()
-			wp_enqueue_script( 'hoverIntent' );
-			
-			// Register the script if not already registered
-			if ( ! wp_script_is( MDS_PREFIX . 'admin-core-js', 'registered' ) ) {
-				wp_register_script(
-					MDS_PREFIX . 'admin-core-js',
-					MDS_CORE_URL . 'admin/js/admin.min.js',
-					[ 'jquery', 'jquery-ui-core', 'jquery-ui-dialog', 'jquery-ui-button', 'jquery-form', 'hoverIntent' ],
-					filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
-					true
-				);
-			}
-			
-			// Enqueue the registered script
-			wp_enqueue_script( MDS_PREFIX . 'admin-core-js' );
-		}
+		// Legacy admin-core-js removed - functionality consolidated into main admin.js
+		// which is loaded globally via MillionDollarScript.php
+		// This method is kept for backwards compatibility but does nothing
 	}
 
 	/**

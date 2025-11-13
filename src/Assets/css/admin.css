@@ -117,14 +117,17 @@
 	background-color: #32373c;
 	width: 200px;
 	z-index: 1000;
-	max-height: calc(100vh - 150px);
-	overflow-y: auto;
-	overflow-x: hidden;
+	/* Remove overflow constraints to allow third-level menus to escape */
+	overflow: visible;
 }
 
+/* Third-level dropdowns (nested submenus) */
 .mds-admin-menu ul ul {
+	position: absolute;
 	left: 100%;
 	top: 0;
+	/* Parent now has overflow: visible, so third-level menus can escape freely */
+	overflow: visible;
 }
 
 .mds-admin-menu img {
@@ -135,6 +138,11 @@
 
 .mds-admin-menu li > ul {
 	display: none;
+}
+
+/* Show submenus on focus (hover is handled by JavaScript hoverintent) */
+.mds-admin-menu li:focus-within > ul {
+	display: block;
 }
 
 @media screen and (min-width: 1000px) {
@@ -497,32 +505,14 @@ ul.milliondollarscript-menu {
     min-width: 220px;
     z-index: 1000;
     border-bottom-right-radius: 8px;
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    /* Remove overflow constraints to allow third-level menus to escape */
+    /* Long menus will grow naturally without scrollbars */
+    overflow: visible;
 }
 
-/* Webkit scrollbar styling for submenus */
-.milliondollarscript-menu li > ul::-webkit-scrollbar {
-    width: 6px;
-}
-
-.milliondollarscript-menu li > ul::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.milliondollarscript-menu li > ul::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-}
-
-.milliondollarscript-menu li > ul::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-}
-
-.milliondollarscript-menu li:focus-within > ul {
+/* Show submenus on focus and when opened via JavaScript */
+.milliondollarscript-menu li:focus-within > ul,
+.milliondollarscript-menu li.submenu-open > ul {
     display: block;
 }
 
@@ -546,11 +536,11 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 
 /* Third-level positioning for hero menu */
 .milliondollarscript-menu li ul ul {
+    position: absolute;
     left: 100%;
     top: 0;
-    max-height: none !important;
-    overflow-y: visible !important;
-    overflow-x: hidden !important;
+    /* Parent now has overflow: visible, so third-level menus can escape freely */
+    overflow: visible;
 }
 
 /* Mobile menu toggle button */
@@ -564,7 +554,7 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 	flex-direction: column;
 	gap: 4px;
 	z-index: 1001;
-	margin-bottom: 10px;
+	margin: 0 auto 10px auto;
 }
 
 .hamburger-line {
@@ -589,6 +579,13 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 }
 
 @media screen and (max-width: 750px) {
+	/* Reduce fire element height on mobile for better alignment */
+	div.milliondollarscript-fire {
+		min-height: 60px;
+		max-height: 60px;
+		overflow: hidden;
+	}
+
 	.milliondollarscript-menu-toggle {
 		display: flex;
 	}
@@ -602,16 +599,18 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 
 	ul.milliondollarscript-menu.menu-open {
 		display: flex;
+		background: #000000;
 	}
 
 	/* Mobile menu items take full width */
 	.milliondollarscript-menu > li {
 		width: 100%;
+		text-align: left !important;
 	}
 
 	.milliondollarscript-menu > li > a {
 		width: 100%;
-		text-align: left;
+		text-align: left !important;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
@@ -620,7 +619,7 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 		position: static;
 		display: none;
 		width: 100%;
-		background: rgba(30, 35, 40, 0.95);
+		background: #000000;
 		border-radius: 0;
 		max-height: none;
 		overflow-y: visible;
@@ -634,7 +633,7 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 	.milliondollarscript-menu li ul ul {
 		position: static;
 		left: 0;
-		background: rgba(20, 25, 30, 0.95);
+		background: #000000;
 		margin-left: 15px;
 	}
 
@@ -660,6 +659,12 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 	}
 
 	/* Adjust icon-only items for mobile */
+	.milliondollarscript-menu .mds-menu-icon-only > a {
+		text-align: left !important;
+		padding: 20px !important;
+		min-width: auto !important;
+	}
+
 	.milliondollarscript-menu .mds-menu-icon-only .mds-menu-text {
 		position: static;
 		display: inline;
@@ -673,6 +678,35 @@ div.mds-main-page .milliondollarscript-menu li > ul li a:hover,
 	}
 
 	.milliondollarscript-menu .mds-menu-icon-only .mds-menu-text::after {
+		display: none;
+	}
+
+	/* Remove hover effects for icon-only items on mobile */
+	.milliondollarscript-menu .mds-menu-icon-only:hover .mds-menu-text,
+	.milliondollarscript-menu .mds-menu-icon-only:focus-within .mds-menu-text {
+		position: static !important;
+		bottom: auto !important;
+		left: auto !important;
+		transform: none !important;
+		margin-bottom: 0 !important;
+		margin: 0 0 0 8px !important;
+		padding: 0 !important;
+		background: none !important;
+		color: inherit !important;
+		border-radius: 0 !important;
+		font-size: inherit !important;
+		white-space: nowrap !important;
+		width: auto !important;
+		height: auto !important;
+		overflow: visible !important;
+		clip: auto !important;
+		z-index: auto !important;
+		pointer-events: auto !important;
+		display: inline !important;
+	}
+
+	.milliondollarscript-menu .mds-menu-icon-only:hover .mds-menu-text::after,
+	.milliondollarscript-menu .mds-menu-icon-only:focus-within .mds-menu-text::after {
 		display: none;
 	}
 }
@@ -740,10 +774,18 @@ div.mds-main-page .milliondollarscript-menu > li > a.mds-active-submenu,
 .milliondollarscript-menu .mds-menu-icon-only > a,
 div.mds-main-page .milliondollarscript-menu .mds-menu-icon-only > a,
 .admin-container .milliondollarscript-menu .mds-menu-icon-only > a {
-    min-width: 40px;
-    padding: 20px 8px !important;
-    text-align: center;
     position: relative;
+}
+
+/* Desktop-only icon padding and alignment */
+@media screen and (min-width: 751px) {
+    .milliondollarscript-menu .mds-menu-icon-only > a,
+    div.mds-main-page .milliondollarscript-menu .mds-menu-icon-only > a,
+    .admin-container .milliondollarscript-menu .mds-menu-icon-only > a {
+        min-width: 40px;
+        padding: 20px 8px !important;
+        text-align: center;
+    }
 }
 
 /* Hide text by default on icon-only items (but keep accessible) */
@@ -864,7 +906,7 @@ div.milliondollarscript-fire {
 	top: 0;
 	left: 0;
 	display: none;
-	pointer-events: auto;
+	pointer-events: none;
 	background: transparent;
 }
 

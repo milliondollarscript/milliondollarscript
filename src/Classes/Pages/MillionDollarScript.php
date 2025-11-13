@@ -57,15 +57,10 @@ class MillionDollarScript {
 		wp_enqueue_script(
 			MDS_PREFIX . 'admin-js',
 			MDS_BASE_URL . 'src/Assets/js/admin.min.js',
-			[ 'jquery' ],
-			filemtime( MDS_CORE_PATH . 'admin/js/admin.min.js' ),
+			[ 'jquery', 'hoverIntent' ],
+			filemtime( MDS_BASE_PATH . 'src/Assets/js/admin.min.js' ),
 			true
 		);
-
-			// Ensure the shared admin menu controller is available so the dashboard menu matches admin behavior
-			if ( class_exists( \MillionDollarScript\Classes\Admin\Admin::class ) ) {
-				\MillionDollarScript\Classes\Admin\Admin::enqueue_admin_scripts();
-			}
 
 		// Load fire.js
 		// @link https://gpfault.net/posts/webgl2-particles.txt.html

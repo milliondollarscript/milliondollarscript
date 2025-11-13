@@ -22,6 +22,18 @@ class Core_Dashboard_Menu {
 	 * Hooked into 'mds_register_dashboard_menu'.
 	 */
 	public static function register(): void {
+		// 0. Dashboard.
+		Menu_Registry::register(
+			array(
+				'slug'      => 'milliondollarscript',
+				'title'     => 'Dashboard',
+				'url'       => admin_url( 'admin.php?page=milliondollarscript' ),
+				'position'  => 0,
+				'icon'      => 'dashicons-dashboard',
+				'icon_only' => true,
+			)
+		);
+
 		// 1. Setup Wizard (icon-only).
 		Menu_Registry::register(
 			array(

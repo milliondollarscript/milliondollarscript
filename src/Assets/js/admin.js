@@ -1,3 +1,11 @@
+/**
+ * Toggle all checkboxes with a given name attribute
+ * @param {string} name - The name attribute of checkboxes to toggle (without the [] suffix)
+ */
+function checkBoxes(name) {
+	jQuery('input[name="' + name + '[]"]').trigger('click');
+}
+
 jQuery(document).ready(function () {
 	let $fire_container = jQuery("div.milliondollarscript-fire");
 	if ($fire_container.length > 0) {
@@ -50,6 +58,9 @@ jQuery(document).ready(function () {
 		updateFirePosition();
 
 		jQuery(window).resize(function () {
+			// Remove any inline height style to let CSS media queries control the height
+			$fire_container.css("height", "");
+
 			const width = $fire_container.width();
 			const height = $fire_container.height();
 
@@ -88,27 +99,64 @@ jQuery(document).ready(function () {
 			menu.classList.toggle('menu-open');
 		});
 
-		// Add has-submenu class and click handlers for items with submenus
+		// Add has-submenu class and hover/click handlers for items with submenus
 		const menuItems = menu.querySelectorAll('li');
 		menuItems.forEach(item => {
 			const submenu = item.querySelector(':scope > ul');
 			if (submenu) {
 				item.classList.add('has-submenu');
 
-				// Toggle submenu on click (mobile only)
+				// Desktop hover behavior using hoverIntent
+				if (typeof jQuery !== 'undefined' && jQuery.fn.hoverIntent) {
+					jQuery(item).hoverIntent({
+						over: function() {
+							if (window.innerWidth > 750) {
+								jQuery(this).addClass('submenu-open');
+							}
+						},
+						out: function() {
+							if (window.innerWidth > 750) {
+								jQuery(this).removeClass('submenu-open');
+							}
+						},
+						timeout: 200
+					});
+				}
+
+				// Click handler for both mobile and desktop
 				const link = item.querySelector(':scope > a');
 				if (link) {
 					link.addEventListener('click', function(e) {
-						// Only toggle on mobile (when menu toggle is visible)
 						if (window.innerWidth <= 750) {
-							// If link has a URL and submenu is already open, allow navigation
+							// Mobile: toggle submenu, allow navigation on second click
 							if (this.getAttribute('href') && this.getAttribute('href') !== '#' && item.classList.contains('submenu-open')) {
 								return true;
 							}
-
-							// Otherwise toggle the submenu
 							e.preventDefault();
+							e.stopPropagation();
 							item.classList.toggle('submenu-open');
+						} else {
+							// Desktop: toggle submenu on click (for touch devices or preference)
+							// Only prevent default if there's no href or it's just a hash
+							const href = this.getAttribute('href');
+							if (!href || href === '#' || href === '') {
+								e.preventDefault();
+								e.stopPropagation();
+
+								// Toggle this submenu
+								const wasOpen = item.classList.contains('submenu-open');
+
+								// Close all other submenus at the same level
+								const siblings = Array.from(item.parentElement.children);
+								siblings.forEach(sibling => {
+									if (sibling !== item) {
+										sibling.classList.remove('submenu-open');
+									}
+								});
+
+								// Toggle current submenu
+								item.classList.toggle('submenu-open', !wasOpen);
+							}
 						}
 					});
 				}
@@ -121,6 +169,13 @@ jQuery(document).ready(function () {
 				if (!e.target.closest('.milliondollarscript-menu-wrapper')) {
 					menuToggle.setAttribute('aria-expanded', 'false');
 					menu.classList.remove('menu-open');
+				}
+			} else if (window.innerWidth > 750) {
+				// Desktop: close all submenus when clicking outside
+				if (!e.target.closest('ul.milliondollarscript-menu')) {
+					menuItems.forEach(item => {
+						item.classList.remove('submenu-open');
+					});
 				}
 			}
 		});

@@ -58,7 +58,8 @@ function checkBoxes(name) {
 }
 
 jQuery(document).ready(function ($) {
-	const $mds_admin_menu = $(".mds-admin-menu");
+	// Support both old and new menu class names throughout
+	const $mds_admin_menu = $(".mds-admin-menu, .milliondollarscript-menu");
 	const MENU_ITEM_SELECTOR = ".mds-admin-menu li, .milliondollarscript-menu li";
 	const MENU_LINK_SELECTOR = ".mds-admin-menu li > a, .milliondollarscript-menu li > a";
 	const HOVER_OPEN_DELAY = 400;
@@ -144,6 +145,7 @@ jQuery(document).ready(function ($) {
 
 	function handleHoverOver() {
 		const $li = $(this);
+		// Only handle hover on desktop
 		if (!isDesktop || $li.children('ul').length === 0) {
 			return;
 		}
@@ -160,6 +162,7 @@ jQuery(document).ready(function ($) {
 
 	function handleHoverOut() {
 		const $li = $(this);
+		// Only handle hover on desktop
 		if (!isDesktop || $li.children('ul').length === 0) {
 			return;
 		}
@@ -193,7 +196,7 @@ jQuery(document).ready(function ($) {
 		}
 	}
 
-	// Click handler - works on both mobile and desktop
+	// Mobile click handler - opens and keeps open, closes on second click or outside click
 	$(document).on("click", MENU_LINK_SELECTOR, function (e) {
 		const $link = $(this);
 		const $parent = $link.parent();
@@ -202,7 +205,29 @@ jQuery(document).ready(function ($) {
 		if ($parent.children('ul').length > 0) {
 			if (!isDesktop) {
 				e.preventDefault();
-				toggleSubmenu($link);
+				e.stopPropagation();
+
+				// Check if submenu is already open and fully visible
+				const isOpen = $link.hasClass('mds-active-submenu');
+
+				if (isOpen) {
+					// Second click - close the submenu
+					closeSubmenu($parent);
+				} else {
+					// First click - close siblings and open this submenu
+					closeSiblingSubmenus($parent);
+					openSubmenu($parent, { immediate: true });
+				}
+			}
+		}
+	});
+
+	// Close submenus when clicking outside on mobile
+	$(document).on("click", function (e) {
+		if (!isDesktop) {
+			// If click is not on a menu item, close all submenus
+			if (!$(e.target).closest(MENU_ITEM_SELECTOR).length) {
+				closeAllMenus({ immediate: true });
 			}
 		}
 	});
@@ -233,7 +258,9 @@ jQuery(document).ready(function ($) {
 	$(document).on('mouseenter.mdsMenuHover', MENU_ITEM_SELECTOR, handleHoverOver);
 	$(document).on('mouseleave.mdsMenuHover', MENU_ITEM_SELECTOR, handleHoverOut);
 
-	const $mds_menu_toggle = $(".mds-menu-toggle");
+	// Support both old and new menu toggle class names
+	const $mds_menu_toggle = $(".mds-menu-toggle, .milliondollarscript-menu-toggle");
+	const $menu_containers = $(".mds-admin-menu, .milliondollarscript-menu");
 
 	updateMenuDisplay();
 
@@ -241,7 +268,18 @@ jQuery(document).ready(function ($) {
 
 	$mds_menu_toggle.on("click", function (e) {
 		e.preventDefault();
-		$mds_admin_menu.slideToggle();
+		// Toggle the corresponding menu container
+		const $toggle = $(this);
+		const $menuToToggle = $toggle.hasClass('mds-menu-toggle')
+			? $toggle.siblings('.mds-admin-menu')
+			: $toggle.siblings('.milliondollarscript-menu');
+
+		if ($menuToToggle.length > 0) {
+			$menuToToggle.slideToggle();
+		} else {
+			// Fallback: toggle all menu containers if no sibling found
+			$menu_containers.slideToggle();
+		}
 	});
 
 	function clearAllTimers() {
@@ -260,12 +298,12 @@ jQuery(document).ready(function ($) {
 		isDesktop = $(window).width() > 999;
 
 		if (isDesktop) {
-			$mds_admin_menu.css('display', '').addClass('mds-desktop-menu');
+			$menu_containers.css('display', '').addClass('mds-desktop-menu');
 			$mds_menu_toggle.hide();
 		} else {
-			$mds_admin_menu.removeClass('mds-desktop-menu');
-			if ($mds_admin_menu.is(":visible")) {
-				$mds_admin_menu.hide();
+			$menu_containers.removeClass('mds-desktop-menu');
+			if ($menu_containers.is(":visible")) {
+				$menu_containers.hide();
 			}
 			$mds_menu_toggle.show();
 
