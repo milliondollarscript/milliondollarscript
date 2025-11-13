@@ -41,9 +41,9 @@ jobs:
 
           output_path = os.environ["GITHUB_OUTPUT"]
           with open(output_path, "a", encoding="utf-8") as out:
-              out.write("body<<__CHANGELOG__\\n")
+              out.write("body<<__CHANGELOG__\n")
               out.write(body)
-              out.write("\\n__CHANGELOG__\\n")
+              out.write("\n__CHANGELOG__\n")
           PY
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
@@ -65,4 +65,3 @@ jobs:
               release_id: releaseId,
               body,
             });
-*** End Patch
