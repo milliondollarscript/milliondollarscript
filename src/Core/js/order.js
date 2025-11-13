@@ -447,6 +447,11 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		const currentWidth = img.width();
 		const currentHeight = img.height();
 
+		// Use getBoundingClientRect for more accurate positioning
+		const imgRect = img[0].getBoundingClientRect();
+		const container = img.parent();
+		const containerRect = container[0].getBoundingClientRect();
+
 		// Calculate block size
 		const blockWidth = currentWidth / gridWidthBlocks;
 		const blockHeight = currentHeight / gridHeightBlocks;
@@ -524,10 +529,14 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 				pixelX = Math.min(Math.max(0, pixelX), maxX);
 				pixelY = Math.min(Math.max(0, pixelY), maxY);
 
-				// Position the pointer
+				// Position the pointer relative to container, adjusting for image position within container
+				// Image position within container accounts for margin: 0 auto centering
+				const imgLeftInContainer = imgRect.left - containerRect.left;
+				const imgTopInContainer = imgRect.top - containerRect.top;
+
 				window.$block_pointer.css({
-					left: pixelX + "px",
-					top: pixelY + "px",
+					left: (pixelX + imgLeftInContainer) + "px",
+					top: (pixelY + imgTopInContainer) + "px",
 				});
 
 				// Calculate the block position based on pixel position
@@ -622,8 +631,12 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		// Get current image and pointer dimensions
 		const imgWidth = img.width();
 		const imgHeight = img.height();
-		const imgOffset = img.offset();
 		const pointer = window.$block_pointer;
+
+		// Use getBoundingClientRect for more accurate positioning
+		const imgRect = img[0].getBoundingClientRect();
+		const container = img.parent();
+		const containerRect = container[0].getBoundingClientRect();
 
 		// Calculate block dimensions based on current image size
 		const blockWidth = imgWidth / gridWidthBlocks;
@@ -637,9 +650,9 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		window.blk_width = blockWidth;
 		window.blk_height = blockHeight;
 
-		// Get mouse position relative to the image
-		const mouseX = e.pageX - imgOffset.left;
-		const mouseY = e.pageY - imgOffset.top;
+		// Get mouse position relative to the image (viewport coordinates)
+		const mouseX = e.clientX - imgRect.left;
+		const mouseY = e.clientY - imgRect.top;
 
 		// Constrain mouse position within image boundaries
 		const boundedMouseX = Math.max(0, Math.min(mouseX, imgWidth - 1));
@@ -665,10 +678,14 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		pixelX = Math.min(pixelX, maxX);
 		pixelY = Math.min(pixelY, maxY);
 
-		// Position the pointer
+		// Position the pointer relative to container, adjusting for image position within container
+		// Image position within container accounts for margin: 0 auto centering
+		const imgLeftInContainer = imgRect.left - containerRect.left;
+		const imgTopInContainer = imgRect.top - containerRect.top;
+
 		pointer.css({
-			left: pixelX + "px",
-			top: pixelY + "px",
+			left: (pixelX + imgLeftInContainer) + "px",
+			top: (pixelY + imgTopInContainer) + "px",
 		});
 
 		// Update the block position based on the constrained pixel position
