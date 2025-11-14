@@ -29,125 +29,12 @@
 
 namespace MillionDollarScript\Classes\System;
 
-use MillionDollarScript\Classes\Data\Options;
-
 defined( 'ABSPATH' ) or exit;
 
 /**
- * VCS API shim for core plugin updates via extension server.
- *
- * This class extends the YahnisElsts Plugin Update Checker VCS API to proxy
- * update requests to the MDS extension server instead of using GitLab directly.
- * Supports both legacy (v5.5) and modern (v5.6+) versions of the library.
+ * Handles HTTP communication with the extension server for core plugin updates.
  */
 class CorePluginUpdateVcsApi {
-	private const LEGACY_API_CLASS = 'Puc_v5p5_Vcs_Api';
-	private const MODERN_API_CLASS = '\YahnisElsts\PluginUpdateChecker\v5p6\Vcs\Api';
-
-	/**
-	 * Create VCS API instance for core plugin updates.
-	 *
-	 * @param string $extensionServerUrl Extension server base URL
-	 * @param string $channel Release channel (stable, beta, alpha)
-	 * @return object|null VCS API instance or null if library unavailable
-	 */
-	public static function create( string $extensionServerUrl, string $channel ): ?object {
-		$extensionServerUrl = rtrim( $extensionServerUrl, '/' );
-
-		// Try legacy library first (v5.5)
-		if ( class_exists( self::LEGACY_API_CLASS ) ) {
-			return new class( $extensionServerUrl, $channel ) extends \Puc_v5p5_Vcs_Api {
-				private $serverUrl;
-				private $channel;
-
-				public function __construct( string $serverUrl, string $channel ) {
-					parent::__construct( $serverUrl );
-					$this->serverUrl = $serverUrl;
-					$this->channel = $channel;
-				}
-
-				public function getUpdate() {
-					return $this->checkForUpdate();
-				}
-
-				public function checkForUpdate() {
-					return CorePluginUpdateVcsApi::requestUpdate( $this->serverUrl, $this->channel );
-				}
-
-				protected function getUpdateDetectionStrategies( $configBranch ) {
-					return [];
-				}
-
-				public function getBranch( $branchName ) {
-					return null;
-				}
-
-				public function getTag( $tagName ) {
-					return null;
-				}
-
-				public function getLatestTag() {
-					return null;
-				}
-
-				public function getRemoteFile( $path, $ref = 'master' ) {
-					return null;
-				}
-
-				public function getLatestCommitTime( $ref ) {
-					return null;
-				}
-			};
-		}
-
-		// Try modern library (v5.6+)
-		if ( class_exists( self::MODERN_API_CLASS ) ) {
-			return new class( $extensionServerUrl, $channel ) extends \YahnisElsts\PluginUpdateChecker\v5p6\Vcs\Api {
-				private $serverUrl;
-				private $channel;
-
-				public function __construct( string $serverUrl, string $channel ) {
-					parent::__construct( $serverUrl );
-					$this->serverUrl = $serverUrl;
-					$this->channel = $channel;
-				}
-
-				public function getUpdate() {
-					return $this->checkForUpdate();
-				}
-
-				public function checkForUpdate() {
-					return CorePluginUpdateVcsApi::requestUpdate( $this->serverUrl, $this->channel );
-				}
-
-				protected function getUpdateDetectionStrategies( $configBranch ) {
-					return [];
-				}
-
-				public function getBranch( $branchName ) {
-					return null;
-				}
-
-				public function getTag( $tagName ) {
-					return null;
-				}
-
-				public function getLatestTag() {
-					return null;
-				}
-
-				public function getRemoteFile( $path, $ref = 'master' ) {
-					return null;
-				}
-
-				public function getLatestCommitTime( $ref ) {
-					return null;
-				}
-			};
-		}
-
-		return null;
-	}
 
 	/**
 	 * Request update information from extension server.
@@ -170,6 +57,17 @@ class CorePluginUpdateVcsApi {
 		];
 
 		// Make request to extension server
+		Logs::log(
+			sprintf(
+				'Core plugin update request -> %s/api/public/core-plugin/v1/check-update (channel=%s, current=%s, sslverify=%s)',
+				$serverUrl,
+				$channel,
+				$request_body['current_version'],
+				$sslverify ? 'true' : 'false'
+			),
+			Logs::LEVEL_DEBUG
+		);
+
 		$response = wp_remote_post(
 			$serverUrl . '/api/public/core-plugin/v1/check-update',
 			[
@@ -186,14 +84,24 @@ class CorePluginUpdateVcsApi {
 		// Handle HTTP errors
 		if ( is_wp_error( $response ) ) {
 			Logs::log(
-				'Core plugin update check failed: ' . $response->get_error_message(),
-				'error'
+				'Core plugin update check failed (WP_Error): ' . $response->get_error_message(),
+				Logs::LEVEL_ERROR
 			);
+
 			return null;
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
 		$body_string   = wp_remote_retrieve_body( $response );
+
+		Logs::log(
+			sprintf(
+				'Core plugin update response status=%d body=%s',
+				$response_code,
+				self::truncate_for_log( $body_string )
+			),
+			Logs::LEVEL_DEBUG
+		);
 
 		// Handle non-200 responses
 		if ( $response_code !== 200 ) {
@@ -212,25 +120,37 @@ class CorePluginUpdateVcsApi {
 		$body = json_decode( $body_string );
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			Logs::log(
-				'Core plugin update check failed: Invalid JSON response',
-				'error'
+				'Core plugin update check failed: Invalid JSON response (' . json_last_error_msg() . ')',
+				Logs::LEVEL_ERROR
 			);
+
 			return null;
 		}
 
 		// Check for API-level errors
 		if ( empty( $body->success ) ) {
 			Logs::log(
-				'Core plugin update check failed: ' . ( $body->error ?? 'Unknown error' ),
-				'error'
+				'Core plugin update JSON indicated failure: ' . ( $body->error ?? 'Unknown error' ),
+				Logs::LEVEL_ERROR
 			);
+
 			return null;
 		}
 
 		// No update available
 		if ( empty( $body->data->update_available ) ) {
+			Logs::log( 'Core plugin update response indicates no update is available.', Logs::LEVEL_DEBUG );
 			return null;
 		}
+
+		Logs::log(
+			sprintf(
+				'Core plugin update available -> version %s channel %s',
+				$body->data->new_version ?? 'unknown',
+				$body->data->channel ?? $channel
+			),
+			Logs::LEVEL_INFO
+		);
 
 		// Transform extension server response to YahnisElsts format
 		return self::transformToUpdateObject( $body->data );
@@ -312,5 +232,24 @@ class CorePluginUpdateVcsApi {
 			$wp_version,
 			home_url()
 		);
+	}
+
+	/**
+	 * Sanitize and truncate a response body for safe logging.
+	 */
+	private static function truncate_for_log( string $value, int $max = 400 ): string {
+		$clean = self::sanitize_tokens_for_log( $value );
+		if ( strlen( $clean ) > $max ) {
+			return substr( $clean, 0, $max ) . '…';
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * Mask signed download tokens in log output.
+	 */
+	private static function sanitize_tokens_for_log( string $value ): string {
+		return preg_replace( '/token=[A-Za-z0-9._~-]+/', 'token=***', $value );
 	}
 }

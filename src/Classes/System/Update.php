@@ -38,9 +38,19 @@ class Update {
 	public static function checker(): void {
 		global $MDSUpdateChecker;
 		$updates = Options::get_option( 'updates', 'stable' );
+
+		Logs::log(
+			sprintf(
+				'Core update checker bootstrap (MDS_VERSION=%s, updates=%s)',
+				defined( 'MDS_VERSION' ) ? MDS_VERSION : 'unknown',
+				$updates
+			),
+			Logs::LEVEL_DEBUG
+		);
 		
 		// Skip update checks if disabled
 		if ( $updates === 'no' ) {
+			Logs::log( 'Core update checker skipped because updates option is set to "no".', Logs::LEVEL_DEBUG );
 			return;
 		}
 		
@@ -52,37 +62,19 @@ class Update {
 		if ( empty( $extension_server_url ) ) {
 			$extension_server_url = 'https://milliondollarscript.com';
 		}
-		
-		// Create VCS API shim for extension server
-		$vcs_api = CorePluginUpdateVcsApi::create( $extension_server_url, $updates );
-		
-		if ( $vcs_api === null ) {
-			// Fallback: Plugin Update Checker library not available
-			Logs::log(
-				'Plugin Update Checker library not available for core plugin updates',
-				'error'
-			);
-			return;
-		}
-		
-		// Directly instantiate the VCS plugin update checker (bypass factory)
-		$checker_class = '\\YahnisElsts\\PluginUpdateChecker\\v5p6\\Vcs\\PluginUpdateChecker';
-		
-		if ( ! class_exists( $checker_class ) ) {
-			Logs::log(
-				'VCS PluginUpdateChecker class not available',
-				'error'
-			);
-			return;
-		}
-		
-		$MDSUpdateChecker = new $checker_class(
-			$vcs_api,              // VCS API object
-			MDS_BASE_FILE,         // Plugin file path
-			'milliondollarscript-two',  // Slug
-			12,                    // Check period (hours)
-			'',                    // Option name (auto-generated)
-			''                     // MU plugin file (none)
+
+		Logs::log(
+			sprintf( 'Core update checker using extension server URL: %s', $extension_server_url ),
+			Logs::LEVEL_DEBUG
 		);
+		
+		$MDSUpdateChecker = new CorePluginUpdateChecker(
+			$extension_server_url,
+			MDS_BASE_FILE,
+			'milliondollarscript-two',
+			$updates
+		);
+
+		Logs::log( 'Core update checker successfully instantiated and scheduled.', Logs::LEVEL_DEBUG );
 	}
 }
