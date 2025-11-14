@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.15 - 2025-11-14
+
+
+
+### Fixed
+
+- fix GitHub release notes workflow and restore changelog
+
+
 ## 2.6.13 - 2025-11-13
 
 ### Added
