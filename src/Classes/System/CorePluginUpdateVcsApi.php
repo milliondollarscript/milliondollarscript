@@ -187,8 +187,10 @@ class CorePluginUpdateVcsApi {
 
 		// Changelog (convert Markdown to HTML if provided)
 		if ( ! empty( $data->changelog ) ) {
-			$update->sections = [
-				'changelog' => self::parseChangelog( $data->changelog ),
+			$changelog_html   = self::parseChangelog( $data->changelog );
+			$update->changelog = $changelog_html;
+			$update->sections  = [
+				'changelog' => $changelog_html,
 			];
 		}
 

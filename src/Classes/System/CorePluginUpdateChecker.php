@@ -111,6 +111,13 @@ class CorePluginUpdateChecker extends PluginUpdateChecker {
 		$info->author      = $data->author ?? 'Million Dollar Script';
 		$info->author_homepage = $data->author_homepage ?? 'https://milliondollarscript.com';
 
+		if ( empty( $info->sections['changelog'] ) ) {
+			$changelog_html = $this->render_changelog( $data->changelog ?? '' );
+			if ( $changelog_html ) {
+				$info->sections['changelog'] = $changelog_html;
+			}
+		}
+
 		return $info;
 	}
 
@@ -130,6 +137,16 @@ class CorePluginUpdateChecker extends PluginUpdateChecker {
 		$update->sections = isset( $data->sections ) ? (array) $data->sections : [];
 		$update->homepage = $data->homepage ?? 'https://milliondollarscript.com';
 		$update->name = $data->name ?? 'Million Dollar Script';
+
+		if ( empty( $update->sections['changelog'] ) ) {
+			$changelog_html = $this->render_changelog( $data->changelog ?? '' );
+			if ( $changelog_html ) {
+				$update->sections['changelog'] = $changelog_html;
+			}
+		}
+		if ( empty( $update->changelog ) && ! empty( $update->sections['changelog'] ) ) {
+			$update->changelog = $update->sections['changelog'];
+		}
 
 		return $update;
 	}
@@ -166,5 +183,23 @@ class CorePluginUpdateChecker extends PluginUpdateChecker {
 		Logs::log( sprintf( 'Core plugin download starting: %s', $package ), Logs::LEVEL_DEBUG );
 
 		return $reply;
+	}
+
+	/**
+	 * Render changelog Markdown (or plain text) to HTML for the admin UI.
+	 */
+	private function render_changelog( string $changelog ): string {
+		$trimmed = trim( $changelog );
+		if ( $trimmed === '' ) {
+			return '';
+		}
+
+		if ( class_exists( 'Parsedown' ) ) {
+			return \Parsedown::instance()->text( $trimmed );
+		}
+
+		$html = wpautop( $trimmed );
+
+		return str_replace( "\n", '<br>', $html );
 	}
 }

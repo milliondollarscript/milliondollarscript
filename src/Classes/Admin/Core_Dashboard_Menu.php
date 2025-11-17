@@ -9,6 +9,8 @@
 
 namespace MillionDollarScript\Classes\Admin;
 
+use MillionDollarScript\Classes\Data\Options;
+
 /**
  * Core_Dashboard_Menu class
  *
@@ -490,12 +492,14 @@ class Core_Dashboard_Menu {
 			)
 		);
 
-		// System > Changelog.
+		// System > Changelog (external link to extension server).
+		$extension_server = rtrim( (string) Options::get_option( 'extension_server_url', 'https://milliondollarscript.com' ), '/' );
 		Menu_Registry::register(
 			array(
-				'slug'     => 'milliondollarscript_changelog',
+				'slug'     => 'milliondollarscript_changelog_external',
 				'title'    => 'Changelog',
-				'url'      => admin_url( 'admin.php?page=milliondollarscript_changelog' ),
+				'url'      => $extension_server . '/changelog',
+				'target'   => '_blank',
 				'parent'   => 'system',
 				'position' => 9,
 			)
