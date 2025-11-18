@@ -4,45 +4,28 @@
 
 
 
-### CI
+### Changed
 
-- checkout release tag before extracting changelog
+- improve tippy instance management for multiple tooltips
 
+- replace internal changelog page with external link
 
-### Chore
-
-- bump version to 2.6.29
-
-- pin working tree to 2.6.28 for 2.6.28 release
-
-- keep working tree at 2.6.28
-
-
-## 2.6.28 - 2025-11-18
-
+- redesign update architecture with direct HTTP communication
 
 
 ### Chore
 
-- prepare release 2.6.28 with changelog in package
+- update composer autoload for new classes and version upgrades
 
 
-## 2.6.27 - 2025-11-18
+### Documentation
+
+- convert plain text URLs to markdown links in readme
 
 
+### Fixed
 
-### Chore
-
-- align version to 2.6.26
-
-
-## 2.6.26 - 2025-11-18
-
-
-
-### Chore
-
-- re-release 2.6.25 to include changelog in package
+- ensure links always have valid href
 
 
 ## 2.6.24 - 2025-11-18
