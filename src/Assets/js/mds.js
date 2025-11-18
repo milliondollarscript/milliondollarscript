@@ -287,7 +287,13 @@ function mds_load_ajax() {
 }
 
 function updateTippyPosition() {
-	if (window.tippy_instance && window.tippy_instance.popperInstance) {
+	if (window.tippy_instances && Array.isArray(window.tippy_instances)) {
+		window.tippy_instances.forEach((instance) => {
+			if (instance && instance.popperInstance) {
+				instance.popperInstance.update().then(() => {});
+			}
+		});
+	} else if (window.tippy_instance && window.tippy_instance.popperInstance) {
 		window.tippy_instance.popperInstance.update().then(() => {});
 	}
 }
@@ -359,6 +365,17 @@ function mdsParseAreaData($element) {
 }
 
 function add_tippy() {
+	if (window.tippy_instances && Array.isArray(window.tippy_instances)) {
+		window.tippy_instances.forEach((instance) => {
+			if (instance && typeof instance.destroy === "function") {
+				instance.destroy();
+			}
+		});
+	}
+
+	window.tippy_instances = [];
+	window.tippy_instance = null;
+
 	const defaultContent =
 		"<div class='ajax-loader' role='status' aria-live='polite'><span class='ajax-loader__spinner' aria-hidden='true'></span></div>";
 	const isIOS = /iPhone|iPad|iPod/.test(navigator.platform);
@@ -443,7 +460,7 @@ function add_tippy() {
 
 	// Only initialize tippy if the selector is not empty
 	if (tooltipSelector) {
-		tippy(tooltipSelector, {
+		const instances = tippy(tooltipSelector, {
 			theme: "light",
 			content: defaultContent,
 			duration: 50,
@@ -489,6 +506,7 @@ function add_tippy() {
 				instance._isFetching = false;
 				instance._content = null;
 				instance._error = null;
+				window.tippy_instance = instance;
 
 				// Store the instance in a local property instead of overwriting global one
 				// This prevents issues with multiple grids where the last one would overwrite others
@@ -577,6 +595,10 @@ function add_tippy() {
 				instance._error = null;
 			},
 		});
+		window.tippy_instances = instances || [];
+		if (window.tippy_instances.length > 0) {
+			window.tippy_instance = window.tippy_instances[0];
+		}
 
 		// Track touch interactions to improve tooltip behavior
 		window.is_touch = false;
@@ -662,11 +684,7 @@ jQuery(document).on("mds-loaded", function (event) {
 
 function mds_load_tippy(tippy, $el, scalemap, type, isgrid) {
 	let tooltips_deferred = false; // Renamed to avoid confusion
-	if (
-		tippy &&
-		window.tippy_instance == undefined &&
-		MDS.ENABLE_MOUSEOVER !== "NO"
-	) {
+	if (tippy && MDS.ENABLE_MOUSEOVER !== "NO") {
 		tooltips_deferred = true;
 		defer("Popper", () => {
 			defer("tippy", () => {
