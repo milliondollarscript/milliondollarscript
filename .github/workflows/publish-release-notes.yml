@@ -17,11 +17,6 @@ jobs:
   changelog-to-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Resolve tag name
         id: vars
         run: |
@@ -32,6 +27,13 @@ jobs:
             exit 1
           fi
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out repository at tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: refs/tags/${{ steps.vars.outputs.tag }}
 
       - name: Extract notes from CHANGELOG.md
         id: extract
