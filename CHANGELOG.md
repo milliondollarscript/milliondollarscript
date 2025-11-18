@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.6.30 - 2025-11-18
+
+
+
+### CI
+
+- handle workflow_dispatch release lookup
+
+- fix changelog regex escaping
+
+- make changelog parser more tolerant
+
+
+### Documentation
+
+- update changelog for 2.6.29
+
+
+### Fixed
+
+- restrict pointer image endpoint access
+
+
 ## 2.6.29 - 2025-11-18
 
 
