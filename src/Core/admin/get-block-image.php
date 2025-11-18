@@ -28,15 +28,29 @@
 
 defined( 'ABSPATH' ) or exit;
 
+// Only admins should be able to fetch admin asset variants.
+if ( ! current_user_can( 'manage_options' ) ) {
+	wp_die( 'Unauthorized access.' );
+}
+
 // accepts $_REQUEST['BID'] and $_REQUEST['image_name']
 
 global $f2;
-$row = load_banner_constants( $f2->bid() );
+$BID = $f2->bid();
 
-$image = $row[ $_REQUEST['image_name'] ];
+// Sanitize the requested key to avoid accessing unexpected array fields.
+$image_name = isset( $_REQUEST['image_name'] ) ? sanitize_key( wp_unslash( $_REQUEST['image_name'] ) ) : '';
+if ( $image_name === '' ) {
+	wp_die( 'Invalid image request.' );
+}
 
-if ( $image == '' ) {
-	$image = get_default_image( $_REQUEST['image_name'] );
+$row = load_banner_constants( $BID );
+
+// Guard against missing keys to prevent notices and accidental data leakage.
+$image = $row[ $image_name ] ?? '';
+
+if ( $image === '' ) {
+	$image = get_default_image( $image_name );
 }
 
 header( "Cache-Control: max-age=60, must-revalidate" ); // HTTP/1.1

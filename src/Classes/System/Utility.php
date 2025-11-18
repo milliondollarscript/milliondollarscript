@@ -1631,6 +1631,24 @@ class Utility {
 	}
 
 	/**
+	 * Safely unserialize a value while disallowing object instantiation.
+	 * Mirrors maybe_unserialize behavior but passes allowed_classes => false.
+	 */
+	public static function safe_maybe_unserialize( $value ) {
+		if ( ! is_string( $value ) ) {
+			return $value;
+		}
+
+		if ( ! is_serialized( $value ) ) {
+			return $value;
+		}
+
+		$result = @unserialize( $value, [ 'allowed_classes' => false ] );
+
+		return ( false === $result && 'b:0;' !== $value ) ? $value : $result;
+	}
+
+	/**
 	 * Outputs an HTML dropdown (<select>) of available grids.
 	 *
 	 * Queries the database for all banners/grids and generates <option> tags.

@@ -104,26 +104,44 @@ class Cron {
 
 		$banners = $wpdb->get_results( "SELECT `banner_id` FROM " . MDS_DB_PREFIX . "banners ORDER BY banner_id", ARRAY_A );
 
-		foreach ( $banners as $banner ) {
-			$upload_dir = Utility::get_upload_path() . "grids/";
-			$dh         = opendir( $upload_dir );
-			while ( ( $file = readdir( $dh ) ) !== false ) {
-				// 24 hours
-				$elapsed_time = 60 * 60 * 24;
+		// Bail early if upload directory is missing to avoid runtime warnings in cron.
+		$grid_dir = Utility::get_upload_path() . "grids/";
+		if ( is_dir( $grid_dir ) && is_readable( $grid_dir ) ) {
+			foreach ( $banners as $banner ) {
+				$upload_dir = $grid_dir;
+				$dh         = @opendir( $upload_dir );
+				if ( ! $dh ) {
+					Logs::log( 'clean_temp_files: unable to open grids directory: ' . $upload_dir, Logs::LEVEL_WARNING );
+					continue;
+				}
+				while ( ( $file = readdir( $dh ) ) !== false ) {
+					// 24 hours
+					$elapsed_time = 60 * 60 * 24;
 
-				// delete old files
-				$stat = stat( $upload_dir . $file );
-				if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
-					if ( str_starts_with( $file, 'grid' . $banner['banner_id'] . '-' ) ) {
-						unlink( $upload_dir . $file );
+					// delete old files
+					$stat = stat( $upload_dir . $file );
+					if ( $stat['mtime'] < ( time() - $elapsed_time ) ) {
+						if ( str_starts_with( $file, 'grid' . $banner['banner_id'] . '-' ) ) {
+							unlink( $upload_dir . $file );
+						}
 					}
 				}
 			}
+		} else {
+			Logs::log( 'clean_temp_files: grids upload directory missing or unreadable: ' . $grid_dir, Logs::LEVEL_WARNING );
 		}
 
 		// delete tmp_* files older than 24 hours
 		$upload_dir = Utility::get_upload_path() . "images/";
-		$dh         = opendir( $upload_dir );
+		if ( ! is_dir( $upload_dir ) || ! is_readable( $upload_dir ) ) {
+			Logs::log( 'clean_temp_files: images upload directory missing or unreadable: ' . $upload_dir, Logs::LEVEL_WARNING );
+			return;
+		}
+		$dh         = @opendir( $upload_dir );
+		if ( ! $dh ) {
+			Logs::log( 'clean_temp_files: unable to open images directory: ' . $upload_dir, Logs::LEVEL_WARNING );
+			return;
+		}
 		while ( ( $file = readdir( $dh ) ) !== false ) {
 			// 24 hours
 			$elapsed_time = 60 * 60 * 24;

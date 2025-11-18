@@ -356,7 +356,7 @@ class Extensions {
         while (is_string($value) && $attempts < 5) {
             $attempts++;
 
-            $maybe_unserialized = maybe_unserialize($value);
+            $maybe_unserialized = Utility::safe_maybe_unserialize($value);
             if ($maybe_unserialized !== $value) {
                 $value = $maybe_unserialized;
                 continue;
@@ -378,9 +378,9 @@ class Extensions {
         return $value;
     }
 
-    private static function extract_stripe_price_blocks($value): array
-    {
-        $value = self::decode_metadata_fragment($value);
+	private static function extract_stripe_price_blocks($value): array
+	{
+		$value = self::decode_metadata_fragment($value);
 
         if (!is_array($value)) {
             return [];
@@ -2859,27 +2859,27 @@ class Extensions {
             $createdAt = gmdate('c');
         }
 
-        $metadata = [];
-        if (isset($raw['metadata'])) {
-            $metaValue = $raw['metadata'];
-            if (is_string($metaValue)) {
-                $unserialized = maybe_unserialize($metaValue);
-                if ($unserialized !== $metaValue) {
-                    $metaValue = $unserialized;
-                } else {
-                    $decoded = json_decode($metaValue, true);
-                    if (is_array($decoded)) {
-                        $metaValue = $decoded;
-                    }
-                }
-            } elseif ($metaValue instanceof \stdClass) {
-                $metaValue = json_decode(wp_json_encode($metaValue), true);
-            }
+		$metadata = [];
+		if (isset($raw['metadata'])) {
+			$metaValue = $raw['metadata'];
+			if (is_string($metaValue)) {
+				$unserialized = Utility::safe_maybe_unserialize($metaValue);
+				if ($unserialized !== $metaValue) {
+					$metaValue = $unserialized;
+				} else {
+					$decoded = json_decode($metaValue, true);
+					if (is_array($decoded)) {
+						$metaValue = $decoded;
+					}
+				}
+			} elseif ($metaValue instanceof \stdClass) {
+				$metaValue = json_decode(wp_json_encode($metaValue), true);
+			}
 
-            if (is_array($metaValue)) {
-                $metadata = $metaValue;
-            }
-        }
+			if (is_array($metaValue)) {
+				$metadata = $metaValue;
+			}
+		}
         if (!is_array($metadata)) {
             $metadata = [];
         }
@@ -3378,19 +3378,19 @@ class Extensions {
      * Decode a license metadata payload retrieved from wp_mds_extension_licenses.
      */
     private static function normalize_license_metadata($metadata): array {
-        if ($metadata === null || $metadata === '') {
-            return [];
-        }
+		if ($metadata === null || $metadata === '') {
+		    return [];
+		}
 
-        if (is_string($metadata)) {
-            $unserialized = maybe_unserialize($metadata);
-            if ($unserialized !== $metadata) {
-                return self::normalize_license_metadata($unserialized);
-            }
+		if (is_string($metadata)) {
+			$unserialized = Utility::safe_maybe_unserialize($metadata);
+			if ($unserialized !== $metadata) {
+				return self::normalize_license_metadata($unserialized);
+			}
 
-            $decoded = json_decode($metadata, true);
-            return is_array($decoded) ? $decoded : [];
-        }
+			$decoded = json_decode($metadata, true);
+			return is_array($decoded) ? $decoded : [];
+		}
 
         if ($metadata instanceof \stdClass) {
             return json_decode(wp_json_encode($metadata), true) ?: [];

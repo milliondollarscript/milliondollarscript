@@ -29,6 +29,7 @@
 
 namespace MillionDollarScript\Classes\Extension;
 
+use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\Data\DatabaseStatic;
 
 defined( 'ABSPATH' ) or exit;
@@ -268,20 +269,20 @@ class MDS_License_Manager {
     /**
      * Decode a stored metadata value into an array.
      */
-    public static function decode_metadata_value( $metadata ): array {
-        if ( $metadata === null || $metadata === '' ) {
-            return [];
-        }
+	public static function decode_metadata_value( $metadata ): array {
+		if ( $metadata === null || $metadata === '' ) {
+			return [];
+		}
 
-        if ( is_string( $metadata ) ) {
-            $unserialized = maybe_unserialize( $metadata );
-            if ( $unserialized !== $metadata ) {
-                return self::decode_metadata_value( $unserialized );
-            }
+		if ( is_string( $metadata ) ) {
+			$unserialized = Utility::safe_maybe_unserialize( $metadata );
+			if ( $unserialized !== $metadata ) {
+				return self::decode_metadata_value( $unserialized );
+			}
 
-            $decoded = json_decode( $metadata, true );
-            return is_array( $decoded ) ? $decoded : [];
-        }
+			$decoded = json_decode( $metadata, true );
+			return is_array( $decoded ) ? $decoded : [];
+		}
 
         if ( $metadata instanceof \stdClass ) {
             return json_decode( wp_json_encode( $metadata ), true ) ?: [];
@@ -291,8 +292,9 @@ class MDS_License_Manager {
             return $metadata;
         }
 
-        return [];
-    }
+		return [];
+	}
+
 
     /**
      * Merge metadata and date fields from a remote license payload.
