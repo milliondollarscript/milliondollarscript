@@ -52,7 +52,7 @@ jobs:
               changelog = fh.read()
 
           # Allow CRLF/LF and tolerate optional date suffix on heading
-          pattern = rf"^##\\s+{re.escape(version)}[^\\n]*\\r?\\n(?P<body>.*?)(?=^##\\s+|\\Z)"
+          pattern = rf"^##\s+{re.escape(version)}[^\n]*\r?\n(?P<body>.*?)(?=^##\s+|\Z)"
           match = re.search(pattern, changelog, flags=re.MULTILINE | re.DOTALL)
           if not match:
               raise SystemExit(f"Could not find changelog entry for version '{version}'")
