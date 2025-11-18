@@ -36,6 +36,11 @@ if ( ! current_user_can( 'manage_options' ) ) {
 header( "Cache-Control: no-cache, must-revalidate" ); // HTTP/1.1
 header( "Expires: Mon, 26 Jul 1997 05:00:00 GMT" ); // Date in the past
 
+// Restrict to administrators
+if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+	wp_die( 'Unauthorized', 403 );
+}
+
 global $f2;
 $BID = $f2->bid();
 
