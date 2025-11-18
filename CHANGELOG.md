@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.6.29 - 2025-11-18
+
+
+
+### CI
+
+- checkout release tag before extracting changelog
+
+
+### Chore
+
+- bump version to 2.6.29
+
+- pin working tree to 2.6.28 for 2.6.28 release
+
+- keep working tree at 2.6.28
+
+
 ## 2.6.28 - 2025-11-18
 
 
