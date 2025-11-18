@@ -51,7 +51,8 @@ jobs:
           with open(changelog_path, "r", encoding="utf-8") as fh:
               changelog = fh.read()
 
-          pattern = rf"^##\\s+{re.escape(version)}(?:\\s+-\\s+[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}})?\\s*\\n(?P<body>.*?)(?=^##\\s+|\\Z)"
+          # Allow CRLF/LF and tolerate optional date suffix on heading
+          pattern = rf"^##\\s+{re.escape(version)}[^\\n]*\\r?\\n(?P<body>.*?)(?=^##\\s+|\\Z)"
           match = re.search(pattern, changelog, flags=re.MULTILINE | re.DOTALL)
           if not match:
               raise SystemExit(f"Could not find changelog entry for version '{version}'")
