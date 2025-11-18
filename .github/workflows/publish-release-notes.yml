@@ -73,10 +73,27 @@ jobs:
       - name: Update GitHub release body
         uses: actions/github-script@v7
         env:
+          TAG_NAME: ${{ steps.vars.outputs.tag }}
           RELEASE_BODY: ${{ steps.extract.outputs.body }}
         with:
           script: |
-            const releaseId = context.payload.release.id;
+            const tag = process.env.TAG_NAME;
+            if (!tag) {
+              throw new Error("Missing TAG_NAME for release update");
+            }
+            let releaseId = context.payload?.release?.id;
+            if (!releaseId) {
+              // Workflow dispatches don't include a release payload; fetch by tag.
+              const { data } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag,
+              }).catch(() => ({ data: null }));
+              releaseId = data?.id;
+            }
+            if (!releaseId) {
+              throw new Error(`Could not resolve release for tag ${tag}`);
+            }
             const body = process.env.RELEASE_BODY;
             if (!body) {
               throw new Error("No release body content found in outputs");
