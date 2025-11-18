@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.6.24 - 2025-11-18
+
+
+
+### Changed
+
+- improve tippy instance management for multiple tooltips
+
+- replace internal changelog page with external link
+
+- redesign update architecture with direct HTTP communication
+
+
+### Chore
+
+- update composer autoload for new classes and version upgrades
+
+
+### Documentation
+
+- convert plain text URLs to markdown links in readme
+
+
+### Fixed
+
+- ensure links always have valid href
+
+
 ## 2.6.15 - 2025-11-14
 
 
