@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.32 - 2025-11-18
+
+
+
+### Fixed
+
+- harden metadata parsing and admin image access
+
+
 ## 2.6.30 - 2025-11-18
 
 
