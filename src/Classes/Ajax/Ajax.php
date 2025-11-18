@@ -828,15 +828,24 @@ class Ajax {
 			$json = '[]';
 		}
 
+		$href = trim( (string) ( $row_context['url'] ?? '' ) );
+		if ( '' === $href ) {
+			$href = '#';
+		}
+
 		$attributes = [
 			'target'        => '_blank',
 			'class'         => 'list-link',
-			'href'          => esc_url( $row_context['url'] ?? '' ),
+			'href'          => esc_url( $href ),
 			'data-data'     => htmlspecialchars( $json, ENT_QUOTES, 'UTF-8' ),
 			'data-alt-text' => $row_context['alt_text_clean'] ?? '',
 		];
 
 		$attributes = apply_filters( 'mds_list_link_attributes', $attributes, $row_context, $column );
+
+		if ( empty( $attributes['href'] ) ) {
+			$attributes['href'] = '#';
+		}
 
 		$link_text = $row_context['alt_text_raw'] ?? '';
 		if ( '' === $link_text ) {
