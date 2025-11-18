@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.28 - 2025-11-18
+
+
+
+### Chore
+
+- prepare release 2.6.28 with changelog in package
+
+
 ## 2.6.27 - 2025-11-18
 
 
