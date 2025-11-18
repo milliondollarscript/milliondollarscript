@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.26 - 2025-11-18
+
+
+
+### Chore
+
+- re-release 2.6.25 to include changelog in package
+
+
 ## 2.6.24 - 2025-11-18
 
 
