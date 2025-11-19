@@ -1,0 +1,30 @@
+{
+  "name": "milliondollarscript-two",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": ".eslintrc.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/milliondollarscript/milliondollarscript.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/milliondollarscript/milliondollarscript/issues"
+  },
+  "homepage": "https://github.com/milliondollarscript/milliondollarscript#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0"
+  }
+}

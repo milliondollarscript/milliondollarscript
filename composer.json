@@ -1,0 +1,69 @@
+{
+    "name": "milliondollarscript/milliondollarscript-two",
+    "description": "A WordPress plugin with Million Dollar Script 2.x embedded in it.",
+    "version": "2.6.33",
+    "keywords": [
+        "million dollar script",
+        "pixel advertising",
+        "grid",
+        "ad space",
+        "marketing",
+        "wordpress",
+        "plugin"
+    ],
+    "homepage": "https://milliondollarscript.com/",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Ryan Rhode",
+            "email": "ryan@milliondollarscript.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "MillionDollarScript\\": "src/"
+        },
+        "classmap": [
+            "src/Core/include"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.1"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": false,
+            "composer/installers": true
+        },
+        "vendor-dir": "vendor"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.1",
+        "composer/installers": "^2.3",
+        "htmlburger/carbon-fields": "^3.6",
+        "yahnis-elsts/plugin-update-checker": "^5.6",
+        "imagine/imagine": "^1.5",
+        "nikic/php-parser": "^5.6",
+        "ext-mysqli": "*",
+        "ext-gd": "*",
+        "ext-json": "*",
+        "ext-iconv": "*",
+        "ext-mbstring": "*",
+        "ext-curl": "*",
+        "ext-bcmath": "*",
+        "ext-openssl": "*",
+        "ext-fileinfo": "*",
+        "ext-imagick": "*"
+    },
+    "scripts": {
+        "lint": "phpcs"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.13",
+        "wp-coding-standards/wpcs": "^3.2"
+    }
+}
