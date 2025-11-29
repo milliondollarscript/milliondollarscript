@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.6.36-alpha.1 - 2025-11-29
+
+
+
+### Added
+
+- add optional anonymous version tracking with user control
+
+
+### Chore
+
+- Update ESLint configuration with single quotes and `wp` global, re-minify `mds.min.
+
+- finalize 2.x updates (composer keywords, linting, gitignore)
+
+
 ## 2.6.32 - 2025-11-18
 
 
