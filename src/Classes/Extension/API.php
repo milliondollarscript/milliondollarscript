@@ -9,6 +9,18 @@ use MillionDollarScript\Classes\Data\Options;
 class API {
 
     /**
+     * Check if version analytics tracking is disabled.
+     *
+     * @return bool True if analytics is disabled, false if enabled
+     */
+    private static function is_version_analytics_disabled(): bool {
+        if ( ! is_callable( [ Options::class, 'get_option' ] ) ) {
+            return false;
+        }
+        return Options::get_option( 'disable_version_analytics', 'no' ) === 'yes';
+    }
+
+    /**
      * Get the base URL for the extension server.
      *
      * @return string
@@ -31,23 +43,31 @@ class API {
      *
      * @param string $license_key
      * @param string $extension_slug
+     * @param string $version Optional version string to track
      * @return array|mixed
      */
-    public static function activate_license( string $license_key, string $extension_slug ) {
+    public static function activate_license( string $license_key, string $extension_slug, string $version = '' ) {
         // Use public API for activation; pass productIdentifier as slug for now
         $url = self::get_base_url() . '/api/public/activate';
 
+        $body = [
+            'licenseKey'        => $license_key,
+            'productIdentifier' => $extension_slug,
+            'deviceId'          => md5( site_url() ), // Required: unique site identifier for activation tracking
+        ];
+
+        // Only send version if analytics not disabled
+        if ( $version !== '' && ! self::is_version_analytics_disabled() ) {
+            $body['version'] = $version;
+        }
+
         $response = wp_remote_post( $url, [
-            'body' => json_encode( [
-                'licenseKey'        => $license_key,
-                'productIdentifier' => $extension_slug,
-                'deviceId'          => md5( site_url() ), // Required: unique site identifier for activation tracking
-            ] ),
+            'body' => json_encode( $body ),
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 20,
-            'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment(),
+            'sslverify' => ! Utility::is_development_environment(),
         ] );
 
         if ( is_wp_error( $response ) ) {
@@ -65,21 +85,30 @@ class API {
      *
      * @param string $license_key
      * @param string $extension_slug
+     * @param string $version Optional version string to track
      * @return array|mixed
      */
-    public static function validate_license( string $license_key, string $extension_slug ) {
+    public static function validate_license( string $license_key, string $extension_slug, string $version = '' ) {
         $url = self::get_base_url() . '/api/public/validate';
 
+        $body = [
+            'licenseKey'        => $license_key,
+            'productIdentifier' => $extension_slug,
+            'deviceId'          => md5( site_url() ), // Required for version tracking
+        ];
+
+        // Only send version if analytics not disabled
+        if ( $version !== '' && ! self::is_version_analytics_disabled() ) {
+            $body['version'] = $version;
+        }
+
         $response = wp_remote_post( $url, [
-            'body' => json_encode( [
-                'licenseKey'        => $license_key,
-                'productIdentifier' => $extension_slug,
-            ] ),
+            'body' => json_encode( $body ),
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 20,
-            'sslverify' => !Utility::is_development_environment(),
+            'sslverify' => ! Utility::is_development_environment(),
         ] );
 
         if ( is_wp_error( $response ) ) {
@@ -109,23 +138,31 @@ class API {
      *
      * @param string $license_key
      * @param string $extension_slug
+     * @param string $version Optional version string to track
      * @return array|mixed
      */
-    public static function deactivate_license( string $license_key, string $extension_slug ) {
+    public static function deactivate_license( string $license_key, string $extension_slug, string $version = '' ) {
         // Use public API for deactivation; pass productIdentifier as slug for consistency
         $url = self::get_base_url() . '/api/public/deactivate';
 
+        $body = [
+            'licenseKey'        => $license_key,
+            'productIdentifier' => $extension_slug,
+            'deviceId'          => md5( site_url() ), // Required: unique site identifier for deactivation tracking
+        ];
+
+        // Only send version if analytics not disabled
+        if ( $version !== '' && ! self::is_version_analytics_disabled() ) {
+            $body['version'] = $version;
+        }
+
         $response = wp_remote_post( $url, [
-            'body' => json_encode( [
-                'licenseKey'        => $license_key,
-                'productIdentifier' => $extension_slug,
-                'deviceId'          => md5( site_url() ), // Required: unique site identifier for deactivation tracking
-            ] ),
+            'body' => json_encode( $body ),
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
             'timeout' => 20,
-            'sslverify' => !\MillionDollarScript\Classes\System\Utility::is_development_environment(),
+            'sslverify' => ! Utility::is_development_environment(),
         ] );
 
         if ( is_wp_error( $response ) ) {

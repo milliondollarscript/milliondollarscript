@@ -2,6 +2,7 @@
 
 namespace MillionDollarScript\Classes\Extension;
 
+use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
 
 /**
@@ -199,14 +200,25 @@ class PluginUpdateCheckerHelper {
             'current_version' => $currentVersion,
         ];
 
+        // Build headers
+        $headers = [
+            'Content-Type' => 'application/json',
+            'x-license-key' => $licenseKey,
+            'User-Agent' => self::buildUserAgent(),
+        ];
+
+        // Add analytics opt-out header if user has disabled version analytics
+        $disable_analytics = is_callable( [ Options::class, 'get_option' ] )
+            ? Options::get_option( 'disable_version_analytics', 'no' )
+            : 'no';
+        if ( $disable_analytics === 'yes' ) {
+            $headers['X-MDS-Analytics-Opt-Out'] = '1';
+        }
+
         $response = wp_remote_post(
             $serverUrl . '/api/public/v1/extensions/check-update',
             [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'x-license-key' => $licenseKey,
-                    'User-Agent' => self::buildUserAgent(),
-                ],
+                'headers' => $headers,
                 'body' => wp_json_encode($request_body),
                 'timeout' => 30,
                 'sslverify' => $sslverify,

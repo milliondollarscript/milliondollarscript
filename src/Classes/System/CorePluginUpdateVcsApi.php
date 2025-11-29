@@ -29,6 +29,8 @@
 
 namespace MillionDollarScript\Classes\System;
 
+use MillionDollarScript\Classes\Data\Options;
+
 defined( 'ABSPATH' ) or exit;
 
 /**
@@ -68,13 +70,24 @@ class CorePluginUpdateVcsApi {
 			Logs::LEVEL_DEBUG
 		);
 
+		// Build headers
+		$headers = [
+			'Content-Type' => 'application/json',
+			'User-Agent'   => self::buildUserAgent(),
+		];
+
+		// Add analytics opt-out header if user has disabled version analytics
+		$disable_analytics = is_callable( [ Options::class, 'get_option' ] )
+			? Options::get_option( 'disable_version_analytics', 'no' )
+			: 'no';
+		if ( $disable_analytics === 'yes' ) {
+			$headers['X-MDS-Analytics-Opt-Out'] = '1';
+		}
+
 		$response = wp_remote_post(
 			$serverUrl . '/api/public/core-plugin/v1/check-update',
 			[
-				'headers'   => [
-					'Content-Type' => 'application/json',
-					'User-Agent'   => self::buildUserAgent(),
-				],
+				'headers'   => $headers,
 				'body'      => wp_json_encode( $request_body ),
 				'timeout'   => 15,
 				'sslverify' => $sslverify,

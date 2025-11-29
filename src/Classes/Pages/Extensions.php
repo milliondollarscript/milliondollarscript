@@ -993,7 +993,23 @@ class Extensions {
         
         return $extensions;
     }
-    
+
+    /**
+     * Get the version of an installed extension by slug.
+     *
+     * @param string $extension_slug The extension slug/ID
+     * @return string The version string, or empty string if not found
+     */
+    public static function get_extension_version( string $extension_slug ): string {
+        $extensions = self::get_installed_extensions();
+        foreach ( $extensions as $ext ) {
+            if ( isset( $ext['id'] ) && $ext['id'] === $extension_slug ) {
+                return $ext['version'] ?? '';
+            }
+        }
+        return '';
+    }
+
     /**
      * Initialize the extension updater for all installed extensions
      */
@@ -8516,10 +8532,20 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             }
             if ($working_base) {
                 $activate_url = rtrim($working_base, '/') . '/api/public/activate';
-                $body = wp_json_encode([
+                $body_data = [
                     'licenseKey' => $license_key,
                     'productIdentifier' => $extension_slug,
-                ]);
+                    'deviceId' => md5( site_url() ),
+                ];
+                // Only send version if analytics not disabled
+                $disable_analytics = \MillionDollarScript\Classes\Data\Options::get_option( 'disable_version_analytics', 'no' );
+                if ( $disable_analytics !== 'yes' ) {
+                    $ext_version = self::get_extension_version( $extension_slug );
+                    if ( $ext_version !== '' ) {
+                        $body_data['version'] = $ext_version;
+                    }
+                }
+                $body = wp_json_encode( $body_data );
                 $resp = wp_remote_post($activate_url, [
                     'timeout' => 20,
                     'headers' => [ 'Content-Type' => 'application/json' ],
@@ -8628,7 +8654,8 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
         // Activate via Extension Server public endpoint, then store locally
         try {
-            $activation = \MillionDollarScript\Classes\Extension\API::activate_license( $license_key, $extension_slug );
+            $ext_version = self::get_extension_version( $extension_slug );
+            $activation = \MillionDollarScript\Classes\Extension\API::activate_license( $license_key, $extension_slug, $ext_version );
             $ok = is_array($activation) && (!empty($activation['success']) || !empty($activation['activated']) || !empty($activation['valid']));
             $fallback_expires = '';
             $remote_payload = null;
@@ -8719,7 +8746,8 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             wp_send_json_error( [ 'message' => Language::get( 'Stored license key is empty.' ) ] );
         }
 
-        $result = \MillionDollarScript\Classes\Extension\API::deactivate_license( $plaintext_key, $extension_slug );
+        $ext_version = self::get_extension_version( $extension_slug );
+        $result = \MillionDollarScript\Classes\Extension\API::deactivate_license( $plaintext_key, $extension_slug, $ext_version );
 
         if ( $result['success'] ) {
             $license_manager->update_license( $license->id, [ 'status' => 'inactive' ] );
@@ -8758,7 +8786,8 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
 
         if ( $plaintext_key !== '' ) {
             try {
-                \MillionDollarScript\Classes\Extension\API::deactivate_license( $plaintext_key, $extension_slug );
+                $ext_version = self::get_extension_version( $extension_slug );
+                \MillionDollarScript\Classes\Extension\API::deactivate_license( $plaintext_key, $extension_slug, $ext_version );
             } catch ( \Exception $e ) {
                 // Ignore remote errors; removing the local record should still proceed.
             }

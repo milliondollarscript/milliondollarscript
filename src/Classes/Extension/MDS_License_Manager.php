@@ -212,7 +212,8 @@ class MDS_License_Manager {
             return false;
         }
 
-        $validation = API::validate_license( $plaintext, $extension_slug );
+        $ext_version = \MillionDollarScript\Classes\Pages\Extensions::get_extension_version( $extension_slug );
+        $validation = API::validate_license( $plaintext, $extension_slug, $ext_version );
 
         if ( is_array( $validation ) && ! empty( $validation['success'] ) && ! empty( $validation['valid'] ) ) {
             set_transient( $transient_key, 'valid', DAY_IN_SECONDS );

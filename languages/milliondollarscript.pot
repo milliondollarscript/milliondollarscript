@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.20\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.34\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-11-17 20:12:01\n"
-"PO-Revision-Date: 2025-11-17 20:12:01\n"
-"X-Generator: Million Dollar Script Two 2.6.20\n"
+"POT-Creation-Date: 2025-11-28 22:51:23\n"
+"PO-Revision-Date: 2025-11-28 22:51:23\n"
+"X-Generator: Million Dollar Script Two 2.6.34\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1882,6 +1882,18 @@ msgid "No - do not store buyer emails or create client portal accounts"
 msgstr ""
 
 msgid "Recommended: keep this enabled so license purchases automatically create a client portal account tied to the buyer's email and display that email in the Extension Server. Disabling this means emails will not be stored with licenses and portal accounts will not be created. If you disable it and later lose site access, you must cancel auto-renewals directly in Stripe or contact support."
+msgstr ""
+
+msgid "Anonymous Version Analytics"
+msgstr ""
+
+msgid "Enabled - Send anonymous version data to help improve the plugin (recommended)"
+msgstr ""
+
+msgid "Disabled - Do not send version analytics"
+msgstr ""
+
+msgid "When enabled, the plugin sends anonymous version information during license validation and update checks. This helps us understand which versions are in use and prioritize compatibility. No personal information is collected - only extension versions and a hashed site identifier. This does not affect performance as the data is sent with existing license validation requests. You can disable this at any time."
 msgstr ""
 
 msgid "Delete data on uninstall?"

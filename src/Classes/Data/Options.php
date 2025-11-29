@@ -1218,6 +1218,14 @@ class Options {
 					] )
 					->set_help_text( Language::get( 'Recommended: keep this enabled so license purchases automatically create a client portal account tied to the buyer\'s email and display that email in the Extension Server. Disabling this means emails will not be stored with licenses and portal accounts will not be created. If you disable it and later lose site access, you must cancel auto-renewals directly in Stripe or contact support.' ) ),
 
+				// Anonymous Version Analytics
+				Field::make( 'radio', MDS_PREFIX . 'disable_version_analytics', Language::get( 'Anonymous Version Analytics' ) )
+					->set_default_value( 'no' )
+					->set_options( [
+						'no'  => Language::get( 'Enabled - Send anonymous version data to help improve the plugin (recommended)' ),
+						'yes' => Language::get( 'Disabled - Do not send version analytics' ),
+					] )
+					->set_help_text( Language::get( 'When enabled, the plugin sends anonymous version information during license validation and update checks. This helps us understand which versions are in use and prioritize compatibility. No personal information is collected - only extension versions and a hashed site identifier. This does not affect performance as the data is sent with existing license validation requests. You can disable this at any time.' ) ),
 
 				// Delete data on uninstall?
 				Field::make( 'radio', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )
