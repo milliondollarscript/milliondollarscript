@@ -11,6 +11,31 @@
 
 ### Chore
 
+- update changelog for 2.6.37-alpha.1
+
+- update changelog for 2.6.36-alpha.1
+
+- Update ESLint configuration with single quotes and `wp` global, re-minify `mds.min.
+
+- finalize 2.x updates (composer keywords, linting, gitignore)
+
+
+### Fixed
+
+- improve error messaging when extension server is unavailable
+
+
+## 2.6.37-alpha.1 - 2025-12-17
+
+
+
+### Added
+
+- add optional anonymous version tracking with user control
+
+
+### Chore
+
 - update changelog for 2.6.36-alpha.1
 
 - Update ESLint configuration with single quotes and `wp` global, re-minify `mds.min.
