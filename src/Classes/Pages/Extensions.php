@@ -1472,8 +1472,7 @@ class Extensions {
             // Print fallback notice inline
             self::print_server_fallback_notice();
             if ($extension_server_error) : ?>
-                <div class="notice notice-warning">
-                    <p><?php echo esc_html( Language::get('Could not connect to extension server: ') . $extension_server_error ); ?></p>
+                <div class="notice notice-info">
                     <p><?php echo esc_html( Language::get('You can only manage installed extensions at this time.') ); ?></p>
                 </div>
             <?php endif; ?>
