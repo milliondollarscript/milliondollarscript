@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.38-alpha.1 - 2025-12-17
+
+
+
+### Fixed
+
+- remove duplicate 2.6.37-alpha.1 entries and update git-cliff config
+
+
 ## 2.6.37-alpha.1 - 2025-12-17
 
 ### Fixed
