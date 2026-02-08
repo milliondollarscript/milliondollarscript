@@ -28,11 +28,14 @@
 
 use MillionDollarScript\Classes\Admin\Notices;
 use MillionDollarScript\Classes\Language\Language;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-@ini_set( 'max_execution_time', 500 );
+if ( @ini_set( 'max_execution_time', 500 ) === false ) {
+	Logs::log( 'MDS Process Pixels: Failed to set max_execution_time — ini_set may be disabled.' );
+}
 
 global $f2;
 

@@ -1192,11 +1192,11 @@ function upload_changed_pixels(
 	} catch ( \Exception $e ) {
 		// Handle any exception that occurred during the file processing/Imagine operations
 		// Clean up temporary files if they exist
-		if (isset($tmp_image_file) && file_exists($tmp_image_file)) {
-			 @unlink($tmp_image_file);
+		if ( isset( $tmp_image_file ) && file_exists( $tmp_image_file ) ) {
+			wp_delete_file( $tmp_image_file );
 		}
-		if (isset($uploadfile) && file_exists($uploadfile)) {
-			@unlink($uploadfile);
+		if ( isset( $uploadfile ) && file_exists( $uploadfile ) ) {
+			wp_delete_file( $uploadfile );
 		}
 		// Return an error message string
 		return Language::get_replace( 'Image processing failed: %ERROR%', '%ERROR%', $e->getMessage() );

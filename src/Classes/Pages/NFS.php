@@ -35,6 +35,7 @@ use Imagine\Image\Palette\RGB;
 use Imagine\Image\Point;
 use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Blocks;
+use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
@@ -187,8 +188,12 @@ class NFS {
 			wp_send_json_error( $error );
 		}
 
-		@ini_set( 'max_execution_time', 10000 );
-		@ini_set( 'max_input_vars', 10002 );
+		if ( @ini_set( 'max_execution_time', 10000 ) === false ) {
+			Logs::log( 'MDS NFS: Failed to set max_execution_time — ini_set may be disabled.' );
+		}
+		if ( @ini_set( 'max_input_vars', 10002 ) === false ) {
+			Logs::log( 'MDS NFS: Failed to set max_input_vars — ini_set may be disabled.' );
+		}
 
 		global $f2;
 
@@ -382,8 +387,12 @@ class NFS {
 
 		$BID = $f2->bid();
 
-		@ini_set( 'max_execution_time', 10000 );
-		@ini_set( 'max_input_vars', 10002 );
+		if ( @ini_set( 'max_execution_time', 10000 ) === false ) {
+			Logs::log( 'MDS NFS: Failed to set max_execution_time — ini_set may be disabled.' );
+		}
+		if ( @ini_set( 'max_input_vars', 10002 ) === false ) {
+			Logs::log( 'MDS NFS: Failed to set max_input_vars — ini_set may be disabled.' );
+		}
 
 		$sql = $wpdb->prepare( "DELETE FROM `" . MDS_DB_PREFIX . "blocks` WHERE `status`='nfs' AND `banner_id`=%d",
 			$BID

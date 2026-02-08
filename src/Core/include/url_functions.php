@@ -31,13 +31,13 @@ defined( 'ABSPATH' ) or exit;
 // @link https://stackoverflow.com/a/13087678
 function full_url() {
 	$ssl      = ! empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] == 'on';
-	$sp       = strtolower( $_SERVER['SERVER_PROTOCOL'] );
+	$sp       = strtolower( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ?? '' ) ) );
 	$protocol = substr( $sp, 0, strpos( $sp, '/' ) ) . ( ( $ssl ) ? 's' : '' );
-	$port     = $_SERVER['SERVER_PORT'];
+	$port     = sanitize_text_field( wp_unslash( $_SERVER['SERVER_PORT'] ?? '' ) );
 	$port     = ( ( ! $ssl && $port == '80' ) || ( $ssl && $port == '443' ) ) ? '' : ':' . $port;
-	$host     = isset( $_SERVER['HTTP_X_FORWARDED_HOST'] ) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : ( isset( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : null );
-	$host     = isset( $host ) ? $host : $_SERVER['SERVER_NAME'] . $port;
-	$uri      = $protocol . '://' . $host . $_SERVER['REQUEST_URI'];
+	$host     = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : null;
+	$host     = isset( $host ) ? $host : sanitize_text_field( wp_unslash( $_SERVER['SERVER_NAME'] ?? '' ) ) . $port;
+	$uri      = $protocol . '://' . $host . esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
 	$segments = explode( '?', $uri, 2 );
 
 	return $segments[0];

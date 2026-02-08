@@ -1499,7 +1499,7 @@ class FormFields {
 			$variants[] = str_replace( "'", '&#039;', $base_for_entities );
 			$variants[] = str_replace( "'", '&#8217;', $base_for_entities );
 			$variants[] = str_replace( "'", '&#x27;', $base_for_entities );
-			$variants[] = addslashes( $base_for_entities );
+			$variants[] = wp_slash( $base_for_entities );
 		}
 
 		$variants = array_values( array_unique( array_filter( $variants, 'strlen' ) ) );

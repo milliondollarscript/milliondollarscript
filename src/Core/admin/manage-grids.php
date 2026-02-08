@@ -347,9 +347,16 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 			// 	);
 			// }
 
-			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".jpg" );
-			@unlink( Utility::get_upload_path() . "grids/grid" . $BID . ".png" );
-			@unlink( Utility::get_upload_path() . "grids/background" . $BID . ".png" );
+			$grid_files = [
+				Utility::get_upload_path() . "grids/grid" . $BID . ".jpg",
+				Utility::get_upload_path() . "grids/grid" . $BID . ".png",
+				Utility::get_upload_path() . "grids/background" . $BID . ".png",
+			];
+			foreach ( $grid_files as $grid_file ) {
+				if ( file_exists( $grid_file ) ) {
+					wp_delete_file( $grid_file );
+				}
+			}
 
 			// Check if WooCommerce integration is enabled
 			if ( Options::get_option( 'woocommerce', 'no', false, 'options' ) ) {
@@ -372,7 +379,7 @@ function get_banner_image_data( $b_row, $image_name ): string {
 		return $cache[ $image_name ];
 	}
 
-	$contents = addslashes( get_default_image( $image_name ) );
+	$contents = get_default_image( $image_name );
 
 	if ( isset( $_FILES ) && isset( $_FILES[ $image_name ] ) && isset( $_FILES[ $image_name ]['tmp_name'] ) && $_FILES[ $image_name ]['tmp_name'] ) {
 		// Validate uploaded file for security
@@ -392,7 +399,7 @@ function get_banner_image_data( $b_row, $image_name ): string {
 				if ( $fh ) {
 					$raw_contents = fread( $fh, filesize( $uploadfile ) );
 					fclose( $fh );
-					$contents = addslashes( base64_encode( $raw_contents ) );
+					$contents = base64_encode( $raw_contents );
 
 					// Clean up temporary file
 					unlink( $uploadfile );
@@ -405,7 +412,7 @@ function get_banner_image_data( $b_row, $image_name ): string {
 		}
 	} else if ( isset( $b_row[ $image_name ] ) && $b_row[ $image_name ] != '' ) {
 		// use the old image
-		$contents = addslashes( ( $b_row[ $image_name ] ) );
+		$contents = $b_row[ $image_name ];
 	}
 
 	$cache[ $image_name ] = $contents;

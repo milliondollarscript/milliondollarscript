@@ -257,8 +257,8 @@ class MDSLegacyShortcodeHandler {
             'tag' => $tag,
             'attributes' => $atts,
             'timestamp' => current_time( 'mysql' ),
-            'url' => $_SERVER['REQUEST_URI'] ?? '',
-            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? ''
+            'url' => sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ),
+            'user_agent' => sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) )
         ];
         
         // Store usage data for analysis

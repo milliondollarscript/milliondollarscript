@@ -35,7 +35,7 @@ if ( ! class_exists( 'wpdb' ) ) {
 
 	// Try to load WP first if necessary
 	$scheme   = ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ? "https" : "http" ) . '://';
-	$wpdomain = parse_url( $scheme . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+	$wpdomain = parse_url( $scheme . sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ?? '' ) ) . esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ) );
 
 	if ( ! defined( 'COOKIE_DOMAIN' ) ) {
 		define( 'COOKIE_DOMAIN', '.' . $wpdomain['host'] );
@@ -71,7 +71,7 @@ function mds_sql_error( $sql ): string {
 	// Log detailed error information for administrators (secure)
 	Logs::log( 'MDS SQL Error - Query: ' . $sql );
 	Logs::log( 'MDS SQL Error - MySQL Error: ' . $wpdb->last_error );
-	Logs::log( 'MDS SQL Error - User: ' . get_current_user_id() . ' - IP: ' . ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
+	Logs::log( 'MDS SQL Error - User: ' . get_current_user_id() . ' - IP: ' . sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) ) );
 
 	// Return generic error message to prevent information disclosure
 	// Only show detailed errors to administrators in debug mode
@@ -98,7 +98,7 @@ function mds_secure_sql_die( string $sql, string $context = '', bool $wp_die = f
 	Logs::log( 'MDS SQL Error - Query: ' . $sql );
 	Logs::log( 'MDS SQL Error - MySQL Error: ' . $error_message );
 	Logs::log( 'MDS SQL Error - Context: ' . $context );
-	Logs::log( 'MDS SQL Error - User: ' . get_current_user_id() . ' - IP: ' . ( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
+	Logs::log( 'MDS SQL Error - User: ' . get_current_user_id() . ' - IP: ' . sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) ) );
 	
 	// Show generic error message to prevent information disclosure
 	$user_message = 'A database error occurred. Please try again later or contact support if the problem persists.';
