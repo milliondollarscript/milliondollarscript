@@ -35,8 +35,8 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-@ini_set( 'max_execution_time', 10000 );
-@ini_set( 'max_input_vars', 10002 );
+ini_set( 'max_execution_time', 10000 );
+ini_set( 'max_input_vars', 10002 );
 
 global $wpdb, $f2;
 
@@ -70,9 +70,7 @@ $results = $wpdb->get_results( "SELECT * FROM `" . MDS_DB_PREFIX . "banners`", A
 					} else {
 						$sel = '';
 					}
-					echo '
-                        <option
-                        ' . $sel . ' value=' . $result['banner_id'] . '>' . $result['name'] . '</option>';
+					echo '<option ' . $sel . ' value="' . esc_attr( $result['banner_id'] ) . '">' . esc_html( $result['name'] ) . '</option>';
 				}
 				?>
             </select>

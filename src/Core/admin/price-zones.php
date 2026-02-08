@@ -34,6 +34,7 @@ global $BID, $f2, $banner_data, $wpdb;
 $BID         = $f2->bid();
 $banner_data = load_banner_constants( $BID );
 
+if ( ! function_exists( 'validate_input' ) ) {
 function validate_input() {
 
 	global $BID, $banner_data, $wpdb;
@@ -125,6 +126,7 @@ function validate_input() {
 
 	return $error;
 }
+}
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 	$sql = $wpdb->prepare( "DELETE FROM " . MDS_DB_PREFIX . "prices WHERE price_id = %d", intval( $_REQUEST['price_id'] ) );
@@ -137,7 +139,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 	if ( $error != '' ) {
 		echo "<p>";
 		echo "<span style='color:red;'>Error: cannot save due to the following errors:</span><br>";
-		echo "<span style='color:red;'>$error</span>";
+		echo "<span style='color:red;'>" . wp_kses_post( $error ) . "</span>";
 		echo "</p>";
 	} else {
 		// calculate block id..
@@ -206,9 +208,7 @@ $res = $wpdb->get_results( $sql, ARRAY_A );
 				} else {
 					$sel = '';
 				}
-				echo '
-            <option
-            ' . $sel . ' value=' . $row['banner_id'] . '>' . $row['name'] . '</option>';
+				echo '<option ' . $sel . ' value="' . esc_attr( $row['banner_id'] ) . '">' . esc_html( $row['name'] ) . '</option>';
 			}
 			?>
         </select>
@@ -219,9 +219,9 @@ $res = $wpdb->get_results( $sql, ARRAY_A );
 if ( $BID != '' ) {
 	?>
     <hr>
-    <b>Grid ID:</b> <?php echo $BID; ?><br>
-    <b>Grid Name:</b> <?php echo $banner_data['G_NAME']; ?><br>
-    <b>Default Price per block:</b> <?php echo $banner_data['G_PRICE']; ?><br>
+    <b>Grid ID:</b> <?php echo intval( $BID ); ?><br>
+    <b>Grid Name:</b> <?php echo esc_html( $banner_data['G_NAME'] ); ?><br>
+    <b>Default Price per block:</b> <?php echo esc_html( $banner_data['G_PRICE'] ); ?><br>
 
     <input type="button" class="mds-admin-action-new" value="New Price Zone..." onclick="window.location.href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>price-zones&amp;new=1&amp;BID=<?php echo $BID; ?>'"><br>
 

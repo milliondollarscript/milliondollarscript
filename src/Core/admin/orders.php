@@ -49,7 +49,7 @@ $valid_show  = [ 'reserved', 'waiting', 'completed', 'expired', 'denied', 'cance
 $show        = isset( $_REQUEST['show'] ) && in_array( $_REQUEST['show'], $valid_show ) ? $_REQUEST['show'] : '';
 $show_suffix = ! empty( $show ) ? '-' . $show : '';
 
-$q_string = "&q_name=$q_name&q_username=$q_username&q_email=$q_email&q_aday=$q_aday&q_amon=$q_amon&q_ayear=$q_ayear&search=$search";
+$q_string = "&q_name=" . urlencode( $q_name ) . "&q_username=" . urlencode( $q_username ) . "&q_email=" . urlencode( $q_email ) . "&q_aday=" . urlencode( $q_aday ) . "&q_amon=" . urlencode( $q_amon ) . "&q_ayear=" . urlencode( $q_ayear ) . "&search=" . urlencode( $search );
 
 $where_sql = "";
 $date_link = "";
@@ -145,13 +145,13 @@ $paginated_results = $wpdb->get_results( $sql, ARRAY_A );
                 <td>Name</td>
                 <td>
                     <label>
-                        <input type="text" name="q_name" size="39" value="<?php echo $q_name; ?>"/>
+                        <input type="text" name="q_name" size="39" value="<?php echo esc_attr( $q_name ); ?>"/>
                     </label>
                 </td>
                 <td>Username</td>
                 <td>
                     <label>
-                        <input type="text" name="q_username" size="28" value="<?php echo $q_username; ?>"/>
+                        <input type="text" name="q_username" size="28" value="<?php echo esc_attr( $q_username ); ?>"/>
                     </label>
                 </td>
             </tr>
@@ -161,68 +161,9 @@ $paginated_results = $wpdb->get_results( $sql, ARRAY_A );
                     <label>
                         <select name="q_aday">
                             <option></option>
-                            <option <?php if ( $q_aday == '1' ) { echo ' selected '; } ?> >1
-                            </option>
-                            <option <?php if ( $q_aday == '2' ) { echo ' selected '; } ?> >2
-                            </option>
-                            <option <?php if ( $q_aday == '3' ) { echo ' selected '; } ?> >3
-                            </option>
-                            <option <?php if ( $q_aday == '4' ) { echo ' selected '; } ?> >4
-                            </option>
-                            <option <?php if ( $q_aday == '5' ) { echo ' selected '; } ?> >5
-                            </option>
-                            <option <?php if ( $q_aday == '6' ) { echo ' selected '; } ?> >6
-                            </option>
-                            <option <?php if ( $q_aday == '7' ) { echo ' selected '; } ?>>7
-                            </option>
-                            <option <?php if ( $q_aday == '8' ) { echo ' selected '; } ?>>8
-                            </option>
-                            <option <?php if ( $q_aday == '9' ) { echo ' selected '; } ?> >9
-                            </option>
-                            <option <?php if ( $q_aday == '25' ) { echo ' selected '; } ?> >25
-                            </option>
-                            <option <?php if ( $q_aday == '26' ) { echo ' selected '; } ?> >26
-                            </option>
-                            <option <?php if ( $q_aday == '10' ) { echo ' selected '; } ?> >10
-                            </option>
-                            <option <?php if ( $q_aday == '11' ) { echo ' selected '; } ?> > 11
-                            </option>
-                            <option <?php if ( $q_aday == '12' ) { echo ' selected '; } ?> >12
-                            </option>
-                            <option <?php if ( $q_aday == '13' ) { echo ' selected '; } ?> >13
-                            </option>
-                            <option <?php if ( $q_aday == '14' ) { echo ' selected '; } ?> >14
-                            </option>
-                            <option <?php if ( $q_aday == '15' ) { echo ' selected '; } ?> >15
-                            </option>
-                            <option <?php if ( $q_aday == '16' ) { echo ' selected '; } ?> >16
-                            </option>
-                            <option <?php if ( $q_aday == '17' ) { echo ' selected '; } ?> >17
-                            </option>
-                            <option <?php if ( $q_aday == '18' ) { echo ' selected '; } ?> >18
-                            </option>
-                            <option <?php if ( $q_aday == '19' ) { echo ' selected '; } ?> >19
-                            </option>
-                            <option <?php if ( $q_aday == '20' ) { echo ' selected '; } ?> >20
-                            </option>
-                            <option <?php if ( $q_aday == '21' ) { echo ' selected '; } ?> >21
-                            </option>
-                            <option <?php if ( $q_aday == '22' ) { echo ' selected '; } ?> >22
-                            </option>
-                            <option <?php if ( $q_aday == '23' ) { echo ' selected '; } ?> >23
-                            </option>
-                            <option <?php if ( $q_aday == '24' ) { echo ' selected '; } ?> >24
-                            </option>
-                            <option <?php if ( $q_aday == '27' ) { echo ' selected '; } ?> >27
-                            </option>
-                            <option <?php if ( $q_aday == '28' ) { echo ' selected '; } ?> >28
-                            </option>
-                            <option <?php if ( $q_aday == '29' ) { echo ' selected '; } ?> >29
-                            </option>
-                            <option <?php if ( $q_aday == '30' ) { echo ' selected '; } ?> >30
-                            </option>
-                            <option <?php if ( $q_aday == '31' ) { echo ' selected '; } ?> >31
-                            </option>
+							<?php for ( $d = 1; $d <= 31; $d++ ) : ?>
+                                <option<?php if ( $q_aday == $d ) { echo ' selected'; } ?>><?php echo $d; ?></option>
+							<?php endfor; ?>
                         </select>
                     </label>
                     <label>
@@ -387,6 +328,57 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 			$mds_pixel_post_type = FormFields::$post_type;
 			$post_statuses       = array_keys( FormFields::get_statuses() );
 
+			// Pre-fetch all banners to avoid N+1 queries in the loop
+			$all_banners   = $wpdb->get_results( "SELECT banner_id, name FROM " . MDS_DB_PREFIX . "banners", ARRAY_A );
+			$banners_by_id = [];
+			foreach ( $all_banners as $b ) {
+				$banners_by_id[ $b['banner_id'] ] = $b['name'];
+			}
+
+			// Pre-fetch pixel post positions to avoid N+1 scanning in the loop
+			$all_pixel_ids = wp_list_pluck( $paginated_results, 'ad_id' );
+			$all_pixel_ids = array_filter( array_map( 'intval', $all_pixel_ids ) );
+			$pixel_positions = [];
+			if ( ! empty( $all_pixel_ids ) ) {
+				$position   = 0;
+				$page_num   = 1;
+				$found_all  = false;
+				$remaining  = array_flip( $all_pixel_ids );
+				while ( ! $found_all ) {
+					$args = array(
+						'post_type'        => $mds_pixel_post_type,
+						'posts_per_page'   => $posts_per_page,
+						'fields'           => 'ids',
+						'orderby'          => 'date',
+						'order'            => 'DESC',
+						'suppress_filters' => true,
+						'post_status'      => $post_statuses,
+						'paged'            => $page_num,
+					);
+					$query = get_posts( $args );
+					if ( empty( $query ) ) {
+						break;
+					}
+					foreach ( $query as $qid ) {
+						$position ++;
+						if ( isset( $remaining[ $qid ] ) ) {
+							$pg = ceil( $position / $posts_per_page );
+							$pixel_positions[ $qid ] = admin_url( 'edit.php?post_type=' . $mds_pixel_post_type . '&paged=' . $pg . '&post_id=' . $qid );
+							unset( $remaining[ $qid ] );
+							if ( empty( $remaining ) ) {
+								$found_all = true;
+								break;
+							}
+						}
+					}
+					if ( count( $query ) < $posts_per_page ) {
+						break;
+					}
+					$page_num ++;
+				}
+			}
+			$default_pixel_link = admin_url( 'edit.php?post_type=' . $mds_pixel_post_type );
+
 			$i = 0;
 
 			// Loop through each of the pages of records
@@ -410,49 +402,8 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 					$row['Username'] = '';
 				}
 
-				$post_id = intval( $row['ad_id'] );
-
-				$page_number = 1;
-				$position    = 0;
-
-				// Loop through MDS Pixel posts in batches to find the correct post
-				while ( true ) {
-					$args = array(
-						'post_type'        => $mds_pixel_post_type,
-						'posts_per_page'   => $posts_per_page,
-						'fields'           => 'ids',
-						'orderby'          => 'date',
-						'order'            => 'DESC',
-						'suppress_filters' => true,
-						'post_status'      => $post_statuses,
-						'paged'            => $page_number,
-					);
-
-					$query = get_posts( $args );
-
-					// Loop through each post in this batch
-					foreach ( $query as $query_post_id ) {
-						$position ++;
-
-						if ( $query_post_id === $post_id ) {
-							// Match found so save the link and break out of the loops
-							$page_number = ceil( $position / $posts_per_page );
-							$pixel_link  = admin_url( 'edit.php?post_type=' . $mds_pixel_post_type . '&paged=' . $page_number . '&post_id=' . $post_id );
-							break 2;
-						}
-					}
-
-					// No posts found so break out of the loop
-					if ( count( $query ) < $posts_per_page ) {
-						break;
-					}
-
-					$page_number ++;
-				}
-
-				if ( ! isset( $pixel_link ) ) {
-					$pixel_link = admin_url( 'edit.php?post_type=' . $mds_pixel_post_type );
-				}
+				$post_id    = intval( $row['ad_id'] );
+				$pixel_link = $pixel_positions[ $post_id ] ?? $default_pixel_link;
 
 				?>
                 <tr class="<?php echo ( ( $_REQUEST['order_id'] ?? '' ) == $row['order_id'] ) ? 'tr-highlight' : 'tr-normal'; ?>">
@@ -470,14 +421,9 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                     <td><?php if ( ! empty( $row['ad_id'] ) ) { ?><a href='<?php echo esc_url( $pixel_link ); ?>'>
                             #<?php echo intval( $row['ad_id'] ); ?></a><?php } ?></td>
                     <td><?php
-
-						$sql = $wpdb->prepare( "SELECT * FROM " . MDS_DB_PREFIX . "banners WHERE banner_id = %d", $row['banner_id'] );
-						$b_row = $wpdb->get_row( $sql, ARRAY_A );
-
-						if ( $b_row ) {
-							echo esc_html( $b_row['name'] );
+						if ( isset( $banners_by_id[ $row['banner_id'] ] ) ) {
+							echo esc_html( $banners_by_id[ $row['banner_id'] ] );
 						}
-
 						?></td>
                     <td><?php echo intval( $order_row['quantity'] ); ?></td>
                     <td><?php echo esc_html( Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] ) ); ?></td>
@@ -530,7 +476,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                        style="font-size: 9px;"
                                        value="Complete"
                                        onclick="
-                                            if (confirm('Payment from <?php echo esc_attr( $row['user_nicename'] ); ?> to be completed. Order for <?php echo $row['price']; ?> will be credited to their account.\n ** Are you sure? **')) {
+                                            if (confirm('Payment from <?php echo esc_js( $row['user_nicename'] ); ?> to be completed. Order for <?php echo esc_js( $row['price'] ); ?> will be credited to their account.\n ** Are you sure? **')) {
                                                 document.getElementById('mds-action').value = 'complete';
                                                 document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
                                                 document.getElementById('mass_action_form').submit();

@@ -78,14 +78,7 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 	<h1 class="wp-heading-inline"><?php echo Language::get('Packages'); ?></h1>
 	<p class="description"><?php Language::out('Packages allow you to group pixels together and define the pricing and duration options available for purchasing pixels on a specific grid.'); ?></p>
 
-	<?php
-	global $wpdb;
-	$banners_table = MDS_DB_PREFIX . 'banners';
-
-	// Fetch banners for the dropdown
-	$banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDER BY name", ARRAY_A);
-
-	?>
+	<?php ?>
 	<form name="bidselect" method="post" action="<?php echo esc_url(admin_url('admin.php?page=mds-packages')); ?>">
 		<?php wp_nonce_field('mds-admin-packages-grid-select', '_wpnonce_grid_select'); ?>
 
@@ -100,7 +93,7 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 					} else {
 						$sel = '';
 					}
-					echo '<option ' . $sel . ' value=' . $row['banner_id'] . '>' . $row['name'] . '</option>';
+					echo '<option ' . $sel . ' value="' . esc_attr( $row['banner_id'] ) . '">' . esc_html( $row['name'] ) . '</option>';
 				}
 			}
 			?>
@@ -114,9 +107,9 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 	?>
 		<hr>
 
-		<b>Grid ID:</b> <?php echo $BID; ?><br>
-		<b>Grid Name</b>: <?php echo $banner_data['G_NAME']; ?><br>
-		<b>Default Price per 100:</b> <?php echo $banner_data['G_PRICE']; ?><br>
+		<b>Grid ID:</b> <?php echo intval( $BID ); ?><br>
+		<b>Grid Name</b>: <?php echo esc_html( $banner_data['G_NAME'] ); ?><br>
+		<b>Default Price per 100:</b> <?php echo esc_html( $banner_data['G_PRICE'] ); ?><br>
 
 		<!-- Add spacing above the New Package button -->
 		<div style="margin-top: 24px;"></div>
@@ -273,7 +266,7 @@ $banners = $wpdb->get_results("SELECT banner_id, name FROM {$banners_table} ORDE
 
 				echo "<p>";
 				echo "<span style='color:red;'>Error: cannot save due to the following errors:</span><br>";
-				echo "<span style='color:red;'>$error</span>";
+				echo "<span style='color:red;'>" . wp_kses_post( $error ) . "</span>";
 				echo "</p>";
 			} else {
 

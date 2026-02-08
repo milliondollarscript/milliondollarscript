@@ -38,13 +38,19 @@ $result = $wpdb->get_results( $sql, ARRAY_A );
 
 foreach ( $result as $row ) {
 
-	$sql = "SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE banner_id='" . intval( $row['banner_id'] ) . "' AND  order_id='" . intval( $row['order_id'] ) . "'";
-	$result2 = $wpdb->get_results( $sql, ARRAY_A );
+	$result2 = $wpdb->get_results( $wpdb->prepare(
+		"SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE banner_id = %d AND order_id = %d",
+		intval( $row['banner_id'] ),
+		intval( $row['order_id'] )
+	), ARRAY_A );
 	if ( count( $result2 ) == 0 ) { // there is no order matching
 		// delete the blocks.
 		echo "Deleting block #" . $row['block_id'] . "<br>";
-		$sql = "DELETE from " . MDS_DB_PREFIX . "blocks WHERE block_id='" . intval( $row['block_id'] ) . "' AND banner_id='" . intval( $row['banner_id'] ) . "' ";
-		$wpdb->query( $sql );
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
+			intval( $row['block_id'] ),
+			intval( $row['banner_id'] )
+		) );
 	}
 }
 Language::out( "Check Completed." );

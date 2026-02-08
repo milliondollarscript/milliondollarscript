@@ -72,6 +72,7 @@ if ( isset( $_GET['opacity_saved'] ) ) {
 	echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( Language::get('Background opacity saved successfully.') ) . '</p></div>';
 }
 
+if ( ! function_exists( 'nice_format' ) ) {
 function nice_format( $val ) {
 	$val  = trim( $val );
 	$last = strtolower( $val[ strlen( $val ) - 1 ] );
@@ -97,6 +98,7 @@ function nice_format( $val ) {
 	}
 
 	return $val;
+}
 }
 
 ?>
@@ -130,7 +132,7 @@ $res = $wpdb->get_results( $sql, ARRAY_A );
 			} else {
 				$sel = '';
 			}
-			echo '<option ' . $sel . ' value=' . $row['banner_id'] . '>' . $row['name'] . '</option>';
+			echo '<option ' . $sel . ' value="' . esc_attr( $row['banner_id'] ) . '">' . esc_html( $row['name'] ) . '</option>';
 		}
 		?>
     </select>
@@ -157,7 +159,7 @@ if ( $layering === 'above' ) {
 
 	<input type="file" name="blend_image">
 	<input type="submit" value="Upload"> <?php Language::out( '(Maximum upload size possible:' ); ?> <?php echo nice_format( ini_get( 'upload_max_filesize' ) ); ?>)<br>
-	<input type="hidden" name="BID" value="<?php echo $BID; ?>">
+	<input type="hidden" name="BID" value="<?php echo intval( $BID ); ?>">
 
 	<hr>
 	<?php

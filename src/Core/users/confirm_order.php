@@ -315,9 +315,9 @@ if ( ! is_user_logged_in() ) {
             <?php wp_nonce_field( 'mds-form' ); ?>
             <input type="hidden" name="action" value="mds_form_submission">
             <input type="hidden" name="mds_dest" value="confirm-order">
-            <input type="hidden" name="selected_pixels" value="<?php echo isset( $_REQUEST['selected_pixels'] ) ? htmlspecialchars( $_REQUEST['selected_pixels'] ) : ''; ?>">
+            <input type="hidden" name="selected_pixels" value="<?php echo isset( $_REQUEST['selected_pixels'] ) ? esc_attr( $_REQUEST['selected_pixels'] ) : ''; ?>">
             <input type="hidden" name="order_id" value="<?php echo intval( $order_row['order_id'] ); ?>">
-            <input type="hidden" name="BID" value="<?php echo $BID; ?>">
+            <input type="hidden" name="BID" value="<?php echo intval( $BID ); ?>">
 			<?php
 			display_package_options_table( $BID, $_REQUEST['pack'], true );
 			?>

@@ -26,6 +26,8 @@
  *
  */
 
+use MillionDollarScript\Classes\System\Logs;
+
 defined( 'ABSPATH' ) or exit;
 
 if ( isset( $_POST['action'] ) && $_POST['action'] == 'mds_admin_form_submission' ) {
@@ -47,7 +49,8 @@ $banner_data = load_banner_constants( $BID );
 $sql = "SELECT * FROM " . MDS_DB_PREFIX . "banners";
 $res = $wpdb->get_results( $sql );
 if ( $wpdb->last_error ) {
-	die( 'Database error: ' . $wpdb->last_error );
+	Logs::log( 'Database error in map-of-orders: ' . $wpdb->last_error );
+	wp_die( esc_html__( 'A database error occurred.', 'milliondollarscript' ) );
 }
 ?>
 
@@ -65,7 +68,7 @@ if ( $wpdb->last_error ) {
 				} else {
 					$sel = '';
 				}
-				echo '<option ' . $sel . ' value=' . $row->banner_id . '>' . $row->name . '</option>';
+				echo '<option ' . $sel . ' value="' . esc_attr( $row->banner_id ) . '">' . esc_html( $row->name ) . '</option>';
 			}
 			?>
         </select>
