@@ -1,7 +1,33 @@
 # Changelog
 
-## 2.6.43-alpha.1 - 2026-02-08
+## 2.6.44-alpha.1 - 2026-02-08
 
+
+### Security
+
+- fix reflected XSS in orders search form inputs and URL query params
+- fix stored XSS in banner name dropdowns across 5 admin files
+- fix stored XSS in unescaped banner data outputs (packages, price-zones)
+- fix stored XSS via unescaped price in inline JS confirm dialog
+- fix unescaped $BID in hidden form fields (backgrounds, confirm_order)
+- harden check.php SQL queries with $wpdb->prepare()
+- replace die() with wp_die() to prevent DB info disclosure (map-of-orders)
+
+### Fixed
+
+- fix date selector days 25/26 appearing out of order in orders admin page
+
+### Changed
+
+- pre-fetch banners and pixel positions to eliminate N+1 queries in orders loop
+- remove duplicate banner query in packages admin page
+- remove dead mouseover_js.inc.php (replaced by Tippy.js)
+- remove legacy IE5/IE6 ActiveXObject code
+- remove @ error suppression on ini_set() calls
+- wrap global functions in function_exists() guards
+
+
+## 2.6.43-alpha.1
 
 
 ### Fixed
@@ -17,8 +43,7 @@
 - security hardening, debug cleanup, and style polish
 
 
-## 2.6.38-alpha.1 - 2025-12-17
-
+## 2.6.38-alpha.1
 
 
 ### Fixed
@@ -26,15 +51,15 @@
 - remove duplicate 2.6.37-alpha.1 entries and update git-cliff config
 
 
-## 2.6.37-alpha.1 - 2025-12-17
+## 2.6.37-alpha.1
+
 
 ### Fixed
 
 - improve error messaging when extension server is unavailable
 
 
-## 2.6.36-alpha.1 - 2025-11-29
-
+## 2.6.36-alpha.1
 
 
 ### Added
@@ -49,8 +74,7 @@
 - finalize 2.x updates (composer keywords, linting, gitignore)
 
 
-## 2.6.32 - 2025-11-18
-
+## 2.6.32
 
 
 ### Fixed
@@ -58,8 +82,7 @@
 - harden metadata parsing and admin image access
 
 
-## 2.6.30 - 2025-11-18
-
+## 2.6.30
 
 
 ### CI
@@ -81,8 +104,48 @@
 - restrict pointer image endpoint access
 
 
-## 2.6.29 - 2025-11-18
+## 2.6.29
 
+
+### CI
+
+- checkout release tag before extracting changelog
+
+
+### Chore
+
+- bump version to 2.6.29
+
+- pin working tree to 2.6.28 for 2.6.28 release
+
+- keep working tree at 2.6.28
+
+
+## 2.6.28
+
+
+### Chore
+
+- prepare release 2.6.28 with changelog in package
+
+
+## 2.6.27
+
+
+### Chore
+
+- align version to 2.6.26
+
+
+## 2.6.26
+
+
+### Chore
+
+- re-release 2.6.25 to include changelog in package
+
+
+## 2.6.24
 
 
 ### Changed
@@ -109,36 +172,7 @@
 - ensure links always have valid href
 
 
-## 2.6.24 - 2025-11-18
-
-
-
-### Changed
-
-- improve tippy instance management for multiple tooltips
-
-- replace internal changelog page with external link
-
-- redesign update architecture with direct HTTP communication
-
-
-### Chore
-
-- update composer autoload for new classes and version upgrades
-
-
-### Documentation
-
-- convert plain text URLs to markdown links in readme
-
-
-### Fixed
-
-- ensure links always have valid href
-
-
-## 2.6.15 - 2025-11-14
-
+## 2.6.15
 
 
 ### Fixed
@@ -146,7 +180,8 @@
 - fix GitHub release notes workflow and restore changelog
 
 
-## 2.6.13 - 2025-11-13
+## 2.6.13
+
 
 ### Added
 
@@ -175,509 +210,767 @@
 - ensure ImageMap initialization after image load
 
 
-## 2.6.4 - 2025-11-08
+## 2.6.4
+
 
 ### Chore
 
 - update extension server URL defaults to production
 
 
-## 2.6.3 - 2025-11-05
-
-- Automated SemVer bump + git-cliff changelog generation now runs in the release hook so future releases stay in sync with GitHub notes.
-
-## 2.6.2 - 2025-11-04
-
-- Hardened tooltip data parsing, refreshed grid maps after generation, and restored manual update notices so check-for-update feedback stays accurate.
-- Rebuilt the Extensions catalog UI: unified inline updates, cadence tabs, sale indicators, and Go-server-aligned defaults to keep plan details consistent.
-- Added a client portal shortcut plus optional account syncing when licenses are claimed for smoother onboarding.
-- Strengthened admin UX: reorganized menus, sanitized plan markup, normalized proxied update downloads, and tightened filesystem path validation.
-- Updated translation templates with the latest menu and action strings.
+## 2.6.2
 
 
-## 2.6.1 - 2025-09-19
+### Added
 
-- Added inline license management with encrypted-at-rest storage, reveal toggles, and automatic post-checkout claims.
-- Improved Extensions admin notices, modals, and fallback ZIP guidance; clarified WooCommerce login redirects and auto-complete messaging.
-- Enhanced ordering UX with resilient grid loading feedback, adjacency validation fixes, and richer parity snapshot tooling.
-- Restored Not For Sale admin access, advertiser list layout, pixel single rendering, search consistency, and WooCommerce update parity.
-- Tightened upload limits, selection sanitization, and manual auto-complete flows to prevent edge-case failures.
+- update plan action strings with parameter placeholders
 
+- separate products from extensions - add dedicated namespaces
 
-## 2.6.0
+- add client portal shortcut
 
-- Feature: Extensions.
+- reorganize admin menu structure and improve navigation UX
 
+- add path validation and sanitization to Filesystem class
 
-## 2.5.15
+- add toggle for portal account syncing
 
-- Improvement: Cancelled blocks now appear as reserved on the ordering grid so it’s clear the area is temporarily unavailable. They’ll be cleaned up automatically based on your Order Timing settings.
-- Fix: Clear Orders not working correctly.
-- Chore: Update language file.
-- New: Added an “Auto-advance after Upload” option so advanced mode can jump users straight from uploading to confirming or paying, with smoother buttons and messages guiding them through the rest of the order.
-- Improvement: Grid images now show a friendly loading message with a retry button if they need extra time, so visitors aren’t left wondering what happened.
-- Improvement: Grid backgrounds automatically follow your light or dark theme colors when no custom color is saved, keeping the grid looking consistent.
-- Improvement: Oversized image uploads now get a friendly nudge with clear sizing tips on both the order and manage screens, so you stay in the flow without any guesswork.
-- Fix: Brought the Not For Sale admin page back so you can quickly reserve blocks without running into access errors.
-- Fix: Stop WooCommerce’s empty checkout redirect from hijacking MDS routes so grid images load reliably regardless of the checkout page slug.
-- Fix: Adjacent block selection works again and shows a friendly message if something needs fixing.
-- Fix: WordPress search now finds MDS Pixels by popup text and custom meta—even when the template is off—and keeps apostrophes exactly as customers entered them.
-- Improvement: Clarified WooCommerce versus manual payment auto-complete settings and linked per-grid messaging to the Pixels Awaiting Approval screen for quicker reviews.
-- Fix: Single MDS Pixel pages now mirror the popup layout and fall back to a 404 when pixels pages are disabled.
-- Fix: Grid image uploads now save consistently instead of reverting to the default artwork during edits.
-- Improvement: Polished the advertiser list styling so banner headings now stretch across every column and the layout stays readable on any screen.
-- New: Developers can fine-tune the advertiser list with fresh hooks (`mds_list_grid_tracks`, `mds_list_grid_template`, `mds_list_default_grid_tracks`, `mds_list_fallback_grid_track`) located in `src/Classes/Ajax/Ajax.php`.
-- Fix: The advertiser list shortcode now shows every grid by default, making it easier for visitors to browse everything you offer.
-- Dev: Pixel permalinks now enforce RFC-friendly lengths and expose new filters (`mds_pixels_max_url_length`, `mds_pixels_max_slug_length`, `mds_permalink_token_value*`, `mds_permalink_final_slug`) so you can clamp or customize any token—including `%text%` and `%meta:field%`—before the slug is saved.
-- Fix: Pixel post titles now mirror the Popup Text a user enters instead of falling back to usernames.
-- New: Toggle the popup text field between plain input and a secure rich text editor (limited to basic formatting), and hook into `mds_form_field_sanitize*` to customise allowed markup.
+- add wordpress parity snapshot capture
 
+- align defaults with go extension server
 
-## 2.5.14
+- unify extensions grid with inline updates
 
-- Perf: Faster block selection on the Order page.
-- Fix: Your selection now appears reliably on the grid after uploading.
-- Fix: Choosing the very first block on the grid did not work.
-- Fix: General stability improvements while ordering.
+- render sale pricing badge with metadata fallback
 
+- render cadence tabs on extensions page
 
-## 2.5.13
+- enforce pixel permalink length filters
 
-- Refactor: Migrate database interactions to $wpdb for improved security and performance.
-- Fix: Update shortcode defaults and titles.
-- Fix: Correct light mode tooltip background defaults.
-- Fix: Backgrounds not working correctly.
-- Chore: Update language file.
-- Fix: Page validation cron job incorrectly marking pages as "error".
-- Fix: "Validate All Pages" button not working.
-- Fix: Creating and updating grids not working.
-- Fix: Approve pixels not working.
-- Fix: Deleting grids causing an error.
-- Feature: Add option to hide uploaded image and dimensions in advanced mode.
-- Fix: jpg files not uploading.
-- Fix: Uploaded image not respecting max_blocks setting in simple mode.
-- Fix: Tooltip text not visible in light theme.
-- Feature: Add All Grids to select box to admin Pixel Approval screens.
-- Fix: Mass complete and cancel of orders not working.
-- Fix: Grid select not working in advanced mode.
-- Feature: Add option for Selection Adjacency Mode under the Orders tab.
-- Feature: Add per-grid option to layer blocks above or below the background image (default remains below). When set to above, block backgrounds become transparent and grid lines render on top of the background.
-- Feature: Support per-grid overlay images for Public and Ordering variants in both Light and Dark modes when layering is above. Overlays are PNG; managed on Manage Grids (under Dark Mode Image Management). Sensible defaults are bundled.
-- Feature: Add per-grid background color settings for Light and Dark modes (defaults: #ffffff and #14181c).
-- Perf: Reduce memory usage when applying background opacity by replacing per-pixel alpha manipulation with GD imagecopymerge().
-- Feature: Admin‑configurable MDS Pixels permalinks.
-  - Base segment is now configurable (default: mds-pixel).
-  - Slug pattern supports tokens: %username%, %display_name%, %order_id%, %grid%, %pixel_id%, %text%, and %meta:field%.
-  - Developers can extend/override tokens via the mds_permalink_tokens filter.
-  - Respects the Transliterate Cyrillic titles to Latin option for cleaner slugs.
-- Feature: Migration tool to update existing MDS Pixel slugs to the current pattern.
-  - Stores previous slugs and issues automatic 301 redirects.
-  - Legacy base segments are recognized and redirected to the new structure.
-  - Usage: After changing the base or slug pattern, click Save Changes first, then click Run migration (batched with nonce/capability checks).
-- Fix: MDS Pixels search behavior corrected when enabled: titles are searchable again and results remain restricted to completed status; conditional bug in posts_search resolved.
-- Fix: Prevented MDS link and button colors from affecting the rest of your theme. Styles are now scoped to the MDS container rather than the entire page (no more mds-container on <body> by default). If you previously relied on the old behavior, you can temporarily re‑enable it with:
-  add_filter('mds_enable_legacy_body_classes', '__return_true');
-- Fix: No more duplicate Manage Pixels pages; page creation runs after the Setup Wizard. Manage shortcode now uses width="100%" height="auto".
-- Fix: Migration notice is hidden on fresh installs until the wizard finishes or legacy pages exist.
-- Fix: Uninstall (Delete data = Yes) now removes plugin options and metadata tables; pages stay. Wizard will show after reinstall.
-- Feature: Added WooCommerce Login Redirect option (Options > Login) to control where users are sent after a successful WooCommerce login when integration is enabled.
-- Feature: Replaced Register button on the login form with a "Register Now" link placed directly under the Log In button.
-- Fix: Order pixel grid rescaling causing missing rows/columns.
+- show plan details and allow license removal
 
+- rebuild catalog UI with pricing and license data
 
-## 2.5.12
+- refresh advertiser list layout
 
-- Feature: Major improvements to pixel selection and upload UI for a smoother, more intuitive experience. Block selection and grid interaction are now more reliable, especially with multiple grids on the same page.
-- Feature: Added dynamic CSS generation for improved style customization.
-- Fix: Moved all the Admin Settings into the Options page for more consistent and reliable configuration.
-- Fix: Enhanced logging and setup wizard flow for better usability.
-- Refactor: Core system classes updated for improved stability and maintainability.
-- Fix: Improved user management reliability.
-- Fix: Improved WooCommerce integration and settings handling.
-- Fix: Click reports page updated for better admin reporting and UI consistency.
-- Fix: Changed all the checkboxes in the Options to radio buttons.
-- Fix: Fixed Complete Order button on Confirm screen when price per block is 0 or user is privileged to go to the Payment page.
-- Fix: Fixed uploading a new pixel image that was smaller than the original didn't resize properly when auto-resize is on.
-- Fix: Approve pixels.
-- Fix: WooCommerce and permission conditional logic checks on Carbon Fields.
-- Feature: Add mds_popup_custom_replacements filter for custom popup template replacements.
-- Fix: Fixed Max Image Size option in popup template.
-- Feature: Add mds_pixel_area_data_values filter for extensions to add additional data.
-- Feature: Add dark mode/light mode selection option.
-- Feature: Add dark mode/light mode grid image generation and switching.
-- Feature: Add page management and creation system.
-- Feature: Add mds_manage_order_header_after, mds_manage_order_content_after and mds_manage_pixels_page_footer actions to Manage Pixels page.
-- Feature: Add JavaScript hooks system with afterTooltipContentLoaded hook for extensions to customize tooltip content.
+- add resilient grid loading feedback
 
+- tighten order flow and auto-advance uploads
 
-## 2.5.11
+- replace Register button with translated link under form
 
-- Add WooCommerce refund integration.
-- Fix: Corrected PHP fatal error during AJAX block type updates in the editor.
-- Fix: Improved image upload handling, error messages, and resolved dimension validation issues during pixel ordering and management.
-- Fix: Improved responsiveness of the pixel grid on the Manage Pixels page for better interaction on smaller screens.
-- Fix: Improved pixel selection accuracy, ensuring that the selection tool properly aligns with grid boundaries at all screen sizes.
-- Fix: Enhanced mobile compatibility for block selection, ensuring proper functionality on touch devices and when zooming.
-- Fix: Fixed issues with multi-block selections where some blocks were not being properly identified.
-- Improved the Manage Pixels info layout: columns are now equal height, mobile stacking is full-width, and images can scale to any size for a cleaner, more responsive experience.
-- Improved the pixel selection and upload experience for users, making the process more reliable and intuitive.
-- Fix: Auto-approved images not being published automatically when grid has auto-approve and auto-publish enabled.
-- Fix: Clicking blocks on grid doesn't popup tippy tooltip - blocks were redirecting immediately instead of showing tooltip first.
-- Fix: When multiple grids are displayed on the same page, clicks on the second grid would trigger actions on the first grid.
-- Fix: Removed visual artifact (black bar) that sometimes appeared when showing tooltips.
-- Fix: Improved tooltip handling for multiple grids to ensure tooltips work consistently on all grids.
-- Fix: Resolved 'headers already sent' errors in process-pixels.php and clear-orders.php by proper handling of form submissions through admin-post.php.
-- Fix: Improved consistency of admin notices by using the Notices class throughout the plugin.
-- Fix: Tooltip AJAX content not loading on second grid when multiple grids are displayed on the same page.
-- Fix: Resolved database upgrade issues when upgrading from version 2.3.5, preventing errors related to missing columns.
-- Fixed PHP 8.2 deprecation notice for dynamic property creation.
-- Fixed issue where the "Delete" button on the Blocked IPs page could delete the wrong entry if the table wasn't sorted by ID.
-- Improved CSS loading logic to prevent potential conflicts or redundant loading.
-- Added a new daily cron task to automatically delete debug log files older than 30 days.
-- Fix: Ensured the "Show Sold Pixels" filter works correctly on the user-facing Manage Pixels page.
-- Fix: Corrected issue where updating pixel link/URL didn't reflect immediately on the grid.
-- Fix: Resolved PHP warning related to array key in Shortcode class.
-- Fix: Added check for `wp_doing_cron` before enqueuing assets.
-- Fix: Removed deprecated `wp_filter_content_tags` usage.
-- Fix: Ensured `order_id` is consistently available in the `mds_order_created` action hook.
-- Chore: Added daily cron task to delete log files older than 30 days.
-- Refactor: Updated logging system to use Options API and hardcoded filename, removing Config dependency.
-- Feature: Added AJAX-powered controls to the Logs page for enabling/disabling logging and clearing the log without page reloads.
-- Feature: Implemented live log updates (optional toggle) and log entry consolidation (showing latest timestamp and count) on the Logs page.
-- Fix: Allow selecting first block.
-- Fix: File upload in simple pixel selection method.
+- add configurable WooCommerce login redirect option
+
+- improve Manage modal clarity; switch activation to /api/public/activate; add inline activation in Available; indicate current plan in UI
+
+- inline license column with encryption-at-rest, eye toggle, and activation\n\n- Add AES-256-GCM compact encryption helper for license keys\n- Add License column in Available Extensions with eye toggle and Activate button\n- New AJAX: mds_available_activate_license, mds_get_license_plaintext\n- Decrypt key before premium download; store pending validations when server unreachable\n- Upload ZIP fallback link when server is unreachable
+
+- auto-claim license after Stripe purchase; add claim endpoint and purchase metadata\n\n- Add mds_claim_license AJAX handler to claim license from server and persist locally\n- Pass claimToken + siteId to checkout URL; include extSlug + claimToken in successUrl for post-return claim\n- Localize purchase state, site_id, and public server URL to JS\n- Auto-claim in admin-extensions.js on purchase success and refresh UI\n- Improve server probe in install flow: fallback to /health and /api/extensions when /api/public/ping is missing
+
+- auto-set Account/Register/Login to WC My Account when enabling integration
+
+- configurable MDS Pixels base and slug pattern; add migration tool with 301 redirects and legacy base support; correct search behavior
+
+- add per-grid blocks layering toggle with overlay images and per-grid light/dark background colors; optimize opacity blending
+
+- rectangle-only validation, distinct error codes, and immediate UI updates
+
+- add purchase flow and per‑extension licensing
+
+- add enhanced notice system and premium gating
+
+- add banner name and grid ID columns to ApprovePixels page
+
+- add max_blocks resizing logic
+
+- enhance image upload and processing functionality
+
+- Improve page validation and UI
+
+- add helper to normalize Imagine save options
+
+- Introduce MDS hooks system for extensibility
+
+- Enhance theme management and layout consistency across interfaces
+
+- Enhance extensibility of ads management and user management pages
+
+- Enhance color management functionality and improve UI styles
+
+- Enhance confirmLink functionality and improve order cancellation process
+
+- Add page management and creation system.
+
+- Complete page management system implementation
+
+- WIP - page management system
+
+- Add enhanced styles and functionality for the extensions page
+
+- Enhance wp-admin login page styling with dark mode support and custom logo integration
+
+- Refactor CSS variables and button styles for improved theme integration
+
+- Add foundation and component CSS variables for dark and light themes
+
+- Add CSS style overrides for WooCommerce buttons and price elements
+
+- Enhance theme customization with new color options for light and dark modes
+
+- Add grid image generation and switching for dark mode
+
+- Implement dark mode feature with theme switching and customizable colors
+
+- Add filter for extending area data values in map rendering
+
+- Added mds_popup_custom_replacements filter for popup template
+
+- Consolidate extension modifications and JS updates
+
+- update Wizard header with dynamic fire effect and reposition admin notices
+
+- add admin page info and hosting promo to setup steps
+
+- Add invert-pixels and stats-display-mode options to Grid settings
+
+- enhance migration process for config values in 2.5.12.0 upgrade
+
+- migrate remaining settings from config_form.php
+
+- Persist Click Report view type and fix styling
+
+- Improve admin block UX with AJAX spinner and error handling
 
 
-## 2.5.10
+### Build
 
-- Fix Payment page redirects and other redirects, also implement more AJAX messages as well as AJAX redirects.
-- Fix block selection issues.
-- More optimizations and fixes while ordering.
-- Fix orders auto-completing when they shouldn't.
-- Add mds_reset_order_progress filter.
-- Fix hover popup interaction.
-- Use WP date and time functions.
-- Fix wrong order id being used in some cases.
-- Fix reset order progress.
-- Fix disapprove pixels not working.
-- Fix pagination.
-- Fix warning: Undefined array key "blocks".
-- Fix when auto-approve is off it isn't unpublishing the order when a user edits it.
-- Reorganized and simplified the admin menu: clearer section names, removed redundant links, grouped pixel actions together, and made navigation more intuitive.
-- Fix Upload button in order details not working correctly.
-- Fix grid currency setting.
-- Use Currency Symbol option.
-- Update Instructions in advanced mode to output a legend with the block images instead of text descriptions.
-- Make the cancel button also clear the WC cart.
-- Fix Order Published notifications were using Order Completed Renewal content.
-- Fix an incompatibility when activating the Elementor plugin.
-- Fix missing mail length processing.
-- Fix confirmation when only the first block on the grid is selected.
-- Fix cancelling an order doesn't remove its blocks.
-- Fix order not loading properly if clicking the back button in the browser or visiting a previous page in the process.
-- Improve order handling when orders time out or are removed while ordering.
-- Fix MINUTES_CONFIRMED option not working correctly.
-- Fix blocks not being disapproved automatically.
-- Fix unable to edit block 0 clicking it on the Manage Pixels screen.
-- Fix payment page message when WooCommerce integration is disabled.
-- Fix confirm order redirect when confirm page is disabled.
-- Make order pending when confirming with WooCommerce integration disabled.
-- Fix PHP Fatal error: Uncaught Error: Cannot use object of type stdClass as array in ...\src\Core\include\functions.php:226
-- Delete orders instead of expiring them for confirmed but not paid orders timeout.
-- Improve time calculation for order expiration.
-- Fix order renewal payment handling.
-- Improve Approve Pixels admin page UI: Added Actions column, linked Order/Ad IDs, linked Username column (replaced Name/Email), adjusted styling for inputs, buttons, images, and block coordinates.
-- Add order validation and custom error handling in WooCommerce.
-- Fix blocks not always the right colour on the order pixels grid by stopping reserved blocks from pulling from orders table.
-- Replace MDS Admin List page with link to MDS Pixels post type.
-- Process pixels when disapproving when a user edits their order.
-- Add more columns to MDS Pixels.
-- Fix MDS Pixel URLs not registering due to post type not being registered first in upgrade operations. Also flush rewrite rules on deactivation.
-- Fix PHP Warning: Undefined array key "renew" in payment.php
-- Don't process the shortcode on admin pages.
-- Prevent double-clicking on most buttons.
-- Ensure only one order can be in progress at a time for a user.
-- Add a new option to lock editing of orders once they are approved or completed. If this option is enabled in the settings, users will be prevented from modifying their orders post approval or completion.
-- Add the ability for admins to deny orders on the Approve/Disapprove screens. Includes email notification and a new email option to configure it.
-- Add paid order status.
-- Add tabs to Email page.
-- Add horizontal admin menu that works on mobile.
-- Fix timeout when confirmed but not paid.
-- Set orders as not in progress when expiring, cancelling and deleting.
-- Fix order being marked private when expiring.
-- Replace Order History and Publish pages with new Manage screen.
-- Remove user menu.
-- Remove options for DISPLAY_ORDER_HISTORY, users-history-page, users-publish-page, and users-home-page.
-- Added mds_header_container and mds_footer_container filters for header and footer html.
-- Fix clicking images in grid not editing the order.
-- Fix temporary upgrade mechanism causing an error.
-- Update vendor libraries.
-- Update language file.
-- Fix error with the get_order_id_from_ad_id function.
-- Don't send the Order Confirmed email when the order is completed, only send the Order Completed email.
-- When Create Pages button is clicked it will now automatically set the Page Layout to No Sidebar if using Divi theme.
-- The Change Pixels upload will not return to the Manage Pixels page anymore.
-- Approving a denied/pending order will notify the user.
-- Make mass operations not send emails to prevent spam issues.
-- Fix tooltip display on mobile when zoomed in.
-- Remove some old unused code.
-- Add paid orders to Orders Waiting page.
-- Add support for shortcodes in the Popup Template option.
-- Add mds-status-edited action that runs when a WooCommerce order status is manually edited if it contains the MDS product.
-- Add mds_order_expiry filter for altering the expiration date shown in the MDS Pixels page.
-- Fix expiration date displayed on MDS Pixels page to show Never if Days to Expire is set to 0 on the grid.
-- Add a function to get the WC order id from the MDS order id to the Orders class.
-- Add mds_woocommerce_product_price filter to adjust the price.
-- Remove mds_my_account and mds_logout capabilities since they are no longer used.
-- Add mds_shortcode action useful for adding custom MDS shortcode extensions.
-- Add mds_block_types filter useful for modifying types on the MDS block.
-- Open accordion on first item by default on the Manage Pixels page.
-- Add mds_order_details action for adding custom order details inside the accordions on the Manage Pixels page.
-- Fix packages.
-- Fix Currency and Currency Symbol options not loading when WooCommerce isn't active.
-- Add Order Pixels button to the Manage Pixels page.
-- Change mds_modify_search_query filter to an action.
-- Change mds_form_save filter to an action.
-- Fix mds_field_output_before filter.
-- Fix mds_field_output_after filter.
-- Add mds_form_field_required filter.
-- Add mds_form_field_display action.
-- Fix mds_posts_search filter.
-- Call FormFields::save function when fields are saved.
-- Add check for MEMORY_LIMIT before using it.
-- Add some missing options to 'Delete data on uninstall' deletion.
-- Fix migration from 2.3.5.
-- Fix privileged users.
-- Add a 1-second delay to the Blocks input box on the Select Pixels screen before automatically snapping it to a squareable value.
-- Fix erasing blocks only erasing the first block when size is larger than 1.
-- Fix multiple grids not working properly in advanced pixel selection method.
-- Remove Admin option "Output processed images to:".
-- Allow title attributes on anchor tags and alt attributes on img tags in the sanitizer.
-- Add null check for $order_row in confirm_order.php.
-- Add null check for $package in make_selection.php and set price to 0 if it is null.
-- Add null check to $banner_id in Orders.php and try to get it if it is null.
-- Add filters mds_dest_select and mds_dest_order_pixels for customizing the first order process steps (will add more in the future).
-- Remove user_id check on insert_ad_data function.
-- Execute the mds_ajax_complete WP hook in JavaScript whenever an MDS AJAX request completes successfully.
-- Do the mds_order_completed action when an order is completed.
-- Fix Forms URL redirects when they already have parameters.
-- Rewrite adjacent block selection in advanced pixel selection method.
-- Fix NFS not working properly when "Show the NFS image on every NFS block" is selected.
-- Fix MDS Pixel posts not being set as completed or published causing the order to not be shown automatically on the grid.
-- Fix errors not outputting correctly at times.
-- Remove Order again button.
-- Use add_query_arg for URL redirect parameters.
-- Set default dimensions on shortcode from the database if they weren't entered.
-- Add a checkbox to the Clear Orders screen to clear associated WooCommerce orders too.
-- Add Changelog page.
-- Don't check NFS block size when set to Show the NFS image on every NFS block.
-- Convert more database calls to use $wpdb.
-- Fix order completion logic to properly handle manual completions and respect auto-approve settings.
-- Fix headers sent warnings by clearing output buffers before redirects.
-- Optimize upload_changed_pixels handling: use batched database updates.
-- Optimize output grid rendering: precompute block dimensions, dynamic driver selection, and direct GD imagecopy.
-- Fix issues selecting pixel blocks, particularly when WordPress permalinks are set to 'Plain'.
-- Improved error messages shown when trying to select a block that is already reserved or sold.
-- Fix clicking pixel blocks on the Manage Pixels page.
-- Add option to transliterate Cyrillic titles to Latin for cleaner URL slugs.
-- Reorganize plugin settings: add new 'Language' tab for related options.
-- Fix fatal error in grid output when using Imagick caused by incorrect call to GD-specific function.
-- Fix background image uploads/deletions in admin by handling them via the standard WordPress admin_post action hook.
-- Improve compatibility with different server image processing setups.
-- Improve reliability of background image uploads and deletions.
-- Add opacity slider for grid background images.
-- Allow JPG and GIF images (in addition to PNG) for grid backgrounds.
-- Improve admin block UX: Add AJAX loading spinner to width/height fields and provide visual error feedback (tooltip/highlight) for invalid grid IDs.
-- Fix WooCommerce order status not updating when MDS order is completed.
-- Improve robustness of grid background image opacity handling when Imagick extension is not available.
-- Fix: Corrected an issue where background image transparency (opacity) might not apply correctly.
-- Fix: Resolved problem with the background image delete button not functioning.
-- Fix: Addressed errors that could occur on some admin pages after submitting forms.
-- Cleanup and fix Click Reports page.
-- Fixed error during image upload on manage pixels page if auto-resize is off and image dimensions were not exact multiples of block size.
-- Make blocks transparent if uploading a smaller image than the selected area during pixel management.
-- Improved Packages admin page: Packages are now saved correctly and the page uses the standard WordPress admin table layout for easier management.
-- Fix: Corrected admin grid selection redirect and security check issue on Packages page.
-- Fix: Resolved issue where admin grid selection could fail security check and redirect incorrectly.
-- Feat: Added an option to show a grid selection dropdown on the user-facing Manage Pixels page.
-- Feat: Added grid selection dropdown to the Manage Pixels page (configurable in MDS Options).
-- Fix: Resolve 'Link expired' error when changing the selected grid on the Packages admin page.
+- refresh extension assets bundle
 
-## 2.5.9
+- sync extension ui assets
 
-- Fix another issue that could cause plugin database migrations to not run.
-- Add a "snapshot" branch to replace the "dev" branch. The dev branch will now be used for ongoing development while the new snapshot branch will be used as the dev branch was before. For lightly tested, periodic snapshots of the dev branch when new features or fixes are ready for wider testing.
-- Update vendor libraries.
-- Fix PHP Warning:  Undefined array key "blocks" in src/Classes/Functions.php on line 168
 
-## 2.5.8
+### Changed
 
-- Fix JSON output in error message when selecting a block that is already reserved.
-- Fix plugin database migrations not running.
-- Add option to exclude MDS Pixel pages from search results.
-- Fix mail string sizes being too large to fit in the database.
+- remove unused FormFields import
 
-## 2.5.7
+- remove manage subscription controls
 
-- Add an option to the WooCommerce tab to Auto-complete Orders.
-- Refactor some WooCommerce related functions to their own WooCommerceFunctions class.
-- Make checkout page redirect without using JS.
-- Add more validation to confirm order page. Includes a mds-confirm-order-validation filter.
-- Add user verification to order retrieval.
-- Add redirect in auto-approve orders.
-- Use payment page for both advanced and simple order methods.
-- Remove MDS checkout page.
-- Add additional MDS page types to the block.
-- Fix new order being started sometimes when it shouldn't be yet.
-- Refine how orders are handled for non-automated order methods like bank, COD, money order, etc.
-- Fix Options > Popup Template adding extra br tags when no visual editor is present.
-- Fix uploaded image not being reset on new order.
-- Allow users to cancel and delete confirmed but not paid orders.
-- Update buttons on Order History page based on current step in the order process.
-- Update language.
+- centralize pixel selection persistence
 
-## 2.5.6
+- Enhance validation logic for migrated pages and improve shortcode detection
 
-- Fix fatal error on activation when too low of PHP version was detected.
-- Force quantity when adding new item to cart.
-- Fix order operations not redirecting properly in MDS admin.
-- Refactor currency functions to their own Currency class.
-- Add an option for Currency to use when WooCommerce isn't enabled.
-- Fix cancel button links on Order History page.
-- Fix order page in simple pixel selection method on certain themes that have relative positioning in some page containers.
-- Add single-mds-pixel page template to output MDS Pixels in their own pages.
-- Also added an option to enable them as they are disabled by default.
-- Fix incorrect fetching of url field on list page.
-- Fix user uploading new image redirecting to admin-post.php.
-- Update language.
-- Add cron schedule for cleaning temp upload files.
-- Add upgrader_process_complete hook to upgrade database, reset cron and flush permalinks on plugin update.
-- Fix user uploading new image not saving properly.
+- Migrate database interactions to $wpdb for improved security and performance
 
-## 2.5.5
+- Update form submission handling to keep submit button disabled during redirect
 
-- Fix having the stats box on the page at the same time as ordering would break the ordering process.
-- Implemented a more robust language scanner system using the nikic/PHP-Parser library.
-- Change Top Clicks page in Admin to use orders instead of blocks and implement translation for it.
-- Update language.
+- Simplify pixel processing logic and improve error handling
 
-## 2.5.4
+- Simplify file handling in upgrade script
 
-- Fix NFS page not working due to missing $.
+- Replace direct database queries on old config table.
+
+- NFS page
+
+- Consolidate mouse handling to native listeners
+
+- Replace direct SQL config table access with WordPress options for LAST_EXPIRE_RUN
+
+- Replace config table usage with WordPress options for database version tracking
+
+- Adjust settings structure and labels in Options class
+
+- update Forms and Orders classes to use Options instead of Config
+
+- update system classes for Options integration
+
+- remove deprecated config_form.php file
+
+- remove deprecated main-config.php file
+
+- remove legacy config code from admin files
+
+- deprecate old Config class as part of Options migration
+
+- move email settings from Options to Emails class
+
+
+### Chore
+
+- merge dev into extensions
+
+- sync workspace state
+
+- sync workspace session
+
+- sync session context
+
+- sync workspace state
+
+- session checkpoint
+
+- update translation template
+
+- update POT
+
+- sync pot file
+
+- merge dev into extensions
+
+- trim noisy debug output
+
+- sync dev with origin
+
+- merge dev into extensions and resolve conflicts
+
+- merge dev into extensions
+
+- update language files
+
+- Update readme.txt for new Selection Adjacency Mode option
+
+- remove tracked .githooks; use local .git/hooks instead
+
+- Update version numbers to 2.5.13.0 in plugin files
+
+- Enhance page management functionality
+
+- Remove debug script for MDS metadata tables (not used anywhere)
+
+- Update version numbers to 2.5.12.130
+
+- Auto-update version to 2.5.12.86
+
+- Update version to 2.5.12.85 after page management completion
+
+- Update vendor libs
+
+- Update version numbers to 2.5.12.114 in plugin and readme files
+
+- Update version numbers to 2.5.12.110 in plugin and readme files
+
+- Update version numbers to 2.5.12.105 in plugin and readme files
+
+- Bump version numbers to 2.5.12.101 in plugin and readme files
+
+- Update development status in composer files
+
 - Update vendor libs.
-- Fix infinite no-orders redirect. Thank-you Peter!
-- Add automatic page creator and delete buttons with multiple new fields for the new pages.
-- Add pages with a shortcode instead of dynamic routes in order to fix header and footer on block themes.
-- Add options to Fields tab for making Popup Text, URL and Image field optional.
-- Fix advanced pixel selection method not working properly.
-- Fix order confirmation when WooCommerce is disabled.
-- Add preview to order details on confirm page.
-- Fix Manage button not linking to the order to edit.
-- Fix editing orders in frontend and admin.
-- Optimize block selection speed in advanced pixel selection method.
-- Update language.
 
-## 2.5.3
+- Update vendor libs.
 
-- Fix uploaded image preview size in advanced pixel selection method.
-- Add Update Language button to automatically add any missing entries to the language file.
-- Refactor Language class functions to move content to first arg.
-- Update language.
-- Add some missing Language to options.
-- Add option to allow changing /milliondollarscript endpoint.
-- Fix wrong path to admin-options.min.js and remove unnecessary slash from MDS_CORE_PATH in various places.
-- Fix new dbver insert.
-- Add additional checks to db upgrades.
-- Fix list page not showing ad.
-- Fix default Popup Template using outdated HTML.
-- Fix automatically update width and height attributes of block when the type changes.
+- Update version numbers (bypass hooks)
 
-## 2.5.2
+- Update version numbers post-hook run
 
-- On dynamic-id check for not empty post id instead of not null.
-- Fix deleted orders still showing as reserved during ordering.
-- Fix jQuery load event not firing.
-- Fix product migration from older versions.
-- Add some missing database upgrades.
-- Move database upgrades to their own files.
-- Add thank-you page option to redirect to after an order is completed.
-- Add user adjustable block selection size in advanced pixel selection method.
-- Fix being able to select blocks in multi-block selection when not clicking the block.
-- Fix still only allowing png files to upload sometimes.
-- Fix uploaded image not appearing the proper size.
-- Rename $menus to prevent conflict with another global.
-- Language file updates.
+- Update version numbers after JS re-minify
 
-## 2.5.1
+- Enhance extension management
 
-- Fix loading of block styles properly.
-- Finish implementing updating from MDS 2.3.5.
-- Found a way to at least load the menu on dynamic pages for block themes.
+- Update language file
 
-## 2.5.0
 
-- Fix more warnings, notices, etc.
-- Don't load popper and tippy if tooltips are disabled.
-- Fix links not working when tooltips are off.
-- Convert all language to WP language. Use a plugin like Loco Translate to make changes to the language.
-- Remove translation tool.
-- Add mds_options_fields and mds_options_save filters for options.
-- Update the updater.
-- Use jQuery libraries from WordPress.
-- Add missing parseInt radix parameter in various places.
-- Change AJAX return values to JSON encoded values.
-- Add AJAX queue when selecting pixels during ordering process.
-- Adjust image file upload width and add filter to only select images.
-- Add DOING_AJAX constant when doing AJAX request.
-- Fix Not For Sale page not loading.
-- Separate WooCommerce options with new filters.
-- Update vendor libraries.
-- Fix install config errors.
-- Fix automatically created MDS product shown on shop page and search.
-- Fix when order expires due to unconfirmed order timeout remove from WC cart.
-- Fix list page on small screens.
-- Rewrite email system to use WP mail functions.
-- Add Emails screen to configure email contents.
-- Integrate admin directly into WP.
-- Remove payment modules.
-- Remove currency editor.
-- Remove extra config options from main config.
-- Remove language.
-- Remove form editor UI.
-- Convert form fields to use Carbon Fields for text, URL, and image form.
-- Add option to enable/disable order expiration via cron.
-- Add AJAX for users/buy pixels page.
-- Remove iframe completely.
-- Remove fields from shortcode and block: lang, display, display_method
-- Convert users to WP users.
-- Make PNG file optional on grid background image.
-- Add user role check to users page and option for allowing specific role(s)
-- Remove guest checkout for now since it didn't work properly.
-- New main plugin page in WP admin.
-- Fix login redirect URL not working all the time.
-- Add privileged user meta to WP users screen.
-- Add clicks and views count to WP users list screen.
-- Add login form.
-- Add tabs to options page.
-- Options fields filter renamed to mds_options and uses tabs array formatted like 'Tab title' =\> \[fields\]
-- Update width and height in the block automatically.
-- Fix deprecated usort notice.
-- Select and refresh not loading selected blocks properly
-- Fix new order being removed too early.
-- Fix email and options require being saved before using, defaults don't work in some cases.
-- Check if order id is owned by the user first before setting order id on user meta
-- Fix multiple consecutive orders not uploading the image (hard to reproduce)
-- Fix only PNGs uploading.
-- Fix error $el.imageScale is not a function
-- Fix MDS order id going to wrong WooCommerce order (may have fixed, have to test) May have been because the order in MDS was not complete and so the session variable for mds_order_id was set to the wrong one when they resumed and not set back or reset Then maybe went to the other one with the wrong session id set and saved that to the WC order
-- Fix NFS page.
-- Fix email content in Outgoing Email
-- Fix MDS order id going to wrong WooCommerce order
-- Fix Divi page edit breaking MDS block
-- Fix display_reset_link X click not cancelling on Manage Grids.
-- Test translation.
-- Organize Options page with tabs or something
-- Fix NFS page height.
-- Fix block loading.
-- Fix Attempt to read property "ID" on null in src\Classes\FormFields.php on line 149
-- Fix being able to overlap existing orders in advanced pixel selection mode.
+### Documentation
+
+- add products integration documentation and session logs
+
+- update tested up to version
+
+- document MDS Pixels permalinks and migration workflow
+
+- enhance extensions UI and clean up submenu handling
+
+- switch tooltip colors to CSS vars
+
+
+### Fixed
+
+- harden tooltip data parsing
+
+- refresh grid map include after generation
+
+- improve plan features HTML rendering and service handling
+
+- Add Manage Pages and Create Pages to Admin menu in Dashboard.
+
+- hide non-extension submenus without blocking access
+
+- Add important to some styles for the mds-ext-active button.
+
+- enforce image MIME allowlist and header casing; remove @unserialize; sanitize grid dimensions
+
+- harden error rendering; add admin-only handler; safe unserialize for block_info
+
+- sanitize popup text listings
+
+- sanitize popup text listings
+
+- default to CAD currency
+
+- preserve stripe amount metadata in catalog
+
+- persist wordpress update transient
+
+- restore default update snapshot handler
+
+- normalise update downloads for proxied hosts
+
+- restore plugin update flow parity
+
+- block update checks without license
+
+- show friendly plan labels on extensions page
+
+- prevent empty pricing cards without amounts
+
+- show latest version check as success notice
+
+- suppress legacy plan entries in extensions UI
+
+- show renewal timezone and refresh license status
+
+- honor site license during premium installs
+
+- show install button after purchasing extension
+
+- honour sale mapping when sale amount matches default
+
+- resync license state and repair removal handler
+
+- restore submenu styling and license actions
+
+- toggle popup rich text safely on display
+
+- ensure pixel post titles follow popup text
+
+- show all grids on advertiser list
+
+- prevent fatal when order lookup fails
+
+- normalize subscription plan detection
+
+- encrypt claimed license storage
+
+- Indentation
+
+- preserve uploaded grid images
+
+- restore mds pixel single layout
+
+- clarify manual auto-complete handling
+
+- keep pixel search results consistent without template
+
+- restore adjacent block validation
+
+- guard missing update checker dependencies
+
+- hide trashed pages in manage view
+
+- prevent WooCommerce redirect on MDS endpoints
+
+- resolve PHP parse error by correcting type hints in checkout handlers
+
+- restore Not For Sale admin page
+
+- stabilize advanced loader handling
+
+- enforce upload limits for pixel images
+
+- align spinner handling across grid pages
+
+- prevent SQL syntax error during block selection
+
+- Clear Orders now verifies nonce on POST, reliably deletes associated WC orders, and shows notices below the MDS menu only
+
+- resolve PHP parse error by correcting type hints in checkout handlers
+
+- persist MDS-WC mapping during checkout so Stripe auto-complete adds order note and completes MDS order
+
+- show cancelled blocks as reserved and block selection; add changelog entry
+
+- use canvas overlay with integer partitions to remove seams; immediate loader on mousedown; batch client-side rendering; restore pointer and slider sync; reduce flicker
+
+- use public activate/deactivate endpoints; honor dev sslverify; improve connectivity for Premium Test flows
+
+- resolve PHP parse error (extra PHP open tag) and complete UI/UX changes (purchased license UI, manage modal, renewal notices, decryption before validation/install)
+
+- define  before use and correct data-plugin-file attribute quoting\n\n- Initialize  per row before rendering attributes\n- Fix HTML attribute quoting for data-plugin-file to avoid escaping issues
+
+- retry auto-claim for webhook delay; trust row licensed state when no key
+
+- correct license checks by slug; pass license key on install; stable install gating\n\n- Use extension slug (not server id) to check local license and render buttons\n- Add data-is-licensed to rows; JS gating trusts row state if no global key\n- Fetch license key from DB and send as x-license-key for downloads\n- Include extensionSlug in checkout URL to help server map purchases\n- Keep auto-claim flow in place (claimToken/siteId)
+
+- relocate any header-injected notices into below-header anchor via JS
+
+- render server-side notices inside below-header anchor and adjust JS fallback\n\n- Wrap purchase/cancel/fallback notices inside #mds-extensions-notices\n- JS fallback now inserts notices before Available Extensions section
+
+- resolve extension server base using container alias and host fallbacks
+
+- anchor notices below header and render JS notices in-page
+
+- prevent duplicate Manage Pixels and fresh-install migration notice; defer auto-create until wizard-created pages; improve uninstall cleanup; shorten readme lines
+
+- prevent link-color bleed by scoping styles to MDS container and removing body-level mds-container\n\n- Scope dynamic CSS variables and rules to .mds-container (and login)\n- Stop adding mds-container to <body> by default; add legacy opt-in filter\n  (mds_enable_legacy_body_classes)\n- Load dynamic CSS later (priority 100) to reliably win tie-specificity\n\nChangelog: added user-friendly note under 2.5.13 about the change and how to opt-in to legacy behavior
+
+- use ARRAY_A in get_results for banners query to fix grid selection in advanced mode
+
+- fix mass complete and cancel order handling
+
+- handle zero banner ID and enable All Grids
+
+- Fix deleting grids causing an error. Improve WooCommerce integration safety and function calls.
+
+- Fix approve pixels not working.
+
+- fix global $wpdb reference preventing grid modifications
+
+- correct order completion flow and email fetch, update language file
+
+- replace mysqli with $wpdb in admin and orders
+
+- handle upload redirect and JS form submission
+
+- harden order selection and reset handling
+
+- correct light mode tooltip background defaults
+
+- update shortcode defaults and titles
+
+- Enhance page creator and error resolution functionality
+
+- Update SQL query to exclude 'cancelled' status in block retrieval
+
+- Update order status checks to include 'cancelled' state
+
+- Resolve order flow issues and prevent duplicate pixel posts
+
+- Prevent double encoding of HTML entities in translation functions
+
+- Update max image size default value and enhance grid image responsiveness on some themes
+
+- Update max image size default value and enhance grid image responsiveness on some themes
+
+- Update max image size default value and enhance grid image responsiveness
+
+- Use namespace for OPTION_NAME_WIZARD_COMPLETE
+
+- File upload in simple pixel selection method.
+
+- Allow selecting first block.
+
+- Update mouseover option retrieval to use Options class
+
+- Removed duplicate option for Order Published email
+
+- Corrected retrieval of max-popup-size option to use the Options class directly
+
+- Removed duplicate option for Order Published email
+
+- Corrected retrieval of max-popup-size option to use the Options class directly
+
+- Update mouseover option retrieval to use Options class
+
+- Fixed file upload processing for order-pixels
+
+- Allow selecting first block.
+
+- Stop deleting data on deactivation.
+
+- Re-minify JS files with updated Bun command
+
+- Stop deleting data on deactivation.
+
+- Update JS minification on extensions branch
+
+- WooCommerce and permission conditional logic checks on Carbon Fields
+
+- Approve pixels.
+
+- add missing file header to Logs.php
+
+- Add version.php back to prevent an update error because WP seems to run the old code still after updating for some reason.
+
+- More dashboard spark fixes that were missed.
+
+- Fixed auto-resizing
+
+- Fixed Complete Order button on Confirm screen when price per block is 0 or user is privileged to go to the Payment page.
+
+- Dashboard spark effects
+
+- ensure images properly fill block space with auto-resize enabled
+
+- Prevent link navigation when tippy tooltip is triggered by click
+
+- Prevent Carbon Fields fatal error during activation
+
+- update log-enable option field name for consistency
+
+- update checkbox option handling in core files and Form classes
+
+- update checkbox option handling in Payment and WooCommerce classes
+
+- update checkbox option handling in Pages and Web classes
+
+- update checkbox option handling in System classes
+
+- update log-enable option handling for proper toggle state
+
+- update admin logs JavaScript for improved debugging
+
+- implement correct default values for Options class settings
+
+
+### Other
+
+- soften cancel auto-renew controls
+
+- refine update status display
+
+- enhance update status readability
+
+- refresh check updates button styling
+
+- resolve conflicts preferring dev updates for core files and minified assets; remove vendor/imagine composer.json per dev; keep extensions features intact
+
+- refine selection size slider styling
+
+- Simplify CSS styles for body and headings in mds.css
+
+- Enhance login form button and link styles for improved user experience
+
+- Refine button and link styles for improved UI consistency
+
+- Update link colors for improved accessibility
+
+- Adjust login form padding and max-width for improved layout
+
+- Update Tippy tooltip dimensions and styling
+
+- Add hover effects for success and confirmation buttons
+
+- Update textarea color to use !important for consistency in styling
+
+- Enhance slider styling for selection size with custom appearance
+
+- Set line-height on grid-inner element to 1 to ensure proper grid height.
+
+- Resolve merge conflicts from dev branch stash
+
+- Use global 'auto-resize' option for conditional image sizing in output_grid and get_order_image
+
+- Implement conditional image resizing based on 'image_auto_resize' banner setting
+
+- Prevent basename deprecation and correct Config::get usage in Cron
+
+- Rearrange styles to fix the default font color of links affecting certain buttons.
+
+- Change Config::get return type to mixed
+
+- Update version, translation template, and changelog
+
+- Consistent option handling and bugfixes across core and system classes
+
+- Normalize Options::get_option default values and comparison for booleans
+
+- Adapt Logs and LanguageScanner to Filesystem changes
+
+- Correct boolean conversion in upgrade logic (_2_5_12_0.php) to return 'no' for false values
+
+- Update click-reports.php for improved click reporting and admin UI consistency
+
+- Update WooCommerce functions and options for improved integration and settings handling
+
+- Update Users class for improved user management and reliability
+
+- Update System classes (Bootstrap, Filesystem, Functions, Logs, Utility) for improved core functionality and maintainability
+
+- Update Logs and Wizard pages for improved logging and setup flow
+
+- Update Admin, Config, and Options classes for improved settings management and data consistency
+
+- Improve selection and pixel UI; add Styles.php for dynamic CSS; update select.js and related PHP for enhanced block selection and UI integration
+
+- Update plugin to v2.5.12.47, fix Stable tag updater, and add new assets/js/css
+
+- Improve readme update logic in version script
+
+- Correct Stable tag format in readme.txt
+
+- Update plugin metadata and documentation in main file and readme
+
+- Remove obsolete/deprecated files (wizard assets, robots.txt, LICENSE.txt)
+
+- Update Core user/admin, grids, pointer, backgrounds, output, and JS assets for improved logic and bugfixes
+
+- Update core classes (Admin, Orders, Forms, Payment, System, WooCommerce, Utility, Debug) for improved maintainability and bug fixes
+
+- Upgrade database migration logic for 2.5.12.0, migrate unmapped configs to Logs class
+
+- Update Composer autoload and vendor files for dependency changes
+
+- Update grid dimensions and price in DB from wizard
+
+- Add Style options for customizing admin colors
+
+- update color scheme and remove step animation
+
+- Centralize page creation logic in Utility::create_mds_page
+
+- Add animated ember effects to wizard fire cursor
+
+- Align wizard page creation with main options page logic
+
+- Correct Logs page slug and update admin menus
+
+- Centralize and improve plugin build date logic
+
+- Use readme.txt "Last updated" as fallback for build date
+
+- Replace BUILD_DATE option with last_updated from PUC
+
+- Resolved AJAX handler registration issue in log viewer
+
+- Implement AJAX log viewer with live updates
+
+- Migrate logging from Config to Options API and WP_DEBUG
+
+- Add daily cron task to clean up old log files
+
+- Resolved database upgrade issues from 2.3.5 by reordering installation steps
+
+- Properly resolve 'headers already sent' errors in admin pages using output buffering and proper form handling
+
+- Update minified JavaScript with tooltip fixes for multiple grids
+
+- Tooltip AJAX content not loading on second grid by improving data attribute handling and removing global tippy instance
+
+- Update admin notice in Utility class to use Notices class for consistency
+
+- Resolve 'headers already sent' errors in process-pixels.php and clear-orders.php by proper handling of form submissions through admin-post.php and using the Notices class for admin messages
+
+- Add dedicated CSS fixes to address tooltip black bar rendering artifacts in different browsers
+
+- Address black bar visual artifact in tooltips by updating tooltip positioning and display options
+
+- Additional tooltip improvements - remove visual artifacts and ensure tooltips work on all grids
+
+- Grid tooltips and multiple grids issues - Prevent immediate redirect on first click and use unique map IDs for each grid
+
+- Auto-approved images not being published automatically when grid has auto-approve and auto-publish enabled
+
+- Improve reliability and handling of pixel selection and upload forms. Hidden fields for selected pixels are now consistently managed in both JS and PHP. UI and workflow are more robust for users.
+
+- Commit auto-updated version and metadata files after previous changes. All uncommitted files are now staged and committed as per workflow.
+
+- Improved Manage Pixels info layout for better responsiveness, equal-height columns, and scalable images. Removed duplicate CSS and ensured mobile stacking is full-width.
+
+- Add inline image map scaling for proper area alignment on Manage Pixels page
+
+- Initialize responsive image map on Manage Pixels page
+
+- Resolve nonce error on Packages grid select
+
+- Ensure package settings save correctly and remove debug logs
+
+- Improve image upload handling and dimension validation
+
+- Resolve fatal error and incorrect dimensions on block type change
+
+- Remove target blank from WC refund link
+
+- Integrate WC refund link into Transaction Log
+
+- Use Language class for WC refund translations
+
+- Ignore URL BID parameter on Manage page when dropdown option is disabled
+
+- Ensure Manage Pixels grid dropdown respects admin option
+
+- Add grid selection dropdown to Manage Pixels page
+
+- Add grid dropdown to Manage Pixels page
+
+- Remove debug code and duplicate notice in Packages admin
+
+- Resolve package saving issues and refactor Packages admin page
+
+- Make uncovered blocks transparent when uploading smaller image
+
+- Prevent crop errors for non-multiple image dimensions
+
+- Corrected click reports form routing and reset logic. Ensured click reports display and reset as expected.
+
+- Reorganized admin menu for clarity. Moved Transaction Log to Reports, removed redundant and nested items, grouped pixel actions, and improved navigation labels. See changelog for details.
+
+- Update 'Approved Pixels' text labels for consistency
+
+- Simplify approve-pixels page, remove URL/Title editing
+
+- Improve Approve Pixels page UI/UX
+
+- Use correct 'order_date' column in approve-pixels ORDER BY clause
+
+- Use correct 'status' column name in approve-pixels queries
+
+- Use 'ostatus' column name in approve-pixels queries
+
+- Add error logging to approve-pixels order query
+
+- Only filter by banner_id in approve-pixels if BID > 0
+
+- Ensure $total_orders is int in approve-pixels to prevent TypeError
+
+- Correct database column names in Utility and approve-pixels
+
+- Implement grid_dropdown and display_pagination in Utility class
+
+- Use Utility class methods in approve-pixels.php
+
+- Standardize formatting and header in approve-pixels.php
+
+- Clean up approve-pixels page and fix dynamic title
+
+- Background image handling and admin form submission errors
+
+- WC order status sync using post meta
+
+- Restore reliable block extraction in upload_changed_pixels by cropping and pasting blocks, avoiding Imagine negative offset errors. Update readme to reflect this.
+
+- Add background image opacity slider and JPG/GIF support
+
+- Handle background uploads correctly and prevent Imagick fatal error
+
+- Move Language and Transliteration settings to new Language tab
+
+- Implement Cyrillic-to-Latin slug transliteration
+
+- Correct URL generation on Manage Pixels grid click
+
+- Enforce order locking by disabling pixel grid clicks
+
+- Add user-friendly changelog entries for recent fixes
+
+- Resolve AJAX URL construction and JSON parsing issues in block selection
+
+- remove stray '+' prefixes from 2.5.10 entries
+
+- append user-facing entries for 2.5.10
+
+- add entry for GD resource annotations in output_grid
+
+- precompute dims, direct GD imagecopy, refactored loops
+
+- dynamic driver selection and remove obsolete Imagick comments
+
+
+### Performance
+
+- bulk transactional selection; reliable order updates
+
+
+### Security
+
+- Resolve admin grid selection redirect issue and security check failure on Packages page
+
+
