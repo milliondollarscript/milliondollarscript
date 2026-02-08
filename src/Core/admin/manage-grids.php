@@ -34,6 +34,7 @@ use MillionDollarScript\Classes\Data\DarkModeImages;
 use MillionDollarScript\Classes\Services\GridImageGenerator;
 use MillionDollarScript\Classes\System\Logs;
 use MillionDollarScript\Classes\Admin\Notices;
+use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -117,7 +118,7 @@ validate_or_defaults();
 
 if ( isset( $_REQUEST['reset_image'] ) && $_REQUEST['reset_image'] != '' ) {
 	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
-		wp_die( 'Security check failed.' );
+		wp_die( Language::get( 'Insufficient permissions' ) );
 	}
 	global $wpdb;
 	$default = get_default_image( $_REQUEST['reset_image'] );
@@ -263,7 +264,7 @@ function is_default(): bool {
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disable' ) {
 	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
-		wp_die( 'Security check failed.' );
+		wp_die( Language::get( 'Insufficient permissions' ) );
 	}
 	global $wpdb;
 	$result = $wpdb->update(
@@ -281,7 +282,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disable' ) 
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'enable' ) {
 	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
-		wp_die( 'Security check failed.' );
+		wp_die( Language::get( 'Insufficient permissions' ) );
 	}
 	global $wpdb;
 	$result = $wpdb->update(
@@ -299,7 +300,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'enable' ) {
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
 	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
-		wp_die( 'Security check failed.' );
+		wp_die( Language::get( 'Insufficient permissions' ) );
 	}
 	if ( is_default() ) {
 		echo "<b>Cannot delete</b> - This is the default grid!<br>";
@@ -707,7 +708,7 @@ if ( isset( $_REQUEST['submit'] ) && $_REQUEST['submit'] != '' ) {
 					if ( isset($_FILES[$input]) && isset($_FILES[$input]['tmp_name']) && is_uploaded_file($_FILES[$input]['tmp_name']) ) {
 						$orig_name = sanitize_file_name( wp_unslash( $_FILES[$input]['name'] ) );
 						$check = wp_check_filetype_and_ext( $_FILES[$input]['tmp_name'], $orig_name, array( 'png' => 'image/png', 'gif' => 'image/gif' ) );
-if ( ! in_array( $check['type'], array('image/png','image/gif'), true ) ) {
+						if ( ! in_array( $check['type'], array('image/png','image/gif'), true ) ) {
 							// Invalid type, ignore this upload and add admin notice
 							Notices::add_notice( sprintf( 'Invalid overlay file type for %s. Only PNG or GIF are allowed.', esc_html( $orig_name ) ), 'error' );
 							continue;
