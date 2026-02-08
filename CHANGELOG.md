@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.6.43-alpha.1 - 2026-02-08
+
+
+
+### Fixed
+
+- correct grid placement offset and skip adjacency check in simple mode
+
+- compatibility page — version display, script loading, button UI
+
+- persist license-claimed notice after post-Stripe redirect
+
+- use generic translated message for nonce failures in manage-grids
+
+- security hardening, debug cleanup, and style polish
+
+
 ## 2.6.38-alpha.1 - 2025-12-17
 
 
