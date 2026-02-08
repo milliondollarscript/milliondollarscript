@@ -927,7 +927,13 @@ $(document).on('click', '.mds-purchase-extension', function (e) {
 					success: function (resp) {
 						if (resp && resp.success) {
 							showNotice('success', 'License claimed. You can now install the extension.');
-							setTimeout(() => window.location.replace(window.location.href.replace(/([?&])(purchase|session)=[^&]*/g,'$1').replace(/[?&]$/,'')), 1500);
+							setTimeout(() => {
+								let cleanUrl = window.location.href
+									.replace(/([?&])(purchase|session|mds_notice)=[^&]*/g, '$1')
+									.replace(/[?&]$/, '');
+								cleanUrl += (cleanUrl.includes('?') ? '&' : '?') + 'mds_notice=license_claimed';
+								window.location.replace(cleanUrl);
+							}, 1500);
 						} else {
 							if (attempts < maxAttempts) {
 								setTimeout(attemptClaim, 5000);

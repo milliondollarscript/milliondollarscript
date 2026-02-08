@@ -1469,8 +1469,14 @@ class Extensions {
                 <div class="notice notice-warning">
                     <p><?php echo esc_html( Language::get('Purchase was cancelled.') ); ?></p>
                 </div>
+            <?php endif;
+            $mds_notice = isset($_GET['mds_notice']) ? sanitize_key($_GET['mds_notice']) : '';
+            if ($mds_notice === 'license_claimed') : ?>
+                <div class="notice notice-success is-dismissible">
+                    <p><?php echo esc_html( Language::get('License claimed successfully! You can now install the extension.') ); ?></p>
+                </div>
             <?php endif; ?>
-            <?php 
+            <?php
             // Print fallback notice inline
             self::print_server_fallback_notice();
             if ($extension_server_error) : ?>
