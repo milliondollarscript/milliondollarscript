@@ -64,8 +64,6 @@ jQuery(document).ready(function ($) {
 	// Initialize page configuration if available
 	function initializePageConfiguration() {
 		if (MDS.page_config && MDS.page_config.is_mds_page) {
-			console.log('MDS: Initializing page configuration from', MDS.page_config.source);
-			
 			const config = MDS.page_config.configuration;
 			
 			// Use setTimeout to ensure Carbon Fields have been rendered
@@ -105,8 +103,6 @@ jQuery(document).ready(function ($) {
 						$alignField.val(config.align);
 					}
 				}
-				
-				console.log('MDS: Page configuration initialized');
 			}, 500);
 		}
 	}

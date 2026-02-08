@@ -25,8 +25,6 @@ jQuery(document).ready(function ($) {
 	function fixColorPickerResetButtons() {
 		// Wait for Carbon Fields to be fully initialized
 		setTimeout(function() {
-			console.log('🔧 Setting up Carbon Fields color picker reset functionality...');
-			
 			let setupCount = 0;
 			
 			// Find all reset buttons and set up functionality
@@ -38,9 +36,8 @@ jQuery(document).ready(function ($) {
 				const hiddenInput = colorContainer.find('input[type="hidden"]');
 				const fieldId = hiddenInput.attr('id');
 				const rawFieldName = hiddenInput.attr('name');
-				
+
 				if (!fieldId || !rawFieldName) {
-					console.log('⚠️ Skipping reset button - no field ID or name found');
 					return;
 				}
 				
@@ -59,18 +56,10 @@ jQuery(document).ready(function ($) {
 				if (!field && cleanFieldName) {
 					field = Object.values(fields).find(f => f.base_name === cleanFieldName);
 				}
-				
+
 				if (!field || !field.default_value) {
-					console.log('⚠️ Skipping reset button - field not found or no default value:', {
-						fieldId: fieldId,
-						cleanFieldName: cleanFieldName,
-						hasField: !!field,
-						hasDefault: field ? !!field.default_value : false
-					});
 					return;
 				}
-				
-				console.log('✅ Setting up reset for field:', field.base_name, 'default:', field.default_value);
 				
 				// Enable the reset button (it might be disabled)
 				resetButton.prop('disabled', false);
@@ -79,9 +68,7 @@ jQuery(document).ready(function ($) {
 				resetButton.off('click').on('click', function(e) {
 					e.preventDefault();
 					e.stopPropagation();
-					
-					console.log('🔄 Resetting field:', field.base_name, 'to default:', field.default_value);
-					
+
 					// Update Carbon Fields store
 					updateFieldValue(field.id, field.default_value);
 					
@@ -99,14 +86,10 @@ jQuery(document).ready(function ($) {
 					if (textInput.length) {
 						textInput.val(field.default_value);
 					}
-					
-					console.log('✅ Reset complete for:', field.base_name);
 				});
-				
+
 				setupCount++;
 			});
-			
-			console.log(`🎉 Reset functionality set up for ${setupCount} color fields`);
 		}, 2000);
 	}
 
@@ -255,50 +238,41 @@ jQuery(document).ready(function ($) {
 		const button = $(this);
 		button.prop('disabled', true).text('Exporting...');
 
-		// Debug theme mode detection
-		console.log('🔍 Debugging theme mode detection...');
-		
 		// Test different selectors for theme mode
 		const selectors = [
 			'input[name="milliondollarscript_theme_mode"]:checked',
 			'input[name="carbon_fields_compact_input[_milliondollarscript_theme_mode]"]:checked',
 			'input[name*="theme_mode"]:checked'
 		];
-		
+
 		let theme_mode = null;
 		selectors.forEach(selector => {
 			const element = $(selector);
 			const value = element.val();
-			console.log(`Selector "${selector}": found ${element.length} elements, value: ${value}`);
 			if (value && !theme_mode) {
 				theme_mode = value;
 			}
 		});
-		
+
 		// Try to get theme mode from Carbon Fields store
 		if (!theme_mode) {
 			const themeField = Object.values(fields).find(f => f.base_name === 'milliondollarscript_theme_mode');
 			if (themeField) {
 				theme_mode = themeField.value;
-				console.log('Got theme mode from Carbon Fields store:', theme_mode);
 			}
 		}
-		
+
 		// Fallback to checking which theme mode fields are visible (conditional logic)
 		if (!theme_mode) {
 			const darkFields = $('.cf-color input[name*="dark"]');
 			const lightFields = $('.cf-color input[name*="background_color"]');
-			
+
 			if (darkFields.closest('.cf-color').is(':visible')) {
 				theme_mode = 'dark';
-				console.log('Detected dark mode from visible dark fields');
 			} else if (lightFields.closest('.cf-color').is(':visible')) {
 				theme_mode = 'light';
-				console.log('Detected light mode from visible light fields');
 			}
 		}
-		
-		console.log('Final theme mode:', theme_mode);
 
 		const colorFields = getColorFields();
 		const exportData = {
@@ -422,13 +396,9 @@ $(document).on('click', '#mds_migrate_slugs_btn', function(){
 // Reset to defaults functionality
 	$('#mds_reset_colors').on('click', function(e) {
 		e.preventDefault();
-		
-		console.log('🔄 Reset to Defaults button clicked');
-		
-		// Check if button exists and is found
+
 		const button = $(this);
-		console.log('Button found:', button.length > 0);
-		
+
 		if (!confirm('Are you sure you want to reset all colors to their default values? This cannot be undone.')) {
 			return;
 		}
@@ -436,15 +406,12 @@ $(document).on('click', '#mds_migrate_slugs_btn', function(){
 		button.prop('disabled', true).text('Resetting...');
 
 		const colorFields = getColorFields();
-		console.log('🎨 Found color fields for reset:', colorFields.length);
-		console.log('Color fields:', colorFields.map(f => ({ base_name: f.base_name, default_value: f.default_value })));
-		
+
 		let resetCount = 0;
 		let skippedCount = 0;
-		
+
 		colorFields.forEach(field => {
 			if (field.default_value && field.default_value !== '') {
-				console.log('✅ Resetting field:', field.base_name, 'from:', field.value, 'to:', field.default_value);
 				
 				// Use the same mechanism that works for individual resets
 				updateFieldValue(field.id, field.default_value);
@@ -461,15 +428,14 @@ $(document).on('click', '#mds_migrate_slugs_btn', function(){
 						colorPreview.css('background-color', field.default_value);
 					}
 				}
-				
+
+
 				resetCount++;
 			} else {
-				console.log('⚠️ Skipping field with no default value:', field.base_name, 'default was:', field.default_value);
 				skippedCount++;
 			}
 		});
 
-		console.log(`🎉 Reset complete: ${resetCount} fields reset, ${skippedCount} skipped`);
 		alert(`Reset ${resetCount} color fields to defaults! Click Save Changes to apply.`);
 		button.prop('disabled', false).html('<span class="dashicons dashicons-update" style="vertical-align: middle;"></span> Reset to Defaults');
 	});

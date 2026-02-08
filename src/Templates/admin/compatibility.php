@@ -674,7 +674,6 @@ $status = $compatibility_manager->getCompatibilityStatus();
 jQuery(document).ready(function($) {
     // Check if pending migrations section should be hidden on page load
     function checkAndHidePendingMigrations() {
-        console.log('Checking pending migrations status...');
         $.ajax({
             url: ajaxurl,
             type: 'POST',
@@ -683,24 +682,14 @@ jQuery(document).ready(function($) {
                 nonce: '<?php echo wp_create_nonce( 'mds_debug_status' ); ?>'
             },
             success: function(response) {
-                console.log('Debug status response:', response);
                 if (response.success && response.data && response.data.pending_migrations) {
-                    console.log('Pending migrations:', response.data.pending_migrations);
                     // If no pending migrations, hide the pending migrations section
                     if (response.data.pending_migrations.length === 0) {
-                        console.log('No pending migrations - hiding section');
                         $('.mds-pending-migrations').hide();
                         $('.mds-migration-results').show(); // Make sure results show if hidden
                         $('#mds-migration-progress').hide(); // Also hide any progress divs
-                    } else {
-                        console.log('Still have pending migrations:', response.data.pending_migrations.length);
                     }
-                } else {
-                    console.log('Invalid response format');
                 }
-            },
-            error: function(xhr, status, error) {
-                console.log('AJAX error:', error);
             }
         });
     }

@@ -200,8 +200,6 @@ class BlockFields {
 
 			?>
 			<script>
-				const MDSTEST = 1;
-				console.log("TEST1");
 				jQuery(function () {
 					if (window.mds_js_loaded !== true) {
 						window.mds_js_loaded = true;
@@ -260,8 +258,6 @@ class BlockFields {
 		?>
 		<script id="mds-fields-script-<?php echo self::$counter; ?>">
 			jQuery(function () {
-				console.log("MDSTEST", MDSTEST);
-
 				new window.mds_ajax(
 					undefined,
 					undefined,

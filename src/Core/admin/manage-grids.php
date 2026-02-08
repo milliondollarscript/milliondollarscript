@@ -100,11 +100,25 @@ function validate_or_defaults(): void {
 	if ( ! isset( $_REQUEST['bgcolor'] ) || $_REQUEST['bgcolor'] != sanitize_hex_color( $_REQUEST['bgcolor'] ) ) {
 		$_REQUEST['bgcolor'] = '';
 	}
+
+	// Cast numeric fields to proper types after validation
+	$_REQUEST['grid_width']      = intval( $_REQUEST['grid_width'] );
+	$_REQUEST['grid_height']     = intval( $_REQUEST['grid_height'] );
+	$_REQUEST['price_per_block'] = floatval( $_REQUEST['price_per_block'] );
+	$_REQUEST['days_expire']     = intval( $_REQUEST['days_expire'] );
+	$_REQUEST['max_orders']      = intval( $_REQUEST['max_orders'] );
+	$_REQUEST['max_blocks']      = intval( $_REQUEST['max_blocks'] );
+	$_REQUEST['min_blocks']      = intval( $_REQUEST['min_blocks'] );
+	$_REQUEST['block_width']     = intval( $_REQUEST['block_width'] );
+	$_REQUEST['block_height']    = intval( $_REQUEST['block_height'] );
 }
 
 validate_or_defaults();
 
 if ( isset( $_REQUEST['reset_image'] ) && $_REQUEST['reset_image'] != '' ) {
+	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
+		wp_die( 'Security check failed.' );
+	}
 	global $wpdb;
 	$default = get_default_image( $_REQUEST['reset_image'] );
 	$image_column = sanitize_key( $_REQUEST['reset_image'] );
@@ -122,7 +136,7 @@ function display_reset_link( $BID, $image_name ): void {
 		?>
         <a class="inventory-reset-link" title="Reset to default"
            onclick="confirmLink(this, 'Reset this image to deafult, are you sure?')"
-           data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo $BID; ?>&reset_image=<?php echo urlencode( $image_name ); ?>' href="#">x</a>
+           data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-manage-grids' ) ); ?>&mds-action=edit&BID=<?php echo intval( $BID ); ?>&reset_image=<?php echo urlencode( $image_name ); ?>&_mds_nonce=<?php echo wp_create_nonce( 'mds_grid_action' ); ?>' href="#">x</a>
 		<?php
 	}
 }
@@ -248,6 +262,9 @@ function is_default(): bool {
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disable' ) {
+	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
+		wp_die( 'Security check failed.' );
+	}
 	global $wpdb;
 	$result = $wpdb->update(
 		MDS_DB_PREFIX . 'banners',
@@ -257,11 +274,15 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'disable' ) 
 		[ '%d' ]
 	);
 	if ( $result === false ) {
-		die( 'Database error: ' . $wpdb->last_error );
+		Logs::error( 'Grid action failed: ' . $wpdb->last_error );
+		Notices::add_error( 'An error occurred while updating the grid. Please try again.' );
 	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'enable' ) {
+	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
+		wp_die( 'Security check failed.' );
+	}
 	global $wpdb;
 	$result = $wpdb->update(
 		MDS_DB_PREFIX . 'banners',
@@ -271,11 +292,15 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'enable' ) {
 		[ '%d' ]
 	);
 	if ( $result === false ) {
-		die( 'Database error: ' . $wpdb->last_error );
+		Logs::error( 'Grid action failed: ' . $wpdb->last_error );
+		Notices::add_error( 'An error occurred while updating the grid. Please try again.' );
 	}
 }
 
 if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'delete' ) {
+	if ( ! wp_verify_nonce( $_REQUEST['_mds_nonce'] ?? '', 'mds_grid_action' ) ) {
+		wp_die( 'Security check failed.' );
+	}
 	if ( is_default() ) {
 		echo "<b>Cannot delete</b> - This is the default grid!<br>";
 	} else {
@@ -781,7 +806,7 @@ if ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'edit' ) {
 
 if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUEST['mds-action'] ) && $_REQUEST['mds-action'] == 'edit' ) ) {
 
-	$size_error_msg = "Error: Invalid size! Must be " . htmlspecialchars( $_REQUEST['block_width'] ) . "x" . htmlspecialchars( $_REQUEST['block_height'] );
+	$size_error_msg = "Error: Invalid size! Must be " . esc_attr( $_REQUEST['block_width'] ) . "x" . esc_attr( $_REQUEST['block_height'] );
 
 	$mds_admin_ajax_nonce = wp_create_nonce( 'mds_admin_ajax_nonce' );
 
@@ -1442,38 +1467,38 @@ if ( ( isset( $_REQUEST['new'] ) && $_REQUEST['new'] != '' ) || ( isset( $_REQUE
 		foreach ( $results as $row ) {
 			?>
             <div class="inventory2-content">
-                <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo $row['banner_id']; ?>'>Edit</a>
-                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>packages&BID=<?php echo $row['banner_id']; ?>">
+                <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=edit&BID=<?php echo intval( $row['banner_id'] ); ?>'>Edit</a>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>packages&BID=<?php echo intval( $row['banner_id'] ); ?>">
                     Packages</a>
 				<?php
 				if ( $row['enabled'] == 'Y' ) {
 					?>
-                    <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=disable&BID=<?php echo $row['banner_id']; ?>'>Disable</a>
+                    <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=disable&BID=<?php echo intval( $row['banner_id'] ); ?>&_mds_nonce=<?php echo wp_create_nonce( 'mds_grid_action' ); ?>'>Disable</a>
 					<?php
 				} else {
 					?>
-                    <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=enable&BID=<?php echo $row['banner_id']; ?>'>Enable</a>
+                    <a href='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=enable&BID=<?php echo intval( $row['banner_id'] ); ?>&_mds_nonce=<?php echo wp_create_nonce( 'mds_grid_action' ); ?>'>Enable</a>
 					<?php
 				}
 				if ( $row['banner_id'] != '1' ) {
 					?>
                     <a onclick="confirmLink(this, 'Delete grid <?php echo intval( $row['banner_id'] ); ?>?')"
-                       data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo $row['banner_id']; ?>' href="#">Delete</a>
+                       data-link='<?php echo esc_url( admin_url( 'admin.php?page=mds-' ) ); ?>manage-grids&mds-action=delete&BID=<?php echo intval( $row['banner_id'] ); ?>&_mds_nonce=<?php echo wp_create_nonce( 'mds_grid_action' ); ?>' href="#">Delete</a>
 					<?php
 				}
 				?>
             </div>
             <div class="inventory2-content">
-				<?php echo $row['banner_id']; ?>
+				<?php echo intval( $row['banner_id'] ); ?>
             </div>
             <div class="inventory2-content">
-				<?php echo $row['name']; ?>
+				<?php echo esc_html( $row['name'] ); ?>
             </div>
             <div class="inventory2-content">
-				<?php echo $row['grid_width']; ?> blocks
+				<?php echo intval( $row['grid_width'] ); ?> blocks
             </div>
             <div class="inventory2-content">
-				<?php echo $row['grid_height']; ?> blocks
+				<?php echo intval( $row['grid_height'] ); ?> blocks
             </div>
             <div class="inventory2-content">
 				<?php

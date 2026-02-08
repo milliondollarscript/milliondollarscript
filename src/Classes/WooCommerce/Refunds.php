@@ -100,6 +100,6 @@ class Refunds {
 		}
 	}
 
-	// TODO: Implement methods for syncing data.
+	// TODO: Implement methods for syncing data. (Deferred to MDS 3.0)
 
 }

@@ -7,7 +7,7 @@
 
 /* Header Section */
 .mds-extensions-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
     color: white;
     padding: 30px;
     border-radius: 12px;
@@ -103,7 +103,7 @@
 
 /* Discovery Banner */
 .mds-discovery-banner {
-    background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+    background: #f093fb;
     border-radius: 16px;
     padding: 25px;
     margin-bottom: 30px;
@@ -179,7 +179,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
     transform: scaleX(0);
     transition: transform 0.3s ease;
 }
@@ -214,7 +214,7 @@
 }
 
 .mds-extension-card--premium::before {
-    background: linear-gradient(90deg, #f472b6 0%, #c084fc 100%);
+    background: #f472b6;
 }
 
 .mds-extension-card--installed {
@@ -223,7 +223,7 @@
 
 .mds-card-header {
     padding: 26px 28px 18px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    background: rgba(102, 126, 234, 0.08);
     border-bottom: 1px solid rgba(102, 126, 234, 0.12);
 }
 
@@ -316,7 +316,7 @@
 }
 
 .mds-card-header-buttons .button.button-primary {
-    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    background: #10b981;
     border: none;
     color: #ffffff;
     box-shadow: 0 12px 28px rgba(16, 185, 129, 0.35);
@@ -324,7 +324,7 @@
 
 .mds-card-header-buttons .button.button-primary:hover,
 .mds-card-header-buttons .button.button-primary:focus {
-    background: linear-gradient(135deg, #0f9f7c 0%, #036d5f 100%);
+    background: #0f9f7c;
     color: #ffffff;
     transform: translateY(-2px);
     box-shadow: 0 16px 34px rgba(16, 185, 129, 0.45);
@@ -348,7 +348,7 @@
 }
 
 .mds-card-header-buttons .mds-activate-extension {
-    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    background: #22c55e;
     border: none;
     color: #ffffff;
     box-shadow: 0 12px 28px rgba(34, 197, 94, 0.32);
@@ -356,7 +356,7 @@
 
 .mds-card-header-buttons .mds-activate-extension:hover,
 .mds-card-header-buttons .mds-activate-extension:focus {
-    background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+    background: #16a34a;
     box-shadow: 0 16px 34px rgba(22, 163, 74, 0.48);
     color: #ffffff;
     transform: translateY(-2px);
@@ -365,7 +365,7 @@
 .mds-card-header-buttons .mds-activate-extension:disabled,
 .mds-card-header-buttons .mds-activate-extension[disabled],
 .mds-card-header-buttons .mds-activate-extension.mds-btn-loading {
-    background: linear-gradient(135deg, #86efac 0%, #22c55e 100%);
+    background: #86efac;
     color: rgba(255, 255, 255, 0.9);
     box-shadow: none;
     transform: none;
@@ -400,7 +400,7 @@
 }
 
 .mds-card-license-buttons .button {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: #3b82f6;
     border: none;
     color: #ffffff;
     box-shadow: 0 10px 24px rgba(59, 130, 246, 0.28);
@@ -408,7 +408,7 @@
 
 .mds-card-license-buttons .button:hover,
 .mds-card-license-buttons .button:focus {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    background: #2563eb;
     box-shadow: 0 14px 32px rgba(37, 99, 235, 0.45);
     color: #ffffff;
 }
@@ -484,7 +484,7 @@ html.dark .mds-card-header-buttons .button.button-primary:focus {
 
 html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension,
 html.dark .mds-card-header-buttons .mds-activate-extension {
-    background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
+    background: #16a34a;
     box-shadow: 0 12px 28px rgba(22, 163, 74, 0.42);
 }
 
@@ -492,7 +492,7 @@ html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-
 html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-extension:focus,
 html.dark .mds-card-header-buttons .mds-activate-extension:hover,
 html.dark .mds-card-header-buttons .mds-activate-extension:focus {
-    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+    background: #15803d;
     box-shadow: 0 16px 34px rgba(22, 163, 74, 0.52);
 }
 
@@ -502,47 +502,47 @@ html.dark .mds-card-header-buttons:not(.mds-card-license-buttons) .mds-activate-
 html.dark .mds-card-header-buttons .mds-activate-extension:disabled,
 html.dark .mds-card-header-buttons .mds-activate-extension[disabled],
 html.dark .mds-card-header-buttons .mds-activate-extension.mds-btn-loading {
-    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    background: #4ade80;
     color: rgba(255, 255, 255, 0.92);
 }
 
 html.dark .mds-inline-license-actions .mds-inline-license-activate {
-    background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
+    background: #16a34a;
     box-shadow: 0 12px 28px rgba(22, 163, 74, 0.42);
 }
 
 html.dark .mds-inline-license-actions .mds-inline-license-activate:hover,
 html.dark .mds-inline-license-actions .mds-inline-license-activate:focus {
-    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+    background: #15803d;
     box-shadow: 0 16px 34px rgba(22, 163, 74, 0.52);
 }
 
 html.dark .mds-inline-license-actions .mds-inline-license-remove {
-    background: linear-gradient(135deg, #ea580c 0%, #9a3412 100%);
+    background: #ea580c;
     box-shadow: 0 12px 28px rgba(234, 88, 12, 0.42);
 }
 
 html.dark .mds-inline-license-actions .mds-inline-license-remove:hover,
 html.dark .mds-inline-license-actions .mds-inline-license-remove:focus {
-    background: linear-gradient(135deg, #c2410c 0%, #7c2d12 100%);
+    background: #c2410c;
     box-shadow: 0 16px 34px rgba(194, 65, 12, 0.52);
 }
 
 html.dark .mds-inline-license-actions .mds-inline-license-remove:disabled,
 html.dark .mds-inline-license-actions .mds-inline-license-remove[disabled] {
-    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    background: #fb923c;
     color: rgba(255, 255, 255, 0.85);
 }
 
 html.dark .mds-card-license-buttons .button {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+    background: #1d4ed8;
     color: #e0e7ff;
     box-shadow: 0 12px 30px rgba(30, 64, 175, 0.45);
 }
 
 html.dark .mds-card-license-buttons .button:hover,
 html.dark .mds-card-license-buttons .button:focus {
-    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+    background: #1e40af;
     color: #f8fafc;
     box-shadow: 0 16px 36px rgba(30, 64, 175, 0.55);
 }
@@ -626,7 +626,7 @@ html.dark .mds-card-title-version {
 }
 
 .mds-btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
     color: white;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
@@ -649,7 +649,7 @@ html.dark .mds-card-title-version {
 }
 
 .mds-btn-active {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: #10b981;
     color: white;
     cursor: default;
 }
@@ -672,7 +672,7 @@ html.dark .mds-card-title-version {
 /* Enhanced Notices */
 .mds-enhanced-notice {
     border-left: 4px solid #667eea;
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, #ffffff 100%);
+    background: rgba(102, 126, 234, 0.1);
     border-radius: 8px;
     margin: 15px 0;
 }
@@ -838,7 +838,7 @@ html.dark .mds-card-title-version {
 }
 
 .mds-card-header-updates .mds-check-updates {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: #3b82f6;
     border: none;
     border-radius: 999px;
     box-shadow: 0 10px 24px rgba(59, 130, 246, 0.28);
@@ -850,7 +850,7 @@ html.dark .mds-card-title-version {
 
 .mds-card-header-updates .mds-check-updates:hover,
 .mds-card-header-updates .mds-check-updates:focus {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    background: #2563eb;
     box-shadow: 0 14px 32px rgba(37, 99, 235, 0.45);
     color: #ffffff;
     transform: translateY(-2px);
@@ -859,7 +859,7 @@ html.dark .mds-card-title-version {
 .mds-card-header-updates .mds-check-updates:disabled,
 .mds-card-header-updates .mds-check-updates[disabled],
 .mds-card-header-updates .mds-check-updates.mds-btn-loading {
-    background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%);
+    background: #93c5fd;
     box-shadow: none;
     color: #f8fafc;
     cursor: not-allowed;
@@ -875,18 +875,18 @@ html.dark .mds-card-title-version {
 
 @media (prefers-color-scheme: dark) {
     .mds-card-header-updates .mds-check-updates {
-        background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+        background: #60a5fa;
     }
 
     .mds-card-header-updates .mds-check-updates:hover,
     .mds-card-header-updates .mds-check-updates:focus {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        background: #3b82f6;
     }
 
     .mds-card-header-updates .mds-check-updates:disabled,
     .mds-card-header-updates .mds-check-updates[disabled],
     .mds-card-header-updates .mds-check-updates.mds-btn-loading {
-        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        background: #1d4ed8;
         color: #dbeafe;
     }
 
@@ -1050,7 +1050,7 @@ html.dark .mds-card-title-version {
 .mds-extensions-page .mds-discovery-banner .mds-banner-text p { color: #3c434a; }
 
 /* Accessible header and banner overrides (placed after prior heading rules) */
-.mds-extensions-page .mds-extensions-header { background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%); }
+.mds-extensions-page .mds-extensions-header { background: #1e3a8a; }
 .mds-extensions-page .mds-extensions-header h1 { color: #ffffff; font-weight: 700; margin-bottom: 8px; }
 
 /* --- License UI: Manage toggle + input sizing --- */
@@ -1122,7 +1122,7 @@ html.dark .mds-card-title-version {
 }
 
 .mds-inline-license-actions .mds-inline-license-activate {
-    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    background: #22c55e;
     border: none;
     border-radius: 999px;
     color: #ffffff;
@@ -1134,7 +1134,7 @@ html.dark .mds-card-title-version {
 
 .mds-inline-license-actions .mds-inline-license-activate:hover,
 .mds-inline-license-actions .mds-inline-license-activate:focus {
-    background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+    background: #16a34a;
     box-shadow: 0 14px 32px rgba(22, 163, 74, 0.45);
     transform: translateY(-1px);
     color: #ffffff;
@@ -1142,7 +1142,7 @@ html.dark .mds-card-title-version {
 
 .mds-inline-license-actions .mds-inline-license-activate:disabled,
 .mds-inline-license-actions .mds-inline-license-activate[disabled] {
-    background: linear-gradient(135deg, #86efac 0%, #22c55e 100%);
+    background: #86efac;
     box-shadow: none;
     color: rgba(255, 255, 255, 0.85);
     cursor: default;
@@ -1154,7 +1154,7 @@ html.dark .mds-card-title-version {
 }
 
 .mds-inline-license-actions .mds-inline-license-remove {
-    background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+    background: #f97316;
     border: none;
     border-radius: 999px;
     color: #ffffff;
@@ -1166,7 +1166,7 @@ html.dark .mds-card-title-version {
 
 .mds-inline-license-actions .mds-inline-license-remove:hover,
 .mds-inline-license-actions .mds-inline-license-remove:focus {
-    background: linear-gradient(135deg, #ea580c 0%, #9a3412 100%);
+    background: #ea580c;
     box-shadow: 0 14px 32px rgba(234, 88, 12, 0.45);
     transform: translateY(-1px);
     color: #ffffff;
@@ -1174,7 +1174,7 @@ html.dark .mds-card-title-version {
 
 .mds-inline-license-actions .mds-inline-license-remove:disabled,
 .mds-inline-license-actions .mds-inline-license-remove[disabled] {
-    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    background: #fb923c;
     box-shadow: none;
     color: rgba(255, 255, 255, 0.85);
     transform: none;
@@ -1225,14 +1225,14 @@ html.dark .mds-card-title-version {
     }
 }
 .mds-extensions-page .mds-extensions-header .mds-extensions-subtitle { color: #e5e7eb; }
-.mds-extensions-page .mds-discovery-banner { background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%); }
+.mds-extensions-page .mds-discovery-banner { background: #2563eb; }
 .mds-extensions-page .mds-discovery-banner .mds-banner-text h2 { color: #ffffff; font-weight: 700; margin-bottom: 8px; }
 .mds-extensions-page .mds-discovery-banner .mds-banner-text p { color: #e5e7eb; }
 .mds-extensions-page .mds-discovery-banner a,
 .mds-extensions-page .mds-extensions-header a { color: #ffffff; text-decoration: none; }
 
 /* Full-width CTA styling (used on main admin page) */
-.mds-cta-full { display: block; width: 100%; padding: 16px 20px; border-radius: 6px; background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%); color: #fff; }
+.mds-cta-full { display: block; width: 100%; padding: 16px 20px; border-radius: 6px; background: #1e3a8a; color: #fff; }
 .mds-cta-full h2 { margin: 0 0 6px; color: #fff; }
 .mds-cta-full p { margin: 0 0 8px; color: #e5e7eb; }
 .mds-cta-full .button.button-primary { background: #16a34a; border-color: #16a34a; }
@@ -1326,7 +1326,7 @@ body.wp-admin .wrap > .notice .mds-go-to-system { pointer-events: auto; }
 
 .mds-plan-card {
   position: relative;
-  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+  background: #ffffff;
   border: 1px solid #d7e3f8;
   border-radius: 18px;
   padding: 24px 26px;
@@ -1350,7 +1350,7 @@ body.wp-admin .wrap > .notice .mds-go-to-system { pointer-events: auto; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(124, 58, 237, 0.12));
+  background: rgba(99, 102, 241, 0.08);
   opacity: 0;
   transition: opacity 0.25s ease;
   border-radius: inherit;
@@ -1468,13 +1468,13 @@ body.wp-admin .wrap > .notice .mds-go-to-system { pointer-events: auto; }
 }
 
 html.dark .mds-plan-card {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(17, 24, 39, 0.95) 100%);
+  background: rgba(30, 41, 59, 0.9);
   border-color: #4c51bf;
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.55);
 }
 
 html.dark .mds-plan-card::before {
-  background: linear-gradient(135deg, rgba(129, 140, 248, 0.18), rgba(124, 58, 237, 0.24));
+  background: rgba(129, 140, 248, 0.18);
 }
 
 html.dark .mds-plan-tab { background: #162136; border-color: #293548; color: #cbd5f5; }
@@ -1651,7 +1651,7 @@ html.dark .mds-plan-features li::before {
 }
 
 .mds-plan-actions .mds-purchase-extension {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: #4f46e5;
   border: none;
   border-radius: 12px;
   color: #fff;
@@ -1680,7 +1680,7 @@ html.dark .mds-plan-features li::before {
 }
 
 html.dark .mds-plan-actions .mds-purchase-extension {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: #6366f1;
   box-shadow: 0 16px 36px rgba(79, 70, 229, 0.55);
 }
 

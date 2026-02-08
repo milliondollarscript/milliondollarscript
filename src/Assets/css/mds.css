@@ -383,7 +383,7 @@ Ads list page
 }
 
 .mds-container .table-row.header {
-	background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0));
+	background-color: rgba(59, 130, 246, 0.08);
 	color: var(--mds-text-primary, #0f172a);
 	font-weight: 600;
 	border-bottom: 2px solid rgba(59, 130, 246, 0.25);
@@ -1962,7 +1962,7 @@ body:not(.login) #loginform label {
 
 /* Enhanced Accordion Header Styling for Better Visual Separation */
 .mds-container .mds-manage-row.ui-accordion-header {
-	background: linear-gradient(135deg, var(--mds-card-bg, #ffffff), var(--mds-bg-secondary, #f8f9fa)) !important;
+	background-color: var(--mds-card-bg, #ffffff) !important;
 	color: var(--mds-text-primary, #000000) !important;
 	border: 1px solid var(--mds-border-color, #d1d5db) !important;
 	border-left: 3px solid #c0c4cc !important;
@@ -1975,7 +1975,7 @@ body:not(.login) #loginform label {
 /* Hover State for Better Interaction Feedback */
 .mds-container .mds-manage-row.ui-accordion-header.ui-state-hover,
 .mds-container .mds-manage-row.ui-accordion-header:hover {
-	background: linear-gradient(135deg, var(--mds-bg-secondary, #f1f3f4), var(--mds-bg-tertiary, #e8eaed)) !important;
+	background-color: var(--mds-bg-secondary, #f1f3f4) !important;
 	border-left-color: #8b9197 !important;
 	box-shadow: 0 2px 6px var(--mds-shadow, rgba(0, 0, 0, 0.12)) !important;
 	transform: translateX(2px) !important;
@@ -1984,7 +1984,7 @@ body:not(.login) #loginform label {
 /* Active/Selected State for Clear Visual Distinction */
 .mds-container .mds-manage-row.ui-accordion-header.ui-state-active,
 .mds-container .mds-manage-row.ui-accordion-header.ui-accordion-header-active {
-	background: linear-gradient(135deg, var(--mds-bg-secondary, #f0f2f5), var(--mds-bg-tertiary, #e1e5e8)) !important;
+	background-color: var(--mds-bg-secondary, #f0f2f5) !important;
 	color: var(--mds-text-primary, #000000) !important;
 	border-left-color: #6b7280 !important;
 	border-left-width: 4px !important;
@@ -1999,7 +1999,7 @@ body:not(.login) #loginform label {
 	border: 2px solid #93a3b8 !important;
 	border-left: 4px solid #4f5866 !important;
 	box-shadow: 0 0 0 2px rgba(147, 163, 184, 0.3) !important;
-	background: linear-gradient(135deg, var(--mds-bg-secondary, #f3f4f6), var(--mds-bg-tertiary, #e5e7eb)) !important;
+	background-color: var(--mds-bg-secondary, #f3f4f6) !important;
 }
 
 /* Remove Default jQuery UI Corner Classes to Use Our Border Radius */

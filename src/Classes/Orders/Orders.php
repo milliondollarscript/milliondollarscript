@@ -477,7 +477,7 @@ class Orders {
 
 		$now = current_time( 'mysql' );
 
-		// TODO: Change default date_published to NULL in the database and set it to null below.
+		// TODO: Change default date_published to NULL in the database and set it to null below. (Deferred to MDS 3.0)
 
 		// Add new order to database
 		$wpdb->insert( MDS_DB_PREFIX . "orders", [
@@ -660,9 +660,9 @@ class Orders {
 	/**
 	 * Update order status.
 	 *
-	 * TODO: Finish and implement into core functions.php in various places.
-	 * TODO: Add additional parameters to update other fields, perhaps one array for each orders and blocks containing all keys and values to update.
-	 * TODO: Separate blocks to their own class.
+	 * TODO: Finish and implement into core functions.php in various places. (Deferred to MDS 3.0)
+	 * TODO: Add additional parameters to update other fields, perhaps one array for each orders and blocks containing all keys and values to update. (Deferred to MDS 3.0)
+	 * TODO: Separate blocks to their own class. (Deferred to MDS 3.0)
 	 *
 	 * @param int $order_id The ID of the order to update.
 	 * @param string $status The new status to set for the order.
@@ -1387,7 +1387,7 @@ class Orders {
 	}
 
 	public static function order_screen(): void {
-		// TODO: handle packages
+		// TODO: handle packages (Deferred to MDS 3.0)
 		if ( ! isset( $_REQUEST['banner_change'] ) && $_SERVER['REQUEST_METHOD'] === 'POST' && ! isset( $_POST['type'] ) ) {
 			Functions::verify_nonce( 'mds-form' );
 
@@ -2045,7 +2045,7 @@ class Orders {
 
 			$price = Currency::convert_to_default_currency_formatted( $row['currency'], $row['price'] );
 
-			// TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email.
+			// TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email. (Deferred to MDS 3.0)
 			$search = [
 				'%SITE_NAME%',
 				'%FIRST_NAME%',
@@ -2438,7 +2438,7 @@ class Orders {
 
 			$price = Currency::convert_to_default_currency_formatted( $order_row['currency'], $order_row['price'] );
 
-			// TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email.
+			// TODO: Add a database update to convert the FNAME and LNAME to FIRST_NAME and LAST_NAME in the option for this email. (Deferred to MDS 3.0)
 			$search = [
 				'%SITE_NAME%',
 				'%FIRST_NAME%',

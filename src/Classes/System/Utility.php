@@ -768,7 +768,7 @@ class Utility {
 	 * @return void
 	 */
 	public static function get_header(): void {
-		// TODO: find some way to make FSE themes work with this
+		// TODO: find some way to make FSE themes work with this (Deferred to MDS 3.0)
 		get_header();
 		if ( wp_is_block_theme() ) {
 			block_header_area();
@@ -781,7 +781,7 @@ class Utility {
 	 * @return void
 	 */
 	public static function get_footer(): void {
-		// TODO: find some way to make FSE themes work with this
+		// TODO: find some way to make FSE themes work with this (Deferred to MDS 3.0)
 		if ( wp_is_block_theme() ) {
 			block_template_part( 'footer' );
 		}

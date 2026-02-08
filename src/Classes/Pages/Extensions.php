@@ -1142,6 +1142,8 @@ class Extensions {
         
         $license_key = ''; // Deprecated auth pathway retained for backwards compatibility.
 
+        // Anonymous class extends Plugin_Upgrader_Skin with intentional empty method overrides
+        // to suppress upgrader output during extension installation/updates.
         $skin = new class(['plugin' => $extension_id]) extends \Plugin_Upgrader_Skin {
             public function feedback($string, ...$args) {}
             public function header() {}
