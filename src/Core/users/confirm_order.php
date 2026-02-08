@@ -123,9 +123,10 @@ $max_blocks = intval( $banner_data['G_MAX_BLOCKS'] );
 if ( $max_blocks > 0 && count( $blocks_array ) > $max_blocks ) {
 	$errors_sub[] = Language::get_replace( 'Maximum blocks selected. (%MAX_BLOCKS% allowed per order)', '%MAX_BLOCKS%', $max_blocks );
 }
-// Enforce adjacency/rectangle depending on option
+// Enforce adjacency/rectangle depending on option (skip for simple mode — blocks are auto-computed)
 $mode = Options::get_option( 'selection-adjacency-mode', 'ADJACENT' );
-if ( $mode !== 'NONE' ) {
+$is_simple_mode = Options::get_option( 'use-ajax' ) === 'SIMPLE';
+if ( $mode !== 'NONE' && ! $is_simple_mode ) {
 	if ( $mode === 'RECTANGLE' ) {
 		if ( ! \MillionDollarScript\Classes\Orders\Blocks::check_adjacency( $blocks_array, $blocks_per_row ) ) {
 			$errors_sub[] = Language::get( 'You must select blocks forming a rectangle or square.' );

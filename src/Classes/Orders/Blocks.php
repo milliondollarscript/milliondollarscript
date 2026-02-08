@@ -591,7 +591,8 @@ class Blocks {
 		}
 
 		$check_mode = strtoupper( $mode ?? Options::get_option( 'selection-adjacency-mode', 'ADJACENT' ) );
-		if ( $check_mode === 'NONE' ) {
+		$is_simple_mode = Options::get_option( 'use-ajax' ) === 'SIMPLE';
+		if ( $check_mode === 'NONE' || $is_simple_mode ) {
 			return $errors;
 		}
 

@@ -228,9 +228,6 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 	function check_selection() {
 		// Server-side check of block availability
 
-		// Get the pointer position
-		const pointerOffset = window.$block_pointer.position();
-
 		// Get block ID using our helper function
 		const blockId = get_clicked_block();
 
@@ -247,9 +244,13 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		// Calculate scale factor between current and original grid size
 		const scaleFactor = originalImgWidth / currentImgWidth;
 
-		// Calculate scaled coordinates (convert from current scale to original scale)
-		const scaledX = Math.round(pointerOffset.left * scaleFactor);
-		const scaledY = Math.round(pointerOffset.top * scaleFactor);
+		// Use offset() (document-relative) for both pointer and image to get accurate
+		// grid-relative coordinates. position() includes the image's centering offset
+		// within the container, which produces incorrect map coordinates.
+		const pointerAbs = window.$block_pointer.offset();
+		const imgAbs = window.$pixelimg.offset();
+		const scaledX = Math.round((pointerAbs.left - imgAbs.left) * scaleFactor);
+		const scaledY = Math.round((pointerAbs.top - imgAbs.top) * scaleFactor);
 
 		// Calculate block coordinates from block ID (for reference/logging)
 		const blockY = Math.floor(blockId / gridWidthBlocks);
@@ -326,9 +327,6 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		submit1.style.cursor = "wait";
 		submit2.style.cursor = "wait";
 
-		// Get pointer position from its current position
-		const pointerOffset = window.$block_pointer.position();
-
 		// Get grid dimensions for proper scaling
 		const gridData = MDS_OBJECT.grid_data || {};
 		const gridWidthBlocks = parseInt(
@@ -342,9 +340,14 @@ jQuery(document).on("ajaxComplete", function (event, xhr, settings) {
 		// Calculate scale factor to convert current coordinates to original scale
 		const scaleFactor = originalImgWidth / currentImgWidth;
 
-		// Scale coordinates to match the original grid size
-		const scaledX = Math.round(pointerOffset.left * scaleFactor);
-		const scaledY = Math.round(pointerOffset.top * scaleFactor);
+		// Use offset() (document-relative) for both pointer and image to get accurate
+		// grid-relative coordinates. position() is container-relative and includes the
+		// image's centering offset within the container, which produces incorrect map
+		// coordinates when the image doesn't fill the full container width.
+		const pointerAbs = window.$block_pointer.offset();
+		const imgAbs = window.$pixelimg.offset();
+		const scaledX = Math.round((pointerAbs.left - imgAbs.left) * scaleFactor);
+		const scaledY = Math.round((pointerAbs.top - imgAbs.top) * scaleFactor);
 
 		// Prepare AJAX data with scaled coordinates
 		let ajax_data = {
