@@ -68,7 +68,7 @@ if ( $wpdb->last_error ) {
     </form>
 <?php
 // Use from_date and to_date from GET/REQUEST, or fallback to current month start and today
-$local_time = current_time('timestamp');
+$local_time = time();
 if (!empty($_REQUEST['from_date'])) {
     $from = sanitize_text_field($_REQUEST['from_date']);
 } else {

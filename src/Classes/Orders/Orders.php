@@ -1208,12 +1208,12 @@ class Orders {
 			if ( $order['days_expire'] > 0 ) {
 
 				if ( $order['published'] != 'Y' ) {
-					$time_start = current_time( 'timestamp' );
+					$time_start = time();
 				} else {
 					$time_start = strtotime( $order['date_published'] );
 				}
 
-				$elapsed_time = current_time( 'timestamp' ) - $time_start;
+				$elapsed_time = time() - $time_start;
 
 				$exp_time = ( $order['days_expire'] * 24 * 60 * 60 );
 
@@ -1293,11 +1293,11 @@ class Orders {
 							if ( $order['date_published'] != '' ) {
 								$time_start = strtotime( $order['date_published'] );
 							} else {
-								$time_start = current_time( 'timestamp' );
+								$time_start = time();
 								echo $time_start;
 							}
 
-							$elapsed_time   = current_time( 'timestamp' ) - $time_start;
+							$elapsed_time   = time() - $time_start;
 							$exp_time       = $order['days_expire'] * 24 * 60 * 60;
 							$exp_time_to_go = $exp_time - $elapsed_time;
 

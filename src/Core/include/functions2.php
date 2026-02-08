@@ -66,7 +66,7 @@ class functions2 {
 
 			if ( isset( $_REQUEST['get_params'] ) ) {
 				$json = json_decode( stripslashes( $_POST['get_params'] ), true );
-				if ( $json && isset( $json['BID'] ) ) {
+				if ( json_last_error() === JSON_ERROR_NONE && $json && isset( $json['BID'] ) ) {
 					return intval( $json['BID'] );
 				}
 			}

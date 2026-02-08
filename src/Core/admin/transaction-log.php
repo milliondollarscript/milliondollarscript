@@ -101,7 +101,7 @@ foreach ( $results as $row ) {
 $bal = $debits - $credits;
 
 $local_date = current_time( 'mysql' );
-$local_time = current_time( 'timestamp' );
+$local_time = time();
 
 if ( ! isset( $_REQUEST['from_day'] ) || $_REQUEST['from_day'] == '' ) {
 	$_REQUEST['from_day'] = "1";

@@ -164,7 +164,7 @@ class MDSPageMetadataMigration {
                 'option_key' => $page_data['option'],
                 'migrated_from_option' => true,
                 'migration_version' => MDS_VERSION,
-                'migration_timestamp' => current_time( 'timestamp' ),
+                'migration_timestamp' => time(),
                 'pre_migration_status' => $post->post_status
             ],
             'display_settings' => $content_analysis['display_settings'],

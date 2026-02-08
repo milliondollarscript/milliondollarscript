@@ -2047,7 +2047,7 @@ class MDSPageManagementInterface {
             'processed_pages' => 0,
             'found_pages' => 0,
             'errors' => [],
-            'start_time' => current_time( 'timestamp' ),
+            'start_time' => time(),
             'status' => 'running'
         ];
         
@@ -2183,7 +2183,7 @@ class MDSPageManagementInterface {
         $is_complete = $scan_data['current_batch'] >= $scan_data['total_batches'];
         if ( $is_complete ) {
             $scan_data['status'] = 'completed';
-            $scan_data['end_time'] = current_time( 'timestamp' );
+            $scan_data['end_time'] = time();
             
             // Force database synchronization to ensure all writes are committed
             global $wpdb;

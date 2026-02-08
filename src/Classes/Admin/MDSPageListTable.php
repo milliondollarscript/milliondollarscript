@@ -419,7 +419,7 @@ class MDSPageListTable extends WP_List_Table {
             return '<span class="mds-never-scanned">' . esc_html( Language::get( 'Never' ) ) . '</span>';
         }
         
-        $time_diff = human_time_diff( strtotime( $item['last_scan'] ), current_time( 'timestamp' ) );
+        $time_diff = human_time_diff( strtotime( $item['last_scan'] ), time() );
         
         return sprintf(
             '<span class="mds-last-scan" title="%s">%s %s</span>',

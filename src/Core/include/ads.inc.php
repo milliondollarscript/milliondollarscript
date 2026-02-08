@@ -302,12 +302,12 @@ function list_ads( $offset = 0, $user_id = '' ) {
 						if ( $prams['days_expire'] > 0 ) {
 
 							if ( $prams['published'] != 'Y' ) {
-								$time_start = current_time( 'timestamp' );
+								$time_start = time();
 							} else {
 								$time_start = strtotime( $prams['date_published'] );
 							}
 
-							$elapsed_time = current_time( 'timestamp' ) - $time_start;
+							$elapsed_time = time() - $time_start;
 
 							$exp_time = ( $prams['days_expire'] * 24 * 60 * 60 );
 

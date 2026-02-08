@@ -70,7 +70,7 @@ function echo_ad_list_data() {
 			$init_date = strtotime( Utility::trim_date( $val ) );
 
 			// now
-			$dst_date = current_time('timestamp');
+			$dst_date = time();
 
 			if ( ! $init_date ) {
 				$days = "x";

@@ -188,10 +188,10 @@ class NFS {
 			wp_send_json_error( $error );
 		}
 
-		if ( @ini_set( 'max_execution_time', 10000 ) === false ) {
+		if ( ini_set( 'max_execution_time', 10000 ) === false ) {
 			Logs::log( 'MDS NFS: Failed to set max_execution_time — ini_set may be disabled.' );
 		}
-		if ( @ini_set( 'max_input_vars', 10002 ) === false ) {
+		if ( ini_set( 'max_input_vars', 10002 ) === false ) {
 			Logs::log( 'MDS NFS: Failed to set max_input_vars — ini_set may be disabled.' );
 		}
 
@@ -221,12 +221,18 @@ class NFS {
 
 		if ( $addingnfs ) {
 			$addnfs = json_decode( html_entity_decode( stripslashes( $_POST['addnfs'] ) ) );
+			if ( null === $addnfs ) {
+				wp_send_json_error( new \WP_Error( '400', 'Invalid JSON in addnfs parameter.' ) );
+			}
 		} else {
 			unset( $addnfs );
 		}
 
 		if ( $removingnfs ) {
 			$remnfs = json_decode( html_entity_decode( stripslashes( $_POST['remnfs'] ) ) );
+			if ( null === $remnfs ) {
+				wp_send_json_error( new \WP_Error( '400', 'Invalid JSON in remnfs parameter.' ) );
+			}
 		} else {
 			unset( $remnfs );
 		}
@@ -387,10 +393,10 @@ class NFS {
 
 		$BID = $f2->bid();
 
-		if ( @ini_set( 'max_execution_time', 10000 ) === false ) {
+		if ( ini_set( 'max_execution_time', 10000 ) === false ) {
 			Logs::log( 'MDS NFS: Failed to set max_execution_time — ini_set may be disabled.' );
 		}
-		if ( @ini_set( 'max_input_vars', 10002 ) === false ) {
+		if ( ini_set( 'max_input_vars', 10002 ) === false ) {
 			Logs::log( 'MDS NFS: Failed to set max_input_vars — ini_set may be disabled.' );
 		}
 

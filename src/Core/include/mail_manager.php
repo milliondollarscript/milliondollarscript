@@ -147,7 +147,7 @@ function process_mail_queue( $send_count = 1 ) {
 				break;
 			}
 			$time_stamp = strtotime( $row['date_stamp'] );
-			$now        = current_time( 'timestamp' );
+			$now        = time();
 			$wait       = $EMAILS_ERROR_WAIT * 60;
 			//echo "(($now - $wait) > $time_stamp) status:".$row['status']."\n";
 			if ( ( ( ( $now - $wait ) > $time_stamp ) && ( $row['status'] == 'error' ) ) || ( $row['status'] == 'queued' ) ) {
