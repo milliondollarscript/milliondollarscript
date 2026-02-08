@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.46-alpha.1 - 2026-02-08
+
+
+
+### Fixed
+
+- sanitize $_SERVER values, remove addslashes/unlink, add ini_set checks
+
+
 ## 2.6.44-alpha.1 - 2026-02-08
 
 
