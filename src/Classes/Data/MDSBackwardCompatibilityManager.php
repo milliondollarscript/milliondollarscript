@@ -107,7 +107,7 @@ class MDSBackwardCompatibilityManager {
      */
     private function initializeCompatibilitySystem(): void {
         // Hook into WordPress initialization
-        add_action( 'init', [ $this, 'checkCompatibilityRequirements' ], 5 );
+        add_action( 'init', [ $this, 'checkCompatibilityRequirements' ], 8 );
         
         // Handle admin compatibility - use init hook instead of admin_init for better reliability
         if ( is_admin() ) {
@@ -1103,6 +1103,31 @@ class MDSBackwardCompatibilityManager {
             'manage_options',
             'mds-compatibility',
             [ $this, 'renderCompatibilityPage' ]
+        );
+
+        add_action( 'admin_print_scripts-' . $hook, [ $this, 'enqueueCompatibilityScripts' ] );
+    }
+
+    /**
+     * Enqueue scripts for the compatibility admin page.
+     *
+     * @return void
+     */
+    public function enqueueCompatibilityScripts(): void {
+        wp_enqueue_script(
+            MDS_PREFIX . 'error-resolution',
+            MDS_BASE_URL . 'src/Assets/js/admin/error-resolution.js',
+            [ 'jquery' ],
+            filemtime( MDS_BASE_PATH . 'src/Assets/js/admin/error-resolution.js' ),
+            true
+        );
+        wp_localize_script(
+            MDS_PREFIX . 'error-resolution',
+            'mdsPageManagement',
+            [
+                'nonce'   => wp_create_nonce( 'mds_page_management_nonce' ),
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            ]
         );
     }
     

@@ -202,7 +202,7 @@ $status = $compatibility_manager->getCompatibilityStatus();
                     <?php echo esc_html( Language::get( 'View Page Management' ) ); ?>
                 </a>
                 
-                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-page-creator' ) ); ?>" 
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=mds-create-pages' ) ); ?>"
                    class="button button-secondary">
                     <?php echo esc_html( Language::get( 'Create New Pages' ) ); ?>
                 </a>
@@ -622,6 +622,17 @@ $status = $compatibility_manager->getCompatibilityStatus();
 
 .mds-action-buttons .button {
     min-width: 150px;
+    text-align: left;
+}
+
+.mds-action-buttons .button .dashicons,
+.mds-error-controls .button .dashicons {
+    vertical-align: middle;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+    margin-right: 2px;
 }
 
 @media (max-width: 768px) {
