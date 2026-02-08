@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.47-alpha.1 - 2026-02-08
+
+
+
+### Fixed
+
+- add json_decode error handling, remove @ini_set suppression, replace deprecated current_time('timestamp')
+
+
 ## 2.6.46-alpha.1 - 2026-02-08
 
 
