@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.48-alpha.1 - 2026-02-09
+
+
+
+### Fixed
+
+- audit remediation P0-P1 critical and security fixes
+
+
 ## 2.6.47-alpha.1 - 2026-02-08
 
 
