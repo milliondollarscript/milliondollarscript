@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.6.51-alpha.1 - 2026-02-09
+## 2.6.51-alpha.1
+
+
+### Chore
+
+- bump version to 2.6.51 and update tested up to 6.9.1
+
+
 ## 2.6.48-alpha.1 - 2026-02-09
 
 
