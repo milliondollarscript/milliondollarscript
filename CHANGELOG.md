@@ -1,7 +1,6 @@
 # Changelog
 
 ## 2.6.51 - 2026-02-09
-## 2.6.51
 
 
 ### Chore
@@ -10,7 +9,6 @@
 
 
 ## 2.6.48 - 2026-02-09
-## 2.6.48-alpha.1
 
 
 ### Fixed
@@ -88,14 +86,6 @@
 
 - finalize 2.x updates (composer keywords, linting, gitignore)
 
-
-## 2.6.48-alpha.1 - 2026-02-09
-
-
-
-### Fixed
-
-- audit remediation P0-P1 critical and security fixes
 
 
 ## 2.6.47-alpha.1 - 2026-02-08
