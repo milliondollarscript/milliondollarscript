@@ -1,5 +1,85 @@
 # Changelog
 
+## 2.6.48 - 2026-02-09
+## 2.6.48-alpha.1
+
+
+### Fixed
+
+- audit remediation P0-P1 critical and security fixes
+
+
+## 2.6.47-alpha.1
+
+
+### Fixed
+
+- add json_decode error handling, remove @ini_set suppression, replace deprecated current_time('timestamp')
+
+
+## 2.6.46-alpha.1
+
+
+### Fixed
+
+- sanitize $_SERVER values, remove addslashes/unlink, add ini_set checks
+
+
+## 2.6.44-alpha.1
+
+
+### Fixed
+
+- audit legacy admin files — XSS, SQL injection, info disclosure, perf
+
+
+## 2.6.43-alpha.1
+
+
+### Fixed
+
+- correct grid placement offset and skip adjacency check in simple mode
+
+- compatibility page — version display, script loading, button UI
+
+- persist license-claimed notice after post-Stripe redirect
+
+- use generic translated message for nonce failures in manage-grids
+
+- security hardening, debug cleanup, and style polish
+
+
+## 2.6.38-alpha.1
+
+
+### Fixed
+
+- remove duplicate 2.6.37-alpha.1 entries and update git-cliff config
+
+
+## 2.6.37-alpha.1
+
+
+### Fixed
+
+- improve error messaging when extension server is unavailable
+
+
+## 2.6.36-alpha.1
+
+
+### Added
+
+- add optional anonymous version tracking with user control
+
+
+### Chore
+
+- Update ESLint configuration with single quotes and `wp` global, re-minify `mds.min.
+
+- finalize 2.x updates (composer keywords, linting, gitignore)
+
+
 ## 2.6.48-alpha.1 - 2026-02-09
 
 
