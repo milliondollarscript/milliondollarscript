@@ -2918,7 +2918,7 @@ class MDSPageManagementInterface {
             wp_send_json_error( Language::get( 'No error data provided' ) );
         }
         
-        $error = json_decode( stripslashes( $error_json ), true );
+        $error = json_decode( wp_unslash( $error_json ), true );
         if ( !$error ) {
             wp_send_json_error( Language::get( 'Invalid error data format' ) );
         }

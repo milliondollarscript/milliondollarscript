@@ -30,27 +30,31 @@ use MillionDollarScript\Classes\Language\Language;
 
 defined( 'ABSPATH' ) or exit;
 
-// select all the blocks...
+// Find and delete orphaned blocks (blocks with no matching order) in a single query.
 global $wpdb;
 
-$sql    = "SELECT order_id, block_id, banner_id FROM " . MDS_DB_PREFIX . "blocks WHERE status <> 'nfs'"; // nfs blocks do not have an order.
-$result = $wpdb->get_results( $sql, ARRAY_A );
+$table_blocks = MDS_DB_PREFIX . 'blocks';
+$table_orders = MDS_DB_PREFIX . 'orders';
 
-foreach ( $result as $row ) {
+// First, report which blocks will be deleted.
+$orphans = $wpdb->get_results(
+	"SELECT b.block_id FROM `{$table_blocks}` b " .
+	"LEFT JOIN `{$table_orders}` o ON o.order_id = b.order_id AND o.banner_id = b.banner_id " .
+	"WHERE b.status <> 'nfs' AND o.order_id IS NULL",
+	ARRAY_A
+);
 
-	$result2 = $wpdb->get_results( $wpdb->prepare(
-		"SELECT order_id FROM " . MDS_DB_PREFIX . "orders WHERE banner_id = %d AND order_id = %d",
-		intval( $row['banner_id'] ),
-		intval( $row['order_id'] )
-	), ARRAY_A );
-	if ( count( $result2 ) == 0 ) { // there is no order matching
-		// delete the blocks.
-		echo "Deleting block #" . $row['block_id'] . "<br>";
-		$wpdb->query( $wpdb->prepare(
-			"DELETE FROM " . MDS_DB_PREFIX . "blocks WHERE block_id = %d AND banner_id = %d",
-			intval( $row['block_id'] ),
-			intval( $row['banner_id'] )
-		) );
+if ( ! empty( $orphans ) ) {
+	foreach ( $orphans as $orphan ) {
+		echo "Deleting block #" . intval( $orphan['block_id'] ) . "<br>";
 	}
+
+	// Delete all orphaned blocks in a single query.
+	$wpdb->query(
+		"DELETE b FROM `{$table_blocks}` b " .
+		"LEFT JOIN `{$table_orders}` o ON o.order_id = b.order_id AND o.banner_id = b.banner_id " .
+		"WHERE b.status <> 'nfs' AND o.order_id IS NULL"
+	);
 }
+
 Language::out( "Check Completed." );

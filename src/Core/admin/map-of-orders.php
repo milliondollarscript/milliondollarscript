@@ -34,7 +34,7 @@ if ( isset( $_POST['action'] ) && $_POST['action'] == 'mds_admin_form_submission
 	return;
 }
 
-ini_set( 'max_execution_time', 10000 );
+ini_set( 'max_execution_time', 300 );
 
 global $f2, $wpdb;
 $BID = $f2->bid();
@@ -75,9 +75,6 @@ if ( $wpdb->last_error ) {
     </form>
     <hr>
 
-<?php
-/*  <iframe width="<?php echo( $banner_data['G_WIDTH'] * $banner_data['BLK_WIDTH'] ); ?>" height="<?php echo( ( $banner_data['G_HEIGHT'] * $banner_data['BLK_HEIGHT'] ) + 50 ); ?>" frameborder=0 marginwidth=0 marginheight=0 VSPACE=0 HSPACE=0 SCROLLING=no src="<?php echo esc_url( admin_url( 'admin.php?page=mds-map-iframe&BID=' . $BID ) ); ?>"></iframe> */
-?>
 <?php
 require_once MDS_CORE_PATH . "admin/map-iframe.php";
 ?>

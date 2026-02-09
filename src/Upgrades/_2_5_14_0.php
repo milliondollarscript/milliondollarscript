@@ -42,7 +42,7 @@ class _2_5_14_0 {
             global $wpdb;
 
             // Add recommended indexes to improve selection performance
-            $table_blocks = MDS_DB_PREFIX . 'blocks';
+            $table_blocks = esc_sql( MDS_DB_PREFIX . 'blocks' );
 
             if ( DatabaseStatic::table_exists( $table_blocks ) ) {
                 // idx_user_banner_status (user_id, banner_id, status)

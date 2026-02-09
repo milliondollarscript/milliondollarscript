@@ -81,7 +81,7 @@ class Ajax {
 
 			// Check if 'get_params' is set
 			if ( isset( $_POST['get_params'] ) ) {
-				$json = json_decode( stripslashes( $_POST['get_params'] ), true );
+				$json = json_decode( wp_unslash( $_POST['get_params'] ), true );
 
 				// Catch broken JSON in get_params
 				if ( json_last_error() === JSON_ERROR_NONE ) {

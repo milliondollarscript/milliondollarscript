@@ -54,8 +54,8 @@ class _2_5_12_0 {
             global $wpdb;
             
             // Check if the config table exists
-            $table_name = MDS_DB_PREFIX . 'config';
-            
+            $table_name = esc_sql( MDS_DB_PREFIX . 'config' );
+
             if (DatabaseStatic::table_exists($table_name)) {
                 // Get all config values from the table
                 $results = $wpdb->get_results("SELECT `config_key`, `val` FROM `{$table_name}`", ARRAY_A);

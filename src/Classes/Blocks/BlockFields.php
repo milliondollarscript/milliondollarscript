@@ -40,8 +40,6 @@ class BlockFields {
 
 	protected static array $fields;
 
-	// private static int $counter = 0;
-
 	/**
 	 * Get block types.
 	 *

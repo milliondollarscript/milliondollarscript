@@ -35,7 +35,7 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-ini_set( 'max_execution_time', 10000 );
+ini_set( 'max_execution_time', 300 );
 ini_set( 'max_input_vars', 10002 );
 
 global $wpdb, $f2;
@@ -53,7 +53,7 @@ $banner_data = load_banner_constants( $BID );
     <hr>
 <?php
 
-$results = $wpdb->get_results( "SELECT * FROM `" . MDS_DB_PREFIX . "banners`", ARRAY_A );
+$results = $wpdb->get_results( "SELECT `banner_id`, `name` FROM `" . MDS_DB_PREFIX . "banners`", ARRAY_A );
 ?>
     <form name="bidselect" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 		<?php wp_nonce_field( 'mds_nfs_grid', 'mds_nfs_nonce' ); ?>
@@ -139,7 +139,7 @@ if ( $BID != '' ) {
 		$nfs_block      = $imagine->load( $banner_data['NFS_BLOCK'] );
 		$nfs_block_data = base64_encode( $nfs_block->get( "png", array( 'png_compression_level' => 9 ) ) );
 
-		$data_covered = ' data-covered="true" data-width="' . $banner_data['BLK_WIDTH'] . '" data-height="' . $banner_data['BLK_HEIGHT'] . '"';
+		$data_covered = ' data-covered="true" data-width="' . esc_attr( $banner_data['BLK_WIDTH'] ) . '" data-height="' . esc_attr( $banner_data['BLK_HEIGHT'] ) . '"';
 		?>
         <style>
 			.selection-area,

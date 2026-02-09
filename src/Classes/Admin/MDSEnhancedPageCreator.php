@@ -1321,12 +1321,12 @@ class MDSEnhancedPageCreator {
                     // Dynamic grid info fields contain JSON data
                     if ( is_string( $value ) && !empty( $value ) ) {
                         // Handle double-escaped JSON from AJAX
-                        $value = stripslashes( $value );
-                        
+                        $value = wp_unslash( $value );
+
                         $decoded = json_decode( $value, true );
                         if ( json_last_error() !== JSON_ERROR_NONE ) {
                             // Try one more time with additional unescaping
-                            $value = stripslashes( $value );
+                            $value = wp_unslash( $value );
                             $decoded = json_decode( $value, true );
                             
                             if ( json_last_error() !== JSON_ERROR_NONE ) {

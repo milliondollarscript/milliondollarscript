@@ -33,7 +33,7 @@ use MillionDollarScript\Classes\System\Utility;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( @ini_set( 'max_execution_time', 500 ) === false ) {
+if ( @ini_set( 'max_execution_time', 300 ) === false ) {
 	Logs::log( 'MDS Process Pixels: Failed to set max_execution_time — ini_set may be disabled.' );
 }
 

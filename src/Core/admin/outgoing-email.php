@@ -31,7 +31,7 @@ use MillionDollarScript\Classes\System\Functions;
 
 defined( 'ABSPATH' ) or exit;
 
-ini_set( 'max_execution_time', 500 );
+ini_set( 'max_execution_time', 300 );
 
 global $wpdb;
 

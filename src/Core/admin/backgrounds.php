@@ -33,7 +33,7 @@ use MillionDollarScript\Classes\System\Utility;
 defined( 'ABSPATH' ) or exit;
 
 
-ini_set( 'max_execution_time', 6000 );
+ini_set( 'max_execution_time', 300 );
 
 global $f2;
 $BID = $f2->bid();

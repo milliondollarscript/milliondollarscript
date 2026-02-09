@@ -75,18 +75,6 @@ class _2_5_2 {
 				$wpdb->query( $sql );
 			}
 
-			// Store banner data from database into an array for later use.
-			// $sql     = "SELECT `banner_id`,`nfs_block`, `usr_nfs_block` FROM `" . MDS_DB_PREFIX . "banners`";
-			// $results = $wpdb->get_results( $sql );
-			// $banners = [];
-			// foreach ( $results as $result ) {
-			// 	// Decode block data while storing to the array
-			// 	$banners[$result->banner_id] = [
-			// 		'nfs_block'     => base64_decode( $result->nfs_block ),
-			// 		'usr_nfs_block' => base64_decode( $result->usr_nfs_block ),
-			// 	];
-			// }
-
 			// Change nfs_block and usr_nfs_block to LONGBLOB
 			$sql               = "SHOW COLUMNS FROM `" . MDS_DB_PREFIX . "banners` LIKE 'nfs_block';";
 			$resultNfsBlock    = $wpdb->get_results( $sql );

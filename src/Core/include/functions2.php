@@ -65,7 +65,7 @@ class functions2 {
 		if ( $var == 0 ) {
 
 			if ( isset( $_REQUEST['get_params'] ) ) {
-				$json = json_decode( stripslashes( $_POST['get_params'] ), true );
+				$json = json_decode( wp_unslash( $_POST['get_params'] ), true );
 				if ( json_last_error() === JSON_ERROR_NONE && $json && isset( $json['BID'] ) ) {
 					return intval( $json['BID'] );
 				}
@@ -174,7 +174,7 @@ class functions2 {
 	 */
 	function value( $value, $stripslashes = true, $quotes = ENT_QUOTES, $encoding = 'UTF-8' ): string {
 		if ( $stripslashes ) {
-			$value = stripslashes( $value );
+			$value = wp_unslash( $value );
 		}
 
 		return htmlspecialchars( $value, $quotes, $encoding );
