@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.6.57-alpha.1 - 2026-04-25
+### Added
+
+- add migration readiness report
+
+
+### Chore
+
+- refresh alpha maintenance tooling locks
+
+- bump flatted
+
+- remove vendor/ from git tracking
+
+
+### Fixed
+
+- harden request urls tracking and uploads
+
+- update minimatch to 3.1.5 to resolve Dependabot alert #6
+
+
+### Performance
+
+- reduce regeneration memory pressure
+
+
+## 2.6.51-alpha.1
+
+
+### Chore
+
+- bump version to 2.6.51 and update tested up to 6.9.1
+
+
 ## 2.6.51-alpha.1 - 2026-02-09
 ## 2.6.51-alpha.1
 
