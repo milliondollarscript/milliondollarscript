@@ -244,6 +244,7 @@ class Admin {
 				'Top Clicks',
 				'Click Reports',
 				'Main Config',
+				'Migration Readiness',
 				'System Information',
 				'License',
 				'Script Homepage',
