@@ -37,67 +37,109 @@ if ( @ini_set( 'max_execution_time', 300 ) === false ) {
 	Logs::log( 'MDS Process Pixels: Failed to set max_execution_time — ini_set may be disabled.' );
 }
 
-global $f2;
+require_once MDS_CORE_PATH . 'include/output_grid.php';
 
-// Handle processing after redirect from admin-post.php
-if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' && !isset($_REQUEST['action']) && isset($_REQUEST['banner_list']) ) {
-	
-	$processing_output = '';
-	$banners_processed = 0;
-	
-	try {
-		// Process all selected banners
-		if ( isset($_REQUEST['banner_list']) && is_array($_REQUEST['banner_list']) && $_REQUEST['banner_list'][0] == 'all' ) {
-			// Process all banners
-			global $wpdb;
-			$results = $wpdb->get_results(
-				"SELECT * FROM " . MDS_DB_PREFIX . "banners",
-				ARRAY_A
-			);
-			foreach ( $results as $row ) {
-				$BID = $row['banner_id'];
-				$processing_output .= process_image( $row['banner_id'] );
-				publish_image( $row['banner_id'] );
-				process_map( $row['banner_id'] );
-				$banners_processed++;
-			}
-		} else if ( isset($_REQUEST['banner_list']) && is_array($_REQUEST['banner_list']) ) {
-			// Process selected banners
-			foreach ( $_REQUEST['banner_list'] as $key => $banner_id ) {
-				if ( $banner_id == 'all' ) continue;
-				$BID = intval( $banner_id );
-				$processing_output .= process_image( $BID );
-				publish_image( $BID );
-				process_map( $BID );
-				$banners_processed++;
+global $f2;
+global $wpdb;
+
+$banners = $wpdb->get_results(
+	"SELECT * FROM " . MDS_DB_PREFIX . "banners",
+	ARRAY_A
+);
+
+$banner_by_id          = [];
+$large_grid_estimates = [];
+foreach ( $banners as $banner ) {
+	$banner_id                   = intval( $banner['banner_id'] ?? 0 );
+	$banner_by_id[ $banner_id ]  = $banner;
+	$estimate                    = mds_grid_render_estimate( $banner );
+	if ( ! empty( $estimate['warn'] ) ) {
+		$large_grid_estimates[ $banner_id ] = [
+			'banner'   => $banner,
+			'estimate' => $estimate,
+		];
+	}
+}
+
+$is_process_request = isset( $_REQUEST['process'] ) && $_REQUEST['process'] == '1' && ! isset( $_REQUEST['action'] ) && isset( $_REQUEST['banner_list'] );
+$selected_banner_ids = [];
+
+if ( $is_process_request && isset( $_REQUEST['banner_list'] ) && is_array( $_REQUEST['banner_list'] ) ) {
+	$banner_list = array_map(
+		static function ( $banner_id ): string {
+			return is_scalar( $banner_id ) ? sanitize_text_field( wp_unslash( (string) $banner_id ) ) : '';
+		},
+		$_REQUEST['banner_list']
+	);
+
+	if ( in_array( 'all', $banner_list, true ) ) {
+		$selected_banner_ids = array_keys( $banner_by_id );
+	} else {
+		foreach ( $banner_list as $banner_id ) {
+			$banner_id = intval( $banner_id );
+			if ( $banner_id > 0 && isset( $banner_by_id[ $banner_id ] ) ) {
+				$selected_banner_ids[] = $banner_id;
 			}
 		}
-		
-	} catch (Exception $e) {
+	}
+}
+
+$selected_banner_ids           = array_values( array_unique( $selected_banner_ids ) );
+$selected_large_grid_estimates = array_intersect_key( $large_grid_estimates, array_flip( $selected_banner_ids ) );
+$large_grid_confirmation       = $_REQUEST['confirm_large_grids'] ?? '';
+$large_grid_confirmation       = is_scalar( $large_grid_confirmation ) ? sanitize_text_field( wp_unslash( (string) $large_grid_confirmation ) ) : '';
+$large_grid_confirmed          = '1' === $large_grid_confirmation;
+$can_process_grids             = ! $is_process_request || empty( $selected_large_grid_estimates ) || $large_grid_confirmed;
+
+// Handle processing after redirect from admin-post.php
+if ( $is_process_request && ! $can_process_grids ) {
+	$processing_warning = Language::get( 'Grid regeneration was not started. Review the large-grid warning below and confirm before processing these grids.' );
+}
+
+if ( $is_process_request && $can_process_grids ) {
+
+	$processing_output = '';
+	$banners_processed = 0;
+
+	try {
+		foreach ( $selected_banner_ids as $BID ) {
+			$processing_output .= process_image( $BID );
+			publish_image( $BID );
+			process_map( $BID );
+			$banners_processed++;
+		}
+
+	} catch ( Exception $e ) {
 		$processing_error = $e->getMessage();
 	}
 }
 
 // Display feedback messages after processing
-if ( isset($_REQUEST['process']) && $_REQUEST['process'] == '1' && !isset($_REQUEST['action']) ) {
-	if ( isset($banners_processed) && $banners_processed > 0 ) {
-		echo '<div class="notice notice-success is-dismissible"><p>' . 
+if ( isset( $_REQUEST['process'] ) && $_REQUEST['process'] == '1' && ! isset( $_REQUEST['action'] ) ) {
+	if ( isset( $banners_processed ) && $banners_processed > 0 ) {
+		echo '<div class="notice notice-success is-dismissible"><p>' .
 			esc_html( Language::get_replace(
-				"Successfully processed [COUNT] grid(s).", 
-				'[COUNT]', 
+				"Successfully processed [COUNT] grid(s).",
+				'[COUNT]',
 				$banners_processed
-			) ) . 
+			) ) .
 			'</p></div>';
-		
+
 		// Output any processing messages
-		if ( !empty($processing_output) ) {
-			echo '<div class="notice notice-info is-dismissible"><p>' . wp_kses_post($processing_output) . '</p></div>';
+		if ( ! empty( $processing_output ) ) {
+			echo '<div class="notice notice-info is-dismissible"><p>' . wp_kses_post( $processing_output ) . '</p></div>';
 		}
 	}
-	
-	if ( isset($processing_error) ) {
-		echo '<div class="notice notice-error is-dismissible"><p>' . 
-			esc_html( Language::get("Error processing grids: ") . $processing_error ) . 
+
+	if ( isset( $processing_warning ) ) {
+		echo '<div class="notice notice-warning is-dismissible"><p>' .
+			esc_html( $processing_warning ) .
+			'</p></div>';
+	}
+
+	if ( isset( $processing_error ) ) {
+		echo '<div class="notice notice-error is-dismissible"><p>' .
+			esc_html( Language::get( "Error processing grids: " ) . $processing_error ) .
 			'</p></div>';
 	}
 }
@@ -114,7 +156,6 @@ if ( ! is_writable( $BANNER_PATH ) ) {
 	echo "<b>Warning:</b> The script does not have permission write to " . $BANNER_PATH . " or the directory does not exist<br>";
 }
 
-global $wpdb;
 $unapproved_orders = $wpdb->get_results(
 	"SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE approved = 'N' AND status = 'completed'",
 	ARRAY_A
@@ -123,6 +164,28 @@ $c = count( $unapproved_orders );
 
 if ( $c > 0 ) {
 	echo "<h3>Note: There are/is $c pixel ads waiting to be approved. <a href='" . esc_url( admin_url( 'admin.php?page=mds-approve-pixels' ) ) . "'>Approve pixel ads here.</a></h3>";
+}
+
+if ( ! empty( $large_grid_estimates ) ) {
+	echo '<div class="notice notice-warning"><p><strong>' . esc_html__( 'Large grid rendering warning:', 'milliondollarscript' ) . '</strong> ' . esc_html__( 'One or more grids may require significant memory or processing time during regeneration.', 'milliondollarscript' ) . '</p><ul>';
+	foreach ( $large_grid_estimates as $item ) {
+		$banner   = $item['banner'];
+		$estimate = $item['estimate'];
+		echo '<li>';
+		echo esc_html(
+			sprintf(
+				'#%d - %s: %s cells, %dx%d px, estimated memory %s',
+				(int) $banner['banner_id'],
+				(string) $banner['name'],
+				number_format_i18n( (int) $estimate['cells'] ),
+				(int) $estimate['width'],
+				(int) $estimate['height'],
+				mds_format_bytes( (int) $estimate['estimated_bytes'] )
+			)
+		);
+		echo '</li>';
+	}
+	echo '</ul></div>';
 }
 
 ?>
@@ -134,22 +197,21 @@ if ( $c > 0 ) {
     <input type="hidden" name="action" value="mds_admin_form_submission" />
     <input type="hidden" name="mds_dest" value="process-pixels" />
 
-    <input value='1' name="process" type="hidden"/>
-    <select name="banner_list[]" multiple size='3'>
+	<input value='1' name="process" type="hidden"/>
+	<select name="banner_list[]" multiple size='3'>
         <option value="all" selected>Process All</option>
 		<?php
 
-		global $wpdb;
-		$banners = $wpdb->get_results(
-			"SELECT * FROM " . MDS_DB_PREFIX . "banners",
-			ARRAY_A
-		);
-
 		foreach ( $banners as $row ) {
-			echo '<option value="' . $row['banner_id'] . '">#' . $row['banner_id'] . ' - ' . $row["name"] . '</option>' . "\n";
+			echo '<option value="' . esc_attr( $row['banner_id'] ) . '">#' . esc_html( $row['banner_id'] ) . ' - ' . esc_html( $row["name"] ) . '</option>' . "\n";
 		}
 		?>
-    </select><br/>
-    <input type="submit" name='submit' value="Process Grids(s)"/>
+	</select><br/>
+	<?php if ( ! empty( $large_grid_estimates ) ) : ?>
+		<label>
+			<input type="checkbox" name="confirm_large_grids" value="1"/>
+			<?php esc_html_e( 'Process large grids despite the memory warning.', 'milliondollarscript' ); ?>
+		</label><br/>
+	<?php endif; ?>
+	<input type="submit" name='submit' value="Process Grids(s)"/>
 </form>
-

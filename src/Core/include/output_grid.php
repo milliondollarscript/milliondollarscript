@@ -187,6 +187,58 @@ function mds_resolve_overlay_path(int $BID, string $variant): string {
     return $fallback;
 }
 
+function mds_grid_render_estimate( array $banner_data ): array {
+	$cols       = max( 0, intval( $banner_data['G_WIDTH'] ?? $banner_data['grid_width'] ?? 0 ) );
+	$rows       = max( 0, intval( $banner_data['G_HEIGHT'] ?? $banner_data['grid_height'] ?? 0 ) );
+	$blkW       = max( 0, intval( $banner_data['BLK_WIDTH'] ?? $banner_data['block_width'] ?? 0 ) );
+	$blkH       = max( 0, intval( $banner_data['BLK_HEIGHT'] ?? $banner_data['block_height'] ?? 0 ) );
+	$cells      = $cols * $rows;
+	$gridW      = $cols * $blkW;
+	$gridH      = $rows * $blkH;
+	$imageBytes = $gridW * $gridH * 6;
+	$cellBytes  = $cells * 96;
+	$estimated  = $imageBytes + $cellBytes + ( 16 * 1024 * 1024 );
+	$limit      = function_exists( 'wp_convert_hr_to_bytes' ) ? wp_convert_hr_to_bytes( ini_get( 'memory_limit' ) ) : 0;
+	$warn       = $cells >= 250000 || ( $limit > 0 && $estimated > ( $limit * 0.70 ) );
+
+	return [
+		'columns'         => $cols,
+		'rows'            => $rows,
+		'cells'           => $cells,
+		'width'           => $gridW,
+		'height'          => $gridH,
+		'estimated_bytes' => $estimated,
+		'memory_limit'    => $limit,
+		'warn'            => $warn,
+	];
+}
+
+function mds_format_bytes( int $bytes ): string {
+	if ( function_exists( 'size_format' ) ) {
+		return size_format( $bytes );
+	}
+
+	if ( $bytes >= 1048576 ) {
+		return round( $bytes / 1048576, 1 ) . ' MB';
+	}
+
+	if ( $bytes >= 1024 ) {
+		return round( $bytes / 1024, 1 ) . ' KB';
+	}
+
+	return $bytes . ' bytes';
+}
+
+function mds_paste_grid_block( $map, $img, bool $useGd, $dstRes, int $x, int $y, int $blkW, int $blkH ): void {
+	if ( $useGd && $img instanceof Imagine\Gd\Image ) {
+		$src = $img->getGdResource();
+		imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
+		return;
+	}
+
+	$map->paste( $img, new Imagine\Image\Point( $x, $y ) );
+}
+
 /**
  * Output grid map
  *
@@ -288,6 +340,15 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 	$rows = (int)$banner_data['G_HEIGHT'];
 	$gridW = $cols * $blkW;
 	$gridH = $rows * $blkH;
+	$render_estimate = mds_grid_render_estimate( $banner_data );
+	if ( ! $show && ! empty( $render_estimate['warn'] ) ) {
+		Logs::log(
+			'MDS grid render estimate warning for BID ' . intval( $BID ) . ': ' .
+			intval( $render_estimate['cells'] ) . ' cells, ' .
+			intval( $render_estimate['width'] ) . 'x' . intval( $render_estimate['height'] ) . 'px, estimated memory ' .
+			mds_format_bytes( intval( $render_estimate['estimated_bytes'] ) )
+		);
+	}
 
 	// load blocks
 	$block_size  = new Imagine\Image\Box( $blkW, $blkH );
@@ -421,7 +482,7 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		}
 	}
 
-	$blocks = $orders = $price_zones = $users = $nfs = array();
+	$blocks = $orders = $users = $nfs = array();
 
 	// preload nfs blocks
 	if ( isset( $default_nfs_block ) ) {
@@ -645,113 +706,46 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		$dstRes = $map->getGdResource();
 	}
 
-	// preload price zones
-	if ( isset( $show_price_zones ) ) {
-		$price_zone_blocks = array();
-		$cell              = 0;
-		for ( $y = 0; $y < $gridH; $y += $blkH ) {
-			for ( $x = 0; $x < $gridW; $x += $blkW ) {
+	$front_blocks = [];
 
-				$price_zone_color = get_zone_color( $BID, $y, $x );
-				switch ( $price_zone_color ) {
-					case "cyan":
-						$price_zone_blocks[ $cell ] = 'price_zone';
-						$price_zones[ $cell ]       = $cyan_block;
-						break;
-					case "yellow":
-						$price_zone_blocks[ $cell ] = 'price_zone';
-						$price_zones[ $cell ]       = $yellow_block;
-						break;
-					case "magenta":
-						$price_zone_blocks[ $cell ] = 'price_zone';
-						$price_zones[ $cell ]       = $magenta_block;
-						break;
-					case "white":
-						$price_zone_blocks[ $cell ] = 'price_zone';
-						$price_zones[ $cell ]       = $white_block;
-						break;
-					default:
-						break;
-				}
-
-				$cell ++;
-			}
-		}
-	}
-
-	// preload full grid
-	$grid_back = $grid_front = $grid_price_zone = array();
-	/** @var \Imagine\Gd\Image[][] $grid_back */
-	/** @var \Imagine\Gd\Image[][] $grid_front */
-	/** @var \Imagine\Gd\Image[][] $grid_price_zone */
-	$cell      = 0;
+	// Grid and NFS blocks go behind the background. Front layers are collected only for occupied cells.
+	$cell = 0;
 	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
 		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
+			$status     = $blocks[ $cell ] ?? '';
+			$back_block = null;
 
-            if ( isset( $blocks[ $cell ] ) && $blocks[ $cell ] != '' ) {
-                if ( isset( $show_orders ) && $blocks[ $cell ] == "order" ) {
-                    $grid_front[ $x ][ $y ] = $orders[ $cell ];
-                } else if ( isset( $user ) && $blocks[ $cell ] == "user" ) {
-                    $grid_front[ $x ][ $y ] = $users[ $cell ];
-                } else if ( isset( $default_nfs_block ) && $blocks[ $cell ] == "nfs" ) {
-                    $grid_back[ $x ][ $y ] = $nfs[ $cell ];
-                } else if ( isset( $default_nfs_front_block ) && $blocks[ $cell ] == "nfs_front" ) {
-                    $grid_front[ $x ][ $y ] = $nfs[ $cell ];
-                } else if ( isset( $default_ordered_block ) && $blocks[ $cell ] == "ordered" ) {
-                    $grid_front[ $x ][ $y ] = $default_ordered_block;
-                } else if ( isset( $default_reserved_block ) && $blocks[ $cell ] == "reserved" ) {
-                    $grid_front[ $x ][ $y ] = $default_reserved_block;
-                } else if ( isset( $default_selected_block ) && $blocks[ $cell ] == "selected" ) {
-                    $grid_front[ $x ][ $y ] = $default_selected_block;
-                } else if ( isset( $default_sold_block ) && $blocks[ $cell ] == "sold" ) {
-                    $grid_front[ $x ][ $y ] = $default_sold_block;
-                } else if ( isset( $show_grid ) && $mds_blocks_layering !== 'above' ) {
-                    $grid_back[ $x ][ $y ] = $default_block;
-                }
-            } else if ( isset( $show_grid ) && $mds_blocks_layering !== 'above' ) {
-                $grid_back[ $x ][ $y ] = $default_block;
-            } else {
-                $grid_back[ $x ][ $y ] = $blank_block;
-            }
+			if ( '' !== $status ) {
+				if ( isset( $show_orders ) && $status === 'order' && isset( $orders[ $cell ] ) ) {
+					$front_blocks[] = [ $x, $y, $orders[ $cell ] ];
+				} else if ( isset( $user ) && $status === 'user' && isset( $users[ $cell ] ) ) {
+					$front_blocks[] = [ $x, $y, $users[ $cell ] ];
+				} else if ( isset( $default_nfs_block ) && $status === 'nfs' && isset( $nfs[ $cell ] ) ) {
+					$back_block = $nfs[ $cell ];
+				} else if ( isset( $default_nfs_front_block ) && $status === 'nfs_front' && isset( $nfs[ $cell ] ) ) {
+					$front_blocks[] = [ $x, $y, $nfs[ $cell ] ];
+				} else if ( isset( $default_ordered_block ) && $status === 'ordered' ) {
+					$front_blocks[] = [ $x, $y, $default_ordered_block ];
+				} else if ( isset( $default_reserved_block ) && $status === 'reserved' ) {
+					$front_blocks[] = [ $x, $y, $default_reserved_block ];
+				} else if ( isset( $default_selected_block ) && $status === 'selected' ) {
+					$front_blocks[] = [ $x, $y, $default_selected_block ];
+				} else if ( isset( $default_sold_block ) && $status === 'sold' ) {
+					$front_blocks[] = [ $x, $y, $default_sold_block ];
+				}
+			}
 
-			// price zone grid layer
-			if ( isset( $show_price_zones ) && isset( $price_zone_blocks[ $cell ] ) ) {
-				$grid_price_zone[ $x ][ $y ] = $price_zones[ $cell ];
+			if ( null === $back_block && isset( $show_grid ) && $mds_blocks_layering !== 'above' ) {
+				$back_block = $default_block;
+			} else if ( null === $back_block && ! isset( $show_grid ) && $mds_blocks_layering !== 'above' ) {
+				$back_block = $blank_block;
+			}
+
+			if ( null !== $back_block ) {
+				mds_paste_grid_block( $map, $back_block, $useGd, $dstRes ?? null, $x, $y, $blkW, $blkH );
 			}
 
 			$cell ++;
-		}
-	}
-
-	// grid and nfs blocks go behind the background
-	if ( isset( $show_grid ) || isset( $default_nfs_block ) ) {
-		for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
-			for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
-				if ( isset( $grid_back[ $x ] ) && isset( $grid_back[ $x ][ $y ] ) ) {
-					if ( $useGd ) {
-						/** @var \Imagine\Gd\Image $img */
-						$img = $grid_back[ $x ][ $y ];
-						/** @var \GdImage $src */
-						$src = $img->getGdResource();
-						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
-					} else {
-						$map->paste( $grid_back[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
-					}
-				} else {
-					// add grid behind if nothing's there in case images are transparent
-					if ( $mds_blocks_layering !== 'above' ) {
-						if ( $useGd ) {
-							/** @var \\Imagine\\Gd\\Image $img */
-							$img = $default_block;
-							/** @var \\GdImage $src */
-							$src = $img->getGdResource();
-							imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
-						} else {
-$map->paste( $default_block, new Imagine\Image\Point( $x, $y ) );
-						}
-					}
-				}
-			}
 		}
 	}
 
@@ -841,62 +835,30 @@ $map->paste( $default_block, new Imagine\Image\Point( $x, $y ) );
 	}
 
 	// paste the blocks
-	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
-		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
-			if ( isset( $grid_front[ $x ] ) && isset( $grid_front[ $x ][ $y ] ) ) {
-				if ( $useGd ) {
-					/** @var \Imagine\Gd\Image $img */
-					$img = $grid_front[ $x ][ $y ];
-					/** @var \GdImage $src */
-					$src = $img->getGdResource();
-					imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
-				} else {
-					$map->paste( $grid_front[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
-				}
-			}
-		}
-	}
-
-// [moved earlier] overlay grid-line blocks between background and front blocks
-if ( false ) {
-		$mode = ( Options::get_option( 'theme_mode', 'light' ) === 'dark' ) ? 'dark' : 'light';
-		$variant = ( $ordering ? 'ordering' : 'public' ) . '-' . $mode;
-		$overlay_path = mds_resolve_overlay_path( (int)$BID, $variant );
-		try {
-			$overlay_block = $imagine->open( $overlay_path );
-			$overlay_block->resize( $block_size );
-			for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
-				for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
-					if ( $useGd ) {
-						/** @var \Imagine\Gd\Image $img */
-						$img = $overlay_block;
-						/** @var \GdImage $src */
-						$src = $img->getGdResource();
-						imagealphablending($dstRes, true);
-						imagesavealpha($dstRes, true);
-						imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
-					} else {
-						$map->paste( $overlay_block, new Imagine\Image\Point( $x, $y ) );
-					}
-				}
-			}
-		} catch ( \Exception $e ) {
-			Logs::log( 'MDS overlay error for BID ' . (int)$BID . ': ' . $e->getMessage() );
-		}
+	foreach ( $front_blocks as $front_block ) {
+		mds_paste_grid_block( $map, $front_block[2], $useGd, $dstRes ?? null, $front_block[0], $front_block[1], $blkW, $blkH );
 	}
 
 	// paste price zone layer
-	for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
-		for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
-			if ( isset( $grid_price_zone[ $x ] ) && isset( $grid_price_zone[ $x ][ $y ] ) ) {
-				if ( $useGd ) {
-					/** @var \Imagine\Gd\Image $img */
-					$img = $grid_price_zone[ $x ][ $y ];
-					/** @var \GdImage $src */
-					$src = $img->getGdResource();
-					imagecopy( $dstRes, $src, $x, $y, 0, 0, $blkW, $blkH );
-				} else {
-					$map->paste( $grid_price_zone[ $x ][ $y ], new Imagine\Image\Point( $x, $y ) );
+	if ( isset( $show_price_zones ) ) {
+		for ( $row = 0, $y = 0; $row < $rows; $row++, $y += $blkH ) {
+			for ( $col = 0, $x = 0; $col < $cols; $col++, $x += $blkW ) {
+				$price_zone_color = get_zone_color( $BID, $y, $x );
+				switch ( $price_zone_color ) {
+					case "cyan":
+						mds_paste_grid_block( $map, $cyan_block, $useGd, $dstRes ?? null, $x, $y, $blkW, $blkH );
+						break;
+					case "yellow":
+						mds_paste_grid_block( $map, $yellow_block, $useGd, $dstRes ?? null, $x, $y, $blkW, $blkH );
+						break;
+					case "magenta":
+						mds_paste_grid_block( $map, $magenta_block, $useGd, $dstRes ?? null, $x, $y, $blkW, $blkH );
+						break;
+					case "white":
+						mds_paste_grid_block( $map, $white_block, $useGd, $dstRes ?? null, $x, $y, $blkW, $blkH );
+						break;
+					default:
+						break;
 				}
 			}
 		}
