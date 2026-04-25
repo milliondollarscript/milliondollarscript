@@ -791,7 +791,7 @@
 
 - Set line-height on grid-inner element to 1 to ensure proper grid height.
 
-- Resolve merge conflicts from dev branch stash
+- Resolve merge conflicts from temporary branch stash
 
 - Use global 'auto-resize' option for conditional image sizing in output_grid and get_order_image
 
@@ -1008,5 +1008,4 @@
 ### Security
 
 - Resolve admin grid selection redirect issue and security check failure on Packages page
-
 
