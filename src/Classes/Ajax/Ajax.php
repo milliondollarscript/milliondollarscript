@@ -38,7 +38,9 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Orders\Blocks;
 use MillionDollarScript\Classes\System\Logs;
+use MillionDollarScript\Classes\System\Request;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\System\Url;
 use function esc_attr;
 use function esc_html;
 use function esc_url;
@@ -53,6 +55,10 @@ defined( 'ABSPATH' ) or exit;
 
 class Ajax {
 
+	private static array $request = [];
+	private static array $post = [];
+	private static array $query = [];
+
 	/**
 	 * Init MDS AJAX..
 	 *
@@ -63,6 +69,8 @@ class Ajax {
 		// MDS AJAX
 		add_action( 'wp_ajax_mds_ajax', [ __CLASS__, 'mds_ajax' ] );
 		add_action( 'wp_ajax_nopriv_mds_ajax', [ __CLASS__, 'mds_ajax' ] );
+		add_action( 'wp_ajax_mds_ajax_grid', [ __CLASS__, 'mds_ajax' ] );
+		add_action( 'wp_ajax_nopriv_mds_ajax_grid', [ __CLASS__, 'mds_ajax' ] );
 	}
 
 	/**
@@ -73,102 +81,165 @@ class Ajax {
 	public static function mds_ajax(): void {
 		check_ajax_referer( 'mds_nonce', 'mds_nonce' );
 
-		// Handle POST input
-		if ( isset( $_POST ) ) {
+		self::$post    = Request::sanitize_scalar_array( is_array( $_POST ) ? $_POST : [] );
+		self::$query   = Request::json_payload( self::$post, 'get_params' );
+		self::$request = array_merge( self::$query, self::$post );
 
-			$type = $_POST['type'] ?? null;
-			$_GET = [];
+		$type = Request::key( self::$post, 'type' );
 
-			// Check if 'get_params' is set
-			if ( isset( $_POST['get_params'] ) ) {
-				$json = json_decode( wp_unslash( $_POST['get_params'] ), true );
-
-				// Catch broken JSON in get_params
-				if ( json_last_error() === JSON_ERROR_NONE ) {
-					$_GET = $json;
+		switch ( $type ) {
+			case "grid":
+			case "show_grid":
+				self::show_grid( self::$request );
+				wp_die();
+			case "stats":
+			case "show_stats":
+				self::show_stats( self::$request );
+				wp_die();
+			case "ga":
+				$tracking = self::get_valid_tracking_data( self::$request );
+				if ( empty( $tracking ) ) {
+					wp_die( '', '', [ 'response' => 400 ] );
 				}
-			}
-
-			// Make sure $_POST and $_REQUEST are arrays
-			$_POST    = is_array( $_POST ) ? $_POST : [];
-			$_REQUEST = is_array( $_REQUEST ) ? $_REQUEST : [];
-
-			// Merge arrays
-			$_REQUEST = array_merge( $_GET, $_POST, $_REQUEST );
-
-			// Handle core MDS AJAX calls
-			if ( isset( $type ) ) {
-				switch ( $type ) {
-					case "grid":
-						self::show_grid();
-						wp_die();
-					case "stats":
-						self::show_stats();
-						wp_die();
-					case "ga":
-						self::get_ad();
-						self::store_view( $_POST );
-						wp_die();
-					case "click":
-						self::store_click( $_POST );
-						wp_die();
-					case "list":
-						self::show_list();
-						wp_die();
-					case "confirm-order":
-						require_once MDS_CORE_PATH . 'users/confirm_order.php';
-						wp_die();
-					case "users":
-					case "account":
-					case "publish":
-					case "history":
-					case "manage":
-						require_once MDS_CORE_PATH . 'users/manage.php';
-						wp_die();
-					case "no-orders":
-						Orders::no_orders();
-						wp_die();
-					case "order":
-						Orders::order_screen();
-						wp_die();
-					case "checkout":
-					case "payment":
-						require_once MDS_CORE_PATH . 'users/payment.php';
-						wp_die();
-					case "thank-you":
-						require_once MDS_CORE_PATH . 'users/thanks.php';
-						wp_die();
-					case "upload":
-						require_once MDS_CORE_PATH . 'users/upload.php';
-						wp_die();
-					case "write-ad":
-						require_once MDS_CORE_PATH . 'users/write_ad.php';
-						wp_die();
-					case "make-selection":
-						// Logs::log( 'MDS AJAX make-selection request routed through Orders::persist_selection handler.' );
-						// Logging suppressed to reduce noise while the legacy shim is still active.
-						require_once MDS_CORE_PATH . 'users/make_selection.php';
-						wp_die();
-					case "validate-selection":
-						self::handle_validate_selection();
-						wp_die();
-					default:
-						break;
+				self::get_ad( $tracking['aid'] );
+				self::store_view( $tracking );
+				wp_die();
+			case "click":
+				$tracking = self::get_valid_tracking_data( self::$request );
+				if ( empty( $tracking ) ) {
+					wp_die( '', '', [ 'response' => 400 ] );
 				}
-			}
+				self::store_click( $tracking );
+				wp_die();
+			case "list":
+			case "show_list":
+				self::show_list( self::$request );
+				wp_die();
+			case "confirm-order":
+				self::load_legacy_user_handler( 'confirm_order.php' );
+				wp_die();
+			case "users":
+			case "account":
+			case "publish":
+			case "history":
+			case "manage":
+				self::load_legacy_user_handler( 'manage.php' );
+				wp_die();
+			case "no-orders":
+				Orders::no_orders();
+				wp_die();
+			case "order":
+				Orders::order_screen();
+				wp_die();
+			case "checkout":
+			case "payment":
+				self::load_legacy_user_handler( 'payment.php' );
+				wp_die();
+			case "thank-you":
+				self::load_legacy_user_handler( 'thanks.php' );
+				wp_die();
+			case "upload":
+				self::load_legacy_user_handler( 'upload.php' );
+				wp_die();
+			case "write-ad":
+				self::load_legacy_user_handler( 'write_ad.php' );
+				wp_die();
+			case "make-selection":
+				// Logs::log( 'MDS AJAX make-selection request routed through Orders::persist_selection handler.' );
+				// Logging suppressed to reduce noise while the legacy shim is still active.
+				self::load_legacy_user_handler( 'make_selection.php' );
+				wp_die();
+			case "validate-selection":
+				self::handle_validate_selection( self::$request );
+				wp_die();
+			default:
+				break;
 		}
 
 		wp_die();
 	}
 
-	private static function handle_validate_selection(): void {
+	private static function load_legacy_user_handler( string $file ): void {
+		$previous_get     = $_GET;
+		$previous_post    = $_POST;
+		$previous_request = $_REQUEST;
+
+		try {
+			$_GET     = self::$query;
+			$_POST    = self::$post;
+			$_REQUEST = self::$request;
+
+			require_once MDS_CORE_PATH . 'users/' . $file;
+		} finally {
+			$_GET     = $previous_get;
+			$_POST    = $previous_post;
+			$_REQUEST = $previous_request;
+		}
+	}
+
+	private static function get_valid_tracking_data( array $request ): ?array {
+		global $wpdb;
+
+		$aid      = Request::positive_int( $request, 'aid' );
+		$bid      = Request::positive_int( $request, 'bid' );
+		$block_id = Request::positive_int( $request, 'block_id' );
+
+		if ( $aid <= 0 || $bid <= 0 || $block_id <= 0 ) {
+			return null;
+		}
+
+		$sql = $wpdb->prepare(
+			"SELECT block_id, banner_id, ad_id, user_id FROM `" . MDS_DB_PREFIX . "blocks` WHERE `ad_id` = %d AND `banner_id` = %d AND `block_id` = %d LIMIT 1",
+			$aid,
+			$bid,
+			$block_id
+		);
+		$row = $wpdb->get_row( $sql, ARRAY_A );
+
+		if ( empty( $row ) ) {
+			return null;
+		}
+
+		return [
+			'aid'      => $aid,
+			'bid'      => $bid,
+			'block_id' => $block_id,
+			'user_id'  => intval( $row['user_id'] ?? 0 ),
+		];
+	}
+
+	private static function resolve_bid( array $request, bool $allow_all = false ): int|string {
+		global $f2;
+
+		$raw_bid = Request::scalar( $request['BID'] ?? '' );
+		if ( $allow_all && 'all' === $raw_bid ) {
+			return 'all';
+		}
+
+		$bid = Request::positive_int( $request, 'BID' );
+		if ( $bid > 0 ) {
+			return $bid;
+		}
+
+		$aid = Request::positive_int( $request, 'aid' );
+		if ( $aid > 0 ) {
+			$pixel = get_post( $aid );
+			if ( ! empty( $pixel ) ) {
+				return intval( carbon_get_post_meta( $aid, MDS_PREFIX . 'grid' ) );
+			}
+		}
+
+		return is_object( $f2 ) && method_exists( $f2, 'get_default_grid' ) ? intval( $f2->get_default_grid() ) : 0;
+	}
+
+	private static function handle_validate_selection( array $request ): void {
 		if ( ! is_user_logged_in() ) {
 			wp_send_json_error( [
 				'messages' => [ Language::get( 'You must be logged in to continue.' ) ],
 			], 401 );
 		}
 
-		$BID = isset( $_REQUEST['BID'] ) ? intval( $_REQUEST['BID'] ) : 0;
+		$BID = Request::positive_int( $request, 'BID' );
 		if ( $BID <= 0 ) {
 			wp_send_json_error( [ 'messages' => [ Language::get( 'Invalid grid.' ) ] ], 400 );
 		}
@@ -178,8 +249,8 @@ class Ajax {
 			wp_send_json_error( [ 'messages' => [ Language::get( 'Invalid grid configuration.' ) ] ], 400 );
 		}
 
-		$mode       = isset( $_REQUEST['mode'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_REQUEST['mode'] ) ) ) : null;
-		$raw_blocks = $_REQUEST['blocks'] ?? '';
+		$mode       = Request::mode( $request, 'mode', [ 'ADJACENT', 'RECTANGLE', 'NONE' ] );
+		$raw_blocks = Request::scalar( $request['blocks'] ?? '' );
 		$block_ids  = Blocks::parse_block_ids( $raw_blocks );
 
 		$errors = Blocks::validate_selection( $block_ids, $banner_data, $mode );
@@ -194,10 +265,8 @@ class Ajax {
 		] );
 	}
 
-	public static function show_grid(): void {
-		global $f2;
-
-		$BID = $f2->bid();
+	public static function show_grid( ?array $request = null ): void {
+		$BID = self::resolve_bid( $request ?? self::$request );
 
 		if ( ! is_numeric( $BID ) ) {
 			die;
@@ -263,10 +332,10 @@ class Ajax {
 		}
 	}
 
-	public static function show_stats(): void {
-		global $f2, $wpdb;
+	public static function show_stats( ?array $request = null ): void {
+		global $wpdb;
 
-		$BID = $f2->bid();
+		$BID = self::resolve_bid( $request ?? self::$request );
 
 		$banner_data = load_banner_constants( $BID );
 
@@ -310,7 +379,11 @@ class Ajax {
 
 	public static function get_ad( $post_id = null, $return = false ): string|null {
 		if ( $post_id == null ) {
-			$post_id = intval( $_POST['aid'] );
+			$post_id = Request::positive_int( self::$request, 'aid' );
+		}
+		$post_id = intval( $post_id );
+		if ( $post_id <= 0 ) {
+			return null;
 		}
 		$fields = FormFields::get_fields();
 
@@ -343,7 +416,8 @@ class Ajax {
 					$value = '<span class="mds-popup-text">' . esc_html( $value ) . '</span>';
 				}
 			} else if ( $field_name === 'url' ) {
-				$value = '<a class="mds-popup-url" target="_blank" href="' . esc_url( $value ) . '">' . esc_html( $value ) . '</a>';
+				$value = Url::advertiser_url( $value );
+				$value = '' !== $value ? '<a class="mds-popup-url" target="_blank" href="' . esc_url( $value ) . '">' . esc_html( $value ) . '</a>' : '';
 			} else if ( $field_name === 'image' ) {
 				$image_id  = carbon_get_post_meta( $post_id, $field->get_base_name() );
 				$image_url = wp_get_attachment_url( $image_id );
@@ -372,32 +446,43 @@ class Ajax {
 
 	public static function store_view( $data ): void {
 		global $wpdb;
+
+		$bid      = intval( $data['bid'] ?? 0 );
+		$block_id = intval( $data['block_id'] ?? 0 );
+		$aid      = intval( $data['aid'] ?? 0 );
+		$user_id  = intval( $data['user_id'] ?? 0 );
+
+		if ( $bid <= 0 || $block_id <= 0 || $aid <= 0 ) {
+			return;
+		}
 		
 		$ADVANCED_VIEW_COUNT = Options::get_option( 'advanced-view-count' );
 		if ( $ADVANCED_VIEW_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
 			$date = current_time( 'Y-m-d' );
-			$sql  = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "views SET views = views + 1 WHERE banner_id = %d AND `date` = %s AND `block_id` = %d", intval( $data['bid'] ), $date, intval( $data['block_id'] ) );
+			$sql  = $wpdb->prepare( "UPDATE " . MDS_DB_PREFIX . "views SET views = views + 1 WHERE banner_id = %d AND `date` = %s AND `block_id` = %d", $bid, $date, $block_id );
 			$wpdb->query( $sql );
 			$x = $wpdb->rows_affected;
 
-			$mds_pixel_post = get_post( $_POST['aid'] );
+			$mds_pixel_post = get_post( $aid );
 
 			if ( ! empty( $mds_pixel_post ) ) {
-				$user_id            = $mds_pixel_post->post_author;
-				$view_count         = intval( get_user_meta( $user_id, MDS_PREFIX . 'view_count', true ) );
-				$update_click_count = $view_count + 1;
-				update_user_meta( $user_id, MDS_PREFIX . 'view_count', $update_click_count );
+				$user_id = $user_id > 0 ? $user_id : intval( $mds_pixel_post->post_author );
+				if ( $user_id > 0 ) {
+					$view_count         = intval( get_user_meta( $user_id, MDS_PREFIX . 'view_count', true ) );
+					$update_click_count = $view_count + 1;
+					update_user_meta( $user_id, MDS_PREFIX . 'view_count', $update_click_count );
+				}
 
 				if ( ! $x ) {
 					$wpdb->insert(
-						MDS_DB_PREFIX . 'views',
-						array(
-							'banner_id' => intval( $data['bid'] ),
+					MDS_DB_PREFIX . 'views',
+					array(
+							'banner_id' => $bid,
 							'date'      => $date,
 							'views'     => 1,
-							'block_id'  => intval( $data['block_id'] ),
+							'block_id'  => $block_id,
 							'user_id'   => intval( $user_id )
 						),
 						array( '%d', '%s', '%d', '%d', '%d' )
@@ -406,65 +491,73 @@ class Ajax {
 			}
 		}
 
-		$sql = $wpdb->prepare( "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `view_count` = `view_count` + 1 WHERE `block_id` = %d AND `banner_id` = %d", intval( $data['block_id'] ), intval( $data['bid'] ) );
+		$sql = $wpdb->prepare( "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `view_count` = `view_count` + 1 WHERE `block_id` = %d AND `banner_id` = %d AND `ad_id` = %d", $block_id, $bid, $aid );
 		$wpdb->query( $sql );
 	}
 
 	public static function store_click( $data ): void {
+		global $wpdb;
+
+		$bid      = intval( $data['bid'] ?? 0 );
+		$block_id = intval( $data['block_id'] ?? 0 );
+		$aid      = intval( $data['aid'] ?? 0 );
+		$user_id  = intval( $data['user_id'] ?? 0 );
+
+		if ( $bid <= 0 || $block_id <= 0 || $aid <= 0 ) {
+			return;
+		}
+
 		$ADVANCED_CLICK_COUNT = Options::get_option( 'advanced-click-count' );
 		if ( $ADVANCED_CLICK_COUNT == 'YES' ) {
 			require_once MDS_CORE_PATH . 'include/ads.inc.php';
 
-			global $wpdb;
-
 			$date         = current_time( 'Y-m-d' );
 			$sql          = "UPDATE `" . MDS_DB_PREFIX . "clicks` SET `clicks` = `clicks` + 1 WHERE `banner_id`=%d AND `date`=%s AND `block_id`=%d";
-			$prepared_sql = $wpdb->prepare( $sql, intval( $data['bid'] ), $date, intval( $data['block_id'] ) );
+			$prepared_sql = $wpdb->prepare( $sql, $bid, $date, $block_id );
 			$wpdb->query( $prepared_sql );
 			$x = $wpdb->rows_affected;
 
-			$sql          = "SELECT * FROM `" . MDS_DB_PREFIX . "blocks` WHERE `ad_id`=%d AND `block_id`=%d;";
-			$prepared_sql = $wpdb->prepare( $sql, intval( $_POST['aid'] ), intval( $data['block_id'] ) );
+			$sql          = "SELECT * FROM `" . MDS_DB_PREFIX . "blocks` WHERE `ad_id`=%d AND `banner_id`=%d AND `block_id`=%d;";
+			$prepared_sql = $wpdb->prepare( $sql, $aid, $bid, $block_id );
 			$row          = $wpdb->get_row( $prepared_sql, ARRAY_A );
 
-			$user_id            = intval( $row['user_id'] );
-			$click_count        = intval( get_user_meta( $user_id, MDS_PREFIX . 'click_count', true ) );
-			$update_click_count = $click_count + 1;
-			update_user_meta( $user_id, MDS_PREFIX . 'click_count', $update_click_count );
+			$user_id = $user_id > 0 ? $user_id : intval( $row['user_id'] ?? 0 );
+			if ( $user_id > 0 ) {
+				$click_count        = intval( get_user_meta( $user_id, MDS_PREFIX . 'click_count', true ) );
+				$update_click_count = $click_count + 1;
+				update_user_meta( $user_id, MDS_PREFIX . 'click_count', $update_click_count );
+			}
 
 			if ( ! $x ) {
 				$wpdb->insert(
 					MDS_DB_PREFIX . 'clicks',
 					array(
-						'banner_id' => intval( $data['bid'] ),
+						'banner_id' => $bid,
 						'date'      => $date,
 						'clicks'    => 1,
-						'block_id'  => intval( $data['block_id'] ),
-						'user_id'   => intval( $row['user_id'] )
+						'block_id'  => $block_id,
+						'user_id'   => $user_id
 					),
 					array( '%d', '%s', '%d', '%d', '%d' )
 				);
 			}
 		}
 
-		$sql = $wpdb->prepare( "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `click_count` = `click_count` + 1 WHERE `block_id` = %d AND banner_id = %d", intval( $data['block_id'] ), intval( $data['bid'] ) );
+		$sql = $wpdb->prepare( "UPDATE `" . MDS_DB_PREFIX . "blocks` SET `click_count` = `click_count` + 1 WHERE `block_id` = %d AND banner_id = %d AND `ad_id` = %d", $block_id, $bid, $aid );
 		$wpdb->query( $sql );
 	}
 
-	public static function show_list(): void {
+	public static function show_list( ?array $request = null ): void {
 		require_once MDS_CORE_PATH . 'include/ads.inc.php';
 		global $wpdb;
 
-		$requested_bid        = isset( $_REQUEST['BID'] ) ? absint( $_REQUEST['BID'] ) : 0;
+		$request              = $request ?? self::$request;
+		$requested_bid        = Request::positive_int( $request, 'BID' );
 		$is_ajax_request      = wp_doing_ajax();
-		$explicit_bid_request = isset( $_GET['BID'] ) || isset( $_POST['BID'] );
-		$list_show_all        = isset( $_REQUEST['mds_list_show_all'] )
-			? filter_var( wp_unslash( $_REQUEST['mds_list_show_all'] ), FILTER_VALIDATE_BOOLEAN )
-			: false;
-		$explicit_id          = isset( $_REQUEST['mds_explicit_id'] )
-			? filter_var( wp_unslash( $_REQUEST['mds_explicit_id'] ), FILTER_VALIDATE_BOOLEAN )
-			: false;
-		$shortcode_id         = isset( $_REQUEST['mds_shortcode_id'] ) ? absint( $_REQUEST['mds_shortcode_id'] ) : 0;
+		$explicit_bid_request = isset( self::$query['BID'] ) || isset( self::$post['BID'] ) || isset( $request['BID'] );
+		$list_show_all        = Request::bool( $request, 'mds_list_show_all' );
+		$explicit_id          = Request::bool( $request, 'mds_explicit_id' );
+		$shortcode_id         = Request::positive_int( $request, 'mds_shortcode_id' );
 		$requested_banner_ids = [];
 
 		if ( $requested_bid > 0 && ( $is_ajax_request || $explicit_bid_request ) && ! $list_show_all ) {
@@ -473,7 +566,7 @@ class Ajax {
 
 		$context = [
 			'requested_bid'         => $requested_bid,
-			'request'               => $_REQUEST,
+			'request'               => $request,
 			'is_ajax_request'       => $is_ajax_request,
 			'explicit_bid_request'  => $explicit_bid_request,
 			'list_show_all'         => $list_show_all,
@@ -746,7 +839,7 @@ class Ajax {
 		$alt_text_trim = wp_strip_all_tags( $alt_text );
 		$alt_text_trim = str_replace( [ "'", '"' ], '', $alt_text_trim );
 
-		$url = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' ) ?: '';
+		$url = Url::advertiser_url( carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' ) ?: '' );
 
 		$data_values = [
 			'aid'       => $ad_id,

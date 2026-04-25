@@ -32,24 +32,32 @@ class FileValidator {
      * Validate uploaded file for security
      *
      * @param array $file $_FILES entry
+     * @param bool $require_uploaded_file Whether tmp_name must pass is_uploaded_file().
      * @return array Validation result with 'valid' boolean and 'error' message
      */
-    public static function validate_image_upload( $file ): array {
+    public static function validate_image_upload( $file, bool $require_uploaded_file = true ): array {
         $result = ['valid' => false, 'error' => ''];
 
         // Check if file was uploaded
-        if ( ! isset( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+        if ( ! isset( $file['tmp_name'] ) || ( $require_uploaded_file && ! is_uploaded_file( $file['tmp_name'] ) ) || ! is_readable( $file['tmp_name'] ) ) {
             $result['error'] = 'Invalid file upload.';
             return $result;
         }
 
+        $max_upload_size = self::get_max_upload_size();
+        $file_size       = isset( $file['size'] ) && is_numeric( $file['size'] ) ? (int) $file['size'] : 0;
+
         // Check file size
-        if ( $file['size'] > self::MAX_FILE_SIZE ) {
-            $result['error'] = 'File size exceeds limit (5MB maximum).';
+        if ( $file_size > $max_upload_size ) {
+            $formatted_limit = function_exists( 'size_format' ) ? size_format( $max_upload_size ) : ( $max_upload_size . ' bytes' );
+            $result['error'] = sprintf(
+                'File size exceeds limit (%s maximum).',
+                $formatted_limit
+            );
             return $result;
         }
 
-        if ( $file['size'] === 0 ) {
+        if ( $file_size === 0 ) {
             $result['error'] = 'Empty file not allowed.';
             return $result;
         }
@@ -60,6 +68,17 @@ class FileValidator {
         
         if ( empty( $extension ) ) {
             $result['error'] = 'File must have an extension.';
+            return $result;
+        }
+
+        $wp_filetype = self::check_wordpress_filetype( $file['tmp_name'], $filename );
+        if ( empty( $wp_filetype['ext'] ) || empty( $wp_filetype['type'] ) ) {
+            $result['error'] = 'Invalid file type. Only JPEG, PNG, and GIF images are allowed.';
+            return $result;
+        }
+
+        if ( $extension !== strtolower( $wp_filetype['ext'] ) && ! ( 'jpg' === $extension && 'jpeg' === strtolower( $wp_filetype['ext'] ) ) ) {
+            $result['error'] = 'File extension does not match the detected image type.';
             return $result;
         }
 
@@ -99,6 +118,44 @@ class FileValidator {
 
         $result['valid'] = true;
         return $result;
+    }
+
+    private static function get_max_upload_size(): int {
+        $wp_limit = function_exists( 'wp_max_upload_size' ) ? (int) wp_max_upload_size() : 0;
+
+        if ( $wp_limit > 0 ) {
+            return min( self::MAX_FILE_SIZE, $wp_limit );
+        }
+
+        return self::MAX_FILE_SIZE;
+    }
+
+    private static function check_wordpress_filetype( string $tmp_name, string $filename ): array {
+        if ( ! function_exists( 'wp_check_filetype_and_ext' ) && defined( 'ABSPATH' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        $allowed_mimes = [
+            'jpg|jpeg' => 'image/jpeg',
+            'png'      => 'image/png',
+            'gif'      => 'image/gif',
+        ];
+
+        if ( function_exists( 'wp_check_filetype_and_ext' ) ) {
+            return wp_check_filetype_and_ext( $tmp_name, $filename, $allowed_mimes );
+        }
+
+        $extension = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+        foreach ( self::ALLOWED_IMAGE_TYPES as $mime => $extensions ) {
+            if ( in_array( $extension, $extensions, true ) ) {
+                return [
+                    'ext'  => $extension,
+                    'type' => $mime,
+                ];
+            }
+        }
+
+        return [];
     }
 
     /**
