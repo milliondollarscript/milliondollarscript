@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.60-alpha.1 - 2026-05-11
+### Chore
+
+- checkpoint MDS2 admin compatibility updates
+
+
+### Fixed
+
+- harden MDS2 extension handling
+
+- improve MDS3 tandem compatibility
+
+
 ## 2.6.57-alpha.1 - 2026-04-25
 ### Added
 
