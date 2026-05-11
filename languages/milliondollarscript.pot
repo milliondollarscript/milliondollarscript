@@ -12,8 +12,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-03 00:07:17\n"
-"PO-Revision-Date: 2026-05-03 00:07:17\n"
+"POT-Creation-Date: 2026-05-11 02:18:58\n"
+"PO-Revision-Date: 2026-05-11 02:18:58\n"
 "X-Generator: Million Dollar Script Two 3.0.0\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
@@ -988,6 +988,9 @@ msgid "Validation completed: %d pages checked, %d still valid, %d invalid pages 
 msgstr ""
 
 msgid "An error occurred during validation: "
+msgstr ""
+
+msgid "Permission denied."
 msgstr ""
 
 msgid "Sorry, you are not allowed to access this page."
@@ -2814,9 +2817,6 @@ msgstr ""
 msgid "Logging disabled."
 msgstr ""
 
-msgid "Permission denied."
-msgstr ""
-
 msgid "Failed to update logging setting."
 msgstr ""
 
@@ -2829,7 +2829,208 @@ msgstr ""
 msgid "Could not open log file for reading."
 msgstr ""
 
+msgid "Account"
+msgstr ""
+
+msgid "License Status"
+msgstr ""
+
+msgid "Add your license key on the System tab to enable premium downloads and updates."
+msgstr ""
+
+msgid "Open System tab"
+msgstr ""
+
+msgid "License Key (masked)"
+msgstr ""
+
+msgid "Expires At"
+msgstr ""
+
+msgid "No license details found for the configured license key."
+msgstr ""
+
+msgid "Error: "
+msgstr ""
+
+msgid "Manage Subscription"
+msgstr ""
+
+msgid "Customer portal is not configured. Ensure your Extension Server URL is set on the System tab."
+msgstr ""
+
+msgid "Pixels Awaiting Approval"
+msgstr ""
+
+msgid "Approved Pixels"
+msgstr ""
+
+msgid "Here you can approve or disapprove pixels that have been ordered by your users."
+msgstr ""
+
+msgid "Change Grid"
+msgstr ""
+
+msgid "Select bulk action"
+msgstr ""
+
+msgid "Bulk Actions"
+msgstr ""
+
+msgid "Approve"
+msgstr ""
+
+msgid "Disapprove"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "%s items"
+msgstr ""
+
+msgid "Select All"
+msgstr ""
+
+msgid "Ad ID"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Block Count"
+msgstr ""
+
+msgid "Block Coordinates"
+msgstr ""
+
+msgid "Payment Status"
+msgstr ""
+
+msgid "Select %s"
+msgstr ""
+
+msgid "No Image"
+msgstr ""
+
+msgid "No orders found matching your criteria."
+msgstr ""
+
+msgid "Million Dollar Script Logo"
+msgstr ""
+
+msgid "Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience."
+msgstr ""
+
+msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
+msgstr ""
+
+msgid "Need to create or configure pages? Use the <a href=\"%s\">Setup Wizard</a> (the wrench icon in the menu above) to get started quickly."
+msgstr ""
+
+msgid "Last Updated: %s"
+msgstr ""
+
+msgid "Last Updated: N/A"
+msgstr ""
+
+msgid "GMT: %s"
+msgstr ""
+
+msgid "Server: %s"
+msgstr ""
+
+msgid "Local: %s"
+msgstr ""
+
+msgid "Customer Accounts"
+msgstr ""
+
+msgid "Orders Waiting"
+msgstr ""
+
+msgid "Orders Cancelled"
+msgstr ""
+
+msgid "Orders Denied"
+msgstr ""
+
+msgid "Orders Completed"
+msgstr ""
+
+msgid "Pixels Waiting for approval"
+msgstr ""
+
+msgid "Credits"
+msgstr ""
+
+msgid "Ryan Rhode - Developer"
+msgstr ""
+
+msgid "Adam Malinowski - Project Founder"
+msgstr ""
+
+msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
+msgstr ""
+
+msgid "Discover Extensions"
+msgstr ""
+
+msgid "Supercharge Million Dollar Script with powerful add-ons for custom fields, translations, analytics, automation, and more."
+msgstr ""
+
+msgid "Explore Extensions"
+msgstr ""
+
+msgid "Premium Installation Service"
+msgstr ""
+
+msgid "The premium installation service handles full plugin setup and configuration for you."
+msgstr ""
+
+msgid "Learn More About The Installation Service"
+msgstr ""
+
+msgid "Custom Development Services"
+msgstr ""
+
+msgid "Want custom features or integrations?<br>The development team can help."
+msgstr ""
+
+msgid "Get Custom Development"
+msgstr ""
+
+msgid "Want Reliable Hosting?"
+msgstr ""
+
+msgid "Hostinger offers fast, affordable hosting for your MDS site."
+msgstr ""
+
+msgid "Check out Hostinger Deals"
+msgstr ""
+
+msgid "Million Dollar Script v%s"
+msgstr ""
+
+msgid "Database v%s"
+msgstr ""
+
+msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3.<br>See %s for license information."
+msgstr ""
+
 msgid "Success!"
+msgstr ""
+
+msgid "Error!"
+msgstr ""
+
+msgid "Reset!"
+msgstr ""
+
+msgid "This will unselect all Not For Sale blocks. Are you sure you want to do this?"
+msgstr ""
+
+msgid "You haven't made any changes to save!"
 msgstr ""
 
 msgid "Error:"
@@ -2839,9 +3040,6 @@ msgid "Saving settings..."
 msgstr ""
 
 msgid "Completing setup..."
-msgstr ""
-
-msgid "Million Dollar Script Logo"
 msgstr ""
 
 msgid "Welcome"
@@ -2874,9 +3072,6 @@ msgstr ""
 msgid "Need Professional Installation?"
 msgstr ""
 
-msgid "Premium Installation Service"
-msgstr ""
-
 msgid "Want a hassle-free setup by the plugin developer? Our premium installation service includes:"
 msgstr ""
 
@@ -2898,9 +3093,6 @@ msgstr ""
 msgid "Learn More About Our Installation Service"
 msgstr ""
 
-msgid "Custom Development Services"
-msgstr ""
-
 msgid "Need custom features or integrations? Our development team can help:"
 msgstr ""
 
@@ -2916,16 +3108,10 @@ msgstr ""
 msgid "Transparent pricing and timeline"
 msgstr ""
 
-msgid "Get Custom Development"
-msgstr ""
-
 msgid "Need Reliable Hosting?"
 msgstr ""
 
 msgid "Power your Million Dollar Script site with fast, affordable hosting. Hostinger offers great performance and value, perfect for getting your pixel grid online."
-msgstr ""
-
-msgid "Check out Hostinger Deals"
 msgstr ""
 
 msgid "Skip Wizard"
@@ -3084,91 +3270,7 @@ msgstr ""
 msgid "Setup wizard completed successfully!"
 msgstr ""
 
-msgid "Account"
-msgstr ""
-
-msgid "License Status"
-msgstr ""
-
-msgid "Add your license key on the System tab to enable premium downloads and updates."
-msgstr ""
-
-msgid "Open System tab"
-msgstr ""
-
-msgid "License Key (masked)"
-msgstr ""
-
-msgid "Expires At"
-msgstr ""
-
-msgid "No license details found for the configured license key."
-msgstr ""
-
-msgid "Error: "
-msgstr ""
-
-msgid "Manage Subscription"
-msgstr ""
-
-msgid "Customer portal is not configured. Ensure your Extension Server URL is set on the System tab."
-msgstr ""
-
-msgid "Pixels Awaiting Approval"
-msgstr ""
-
-msgid "Approved Pixels"
-msgstr ""
-
-msgid "Here you can approve or disapprove pixels that have been ordered by your users."
-msgstr ""
-
-msgid "Change Grid"
-msgstr ""
-
-msgid "Select bulk action"
-msgstr ""
-
-msgid "Bulk Actions"
-msgstr ""
-
-msgid "Approve"
-msgstr ""
-
-msgid "Disapprove"
-msgstr ""
-
-msgid "Apply"
-msgstr ""
-
-msgid "%s items"
-msgstr ""
-
-msgid "Select All"
-msgstr ""
-
-msgid "Ad ID"
-msgstr ""
-
-msgid "Username"
-msgstr ""
-
-msgid "Block Count"
-msgstr ""
-
-msgid "Block Coordinates"
-msgstr ""
-
-msgid "Payment Status"
-msgstr ""
-
-msgid "Select %s"
-msgstr ""
-
-msgid "No Image"
-msgstr ""
-
-msgid "No orders found matching your criteria."
+msgid "Security Error"
 msgstr ""
 
 msgid "A valid license is required to check for updates."
@@ -3486,19 +3588,22 @@ msgstr ""
 msgid "PHP ZipArchive extension is missing on the server. This is required to install extensions. Please ask your hosting provider or system administrator to install/enable it."
 msgstr ""
 
+msgid "Could not initialize WordPress filesystem. Check filesystem permissions."
+msgstr ""
+
+msgid "WP Filesystem not available for writing temporary package."
+msgstr ""
+
+msgid "Failed to retrieve package data from download URL: "
+msgstr ""
+
 msgid "Failed to retrieve package data from download URL. Response code: "
 msgstr ""
 
 msgid "Could not create temporary file for extension package."
 msgstr ""
 
-msgid "WP Filesystem not available for writing temporary package."
-msgstr ""
-
-msgid "Could not write package data to temporary file: "
-msgstr ""
-
-msgid "WP Filesystem not available for post-installation directory rename."
+msgid "Could not write package data to temporary file."
 msgstr ""
 
 msgid "Failed to delete existing directory at expected plugin path."
@@ -3513,7 +3618,10 @@ msgstr ""
 msgid "Upgrader returned an unexpected result and no specific errors were reported by the skin."
 msgstr ""
 
-msgid "POST_INSTALL_ERROR: Installation seemed to succeed, but the plugin file could not be located using slug: "
+msgid "Installation seemed to succeed, but the plugin file could not be located using slug: "
+msgstr ""
+
+msgid "Upgrader messages: "
 msgstr ""
 
 msgid "Extension installed but failed to activate: "
@@ -3574,105 +3682,6 @@ msgid "Failed to cancel subscription."
 msgstr ""
 
 msgid "Auto-renew canceled."
-msgstr ""
-
-msgid "Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience."
-msgstr ""
-
-msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
-msgstr ""
-
-msgid "Need to create or configure pages? Use the <a href=\"%s\">Setup Wizard</a> (the wrench icon in the menu above) to get started quickly."
-msgstr ""
-
-msgid "Last Updated: %s"
-msgstr ""
-
-msgid "Last Updated: N/A"
-msgstr ""
-
-msgid "GMT: %s"
-msgstr ""
-
-msgid "Server: %s"
-msgstr ""
-
-msgid "Local: %s"
-msgstr ""
-
-msgid "Customer Accounts"
-msgstr ""
-
-msgid "Orders Waiting"
-msgstr ""
-
-msgid "Orders Cancelled"
-msgstr ""
-
-msgid "Orders Denied"
-msgstr ""
-
-msgid "Orders Completed"
-msgstr ""
-
-msgid "Pixels Waiting for approval"
-msgstr ""
-
-msgid "Credits"
-msgstr ""
-
-msgid "Ryan Rhode - Developer"
-msgstr ""
-
-msgid "Adam Malinowski - Project Founder"
-msgstr ""
-
-msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
-msgstr ""
-
-msgid "Discover Extensions"
-msgstr ""
-
-msgid "Supercharge Million Dollar Script with powerful add-ons for custom fields, translations, analytics, automation, and more."
-msgstr ""
-
-msgid "Explore Extensions"
-msgstr ""
-
-msgid "The premium installation service handles full plugin setup and configuration for you."
-msgstr ""
-
-msgid "Learn More About The Installation Service"
-msgstr ""
-
-msgid "Want custom features or integrations?<br>The development team can help."
-msgstr ""
-
-msgid "Want Reliable Hosting?"
-msgstr ""
-
-msgid "Hostinger offers fast, affordable hosting for your MDS site."
-msgstr ""
-
-msgid "Million Dollar Script v%s"
-msgstr ""
-
-msgid "Database v%s"
-msgstr ""
-
-msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3.<br>See %s for license information."
-msgstr ""
-
-msgid "Error!"
-msgstr ""
-
-msgid "Reset!"
-msgstr ""
-
-msgid "This will unselect all Not For Sale blocks. Are you sure you want to do this?"
-msgstr ""
-
-msgid "You haven't made any changes to save!"
 msgstr ""
 
 msgid "Error: You must be logged in to view this page"

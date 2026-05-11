@@ -8,8 +8,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint ."
+    "test": "php tests/standalone/stabilization_helpers_test.php",
+    "lint": "eslint src/Assets/js src/Core/js src/Core/admin/js eslint.config.js"
   },
   "repository": {
     "type": "git",

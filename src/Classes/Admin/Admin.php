@@ -47,6 +47,10 @@ class Admin {
 	public static function update_language(): void {
 		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ], 403 );
+		}
+
 		$plugin_folder = plugin_dir_path( MDS_BASE_FILE );
 		$scanner       = new LanguageScanner( $plugin_folder );
 		$scanner->scan_files();
