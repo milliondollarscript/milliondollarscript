@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.6.63-alpha.1 - 2026-05-28
+### Fixed
+
+- center action button icons
+
+- display frontend upload errors
+
+- load order scripts from order contexts
+
+
 ## 2.6.60-alpha.1 - 2026-05-11
 ### Chore
 
