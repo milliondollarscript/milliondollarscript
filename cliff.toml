@@ -24,6 +24,10 @@ message = "^chore\\(release\\)"
 skip = true
 
 [[git.commit_parsers]]
+message = "^ci\\(release\\)"
+skip = true
+
+[[git.commit_parsers]]
 message = "^feat"
 group = "Added"
 

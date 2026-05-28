@@ -2,9 +2,9 @@
 
 namespace MillionDollarScript\Classes\System;
 
-use YahnisElsts\PluginUpdateChecker\v5p6\Plugin\PluginInfo;
-use YahnisElsts\PluginUpdateChecker\v5p6\Plugin\Update as PluginUpdate;
-use YahnisElsts\PluginUpdateChecker\v5p6\Plugin\UpdateChecker as PluginUpdateChecker;
+use YahnisElsts\PluginUpdateChecker\v5p7\Plugin\PluginInfo;
+use YahnisElsts\PluginUpdateChecker\v5p7\Plugin\Update as PluginUpdate;
+use YahnisElsts\PluginUpdateChecker\v5p7\Plugin\UpdateChecker as PluginUpdateChecker;
 
 defined( 'ABSPATH' ) or exit;
 

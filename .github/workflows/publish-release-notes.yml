@@ -54,13 +54,46 @@ jobs:
           with open(changelog_path, "r", encoding="utf-8") as fh:
               changelog = fh.read()
 
-          # Allow CRLF/LF and tolerate optional date suffix on heading
-          pattern = rf"^##\s+{re.escape(version)}[^\n]*\r?\n(?P<body>.*?)(?=^##\s+|\Z)"
-          match = re.search(pattern, changelog, flags=re.MULTILINE | re.DOTALL)
-          if not match:
+          def heading_version(line):
+              match = re.match(r"^##\s+([^\s]+)(?:\s+-.*)?\s*$", line)
+              return match.group(1) if match else None
+
+          def base_version(value):
+              return re.sub(r"-(?:alpha|beta)\.\d+$", "", value)
+
+          lines = changelog.splitlines()
+          body_lines = []
+          in_target = False
+          found_target = False
+
+          for line in lines:
+              current_heading = heading_version(line)
+              if current_heading:
+                  if current_heading == version:
+                      in_target = True
+                      found_target = True
+                      body_lines = []
+                      continue
+
+                  if in_target:
+                      body = "\n".join(body_lines).strip()
+                      if body:
+                          break
+
+                      # Older generated beta changelogs could contain an empty
+                      # beta heading followed by the sibling alpha notes.
+                      if base_version(current_heading) == base_version(version):
+                          continue
+
+                      break
+
+              if in_target:
+                  body_lines.append(line)
+
+          if not found_target:
               raise SystemExit(f"Could not find changelog entry for version '{version}'")
 
-          body = match.group("body").strip()
+          body = "\n".join(body_lines).strip()
           if not body:
               raise SystemExit(f"Changelog entry for version '{version}' is empty")
 
