@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.6.64-alpha.1 - 2026-05-28
+### Fixed
+
+- use bundled plugin update checker version
+
+### CI
+
+- update release notes actions
+
+
 ## 2.6.63-alpha.1 - 2026-05-28
 ### Fixed
 
