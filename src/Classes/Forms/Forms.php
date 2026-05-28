@@ -823,31 +823,33 @@ class Forms {
 				if ( isset( $_FILES['blend_image'] ) && isset( $_FILES['blend_image']['tmp_name'] ) && $_FILES['blend_image']['tmp_name'] != '' && $_FILES['blend_image']['error'] === UPLOAD_ERR_OK ) {
 					$BID = isset( $_POST['BID'] ) ? intval( $_POST['BID'] ) : 0; // Get BID from POST
 
-					// Check MIME type
-					$finfo = finfo_open( FILEINFO_MIME_TYPE );
-					$mime_type = finfo_file( $finfo, $_FILES['blend_image']['tmp_name'] );
-					finfo_close( $finfo );
+					$validation = \MillionDollarScript\Classes\System\FileValidator::validate_image_upload( $_FILES['blend_image'] );
+					$mime_type  = $validation['valid'] ? mime_content_type( $_FILES['blend_image']['tmp_name'] ) : '';
+					$extensions = [
+						'image/jpeg' => 'jpg',
+						'image/png'  => 'png',
+						'image/gif'  => 'gif',
+					];
 
-					$allowed_mime_types = [ 'image/png', 'image/jpeg', 'image/gif' ];
-
-					if ( ! in_array( $mime_type, $allowed_mime_types ) ) {
-						// Add error message? For now, just redirect.
-						$params['upload_error'] = 'invalid_type'; // Changed error code
+					if ( ! $validation['valid'] || ! isset( $extensions[ $mime_type ] ) || $BID <= 0 ) {
+						$params['upload_error'] = 'invalid_type';
 					} else {
-						// Generate a safe filename using the BID and the original extension
-						$extension = pathinfo($_FILES['blend_image']['name'], PATHINFO_EXTENSION);
-						$new_filename = "background{$BID}." . strtolower($extension);
-						$upload_path = Utility::get_upload_path() . "grids/";
+						$new_filename = 'background' . $BID . '.' . $extensions[ $mime_type ];
+						$upload_path   = Utility::get_upload_path() . 'grids/';
+
+						if ( ! is_dir( $upload_path ) ) {
+							wp_mkdir_p( $upload_path );
+						}
 
 						// Remove any existing background file for this grid (regardless of extension)
-						$existing_files = glob($upload_path . "background{$BID}.*");
-						if ($existing_files) {
-							foreach ($existing_files as $existing_file) {
-								unlink($existing_file);
+						$existing_files = glob( $upload_path . "background{$BID}.*" );
+						if ( $existing_files ) {
+							foreach ( $existing_files as $existing_file ) {
+								wp_delete_file( $existing_file );
 							}
 						}
 
-						if ( move_uploaded_file( $_FILES['blend_image']['tmp_name'], $upload_path . $new_filename ) ) {
+						if ( is_dir( $upload_path ) && move_uploaded_file( $_FILES['blend_image']['tmp_name'], $upload_path . $new_filename ) ) {
 							$params['upload_success'] = 'true';
 						} else {
 							$params['upload_error'] = 'failed_move';

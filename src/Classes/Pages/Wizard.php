@@ -141,7 +141,7 @@ class Wizard {
         ?>
         <div class="mds-main-page milliondollarscript mds-wizard">
             <div class="milliondollarscript-fire">
-                <canvas id="milliondollarscript-fire"></canvas>
+                <canvas id="milliondollarscript-fire" data-particle-src="<?php echo esc_url(MDS_BASE_URL . 'src/Assets/images/spark.png'); ?>"></canvas>
 
                 <div class="milliondollarscript-header">
                     <img src="<?php echo esc_url(MDS_BASE_URL . 'src/Assets/images/milliondollarscript-transparent.png'); ?>" class="milliondollarscript-logo" alt="<?php Language::out('Million Dollar Script Logo'); ?>" />
@@ -250,7 +250,7 @@ class Wizard {
         </div>
         
         <div class="mds-wizard-navigation">
-            <a href="<?php echo esc_url(admin_url('admin.php?page=milliondollarscript')); ?>" class="button"><?php echo Language::get('Skip Wizard'); ?></a>
+            <a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&mds-skip-wizard=1' ), 'mds_skip_wizard', 'mds_skip_wizard_nonce' ) ); ?>" class="button"><?php echo Language::get('Skip Wizard'); ?></a>
             <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE_SLUG . '&step=pages')); ?>" class="button button-primary"><?php echo Language::get('Let\'s Go!'); ?></a>
         </div>
         <?php
@@ -672,6 +672,15 @@ class Wizard {
         
         // Handle wizard skip from URL
         if (isset($_GET['mds-skip-wizard']) && $_GET['mds-skip-wizard'] === '1') {
+            if ( ! current_user_can( 'manage_options' ) ) {
+                wp_die( esc_html( Language::get( 'You do not have permission to perform this action.' ) ), esc_html( Language::get( 'Permission denied.' ) ), [ 'response' => 403 ] );
+            }
+
+            $nonce = isset( $_GET['mds_skip_wizard_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['mds_skip_wizard_nonce'] ) ) : '';
+            if ( ! wp_verify_nonce( $nonce, 'mds_skip_wizard' ) ) {
+                wp_die( esc_html( Language::get( 'Security check failed.' ) ), esc_html( Language::get( 'Security Error' ) ), [ 'response' => 403 ] );
+            }
+
             update_option(self::OPTION_NAME_WIZARD_COMPLETE, true);
             wp_safe_redirect(admin_url('admin.php?page=milliondollarscript&wizard-skipped=1'));
             exit;

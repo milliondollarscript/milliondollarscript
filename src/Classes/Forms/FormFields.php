@@ -37,6 +37,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\System\Url;
 use MillionDollarScript\Classes\Web\Permalinks;
 use WP_Error;
 
@@ -543,6 +544,9 @@ class FormFields {
 									$value = self::sanitize_plain_text_value( $value, $field_name );
 								}
 								$value = self::filter_field_value( $field_name, $value, $field_type, (int) $post_id, $raw_value );
+								if ( $field_name === MDS_PREFIX . 'url' ) {
+									$value = Url::advertiser_url( $value );
+								}
 							}
 							carbon_set_post_meta( $post_id, $field_name, $value );
 							}
@@ -556,7 +560,7 @@ class FormFields {
 								] );
 							} else if ( $field_name == MDS_PREFIX . 'url' ) {
 								$wpdb->update( MDS_DB_PREFIX . 'blocks', [
-									'url' => esc_url_raw( $value ), // Ensure URL is properly sanitized
+									'url' => Url::advertiser_url( $value ),
 								], [
 									'ad_id' => $post_id
 								] );
@@ -804,7 +808,7 @@ class FormFields {
 					$value = $field->get_value();
 					if ( is_string( $value ) ) {
 						$value = self::normalize_raw_input( $value );
-						$value = esc_url_raw( $value );
+						$value = Url::advertiser_url( $value );
 					}
 					$field->set_value( $value );
 					break;

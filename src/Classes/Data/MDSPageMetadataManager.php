@@ -706,7 +706,7 @@ class MDSPageMetadataManager {
         } else {
             // Check if this page should have MDS metadata
             $detection_result = $this->detection_engine->detectMDSPage( $post_id );
-            if ( $detection_result['is_mds_page'] ) {
+            if ( $detection_result['is_mds_page'] && !empty( $detection_result['page_type'] ) ) {
                 $this->createOrUpdateMetadata(
                     $post_id,
                     $detection_result['page_type'],
@@ -1044,4 +1044,4 @@ class MDSPageMetadataManager {
         
         return $this->repository->save( $metadata );
     }
-} 
+}

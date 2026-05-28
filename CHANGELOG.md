@@ -1,7 +1,56 @@
 # Changelog
 
-## 2.6.51-beta.1 - 2026-02-09
-## 2.6.51-beta.1
+## 2.6.63-alpha.1 - 2026-05-28
+### Fixed
+
+- center action button icons
+
+- display frontend upload errors
+
+- load order scripts from order contexts
+
+
+## 2.6.60-alpha.1 - 2026-05-11
+### Chore
+
+- checkpoint MDS2 admin compatibility updates
+
+
+### Fixed
+
+- harden MDS2 extension handling
+
+- improve MDS3 tandem compatibility
+
+
+## 2.6.57-alpha.1 - 2026-04-25
+### Added
+
+- add migration readiness report
+
+
+### Chore
+
+- refresh alpha maintenance tooling locks
+
+- bump flatted
+
+- remove vendor/ from git tracking
+
+
+### Fixed
+
+- harden request urls tracking and uploads
+
+- update minimatch to 3.1.5 to resolve Dependabot alert #6
+
+
+### Performance
+
+- reduce regeneration memory pressure
+
+
+## 2.6.51-alpha.1
 
 
 ### Chore
@@ -9,8 +58,13 @@
 - bump version to 2.6.51 and update tested up to 6.9.1
 
 
-## 2.6.48-beta.1 - 2026-02-09
-## 2.6.48-beta.1
+## 2.6.51-alpha.1 - 2026-02-09
+## 2.6.51-alpha.1
+
+
+### Chore
+
+- bump version to 2.6.51 and update tested up to 6.9.1
 
 
 ## 2.6.48-alpha.1 - 2026-02-09
@@ -795,7 +849,7 @@
 
 - Set line-height on grid-inner element to 1 to ensure proper grid height.
 
-- Resolve merge conflicts from dev branch stash
+- Resolve merge conflicts from temporary branch stash
 
 - Use global 'auto-resize' option for conditional image sizing in output_grid and get_order_image
 
@@ -1012,5 +1066,4 @@
 ### Security
 
 - Resolve admin grid selection redirect issue and security check failure on Packages page
-
 

@@ -28,6 +28,7 @@
 
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\System\Url;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -48,7 +49,7 @@ function render_map_area( $fh, $data, $b_row ) {
 	}
 
 	if ( Options::get_option('enable-cloaking') == 'YES' ) {
-		$url = $data['url'];
+		$url = Url::advertiser_url( $data['url'] ?? '' );
 	} else {
 		// build click URL with query args
 		$url = Utility::get_page_url(
@@ -114,8 +115,6 @@ function process_map( $BID, $map_file = '' ) {
 		[ 'published' => 'N' ],
 		[ 'status' => 'expired' ],
 	);
-
-	$sql = "SELECT * FROM `" . MDS_DB_PREFIX . "banners` WHERE `banner_id`=? ";
 
 	$b_row = $wpdb->get_row(
 		$wpdb->prepare(
@@ -204,7 +203,7 @@ GROUP BY y, x, block_id, ad_id, alt_text, image_data";
 
 			$results2 = $wpdb->get_results(
 				$wpdb->prepare(
-					$sql,
+					$sql_i,
 					intval( $BID ),
 					intval( $row['order_id'] ),
 				),
@@ -238,7 +237,7 @@ WHERE (published = 'Y')
 
 					$results3 = $wpdb->get_results(
 						$wpdb->prepare(
-							$sql,
+							$sql_r,
 							intval( $BID ),
 							intval( $row['order_id'] ),
 							intval( $row_i['y1'] ),

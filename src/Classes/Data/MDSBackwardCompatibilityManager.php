@@ -911,7 +911,7 @@ class MDSBackwardCompatibilityManager {
         // Check if this page might be an MDS page
         $detection_result = $this->detection_engine->detectMDSPage( $post_id );
         
-        if ( $detection_result['is_mds_page'] ) {
+        if ( $detection_result['is_mds_page'] && !empty( $detection_result['page_type'] ) ) {
             // Update or create metadata
             if ( $this->metadata_manager->hasMetadata( $post_id ) ) {
                 $this->metadata_manager->createOrUpdateMetadata( $post_id, $detection_result['page_type'], 'auto_detected', [] );
