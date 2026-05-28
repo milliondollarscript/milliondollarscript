@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.64 - 2026-05-28
+### Fixed
+
+- use bundled plugin update checker version
+
+
 ## 2.6.63 - 2026-05-28
 ### Fixed
 
