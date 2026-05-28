@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.61\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.62\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-28 14:09:06\n"
-"PO-Revision-Date: 2026-05-28 14:09:06\n"
-"X-Generator: Million Dollar Script Two 2.6.61\n"
+"POT-Creation-Date: 2026-05-28 14:16:04\n"
+"PO-Revision-Date: 2026-05-28 14:16:04\n"
+"X-Generator: Million Dollar Script Two 2.6.62\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -1227,6 +1227,78 @@ msgstr ""
 msgid "Failed to migrate page %d (%s): %s"
 msgstr ""
 
+msgid "MDS Page Management System has detected pages that need to be migrated to the new metadata system."
+msgstr ""
+
+msgid "Run Migration"
+msgstr ""
+
+msgid "Dismiss"
+msgstr ""
+
+msgid "Compatibility"
+msgstr ""
+
+msgid "Migration completed successfully!"
+msgstr ""
+
+msgid "Total pages"
+msgstr ""
+
+msgid "Migrated pages"
+msgstr ""
+
+msgid "Skipped pages"
+msgstr ""
+
+msgid "Failed pages"
+msgstr ""
+
+msgid "Failed to save metadata for page %d: %s"
+msgstr ""
+
+msgid "Error validating page %d: %s"
+msgstr ""
+
+msgid "Missing MDS shortcode"
+msgstr ""
+
+msgid "This page should contain an MDS shortcode but none was found"
+msgstr ""
+
+msgid "Missing MDS block"
+msgstr ""
+
+msgid "This page should contain an MDS block but none was found"
+msgstr ""
+
+msgid "This page is registered as type \"%s\" but appears to be type \"%s\"."
+msgstr ""
+
+msgid "Not an MDS page"
+msgstr ""
+
+msgid "This page does not appear to be an MDS page, but it is in the MDS page list."
+msgstr ""
+
+msgid "Remove this page from the MDS page list."
+msgstr ""
+
+msgid "There are %d orphaned MDS pages in your database. <a href=\"%s\">Clean them up</a>."
+msgstr ""
+
+msgid "Post no longer exists"
+msgstr ""
+
+msgid "Page no longer contains MDS content"
+msgstr ""
+
+msgid "Grid page missing grid size configuration"
+msgstr ""
+
+msgid "Order page missing payment methods configuration"
+msgstr ""
+
 msgid "URLs & Redirects"
 msgstr ""
 
@@ -2110,78 +2182,6 @@ msgid "Your Pixels"
 msgstr ""
 
 msgid "Checkout"
-msgstr ""
-
-msgid "MDS Page Management System has detected pages that need to be migrated to the new metadata system."
-msgstr ""
-
-msgid "Run Migration"
-msgstr ""
-
-msgid "Dismiss"
-msgstr ""
-
-msgid "Compatibility"
-msgstr ""
-
-msgid "Migration completed successfully!"
-msgstr ""
-
-msgid "Total pages"
-msgstr ""
-
-msgid "Migrated pages"
-msgstr ""
-
-msgid "Skipped pages"
-msgstr ""
-
-msgid "Failed pages"
-msgstr ""
-
-msgid "Failed to save metadata for page %d: %s"
-msgstr ""
-
-msgid "Error validating page %d: %s"
-msgstr ""
-
-msgid "Missing MDS shortcode"
-msgstr ""
-
-msgid "This page should contain an MDS shortcode but none was found"
-msgstr ""
-
-msgid "Missing MDS block"
-msgstr ""
-
-msgid "This page should contain an MDS block but none was found"
-msgstr ""
-
-msgid "This page is registered as type \"%s\" but appears to be type \"%s\"."
-msgstr ""
-
-msgid "Not an MDS page"
-msgstr ""
-
-msgid "This page does not appear to be an MDS page, but it is in the MDS page list."
-msgstr ""
-
-msgid "Remove this page from the MDS page list."
-msgstr ""
-
-msgid "There are %d orphaned MDS pages in your database. <a href=\"%s\">Clean them up</a>."
-msgstr ""
-
-msgid "Post no longer exists"
-msgstr ""
-
-msgid "Page no longer contains MDS content"
-msgstr ""
-
-msgid "Grid page missing grid size configuration"
-msgstr ""
-
-msgid "Order page missing payment methods configuration"
 msgstr ""
 
 msgid "Order Confirmed"
