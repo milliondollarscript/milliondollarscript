@@ -8,24 +8,24 @@ use MillionDollarScript\Classes\System\Utility;
 /**
  * Helper class to manage plugin update checker integration.
  *
- * Supports both the legacy pre-namespaced PUC classes (v5.5) and the modern
- * namespaced release (v5.6+).
+ * Supports the legacy pre-namespaced PUC classes (v5.5) and compatible
+ * namespaced PUC releases that may already be loaded while WordPress updates
+ * plugins.
  */
 class PluginUpdateCheckerHelper {
     private const LEGACY_CHECKER_CLASS = 'Puc_v5p5_Vcs_PluginUpdateChecker';
     private const LEGACY_API_CLASS = 'Puc_v5p5_Vcs_Api';
-    private const MODERN_CHECKER_CLASS = '\YahnisElsts\PluginUpdateChecker\v5p6\Vcs\PluginUpdateChecker';
-    private const MODERN_API_CLASS = '\YahnisElsts\PluginUpdateChecker\v5p6\Vcs\Api';
+    private const MODERN_PUC_VERSIONS = [ 'v5p7', 'v5p6' ];
 
     /**
      * Determine if we can use the plugin update checker library.
      */
     public static function init(): bool {
-        if (class_exists(self::LEGACY_CHECKER_CLASS) && class_exists(self::LEGACY_API_CLASS)) {
+        if (self::getModernClassPair() !== null) {
             return true;
         }
 
-        if (class_exists(self::MODERN_CHECKER_CLASS) && class_exists(self::MODERN_API_CLASS)) {
+        if (class_exists(self::LEGACY_CHECKER_CLASS) && class_exists(self::LEGACY_API_CLASS)) {
             return true;
         }
 
@@ -40,18 +40,21 @@ class PluginUpdateCheckerHelper {
             return null;
         }
 
-        if (class_exists(self::LEGACY_CHECKER_CLASS)) {
-            return new \Puc_v5p5_Vcs_PluginUpdateChecker($api, $pluginFile, $slug, $checkPeriod, $optionName);
-        }
+        $modernClasses = self::getModernClassPair();
+        if ($modernClasses !== null) {
+            $checkerClass = $modernClasses['checker'];
 
-        if (class_exists(self::MODERN_CHECKER_CLASS)) {
-            return new \YahnisElsts\PluginUpdateChecker\v5p6\Vcs\PluginUpdateChecker(
+            return new $checkerClass(
                 $api,
                 $pluginFile,
                 $slug,
                 $checkPeriod,
                 $optionName
             );
+        }
+
+        if (class_exists(self::LEGACY_CHECKER_CLASS)) {
+            return new \Puc_v5p5_Vcs_PluginUpdateChecker($api, $pluginFile, $slug, $checkPeriod, $optionName);
         }
 
         return null;
@@ -67,6 +70,126 @@ class PluginUpdateCheckerHelper {
 
         $serverUrl = rtrim($serverUrl, '/');
         $pluginSlug = self::determinePluginSlug($extensionId, $pluginFile);
+
+        if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p7\Vcs\Api')) {
+            return new class($serverUrl, $extensionId, $currentVersion, $licenseKey, $pluginFile, $pluginSlug) extends \YahnisElsts\PluginUpdateChecker\v5p7\Vcs\Api {
+                private $serverUrl;
+                private $extensionId;
+                private $currentVersion;
+                private $licenseKey;
+                private $pluginFile;
+                private $pluginSlug;
+
+                public function __construct(string $serverUrl, string $extensionId, string $currentVersion, string $licenseKey, string $pluginFile, string $pluginSlug) {
+                    parent::__construct($serverUrl);
+                    $this->serverUrl = $serverUrl;
+                    $this->extensionId = $extensionId;
+                    $this->currentVersion = $currentVersion;
+                    $this->licenseKey = $licenseKey;
+                    $this->pluginFile = $pluginFile;
+                    $this->pluginSlug = $pluginSlug;
+                }
+
+                public function getUpdate() {
+                    return $this->checkForUpdate();
+                }
+
+                public function checkForUpdate() {
+                    return PluginUpdateCheckerHelper::requestUpdate(
+                        $this->serverUrl,
+                        $this->extensionId,
+                        $this->currentVersion,
+                        $this->licenseKey,
+                        $this->pluginFile,
+                        $this->pluginSlug
+                    );
+                }
+
+                protected function getUpdateDetectionStrategies($configBranch) {
+                    return [];
+                }
+
+                public function getBranch($branchName) {
+                    return null;
+                }
+
+                public function getTag($tagName) {
+                    return null;
+                }
+
+                public function getLatestTag() {
+                    return null;
+                }
+
+                public function getRemoteFile($path, $ref = 'master') {
+                    return null;
+                }
+
+                public function getLatestCommitTime($ref) {
+                    return null;
+                }
+            };
+        }
+
+        if (class_exists('\YahnisElsts\PluginUpdateChecker\v5p6\Vcs\Api')) {
+            return new class($serverUrl, $extensionId, $currentVersion, $licenseKey, $pluginFile, $pluginSlug) extends \YahnisElsts\PluginUpdateChecker\v5p6\Vcs\Api {
+                private $serverUrl;
+                private $extensionId;
+                private $currentVersion;
+                private $licenseKey;
+                private $pluginFile;
+                private $pluginSlug;
+
+                public function __construct(string $serverUrl, string $extensionId, string $currentVersion, string $licenseKey, string $pluginFile, string $pluginSlug) {
+                    parent::__construct($serverUrl);
+                    $this->serverUrl = $serverUrl;
+                    $this->extensionId = $extensionId;
+                    $this->currentVersion = $currentVersion;
+                    $this->licenseKey = $licenseKey;
+                    $this->pluginFile = $pluginFile;
+                    $this->pluginSlug = $pluginSlug;
+                }
+
+                public function getUpdate() {
+                    return $this->checkForUpdate();
+                }
+
+                public function checkForUpdate() {
+                    return PluginUpdateCheckerHelper::requestUpdate(
+                        $this->serverUrl,
+                        $this->extensionId,
+                        $this->currentVersion,
+                        $this->licenseKey,
+                        $this->pluginFile,
+                        $this->pluginSlug
+                    );
+                }
+
+                protected function getUpdateDetectionStrategies($configBranch) {
+                    return [];
+                }
+
+                public function getBranch($branchName) {
+                    return null;
+                }
+
+                public function getTag($tagName) {
+                    return null;
+                }
+
+                public function getLatestTag() {
+                    return null;
+                }
+
+                public function getRemoteFile($path, $ref = 'master') {
+                    return null;
+                }
+
+                public function getLatestCommitTime($ref) {
+                    return null;
+                }
+            };
+        }
 
         if (class_exists(self::LEGACY_API_CLASS)) {
             return new class($serverUrl, $extensionId, $currentVersion, $licenseKey, $pluginFile, $pluginSlug) extends \Puc_v5p5_Vcs_Api {
@@ -126,64 +249,23 @@ class PluginUpdateCheckerHelper {
             };
         }
 
-        if (class_exists(self::MODERN_API_CLASS)) {
-            return new class($serverUrl, $extensionId, $currentVersion, $licenseKey, $pluginFile, $pluginSlug) extends \YahnisElsts\PluginUpdateChecker\v5p6\Vcs\Api {
-                private $serverUrl;
-                private $extensionId;
-                private $currentVersion;
-                private $licenseKey;
-                private $pluginFile;
-                private $pluginSlug;
+        return null;
+    }
 
-                public function __construct(string $serverUrl, string $extensionId, string $currentVersion, string $licenseKey, string $pluginFile, string $pluginSlug) {
-                    parent::__construct($serverUrl);
-                    $this->serverUrl = $serverUrl;
-                    $this->extensionId = $extensionId;
-                    $this->currentVersion = $currentVersion;
-                    $this->licenseKey = $licenseKey;
-                    $this->pluginFile = $pluginFile;
-                    $this->pluginSlug = $pluginSlug;
-                }
+    /**
+     * Get the newest compatible namespaced PUC checker/API pair that is loaded.
+     */
+    private static function getModernClassPair(): ?array {
+        foreach (self::MODERN_PUC_VERSIONS as $version) {
+            $checkerClass = '\\YahnisElsts\\PluginUpdateChecker\\' . $version . '\\Vcs\\PluginUpdateChecker';
+            $apiClass = '\\YahnisElsts\\PluginUpdateChecker\\' . $version . '\\Vcs\\Api';
 
-                public function getUpdate() {
-                    return $this->checkForUpdate();
-                }
-
-                public function checkForUpdate() {
-                    return PluginUpdateCheckerHelper::requestUpdate(
-                        $this->serverUrl,
-                        $this->extensionId,
-                        $this->currentVersion,
-                        $this->licenseKey,
-                        $this->pluginFile,
-                        $this->pluginSlug
-                    );
-                }
-
-                protected function getUpdateDetectionStrategies($configBranch) {
-                    return [];
-                }
-
-                public function getBranch($branchName) {
-                    return null;
-                }
-
-                public function getTag($tagName) {
-                    return null;
-                }
-
-                public function getLatestTag() {
-                    return null;
-                }
-
-                public function getRemoteFile($path, $ref = 'master') {
-                    return null;
-                }
-
-                public function getLatestCommitTime($ref) {
-                    return null;
-                }
-            };
+            if (class_exists($checkerClass) && class_exists($apiClass)) {
+                return [
+                    'checker' => $checkerClass,
+                    'api' => $apiClass,
+                ];
+            }
         }
 
         return null;
