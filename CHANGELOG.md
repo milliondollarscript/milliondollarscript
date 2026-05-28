@@ -1,5 +1,78 @@
 # Changelog
 
+## 2.6.63 - 2026-05-28
+### Fixed
+
+- center action button icons
+
+- display frontend upload errors
+
+- load order scripts from order contexts
+
+
+## 2.6.60-alpha.1
+
+
+### Chore
+
+- checkpoint MDS2 admin compatibility updates
+
+
+### Fixed
+
+- harden MDS2 extension handling
+
+- improve MDS3 tandem compatibility
+
+
+## 2.6.57-alpha.1
+
+
+### Added
+
+- add migration readiness report
+
+
+### Chore
+
+- refresh alpha maintenance tooling locks
+
+- bump flatted
+
+- remove vendor/ from git tracking
+
+
+### Fixed
+
+- harden request urls tracking and uploads
+
+- update minimatch to 3.1.5 to resolve Dependabot alert #6
+
+
+### Performance
+
+- reduce regeneration memory pressure
+
+
+## 2.6.51-alpha.1
+
+
+### Chore
+
+- bump version to 2.6.51 and update tested up to 6.9.1
+
+- bump flatted
+
+- remove vendor/ from git tracking
+
+
+### Fixed
+
+- update minimatch to 3.1.5 to resolve Dependabot alert #6
+
+- remove duplicate changelog headings causing empty latest release
+
+
 ## 2.6.63-alpha.1 - 2026-05-28
 ### Fixed
 
