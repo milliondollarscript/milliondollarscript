@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.62\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.63\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-28 14:16:04\n"
-"PO-Revision-Date: 2026-05-28 14:16:04\n"
-"X-Generator: Million Dollar Script Two 2.6.62\n"
+"POT-Creation-Date: 2026-05-28 15:12:29\n"
+"PO-Revision-Date: 2026-05-28 15:12:29\n"
+"X-Generator: Million Dollar Script Two 2.6.63\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -3033,246 +3033,6 @@ msgstr ""
 msgid "You haven't made any changes to save!"
 msgstr ""
 
-msgid "Error:"
-msgstr ""
-
-msgid "Saving settings..."
-msgstr ""
-
-msgid "Completing setup..."
-msgstr ""
-
-msgid "Welcome"
-msgstr ""
-
-msgid "Basic Settings"
-msgstr ""
-
-msgid "Complete"
-msgstr ""
-
-msgid "Welcome to Million Dollar Script!"
-msgstr ""
-
-msgid "This wizard will guide you through setting up your Million Dollar Script installation. We'll help you:"
-msgstr ""
-
-msgid "Create necessary pages for your site"
-msgstr ""
-
-msgid "Configure basic settings"
-msgstr ""
-
-msgid "Get started with your Million Dollar Script website"
-msgstr ""
-
-msgid "This wizard is optional. You can skip it and configure everything manually through the plugin settings."
-msgstr ""
-
-msgid "Need Professional Installation?"
-msgstr ""
-
-msgid "Want a hassle-free setup by the plugin developer? Our premium installation service includes:"
-msgstr ""
-
-msgid "Complete Million Dollar Script installation and configuration"
-msgstr ""
-
-msgid "WordPress installation (or use your existing install)"
-msgstr ""
-
-msgid "Optional WooCommerce integration"
-msgstr ""
-
-msgid "Optional Divi theme integration"
-msgstr ""
-
-msgid "Free bug fixes and support"
-msgstr ""
-
-msgid "Learn More About Our Installation Service"
-msgstr ""
-
-msgid "Need custom features or integrations? Our development team can help:"
-msgstr ""
-
-msgid "Custom features tailored to your business needs"
-msgstr ""
-
-msgid "Integration with other platforms and services"
-msgstr ""
-
-msgid "Expert development by the plugin creator"
-msgstr ""
-
-msgid "Transparent pricing and timeline"
-msgstr ""
-
-msgid "Need Reliable Hosting?"
-msgstr ""
-
-msgid "Power your Million Dollar Script site with fast, affordable hosting. Hostinger offers great performance and value, perfect for getting your pixel grid online."
-msgstr ""
-
-msgid "Skip Wizard"
-msgstr ""
-
-msgid "Let's Go!"
-msgstr ""
-
-msgid "Million Dollar Script requires several WordPress pages to function correctly. A shortcode will be inserted into the pages. Click the button below to automatically create these pages:"
-msgstr ""
-
-msgid "Grid Page"
-msgstr ""
-
-msgid "Displays your pixel grid"
-msgstr ""
-
-msgid "For processing orders"
-msgstr ""
-
-msgid "Write Ad Page"
-msgstr ""
-
-msgid "For writing ads"
-msgstr ""
-
-msgid "Confirm Order Page"
-msgstr ""
-
-msgid "For confirming orders"
-msgstr ""
-
-msgid "Payment Page"
-msgstr ""
-
-msgid "For payment processing"
-msgstr ""
-
-msgid "Checkout Page"
-msgstr ""
-
-msgid "For checkout process"
-msgstr ""
-
-msgid "Manage Page"
-msgstr ""
-
-msgid "For managing orders"
-msgstr ""
-
-msgid "Thank-You Page"
-msgstr ""
-
-msgid "For thanking users"
-msgstr ""
-
-msgid "Upload Page"
-msgstr ""
-
-msgid "Shown when the user uploads their image"
-msgstr ""
-
-msgid "No Orders Page"
-msgstr ""
-
-msgid "Shown when the user has no orders yet"
-msgstr ""
-
-msgid "To add the main grid or order pages to your site's navigation, you'll need to edit your menu.<br>Learn how: <a href=\"%WP_MENU_URL%\" target=\"_blank\">WordPress Menus</a>. If using a block theme, see <a href=\"%FSE_URL%\" target=\"_blank\">Full Site Editing</a>."
-msgstr ""
-
-msgid "Back"
-msgstr ""
-
-msgid "Skip This Step"
-msgstr ""
-
-msgid "Configure the following basic settings for your Million Dollar Script installation:"
-msgstr ""
-
-msgid "Simple - Better for beginners"
-msgstr ""
-
-msgid "Advanced - More options for users"
-msgstr ""
-
-msgid "Choose how users will select pixels on your grid."
-msgstr ""
-
-msgid "Price Per Pixel"
-msgstr ""
-
-msgid "Set the default price per pixel."
-msgstr ""
-
-msgid "Grid Width"
-msgstr ""
-
-msgid "Width of the pixel grid in pixels."
-msgstr ""
-
-msgid "Grid Height"
-msgstr ""
-
-msgid "Height of the pixel grid in pixels."
-msgstr ""
-
-msgid "Enable WooCommerce Integration"
-msgstr ""
-
-msgid "Use WooCommerce for handling payments and pixel orders."
-msgstr ""
-
-msgid "Save Settings"
-msgstr ""
-
-msgid "Setup Complete!"
-msgstr ""
-
-msgid "Congratulations! You have successfully set up Million Dollar Script. Your website is now ready to accept pixel orders and start generating revenue."
-msgstr ""
-
-msgid "What's Next?"
-msgstr ""
-
-msgid "Cusotmize your grid in the Grid Management section"
-msgstr ""
-
-msgid "Customize your pixel blocks to match your branding"
-msgstr ""
-
-msgid "Set up payment gateways to start accepting orders"
-msgstr ""
-
-msgid "Promote your Million Dollar Script website to potential customers"
-msgstr ""
-
-msgid "Enhance Your Million Dollar Script Experience"
-msgstr ""
-
-msgid "Go to Dashboard"
-msgstr ""
-
-msgid "Failed to create pages: "
-msgstr ""
-
-msgid "You do not have permission to perform this action."
-msgstr ""
-
-msgid "Settings saved successfully!"
-msgstr ""
-
-msgid "Error saving settings. Please try again or configure them manually from the Options page."
-msgstr ""
-
-msgid "Setup wizard completed successfully!"
-msgstr ""
-
-msgid "Security Error"
-msgstr ""
-
 msgid "A valid license is required to check for updates."
 msgstr ""
 
@@ -3684,6 +3444,246 @@ msgstr ""
 msgid "Auto-renew canceled."
 msgstr ""
 
+msgid "Error:"
+msgstr ""
+
+msgid "Saving settings..."
+msgstr ""
+
+msgid "Completing setup..."
+msgstr ""
+
+msgid "Welcome"
+msgstr ""
+
+msgid "Basic Settings"
+msgstr ""
+
+msgid "Complete"
+msgstr ""
+
+msgid "Welcome to Million Dollar Script!"
+msgstr ""
+
+msgid "This wizard will guide you through setting up your Million Dollar Script installation. We'll help you:"
+msgstr ""
+
+msgid "Create necessary pages for your site"
+msgstr ""
+
+msgid "Configure basic settings"
+msgstr ""
+
+msgid "Get started with your Million Dollar Script website"
+msgstr ""
+
+msgid "This wizard is optional. You can skip it and configure everything manually through the plugin settings."
+msgstr ""
+
+msgid "Need Professional Installation?"
+msgstr ""
+
+msgid "Want a hassle-free setup by the plugin developer? Our premium installation service includes:"
+msgstr ""
+
+msgid "Complete Million Dollar Script installation and configuration"
+msgstr ""
+
+msgid "WordPress installation (or use your existing install)"
+msgstr ""
+
+msgid "Optional WooCommerce integration"
+msgstr ""
+
+msgid "Optional Divi theme integration"
+msgstr ""
+
+msgid "Free bug fixes and support"
+msgstr ""
+
+msgid "Learn More About Our Installation Service"
+msgstr ""
+
+msgid "Need custom features or integrations? Our development team can help:"
+msgstr ""
+
+msgid "Custom features tailored to your business needs"
+msgstr ""
+
+msgid "Integration with other platforms and services"
+msgstr ""
+
+msgid "Expert development by the plugin creator"
+msgstr ""
+
+msgid "Transparent pricing and timeline"
+msgstr ""
+
+msgid "Need Reliable Hosting?"
+msgstr ""
+
+msgid "Power your Million Dollar Script site with fast, affordable hosting. Hostinger offers great performance and value, perfect for getting your pixel grid online."
+msgstr ""
+
+msgid "Skip Wizard"
+msgstr ""
+
+msgid "Let's Go!"
+msgstr ""
+
+msgid "Million Dollar Script requires several WordPress pages to function correctly. A shortcode will be inserted into the pages. Click the button below to automatically create these pages:"
+msgstr ""
+
+msgid "Grid Page"
+msgstr ""
+
+msgid "Displays your pixel grid"
+msgstr ""
+
+msgid "For processing orders"
+msgstr ""
+
+msgid "Write Ad Page"
+msgstr ""
+
+msgid "For writing ads"
+msgstr ""
+
+msgid "Confirm Order Page"
+msgstr ""
+
+msgid "For confirming orders"
+msgstr ""
+
+msgid "Payment Page"
+msgstr ""
+
+msgid "For payment processing"
+msgstr ""
+
+msgid "Checkout Page"
+msgstr ""
+
+msgid "For checkout process"
+msgstr ""
+
+msgid "Manage Page"
+msgstr ""
+
+msgid "For managing orders"
+msgstr ""
+
+msgid "Thank-You Page"
+msgstr ""
+
+msgid "For thanking users"
+msgstr ""
+
+msgid "Upload Page"
+msgstr ""
+
+msgid "Shown when the user uploads their image"
+msgstr ""
+
+msgid "No Orders Page"
+msgstr ""
+
+msgid "Shown when the user has no orders yet"
+msgstr ""
+
+msgid "To add the main grid or order pages to your site's navigation, you'll need to edit your menu.<br>Learn how: <a href=\"%WP_MENU_URL%\" target=\"_blank\">WordPress Menus</a>. If using a block theme, see <a href=\"%FSE_URL%\" target=\"_blank\">Full Site Editing</a>."
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Skip This Step"
+msgstr ""
+
+msgid "Configure the following basic settings for your Million Dollar Script installation:"
+msgstr ""
+
+msgid "Simple - Better for beginners"
+msgstr ""
+
+msgid "Advanced - More options for users"
+msgstr ""
+
+msgid "Choose how users will select pixels on your grid."
+msgstr ""
+
+msgid "Price Per Pixel"
+msgstr ""
+
+msgid "Set the default price per pixel."
+msgstr ""
+
+msgid "Grid Width"
+msgstr ""
+
+msgid "Width of the pixel grid in pixels."
+msgstr ""
+
+msgid "Grid Height"
+msgstr ""
+
+msgid "Height of the pixel grid in pixels."
+msgstr ""
+
+msgid "Enable WooCommerce Integration"
+msgstr ""
+
+msgid "Use WooCommerce for handling payments and pixel orders."
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "Setup Complete!"
+msgstr ""
+
+msgid "Congratulations! You have successfully set up Million Dollar Script. Your website is now ready to accept pixel orders and start generating revenue."
+msgstr ""
+
+msgid "What's Next?"
+msgstr ""
+
+msgid "Cusotmize your grid in the Grid Management section"
+msgstr ""
+
+msgid "Customize your pixel blocks to match your branding"
+msgstr ""
+
+msgid "Set up payment gateways to start accepting orders"
+msgstr ""
+
+msgid "Promote your Million Dollar Script website to potential customers"
+msgstr ""
+
+msgid "Enhance Your Million Dollar Script Experience"
+msgstr ""
+
+msgid "Go to Dashboard"
+msgstr ""
+
+msgid "Failed to create pages: "
+msgstr ""
+
+msgid "You do not have permission to perform this action."
+msgstr ""
+
+msgid "Settings saved successfully!"
+msgstr ""
+
+msgid "Error saving settings. Please try again or configure them manually from the Options page."
+msgstr ""
+
+msgid "Setup wizard completed successfully!"
+msgstr ""
+
+msgid "Security Error"
+msgstr ""
+
 msgid "Error: You must be logged in to view this page"
 msgstr ""
 
@@ -3933,6 +3933,78 @@ msgstr ""
 msgid "Views"
 msgstr ""
 
+msgid "Background image uploaded successfully."
+msgstr ""
+
+msgid "Error uploading background image."
+msgstr ""
+
+msgid "Error: the image must be a PNG file."
+msgstr ""
+
+msgid "Error: Invalid file type. Please upload a PNG, JPG, or GIF image."
+msgstr ""
+
+msgid "Error: Could not save the uploaded file."
+msgstr ""
+
+msgid "Background image deleted successfully."
+msgstr ""
+
+msgid "Error deleting background image."
+msgstr ""
+
+msgid "Error: Could not delete the file."
+msgstr ""
+
+msgid "Error: File not found."
+msgstr ""
+
+msgid "Error: Invalid grid ID."
+msgstr ""
+
+msgid "Background opacity saved successfully."
+msgstr ""
+
+msgid "Image Blending"
+msgstr ""
+
+msgid "Allows you to specify an image to blend in with your grid in the background.<br />\n<ul>\n<li>Upload a PNG, JPG, or GIF image.</li>\n<li>Use the slider below to control the opacity (transparency) of the background image.</li>\n</ul>"
+msgstr ""
+
+msgid "Remember to process your Grid Image(s) <a href=\"%PROCESS_PIXELS_URL%\">here</a>"
+msgstr ""
+
+msgid "Upload <b>Image (PNG, JPG, GIF)</b> to blend:"
+msgstr ""
+
+msgid "(Maximum upload size possible:"
+msgstr ""
+
+msgid "Background Opacity:"
+msgstr ""
+
+msgid "Save Opacity"
+msgstr ""
+
+msgid "Selected Grid:"
+msgstr ""
+
+msgid "Check Completed."
+msgstr ""
+
+msgid "Packages"
+msgstr ""
+
+msgid "Packages allow you to group pixels together and define the pricing and duration options available for purchasing pixels on a specific grid."
+msgstr ""
+
+msgid "Listing rows that are marked as custom price."
+msgstr ""
+
+msgid "Manage Refund (WooCommerce)"
+msgstr ""
+
 msgid "Million Dollar Script logo"
 msgstr ""
 
@@ -3943,9 +4015,6 @@ msgid "Pixel Management"
 msgstr ""
 
 msgid "Grids"
-msgstr ""
-
-msgid "Packages"
 msgstr ""
 
 msgid "Price Zones"
@@ -4017,72 +4086,6 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-msgid "Background image uploaded successfully."
-msgstr ""
-
-msgid "Error uploading background image."
-msgstr ""
-
-msgid "Error: the image must be a PNG file."
-msgstr ""
-
-msgid "Error: Invalid file type. Please upload a PNG, JPG, or GIF image."
-msgstr ""
-
-msgid "Error: Could not save the uploaded file."
-msgstr ""
-
-msgid "Background image deleted successfully."
-msgstr ""
-
-msgid "Error deleting background image."
-msgstr ""
-
-msgid "Error: Could not delete the file."
-msgstr ""
-
-msgid "Error: File not found."
-msgstr ""
-
-msgid "Error: Invalid grid ID."
-msgstr ""
-
-msgid "Background opacity saved successfully."
-msgstr ""
-
-msgid "Image Blending"
-msgstr ""
-
-msgid "Allows you to specify an image to blend in with your grid in the background.<br />\n<ul>\n<li>Upload a PNG, JPG, or GIF image.</li>\n<li>Use the slider below to control the opacity (transparency) of the background image.</li>\n</ul>"
-msgstr ""
-
-msgid "Remember to process your Grid Image(s) <a href=\"%PROCESS_PIXELS_URL%\">here</a>"
-msgstr ""
-
-msgid "Upload <b>Image (PNG, JPG, GIF)</b> to blend:"
-msgstr ""
-
-msgid "(Maximum upload size possible:"
-msgstr ""
-
-msgid "Background Opacity:"
-msgstr ""
-
-msgid "Save Opacity"
-msgstr ""
-
-msgid "Selected Grid:"
-msgstr ""
-
-msgid "Check Completed."
-msgstr ""
-
-msgid "Packages allow you to group pixels together and define the pricing and duration options available for purchasing pixels on a specific grid."
-msgstr ""
-
-msgid "Listing rows that are marked as custom price."
-msgstr ""
-
 msgid "Grid regeneration was not started. Review the large-grid warning below and confirm before processing these grids."
 msgstr ""
 
@@ -4090,9 +4093,6 @@ msgid "Successfully processed [COUNT] grid(s)."
 msgstr ""
 
 msgid "Error processing grids: "
-msgstr ""
-
-msgid "Manage Refund (WooCommerce)"
 msgstr ""
 
 msgid "Price Options"
@@ -4150,6 +4150,15 @@ msgid "From column"
 msgstr ""
 
 msgid "To column"
+msgstr ""
+
+msgid "Today!"
+msgstr ""
+
+msgid "Day ago"
+msgstr ""
+
+msgid "Days ago"
 msgstr ""
 
 msgid "ERROR: Cannot save your ad for the following reasons: "
@@ -4213,15 +4222,6 @@ msgid "Could not read image dimensions after conversion. File might be corrupted
 msgstr ""
 
 msgid "Image processing failed: %ERROR%"
-msgstr ""
-
-msgid "Today!"
-msgstr ""
-
-msgid "Day ago"
-msgstr ""
-
-msgid "Days ago"
 msgstr ""
 
 msgid "The upload image file is empty."

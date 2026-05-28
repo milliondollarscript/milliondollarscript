@@ -1,7 +1,7 @@
 {
     "name": "milliondollarscript/milliondollarscript-two",
     "description": "A WordPress plugin with Million Dollar Script 2.x embedded in it.",
-    "version": "2.6.63",
+    "version": "2.6.64",
     "keywords": [
         "million dollar script",
         "pixel advertising",
@@ -45,7 +45,7 @@
         "php": ">=8.1",
         "composer/installers": "^2.3",
         "htmlburger/carbon-fields": "^3.6",
-        "yahnis-elsts/plugin-update-checker": "^5.6",
+        "yahnis-elsts/plugin-update-checker": "^5.7",
         "imagine/imagine": "^1.5",
         "nikic/php-parser": "^5.6",
         "ext-mysqli": "*",
