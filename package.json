@@ -8,7 +8,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "php tests/standalone/stabilization_helpers_test.php",
+    "test": "php tests/standalone/stabilization_helpers_test.php && php tests/standalone/frontend_assets_test.php",
     "lint": "eslint src/Assets/js src/Core/js src/Core/admin/js eslint.config.js"
   },
   "repository": {

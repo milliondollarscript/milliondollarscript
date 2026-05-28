@@ -43,6 +43,7 @@ defined( 'ABSPATH' ) or exit;
 
 class Functions {
 	private static ?string $tooltips;
+	private static array $localized_order_scripts = [];
 
 	public static function get_script_data(): array {
 		// global $f2;
@@ -74,10 +75,10 @@ class Functions {
 		];
 	}
 
-	public static function get_select_data(): array {
+	public static function get_select_data( ?int $banner_id = null ): array {
 
 		global $f2, $wpdb;
-		$BID = $f2->bid();
+		$BID = $banner_id && $banner_id > 0 ? $f2->bid( $banner_id ) : $f2->bid();
 
 		if ( ! is_numeric( $BID ) ) {
 			die();
@@ -141,7 +142,7 @@ class Functions {
 			'no_blocks_selected'   => Language::get( 'You have no blocks selected.' ),
 			'MDS_CORE_URL'         => esc_url( MDS_CORE_URL ),
 			'INVERT_PIXELS'        => Options::get_option( 'invert-pixels' ),
-'WAIT'                 => Language::get( 'Please Wait! Reserving Pixels...' ),
+			'WAIT'                 => Language::get( 'Please Wait! Reserving Pixels...' ),
 			'selection_adjacency_mode' => Options::get_option( 'selection-adjacency-mode', 'ADJACENT' ),
 		];
 	}
@@ -149,93 +150,61 @@ class Functions {
 	/**
 	 * Register scripts and styles
 	 */
-	public static function register_scripts(): void {
-		if ( wp_script_is( 'mds' ) ) {
-			return;
-		}
+	public static function register_scripts( mixed $shortcode_atts = null ): void {
+		$shortcode_atts = is_array( $shortcode_atts ) ? $shortcode_atts : null;
 
-		wp_register_style( 'mds', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
+		if ( ! wp_style_is( 'mds', 'registered' ) ) {
+			wp_register_style( 'mds', MDS_BASE_URL . 'src/Assets/css/mds.css', [], filemtime( MDS_BASE_PATH . 'src/Assets/css/mds.css' ) );
+		}
 
 		self::$tooltips = Options::get_option( 'enable-mouseover' );
 		if ( self::$tooltips == 'POPUP' ) {
-			wp_register_script( 'popper', MDS_CORE_URL . 'js/third-party/popper.min.js', [], filemtime( MDS_CORE_PATH . 'js/third-party/popper.min.js' ), true );
-			wp_register_script( 'tippy', MDS_CORE_URL . 'js/third-party/tippy-bundle.umd.min.js', [ 'popper' ], filemtime( MDS_CORE_PATH . 'js/third-party/tippy-bundle.umd.min.js' ), true );
-			wp_register_style( 'tippy-light', MDS_CORE_URL . 'css/tippy/light.css', [], filemtime( MDS_CORE_PATH . 'css/tippy/light.css' ) );
+			if ( ! wp_script_is( 'popper', 'registered' ) ) {
+				wp_register_script( 'popper', MDS_CORE_URL . 'js/third-party/popper.min.js', [], filemtime( MDS_CORE_PATH . 'js/third-party/popper.min.js' ), true );
+			}
+			if ( ! wp_script_is( 'tippy', 'registered' ) ) {
+				wp_register_script( 'tippy', MDS_CORE_URL . 'js/third-party/tippy-bundle.umd.min.js', [ 'popper' ], filemtime( MDS_CORE_PATH . 'js/third-party/tippy-bundle.umd.min.js' ), true );
+			}
+			if ( ! wp_style_is( 'tippy-light', 'registered' ) ) {
+				wp_register_style( 'tippy-light', MDS_CORE_URL . 'css/tippy/light.css', [], filemtime( MDS_CORE_PATH . 'css/tippy/light.css' ) );
+			}
 			$deps = [ 'jquery', 'tippy' ];
 		} else {
 			$deps = [];
 		}
 
-		wp_register_script( 'image-scale', MDS_CORE_URL . 'js/third-party/image-scale.min.js', $deps, filemtime( MDS_CORE_PATH . 'js/third-party/image-scale.min.js' ), true );
-		wp_register_script( 'image-map', MDS_CORE_URL . 'js/third-party/image-map.min.js', [ 'image-scale' ], filemtime( MDS_CORE_PATH . 'js/third-party/image-map.min.js' ), true );
-		wp_register_script( 'contact', MDS_CORE_URL . 'js/third-party/contact.nomodule.min.js', [ 'image-map' ], filemtime( MDS_CORE_PATH . 'js/third-party/contact.nomodule.min.js' ), true );
-
-		wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.min.js', [
-			'jquery',
-			'contact',
-			'image-scale',
-			'image-map',
-			'wp-hooks'
-		], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
-		wp_localize_script( 'mds', 'MDS', self::get_script_data() );
-
-		$order_script  = "";
-		$data_function = "";
-
-		$register_order_script = false;
-
-		global $post;
-
-		if ( isset( $post ) && $post->ID == Options::get_option( 'users-order-page' ) ) {
-			$register_order_script = true;
-		} elseif ( isset( $post ) ) {
-			// Check new metadata system for order pages
-			$metadata_manager = MDSPageMetadataManager::getInstance();
-			$metadata = $metadata_manager->getMetadata( $post->ID );
-			if ( $metadata && $metadata->page_type === 'order' ) {
-				$register_order_script = true;
-			}
-		} else {
-			global $wp_query;
-			$MDS_ENDPOINT = Options::get_option( 'endpoint', 'milliondollarscript' );
-			if ( isset( $wp_query->query_vars[ $MDS_ENDPOINT ] ) ) {
-				$page = $wp_query->query_vars[ $MDS_ENDPOINT ];
-				if ( $page == 'order' ) {
-					$register_order_script = true;
-				}
-			}
+		if ( ! wp_script_is( 'image-scale', 'registered' ) ) {
+			wp_register_script( 'image-scale', MDS_CORE_URL . 'js/third-party/image-scale.min.js', $deps, filemtime( MDS_CORE_PATH . 'js/third-party/image-scale.min.js' ), true );
+		}
+		if ( ! wp_script_is( 'image-map', 'registered' ) ) {
+			wp_register_script( 'image-map', MDS_CORE_URL . 'js/third-party/image-map.min.js', [ 'image-scale' ], filemtime( MDS_CORE_PATH . 'js/third-party/image-map.min.js' ), true );
+		}
+		if ( ! wp_script_is( 'contact', 'registered' ) ) {
+			wp_register_script( 'contact', MDS_CORE_URL . 'js/third-party/contact.nomodule.min.js', [ 'image-map' ], filemtime( MDS_CORE_PATH . 'js/third-party/contact.nomodule.min.js' ), true );
 		}
 
-		if ( $register_order_script ) {
-			// select.js
-			if ( is_user_logged_in() && Options::get_option( 'use-ajax' ) == 'YES' ) {
-				$order_script  = 'select';
-				$data_function = self::get_select_data();
-			}
-
-			// order.js
-			if ( is_user_logged_in() && Options::get_option( 'use-ajax' ) == 'SIMPLE' ) {
-				$order_script  = 'order';
-				$data_function = Orders::get_order_data();
-			}
-
-			if ( ! empty( $order_script ) ) {
-				wp_register_script( 'mds-' . $order_script, MDS_CORE_URL . 'js/' . $order_script . '.min.js', [
-					'jquery',
-					'mds',
-					'contact'
-				], filemtime( MDS_CORE_PATH . 'js/' . $order_script . '.min.js' ), true );
-				wp_localize_script( 'mds-' . $order_script, 'MDS_OBJECT', $data_function );
-			}
+		if ( ! wp_script_is( 'mds', 'registered' ) ) {
+			wp_register_script( 'mds', MDS_BASE_URL . 'src/Assets/js/mds.min.js', [
+				'jquery',
+				'contact',
+				'image-scale',
+				'image-map',
+				'wp-hooks'
+			], filemtime( MDS_BASE_PATH . 'src/Assets/js/mds.min.js' ), true );
+			wp_localize_script( 'mds', 'MDS', self::get_script_data() );
 		}
+
+		self::register_order_script( $shortcode_atts );
 	}
 
 	/**
 	 * Enqueue scripts and styles
 	 */
-	public static function enqueue_scripts(): void {
+	public static function enqueue_scripts( mixed $shortcode_atts = null ): void {
+		$shortcode_atts = is_array( $shortcode_atts ) ? $shortcode_atts : null;
+
 		// Ensure scripts are registered (for admin pages)
-		self::register_scripts();
+		self::register_scripts( $shortcode_atts );
 		wp_enqueue_script( 'wp-hooks' );
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'jquery-ui-accordion' );
@@ -253,11 +222,367 @@ class Functions {
 		wp_enqueue_script( 'image-map' );
 		wp_enqueue_script( 'contact' );
 
-		wp_enqueue_script( 'mds-core' );
-
 		wp_enqueue_script( 'mds' );
-		wp_enqueue_script( 'mds-select' );
-		wp_enqueue_script( 'mds-order' );
+
+		$order_handle = self::get_order_script_handle( $shortcode_atts );
+		if ( $order_handle !== null ) {
+			wp_enqueue_script( $order_handle );
+		}
+	}
+
+	private static function register_order_script( ?array $shortcode_atts = null ): ?string {
+		$order_handle = self::get_order_script_handle( $shortcode_atts );
+		if ( $order_handle === null ) {
+			return null;
+		}
+
+		$script      = str_replace( 'mds-', '', $order_handle );
+		$context     = self::get_order_context( $shortcode_atts );
+		$banner_id   = $context['banner_id'];
+		$script_url  = MDS_CORE_URL . 'js/' . $script . '.min.js';
+		$script_path = MDS_CORE_PATH . 'js/' . $script . '.min.js';
+
+		if ( ! wp_script_is( $order_handle, 'registered' ) ) {
+			wp_register_script( $order_handle, $script_url, [
+				'jquery',
+				'mds',
+				'contact'
+			], filemtime( $script_path ), true );
+		}
+
+		$localization_key = $banner_id === null ? 'default' : (string) $banner_id;
+		if ( ( self::$localized_order_scripts[ $order_handle ] ?? null ) !== $localization_key ) {
+			$data = $script === 'select'
+				? self::get_select_data( $banner_id )
+				: Orders::get_order_data( $banner_id );
+			wp_localize_script( $order_handle, 'MDS_OBJECT', $data );
+			self::$localized_order_scripts[ $order_handle ] = $localization_key;
+		}
+
+		return $order_handle;
+	}
+
+	private static function get_order_script_handle( ?array $shortcode_atts = null ): ?string {
+		if ( ! is_user_logged_in() ) {
+			return null;
+		}
+
+		$context = self::get_order_context( $shortcode_atts );
+		if ( ! $context['is_order'] ) {
+			return null;
+		}
+
+		return match ( Options::get_option( 'use-ajax' ) ) {
+			'YES' => 'mds-select',
+			'SIMPLE' => 'mds-order',
+			default => null,
+		};
+	}
+
+	private static function get_order_context( ?array $shortcode_atts = null ): array {
+		$shortcode_context = self::get_order_context_from_atts( $shortcode_atts );
+		if ( $shortcode_context['is_order'] ) {
+			return $shortcode_context;
+		}
+
+		if ( self::is_order_endpoint() ) {
+			return [
+				'is_order'  => true,
+				'banner_id' => null,
+			];
+		}
+
+		foreach ( self::get_current_post_ids() as $post_id ) {
+			$post_context = self::get_order_context_from_post( $post_id );
+			if ( $post_context['is_order'] ) {
+				return $post_context;
+			}
+		}
+
+		return [
+			'is_order'  => false,
+			'banner_id' => null,
+		];
+	}
+
+	private static function get_order_context_from_atts( ?array $atts ): array {
+		if ( ! is_array( $atts ) ) {
+			return [
+				'is_order'  => false,
+				'banner_id' => null,
+			];
+		}
+
+		$page_type = self::get_context_page_type( $atts );
+		if ( $page_type !== 'order' ) {
+			return [
+				'is_order'  => false,
+				'banner_id' => null,
+			];
+		}
+
+		return [
+			'is_order'  => true,
+			'banner_id' => self::get_context_banner_id( $atts ),
+		];
+	}
+
+	private static function get_order_context_from_post( int $post_id ): array {
+		if ( $post_id <= 0 ) {
+			return [
+				'is_order'  => false,
+				'banner_id' => null,
+			];
+		}
+
+		$legacy_order_page_id = intval( Options::get_option( 'users-order-page' ) );
+		if ( $legacy_order_page_id > 0 && $post_id === $legacy_order_page_id ) {
+			return [
+				'is_order'  => true,
+				'banner_id' => null,
+			];
+		}
+
+		if ( function_exists( 'get_post_meta' ) ) {
+			$page_type = self::normalize_page_type( get_post_meta( $post_id, '_mds_page_type', true ) );
+			if ( $page_type === 'order' ) {
+				return [
+					'is_order'  => true,
+					'banner_id' => null,
+				];
+			}
+		}
+
+		$metadata_manager = MDSPageMetadataManager::getInstanceSafely();
+		if ( $metadata_manager !== null ) {
+			try {
+				$metadata = $metadata_manager->getMetadata( $post_id );
+				if ( $metadata && isset( $metadata->page_type ) && self::normalize_page_type( $metadata->page_type ) === 'order' ) {
+					return [
+						'is_order'  => true,
+						'banner_id' => null,
+					];
+				}
+			} catch ( \Throwable ) {
+				// Metadata lookup failures must not prevent frontend asset loading.
+			}
+		}
+
+		$post = self::get_post_for_id( $post_id );
+		if ( $post && isset( $post->post_content ) ) {
+			return self::get_order_context_from_content( (string) $post->post_content );
+		}
+
+		return [
+			'is_order'  => false,
+			'banner_id' => null,
+		];
+	}
+
+	private static function get_order_context_from_content( string $content ): array {
+		if ( $content === '' ) {
+			return [
+				'is_order'  => false,
+				'banner_id' => null,
+			];
+		}
+
+		if ( preg_match_all( '/\[(milliondollarscript|mds)\b([^\]]*)\]/i', $content, $matches, PREG_SET_ORDER ) ) {
+			foreach ( $matches as $match ) {
+				$atts = self::parse_shortcode_atts( $match[2] ?? '' );
+				$context = self::get_order_context_from_atts( $atts );
+				if ( $context['is_order'] ) {
+					return $context;
+				}
+			}
+		}
+
+		$block_context = self::get_order_context_from_blocks( $content );
+		if ( $block_context['is_order'] ) {
+			return $block_context;
+		}
+
+		return [
+			'is_order'  => false,
+			'banner_id' => null,
+		];
+	}
+
+	private static function get_order_context_from_blocks( string $content ): array {
+		if ( function_exists( 'parse_blocks' ) ) {
+			$context = self::find_order_block_context( parse_blocks( $content ) );
+			if ( $context['is_order'] ) {
+				return $context;
+			}
+		}
+
+		if ( preg_match( '/"milliondollarscript_type"\s*:\s*"order"/i', $content ) || preg_match( '/<!--\s+wp:milliondollarscript\/order(?:-block)?\b/i', $content ) ) {
+			$banner_id = null;
+			if ( preg_match( '/"milliondollarscript_id"\s*:\s*"?(\d+)"?/i', $content, $matches ) ) {
+				$banner_id = intval( $matches[1] );
+			}
+
+			return [
+				'is_order'  => true,
+				'banner_id' => $banner_id > 0 ? $banner_id : null,
+			];
+		}
+
+		return [
+			'is_order'  => false,
+			'banner_id' => null,
+		];
+	}
+
+	private static function find_order_block_context( array $blocks ): array {
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) ) {
+				continue;
+			}
+
+			$block_context = self::get_order_context_from_block( $block );
+			if ( $block_context['is_order'] ) {
+				return $block_context;
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+				$inner_context = self::find_order_block_context( $block['innerBlocks'] );
+				if ( $inner_context['is_order'] ) {
+					return $inner_context;
+				}
+			}
+		}
+
+		return [
+			'is_order'  => false,
+			'banner_id' => null,
+		];
+	}
+
+	private static function get_order_context_from_block( array $block ): array {
+		$block_name    = (string) ( $block['blockName'] ?? '' );
+		$attrs         = is_array( $block['attrs'] ?? null ) ? $block['attrs'] : [];
+		$context_attrs = is_array( $attrs['data'] ?? null ) ? $attrs['data'] : $attrs;
+		$page_type     = null;
+
+		if ( $block_name === 'carbon-fields/million-dollar-script' ) {
+			$page_type = self::get_context_page_type( $context_attrs );
+		} elseif ( preg_match( '/milliondollarscript\/(.+?)(?:-block)?$/', $block_name, $matches ) ) {
+			$page_type = self::normalize_page_type( $matches[1] );
+		}
+
+		if ( $page_type === null ) {
+			$page_type = self::get_context_page_type( $attrs );
+		}
+
+		if ( $page_type !== 'order' ) {
+			return [
+				'is_order'  => false,
+				'banner_id' => null,
+			];
+		}
+
+		return [
+			'is_order'  => true,
+			'banner_id' => self::get_context_banner_id( $context_attrs ),
+		];
+	}
+
+	private static function get_current_post_ids(): array {
+		$post_ids = [];
+
+		if ( function_exists( 'get_queried_object_id' ) ) {
+			$post_ids[] = intval( get_queried_object_id() );
+		}
+
+		global $post;
+		if ( isset( $post->ID ) ) {
+			$post_ids[] = intval( $post->ID );
+		}
+
+		return array_values( array_unique( array_filter( $post_ids ) ) );
+	}
+
+	private static function get_post_for_id( int $post_id ): ?object {
+		global $post;
+		if ( isset( $post->ID ) && intval( $post->ID ) === $post_id ) {
+			return $post;
+		}
+
+		if ( function_exists( 'get_post' ) ) {
+			$post_object = get_post( $post_id );
+			if ( is_object( $post_object ) ) {
+				return $post_object;
+			}
+		}
+
+		return null;
+	}
+
+	private static function is_order_endpoint(): bool {
+		$endpoint = Options::get_option( 'endpoint', 'milliondollarscript' );
+		$page     = null;
+
+		if ( function_exists( 'get_query_var' ) ) {
+			$page = get_query_var( $endpoint );
+		}
+
+		if ( empty( $page ) ) {
+			global $wp_query;
+			if ( isset( $wp_query->query_vars[ $endpoint ] ) ) {
+				$page = $wp_query->query_vars[ $endpoint ];
+			}
+		}
+
+		return self::normalize_page_type( $page ) === 'order';
+	}
+
+	private static function get_context_page_type( array $context ): ?string {
+		foreach ( [ 'type', 'page', 'display', 'mds_type', 'milliondollarscript_type' ] as $key ) {
+			if ( isset( $context[ $key ] ) && $context[ $key ] !== '' ) {
+				return self::normalize_page_type( $context[ $key ] );
+			}
+		}
+
+		return null;
+	}
+
+	private static function get_context_banner_id( array $context ): ?int {
+		foreach ( [ 'id', 'BID', 'bid', 'milliondollarscript_id' ] as $key ) {
+			if ( isset( $context[ $key ] ) && is_numeric( $context[ $key ] ) && intval( $context[ $key ] ) > 0 ) {
+				return intval( $context[ $key ] );
+			}
+		}
+
+		return null;
+	}
+
+	private static function normalize_page_type( mixed $value ): string {
+		$value = strtolower( trim( (string) $value ) );
+
+		if ( function_exists( 'sanitize_key' ) ) {
+			return sanitize_key( $value );
+		}
+
+		return preg_replace( '/[^a-z0-9_\-]/', '', $value ) ?: '';
+	}
+
+	private static function parse_shortcode_atts( string $text ): array {
+		if ( function_exists( 'shortcode_parse_atts' ) ) {
+			$atts = shortcode_parse_atts( $text );
+			if ( is_array( $atts ) ) {
+				return $atts;
+			}
+		}
+
+		$atts = [];
+		if ( preg_match_all( '/([\w-]+)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s\]]+))/', $text, $matches, PREG_SET_ORDER ) ) {
+			foreach ( $matches as $match ) {
+				$atts[ $match[1] ] = $match[2] !== '' ? $match[2] : ( $match[3] !== '' ? $match[3] : $match[4] );
+			}
+		}
+
+		return $atts;
 	}
 
 	public static function sanitize_array( $value ): array|string {
