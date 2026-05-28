@@ -5,16 +5,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 3.0.0\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.61\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-11 02:18:58\n"
-"PO-Revision-Date: 2026-05-11 02:18:58\n"
-"X-Generator: Million Dollar Script Two 3.0.0\n"
+"POT-Creation-Date: 2026-05-28 14:09:06\n"
+"PO-Revision-Date: 2026-05-28 14:09:06\n"
+"X-Generator: Million Dollar Script Two 2.6.61\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
 
@@ -3705,6 +3705,15 @@ msgstr ""
 msgid "Your order has been received and is pending approval. Your order will be published as soon as the payment is cleared."
 msgstr ""
 
+msgid "Invalid path: directory is outside allowed locations."
+msgstr ""
+
+msgid "Could not create directory."
+msgstr ""
+
+msgid "Could not delete directory."
+msgstr ""
+
 msgid "Please Wait..."
 msgstr ""
 
@@ -3766,15 +3775,6 @@ msgid "Edit Your Ad:"
 msgstr ""
 
 msgid "Ad Saved"
-msgstr ""
-
-msgid "Invalid path: directory is outside allowed locations."
-msgstr ""
-
-msgid "Could not create directory."
-msgstr ""
-
-msgid "Could not delete directory."
 msgstr ""
 
 msgid "Error copying file. From: %s To: %s"
@@ -4281,33 +4281,6 @@ msgstr ""
 msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
 msgstr ""
 
-msgid "Available Grids"
-msgstr ""
-
-msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a></p>"
-msgstr ""
-
-msgid "Upload your pixel image"
-msgstr ""
-
-msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
-msgstr ""
-
-msgid "<p><strong>Upload your pixels:</strong></p>"
-msgstr ""
-
-msgid "Your uploaded pixels:"
-msgstr ""
-
-msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />"
-msgstr ""
-
-msgid "Your image was automatically resized to %WIDTH%x%HEIGHT% to fit the grid constraints."
-msgstr ""
-
-msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />"
-msgstr ""
-
 msgid "<p>1. <a href=\"%ORDER_URL%?BID=%BID%\">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
 msgstr ""
 
@@ -4342,6 +4315,9 @@ msgid "<p>We are sorry, it looks like you took too long! Either your session has
 msgstr ""
 
 msgid "<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
+msgstr ""
+
+msgid "Available Grids"
 msgstr ""
 
 msgid "There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:"
@@ -4392,10 +4368,19 @@ msgstr ""
 msgid "There was an error with the image file."
 msgstr ""
 
+msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a></p>"
+msgstr ""
+
 msgid "<p>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a>.</p>"
 msgstr ""
 
+msgid "Upload your pixel image"
+msgstr ""
+
 msgid "<p>- Upload a GIF, JPEG or PNG graphics file<br/>\n- Click \"Browse\" to find your file on your computer, then click \"Upload\".<br/>\n- Once uploaded, you will be able to position your file over the grid.<br/></p>"
+msgstr ""
+
+msgid "<p><strong>Upload your pixels:</strong></p>"
 msgstr ""
 
 msgid "Your Uploaded Pixels"
@@ -4429,6 +4414,21 @@ msgid "Complete Order"
 msgstr ""
 
 msgid "Confirm & Pay"
+msgstr ""
+
+msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
+msgstr ""
+
+msgid "Your uploaded pixels:"
+msgstr ""
+
+msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />"
+msgstr ""
+
+msgid "Your image was automatically resized to %WIDTH%x%HEIGHT% to fit the grid constraints."
+msgstr ""
+
+msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />"
 msgstr ""
 
 msgid "MDS Backward Compatibility"

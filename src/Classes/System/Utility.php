@@ -974,21 +974,51 @@ class Utility {
 	}
 
 	/**
-	 * Get any error messages.
-	 * WARNING: This is not sanitized. Do not output directly to the browser.
+	 * Get a frontend error message from redirect parameters or direct processing.
 	 *
 	 * @return string|null
 	 */
 	public static function get_error(): ?string {
-		$error = null;
+		foreach ( [ 'mds_error', 'upload_error' ] as $error_key ) {
+			if ( isset( $_GET[ $error_key ] ) ) {
+				$error = self::normalize_request_error( $_GET[ $error_key ] );
+				if ( $error !== null ) {
+					return $error;
+				}
+			}
 
-		if ( isset( $_GET['mds_error'] ) ) {
-			$error = urldecode( $_GET['mds_error'] );
-		} else if ( isset( $_POST['mds_error'] ) ) {
-			$error = urldecode( $_POST['mds_error'] );
+			if ( isset( $_POST[ $error_key ] ) ) {
+				$error = self::normalize_request_error( $_POST[ $error_key ] );
+				if ( $error !== null ) {
+					return $error;
+				}
+			}
 		}
 
-		return $error;
+		global $mds_error;
+
+		if ( ! empty( $mds_error ) ) {
+			return self::normalize_request_error( $mds_error );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Normalize an error value that may have been URL encoded during redirect.
+	 *
+	 * @param mixed $value
+	 *
+	 * @return string|null
+	 */
+	private static function normalize_request_error( mixed $value ): ?string {
+		if ( is_array( $value ) ) {
+			return null;
+		}
+
+		$message = sanitize_text_field( urldecode( (string) wp_unslash( $value ) ) );
+
+		return $message !== '' ? $message : null;
 	}
 
 	/**
