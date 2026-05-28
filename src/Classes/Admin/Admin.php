@@ -47,6 +47,10 @@ class Admin {
 	public static function update_language(): void {
 		check_ajax_referer( 'mds_admin_nonce', 'nonce' );
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => Language::get( 'Permission denied.' ) ], 403 );
+		}
+
 		$plugin_folder = plugin_dir_path( MDS_BASE_FILE );
 		$scanner       = new LanguageScanner( $plugin_folder );
 		$scanner->scan_files();
@@ -57,17 +61,23 @@ class Admin {
 
 
 	public static function block_editor_scripts(): void {
+		$dependencies = [
+			'jquery',
+			'jquery-ui-core',
+			'jquery-ui-dialog',
+			'jquery-ui-button',
+			'jquery-form',
+			'wp-data',
+		];
+
+		if ( wp_script_is( 'carbon-fields-vendor', 'registered' ) || wp_script_is( 'carbon-fields-vendor', 'enqueued' ) ) {
+			$dependencies[] = 'carbon-fields-vendor';
+		}
+
 		wp_register_script(
 			MDS_PREFIX . 'admin-block-js',
 			MDS_BASE_URL . 'src/Assets/js/admin-block.min.js',
-			[
-				'jquery',
-				'jquery-ui-core',
-				'jquery-ui-dialog',
-				'jquery-ui-button',
-				'jquery-form',
-				'carbon-fields-vendor'
-			],
+			$dependencies,
 			filemtime( MDS_BASE_PATH . 'src/Assets/js/admin-block.min.js' ),
 			true
 		);
@@ -244,6 +254,7 @@ class Admin {
 				'Top Clicks',
 				'Click Reports',
 				'Main Config',
+				'Migration Readiness',
 				'System Information',
 				'License',
 				'Script Homepage',

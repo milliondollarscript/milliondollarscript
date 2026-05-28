@@ -228,18 +228,18 @@ class Options {
 						<h3>' . Language::get( 'Export & Import Color Settings' ) . '</h3>
 						<p>' . Language::get( 'Export your current color settings as a backup file or import settings from a previously saved file.' ) . '</p>
 						<div style="margin: 15px 0;">
-							<button type="button" id="mds_export_colors" class="button button-secondary" style="margin-right: 10px;">
-								<span class="dashicons dashicons-download" style="vertical-align: middle;"></span> ' . Language::get( 'Export Colors' ) . '
+							<button type="button" id="mds_export_colors" class="button button-secondary mds-admin-icon-button" style="margin-right: 10px;">
+								<span class="dashicons dashicons-download" aria-hidden="true"></span> ' . Language::get( 'Export Colors' ) . '
 							</button>
-							<button type="button" id="mds_reset_colors" class="button button-secondary" style="margin-right: 10px;">
-								<span class="dashicons dashicons-update" style="vertical-align: middle;"></span> ' . Language::get( 'Reset to Defaults' ) . '
+							<button type="button" id="mds_reset_colors" class="button button-secondary mds-admin-icon-button" style="margin-right: 10px;">
+								<span class="dashicons dashicons-update" aria-hidden="true"></span> ' . Language::get( 'Reset to Defaults' ) . '
 							</button>
 						</div>
 						<div style="margin: 15px 0;">
 							<label for="mds_import_file" style="display: block; margin-bottom: 5px; font-weight: bold;">' . Language::get( 'Import Colors:' ) . '</label>
 							<input type="file" id="mds_import_file" accept=".json" style="margin-right: 10px;">
-							<button type="button" id="mds_import_colors" class="button button-secondary" disabled>
-								<span class="dashicons dashicons-upload" style="vertical-align: middle;"></span> ' . Language::get( 'Import Colors' ) . '
+							<button type="button" id="mds_import_colors" class="button button-secondary mds-admin-icon-button" disabled>
+								<span class="dashicons dashicons-upload" aria-hidden="true"></span> ' . Language::get( 'Import Colors' ) . '
 							</button>
 						</div>
 						<p style="font-style: italic; color: #666;">' . Language::get( 'Note: Import will replace all current color settings. Make sure to export your current settings first as a backup.' ) . '</p>
@@ -1245,7 +1245,7 @@ class Options {
 						'beta'   => Language::get( 'Beta' ),
 						'alpha'  => Language::get( 'Alpha' )
 					] )
-					->set_help_text( Language::get( '<strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Stable</strong> - Production-ready releases with thoroughly tested code. Updates are checked against the "stable" release branch. Recommended for all live sites. Updates occur when new stable versions are released, typically after features have been tested in beta and deemed production-ready.<br /><br /><strong>Beta</strong> - Pre-release testing builds from the "beta" branch. These are feature-complete snapshots created periodically during development when new features are ready for testing. Lightly tested and suitable for staging environments. May contain minor bugs but generally stable.<br /><br /><strong>Alpha</strong> - Cutting-edge development builds from the "alpha" branch. This is the active development branch containing new, untested code for upcoming releases. Expect bugs and potential breaking changes. Only use this in development environments if you understand the risks. Never use on a live site.<br /><br /><span style="color: red">Always backup your files and database before updating. Test thoroughly and report any issues you find.</span>' ) ),
+						->set_help_text( Language::get( '<strong>Don\'t update</strong> - No updates will be searched for or installed for this plugin. Use this if custom changes have been made to the plugin code. Updates should be merged in manually.<br /><br /><strong>Stable</strong> - Production-ready releases with thoroughly tested code. Updates are checked against the "main" release branch. Recommended for all live sites. Updates occur when new stable versions are released, typically after features have been tested in beta and deemed production-ready.<br /><br /><strong>Beta</strong> - Pre-release testing builds from the "beta" branch. These are feature-complete snapshots created periodically during development when new features are ready for testing. Lightly tested and suitable for staging environments. May contain minor bugs but generally stable.<br /><br /><strong>Alpha</strong> - Cutting-edge development builds from the "alpha" branch. This is the active development branch containing new, untested code for upcoming releases. Expect bugs and potential breaking changes. Only use this in development environments if you understand the risks. Never use on a live site.<br /><br /><span style="color: red">Always backup your files and database before updating. Test thoroughly and report any issues you find.</span>' ) ),
 
 				// Enable Logging
 				Field::make( 'radio', MDS_PREFIX . 'log-enable', Language::get( 'Enable Logging' ) )
@@ -1483,6 +1483,13 @@ class Options {
 		if ( $page !== 'milliondollarscript_options' ) {
 			return;
 		}
+
+		wp_enqueue_style(
+			MDS_PREFIX . 'admin-options-css',
+			MDS_BASE_URL . 'src/Assets/css/admin/options.css',
+			[],
+			filemtime( MDS_BASE_PATH . 'src/Assets/css/admin/options.css' )
+		);
 
 			wp_register_script(
 				MDS_PREFIX . 'admin-options-js',

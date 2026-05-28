@@ -1402,10 +1402,10 @@ class Orders {
 		}
 	}
 
-	public static function get_order_data(): array {
+	public static function get_order_data( ?int $banner_id = null ): array {
 
 		global $f2, $wpdb;
-		$BID = $f2->bid();
+		$BID = $banner_id && $banner_id > 0 ? $f2->bid( $banner_id ) : $f2->bid();
 
 		if ( ! is_numeric( $BID ) ) {
 			die();

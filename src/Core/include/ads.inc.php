@@ -41,6 +41,7 @@ use MillionDollarScript\Classes\Language\Language;
 use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\System\Functions;
 use MillionDollarScript\Classes\System\Utility;
+use MillionDollarScript\Classes\System\Url;
 use MillionDollarScript\Classes\WooCommerce\WooCommerceFunctions;
 
 defined( 'ABSPATH' ) or exit;
@@ -61,7 +62,7 @@ function load_ad_values( $ad_id ) {
 		$prams['order_id']  = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'order' );
 		$prams['banner_id'] = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'grid' );
 		$prams['text']      = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' );
-		$prams['url']       = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' );
+		$prams['url']       = Url::advertiser_url( carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' ) );
 		$prams['image']     = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'image' );
 
 		return $prams;
@@ -89,12 +90,8 @@ function assign_ad_template( $prams ) {
 	// Replace http with https
 	$search[]  = 'href="http://%url%"';
 	$replace[] = 'href="%url%"';
-	$value     = $prams['url'];
-	$url       = parse_url( $value );
-	if ( empty( $url['scheme'] ) ) {
-		$value = 'https://' . $value;
-	}
-	$value     = '<a class="mds-popup-url" href="' . esc_url( $value ) . '">' . esc_html( $value ) . '</a>';
+	$value     = Url::advertiser_url( $prams['url'] ?? '' );
+	$value     = '' !== $value ? '<a class="mds-popup-url" href="' . esc_url( $value ) . '">' . esc_html( $value ) . '</a>' : '';
 	$search[]  = '%url%';
 	$replace[] = $value;
 
@@ -624,7 +621,7 @@ function insert_ad_data( $order_id = 0, $admin = false, $image_data = '' ) {
 			$blocks = $order_row['blocks'];
 
 			$text          = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'text' );
-			$url           = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' );
+			$url           = Url::advertiser_url( carbon_get_post_meta( $ad_id, MDS_PREFIX . 'url' ) );
 			$attachment_id = carbon_get_post_meta( $ad_id, MDS_PREFIX . 'image' );
 			$image_file         = get_attached_file( $attachment_id );
 

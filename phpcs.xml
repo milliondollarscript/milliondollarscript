@@ -7,8 +7,10 @@
 	<!-- <rule ref="WordPress-Docs" /> -->
 	<!-- <rule ref="WordPress-Extra" /> -->
 
-	<!-- Check all PHP files -->
-	<file>.</file>
+	<!-- Check PHP source files only -->
+	<file>milliondollarscript-two.php</file>
+	<file>src</file>
+	<file>templates</file>
 
 	<!-- Exclude patterns -->
 	<exclude-pattern>*/vendor/*</exclude-pattern>
@@ -16,10 +18,16 @@
 	<exclude-pattern>*/dist/*</exclude-pattern>
 	<exclude-pattern>*/build/*</exclude-pattern>
 	<exclude-pattern>*/tests/*</exclude-pattern>
+	<exclude-pattern>*/src/Assets/*</exclude-pattern>
+	<exclude-pattern>*/src/Core/css/*</exclude-pattern>
+	<exclude-pattern>*/src/Core/js/*</exclude-pattern>
+	<exclude-pattern>*/src/Core/html/*</exclude-pattern>
 
 	<!-- Show progress and sniff codes -->
 	<arg value="ps" />
 	<arg name="colors" />
+	<arg name="extensions" value="php" />
+	<ini name="memory_limit" value="512M" />
 	
 	<!-- Check for PHP 8.1+ compatibility -->
 	<config name="testVersion" value="8.1" />

@@ -621,12 +621,25 @@ $status = $compatibility_manager->getCompatibilityStatus();
 }
 
 .mds-action-buttons .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
     min-width: 150px;
     text-align: left;
 }
 
+.mds-error-controls .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .mds-action-buttons .button .dashicons,
 .mds-error-controls .button .dashicons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     vertical-align: middle;
     font-size: 16px;
     width: 16px;
@@ -639,7 +652,7 @@ $status = $compatibility_manager->getCompatibilityStatus();
     .mds-status-cards {
         grid-template-columns: 1fr;
     }
-    
+
     .mds-migration-summary {
         grid-template-columns: 1fr;
     }
@@ -904,4 +917,4 @@ jQuery(document).ready(function($) {
     checkMigrationStatus();
     setInterval(checkMigrationStatus, 30000);
 });
-</script> 
+</script>

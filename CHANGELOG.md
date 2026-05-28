@@ -1,6 +1,56 @@
 # Changelog
 
-## 2.6.51 - 2026-02-09
+## 2.6.63-alpha.1 - 2026-05-28
+### Fixed
+
+- center action button icons
+
+- display frontend upload errors
+
+- load order scripts from order contexts
+
+
+## 2.6.60-alpha.1 - 2026-05-11
+### Chore
+
+- checkpoint MDS2 admin compatibility updates
+
+
+### Fixed
+
+- harden MDS2 extension handling
+
+- improve MDS3 tandem compatibility
+
+
+## 2.6.57-alpha.1 - 2026-04-25
+### Added
+
+- add migration readiness report
+
+
+### Chore
+
+- refresh alpha maintenance tooling locks
+
+- bump flatted
+
+- remove vendor/ from git tracking
+
+
+### Fixed
+
+- harden request urls tracking and uploads
+
+- update minimatch to 3.1.5 to resolve Dependabot alert #6
+
+
+### Performance
+
+- reduce regeneration memory pressure
+
+
+## 2.6.51-alpha.1
 
 
 ### Chore
@@ -8,84 +58,22 @@
 - bump version to 2.6.51 and update tested up to 6.9.1
 
 
-## 2.6.48 - 2026-02-09
+## 2.6.51-alpha.1 - 2026-02-09
+## 2.6.51-alpha.1
+
+
+### Chore
+
+- bump version to 2.6.51 and update tested up to 6.9.1
+
+
+## 2.6.48-alpha.1 - 2026-02-09
+
 
 
 ### Fixed
 
 - audit remediation P0-P1 critical and security fixes
-
-
-## 2.6.47-alpha.1
-
-
-### Fixed
-
-- add json_decode error handling, remove @ini_set suppression, replace deprecated current_time('timestamp')
-
-
-## 2.6.46-alpha.1
-
-
-### Fixed
-
-- sanitize $_SERVER values, remove addslashes/unlink, add ini_set checks
-
-
-## 2.6.44-alpha.1
-
-
-### Fixed
-
-- audit legacy admin files — XSS, SQL injection, info disclosure, perf
-
-
-## 2.6.43-alpha.1
-
-
-### Fixed
-
-- correct grid placement offset and skip adjacency check in simple mode
-
-- compatibility page — version display, script loading, button UI
-
-- persist license-claimed notice after post-Stripe redirect
-
-- use generic translated message for nonce failures in manage-grids
-
-- security hardening, debug cleanup, and style polish
-
-
-## 2.6.38-alpha.1
-
-
-### Fixed
-
-- remove duplicate 2.6.37-alpha.1 entries and update git-cliff config
-
-
-## 2.6.37-alpha.1
-
-
-### Fixed
-
-- improve error messaging when extension server is unavailable
-
-
-## 2.6.36-alpha.1
-
-
-### Added
-
-- add optional anonymous version tracking with user control
-
-
-### Chore
-
-- Update ESLint configuration with single quotes and `wp` global, re-minify `mds.min.
-
-- finalize 2.x updates (composer keywords, linting, gitignore)
-
 
 
 ## 2.6.47-alpha.1 - 2026-02-08
@@ -861,7 +849,7 @@
 
 - Set line-height on grid-inner element to 1 to ensure proper grid height.
 
-- Resolve merge conflicts from dev branch stash
+- Resolve merge conflicts from temporary branch stash
 
 - Use global 'auto-resize' option for conditional image sizing in output_grid and get_order_image
 
@@ -1078,5 +1066,4 @@
 ### Security
 
 - Resolve admin grid selection redirect issue and security check failure on Packages page
-
 

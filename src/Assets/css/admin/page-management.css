@@ -90,10 +90,30 @@
     gap: 6px;
 }
 
+.mds-quick-actions .mds-action-buttons .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    line-height: normal;
+}
+
 .mds-action-buttons .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
+}
+
+.mds-quick-actions .mds-action-buttons .dashicons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    line-height: 1;
+    margin: 0;
 }
 
 /* Filters */

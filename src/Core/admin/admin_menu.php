@@ -158,6 +158,9 @@ defined( 'ABSPATH' ) or exit;
                 <a href="<?php echo admin_url( 'admin.php?page=mds-system-information' ); ?>"><?php Language::out( 'System Information' ); ?></a>
             </li>
             <li>
+                <a href="<?php echo admin_url( 'admin.php?page=mds-migration-readiness' ); ?>"><?php Language::out( 'Migration Readiness' ); ?></a>
+            </li>
+            <li>
                 <a href="<?php echo admin_url( 'admin.php?page=mds-license' ); ?>"><?php Language::out( 'License' ); ?></a>
             </li>
         </ul>

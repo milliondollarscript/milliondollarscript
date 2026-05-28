@@ -113,10 +113,9 @@ $pixel_count    = 0;
 $block_size     = 0;
 $messages       = "";
 
-// Check for upload results from redirect parameters
-if ( isset( $_GET['upload_error'] ) ) {
-	$messages .= "<b style='color:red;'>" . urldecode( $_GET['upload_error'] ) . "</b><br>";
-} elseif ( isset( $_GET['upload_success'] ) ) {
+// Check for successful upload results from redirect parameters.
+// Redirect errors are displayed by the shared frontend header.
+if ( isset( $_GET['upload_success'] ) ) {
 	// Upload was successful, get the uploaded file info
 	if ( ! empty( $tmp_image_file ) && file_exists( $tmp_image_file ) ) {
 		$size = getimagesize( $tmp_image_file );

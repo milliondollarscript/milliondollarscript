@@ -27,7 +27,7 @@ class ExtensionServerTest {
         // Get server configuration
         $default_server_url = defined('WP_DEBUG') && WP_DEBUG 
             ? 'http://extension-server-go:3030'
-            : 'https://extensions.milliondollarscript.com';
+            : 'https://milliondollarscript.com';
         $server_url = Options::get_option('extension_server_url', $default_server_url);
         $api_key = Options::get_option('extension_server_api_key', '');
         $license_key = ''; // This is deprecated

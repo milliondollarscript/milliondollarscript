@@ -160,7 +160,7 @@ class Extensions {
         }
 
         $use_license = $license_key !== '' && ($has_active_license || $requires_license);
-        $server_url = Options::get_option('extension_server_url', 'https://extensions.milliondollarscript.com');
+        $server_url = Options::get_option('extension_server_url', 'https://milliondollarscript.com');
         $slug = self::resolve_extension_identifier(
             [
                 'id' => $extension_id,
@@ -2129,16 +2129,12 @@ class Extensions {
                 foreach ($installed_plugins as $plugin_file => $plugin_data) {
                     $current_plugin_dir = dirname($plugin_file);
                     $current_plugin_basename = basename($plugin_file, '.php');
-                    // error_log("[MDS DEBUG] Checking: Server Slug ('{$plugin_slug_from_server}') vs Installed Plugin File ('{$plugin_file}'), Dir ('{$current_plugin_dir}'), Basename ('{$current_plugin_basename}')");
-
                     if ($current_plugin_dir === $plugin_slug_from_server && $current_plugin_dir !== '.') {
-                        // error_log("[MDS DEBUG] Match on directory: {$plugin_slug_from_server}");
                         $is_installed = true;
                         $installed_plugin_file = $plugin_file;
                         break;
                     }
                     if ($current_plugin_basename === $plugin_slug_from_server && $current_plugin_dir === '.') {
-                        // error_log("[MDS DEBUG] Match on basename (single file plugin): {$plugin_slug_from_server}");
                         $is_installed = true;
                         $installed_plugin_file = $plugin_file;
                         break;
@@ -2442,7 +2438,7 @@ class Extensions {
      * Build the download URL for an extension entry returned by the server catalog.
      */
     private static function build_extension_download_url(array $entry): string {
-        $server = Options::get_option('extension_server_url', 'https://extensions.milliondollarscript.com');
+        $server = Options::get_option('extension_server_url', 'https://milliondollarscript.com');
         $server = is_string($server) ? trim($server) : '';
         $id = isset($entry['id']) ? trim((string) $entry['id']) : '';
         if ($server === '' || $id === '') {
@@ -2468,7 +2464,7 @@ class Extensions {
             'by_id'   => [],
         ];
 
-        $server = Options::get_option('extension_server_url', 'https://extensions.milliondollarscript.com');
+        $server = Options::get_option('extension_server_url', 'https://milliondollarscript.com');
         $server = is_string($server) ? trim($server) : '';
         if ($server === '') {
             return $catalog;
@@ -7578,10 +7574,6 @@ class Extensions {
                 }
             }
 
-            error_log('[MDS Extension Install] Extension ID: ' . $extension_id);
-            error_log('[MDS Extension Install] Retrieved Extension Server URL: ' . $user_configured_url);
-            error_log('[MDS Extension Install] Retrieved License Key: ' . (empty($license_key) ? 'EMPTY' : $license_key));
-            
             $working_base = null;
             foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) { continue; }
@@ -7615,12 +7607,6 @@ class Extensions {
             }
             
             $download_url = rtrim($working_base, '/') . '/api/extensions/' . urlencode($extension_id) . '/download';
-            
-            if (!empty($license_key)) {
-                $download_url .= '?licenseKey=' . urlencode($license_key);
-            }
-
-            error_log('[MDS Extension Install] Final Download URL: ' . $download_url);
             
             $result = self::install_extension_from_url($extension_id, $extension_slug, $download_url, $license_key);
             wp_send_json_success($result);
@@ -7665,404 +7651,171 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
      * @throws \Exception If the installation fails.
      */
     public static function install_extension_from_url( string $extension_id, string $extension_slug, string $download_url, string $license_key = '' ): array {
-    // DIAGNOSTIC: Check for ZipArchive class
-    if ( ! class_exists( 'ZipArchive' ) ) {
-        $zip_error_msg = Language::get('PHP ZipArchive extension is missing on the server. This is required to install extensions. Please ask your hosting provider or system administrator to install/enable it.');
-        error_log('[MDS Extension Install] CRITICAL_PREREQUISITE_FAIL: ZipArchive class not found. ' . $zip_error_msg);
-        throw new \Exception($zip_error_msg);
-    } else {
-        error_log('[MDS Extension Install] DIAGNOSTIC: ZipArchive class found and available.');
-    }
+        if ( ! class_exists( 'ZipArchive' ) ) {
+            throw new \Exception( Language::get( 'PHP ZipArchive extension is missing on the server. This is required to install extensions. Please ask your hosting provider or system administrator to install/enable it.' ) );
+        }
 
-    // DIAGNOSTIC: Attempt to initialize WP_Filesystem to check for direct write access
-    // This is more for debugging insight; WP_Upgrader will do its own fs_connect.
-    if ( ! function_exists( 'request_filesystem_credentials' ) ) {
-        require_once ABSPATH . 'wp-admin/includes/file.php'; // Ensure file.php is loaded for request_filesystem_credentials
-    }
-    ob_start(); // Prevent request_filesystem_credentials from outputting HTML in AJAX
-    $creds = request_filesystem_credentials( admin_url(), '', false, false, null );
-    $credentials_form_output = ob_get_clean();
-    if (!empty($credentials_form_output)) {
-        // This indicates request_filesystem_credentials tried to output a form.
-        error_log('[MDS Extension Install] DIAGNOSTIC: request_filesystem_credentials generated output (unexpected in AJAX): ' . $credentials_form_output);
-    }
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-    if ( false === $creds ) {
-        error_log('[MDS Extension Install] DIAGNOSTIC: request_filesystem_credentials returned false. This might mean direct filesystem access is not configured, or credentials would be required if it were an interactive session.');
-        // Not necessarily fatal here, as WP_Upgrader might still attempt 'direct' method.
-    } elseif ( ! WP_Filesystem( $creds ) ) {
-        error_log('[MDS Extension Install] DIAGNOSTIC: WP_Filesystem() call failed after getting credentials. Filesystem could not be initialized. Check filesystem permissions and WordPress configuration.');
-        // This is a strong indicator of a problem. Consider throwing an exception if direct access is expected to work.
-        // throw new \Exception(Language::get('Could not initialize WordPress filesystem. Check permissions.'));
-    } else {
         global $wp_filesystem;
-        if ($wp_filesystem instanceof \WP_Filesystem_Direct) {
-            error_log('[MDS Extension Install] DIAGNOSTIC: WP_Filesystem initialized successfully using "direct" method via preliminary check.');
-        } elseif (isset($wp_filesystem) && is_object($wp_filesystem) && property_exists($wp_filesystem, 'method')) {
-            error_log('[MDS Extension Install] DIAGNOSTIC: WP_Filesystem initialized successfully via preliminary check using method: ' . $wp_filesystem->method);
-        } else {
-            error_log('[MDS Extension Install] DIAGNOSTIC: WP_Filesystem initialized via preliminary check, but method is unknown or $wp_filesystem is not as expected.');
+
+        if ( ! function_exists( 'request_filesystem_credentials' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
         }
-    }
-    // END DIAGNOSTIC WP_Filesystem check
 
-    // Include required WordPress files (some might have been included by WP_Filesystem check already)
-    if ( ! class_exists( 'WP_Upgrader' ) ) {  require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php'; }
+        ob_start();
+        $creds = request_filesystem_credentials( admin_url(), '', false, false, null );
+        ob_end_clean();
 
-    require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php'; 
-    require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
-    require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/plugin.php';
-    
-    // Get the license key for authentication (passed in)
-    $license_key = is_string($license_key) ? $license_key : '';
-    
-    // Set up the upgrader
-    $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() ); 
-    
-    // Add authentication headers
-    add_filter( 'http_request_args', function( $args, $url ) use ( $download_url, $license_key ) {
-        if ( strpos( $url, $download_url ) === 0 ) {
-            if (!empty($license_key)) {
-                $args['headers']['x-license-key'] = $license_key;
-            }
-            $args['sslverify'] = !Utility::is_development_environment();
+        if ( ( false === $creds || ! WP_Filesystem( $creds ) ) && ! WP_Filesystem() ) {
+            throw new \Exception( Language::get( 'Could not initialize WordPress filesystem. Check filesystem permissions.' ) );
         }
-        return $args;
-    }, 10, 2 );
-    
-    // DEBUG: Attempt direct wp_remote_get to see raw response
-    error_log('[MDS Extension Install] Attempting direct wp_remote_get for: ' . $download_url);
-    $current_request_args_filter = null;
-    foreach ($GLOBALS['wp_filter']['http_request_args'] as $priority => $filters) {
-        foreach ($filters as $filter_name => $filter_details) {
-            if (is_array($filter_details['function']) && $filter_details['function'][0] instanceof \Closure) {
-                // This is likely our closure, but we can't be 100% sure without more complex reflection.
-                // For simplicity, we'll assume it's the one we want to use or that headers are already set.
-                // A more robust solution might involve removing and re-adding the filter specifically.
-            }
+
+        if ( empty( $wp_filesystem ) || ! is_object( $wp_filesystem ) ) {
+            throw new \Exception( Language::get( 'WP Filesystem not available for writing temporary package.' ) );
         }
-    }
 
-    $direct_get_args = [
-        'timeout'   => 60, 
-        'sslverify' => false, // Explicitly false, though already set by the filter
-    ];
-    // If we have a license key, ensure it's in headers for the direct call
-    if (!empty($license_key)) {
-        $direct_get_args['headers']['x-license-key'] = $license_key;
-    }
+        $license_key = is_string( $license_key ) ? $license_key : '';
+        $request_args = [
+            'timeout'   => 60,
+            'sslverify' => ! Utility::is_development_environment(),
+        ];
 
-    $direct_response = wp_remote_get($download_url, $direct_get_args);
-
-    if (is_wp_error($direct_response)) {
-        error_log('[MDS Extension Install] wp_remote_get ERROR: ' . $direct_response->get_error_message());
-    } else {
-        $direct_response_code = wp_remote_retrieve_response_code($direct_response);
-        $direct_response_headers = wp_remote_retrieve_headers($direct_response);
-        $direct_response_body_length = strlen(wp_remote_retrieve_body($direct_response));
-        error_log('[MDS Extension Install] wp_remote_get SUCCESS. Code: ' . $direct_response_code . '. Body Length: ' . $direct_response_body_length);
-        
-        // Log specific headers
-        $content_type_header = wp_remote_retrieve_header($direct_response, 'content-type');
-        error_log('[MDS Extension Install] wp_remote_get Content-Type Header: ' . ($content_type_header ?: 'NOT FOUND'));
-        $content_disposition_header = wp_remote_retrieve_header($direct_response, 'content-disposition');
-        error_log('[MDS Extension Install] wp_remote_get Content-Disposition Header: ' . ($content_disposition_header ?: 'NOT FOUND'));
-    }
-    // END DEBUG
-
-    // Retrieve the package data from the successful wp_remote_get response
-    // $direct_response is from the wp_remote_get call a few lines above.
-    $package_data = wp_remote_retrieve_body($direct_response);
-    if (empty($package_data)) {
-        $response_code_for_empty_body = wp_remote_retrieve_response_code($direct_response);
-        throw new \Exception(Language::get('Failed to retrieve package data from download URL. Response code: ') . $response_code_for_empty_body);
-    }
-
-    // Create a temporary file for the package
-    // $extension_slug is passed as an argument to this method.
-    $temp_filename = wp_tempnam($extension_slug . '.zip'); // wp_tempnam creates a file in WP's temp dir
-    if (!$temp_filename) {
-        throw new \Exception(Language::get('Could not create temporary file for extension package.'));
-    }
-
-    // $wp_filesystem should have been initialized earlier in this method by init_wp_filesystem_direct().
-    // If $wp_filesystem is not an object here, init_wp_filesystem_direct() would have thrown or returned false.
-    if (empty($wp_filesystem) || !is_object($wp_filesystem)) {
-        if ($wp_filesystem && $wp_filesystem->exists($temp_filename)) { // Attempt cleanup if temp file was created
-             $wp_filesystem->delete($temp_filename);
+        if ( '' !== $license_key ) {
+            $request_args['headers']['x-license-key'] = $license_key;
         }
-        throw new \Exception(Language::get('WP Filesystem not available for writing temporary package.'));
-    }
 
-    $install_package_path = $temp_filename; // Path to be used for installation
-    error_log('[MDS Extension Install] Attempting to write package to temporary file: ' . $install_package_path);
-
-    // Set the plugin slug hint for the upgrader skin to ensure correct destination directory name.
-    // $extension_slug is the sanitized slug, e.g., "hello-world".
-    if (isset($upgrader->skin) && is_object($upgrader->skin)) {
-        $upgrader->skin->plugin_info = ['slug' => $extension_slug];
-        error_log('[MDS Extension Install] Set $upgrader->skin->plugin_info slug to: ' . $extension_slug);
-    } else {
-        error_log('[MDS Extension Install] WARNING: $upgrader->skin is not set or not an object before setting plugin_info. This might lead to incorrect destination path.');
-    }
-
-    try {
-        // Write the package data to the temporary file
-        if (!$wp_filesystem->put_contents($install_package_path, $package_data)) {
-            throw new \Exception(Language::get('Could not write package data to temporary file: ') . $install_package_path);
+        $direct_response = wp_remote_get( $download_url, $request_args );
+        if ( is_wp_error( $direct_response ) ) {
+            throw new \Exception( Language::get( 'Failed to retrieve package data from download URL: ' ) . $direct_response->get_error_message() );
         }
-        error_log('[MDS Extension Install] Package data successfully written to temporary file: ' . $install_package_path);
 
-        // Install the extension from the local temporary file
-        $result = $upgrader->install($install_package_path); // Pass local file path
-
-        // --- Post-install directory name correction ---
-        // NEW DETAILED LOGGING FOR RENAME BLOCK ENTRY AND STATE
-        error_log('[MDS Extension Install] RENAME_BLOCK_CHECK: Just after $upgrader->install(). Current $result: ' . print_r($result, true));
-        error_log('[MDS Extension Install] RENAME_BLOCK_CHECK: Current $upgrader->skin->result directly after install: ' . print_r($upgrader->skin->result ?? 'not set', true));
-
-        if ($result === true || $result === 1) { // Check for successful installation
-            error_log('[MDS Extension Install] RENAME_BLOCK: Entered. Result is: ' . print_r($result, true));
-            error_log('[MDS Extension Install] RENAME_BLOCK: Current skin->result (inside if $result is true/1): ' . print_r($upgrader->skin->result ?? 'not set', true));
-            if (isset($upgrader->skin->result['destination'], $upgrader->skin->result['destination_name']) && is_string($upgrader->skin->result['destination']) && is_string($upgrader->skin->result['destination_name'])) {
-                $actual_destination_path = rtrim($upgrader->skin->result['destination'], '/'); // Full path like /wp-content/plugins/slug-random
-                $actual_destination_name = $upgrader->skin->result['destination_name']; // Just slug-random
-
-                $expected_destination_name = $extension_slug; // e.g., "hello-world"
-                // Ensure $wp_filesystem is available and is an object
-                if (empty($wp_filesystem) || !is_object($wp_filesystem)) {
-                     error_log('[MDS Extension Install] ERROR: WP_Filesystem not available for directory rename operation.');
-                     $result = new \WP_Error('filesystem_unavailable', Language::get('WP Filesystem not available for post-installation directory rename.'));
-                } else {
-                    $expected_destination_path = rtrim($wp_filesystem->wp_plugins_dir(), '/') . '/' . $expected_destination_name;
-
-                    if ($actual_destination_name !== $expected_destination_name) {
-                        error_log("[MDS Extension Install] Destination name mismatch. Actual: '$actual_destination_name' ('$actual_destination_path'), Expected: '$expected_destination_name' ('$expected_destination_path'). Attempting rename.");
-                        
-                        if ($wp_filesystem->exists($expected_destination_path)) {
-                            error_log("[MDS Extension Install] WARNING: Expected destination path '$expected_destination_path' already exists. Deleting it before rename.");
-                            // Attempt to delete if it's an old version or remnant. This can be risky.
-                            // Consider if this should be a hard error or a configurable behavior.
-                            if (!$wp_filesystem->delete($expected_destination_path, true)) {
-                                error_log("[MDS Extension Install] ERROR: Failed to delete existing directory at expected path '$expected_destination_path'. Cannot proceed with rename.");
-                                $result = new \WP_Error('delete_existing_failed', Language::get('Failed to delete existing directory at expected plugin path.'));
-                            }
-                        }
-                        
-                        // Proceed with move only if the previous step didn't set $result to WP_Error
-                        if (!is_wp_error($result)) {
-                            if ($wp_filesystem->move($actual_destination_path, $expected_destination_path, true)) { // true for overwrite
-                                error_log("[MDS Extension Install] Successfully renamed '$actual_destination_path' to '$expected_destination_path'.");
-                                // Update skin result to reflect the new path
-                                $upgrader->skin->result['destination'] = $expected_destination_path . '/';
-                                $upgrader->skin->result['destination_name'] = $expected_destination_name;
-                                if (isset($upgrader->skin->result['remote_destination'])) {
-                                     $upgrader->skin->result['remote_destination'] = $expected_destination_path . '/';
-                                }
-                            } else {
-                                error_log("[MDS Extension Install] ERROR: Failed to rename '$actual_destination_path' to '$expected_destination_path'. Error details: " . print_r($wp_filesystem->errors, true));
-                                $result = new \WP_Error('rename_failed', Language::get('Failed to correct plugin directory name after installation.'));
-                            }
-                        }
-                    } else {
-                         error_log("[MDS Extension Install] Destination name matches expected: '$expected_destination_name'. No rename needed.");
-                    }
-                }
-            } else {
-                error_log('[MDS Extension Install] RENAME_BLOCK: skin->result not set as expected (destination or destination_name missing/invalid). Skin result was: ' . print_r($upgrader->skin->result ?? 'not set', true));
-                // Potentially treat as an error if these fields are essential for verification
-                // $result = new \WP_Error('skin_result_missing', Language::get('Upgrader skin result incomplete after installation.'));
-            }
-        } else {
-            error_log('[MDS Extension Install] RENAME_BLOCK: Not entered. Actual $result value was: ' . print_r($result, true));
+        $response_code = wp_remote_retrieve_response_code( $direct_response );
+        $package_data  = wp_remote_retrieve_body( $direct_response );
+        if ( 200 !== $response_code || empty( $package_data ) ) {
+            throw new \Exception( Language::get( 'Failed to retrieve package data from download URL. Response code: ' ) . $response_code );
         }
-        // --- End Post-install directory name correction ---
 
-    } finally {
-        // Ensure the temporary file is deleted
-        if ($wp_filesystem->exists($install_package_path)) {
-            if ($wp_filesystem->delete($install_package_path)) {
-                error_log('[MDS Extension Install] Temporary file deleted: ' . $install_package_path);
-            } else {
-                error_log('[MDS Extension Install] WARNING: Failed to delete temporary file: ' . $install_package_path);
-            }
+        $temp_filename = wp_tempnam( $extension_slug . '.zip' );
+        if ( ! $temp_filename ) {
+            throw new \Exception( Language::get( 'Could not create temporary file for extension package.' ) );
         }
-    }
 
-    // --- BEGIN NEW DIAGNOSTIC LOGGING ---
-    error_log('[MDS Extension Install] DIAGNOSTIC: $upgrader->install() returned: ' . print_r($result, true));
+        $install_package_path = $temp_filename;
+        $upgrader             = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() );
 
-    if (isset($upgrader->skin->result)) {
-        error_log('[MDS Extension Install] DIAGNOSTIC: $upgrader->skin->result: ' . print_r($upgrader->skin->result, true));
-    } else {
-        error_log('[MDS Extension Install] DIAGNOSTIC: $upgrader->skin->result is NOT SET.');
-    }
+        if ( isset( $upgrader->skin ) && is_object( $upgrader->skin ) ) {
+            $upgrader->skin->plugin_info = [ 'slug' => $extension_slug ];
+        }
 
-    // Safely access $upgrader->skin->plugin_info using reflection
-    if (isset($upgrader->skin)) {
-        $skin_object = $upgrader->skin;
-        $skin_class_name = get_class($skin_object);
         try {
-            $plugin_info_property = new \ReflectionProperty($skin_class_name, 'plugin_info');
-            if ($plugin_info_property->isPublic()) {
-                $plugin_info_value = $plugin_info_property->getValue($skin_object);
-                error_log('[MDS Extension Install] DIAGNOSTIC: $upgrader->skin->plugin_info (public): ' . print_r($plugin_info_value, true));
-            } else {
-                $plugin_info_property->setAccessible(true);
-                $plugin_info_value = $plugin_info_property->getValue($skin_object);
-                error_log('[MDS Extension Install] DIAGNOSTIC: $upgrader->skin->plugin_info (made accessible): ' . print_r($plugin_info_value, true));
-                $plugin_info_property->setAccessible(false); // Revert accessibility
+            if ( ! $wp_filesystem->put_contents( $install_package_path, $package_data ) ) {
+                throw new \Exception( Language::get( 'Could not write package data to temporary file.' ) );
             }
-        } catch (\ReflectionException $e) {
-            error_log('[MDS Extension Install] DIAGNOSTIC: ReflectionException for $upgrader->skin->plugin_info on class ' . $skin_class_name . ': ' . $e->getMessage());
-        }
-    } else {
-        error_log('[MDS Extension Install] DIAGNOSTIC: $upgrader->skin is NOT SET.');
-    }
-    // --- END NEW DIAGNOSTIC LOGGING ---
 
-    // Enhanced diagnostic logging for skin errors and messages
-    $all_skin_error_messages = []; // Collect all error messages here
-    $item_specific_wp_error = null;
+            $result = $upgrader->install( $install_package_path );
 
-    // Try to get item-specific WP_Error from WP_Ajax_Upgrader_Skin
-    if ($upgrader->skin instanceof \WP_Ajax_Upgrader_Skin) {
-        /** @var \WP_Ajax_Upgrader_Skin $ajax_skin_instance */
-        $ajax_skin_instance = $upgrader->skin; // Assign to a new variable after type check
+            if ( ( true === $result || 1 === $result ) && isset( $upgrader->skin->result['destination'], $upgrader->skin->result['destination_name'] ) && is_string( $upgrader->skin->result['destination'] ) && is_string( $upgrader->skin->result['destination_name'] ) ) {
+                $actual_destination_path = rtrim( $upgrader->skin->result['destination'], '/' );
+                $actual_destination_name = $upgrader->skin->result['destination_name'];
+                $expected_destination_name = $extension_slug;
+                $expected_destination_path = rtrim( $wp_filesystem->wp_plugins_dir(), '/' ) . '/' . $expected_destination_name;
 
-        if (method_exists($ajax_skin_instance, 'get_item_errors')) {
-            $item_specific_wp_error = $ajax_skin_instance->get_item_errors(); // Call on the new variable
-
-            if (is_wp_error($item_specific_wp_error)) { // Check if the result is a WP_Error
-                /** @var \WP_Error $confirmed_wp_error */
-                $confirmed_wp_error = $item_specific_wp_error;
-                if (!empty($confirmed_wp_error->get_error_codes())) {
-                    error_log('[MDS Extension Install] Upgrader Skin Item WP_Error Codes: ' . esc_html(implode(', ', $confirmed_wp_error->get_error_codes())));
-                    foreach ($confirmed_wp_error->get_error_messages() as $message) {
-                        error_log('[MDS Extension Install] Upgrader Skin Item WP_Error Message: ' . esc_html($message));
-                        $all_skin_error_messages[] = $message;
+                if ( $actual_destination_name !== $expected_destination_name ) {
+                    if ( $wp_filesystem->exists( $expected_destination_path ) && ! $wp_filesystem->delete( $expected_destination_path, true ) ) {
+                        $result = new \WP_Error( 'delete_existing_failed', Language::get( 'Failed to delete existing directory at expected plugin path.' ) );
                     }
-                    $error_data = $confirmed_wp_error->get_error_data();
-                    if (!empty($error_data)) {
-                        error_log('[MDS Extension Install] Upgrader Skin Item WP_Error Data: ' . esc_html(print_r($error_data, true)));
+
+                    if ( ! is_wp_error( $result ) ) {
+                        if ( $wp_filesystem->move( $actual_destination_path, $expected_destination_path, true ) ) {
+                            $upgrader->skin->result['destination']      = $expected_destination_path . '/';
+                            $upgrader->skin->result['destination_name'] = $expected_destination_name;
+                            if ( isset( $upgrader->skin->result['remote_destination'] ) ) {
+                                $upgrader->skin->result['remote_destination'] = $expected_destination_path . '/';
+                            }
+                        } else {
+                            $result = new \WP_Error( 'rename_failed', Language::get( 'Failed to correct plugin directory name after installation.' ) );
+                        }
                     }
-                } else {
-                    error_log('[MDS Extension Install] Upgrader Skin Item WP_Error object (from get_item_errors()) was empty (no error codes).');
                 }
+            }
+        } finally {
+            if ( $wp_filesystem->exists( $install_package_path ) ) {
+                $wp_filesystem->delete( $install_package_path );
+            }
+        }
+
+        $all_skin_error_messages = [];
+
+        if ( $upgrader->skin instanceof \WP_Ajax_Upgrader_Skin && method_exists( $upgrader->skin, 'get_item_errors' ) ) {
+            $item_specific_wp_error = $upgrader->skin->get_item_errors();
+            if ( is_wp_error( $item_specific_wp_error ) && ! empty( $item_specific_wp_error->get_error_codes() ) ) {
+                $all_skin_error_messages = array_merge( $all_skin_error_messages, $item_specific_wp_error->get_error_messages() );
+            }
+        }
+
+        if ( isset( $upgrader->skin->errors ) && ! empty( $upgrader->skin->errors ) ) {
+            foreach ( (array) $upgrader->skin->errors as $error_value ) {
+                $message = is_array( $error_value ) ? implode( '; ', $error_value ) : $error_value;
+                if ( is_string( $message ) ) {
+                    $all_skin_error_messages[] = $message;
+                }
+            }
+        }
+
+        if ( isset( $upgrader->skin->messages ) && is_array( $upgrader->skin->messages ) ) {
+            foreach ( $upgrader->skin->messages as $message ) {
+                if ( is_string( $message ) ) {
+                    $all_skin_error_messages[] = $message;
+                }
+            }
+        }
+
+        wp_clean_plugins_cache( true );
+
+        if ( true !== $result ) {
+            $final_error_message = Language::get( 'Installation failed: ' );
+
+            if ( is_wp_error( $result ) ) {
+                $final_error_message .= $result->get_error_message();
+            } elseif ( ! empty( $all_skin_error_messages ) ) {
+                $final_error_message .= implode( '; ', array_unique( $all_skin_error_messages ) );
             } else {
-                error_log('[MDS Extension Install] Call to $ajax_skin_instance->get_item_errors() did not return a WP_Error object, or it was null. Actual type/value: ' . esc_html(gettype($item_specific_wp_error)));
+                $final_error_message .= Language::get( 'Upgrader returned an unexpected result and no specific errors were reported by the skin.' );
             }
-        } else {
-            error_log('[MDS Extension Install] DIAGNOSTIC: Skin IS WP_Ajax_Upgrader_Skin but method get_item_errors() does NOT exist. Skin class: ' . esc_html(get_class($ajax_skin_instance)));
-        }
-    } else {
-        error_log('[MDS Extension Install] Skin is not an instance of WP_Ajax_Upgrader_Skin, cannot call get_item_errors(). Skin type: ' . esc_html(get_class($upgrader->skin)));
-    }
 
-    // Check public 'errors' array from WP_Upgrader_Skin (parent class)
-    /** @var \WP_Upgrader_Skin $generic_skin_for_errors_prop */
-    $generic_skin_for_errors_prop = $upgrader->skin;
-    if (isset($generic_skin_for_errors_prop->errors) && !empty($generic_skin_for_errors_prop->errors)) {
-        error_log('[MDS Extension Install] Upgrader Skin Public Errors Array (from WP_Upgrader_Skin):');
-        foreach ((array) $generic_skin_for_errors_prop->errors as $error_key => $error_value) {
-            $message_to_log = is_array($error_value) ? implode('; ', $error_value) : $error_value;
-            error_log('  - [' . esc_html((string)$error_key) . '] ' . esc_html($message_to_log));
-            if (is_string($message_to_log) && !in_array($message_to_log, $all_skin_error_messages, true)) {
-                 $all_skin_error_messages[] = $message_to_log;
+            throw new \Exception( $final_error_message );
+        }
+
+        $plugin_file = self::find_plugin_file_by_slug( $extension_slug );
+        if ( ! $plugin_file ) {
+            $error_msg = Language::get( 'Installation seemed to succeed, but the plugin file could not be located using slug: ' ) . $extension_slug;
+            if ( ! empty( $all_skin_error_messages ) ) {
+                $error_msg .= ' ' . Language::get( 'Upgrader messages: ' ) . implode( '; ', array_unique( $all_skin_error_messages ) );
+            }
+
+            throw new \Exception( $error_msg );
+        }
+
+        if ( apply_filters( 'mds_auto_activate_extension_on_install', true, $extension_id, $plugin_file ) ) {
+            $activate_result = activate_plugin( $plugin_file );
+
+            if ( is_wp_error( $activate_result ) ) {
+                throw new \Exception( Language::get( 'Extension installed but failed to activate: ' ) . $activate_result->get_error_message() );
             }
         }
-    } else {
-        error_log('[MDS Extension Install] Upgrader Skin Public Errors Array (from WP_Upgrader_Skin) is empty or not set.');
-    }
-    
-    // General messages from the skin are in the public 'messages' property
-    /** @var \WP_Upgrader_Skin $generic_skin_for_messages_prop */
-    $generic_skin_for_messages_prop = $upgrader->skin;
-    if (isset($generic_skin_for_messages_prop->messages) && !empty($generic_skin_for_messages_prop->messages)) {
-        error_log('[MDS Extension Install] Upgrader Skin General Messages: ' . esc_html(implode('; ', $generic_skin_for_messages_prop->messages)));
-    } else {
-        error_log('[MDS Extension Install] Upgrader Skin reported no general messages.');
-    }
-    // End enhanced diagnostic logging
-    
-    // Clear plugin cache regardless of immediate success/failure of install()
-    // as it might have partially unpacked files or left traces.
-    wp_clean_plugins_cache(true); // Pass true for aggressive cache clearing
 
-    // New error handling logic
-    if ($result !== true) { // Covers WP_Error, null, false, or anything else not strictly true
-        $final_error_message = Language::get('Installation failed: ');
-
-        if (is_wp_error($result)) {
-            $final_error_message .= $result->get_error_message();
-        } elseif (!empty($all_skin_error_messages)) {
-            // $all_skin_error_messages is already populated with strings.
-            $unique_messages = array_unique($all_skin_error_messages);
-            $final_error_message .= implode('; ', $unique_messages);
-        } else {
-            // This case means $result was not true (e.g. null/false), not WP_Error, and skin messages were empty.
-            $final_error_message .= Language::get('Upgrader returned an unexpected result and no specific errors were reported by the skin.');
-            // Adding the raw $result for more debug info in this specific unexpected case.
-            $final_error_message .= ' (Raw upgrader result: ' . print_r($result, true) . ')';
-        }
-        throw new \Exception($final_error_message);
+        return [
+            'success' => true,
+            'message' => Language::get( 'Extension installed and activated successfully.' ),
+            'reload'  => true,
+        ];
     }
-    // If we reach here, $result must have been strictly true.
-    // Proceed with finding and activating the plugin.
-    
-    // Verify installation by finding the plugin file
-    $plugin_file = self::find_plugin_file_by_slug($extension_slug);
-    
-    if ( ! $plugin_file ) {
-        // Check skin for specific messages if file not found
-        /** @var \WP_Upgrader_Skin $skin_for_messages_prop_fallback */
-        $skin_for_messages_prop_fallback = $upgrader->skin;
-        $skin_messages = []; // Default to empty array
-
-        // Safely access messages property, checking for existence and public visibility
-        if (is_object($skin_for_messages_prop_fallback) && property_exists($skin_for_messages_prop_fallback, 'messages')) {
-            try {
-                $reflection = new \ReflectionProperty(get_class($skin_for_messages_prop_fallback), 'messages');
-                if ($reflection->isPublic()) {
-                    $skin_messages = $skin_for_messages_prop_fallback->messages;
-                } else {
-                    error_log('[MDS Extension Install] Fallback Check: Property "messages" on skin object (' . esc_html(get_class($skin_for_messages_prop_fallback)) . ') is not public.');
-                }
-            } catch (\ReflectionException $e) {
-                error_log('[MDS Extension Install] Fallback Check: ReflectionException for "messages" property on skin object (' . esc_html(get_class($skin_for_messages_prop_fallback)) . '): ' . esc_html($e->getMessage()));
-            }
-        } elseif (is_object($skin_for_messages_prop_fallback)) {
-            error_log('[MDS Extension Install] Fallback Check: Property "messages" does not exist on skin object (' . esc_html(get_class($skin_for_messages_prop_fallback)) . ').');
-        } else {
-            error_log('[MDS Extension Install] Fallback Check: Skin object is not an object when trying to access "messages".');
-        }
-        // More specific error message for easier identification in logs
-        $error_msg = Language::get('POST_INSTALL_ERROR: Installation seemed to succeed, but the plugin file could not be located using slug: ') . $extension_slug;
-        if (!empty($skin_messages)) {
-            $error_msg .= ' Upgrader messages: ' . implode('; ', $skin_messages);
-        }
-        error_log('[MDS Extension Install] CRITICAL FAILURE: ' . $error_msg);
-        throw new \Exception($error_msg);
-    }
-    
-    error_log('[MDS Extension Install] Plugin file found: ' . $plugin_file . '. Attempting activation.');
-    // Attempt to activate the plugin
-    if (apply_filters('mds_auto_activate_extension_on_install', true, $extension_id, $plugin_file)) {
-        $activate_result = activate_plugin( $plugin_file );
-        
-        if ( is_wp_error( $activate_result ) ) {
-            throw new \Exception( Language::get( 'Extension installed but failed to activate: ' ) . $activate_result->get_error_message() );
-        }
-    }
-    
-    return [
-        'success' => true,
-        'message' => Language::get( 'Extension installed and activated successfully.' ),
-        'reload' => true
-    ];
-}
     public static function ajax_purchase_extension(): void {
         check_ajax_referer('mds_extensions_nonce', 'nonce');
 
@@ -8501,7 +8254,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 }
             }
 
-            wp_send_json_success( [ 'message' => Language::get('License claimed and saved.'), 'license_key' => $licenseKey ] );
+            wp_send_json_success( [ 'message' => Language::get('License claimed and saved.') ] );
         } catch (\Exception $e) {
             wp_send_json_error( [ 'message' => $e->getMessage() ] );
         }

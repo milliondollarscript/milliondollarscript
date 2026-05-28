@@ -160,7 +160,7 @@ class Shortcode {
 		}
 
 		// load scripts
-		Functions::register_scripts();
-		Functions::enqueue_scripts();
+		Functions::register_scripts( $atts );
+		Functions::enqueue_scripts( $atts );
 	}
 }

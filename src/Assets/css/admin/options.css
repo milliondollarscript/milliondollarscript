@@ -1,0 +1,29 @@
+/*
+ * Million Dollar Script Two
+ * Options admin styles.
+ */
+
+.wp-core-ui .mds-admin-icon-button.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	vertical-align: middle;
+}
+
+.wp-core-ui .mds-admin-icon-button.button .dashicons {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 1;
+	margin: 0;
+	vertical-align: middle;
+}
+
+.wp-core-ui .mds-admin-icon-button.button:disabled .dashicons,
+.wp-core-ui .mds-admin-icon-button.button[disabled] .dashicons {
+	opacity: 0.7;
+}
