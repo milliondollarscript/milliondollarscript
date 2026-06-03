@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.65-alpha.1 - 2026-06-03
+### Fixed
+
+- delete cancelled orders from admin
+
+
 ## 2.6.64-alpha.1 - 2026-05-28
 ### Fixed
 
