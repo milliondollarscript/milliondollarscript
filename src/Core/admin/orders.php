@@ -281,26 +281,26 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
         <table>
             <tr>
                 <td colspan="12">
-					<?php if ( $show != 'DE' ) { ?>
+					<?php if ( $show != 'deleted' ) { ?>
                         With selected:
 						<?php
-						if ( $show != 'RE' ) {
+						if ( $show != 'reserved' ) {
 							?>
                             <input type="submit" value='Complete'
                                    onclick="return confirm('Complete for all selected, are you sure?')"
                                    name='mass_complete'>
 						<?php
 						}
-						if ( $show != 'CA' ) {
+						if ( $show != 'cancelled' ) {
 							?>
                             | <input type="submit" value='Cancel' name='mass_cancel'
                                      onclick="document.getElementById('mds_dest_input').value = 'cancel-orders'; return confirm('Cancel for all selected, are you sure?')">
 						<?php
 						}
-						if ( $show == 'CA' ) {
+						if ( $show == 'cancelled' ) {
 							?>
                             | <input type="submit" value='Delete' name='mass_delete'
-                                     onclick="return confirm('Delete for all selected, are you sure?')">
+                                     onclick="document.getElementById('mds_dest_input').value = 'delete-orders'; return confirm('Delete for all selected, are you sure?')">
 						<?php
 						}
 					} ?>
@@ -453,7 +453,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 							echo "(Refunded)";
 						}
 
-						if ( $show == 'RE' ) {
+						if ( $show == 'reserved' ) {
 							?>
                             <input type="button"
                                    style="font-size: 9px;"
@@ -493,6 +493,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
                                             if (confirm('Delete the order from <?php echo esc_attr( $row['LastName'] ) . ", " . esc_attr( $row['FirstName'] ); ?>, are you sure?')) {
                                                 document.getElementById('mds-action').value = 'delete';
                                                 document.getElementById('order_id').value = '<?php echo intval( $row['order_id'] ); ?>';
+                                                document.getElementById('mds_dest_input').value = 'delete-orders';
                                                 document.getElementById('mass_action_form').submit();
                                             }
                                        ">
