@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.66-alpha.1 - 2026-06-04
+### Chore
+
+- update imagine to 1.5.4
+
+
 ## 2.6.65-alpha.1 - 2026-06-03
 ### Fixed
 
