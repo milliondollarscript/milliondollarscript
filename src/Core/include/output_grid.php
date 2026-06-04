@@ -382,7 +382,10 @@ function output_grid( $show, $file, $BID, $types, $user_id = 0, $cached = false,
 		// If Imagick fails, fall back to the GD driver
 		$gd_imagine = new \Imagine\Gd\Imagine();
 		try {
-			$tmp_block = $gd_imagine->load( $image_data );
+			$imagine       = $gd_imagine;
+			$blank_block   = $imagine->create( $block_size, $color );
+			$default_block = $blank_block->copy();
+			$tmp_block     = $gd_imagine->load( $image_data );
 		} catch ( \Imagine\Exception\RuntimeException $gd_e ) {
 			// If GD also fails, log it and re-throw the exception to stop the process
 			error_log( '[MDS Fallback] GD also failed to load image for Banner ID: ' . $BID . '. Error: ' . $gd_e->getMessage() );
