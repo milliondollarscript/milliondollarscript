@@ -3,6 +3,7 @@
 namespace MillionDollarScript\Classes\Extension;
 
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Extensions\CatalogCompatibility;
 use MillionDollarScript\Classes\System\Utility;
 
 /**
@@ -281,6 +282,7 @@ class PluginUpdateCheckerHelper {
             'extension_id' => $extensionId,
             'current_version' => $currentVersion,
         ];
+        $request_body = CatalogCompatibility::request_body($request_body);
 
         // Build headers
         $headers = [

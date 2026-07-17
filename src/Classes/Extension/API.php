@@ -2,6 +2,7 @@
 
 namespace MillionDollarScript\Classes\Extension;
 
+use MillionDollarScript\Classes\Extensions\CatalogCompatibility;
 use MillionDollarScript\Classes\System\Utility;
 
 use MillionDollarScript\Classes\Data\Options;
@@ -50,11 +51,11 @@ class API {
         // Use public API for activation; pass productIdentifier as slug for now
         $url = self::get_base_url() . '/api/public/activate';
 
-        $body = [
+        $body = CatalogCompatibility::request_body( [
             'licenseKey'        => $license_key,
             'productIdentifier' => $extension_slug,
             'deviceId'          => md5( site_url() ), // Required: unique site identifier for activation tracking
-        ];
+        ] );
 
         // Only send version if analytics not disabled
         if ( $version !== '' && ! self::is_version_analytics_disabled() ) {
@@ -91,11 +92,11 @@ class API {
     public static function validate_license( string $license_key, string $extension_slug, string $version = '' ) {
         $url = self::get_base_url() . '/api/public/validate';
 
-        $body = [
+        $body = CatalogCompatibility::request_body( [
             'licenseKey'        => $license_key,
             'productIdentifier' => $extension_slug,
             'deviceId'          => md5( site_url() ), // Required for version tracking
-        ];
+        ] );
 
         // Only send version if analytics not disabled
         if ( $version !== '' && ! self::is_version_analytics_disabled() ) {
@@ -145,11 +146,11 @@ class API {
         // Use public API for deactivation; pass productIdentifier as slug for consistency
         $url = self::get_base_url() . '/api/public/deactivate';
 
-        $body = [
+        $body = CatalogCompatibility::request_body( [
             'licenseKey'        => $license_key,
             'productIdentifier' => $extension_slug,
             'deviceId'          => md5( site_url() ), // Required: unique site identifier for deactivation tracking
-        ];
+        ] );
 
         // Only send version if analytics not disabled
         if ( $version !== '' && ! self::is_version_analytics_disabled() ) {
