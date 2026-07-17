@@ -76,7 +76,7 @@ class UnifiedExtensionsManager {
      * @return array Array of extension objects.
      */
     private static function fetch_extensions(): array {
-        $url = self::get_extension_server_base_url() . '/api/public/extensions';
+        $url = CatalogCompatibility::append_query(self::get_extension_server_base_url() . '/api/public/extensions');
 
         $response = wp_remote_get($url, [
             'headers' => [
@@ -229,7 +229,7 @@ class UnifiedExtensionsManager {
         }
 
         // Try fetching as extension first
-        $url = self::get_extension_server_base_url() . '/api/public/extensions/' . urlencode($id);
+        $url = CatalogCompatibility::append_query(self::get_extension_server_base_url() . '/api/public/extensions/' . urlencode($id));
 
         $response = wp_remote_get($url, [
             'headers' => [

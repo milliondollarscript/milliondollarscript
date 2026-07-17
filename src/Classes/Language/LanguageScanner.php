@@ -132,6 +132,8 @@ class LanguageScanner {
 			}
 		}
 
+		sort( $file_list, SORT_STRING );
+
 		return $file_list;
 	}
 
@@ -141,7 +143,7 @@ class LanguageScanner {
 	 * @return string The header for the language file.
 	 */
 	private function get_header(): string {
-		$version = MDS_VERSION;
+		$version = $this->plugin_version();
 		$date    = current_time( 'mysql' );
 		$year    = date( 'Y' );
 
@@ -167,6 +169,33 @@ msgstr ""
 "Language: English\\n"
 
 HEADERS;
+	}
+
+	/**
+	 * Resolve the MDS2 package version without relying on shared MDS constants.
+	 */
+	private function plugin_version(): string {
+		$plugin_file = trailingslashit( $this->plugin_folder ) . 'milliondollarscript-two.php';
+		if ( is_readable( $plugin_file ) ) {
+			$header = (string) file_get_contents( $plugin_file, false, null, 0, 8192 );
+			if ( preg_match( '/^[ \t*#@\/]*Version:\s*([^\r\n]+)/mi', $header, $matches ) ) {
+				return trim( (string) $matches[1] );
+			}
+		}
+
+		$composer = trailingslashit( $this->plugin_folder ) . 'composer.json';
+		if ( is_readable( $composer ) ) {
+			$data = json_decode( (string) file_get_contents( $composer ), true );
+			if ( is_array( $data ) && ! empty( $data['version'] ) && is_scalar( $data['version'] ) ) {
+				return (string) $data['version'];
+			}
+		}
+
+		if ( defined( 'MDS_VERSION' ) && ! defined( 'MDS3_VERSION' ) ) {
+			return (string) MDS_VERSION;
+		}
+
+		return '';
 	}
 
 	/**

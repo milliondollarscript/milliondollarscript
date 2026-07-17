@@ -5,18 +5,33 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Million Dollar Script Two 2.6.63\n"
+"Project-Id-Version: Million Dollar Script Two 2.6.65\n"
 "Report-Msgid-Bugs-To: https://milliondollarscript.com/\n"
 "Last-Translator: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "Language-Team: Ryan Rhode <ryan@milliondollarscript.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-28 15:12:29\n"
-"PO-Revision-Date: 2026-05-28 15:12:29\n"
-"X-Generator: Million Dollar Script Two 2.6.63\n"
+"POT-Creation-Date: 2026-06-04 02:24:28\n"
+"PO-Revision-Date: 2026-06-04 02:24:28\n"
+"X-Generator: Million Dollar Script Two 2.6.65\n"
 "X-Domain: milliondollarscript\n"
 "Language: English\n"
+
+msgid "Permission denied."
+msgstr ""
+
+msgid "Sorry, you are not allowed to access this page."
+msgstr ""
+
+msgid "Grid not found."
+msgstr ""
+
+msgid "Error sending data."
+msgstr ""
+
+msgid "Invalid callback: %s"
+msgstr ""
 
 msgid "Failed to create %s page: %s"
 msgstr ""
@@ -990,21 +1005,6 @@ msgstr ""
 msgid "An error occurred during validation: "
 msgstr ""
 
-msgid "Permission denied."
-msgstr ""
-
-msgid "Sorry, you are not allowed to access this page."
-msgstr ""
-
-msgid "Grid not found."
-msgstr ""
-
-msgid "Error sending data."
-msgstr ""
-
-msgid "Invalid callback: %s"
-msgstr ""
-
 msgid "You must be logged in to continue."
 msgstr ""
 
@@ -1119,6 +1119,33 @@ msgstr ""
 msgid "Plugin Activation Error"
 msgstr ""
 
+msgid "MDS Page Management System has detected pages that need to be migrated to the new metadata system."
+msgstr ""
+
+msgid "Run Migration"
+msgstr ""
+
+msgid "Dismiss"
+msgstr ""
+
+msgid "Compatibility"
+msgstr ""
+
+msgid "Migration completed successfully!"
+msgstr ""
+
+msgid "Total pages"
+msgstr ""
+
+msgid "Migrated pages"
+msgstr ""
+
+msgid "Skipped pages"
+msgstr ""
+
+msgid "Failed pages"
+msgstr ""
+
 msgid "Scan stopped due to execution time limit"
 msgstr ""
 
@@ -1179,81 +1206,6 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
-msgid "Database operation failed"
-msgstr ""
-
-msgid "Failed to initialize MDS metadata system: %s"
-msgstr ""
-
-msgid "Page Management"
-msgstr ""
-
-msgid "Cleaned up %d orphaned pages"
-msgstr ""
-
-msgid "Metadata not found"
-msgstr ""
-
-msgid "Page type is required"
-msgstr ""
-
-msgid "Write Ad"
-msgstr ""
-
-msgid "MDS"
-msgstr ""
-
-msgid "Add Grid Size Configuration"
-msgstr ""
-
-msgid "This grid page needs a grid size configuration to function properly."
-msgstr ""
-
-msgid "Add Payment Methods Configuration"
-msgstr ""
-
-msgid "This order page needs payment methods configuration."
-msgstr ""
-
-msgid "Add MDS Content"
-msgstr ""
-
-msgid "This page needs MDS shortcode or block content to function."
-msgstr ""
-
-msgid "Page ID %d for %s does not exist"
-msgstr ""
-
-msgid "Failed to migrate page %d (%s): %s"
-msgstr ""
-
-msgid "MDS Page Management System has detected pages that need to be migrated to the new metadata system."
-msgstr ""
-
-msgid "Run Migration"
-msgstr ""
-
-msgid "Dismiss"
-msgstr ""
-
-msgid "Compatibility"
-msgstr ""
-
-msgid "Migration completed successfully!"
-msgstr ""
-
-msgid "Total pages"
-msgstr ""
-
-msgid "Migrated pages"
-msgstr ""
-
-msgid "Skipped pages"
-msgstr ""
-
-msgid "Failed pages"
-msgstr ""
-
 msgid "Failed to save metadata for page %d: %s"
 msgstr ""
 
@@ -1297,6 +1249,54 @@ msgid "Grid page missing grid size configuration"
 msgstr ""
 
 msgid "Order page missing payment methods configuration"
+msgstr ""
+
+msgid "Page ID %d for %s does not exist"
+msgstr ""
+
+msgid "Failed to migrate page %d (%s): %s"
+msgstr ""
+
+msgid "Database operation failed"
+msgstr ""
+
+msgid "Failed to initialize MDS metadata system: %s"
+msgstr ""
+
+msgid "Page Management"
+msgstr ""
+
+msgid "Cleaned up %d orphaned pages"
+msgstr ""
+
+msgid "Metadata not found"
+msgstr ""
+
+msgid "Page type is required"
+msgstr ""
+
+msgid "Write Ad"
+msgstr ""
+
+msgid "MDS"
+msgstr ""
+
+msgid "Add Grid Size Configuration"
+msgstr ""
+
+msgid "This grid page needs a grid size configuration to function properly."
+msgstr ""
+
+msgid "Add Payment Methods Configuration"
+msgstr ""
+
+msgid "This order page needs payment methods configuration."
+msgstr ""
+
+msgid "Add MDS Content"
+msgstr ""
+
+msgid "This page needs MDS shortcode or block content to function."
 msgstr ""
 
 msgid "URLs & Redirects"
@@ -2745,91 +2745,10 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-msgid "MDS Logs"
-msgstr ""
-
-msgid "Logs"
+msgid "Account"
 msgstr ""
 
 msgid "You do not have sufficient permissions to access this page."
-msgstr ""
-
-msgid "Million Dollar Script Logs"
-msgstr ""
-
-msgid "Log Settings"
-msgstr ""
-
-msgid "Enable Live Update"
-msgstr ""
-
-msgid "Automatically refresh the log view below with new entries every few seconds."
-msgstr ""
-
-msgid "Log File Path"
-msgstr ""
-
-msgid "Could not determine log path."
-msgstr ""
-
-msgid "Manage Log File"
-msgstr ""
-
-msgid "Clear Log File"
-msgstr ""
-
-msgid "Deletes the current log file. A new file will be created when the next log event occurs."
-msgstr ""
-
-msgid "Log Content"
-msgstr ""
-
-msgid "Loading log entries..."
-msgstr ""
-
-msgid "Are you sure you want to clear the log file? This action cannot be undone."
-msgstr ""
-
-msgid "An AJAX error occurred. Please check your browser console or server logs."
-msgstr ""
-
-msgid "Error loading logs."
-msgstr ""
-
-msgid "Live log update enabled."
-msgstr ""
-
-msgid "Live log update disabled."
-msgstr ""
-
-msgid "Log file cleared successfully."
-msgstr ""
-
-msgid "Log file has been cleared."
-msgstr ""
-
-msgid "Log file is empty."
-msgstr ""
-
-msgid "Logging enabled."
-msgstr ""
-
-msgid "Logging disabled."
-msgstr ""
-
-msgid "Failed to update logging setting."
-msgstr ""
-
-msgid "Could not clear log file. Check file permissions or if the file exists."
-msgstr ""
-
-msgid "Log file is empty or does not exist."
-msgstr ""
-
-msgid "Could not open log file for reading."
-msgstr ""
-
-msgid "Account"
 msgstr ""
 
 msgid "License Status"
@@ -2914,123 +2833,6 @@ msgid "No Image"
 msgstr ""
 
 msgid "No orders found matching your criteria."
-msgstr ""
-
-msgid "Million Dollar Script Logo"
-msgstr ""
-
-msgid "Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience."
-msgstr ""
-
-msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
-msgstr ""
-
-msgid "Need to create or configure pages? Use the <a href=\"%s\">Setup Wizard</a> (the wrench icon in the menu above) to get started quickly."
-msgstr ""
-
-msgid "Last Updated: %s"
-msgstr ""
-
-msgid "Last Updated: N/A"
-msgstr ""
-
-msgid "GMT: %s"
-msgstr ""
-
-msgid "Server: %s"
-msgstr ""
-
-msgid "Local: %s"
-msgstr ""
-
-msgid "Customer Accounts"
-msgstr ""
-
-msgid "Orders Waiting"
-msgstr ""
-
-msgid "Orders Cancelled"
-msgstr ""
-
-msgid "Orders Denied"
-msgstr ""
-
-msgid "Orders Completed"
-msgstr ""
-
-msgid "Pixels Waiting for approval"
-msgstr ""
-
-msgid "Credits"
-msgstr ""
-
-msgid "Ryan Rhode - Developer"
-msgstr ""
-
-msgid "Adam Malinowski - Project Founder"
-msgstr ""
-
-msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
-msgstr ""
-
-msgid "Discover Extensions"
-msgstr ""
-
-msgid "Supercharge Million Dollar Script with powerful add-ons for custom fields, translations, analytics, automation, and more."
-msgstr ""
-
-msgid "Explore Extensions"
-msgstr ""
-
-msgid "Premium Installation Service"
-msgstr ""
-
-msgid "The premium installation service handles full plugin setup and configuration for you."
-msgstr ""
-
-msgid "Learn More About The Installation Service"
-msgstr ""
-
-msgid "Custom Development Services"
-msgstr ""
-
-msgid "Want custom features or integrations?<br>The development team can help."
-msgstr ""
-
-msgid "Get Custom Development"
-msgstr ""
-
-msgid "Want Reliable Hosting?"
-msgstr ""
-
-msgid "Hostinger offers fast, affordable hosting for your MDS site."
-msgstr ""
-
-msgid "Check out Hostinger Deals"
-msgstr ""
-
-msgid "Million Dollar Script v%s"
-msgstr ""
-
-msgid "Database v%s"
-msgstr ""
-
-msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3.<br>See %s for license information."
-msgstr ""
-
-msgid "Success!"
-msgstr ""
-
-msgid "Error!"
-msgstr ""
-
-msgid "Reset!"
-msgstr ""
-
-msgid "This will unselect all Not For Sale blocks. Are you sure you want to do this?"
-msgstr ""
-
-msgid "You haven't made any changes to save!"
 msgstr ""
 
 msgid "A valid license is required to check for updates."
@@ -3444,6 +3246,204 @@ msgstr ""
 msgid "Auto-renew canceled."
 msgstr ""
 
+msgid "MDS Logs"
+msgstr ""
+
+msgid "Logs"
+msgstr ""
+
+msgid "Million Dollar Script Logs"
+msgstr ""
+
+msgid "Log Settings"
+msgstr ""
+
+msgid "Enable Live Update"
+msgstr ""
+
+msgid "Automatically refresh the log view below with new entries every few seconds."
+msgstr ""
+
+msgid "Log File Path"
+msgstr ""
+
+msgid "Could not determine log path."
+msgstr ""
+
+msgid "Manage Log File"
+msgstr ""
+
+msgid "Clear Log File"
+msgstr ""
+
+msgid "Deletes the current log file. A new file will be created when the next log event occurs."
+msgstr ""
+
+msgid "Log Content"
+msgstr ""
+
+msgid "Loading log entries..."
+msgstr ""
+
+msgid "Are you sure you want to clear the log file? This action cannot be undone."
+msgstr ""
+
+msgid "An AJAX error occurred. Please check your browser console or server logs."
+msgstr ""
+
+msgid "Error loading logs."
+msgstr ""
+
+msgid "Live log update enabled."
+msgstr ""
+
+msgid "Live log update disabled."
+msgstr ""
+
+msgid "Log file cleared successfully."
+msgstr ""
+
+msgid "Log file has been cleared."
+msgstr ""
+
+msgid "Log file is empty."
+msgstr ""
+
+msgid "Logging enabled."
+msgstr ""
+
+msgid "Logging disabled."
+msgstr ""
+
+msgid "Failed to update logging setting."
+msgstr ""
+
+msgid "Could not clear log file. Check file permissions or if the file exists."
+msgstr ""
+
+msgid "Log file is empty or does not exist."
+msgstr ""
+
+msgid "Could not open log file for reading."
+msgstr ""
+
+msgid "Million Dollar Script Logo"
+msgstr ""
+
+msgid "Million Dollar Script enables you to sell pixel-based advertising space on your website for an interactive user experience."
+msgstr ""
+
+msgid "Visit the <a target=\"_blank\" href=\"https://milliondollarscript.com/million-dollar-script-wordpress-plugin/\">Million Dollar Script WordPress Plugin</a> page on the website for additional documentation."
+msgstr ""
+
+msgid "Need to create or configure pages? Use the <a href=\"%s\">Setup Wizard</a> (the wrench icon in the menu above) to get started quickly."
+msgstr ""
+
+msgid "Last Updated: %s"
+msgstr ""
+
+msgid "Last Updated: N/A"
+msgstr ""
+
+msgid "GMT: %s"
+msgstr ""
+
+msgid "Server: %s"
+msgstr ""
+
+msgid "Local: %s"
+msgstr ""
+
+msgid "Customer Accounts"
+msgstr ""
+
+msgid "Orders Waiting"
+msgstr ""
+
+msgid "Orders Cancelled"
+msgstr ""
+
+msgid "Orders Denied"
+msgstr ""
+
+msgid "Orders Completed"
+msgstr ""
+
+msgid "Pixels Waiting for approval"
+msgstr ""
+
+msgid "Credits"
+msgstr ""
+
+msgid "Ryan Rhode - Developer"
+msgstr ""
+
+msgid "Adam Malinowski - Project Founder"
+msgstr ""
+
+msgid "And the many members of the community who have contributed bug reports, feature suggestions and fixes."
+msgstr ""
+
+msgid "Discover Extensions"
+msgstr ""
+
+msgid "Supercharge Million Dollar Script with powerful add-ons for custom fields, translations, analytics, automation, and more."
+msgstr ""
+
+msgid "Explore Extensions"
+msgstr ""
+
+msgid "Premium Installation Service"
+msgstr ""
+
+msgid "The premium installation service handles full plugin setup and configuration for you."
+msgstr ""
+
+msgid "Learn More About The Installation Service"
+msgstr ""
+
+msgid "Custom Development Services"
+msgstr ""
+
+msgid "Want custom features or integrations?<br>The development team can help."
+msgstr ""
+
+msgid "Get Custom Development"
+msgstr ""
+
+msgid "Want Reliable Hosting?"
+msgstr ""
+
+msgid "Hostinger offers fast, affordable hosting for your MDS site."
+msgstr ""
+
+msgid "Check out Hostinger Deals"
+msgstr ""
+
+msgid "Million Dollar Script v%s"
+msgstr ""
+
+msgid "Database v%s"
+msgstr ""
+
+msgid "&copy; Copyright %s by the authors. Released under the GNU GPL v3.<br>See %s for license information."
+msgstr ""
+
+msgid "Success!"
+msgstr ""
+
+msgid "Error!"
+msgstr ""
+
+msgid "Reset!"
+msgstr ""
+
+msgid "This will unselect all Not For Sale blocks. Are you sure you want to do this?"
+msgstr ""
+
+msgid "You haven't made any changes to save!"
+msgstr ""
+
 msgid "Error:"
 msgstr ""
 
@@ -3816,6 +3816,15 @@ msgstr ""
 msgid "Click Count"
 msgstr ""
 
+msgid "MDS: Corresponding MDS Order %MDS_ORDER_ID% pixels automatically cancelled due to full WooCommerce refund."
+msgstr ""
+
+msgid "MDS Error: Could not cancel associated pixels during refund sync - Orders class not found."
+msgstr ""
+
+msgid "MDS Error: Exception during pixel cancellation sync: %ERROR_MESSAGE%"
+msgstr ""
+
 msgid "Quantity does not match! (1)"
 msgstr ""
 
@@ -3876,61 +3885,97 @@ msgstr ""
 msgid "Immediately mark the linked MDS order as completed when WooCommerce changes the order status out of \"on-hold\". For manual/offline checkouts that bypass WooCommerce entirely, use the “Auto-complete manual payments” option on the Orders tab (visible only when WooCommerce integration is disabled)."
 msgstr ""
 
-msgid "MDS: Corresponding MDS Order %MDS_ORDER_ID% pixels automatically cancelled due to full WooCommerce refund."
+msgid "Million Dollar Script logo"
 msgstr ""
 
-msgid "MDS Error: Could not cancel associated pixels during refund sync - Orders class not found."
+msgid "View Site"
 msgstr ""
 
-msgid "MDS Error: Exception during pixel cancellation sync: %ERROR_MESSAGE%"
+msgid "Pixel Management"
 msgstr ""
 
-msgid "Done!"
+msgid "Grids"
+msgstr ""
+
+msgid "Packages"
+msgstr ""
+
+msgid "Price Zones"
+msgstr ""
+
+msgid "Not For Sale"
+msgstr ""
+
+msgid "Backgrounds"
+msgstr ""
+
+msgid "Shortcodes"
+msgstr ""
+
+msgid "Process Pixels"
+msgstr ""
+
+msgid "Waiting"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Reserved"
+msgstr ""
+
+msgid "Denied"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Deleted"
+msgstr ""
+
+msgid "Map"
 msgstr ""
 
 msgid "Clear Orders"
 msgstr ""
 
-msgid "<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgid "Pixel Approval"
 msgstr ""
 
-msgid "You might want to run a backup before doing this. Click the Delete button below if you wish to proceed.</p>"
+msgid "Awaiting Approval"
 msgstr ""
 
-msgid "Clear associated WooCommerce orders too?"
+msgid "Reports"
 msgstr ""
 
-msgid "WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgid "Transaction Log"
 msgstr ""
 
-msgid "You might want to run a backup before doing this. Are you sure?"
+msgid "Top Customers"
 msgstr ""
 
-msgid "License not found"
-msgstr ""
-
-msgid "System Information"
-msgstr ""
-
-msgid "The path to your uploads directory: %UPLOAD_PATH%"
-msgstr ""
-
-msgid "Select grid:"
-msgstr ""
-
-msgid "Show All"
-msgstr ""
-
-msgid "Here is the list of the top clicks. You may copy and paste this list onto your website."
-msgstr ""
-
-msgid "Advertiser's Link"
+msgid "Outgoing Email"
 msgstr ""
 
 msgid "Clicks"
 msgstr ""
 
-msgid "Views"
+msgid "Top Clicks"
+msgstr ""
+
+msgid "Click Reports"
+msgstr ""
+
+msgid "System Information"
+msgstr ""
+
+msgid "Migration Readiness"
+msgstr ""
+
+msgid "License"
+msgstr ""
+
+msgid "Help"
 msgstr ""
 
 msgid "Background image uploaded successfully."
@@ -3975,6 +4020,9 @@ msgstr ""
 msgid "Remember to process your Grid Image(s) <a href=\"%PROCESS_PIXELS_URL%\">here</a>"
 msgstr ""
 
+msgid "Select grid:"
+msgstr ""
+
 msgid "Upload <b>Image (PNG, JPG, GIF)</b> to blend:"
 msgstr ""
 
@@ -3993,97 +4041,31 @@ msgstr ""
 msgid "Check Completed."
 msgstr ""
 
-msgid "Packages"
+msgid "Done!"
+msgstr ""
+
+msgid "<p>WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgstr ""
+
+msgid "You might want to run a backup before doing this. Click the Delete button below if you wish to proceed.</p>"
+msgstr ""
+
+msgid "Clear associated WooCommerce orders too?"
+msgstr ""
+
+msgid "WARNING: This will completely delete all ads, blocks, and orders including any orders in progress. This cannot be undone!"
+msgstr ""
+
+msgid "You might want to run a backup before doing this. Are you sure?"
+msgstr ""
+
+msgid "License not found"
 msgstr ""
 
 msgid "Packages allow you to group pixels together and define the pricing and duration options available for purchasing pixels on a specific grid."
 msgstr ""
 
 msgid "Listing rows that are marked as custom price."
-msgstr ""
-
-msgid "Manage Refund (WooCommerce)"
-msgstr ""
-
-msgid "Million Dollar Script logo"
-msgstr ""
-
-msgid "View Site"
-msgstr ""
-
-msgid "Pixel Management"
-msgstr ""
-
-msgid "Grids"
-msgstr ""
-
-msgid "Price Zones"
-msgstr ""
-
-msgid "Not For Sale"
-msgstr ""
-
-msgid "Backgrounds"
-msgstr ""
-
-msgid "Shortcodes"
-msgstr ""
-
-msgid "Process Pixels"
-msgstr ""
-
-msgid "Waiting"
-msgstr ""
-
-msgid "Completed"
-msgstr ""
-
-msgid "Reserved"
-msgstr ""
-
-msgid "Denied"
-msgstr ""
-
-msgid "Cancelled"
-msgstr ""
-
-msgid "Deleted"
-msgstr ""
-
-msgid "Map"
-msgstr ""
-
-msgid "Pixel Approval"
-msgstr ""
-
-msgid "Awaiting Approval"
-msgstr ""
-
-msgid "Reports"
-msgstr ""
-
-msgid "Transaction Log"
-msgstr ""
-
-msgid "Top Customers"
-msgstr ""
-
-msgid "Outgoing Email"
-msgstr ""
-
-msgid "Top Clicks"
-msgstr ""
-
-msgid "Click Reports"
-msgstr ""
-
-msgid "Migration Readiness"
-msgstr ""
-
-msgid "License"
-msgstr ""
-
-msgid "Help"
 msgstr ""
 
 msgid "Grid regeneration was not started. Review the large-grid warning below and confirm before processing these grids."
@@ -4095,70 +4077,22 @@ msgstr ""
 msgid "Error processing grids: "
 msgstr ""
 
-msgid "Price Options"
+msgid "The path to your uploads directory: %UPLOAD_PATH%"
 msgstr ""
 
-msgid "Please select your preferred package from the following list:"
+msgid "Show All"
 msgstr ""
 
-msgid "Here are the available price options for this grid:"
+msgid "Here is the list of the top clicks. You may copy and paste this list onto your website."
 msgstr ""
 
-msgid "Max Orders"
+msgid "Advertiser's Link"
 msgstr ""
 
-msgid "free"
+msgid "Views"
 msgstr ""
 
-msgid "/ %NUM_PIXELS% pixels"
-msgstr ""
-
-msgid "Expires in %DAYS_EXPIRE% days."
-msgstr ""
-
-msgid "Unlimited"
-msgstr ""
-
-msgid "No account yet?"
-msgstr ""
-
-msgid "Register Now"
-msgstr ""
-
-msgid "Register for an account"
-msgstr ""
-
-msgid "Price Table"
-msgstr ""
-
-msgid "The following table shows the different price regions for the selected grid."
-msgstr ""
-
-msgid "Price / %NUM_PIXELS% pixels"
-msgstr ""
-
-msgid "Color"
-msgstr ""
-
-msgid "From row"
-msgstr ""
-
-msgid "To row"
-msgstr ""
-
-msgid "From column"
-msgstr ""
-
-msgid "To column"
-msgstr ""
-
-msgid "Today!"
-msgstr ""
-
-msgid "Day ago"
-msgstr ""
-
-msgid "Days ago"
+msgid "Manage Refund (WooCommerce)"
 msgstr ""
 
 msgid "ERROR: Cannot save your ad for the following reasons: "
@@ -4224,7 +4158,94 @@ msgstr ""
 msgid "Image processing failed: %ERROR%"
 msgstr ""
 
+msgid "Today!"
+msgstr ""
+
+msgid "Day ago"
+msgstr ""
+
+msgid "Days ago"
+msgstr ""
+
+msgid "Price Options"
+msgstr ""
+
+msgid "Please select your preferred package from the following list:"
+msgstr ""
+
+msgid "Here are the available price options for this grid:"
+msgstr ""
+
+msgid "Max Orders"
+msgstr ""
+
+msgid "free"
+msgstr ""
+
+msgid "/ %NUM_PIXELS% pixels"
+msgstr ""
+
+msgid "Expires in %DAYS_EXPIRE% days."
+msgstr ""
+
+msgid "Unlimited"
+msgstr ""
+
+msgid "Price Table"
+msgstr ""
+
+msgid "The following table shows the different price regions for the selected grid."
+msgstr ""
+
+msgid "Price / %NUM_PIXELS% pixels"
+msgstr ""
+
+msgid "Color"
+msgstr ""
+
+msgid "From row"
+msgstr ""
+
+msgid "To row"
+msgstr ""
+
+msgid "From column"
+msgstr ""
+
+msgid "To column"
+msgstr ""
+
+msgid "No account yet?"
+msgstr ""
+
+msgid "Register Now"
+msgstr ""
+
+msgid "Register for an account"
+msgstr ""
+
 msgid "The upload image file is empty."
+msgstr ""
+
+msgid "Go Back"
+msgstr ""
+
+msgid "Please write your ad before confirming your order."
+msgstr ""
+
+msgid "<< Previous"
+msgstr ""
+
+msgid "Next >>"
+msgstr ""
+
+msgid "<p><span style=\"color:red\">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</p>"
+msgstr ""
+
+msgid "Complete Order"
+msgstr ""
+
+msgid "Confirm & Pay"
 msgstr ""
 
 msgid "You are not logged in. Please log in or sign up for a new account."
@@ -4281,6 +4302,33 @@ msgstr ""
 msgid "You have no pixels yet. Go <a href=\"%ORDER_URL%\">here</a> to order pixels."
 msgstr ""
 
+msgid "Available Grids"
+msgstr ""
+
+msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a></p>"
+msgstr ""
+
+msgid "Upload your pixel image"
+msgstr ""
+
+msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
+msgstr ""
+
+msgid "<p><strong>Upload your pixels:</strong></p>"
+msgstr ""
+
+msgid "Your uploaded pixels:"
+msgstr ""
+
+msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />"
+msgstr ""
+
+msgid "Your image was automatically resized to %WIDTH%x%HEIGHT% to fit the grid constraints."
+msgstr ""
+
+msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />"
+msgstr ""
+
 msgid "<p>1. <a href=\"%ORDER_URL%?BID=%BID%\">Select Your pixels</a> -> 2. <b>Image Upload</b> -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
 msgstr ""
 
@@ -4290,22 +4338,10 @@ msgstr ""
 msgid "<h3>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a></h3>"
 msgstr ""
 
-msgid "<< Previous"
-msgstr ""
-
-msgid "Next >>"
-msgstr ""
-
-msgid "<p><span style=\"color:red\">Error: Cannot place order. This price option is limited to %MAX_ORDERS% per customer.</span><br/>Please select another option, or check your order history under <a href=\"%MANAGE_URL%\">Manage Pixels</a>.</p>"
-msgstr ""
-
 msgid "Complete Order >>"
 msgstr ""
 
 msgid "Confirm & Pay >>"
-msgstr ""
-
-msgid "Go Back"
 msgstr ""
 
 msgid "<h1>Pixel Reservation Not Yet Completed...</h1>"
@@ -4315,9 +4351,6 @@ msgid "<p>We are sorry, it looks like you took too long! Either your session has
 msgstr ""
 
 msgid "<p>1. <b>Select Your Pixels</b> -> 2. Image Upload -> 3. Write Your Ad -> 4. Confirm Order -> 5. Payment</p>"
-msgstr ""
-
-msgid "Available Grids"
 msgstr ""
 
 msgid "There are <b>%GRID_COUNT%</b> different images served by this website! Select the image which you would like to publish your pixels to:"
@@ -4368,19 +4401,10 @@ msgstr ""
 msgid "There was an error with the image file."
 msgstr ""
 
-msgid "<p>Note: You have placed some pixels on order, but it was not confirmed (green blocks). <a href=\"%MANAGE_URL%\">Manage Pixels</a></p>"
-msgstr ""
-
 msgid "<p>You have no pixels selected on order! Please <a href=\"%ORDER_URL%?BID=%BID%\">select some pixels here</a>.</p>"
 msgstr ""
 
-msgid "Upload your pixel image"
-msgstr ""
-
 msgid "<p>- Upload a GIF, JPEG or PNG graphics file<br/>\n- Click \"Browse\" to find your file on your computer, then click \"Upload\".<br/>\n- Once uploaded, you will be able to position your file over the grid.<br/></p>"
-msgstr ""
-
-msgid "<p><strong>Upload your pixels:</strong></p>"
 msgstr ""
 
 msgid "Your Uploaded Pixels"
@@ -4405,30 +4429,6 @@ msgid "<h3>Please write your advertisement and click \"Save Ad\" when done.</h3>
 msgstr ""
 
 msgid "Sorry there was an error with your session."
-msgstr ""
-
-msgid "Please write your ad before confirming your order."
-msgstr ""
-
-msgid "Complete Order"
-msgstr ""
-
-msgid "Confirm & Pay"
-msgstr ""
-
-msgid "- Upload a GIF, JPEG or PNG graphics file<br />\n- Click 'Browse' to find your file on your computer, then click 'Upload'.<br />\n- Once uploaded, you will be able to position your file over the grid.<br />"
-msgstr ""
-
-msgid "Your uploaded pixels:"
-msgstr ""
-
-msgid "The uploaded image is %WIDTH% pixels wide and %HEIGHT% pixels high.<br />"
-msgstr ""
-
-msgid "Your image was automatically resized to %WIDTH%x%HEIGHT% to fit the grid constraints."
-msgstr ""
-
-msgid "The uploaded image will require you to purchase %PIXEL_COUNT% pixels from the map which is exactly %BLOCK_COUNT% blocks.<br />"
 msgstr ""
 
 msgid "MDS Backward Compatibility"

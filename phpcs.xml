@@ -3,6 +3,7 @@
 	<description>Custom ruleset for Million Dollar Script core plugin.</description>
 
 	<!-- Use WordPress Coding Standards -->
+	<config name="installed_paths" value="vendor/wp-coding-standards/wpcs,vendor/phpcsstandards/phpcsutils,vendor/phpcsstandards/phpcsextra" />
 	<rule ref="WordPress-Core" />
 	<!-- <rule ref="WordPress-Docs" /> -->
 	<!-- <rule ref="WordPress-Extra" /> -->

@@ -4,6 +4,7 @@ namespace MillionDollarScript\Classes\Products;
 
 use MillionDollarScript\Classes\System\Utility;
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Extensions\CatalogCompatibility;
 
 /**
  * Products API Client
@@ -65,6 +66,7 @@ class ProductsClient {
             'offset'    => absint($args['offset']),
         ];
 
+        $query_params = array_merge($query_params, CatalogCompatibility::query_args());
         $url = self::get_base_url() . '/api/public/products?' . http_build_query($query_params);
 
         // Check transient cache first
@@ -125,10 +127,10 @@ class ProductsClient {
             return false;
         }
 
-        $url = self::get_base_url() . '/api/public/products/' . urlencode($slug);
+        $url = CatalogCompatibility::append_query(self::get_base_url() . '/api/public/products/' . urlencode($slug));
 
         // Check transient cache first
-        $cache_key = 'mds_product_detail_' . $slug;
+        $cache_key = 'mds_product_detail_' . md5($url);
         $cached = get_transient($cache_key);
         if (false !== $cached) {
             return $cached;
@@ -209,7 +211,7 @@ class ProductsClient {
 
         $url = self::get_base_url() . '/api/public/store/checkout';
 
-        $body = [
+        $body = CatalogCompatibility::request_body( [
             'priceId'       => $args['priceId'],
             'extensionSlug' => $args['extensionSlug'],
             'plan'          => $args['plan'],
@@ -217,7 +219,7 @@ class ProductsClient {
             'successUrl'    => $args['successUrl'],
             'cancelUrl'     => $args['cancelUrl'],
             'metadata'      => $args['metadata'] ?? [],
-        ];
+        ] );
 
         $response = wp_remote_post($url, [
             'body'      => json_encode($body),
@@ -263,6 +265,8 @@ class ProductsClient {
     public static function clear_cache( ?string $slug = null ): void {
         if ($slug !== null) {
             delete_transient('mds_product_detail_' . $slug);
+            $url = CatalogCompatibility::append_query(self::get_base_url() . '/api/public/products/' . urlencode($slug));
+            delete_transient('mds_product_detail_' . md5($url));
         } else {
             // Clear all product caches
             global $wpdb;
