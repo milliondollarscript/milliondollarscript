@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.6.67 - 2026-07-17
+### Fixed
+
+- preserve MDS2 compatibility for MDS 3.0 transition
+- load order scripts from order contexts
+- update minimatch to 3.1.5 to resolve Dependabot alert #6
+
+### Chore
+
+- update imagine to 1.5.4
+- update imagine to 1.5.3
+- bump flatted
+- remove vendor/ from git tracking
+- bump version to 2.6.51 and update tested up to 6.9.1
+
+
 ## 2.6.67-beta.1 - 2026-07-17
 ### Fixed
 
