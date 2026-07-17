@@ -3,6 +3,7 @@
 namespace MillionDollarScript\Classes\System;
 
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Extensions\CatalogCompatibility;
 use MillionDollarScript\Classes\System\Logs;
 
 /**
@@ -90,7 +91,7 @@ class ExtensionServerTest {
 
         // Test 3: Extension Loading
         try {
-            $response = wp_remote_get($server_url . '/api/public/extensions', [
+            $response = wp_remote_get(CatalogCompatibility::append_query($server_url . '/api/public/extensions'), [
                 'timeout' => 10,
                 'sslverify' => strpos($server_url, 'localhost') === false,
                 'headers' => [

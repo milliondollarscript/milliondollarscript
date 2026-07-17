@@ -524,8 +524,8 @@ class MDSPageWordPressIntegration {
                 );
                 
                 // Add help icon with error details if validation errors exist
-                if ( !empty( $metadata->validation_errors ) ) {
-                    $error_details = implode( ', ', $metadata->validation_errors );
+                $error_details = implode( ', ', $this->getValidationErrorMessages( $metadata->validation_errors ?? [] ) );
+                if ( $error_details !== '' ) {
                     $status_with_help .= sprintf(
                         ' <span class="mds-error-help dashicons dashicons-editor-help" title="%s" data-post-id="%d" style="cursor: pointer; color: #d63638;"></span>',
                         esc_attr( $error_details ),
@@ -569,7 +569,7 @@ class MDSPageWordPressIntegration {
                 'page_id' => $page_id,
                 'page_title' => $post->post_title,
                 'status' => $metadata->status,
-                'validation_errors' => $metadata->validation_errors ?? [],
+                'validation_errors' => $this->getValidationErrorMessages( $metadata->validation_errors ?? [] ),
                 'confidence_score' => $metadata->confidence_score,
                 'page_type' => $metadata->page_type,
                 'page_config' => $metadata->page_config,
@@ -617,7 +617,7 @@ class MDSPageWordPressIntegration {
                 'page_id' => $page_id,
                 'fixes_applied' => $fixes_applied,
                 'new_status' => $updated_metadata->status,
-                'remaining_errors' => $updated_metadata->validation_errors ?? []
+                'remaining_errors' => $this->getValidationErrorMessages( $updated_metadata->validation_errors ?? [] )
             ]
         ] );
     }
@@ -635,7 +635,7 @@ class MDSPageWordPressIntegration {
             return $fixes;
         }
         
-        foreach ( $metadata->validation_errors as $error ) {
+        foreach ( $this->getValidationErrorMessages( $metadata->validation_errors ) as $error ) {
             if ( strpos( $error, 'Grid page missing grid size configuration' ) !== false ) {
                 $fixes[] = [
                     'type' => 'config',
@@ -683,7 +683,7 @@ class MDSPageWordPressIntegration {
             return $fixes_applied;
         }
         
-        foreach ( $metadata->validation_errors as $error ) {
+        foreach ( $this->getValidationErrorMessages( $metadata->validation_errors ) as $error ) {
             if ( strpos( $error, 'Grid page missing grid size configuration' ) !== false ) {
                 if ( empty( $metadata->page_config['grid_size'] ) ) {
                     $metadata->page_config['grid_size'] = '100x100';
@@ -706,6 +706,107 @@ class MDSPageWordPressIntegration {
         
         return $fixes_applied;
     }
+
+    /**
+     * Convert mixed validation error payloads into safe display strings.
+     *
+     * @param mixed $errors
+     * @return array
+     */
+    private function getValidationErrorMessages( $errors ): array {
+        if ( empty( $errors ) ) {
+            return [];
+        }
+
+        if ( is_string( $errors ) || is_numeric( $errors ) ) {
+            $message = $this->normalizeValidationErrorText( $errors );
+            return $message !== '' ? [ $message ] : [];
+        }
+
+        if ( is_object( $errors ) ) {
+            $errors = [ $errors ];
+        }
+
+        if ( ! is_array( $errors ) ) {
+            return [];
+        }
+
+        $messages = [];
+        foreach ( $errors as $error ) {
+            $message = $this->getValidationErrorMessage( $error );
+            if ( $message !== '' ) {
+                $messages[] = $message;
+            }
+        }
+
+        return array_values( array_unique( $messages ) );
+    }
+
+    /**
+     * Convert one validation error entry into a safe display string.
+     *
+     * @param mixed $error
+     * @return string
+     */
+    private function getValidationErrorMessage( $error ): string {
+        if ( is_string( $error ) || is_numeric( $error ) ) {
+            return $this->normalizeValidationErrorText( $error );
+        }
+
+        if ( is_object( $error ) ) {
+            $error = (array) $error;
+        }
+
+        if ( ! is_array( $error ) ) {
+            return '';
+        }
+
+        $parts = [];
+        foreach ( [ 'message', 'description' ] as $key ) {
+            if ( isset( $error[$key] ) ) {
+                $part = $this->normalizeValidationErrorText( $error[$key] );
+                if ( $part !== '' && ! in_array( $part, $parts, true ) ) {
+                    $parts[] = $part;
+                }
+            }
+        }
+
+        if ( isset( $error['suggested_fix'] ) ) {
+            $suggested_fix = $this->normalizeValidationErrorText( $error['suggested_fix'] );
+            if ( $suggested_fix !== '' ) {
+                $parts[] = Language::get( 'Suggested Fix:' ) . ' ' . $suggested_fix;
+            }
+        }
+
+        if ( empty( $parts ) && isset( $error['type'] ) ) {
+            $parts[] = ucfirst( str_replace( '_', ' ', $this->normalizeValidationErrorText( $error['type'] ) ) );
+        }
+
+        if ( empty( $parts ) ) {
+            $encoded = wp_json_encode( $error );
+            return is_string( $encoded ) ? $this->normalizeValidationErrorText( $encoded ) : '';
+        }
+
+        return implode( ' ', $parts );
+    }
+
+    /**
+     * Normalize validation error text for use in admin titles and JSON responses.
+     *
+     * @param mixed $text
+     * @return string
+     */
+    private function normalizeValidationErrorText( $text ): string {
+        if ( is_array( $text ) || is_object( $text ) ) {
+            $encoded = wp_json_encode( $text );
+            $text = is_string( $encoded ) ? $encoded : '';
+        }
+
+        $text = wp_strip_all_tags( (string) $text );
+        $text = preg_replace( '/\s+/', ' ', $text );
+
+        return trim( $text );
+    }
     
     /**
      * Get metadata manager instance
@@ -715,4 +816,4 @@ class MDSPageWordPressIntegration {
     public function getManager(): MDSPageMetadataManager {
         return $this->manager;
     }
-} 
+}

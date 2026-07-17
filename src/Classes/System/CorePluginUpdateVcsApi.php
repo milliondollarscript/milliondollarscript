@@ -30,6 +30,7 @@
 namespace MillionDollarScript\Classes\System;
 
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Extensions\CatalogCompatibility;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -57,6 +58,7 @@ class CorePluginUpdateVcsApi {
 			'php_version'     => PHP_VERSION,
 			'wp_version'      => get_bloginfo( 'version' ),
 		];
+		$request_body = CatalogCompatibility::request_body( $request_body );
 
 		// Make request to extension server
 		Logs::log(

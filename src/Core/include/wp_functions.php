@@ -32,8 +32,9 @@ use MillionDollarScript\Classes\System\Utility;
 defined( 'ABSPATH' ) or exit;
 
 function mds_load_wp() {
-	require_once ABSPATH . '/wp-load.php';
-	require_once ABSPATH . '/wp-includes/pluggable.php';
+	if ( ! function_exists( 'wp_get_current_user' ) ) {
+		require_once ABSPATH . WPINC . '/pluggable.php';
+	}
 }
 
 function mds_wp_login_check(): void {

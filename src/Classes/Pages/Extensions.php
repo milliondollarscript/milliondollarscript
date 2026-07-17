@@ -42,6 +42,7 @@ use MillionDollarScript\Classes\Extension\ExtensionUpdater;
 use MillionDollarScript\Classes\Extension\PluginUpdateCheckerHelper;
 use MillionDollarScript\Classes\Extension\LicenseCrypto;
 use MillionDollarScript\Classes\Extension\MDS_License_Manager;
+use MillionDollarScript\Classes\Extensions\CatalogCompatibility;
 use MillionDollarScript\Classes\Data\Options;
 use MillionDollarScript\Classes\System\Utility;
 
@@ -1908,7 +1909,7 @@ class Extensions {
             if (empty($base)) {
                 continue;
             }
-            $api_url = rtrim($base, '/') . '/api/public/extensions';
+            $api_url = CatalogCompatibility::append_query(rtrim($base, '/') . '/api/public/extensions');
             $res = wp_remote_get($api_url, $args);
 
             if (is_wp_error($res)) {
@@ -2445,7 +2446,9 @@ class Extensions {
             return '';
         }
 
-        return rtrim($server, '/') . '/api/extensions/' . rawurlencode($id) . '/download';
+        return CatalogCompatibility::append_query(
+            rtrim($server, '/') . '/api/extensions/' . rawurlencode($id) . '/download'
+        );
     }
 
     /**
@@ -2472,7 +2475,7 @@ class Extensions {
 
         $sslverify = !Utility::is_development_environment();
         $response = wp_remote_get(
-            rtrim($server, '/') . '/api/public/extensions',
+            CatalogCompatibility::append_query(rtrim($server, '/') . '/api/public/extensions'),
             [
                 'timeout'   => 15,
                 'sslverify' => $sslverify,
@@ -3734,10 +3737,10 @@ class Extensions {
             'timeout' => 20,
             'sslverify' => !Utility::is_development_environment(),
             'headers' => [ 'Content-Type' => 'application/json' ],
-            'body'    => wp_json_encode([
+            'body'    => wp_json_encode(CatalogCompatibility::request_body([
                 'licenseKey' => $plaintext,
                 'productIdentifier' => $slug,
-            ]),
+            ])),
         ]);
 
         if (is_wp_error($response)) {
@@ -3792,7 +3795,7 @@ class Extensions {
 
         $probes = [
             '/api/public/ping',
-            '/api/public/extensions',
+            CatalogCompatibility::append_query('/api/public/extensions'),
             '/health',
         ];
 
@@ -7432,7 +7435,7 @@ class Extensions {
             $working_base = null;
             foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) { continue; }
-                $api_url = rtrim($base, '/') . '/api/public/extensions/' . urlencode($extension_id);
+                $api_url = CatalogCompatibility::append_query(rtrim($base, '/') . '/api/public/extensions/' . urlencode($extension_id));
                 $res = wp_remote_get($api_url, $args);
                 if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
                     $response = $res;
@@ -7594,7 +7597,7 @@ class Extensions {
                     break;
                 }
                 // Fallback to a simple GET on /api/public/extensions
-                $probe3 = rtrim($base, '/') . '/api/public/extensions';
+                $probe3 = CatalogCompatibility::append_query(rtrim($base, '/') . '/api/public/extensions');
                 $probe3_res = wp_remote_get($probe3, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
                 $code3 = !is_wp_error($probe3_res) ? wp_remote_retrieve_response_code($probe3_res) : 0;
                 if ($code3 === 200) {
@@ -7606,7 +7609,9 @@ class Extensions {
                 throw new \Exception(Language::get('Extension server unreachable.'));
             }
             
-            $download_url = rtrim($working_base, '/') . '/api/extensions/' . urlencode($extension_id) . '/download';
+            $download_url = CatalogCompatibility::append_query(
+                rtrim($working_base, '/') . '/api/extensions/' . urlencode($extension_id) . '/download'
+            );
             
             $result = self::install_extension_from_url($extension_id, $extension_slug, $download_url, $license_key);
             wp_send_json_success($result);
@@ -7862,14 +7867,14 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 }
 
                 // Try extensions endpoint first
-                $api_url = rtrim($base, '/') . '/api/public/extensions/' . urlencode($extension_id);
+                $api_url = CatalogCompatibility::append_query(rtrim($base, '/') . '/api/public/extensions/' . urlencode($extension_id));
                 $res = wp_remote_get($api_url, $args);
 
                 if (is_wp_error($res)) {
                     $errors[] = $base . ' extensions => ' . $res->get_error_message();
 
                     // Try products endpoint as fallback
-                    $api_url = rtrim($base, '/') . '/api/public/products/' . urlencode($extension_id);
+                    $api_url = CatalogCompatibility::append_query(rtrim($base, '/') . '/api/public/products/' . urlencode($extension_id));
                     $res = wp_remote_get($api_url, $args);
 
                     if (is_wp_error($res)) {
@@ -7885,7 +7890,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                     break;
                 } elseif ($code === 404) {
                     // Try products endpoint as fallback for 404s
-                    $api_url = rtrim($base, '/') . '/api/public/products/' . urlencode($extension_id);
+                    $api_url = CatalogCompatibility::append_query(rtrim($base, '/') . '/api/public/products/' . urlencode($extension_id));
                     $res = wp_remote_get($api_url, $args);
 
                     if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
@@ -8092,7 +8097,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             ];
 
             // Build JSON payload for POST request to extension server
-            $checkout_payload = [
+            $checkout_payload = CatalogCompatibility::request_body([
                 'priceId'        => isset($checkout_query_params['priceId']) ? $checkout_query_params['priceId'] : '',
                 'successUrl'     => $success_url,
                 'cancelUrl'      => $cancel_url,
@@ -8100,7 +8105,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 'extensionSlug'  => $ext_slug_for_claim,
                 'metadata'       => $checkout_metadata,
                 'allowPromotion' => true,
-            ];
+            ]);
 
 
             // Make POST request to extension server to create Stripe checkout session
@@ -8175,7 +8180,7 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             $working_base = null;
             foreach (self::extension_server_candidates($user_configured_url) as $base) {
                 if (empty($base)) { continue; }
-                $probe = rtrim($base, '/') . '/api/public/extensions';
+                $probe = CatalogCompatibility::append_query(rtrim($base, '/') . '/api/public/extensions');
                 $res = wp_remote_get($probe, [ 'timeout' => 10, 'sslverify' => !Utility::is_development_environment() ]);
                 if (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) {
                     $working_base = $base;
@@ -8191,11 +8196,11 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 'headers' => [ 'Content-Type' => 'application/json' ],
                 'timeout' => 30,
                 'sslverify' => !Utility::is_development_environment(),
-                'body'    => wp_json_encode([
+                'body'    => wp_json_encode(CatalogCompatibility::request_body([
                     'extensionSlug' => $extension_slug,
                     'siteId'        => $site_id,
                     'claimToken'    => $claim_token,
-                ]),
+                ])),
             ]);
 
             if ( is_wp_error( $response ) ) {
@@ -8292,11 +8297,11 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
             }
             if ($working_base) {
                 $activate_url = rtrim($working_base, '/') . '/api/public/activate';
-                $body_data = [
+                $body_data = CatalogCompatibility::request_body([
                     'licenseKey' => $license_key,
                     'productIdentifier' => $extension_slug,
                     'deviceId' => md5( site_url() ),
-                ];
+                ]);
                 // Only send version if analytics not disabled
                 $disable_analytics = \MillionDollarScript\Classes\Data\Options::get_option( 'disable_version_analytics', 'no' );
                 if ( $disable_analytics !== 'yes' ) {
@@ -8700,10 +8705,10 @@ protected static function find_plugin_file_by_slug(string $slug): ?string {
                 'timeout'   => 20,
                 'sslverify' => !Utility::is_development_environment(),
                 'headers'   => [ 'Content-Type' => 'application/json' ],
-                'body'      => wp_json_encode([
+                'body'      => wp_json_encode(CatalogCompatibility::request_body([
                     'licenseKey'        => $plaintext_key,
                     'productIdentifier' => $slug,
-                ]),
+                ])),
             ]
         );
 
