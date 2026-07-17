@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.6.67-beta.1 - 2026-07-17
+### Fixed
+
+- preserve MDS2 compatibility for MDS 3.0 transition
+
+### Chore
+
+- update imagine to 1.5.4
+
+
 ## 2.6.67-alpha.1 - 2026-07-17
 ### Fixed
 
