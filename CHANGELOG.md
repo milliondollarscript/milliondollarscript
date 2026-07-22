@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.68 - 2026-07-18
+### Changed
+
+- declare compatibility with WordPress 7.0.2 after local validation
+
+
 ## 2.6.67 - 2026-07-17
 ### Fixed
 
