@@ -3,7 +3,7 @@
 ## 2.6.68 - 2026-07-18
 ### Changed
 
-- declare compatibility with WordPress 7.0.2 after local validation
+- declare compatibility with WordPress 7.0.3 after exact-version activation, upgrade, order, migration, and browser validation
 
 
 ## 2.6.67 - 2026-07-17
