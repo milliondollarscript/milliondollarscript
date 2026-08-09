@@ -1,9 +1,14 @@
 # Changelog
 
 ## 2.6.68 - 2026-07-18
+### Fixed
+
+- store and query WooCommerce order mappings through supported order APIs so checkout, status, refund, administration, and migration reporting work with authoritative HPOS storage
+
 ### Changed
 
 - declare compatibility with WordPress 7.0.3 after exact-version activation, upgrade, order, migration, and browser validation
+- declare WooCommerce HPOS compatibility after exact WooCommerce 11.0.0 purchase, status, refund, admin, and customer-flow validation in both storage modes
 
 
 ## 2.6.67 - 2026-07-17

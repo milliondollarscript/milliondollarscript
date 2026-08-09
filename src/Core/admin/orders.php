@@ -27,6 +27,7 @@
  */
 
 use MillionDollarScript\Classes\Forms\FormFields;
+use MillionDollarScript\Classes\Orders\Orders;
 use MillionDollarScript\Classes\Payment\Currency;
 use MillionDollarScript\Classes\System\Functions;
 
@@ -434,12 +435,7 @@ if ( isset( $_REQUEST['order_id'] ) && $_REQUEST['order_id'] != '' ) {
 						$is_wc_refunded = false;
 						$mds_order_id_for_wc_lookup = absint( $row['order_id'] );
 
-						// Find the WC order ID by querying postmeta based on the mds_order_id value
-						$wc_order_id = $wpdb->get_var( $wpdb->prepare(
-							"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s",
-							'mds_order_id',
-							$mds_order_id_for_wc_lookup
-						) );
+						$wc_order_id = Orders::get_wc_order_id_from_mds_order_id( $mds_order_id_for_wc_lookup );
 
 						// If we found a WC order ID and WooCommerce is active and function exists
 					if ( $wc_order_id && function_exists( 'wc_get_order' ) ) {

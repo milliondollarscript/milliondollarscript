@@ -779,7 +779,7 @@ class WooCommerceFunctions {
 			return false;
 		}
 
-		$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
+		$mds_order_id = $order->get_meta( 'mds_order_id', true );
 
 		if ( $mds_order_id == null ) {
 			return false;
@@ -832,6 +832,17 @@ class WooCommerceFunctions {
 	public static function is_mds_order( $id ): bool {
 
 		$order = \wc_get_order( $id );
+		return self::is_mds_order_object( $order );
+	}
+
+	/**
+	 * Check whether a WooCommerce order object contains the MDS product.
+	 *
+	 * @param mixed $order WooCommerce order object.
+	 *
+	 * @return bool
+	 */
+	public static function is_mds_order_object( $order ): bool {
 
 		if ( ! ( $order instanceof \WC_Order ) ) {
 			return false;
@@ -839,7 +850,8 @@ class WooCommerceFunctions {
 
 		// Check if there is an MDS item in the order
 		foreach ( $order->get_items() as $item ) {
-			$meta_values = get_post_custom( $item['product_id'] );
+			$product_id  = method_exists( $item, 'get_product_id' ) ? $item->get_product_id() : $item['product_id'];
+			$meta_values = get_post_custom( $product_id );
 
 			if ( isset( $meta_values['_milliondollarscript'] ) && $meta_values['_milliondollarscript'][0] === "yes" ) {
 				// MDS item found
@@ -856,13 +868,14 @@ class WooCommerceFunctions {
 	 * @param $id int WooCommerce order id
 	 */
 	public static function complete_mds_order( int $id ): void {
-		if ( ! self::is_mds_order( $id ) ) {
+		$order = \wc_get_order( $id );
+		if ( ! self::is_mds_order_object( $order ) ) {
 			// Not a Million Dollar Script order
 			return;
 		}
 
 		if ( self::check_quantity( $id ) ) {
-			$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
+			$mds_order_id = $order->get_meta( 'mds_order_id', true );
 			global $wpdb;
 			$sql          = "SELECT * FROM " . MDS_DB_PREFIX . "orders WHERE order_id=%d";
 			$prepared_sql = $wpdb->prepare( $sql, intval( $mds_order_id ) );

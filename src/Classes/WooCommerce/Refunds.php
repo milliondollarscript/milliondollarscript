@@ -66,7 +66,7 @@ class Refunds {
 		}
 
 		// Check if it's an MDS order
-		$mds_order_id = get_post_meta( $order_id, 'mds_order_id', true );
+		$mds_order_id = $order->get_meta( 'mds_order_id', true );
 		if ( empty( $mds_order_id ) ) {
 			return; // Not an MDS order
 		}

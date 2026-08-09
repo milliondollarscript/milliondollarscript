@@ -82,6 +82,17 @@ register_uninstall_hook( __FILE__, '\MillionDollarScript\milliondollarscript_two
 // Add activation hook for the wizard redirect transient
 register_activation_hook( __FILE__, ['MillionDollarScript\Classes\Pages\Wizard', 'set_redirect_transient'] );
 
+// WooCommerce orders are accessed through its CRUD APIs, including when HPOS is authoritative.
+add_action( 'before_woocommerce_init', static function (): void {
+	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+			'custom_order_tables',
+			MDS_BASE_FILE,
+			true
+		);
+	}
+} );
+
 /**
  * Performs upgrade operations.
  *

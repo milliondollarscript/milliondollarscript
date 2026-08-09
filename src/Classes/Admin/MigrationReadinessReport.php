@@ -3,6 +3,7 @@
 namespace MillionDollarScript\Classes\Admin;
 
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Orders\Orders;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -70,12 +71,7 @@ class MigrationReadinessReport {
 			'packages'                   => self::count_table( MDS_DB_PREFIX . 'packages' ),
 			'price_zones'                => self::count_table( MDS_DB_PREFIX . 'prices' ),
 			'order_statuses'             => self::count_grouped( MDS_DB_PREFIX . 'orders', 'status' ),
-			'woocommerce_linked_orders'  => (int) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(DISTINCT post_id) FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value <> ''",
-					'mds_order_id'
-				)
-			),
+			'woocommerce_linked_orders'  => Orders::count_linked_wc_orders(),
 			'woocommerce_enabled'        => self::woocommerce_enabled(),
 			'nfs_blocks'                 => self::count_where( MDS_DB_PREFIX . 'blocks', "status = 'nfs'" ),
 			'unavailable_blocks'         => self::count_where( MDS_DB_PREFIX . 'blocks', "status IN ('reserved','ordered','cancelled','nfs')" ),

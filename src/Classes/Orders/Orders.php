@@ -563,15 +563,11 @@ class Orders {
 	 */
 	public static function get_wc_order_id_from_mds_order_id( int $mds_order_id ): ?int {
 		$args = array(
-			'limit'      => 1,
-			'meta_query' => array(
-				array(
-					'key'     => 'mds_order_id',
-					'value'   => $mds_order_id,
-					'compare' => '=',
-				),
-			),
-			'status'     => 'any',
+			'limit'        => 1,
+			'meta_key'     => 'mds_order_id',
+			'meta_value'   => $mds_order_id,
+			'meta_compare' => '=',
+			'status'       => 'any',
 		);
 
 		// Get order IDs
@@ -584,6 +580,29 @@ class Orders {
 
 		// Return null if no order is found
 		return null;
+	}
+
+	/**
+	 * Count WooCommerce orders linked to MDS orders across supported order stores.
+	 *
+	 * @return int
+	 */
+	public static function count_linked_wc_orders(): int {
+		if ( ! function_exists( 'wc_get_orders' ) ) {
+			return 0;
+		}
+
+		$result = wc_get_orders(
+			[
+				'limit'        => 1,
+				'paginate'     => true,
+				'return'       => 'ids',
+				'meta_key'     => 'mds_order_id',
+				'meta_compare' => 'EXISTS',
+			]
+		);
+
+		return is_object( $result ) && isset( $result->total ) ? absint( $result->total ) : 0;
 	}
 
 	/**

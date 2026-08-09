@@ -117,11 +117,15 @@ class WooCommerce {
 		}
 
 		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			Logs::log( 'MDS: Unable to load WooCommerce order ' . absint( $order_id ) . ' while saving its MDS mapping.' );
+			return;
+		}
 
 		// If the order doesn't have mds_order_id yet then add it and a note.
-		$post_meta_mds_order_id = get_post_meta( $order_id, 'mds_order_id', true );
-		if ( empty( $post_meta_mds_order_id ) ) {
-			update_post_meta( $order_id, "mds_order_id", $mds_order_id );
+		$mapped_mds_order_id = $order->get_meta( 'mds_order_id', true );
+		if ( empty( $mapped_mds_order_id ) ) {
+			$order->update_meta_data( 'mds_order_id', $mds_order_id );
 			$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 			$order->save();
 
@@ -213,9 +217,9 @@ class WooCommerce {
 			}
 
 			// If the order doesn't have mds_order_id yet then add it and a note.
-			$post_meta_mds_order_id = get_post_meta( $order_id, 'mds_order_id', true );
-			if ( empty( $post_meta_mds_order_id ) ) {
-				update_post_meta( $order_id, "mds_order_id", $mds_order_id );
+			$mapped_mds_order_id = $order->get_meta( 'mds_order_id', true );
+			if ( empty( $mapped_mds_order_id ) ) {
+				$order->update_meta_data( 'mds_order_id', $mds_order_id );
 				$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 				$order->save();
 			}
@@ -500,22 +504,22 @@ class WooCommerce {
 			return;
 		}
 
-		$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
+		$mds_order_id = $order->get_meta( 'mds_order_id', true );
 		if ( ! empty( $mds_order_id ) ) {
 			$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 		}
 
-		$btcpay_id = get_post_meta( $id, 'BTCPay_id', true );
+		$btcpay_id = $order->get_meta( 'BTCPay_id', true );
 		if ( ! empty( $btcpay_id ) ) {
 			$order->add_order_note( "BTCPay id: " . $btcpay_id );
 		}
 
-		$coinpayments_id = get_post_meta( $id, 'Transaction ID', true );
+		$coinpayments_id = $order->get_meta( 'Transaction ID', true );
 		if ( ! empty( $coinpayments_id ) ) {
 			$order->add_order_note( "CoinPayments Transaction ID: " . $coinpayments_id );
 		}
 
-		$coinbase_id = get_post_meta( $id, '_coinbase_charge_id', true );
+		$coinbase_id = $order->get_meta( '_coinbase_charge_id', true );
 		if ( ! empty( $coinbase_id ) ) {
 			$order->add_order_note( "Coinbase Charge ID: " . $coinbase_id );
 		}
@@ -566,7 +570,10 @@ class WooCommerce {
 
 		if ( $to === "completed" ) {
 			$order        = wc_get_order( $id );
-			$mds_order_id = get_post_meta( $id, 'mds_order_id', true );
+			if ( ! $order ) {
+				return;
+			}
+			$mds_order_id = $order->get_meta( 'mds_order_id', true );
 			if ( ! empty( $mds_order_id ) ) {
 				$order->add_order_note( "MDS order id: <a href='" . esc_url( admin_url( 'admin.php?page=mds-orders&order_id=' . $mds_order_id ) ) . "'>" . $mds_order_id . "</a>" );
 			}
@@ -596,8 +603,13 @@ class WooCommerce {
 		}
 
 		$order        = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return null;
+		}
+
 		$mds_order_id = absint( WC()->session->get( "mds_order_id" ) );
-		update_post_meta( $order_id, "mds_order_id", $mds_order_id );
+		$order->update_meta_data( 'mds_order_id', $mds_order_id );
+		$order->save();
 		if ( ! WooCommerceFunctions::check_quantity( $order_id ) ) {
 			$message = "Quantity does not match! (3)";
 			throw new \Exception( '<a href="' . wc_get_cart_url() . '" class="button wc-forward">' . __( 'View cart', 'woocommerce' ) . '</a> ' . $message );
@@ -616,11 +628,19 @@ class WooCommerce {
 	 * @return void
 	 */
 	public static function checkout_create_order( $order, $data ): void {
-		if ( ! WooCommerceFunctions::is_mds_order( $order->get_id() ) ) {
+		$mds_order_id = absint( WC()->session->get( 'mds_order_id' ) );
+		if (
+			empty( $mds_order_id )
+			|| ! WooCommerceFunctions::valid_mds_order()
+			|| ! WooCommerceFunctions::is_mds_order_object( $order )
+		) {
 			return;
 		}
-		// Reuse logic that saves mds_order_id and adds the order note only if not already present.
-		self::new_order( $order->get_id() );
+
+		// This hook runs before the order has an ID, so attach the mapping to the order object.
+		if ( empty( $order->get_meta( 'mds_order_id', true ) ) ) {
+			$order->update_meta_data( 'mds_order_id', $mds_order_id );
+		}
 	}
 
 	/**

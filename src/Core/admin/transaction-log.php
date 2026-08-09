@@ -279,19 +279,23 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
 
 	// Use WordPress prepared statement for secure query
 	$sql = $wpdb->prepare(
-		"SELECT t.*, o.*, u.*, pm.post_id as wc_order_id 
+		"SELECT t.*, o.*, u.*
 		 FROM " . MDS_DB_PREFIX . "transactions t 
 		 JOIN " . MDS_DB_PREFIX . "orders o ON t.order_id = o.order_id 
-		 JOIN " . $wpdb->prefix . "users u ON o.user_id = u.ID 
-		 LEFT JOIN " . $wpdb->prefix . "postmeta pm ON t.order_id = pm.meta_value AND pm.meta_key = 'mds_order_id' 
+		 JOIN " . $wpdb->prefix . "users u ON o.user_id = u.ID
 		 WHERE t.date >= %s AND t.date <= %s 
 		 ORDER BY t.date DESC",
 		$from_date, $to_date
 	);
 	$results = $wpdb->get_results( $sql, ARRAY_A );
+	$wc_order_ids_by_mds_order = [];
 	foreach ( $results as $row ) {
 		$user_info      = get_userdata( $row['ID'] );
-		$wc_order_id    = $row['wc_order_id'] ?? null;
+		$mds_order_id   = absint( $row['order_id'] );
+		if ( ! array_key_exists( $mds_order_id, $wc_order_ids_by_mds_order ) ) {
+			$wc_order_ids_by_mds_order[ $mds_order_id ] = Orders::get_wc_order_id_from_mds_order_id( $mds_order_id );
+		}
+		$wc_order_id    = $wc_order_ids_by_mds_order[ $mds_order_id ];
 		$show_refund_link = false;
 
 		// Check if associated WC order exists and is potentially refundable
@@ -304,7 +308,7 @@ if ( ! isset( $_REQUEST['to_year'] ) || $_REQUEST['to_year'] == '' ) {
 				$gateway = $payment_gateways[ $gateway_id ] ?? null;
 				if ( $gateway && is_array( $gateway->supports ) && in_array( 'refunds', $gateway->supports, true ) ) {
 					$show_refund_link = true;
-					$refund_link_url = get_edit_post_link( $wc_order_id );
+					$refund_link_url = $order->get_edit_order_url();
 				}
 			}
 		}
