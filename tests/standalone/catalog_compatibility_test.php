@@ -77,6 +77,27 @@ foreach ( $integrationFiles as $relativePath => $expectedCall ) {
 	);
 }
 
+$extensionsPage = (string) file_get_contents( $pluginRoot . '/src/Classes/Pages/Extensions.php' );
+assert_catalog_true(
+	str_contains( $extensionsPage, "'one_time'     => 'one_time'" )
+		&& str_contains( $extensionsPage, "'lifetime'     => 'one_time'" ),
+	'MDS2 must normalize server lifetime plans to the one_time catalog contract'
+);
+assert_catalog_true(
+	str_contains( $extensionsPage, "private const STRIPE_PRICE_PLANS = ['monthly', 'yearly', 'one_time'];" ),
+	'MDS2 must preserve monthly, yearly, and lifetime purchase choices returned by the server'
+);
+assert_catalog_true(
+	str_contains( $extensionsPage, "\$allowed_plans = ['one_time', 'monthly', 'yearly'];" ),
+	'MDS2 must constrain checkout requests to supported server plan keys'
+);
+$productsClient = (string) file_get_contents( $pluginRoot . '/src/Classes/Products/ProductsClient.php' );
+assert_catalog_true(
+	str_contains( $productsClient, "'plan'          => \$args['plan']," )
+		&& str_contains( $productsClient, "'priceId'       => \$args['priceId']," ),
+	'MDS2 checkout requests must send the selected server plan and price for validation'
+);
+
 if ( ! empty( $failures ) ) {
 	fwrite( STDERR, implode( PHP_EOL, $failures ) . PHP_EOL );
 	exit( 1 );
