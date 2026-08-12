@@ -1225,7 +1225,7 @@ class Options {
 						'no'  => Language::get( 'Enabled - Send anonymous version data to help improve the plugin (recommended)' ),
 						'yes' => Language::get( 'Disabled - Do not send version analytics' ),
 					] )
-					->set_help_text( Language::get( 'When enabled, the plugin sends anonymous version information during license validation and update checks. This helps us understand which versions are in use and prioritize compatibility. No personal information is collected - only extension versions and a hashed site identifier. This does not affect performance as the data is sent with existing license validation requests. You can disable this at any time.' ) ),
+					->set_help_text( Language::get( 'When enabled, the existing update check sends MDS, WordPress, PHP, and official Million Dollar Script extension versions and active states with a hashed site identifier. Other plugins, customer data, content, and credentials are not sent. No extra request is created, and you can disable this at any time.' ) ),
 
 				// Delete data on uninstall?
 				Field::make( 'radio', MDS_PREFIX . 'delete-data', Language::get( 'Delete data on uninstall?' ) )

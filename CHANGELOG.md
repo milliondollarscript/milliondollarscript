@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+### Changed
+
+- extend the existing anonymous core update telemetry with a versioned, bounded snapshot of official extension versions and active states, with opt-out enforcement and no arbitrary plugin inventory
+
 ## 2.6.70 - 2026-08-12
 ### Changed
 

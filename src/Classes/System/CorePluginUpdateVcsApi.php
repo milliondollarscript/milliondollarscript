@@ -30,6 +30,7 @@
 namespace MillionDollarScript\Classes\System;
 
 use MillionDollarScript\Classes\Data\Options;
+use MillionDollarScript\Classes\Extension\ExtensionAnalytics;
 use MillionDollarScript\Classes\Extensions\CatalogCompatibility;
 
 defined( 'ABSPATH' ) or exit;
@@ -79,11 +80,14 @@ class CorePluginUpdateVcsApi {
 		];
 
 		// Add analytics opt-out header if user has disabled version analytics
-		$disable_analytics = is_callable( [ Options::class, 'get_option' ] )
+		$disable_analytics = is_callable( array( Options::class, 'get_option' ) )
 			? Options::get_option( 'disable_version_analytics', 'no' )
 			: 'no';
-		if ( $disable_analytics === 'yes' ) {
+		if ( 'yes' === $disable_analytics ) {
 			$headers['X-MDS-Analytics-Opt-Out'] = '1';
+		} else {
+			$request_body['analytics_payload_version'] = 1;
+			$request_body['extensions']                = ExtensionAnalytics::snapshot();
 		}
 
 		$response = wp_remote_post(

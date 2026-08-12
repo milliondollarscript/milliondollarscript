@@ -2118,7 +2118,7 @@ msgstr ""
 msgid "Disabled - Do not send version analytics"
 msgstr ""
 
-msgid "When enabled, the plugin sends anonymous version information during license validation and update checks. This helps us understand which versions are in use and prioritize compatibility. No personal information is collected - only extension versions and a hashed site identifier. This does not affect performance as the data is sent with existing license validation requests. You can disable this at any time."
+msgid "When enabled, the existing update check sends MDS, WordPress, PHP, and official Million Dollar Script extension versions and active states with a hashed site identifier. Other plugins, customer data, content, and credentials are not sent. No extra request is created, and you can disable this at any time."
 msgstr ""
 
 msgid "Delete data on uninstall?"
