@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.70 - 2026-08-12
+### Changed
+
+- declare compatibility with WordPress 7.0.4 after focused activation, media, frontend, order, payment completion, and refund validation for the narrowly scoped core security release
+
 ## 2.6.69 - 2026-08-11
 ### Changed
 
