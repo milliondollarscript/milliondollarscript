@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+### Changed
+
+- declare compatibility with WooCommerce 11.0.1 after exact-version order mapping, payment completion, full-refund, frontend, and error-log validation in both classic and HPOS storage modes
+
 ## 2.6.68 - 2026-07-18
 ### Fixed
 
