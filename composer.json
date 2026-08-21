@@ -1,0 +1,22 @@
+{
+    "name": "million-dollar-script/million-dollar-script",
+    "description": "Million Dollar Script - Sell pixels on your website",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "require": {
+        "php": ">=8.1"
+    },
+    "scripts": {
+        "test:rewrite": "php tests/rewrite/run.php"
+    },
+    "autoload": {
+        "psr-4": {
+            "MillionDollarScript\\V3\\": "src/",
+            "MillionDollarScript\\Core\\": "src/PublicApi/Core/",
+            "MillionDollarScript\\Commerce\\": "src/PublicApi/Commerce/",
+            "MillionDollarScript\\Media\\": "src/PublicApi/Media/",
+            "MillionDollarScript\\Rendering\\": "src/PublicApi/Rendering/",
+            "MillionDollarScript\\Extensions\\": "src/PublicApi/Extensions/"
+        }
+    }
+}

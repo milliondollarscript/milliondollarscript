@@ -1,0 +1,121 @@
+#adminmenu .mds3-sidebar-extensions-anchor {
+    margin-bottom: 0;
+    position: relative;
+}
+
+#adminmenu .mds3-sidebar-extensions-anchor > a {
+    padding-right: 34px;
+}
+
+#adminmenu .mds3-sidebar-extension-disclosure {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    bottom: auto;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: rgba(240, 246, 252, 0.72);
+    cursor: pointer;
+    display: inline-flex;
+    height: 22px;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    right: 8px;
+    top: calc((28px - 22px) / 2);
+    transform: none;
+    width: 22px;
+    z-index: 2;
+}
+
+#adminmenu .mds3-sidebar-extension-disclosure-icon {
+    height: 6px;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+}
+
+#adminmenu .mds3-sidebar-extension-disclosure-icon::before,
+#adminmenu .mds3-sidebar-extension-disclosure-icon::after {
+    background: currentColor;
+    border-radius: 999px;
+    content: "";
+    height: 2px;
+    position: absolute;
+    top: 2px;
+    width: 6px;
+}
+
+#adminmenu .mds3-sidebar-extension-disclosure-icon::before {
+    left: 0;
+    transform: rotate(42deg);
+    transform-origin: 100% 50%;
+}
+
+#adminmenu .mds3-sidebar-extension-disclosure-icon::after {
+    right: 0;
+    transform: rotate(-42deg);
+    transform-origin: 0 50%;
+}
+
+#adminmenu .mds3-sidebar-extensions-anchor.is-expanded .mds3-sidebar-extension-disclosure-icon::before {
+    transform: rotate(-42deg);
+}
+
+#adminmenu .mds3-sidebar-extensions-anchor.is-expanded .mds3-sidebar-extension-disclosure-icon::after {
+    transform: rotate(42deg);
+}
+
+#adminmenu .mds3-sidebar-extension-disclosure:hover,
+#adminmenu .mds3-sidebar-extension-disclosure:focus {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.34);
+    color: #ffffff;
+}
+
+#adminmenu .mds3-sidebar-extension-disclosure:focus {
+    box-shadow: 0 0 0 1px #ffffff, 0 0 0 3px rgba(147, 197, 253, 0.5);
+    outline: none;
+}
+
+#adminmenu .mds3-sidebar-extension-submenu {
+    border-left: 2px solid rgba(147, 197, 253, 0.65);
+    margin: 2px 0 3px 20px;
+    padding: 1px 0 1px 4px;
+}
+
+#adminmenu .mds3-sidebar-extension-submenu[hidden] {
+    display: none;
+}
+
+#adminmenu .mds3-sidebar-extension-submenu li {
+    margin: 0;
+}
+
+#adminmenu .mds3-sidebar-extension-submenu li > a {
+    color: rgba(240, 246, 252, 0.72);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.3;
+    padding-left: 8px;
+}
+
+#adminmenu .wp-submenu .mds3-sidebar-extensions-anchor.current .mds3-sidebar-extension-submenu li:not(.current) > a,
+#adminmenu .wp-submenu .mds3-sidebar-extensions-anchor.wp-has-current-submenu .mds3-sidebar-extension-submenu li:not(.current) > a {
+    color: rgba(240, 246, 252, 0.72);
+    font-weight: 400;
+}
+
+#adminmenu .mds3-sidebar-extension-submenu li.current > a {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+#adminmenu .mds3-sidebar-extension-submenu li > a:hover,
+#adminmenu .mds3-sidebar-extension-submenu li > a:focus {
+    color: #ffffff;
+}

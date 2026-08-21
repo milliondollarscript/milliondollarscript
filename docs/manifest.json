@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "package": "million-dollar-script",
+  "type": "core",
+  "version": "3.0.0",
+  "channel": "main",
+  "title": "Million Dollar Script",
+  "docs": [
+    {
+      "id": "setup",
+      "title": "Setup",
+      "file": "setup.md",
+      "audience": ["admin", "support"],
+      "topics": ["setup", "pages", "payments", "extensions"]
+    },
+    {
+      "id": "mds2-migration",
+      "title": "Million Dollar Script 2 Migration",
+      "file": "mds2-migration.md",
+      "audience": ["admin", "support", "developer"],
+      "topics": ["migration", "mds2-migration", "orders", "grids"]
+    },
+    {
+      "id": "standalone-checkout",
+      "title": "Standalone Checkout",
+      "file": "standalone-checkout.md",
+      "audience": ["admin", "support"],
+      "topics": ["standalone-checkout", "checkout", "payments", "orders"]
+    },
+    {
+      "id": "orders",
+      "title": "Managing Orders",
+      "file": "orders.md",
+      "audience": ["admin", "support"],
+      "topics": ["orders", "grids", "commerce", "moderation"]
+    },
+    {
+      "id": "grids-and-blocks",
+      "title": "Grids and Editor Blocks",
+      "file": "grids-and-blocks.md",
+      "audience": ["admin", "support"],
+      "topics": ["grids", "pages", "accessibility", "developer"]
+    },
+    {
+      "id": "settings",
+      "title": "Settings Reference",
+      "file": "settings.md",
+      "audience": ["admin", "support"],
+      "topics": ["settings", "imports", "exports"]
+    },
+    {
+      "id": "api-access",
+      "title": "API Access",
+      "file": "api-access.md",
+      "audience": ["admin", "developer", "support"],
+      "topics": ["api", "rest-api", "security"]
+    },
+    {
+      "id": "service-signatures",
+      "title": "Service-Signature Authentication",
+      "file": "service-signatures.md",
+      "audience": ["developer", "support"],
+      "topics": ["api", "rest-api", "security"]
+    },
+    {
+      "id": "extension-api",
+      "title": "Extension API",
+      "file": "extension-api.md",
+      "audience": ["developer", "support"],
+      "topics": ["api", "extensions", "developer"]
+    },
+    {
+      "id": "extension-packs",
+      "title": "Extension Packs",
+      "file": "extension-packs.md",
+      "audience": ["admin", "support"],
+      "topics": ["extensions", "extension-packs", "licensing", "updates"]
+    },
+    {
+      "id": "million-dollar-script-extensions",
+      "title": "Extensions",
+      "file": "extensions.md",
+      "audience": ["admin", "support"],
+      "topics": ["extensions", "licensing", "updates"]
+    },
+    {
+      "id": "emails",
+      "title": "Order Emails",
+      "file": "emails.md",
+      "audience": ["admin", "support"],
+      "topics": ["emails", "orders", "settings"]
+    },
+    {
+      "id": "legal-pages",
+      "title": "Legal Pages",
+      "file": "legal-pages.md",
+      "audience": ["admin", "support", "legal-review"],
+      "topics": ["legal", "legal-pages", "privacy", "setup"]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "file": "troubleshooting.md",
+      "audience": ["admin", "support"],
+      "topics": ["troubleshooting", "updates", "licensing", "security"]
+    },
+    {
+      "id": "fatal-error-call-to-undefined-function-imagecreate",
+      "title": "PHP GD and Local Tile Errors",
+      "file": "fatal-error-call-to-undefined-function-imagecreate.md",
+      "audience": ["admin", "support"],
+      "topics": ["troubleshooting", "rendering", "grids", "performance", "imagegrid"]
+    },
+    {
+      "id": "rest-api-authentication-errors",
+      "title": "REST API Authentication Errors",
+      "file": "rest-api-authentication-errors.md",
+      "audience": ["admin", "developer", "support"],
+      "topics": ["troubleshooting", "api", "rest-api", "security"]
+    },
+    {
+      "id": "extension-dependency-activation-errors",
+      "title": "Extension Dependency and Activation Errors",
+      "file": "extension-dependency-activation-errors.md",
+      "audience": ["admin", "developer", "support"],
+      "topics": ["troubleshooting", "extensions", "setup"]
+    },
+    {
+      "id": "developer-upgrade-notes",
+      "title": "Developer Upgrade Notes",
+      "file": "developer-upgrade-notes.md",
+      "audience": ["developer", "support"],
+      "topics": ["developer-upgrade", "api", "extensions", "field-help"]
+    }
+  ]
+}

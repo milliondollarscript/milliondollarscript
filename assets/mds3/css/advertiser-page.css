@@ -1,0 +1,70 @@
+.mds-advertiser-page {
+    width: min(100% - 2rem, 760px);
+    margin: 3rem auto;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: 0.75rem;
+    background: Canvas;
+    color: CanvasText;
+}
+
+.mds-advertiser-page__eyebrow {
+    margin: 0 0 0.4rem;
+    color: color-mix(in srgb, currentColor 68%, transparent);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.mds-advertiser-page__image {
+    margin: 1.75rem 0;
+}
+
+.mds-advertiser-page__image img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
+.mds-advertiser-page__content {
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.mds-advertiser-page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    margin-top: 1.75rem;
+}
+
+.mds-advertiser-page__button,
+.mds-advertiser-page__grid-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+}
+
+.mds-advertiser-page__button {
+    padding: 0.7rem 1rem;
+    border-radius: 0.4rem;
+    background: #2563eb;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+@media (max-width: 480px) {
+    .mds-advertiser-page {
+        width: min(100% - 1rem, 760px);
+        margin-block: 1rem;
+    }
+
+    .mds-advertiser-page__actions > * {
+        width: 100%;
+    }
+}

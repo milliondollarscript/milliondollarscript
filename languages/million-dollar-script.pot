@@ -1,0 +1,6663 @@
+# Copyright (C) 2026 Million Dollar Script
+# This file is distributed under the GPL-3.0+.
+msgid ""
+msgstr ""
+"Project-Id-Version: Million Dollar Script 3.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/million-dollar-script\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-06-05T17:54:28+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: million-dollar-script\n"
+
+#. Plugin Name of the plugin
+#. Author of the plugin
+#: million-dollar-script.php
+#: src/Admin/Admin.php:145
+#: src/Admin/Admin.php:146
+#: src/Admin/Concerns/RendersAdminNavigation.php:29
+#: src/Blocks/EditorBlocks.php:264
+#: src/Blocks/EditorBlocks.php:508
+#: templates/admin/pages/dashboard.php:17
+#: assets/mds3/js/blocks.js:208
+msgid "Million Dollar Script"
+msgstr ""
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: million-dollar-script.php
+msgid "https://milliondollarscript.com"
+msgstr ""
+
+#. Description of the plugin
+#: million-dollar-script.php
+#: src/Updates/CorePluginUpdater.php:89
+msgid "WordPress-first pixel grid advertising plugin."
+msgstr ""
+
+#: src/Admin/Admin.php:93
+msgid "Hide extension links"
+msgstr ""
+
+#: src/Admin/Admin.php:94
+msgid "Show extension links"
+msgstr ""
+
+#: src/Admin/Admin.php:118
+msgid "Loading..."
+msgstr ""
+
+#: src/Admin/Admin.php:119
+msgid "Unable to load order details."
+msgstr ""
+
+#: src/Admin/Admin.php:120
+msgid "Migration progress could not be updated."
+msgstr ""
+
+#: src/Admin/Admin.php:121
+msgid "Installing..."
+msgstr ""
+
+#: src/Admin/Admin.php:122
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:228
+msgid "Plugin installed and activated. You can continue setup."
+msgstr ""
+
+#: src/Admin/Admin.php:123
+msgid "The plugin could not be installed automatically."
+msgstr ""
+
+#. translators: 1: first visible extension number, 2: last visible extension number, 3: total extensions, 4: current page, 5: total pages.
+#: src/Admin/Admin.php:125
+#, php-format
+msgid "Showing %1$d-%2$d of %3$d · Page %4$d of %5$d"
+msgstr ""
+
+#: src/Admin/Admin.php:126
+msgid "Select image"
+msgstr ""
+
+#: src/Admin/Admin.php:127
+msgid "Use image"
+msgstr ""
+
+#. translators: %s: dependent extension name
+#: src/Admin/Admin.php:129
+#: src/Extensions/ExtensionSetup.php:155
+#, php-format
+msgid "Required by %s"
+msgstr ""
+
+#. translators: 1: extension name, 2: conflicting extension name.
+#: src/Admin/Admin.php:131
+#, php-format
+msgid "%1$s conflicts with %2$s."
+msgstr ""
+
+#: src/Admin/Admin.php:154
+#: src/Admin/Concerns/RendersAdminNavigation.php:60
+msgid "Dashboard"
+msgstr ""
+
+#: src/Admin/Admin.php:156
+#: src/Admin/Concerns/RendersAdminNavigation.php:68
+#: src/Admin/Concerns/RendersDashboardPanels.php:57
+#: src/Admin/Concerns/RendersMigrationPanels.php:176
+#: src/Admin/Concerns/RendersMigrationPanels.php:333
+#: src/Migration/Importer.php:433
+#: templates/admin/pages/dashboard.php:58
+#: templates/admin/pages/grids.php:92
+#: templates/admin/pages/grids.php:265
+msgid "Grids"
+msgstr ""
+
+#: src/Admin/Admin.php:157
+#: src/Admin/Concerns/RendersAdminNavigation.php:73
+#: src/Admin/Concerns/RendersDashboardPanels.php:53
+#: src/Admin/Concerns/RendersMigrationPanels.php:179
+#: src/Admin/Concerns/RendersMigrationPanels.php:336
+#: src/Migration/Importer.php:436
+#: templates/admin/pages/orders.php:203
+msgid "Orders"
+msgstr ""
+
+#: src/Admin/Admin.php:159
+#: src/Admin/Concerns/RendersAdminNavigation.php:41
+#: src/Admin/Concerns/RendersDashboardPanels.php:83
+#: templates/admin/partials/dashboard-extension-cards.php:15
+msgid "Extensions"
+msgstr ""
+
+#: src/Admin/Admin.php:160
+#: src/Admin/Concerns/RendersAdminNavigation.php:96
+#: src/Admin/Concerns/RendersDashboardPanels.php:85
+#: templates/admin/pages/docs.php:26
+msgid "Documentation"
+msgstr ""
+
+#: src/Admin/Admin.php:161
+#: src/Admin/Concerns/RendersAdminNavigation.php:91
+#: src/Admin/Concerns/RendersDashboardPanels.php:84
+#: templates/admin/pages/api-access.php:13
+msgid "API Access"
+msgstr ""
+
+#: src/Admin/Admin.php:162
+#: src/Admin/Concerns/RendersAdminNavigation.php:86
+#: src/Admin/Concerns/RendersDashboardPanels.php:47
+#: src/Admin/Concerns/RendersMigrationPanels.php:332
+#: src/Migration/Importer.php:432
+#: templates/admin/pages/settings.php:24
+msgid "Settings"
+msgstr ""
+
+#: src/Admin/Admin.php:163
+#: src/Admin/Concerns/RendersAdminNavigation.php:101
+#: src/Admin/Concerns/RendersDashboardPanels.php:62
+#: templates/admin/pages/setup.php:13
+msgid "Setup"
+msgstr ""
+
+#: src/Admin/Admin.php:165
+#: src/Admin/Concerns/RendersDashboardPanels.php:67
+msgid "Migration"
+msgstr ""
+
+#: src/Admin/Admin.php:167
+#: src/Admin/Concerns/RendersAdminNavigation.php:106
+#: src/Admin/Concerns/RendersDashboardPanels.php:48
+#: templates/admin/pages/system-status.php:13
+#: templates/admin/pages/system-status.php:17
+msgid "System Status"
+msgstr ""
+
+#: src/Admin/Concerns/HandlesApiAdminActions.php:22
+#: src/Admin/Concerns/HandlesApiAdminActions.php:49
+#: src/Admin/Concerns/HandlesApiAdminActions.php:61
+#: src/Admin/Concerns/HandlesApiAdminActions.php:81
+#: src/Admin/Concerns/HandlesGridAdminActions.php:26
+#: src/Admin/Concerns/HandlesGridAdminActions.php:63
+#: src/Admin/Concerns/HandlesGridAdminActions.php:108
+#: src/Admin/Concerns/HandlesGridAdminActions.php:119
+#: src/Admin/Concerns/HandlesGridAdminActions.php:159
+#: src/Admin/Concerns/HandlesGridAdminActions.php:199
+#: src/Admin/Concerns/HandlesGridAdminActions.php:215
+#: src/Admin/Concerns/HandlesGridAdminActions.php:245
+#: src/Admin/Concerns/HandlesGridAdminActions.php:258
+#: src/Admin/Concerns/HandlesGridAdminActions.php:270
+#: src/Admin/Concerns/HandlesGridAdminActions.php:283
+#: src/Admin/Concerns/HandlesGridAdminActions.php:295
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:25
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:36
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:54
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:97
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:165
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:208
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:229
+#: src/Admin/Concerns/HandlesOrderAdminActions.php:25
+#: src/Admin/Concerns/HandlesOrderAdminActions.php:46
+#: src/Admin/Concerns/HandlesOrderAdminActions.php:146
+#: src/Admin/Concerns/HandlesOrderAdminActions.php:172
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:27
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:60
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:82
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:115
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:145
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:157
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:193
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:215
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:261
+#: src/Extensions/ExtensionAdmin.php:41
+#: src/Extensions/ExtensionAdmin.php:114
+#: src/Extensions/ExtensionAdmin.php:145
+#: src/Extensions/ExtensionAdmin.php:165
+#: src/Extensions/ExtensionAdmin.php:196
+#: src/Extensions/ExtensionAdmin.php:216
+#: src/Extensions/ExtensionAdmin.php:241
+#: src/Extensions/ExtensionAdmin.php:260
+#: src/Extensions/ExtensionAdmin.php:275
+msgid "Permission denied."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesGridAdminActions.php:71
+#: src/Grid/Concerns/HandlesGridAjaxRequests.php:30
+#: src/Grid/Concerns/HandlesGridAjaxRequests.php:157
+#: src/Grid/GridRepository.php:253
+#: src/Grid/GridRepository.php:309
+#: src/Rendering/Concerns/BuildsImageGridManifests.php:24
+#: src/Rendering/Concerns/SubmitsImageGridJobs.php:28
+#: src/Rest/Concerns/HandlesGridEndpoints.php:45
+#: src/Rest/Concerns/HandlesGridEndpoints.php:94
+#: src/Rest/Concerns/HandlesGridEndpoints.php:120
+#: src/Rest/Concerns/HandlesGridEndpoints.php:182
+msgid "Grid not found."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesGridAdminActions.php:142
+msgid "Grid export could not be encoded."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesGridAdminActions.php:169
+msgid "Choose a valid grid export file."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesGridAdminActions.php:173
+msgid "The grid export file is too large."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesGridAdminActions.php:178
+msgid "The grid export file is empty."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesGridAdminActions.php:223
+msgid "Grid page mode could not be updated."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:62
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:174
+msgid "Enable Classic Pixel Grid before importing Million Dollar Script 2 data."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:105
+msgid "Enable Classic Pixel Grid before creating Million Dollar Script grid pages."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesMigrationAdminActions.php:234
+#: src/Migration/Importer.php:114
+#: src/Migration/Importer.php:184
+#: src/Migration/Importer.php:204
+msgid "Migration job was not found."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesOrderAdminActions.php:177
+msgid "Invalid order ID."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesOrderAdminActions.php:182
+#: src/Rest/Concerns/HandlesOrderEndpoints.php:29
+#: src/Rest/Concerns/HandlesOrderEndpoints.php:50
+#: src/Rest/Concerns/HandlesOrderEndpoints.php:67
+msgid "Order not found."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:69
+msgid "Settings export could not be generated."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:121
+msgid "Preview the settings import again before applying it."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:169
+msgid "That payment provider is not ready yet. Install and activate its required plugins, or choose standalone/manual checkout."
+msgstr ""
+
+#: src/Admin/Concerns/HandlesSettingsAdminActions.php:241
+#: templates/admin/pages/settings.php:147
+msgid "Last Million Dollar Script 2 Source Prefix"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminNavigation.php:26
+#: src/Blocks/EditorBlocks.php:507
+#: assets/mds3/js/blocks.js:207
+msgid "MDS"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminNavigation.php:47
+msgid "Open extensions"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminNavigation.php:79
+msgid "New grid"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:70
+msgid "WooCommerce checkout"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:177
+#: templates/admin/partials/extensions-list.php:135
+msgid "Details"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:178
+#: templates/admin/pages/grids.php:329
+#: templates/admin/partials/grid-public-page-panel.php:16
+msgid "Public Page"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:179
+#: src/Admin/Concerns/RendersMigrationPanels.php:177
+#: src/Admin/Concerns/RendersMigrationPanels.php:334
+#: src/Migration/Importer.php:434
+#: templates/admin/partials/packages-panel.php:16
+msgid "Packages"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:180
+#: templates/admin/partials/price-rules-panel.php:16
+msgid "Price Zones"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:181
+msgid "Availability"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:416
+#: templates/admin/pages/settings.php:144
+msgid "Upgrade Compatibility"
+msgstr ""
+
+#: src/Admin/Concerns/RendersAdminPages.php:417
+msgid "Import / Export"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:33
+msgid "Public read"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:34
+msgid "Browser write with REST nonce"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:35
+msgid "API key read"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:36
+msgid "API key write"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:37
+msgid "Signed manage token (endpoint managed)"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:38
+msgid "WordPress administrator"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:39
+msgid "Trusted service signature or WordPress administrator"
+msgstr ""
+
+#: src/Admin/Concerns/RendersApiPanels.php:40
+#: src/Admin/Concerns/RendersDashboardPanels.php:519
+#: src/Settings/SettingsSchema.php:55
+#: templates/admin/pages/dashboard.php:77
+#: templates/admin/partials/extension-actions.php:28
+msgid "Disabled"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:63
+#: templates/admin/pages/dashboard.php:32
+msgid "View site"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:73
+#: templates/frontend/pages/manage-orders.php:37
+msgid "Manage"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:77
+msgid "Launch"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:81
+msgid "Extend"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:86
+msgid "Changelog"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:119
+msgid "Premium Installation Service"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:120
+msgid "Get help with complete plugin setup, page creation, checkout configuration, and launch checks."
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:122
+msgid "Learn more"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:126
+msgid "Custom Development Services"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:127
+msgid "Commission custom features, integrations, data migrations, or extension work for a specific site."
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:129
+msgid "Request custom work"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:133
+msgid "Reliable Hosting"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:134
+msgid "Hostinger offers fast, affordable hosting suitable for getting a Million Dollar Script grid online."
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:136
+msgid "Check hosting deals"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:168
+msgid "Activate in Extensions"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:185
+#: templates/admin/partials/extension-actions.php:23
+#: templates/admin/partials/extension-claim-panel.php:20
+msgid "Claim license"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:200
+#: src/Admin/FieldHelp.php:53
+msgid "Docs"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:353
+#: templates/admin/partials/dashboard-extension-cards.php:127
+#: templates/admin/partials/dashboard-extension-cards.php:141
+#: templates/admin/partials/dashboard-service-cards.php:24
+msgid "Open"
+msgstr ""
+
+#. translators: %s: payment provider name
+#: src/Admin/Concerns/RendersDashboardPanels.php:507
+#, php-format
+msgid "%s available"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:512
+msgid "Plugin version"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:513
+msgid "Database version"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:513
+msgid "Not installed"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:514
+msgid "WordPress"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:515
+msgid "PHP"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:516
+#: templates/admin/pages/setup.php:203
+#: templates/admin/partials/order-detail-panel.php:31
+msgid "Commerce"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:517
+msgid "Theme mode"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:518
+msgid "Extension server"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:518
+#: templates/admin/pages/extensions.php:77
+msgid "Not configured"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:519
+msgid "Logging"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:519
+#: src/Settings/SettingsSchema.php:55
+#: templates/admin/partials/extension-actions.php:28
+msgid "Enabled"
+msgstr ""
+
+#: src/Admin/Concerns/RendersDashboardPanels.php:558
+#: src/Pages/Concerns/ResolvesPageOrders.php:113
+#: templates/admin/pages/orders.php:214
+msgid "Unknown"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:33
+msgid "Licensed"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:33
+#: src/Admin/Concerns/RendersExtensionPanels.php:161
+msgid "License required"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:59
+msgid "Needs"
+msgstr ""
+
+#. translators: %s: missing extension capabilities
+#: src/Admin/Concerns/RendersExtensionPanels.php:61
+#, php-format
+msgid "Missing %s"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:66
+msgid "Conflict"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:69
+#: src/Admin/Concerns/RendersExtensionPanels.php:146
+msgid "Provides"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:72
+#: src/Admin/Concerns/RendersExtensionPanels.php:149
+msgid "Requires"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:75
+#: src/Admin/Concerns/RendersExtensionPanels.php:155
+msgid "Conflicts"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:78
+#: src/Admin/Concerns/RendersExtensionPanels.php:158
+msgid "Service"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:78
+#: src/Admin/Concerns/RendersExtensionPanels.php:158
+msgid "External service required"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:81
+msgid "API minimum"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:152
+msgid "Missing"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:161
+msgid "License"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:169
+#: src/Extensions/ExtensionSetup.php:388
+msgid "Bundled default"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:172
+#: src/Admin/Concerns/RendersFormFields.php:122
+#: templates/admin/pages/extensions.php:69
+#: templates/admin/pages/grids.php:74
+#: templates/admin/partials/dashboard-extension-cards.php:82
+#: templates/admin/partials/extensions-list.php:79
+msgid "Active"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:175
+#: templates/admin/pages/extensions.php:68
+#: templates/admin/partials/dashboard-extension-cards.php:84
+#: templates/admin/partials/extension-actions.php:43
+#: templates/admin/partials/extensions-list.php:81
+msgid "Installed"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:178
+msgid "Available with license"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:181
+msgid "Available with service"
+msgstr ""
+
+#: src/Admin/Concerns/RendersExtensionPanels.php:184
+#: src/Admin/Concerns/RendersFormFields.php:125
+#: src/Grid/GridShortcode.php:246
+#: templates/admin/partials/order-detail-panel.php:72
+#: templates/frontend/grid/shell.php:56
+#: assets/mds3/js/blocks.js:718
+#: assets/mds3/js/blocks.js:1250
+msgid "Available"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:99
+#: src/Admin/Concerns/RendersFormFields.php:101
+#: src/Admin/Concerns/RendersFormFields.php:103
+#: assets/mds3/js/blocks.js:887
+msgid "Yes"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:100
+#: src/Admin/Concerns/RendersFormFields.php:102
+#: src/Admin/Concerns/RendersFormFields.php:104
+#: assets/mds3/js/blocks.js:887
+msgid "No"
+msgstr ""
+
+#. translators: %d: user ID.
+#: src/Admin/Concerns/RendersFormFields.php:105
+#: src/Admin/Concerns/RendersGridPanels.php:270
+#: src/Settings/SettingsSchema.php:26
+#: src/Settings/SettingsSchema.php:100
+msgid "System"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:106
+#: src/Settings/SettingsSchema.php:26
+msgid "Light"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:107
+#: src/Settings/SettingsSchema.php:26
+msgid "Dark"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:108
+msgid "New tab"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:109
+msgid "Same tab"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:110
+msgid "None"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:111
+msgid "Basic"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:112
+msgid "Full"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:113
+#: src/Admin/Concerns/RendersMigrationPanels.php:180
+#: src/Admin/Concerns/RendersMigrationPanels.php:337
+#: src/Grid/GridStats.php:45
+#: src/Migration/Importer.php:437
+#: templates/admin/partials/availability-panel.php:64
+#: templates/admin/partials/region-editor.php:25
+#: assets/mds3/js/blocks.js:595
+#: assets/mds3/js/blocks.js:667
+#: assets/mds3/js/blocks.js:1212
+#: assets/mds3/js/blocks.js:1414
+msgid "Blocks"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:114
+#: src/Grid/GridStats.php:45
+#: templates/frontend/grid/shell.php:54
+#: assets/mds3/js/blocks.js:598
+#: assets/mds3/js/blocks.js:1213
+#: assets/mds3/js/blocks.js:1415
+msgid "Pixels"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:115
+msgid "Hover"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:116
+msgid "Click"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:117
+#: src/Admin/Concerns/RendersFormFields.php:118
+msgid "Main"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:119
+msgid "Beta"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:120
+#: src/Admin/Concerns/RendersFormFields.php:121
+msgid "Alpha"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:123
+#: src/Admin/Concerns/RendersMigrationPanels.php:265
+#: src/Admin/Concerns/RendersMigrationPanels.php:306
+#: src/Migration/Importer.php:451
+#: templates/admin/pages/grids.php:75
+msgid "Paused"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:124
+#: templates/admin/pages/grids.php:76
+msgid "Archived"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:126
+#: src/Grid/GridShortcode.php:249
+#: templates/admin/partials/order-detail-panel.php:75
+msgid "Unavailable"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:127
+#: assets/mds3/js/blocks.js:65
+#: assets/mds3/js/blocks.js:664
+#: assets/mds3/js/blocks.js:668
+#: assets/mds3/js/blocks.js:1097
+#: assets/mds3/js/blocks.js:1387
+msgid "Automatic"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:128
+#: assets/mds3/js/blocks.js:63
+#: assets/mds3/js/blocks.js:1099
+#: assets/mds3/js/blocks.js:1389
+msgid "Classic"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:129
+msgid "Canvas"
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:159
+msgid "Administrative title shown in Million Dollar Script grid lists and generated page labels."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:160
+msgid "Internal or frontend description for this item."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:161
+msgid "Total grid width in pixels."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:162
+msgid "Total grid height in pixels."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:163
+msgid "Width of each sellable block in pixels."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:164
+msgid "Height of each sellable block in pixels."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:165
+msgid "Default price for one block before packages or price zones apply."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:166
+msgid "Three-letter currency code for prices saved from this form."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:167
+msgid "Renderer used for the public grid. Auto chooses the best available renderer."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:168
+msgid "Minimum blocks a customer must select in one order."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:169
+msgid "Maximum blocks a customer may select in one order. Use 0 for no limit."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:170
+msgid "Maximum active orders allowed for this item. Use 0 for no limit."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:171
+msgid "Number of days before pending orders expire. Use 0 to disable day-based expiry."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:172
+msgid "Publishes customer uploads immediately after payment when enabled."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:173
+msgid "Approves orders automatically instead of requiring manual review."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:174
+msgid "Controls whether unavailable blocks count as covered grid area."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:175
+msgid "Background color shown behind this grid."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:176
+msgid "Controls whether this item is active, paused, or archived."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:177
+msgid "Number of days this package keeps a placement active. Use 0 for no fixed duration."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:178
+msgid "Price charged for this package or zone."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:179
+msgid "First grid row in the selected region."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:180
+msgid "Last grid row in the selected region."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:181
+msgid "First grid column in the selected region."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:182
+msgid "Last grid column in the selected region."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:183
+msgid "First legacy block ID covered by this zone."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:184
+msgid "Last legacy block ID covered by this zone."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:185
+msgid "Availability status to apply to the selected region."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:186
+msgid "Optional internal note for this region change."
+msgstr ""
+
+#: src/Admin/Concerns/RendersFormFields.php:187
+msgid "Database table prefix for the Million Dollar Script 2 installation being inspected."
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:224
+#: src/Grid/GridShortcode.php:248
+#: templates/admin/partials/order-detail-panel.php:74
+msgid "Reserved"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:225
+msgid "Awaiting payment"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:226
+#: templates/admin/pages/orders.php:96
+msgid "Paid"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:227
+msgid "Cancelled"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:228
+#: src/Admin/Concerns/RendersMigrationPanels.php:274
+#: src/Migration/Importer.php:453
+msgid "Failed"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:229
+#: templates/admin/pages/orders.php:99
+msgid "Refunded"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:230
+#: templates/admin/pages/orders.php:182
+msgid "Expired"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:231
+msgid "Denied"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:232
+msgid "Deleted"
+msgstr ""
+
+#. translators: %d: user ID.
+#: src/Admin/Concerns/RendersGridPanels.php:270
+#, php-format
+msgid "User #%d"
+msgstr ""
+
+#. translators: %d: grid ID.
+#: src/Admin/Concerns/RendersGridPanels.php:342
+#: src/Orders/OrderNotifications.php:430
+#: src/Orders/OrderNotifications.php:434
+#, php-format
+msgid "Grid #%d"
+msgstr ""
+
+#. translators: 1: x, 2: y, 3: width, 4: height
+#: src/Admin/Concerns/RendersGridPanels.php:362
+#, php-format
+msgid "%1$d,%2$d %3$dx%4$d"
+msgstr ""
+
+#. translators: %d: placement count.
+#: src/Admin/Concerns/RendersGridPanels.php:386
+#, php-format
+msgid "%d placement highlighted."
+msgid_plural "%d placements highlighted."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:436
+msgid "yes"
+msgstr ""
+
+#: src/Admin/Concerns/RendersGridPanels.php:436
+msgid "no"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:30
+msgid "Million Dollar Script 2 will remain active. Million Dollar Script will not migrate data or take over legacy Million Dollar Script 2 embeds while Million Dollar Script 2 is active."
+msgstr ""
+
+#. translators: %d: plugin count
+#: src/Admin/Concerns/RendersMigrationPanels.php:36
+#, php-format
+msgid "%d Million Dollar Script 2 plugin was deactivated. Million Dollar Script data was not imported."
+msgid_plural "%d Million Dollar Script 2 plugins were deactivated. Million Dollar Script data was not imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: deactivated plugins, 2: skipped plugins
+#: src/Admin/Concerns/RendersMigrationPanels.php:44
+#, php-format
+msgid "Million Dollar Script 2 deactivation was partial. Deactivated: %1$d. Skipped: %2$d."
+msgstr ""
+
+#. translators: %d: plugin count
+#: src/Admin/Concerns/RendersMigrationPanels.php:53
+#, php-format
+msgid "Million Dollar Script 2 data was imported and %d Million Dollar Script 2 plugin was deactivated."
+msgstr ""
+
+#. translators: 1: deactivated plugins, 2: skipped plugins
+#: src/Admin/Concerns/RendersMigrationPanels.php:61
+#, php-format
+msgid "Million Dollar Script 2 data was imported, but deactivation was partial. Deactivated: %1$d. Skipped: %2$d."
+msgstr ""
+
+#. translators: %s: migration error
+#: src/Admin/Concerns/RendersMigrationPanels.php:71
+#, php-format
+msgid "Million Dollar Script 2 import failed: %s"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:73
+msgid "Million Dollar Script 2 import failed. Review the migration dry run before trying again."
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:106
+msgid "network active"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:107
+#: templates/admin/pages/orders.php:135
+msgid "active"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:107
+msgid "installed inactive"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:178
+#: src/Admin/Concerns/RendersMigrationPanels.php:335
+#: src/Migration/Importer.php:435
+msgid "Price rules"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:181
+#: src/Admin/Concerns/RendersMigrationPanels.php:338
+#: src/Migration/Importer.php:438
+msgid "Order items"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:182
+#: src/Admin/Concerns/RendersMigrationPanels.php:339
+#: src/Migration/Importer.php:439
+msgid "Placements"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:183
+#: src/Admin/Concerns/RendersMigrationPanels.php:340
+#: src/Migration/Importer.php:440
+msgid "Pages"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:193
+#: src/Admin/Concerns/RendersMigrationPanels.php:319
+msgid "n/a"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:232
+#: src/Admin/Concerns/RendersMigrationPanels.php:278
+#: templates/admin/partials/migration-recovery-panel.php:83
+msgid "Run import again"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:234
+msgid "The latest import finished. Running it again updates existing migrated records and keeps Million Dollar Script 2 tables intact."
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:244
+#: src/Migration/Importer.php:416
+msgid "Complete"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:246
+#: src/Migration/Importer.php:449
+#: templates/admin/partials/migration-recovery-panel.php:49
+msgid "Completed"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:247
+msgid "Latest import completed"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:253
+msgid "Process next batch"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:254
+msgid "Import is running in bounded batches. You can leave this page and continue later without duplicating migrated records."
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:257
+#: src/Migration/Importer.php:455
+msgid "Running"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:258
+msgid "Import in progress"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:261
+msgid "Resume import"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:262
+msgid "Import is paused. Resume continues from the last saved stage and cursor."
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:266
+msgid "Import paused"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:269
+msgid "Retry import"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:270
+msgid "The last import stopped before completion. Retry import is non-destructive and uses the migration map to avoid duplicate Million Dollar Script records."
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:275
+msgid "Import needs attention"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:279
+msgid "The last import completed with warnings. Review the warning list, then run the import again after correcting the source data or media references."
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:282
+#: templates/admin/partials/migration-recovery-panel.php:41
+msgid "Warnings"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:283
+msgid "Import completed with warnings"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:288
+msgid "Import status needs review"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:298
+msgid "Ready to retry"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:298
+msgid "Pending retry"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:302
+msgid "In progress"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:302
+#: src/Migration/Importer.php:457
+msgid "Pending"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:306
+msgid "Pending resume"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:310
+msgid "Imported, review"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:310
+msgid "Review warnings"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:313
+msgid "Verified"
+msgstr ""
+
+#: src/Admin/Concerns/RendersMigrationPanels.php:313
+msgid "No rows"
+msgstr ""
+
+#: src/Admin/FieldHelp.php:42
+msgid "More information"
+msgstr ""
+
+#: src/Blocks/BlockRepository.php:77
+msgid "Block coordinate is outside the grid."
+msgstr ""
+
+#: src/Blocks/BlockRepository.php:117
+msgid "Block is not available."
+msgstr ""
+
+#: src/Blocks/Concerns/ComputesAvailabilityRegions.php:34
+#: src/Blocks/Concerns/ComputesAvailabilityRegions.php:51
+msgid "Region is outside the grid."
+msgstr ""
+
+#: src/Blocks/Concerns/ManagesAvailabilityRegions.php:99
+msgid "Only available and unavailable region updates are supported."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:36
+#: assets/mds3/js/blocks.js:1015
+msgid "Grid Embed"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:39
+#: assets/mds3/js/blocks.js:1016
+msgid "Embed a specific Million Dollar Script grid directly in this page."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:40
+#: templates/admin/partials/order-detail-panel.php:86
+#: assets/mds3/js/blocks.js:1019
+msgid "grid"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:40
+#: src/Pages/Concerns/RendersPagePanels.php:41
+#: assets/mds3/js/blocks.js:1019
+msgid "pixels"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:40
+#: assets/mds3/js/blocks.js:1019
+msgid "embed"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:72
+#: assets/mds3/js/blocks.js:1169
+msgid "Stats Widget"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:75
+#: assets/mds3/js/blocks.js:1170
+msgid "Display a compact sold and available inventory widget."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:76
+#: assets/mds3/js/blocks.js:1173
+msgid "stats"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:76
+#: assets/mds3/js/blocks.js:1173
+msgid "inventory"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:112
+#: assets/mds3/js/blocks.js:702
+#: assets/mds3/js/blocks.js:1284
+msgid "Page Flow"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:115
+msgid "Display a Million Dollar Script page panel or flow."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:116
+#: assets/mds3/js/blocks.js:1288
+msgid "order pixels"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:116
+#: assets/mds3/js/blocks.js:1288
+msgid "customer flow"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:195
+msgid "Legacy Million Dollar Script Embed"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:198
+msgid "Render a Million Dollar Script 2 block through Million Dollar Script compatibility."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:199
+msgid "legacy"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:199
+msgid "MDS2"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:362
+#: src/Grid/GridRepository.php:219
+msgid "Untitled grid"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:377
+msgid "Show the public pixel grid."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:378
+msgid "Show an interactive ordering grid for visitors to reserve pixels."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:379
+msgid "Continue the customer flow for writing ad content."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:380
+msgid "Show order confirmation details when an order is in progress."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:381
+msgid "Send customers to the correct checkout or payment flow."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:382
+msgid "Let customers find and manage their pixel orders."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:383
+msgid "Show the order thank-you panel after checkout."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:384
+msgid "Display published advertisers for a selected grid."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:385
+msgid "Let customers upload or update creative for an order."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:386
+msgid "Show the no-orders account panel."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:387
+msgid "Show sold and available inventory."
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:509
+#: assets/mds3/js/blocks.js:209
+msgid "million dollar script"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:645
+#: assets/mds3/js/blocks.js:844
+#: assets/mds3/js/blocks.js:896
+msgid "First available item"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:646
+#: assets/mds3/js/blocks.js:846
+msgid "Enter a custom ID"
+msgstr ""
+
+#: src/Blocks/EditorBlocks.php:647
+#: assets/mds3/js/blocks.js:867
+msgid "Use this when the item is not listed. The same ID is saved for this block."
+msgstr ""
+
+#. translators: 1: grid ID, 2: block count
+#: src/Commerce/Concerns/BuildsPaymentCheckouts.php:182
+#, php-format
+msgid "Million Dollar Script grid %1$d selection (%2$d block)"
+msgid_plural "Million Dollar Script grid %1$d selection (%2$d blocks)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Commerce/Concerns/ManagesPaymentProviders.php:21
+#: src/Commerce/Concerns/ManagesPaymentProviders.php:28
+#: src/Commerce/Concerns/ManagesPaymentProviders.php:98
+#: src/Settings/SettingsSchema.php:261
+#: src/Settings/SettingsSchema.php:264
+msgid "Standalone/manual checkout"
+msgstr ""
+
+#. translators: %s: docs manifest path
+#: src/Docs/DocsRegistry.php:501
+#, php-format
+msgid "Docs manifest could not be parsed: %s"
+msgstr ""
+
+#. translators: 1: docs package, 2: validation errors
+#: src/Docs/DocsRegistry.php:512
+#, php-format
+msgid "Docs manifest skipped for %1$s: %2$s"
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:565
+msgid "schema must be 1."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:568
+msgid "package is required."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:571
+msgid "type must be core or extension."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:574
+msgid "version is required."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:577
+msgid "channel must be main, beta, or alpha."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:580
+#: src/Docs/DocsRegistry.php:609
+msgid "title is required."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:583
+msgid "docs must be a non-empty array."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:589
+msgid "docs directory was not readable."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:597
+msgid "must be an object."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:602
+msgid "id must be URL-safe."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:604
+msgid "id is duplicated."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:614
+msgid "file must stay inside docs/."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:616
+msgid "file must be Markdown."
+msgstr ""
+
+#: src/Docs/DocsRegistry.php:620
+msgid "file was not found inside docs/."
+msgstr ""
+
+#. translators: %s: docs manifest field
+#: src/Docs/DocsRegistry.php:628
+#, php-format
+msgid "%s must be a non-empty array."
+msgstr ""
+
+#. translators: 1: docs manifest field, 2: unsupported value
+#: src/Docs/DocsRegistry.php:637
+#, php-format
+msgid "%1$s contains unsupported value %2$s."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:47
+#: src/Extensions/ExtensionAdmin.php:75
+msgid "Extension package is not available for install."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:51
+msgid "Extension is already installed."
+msgstr ""
+
+#. translators: %s: plugin file path
+#: src/Extensions/ExtensionAdmin.php:58
+#, php-format
+msgid "Extension files already exist at %s, but this installed copy is not registered as a compatible Million Dollar Script extension. Activate or update the existing plugin if it is compatible, or delete it before installing from the catalog."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:72
+msgid "Activate a license before installing this premium extension."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:86
+msgid "Extension install failed."
+msgstr ""
+
+#. translators: %s: activation error
+#: src/Extensions/ExtensionAdmin.php:99
+#, php-format
+msgid "Extension installed, but activation failed: %s"
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:104
+msgid "Extension installed and activated."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:107
+msgid "Extension installed."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:119
+#: src/Extensions/ExtensionAdmin.php:170
+#: src/Extensions/ExtensionAdmin.php:201
+#: src/Extensions/ExtensionAdmin.php:221
+msgid "Extension is not installed."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:125
+msgid "Activate a license before updating this premium extension."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:136
+msgid "No extension update was available."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:139
+msgid "Extension updated."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:158
+msgid "Extension updates checked."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:174
+msgid "Activate a license before checking updates for this premium extension."
+msgstr ""
+
+#. translators: %s: update version
+#: src/Extensions/ExtensionAdmin.php:184
+#, php-format
+msgid "Extension update available: %s."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:189
+msgid "This extension is up to date."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:209
+msgid "Extension activated."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:234
+msgid "Extension deactivated."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:253
+msgid "Extension license activated."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:268
+msgid "Extension license deactivated."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:286
+msgid "Purchased license claimed and activated."
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:331
+#: src/Setup/Installer.php:128
+#: src/Setup/Installer.php:136
+msgid "Plugin Activation Error"
+msgstr ""
+
+#: src/Extensions/ExtensionAdmin.php:343
+msgid "Plugin Deactivation Error"
+msgstr ""
+
+#: src/Extensions/ExtensionCatalog.php:109
+#: templates/admin/pages/setup.php:230
+msgid "Classic Pixel Grid"
+msgstr ""
+
+#: src/Extensions/ExtensionCatalog.php:110
+msgid "Default Million Dollar Script grid, block sales, pages, shortcodes, blocks, orders, migration support, and local rendering."
+msgstr ""
+
+#: src/Extensions/ExtensionCatalog.php:265
+msgid "Extension server URL is not configured. Installed extensions can still be managed."
+msgstr ""
+
+#: src/Extensions/ExtensionCatalog.php:290
+msgid "Invalid catalog response."
+msgstr ""
+
+#: src/Extensions/ExtensionCatalog.php:298
+msgid "Connected to the extension server using a fallback URL."
+msgstr ""
+
+#: src/Extensions/ExtensionCatalog.php:313
+msgid "The extension catalog could not be reached. Installed extensions can still be managed."
+msgstr ""
+
+#: src/Extensions/ExtensionCatalog.php:364
+msgid "No response."
+msgstr ""
+
+#. translators: %s: missing extension capabilities
+#: src/Extensions/ExtensionDependencyResolver.php:58
+#, php-format
+msgid "Missing required extension capability: %s"
+msgstr ""
+
+#. translators: %s: conflicting extensions
+#: src/Extensions/ExtensionDependencyResolver.php:67
+#, php-format
+msgid "Conflicting active extension: %s"
+msgstr ""
+
+#. translators: %s: active dependent extension names
+#: src/Extensions/ExtensionDependencyResolver.php:107
+#, php-format
+msgid "This extension is required by active extension(s): %s"
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:75
+msgid "A valid extension slug and license key are required."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:92
+msgid "License activation failed."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:104
+msgid "License activated."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:119
+msgid "Stored license removed."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:133
+msgid "License deactivation failed."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:145
+msgid "A valid extension and claim token are required."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:160
+msgid "The claimed license response did not include a license key."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:220
+msgid "Extension server URL is not configured."
+msgstr ""
+
+#: src/Extensions/ExtensionLicenseManager.php:237
+msgid "Extension server rejected the request."
+msgstr ""
+
+#: src/Extensions/ExtensionOnboarding.php:111
+msgid "Select at least one draft page to create."
+msgstr ""
+
+#. translators: %s: legal document slug
+#: src/Extensions/ExtensionOnboarding.php:120
+#, php-format
+msgid "Skipped unknown legal document: %s."
+msgstr ""
+
+#. translators: %s: legal document title
+#: src/Extensions/ExtensionOnboarding.php:132
+#, php-format
+msgid "%s already has a non-draft page. Review it manually before changing published content."
+msgstr ""
+
+#: src/Extensions/ExtensionOnboarding.php:287
+msgid "Important:"
+msgstr ""
+
+#: src/Extensions/ExtensionOnboarding.php:288
+msgid "This draft is not legal advice. Before publishing, verify the facts, fees, data flows, jurisdictions, and consumer notices with qualified counsel."
+msgstr ""
+
+#: src/Extensions/ExtensionOnboarding.php:324
+msgid "this site"
+msgstr ""
+
+#: src/Extensions/ExtensionOnboarding.php:341
+msgid "the contact page"
+msgstr ""
+
+#: src/Extensions/ExtensionOnboarding.php:345
+msgid "the site administrator or the contact page listed on this site"
+msgstr ""
+
+#. translators: 1: extension name, 2: missing capability
+#: src/Extensions/ExtensionSetup.php:162
+#, php-format
+msgid "%1$s requires missing capability %2$s."
+msgstr ""
+
+#. translators: 1: extension name, 2: conflicting capability
+#: src/Extensions/ExtensionSetup.php:185
+#, php-format
+msgid "%1$s conflicts with selected capability %2$s."
+msgstr ""
+
+#: src/Extensions/ExtensionSetup.php:235
+msgid "Current user cannot activate plugins."
+msgstr ""
+
+#. translators: %s: extension name
+#: src/Extensions/ExtensionSetup.php:286
+#, php-format
+msgid "%s is available but is not installed yet. Install it from Extensions when you are ready."
+msgstr ""
+
+#: src/Extensions/ExtensionSetup.php:391
+msgid "Active extension"
+msgstr ""
+
+#: src/Grid/Concerns/HandlesGridAjaxRequests.php:162
+#: src/Orders/ReservationService.php:30
+msgid "No blocks selected."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesGridAjaxRequests.php:199
+msgid "Security check failed."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesGridAjaxRequests.php:223
+msgid "Advertiser link not found."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesGridAjaxRequests.php:224
+msgid "Not Found"
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:37
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:364
+#: src/Orders/OrderRenewal.php:61
+#: src/Pages/Concerns/RendersPagePanels.php:622
+#: src/Pages/Concerns/RendersPagePanels.php:664
+msgid "Order could not be verified."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:42
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:369
+msgid "This order can no longer receive uploads."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:47
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:374
+msgid "Order has no block placement target."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:64
+#: src/Media/PlacementDraftRepository.php:92
+#: src/Media/PlacementDraftRepository.php:118
+#: src/Media/PlacementDraftRepository.php:121
+msgid "Draft image could not be verified."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:73
+msgid "Image upload is required."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:113
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:121
+#: src/Grid/GridShortcode.php:176
+msgid "Enter a valid website URL."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:118
+#: src/Grid/GridShortcode.php:195
+msgid "Enter the advertiser destination URL."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:125
+#: src/Grid/GridShortcode.php:191
+msgid "Enter the popup text for this placement."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:192
+msgid "Image received from the original upload."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:209
+msgid "Draft image found."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:209
+msgid "No draft image found."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:229
+#: src/Grid/GridShortcode.php:212
+msgid "Image saved for this order."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:250
+#: src/Grid/GridShortcode.php:213
+msgid "Draft image removed."
+msgstr ""
+
+#: src/Grid/Concerns/HandlesPlacementAjaxSubmission.php:379
+msgid "Order does not belong to this grid."
+msgstr ""
+
+#: src/Grid/GridPostType.php:26
+msgid "Grid Pages"
+msgstr ""
+
+#: src/Grid/GridPostType.php:27
+msgid "Grid Page"
+msgstr ""
+
+#: src/Grid/GridPostType.php:93
+#: templates/admin/pages/orders.php:253
+#: templates/admin/pages/orders.php:260
+#: templates/admin/pages/orders.php:369
+#: templates/admin/pages/orders.php:392
+#: templates/admin/partials/order-detail-panel.php:126
+#: templates/frontend/pages/grid-picker.php:54
+#: assets/mds3/js/blocks.js:659
+#: assets/mds3/js/blocks.js:1043
+#: assets/mds3/js/blocks.js:1195
+#: assets/mds3/js/blocks.js:1254
+#: assets/mds3/js/blocks.js:1333
+#: assets/mds3/js/blocks.js:1484
+msgid "Grid"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:160
+msgid "Loading grid..."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:161
+msgid "Select blocks"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:162
+#: templates/frontend/grid/shell.php:80
+msgid "Reserve selection"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:163
+msgid "Reserving selection..."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:164
+#: templates/admin/pages/grids.php:291
+#: templates/admin/partials/image-field.php:23
+#: templates/frontend/grid/shell.php:81
+#: templates/frontend/pages/grid-picker.php:33
+msgid "Clear"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:165
+msgid "Selection reserved."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:166
+msgid "Default pricing"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:167
+#: templates/frontend/grid/shell.php:135
+msgid "Upload image"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:168
+#: templates/frontend/grid/shell.php:136
+msgid "Continue to payment"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:169
+msgid "Uploading image..."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:170
+msgid "Image uploaded."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:171
+msgid "The grid could not be loaded."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:172
+msgid "Select blocks that touch the current selection."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:173
+#: src/Orders/ReservationService.php:318
+msgid "Selection must form a complete rectangle or square."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:174
+msgid "One or more blocks in that selection are unavailable."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:175
+#: src/Pages/Concerns/RendersPagePanels.php:432
+#: templates/frontend/pages/advertiser-list.php:18
+msgid "Advertiser"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:177
+msgid "Selection is ready."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:178
+msgid "Fit grid"
+msgstr ""
+
+#. translators: %d: selected block count.
+#: src/Grid/GridShortcode.php:180
+#, php-format
+msgid "%d selected"
+msgstr ""
+
+#. translators: %s: formatted price estimate.
+#: src/Grid/GridShortcode.php:182
+#, php-format
+msgid "Estimated total: %s"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:183
+#: templates/admin/pages/extensions.php:72
+#: templates/admin/partials/extensions-list.php:73
+msgid "Free"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:184
+msgid "Select at least one available block."
+msgstr ""
+
+#. translators: %d: minimum blocks
+#: src/Grid/GridShortcode.php:186
+#: src/Orders/ReservationService.php:42
+#, php-format
+msgid "Select at least %d blocks."
+msgstr ""
+
+#. translators: %d: maximum blocks
+#: src/Grid/GridShortcode.php:188
+#: src/Orders/ReservationService.php:49
+#, php-format
+msgid "Select no more than %d blocks."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:189
+msgid "Only one block can be selected for this grid."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:190
+msgid "Choose an image before saving the ad."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:192
+#: src/Orders/ReservationService.php:207
+msgid "Enter your email address before reserving blocks."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:193
+#: src/Orders/ReservationService.php:203
+msgid "Enter a valid email address before reserving blocks."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:194
+#: src/Orders/ReservationService.php:199
+msgid "Sign in before reserving blocks."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:196
+msgid "Ad details are ready."
+msgstr ""
+
+#. translators: %s: message text shown in the dismissible notice.
+#: src/Grid/GridShortcode.php:198
+#, php-format
+msgid "Dismiss message: %s"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:199
+msgid "Dismiss message"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:200
+msgid "This block is reserved."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:201
+msgid "This block is unavailable."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:202
+msgid "This block is already taken."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:203
+msgid "Saved ad details were found for this order."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:204
+msgid "Restore details"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:205
+msgid "Dismiss"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:206
+msgid "Ad details are saved in this browser."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:207
+msgid "Saved ad details restored."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:208
+msgid "Browsers cannot restore an unsaved image file. Choose the image again if it was not already uploaded."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:209
+msgid "A saved image was found for this order."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:210
+msgid "Restore image"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:211
+msgid "Saving image for this order..."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:214
+#: templates/frontend/grid/shell.php:90
+#: templates/frontend/pages/order-upload.php:30
+msgid "Remove image"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:215
+msgid "Draft image could not be removed."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:216
+msgid "Image preview updated."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:217
+msgid "Saved order progress was found in this browser."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:218
+msgid "Restore progress"
+msgstr ""
+
+#: src/Grid/GridShortcode.php:219
+msgid "Order progress restored."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:220
+msgid "Finish the current order before selecting more blocks."
+msgstr ""
+
+#: src/Grid/GridShortcode.php:247
+msgid "Selected"
+msgstr ""
+
+#: src/Grid/GridTransfer.php:26
+msgid "Select at least one grid to export."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:37
+msgid "This export contains grid configuration, packages, price zones, and admin availability settings."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:38
+msgid "Orders, paid placements, customer data, and uploaded ad media are not imported into new grids."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:53
+msgid "No exportable grids were found."
+msgstr ""
+
+#. translators: %d: grid entry number in the imported file.
+#: src/Grid/GridTransfer.php:72
+#, php-format
+msgid "Grid entry %d was skipped because it is invalid."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:94
+msgid "No grids could be imported."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:109
+msgid "The selected file is not valid JSON."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:113
+msgid "The selected file is not a Million Dollar Script grid export."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:117
+msgid "This grid export uses an unsupported schema version."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:121
+msgid "The grid export does not contain any grids."
+msgstr ""
+
+#. translators: %d: maximum number of grids allowed in one import file.
+#: src/Grid/GridTransfer.php:127
+#, php-format
+msgid "This file contains more than %d grids."
+msgstr ""
+
+#: src/Grid/GridTransfer.php:171
+msgid "Imported Grid"
+msgstr ""
+
+#: src/Grid/PackageRepository.php:72
+#: src/Grid/PriceRuleRepository.php:58
+msgid "Grid is required."
+msgstr ""
+
+#: src/Grid/PackageRepository.php:85
+msgid "Untitled package"
+msgstr ""
+
+#: src/Media/PlacementDraftRepository.php:38
+msgid "Choose an image before uploading."
+msgstr ""
+
+#. translators: %d: order ID.
+#: src/Media/PlacementDraftRepository.php:341
+#, php-format
+msgid "Order %d draft image"
+msgstr ""
+
+#: src/Media/PlacementRepository.php:87
+msgid "Grid and attachment are required."
+msgstr ""
+
+#: src/Media/UploadValidator.php:29
+msgid "Image upload failed. Please choose another file."
+msgstr ""
+
+#: src/Media/UploadValidator.php:34
+msgid "Image upload is empty."
+msgstr ""
+
+#. translators: %s: maximum upload size
+#: src/Media/UploadValidator.php:41
+#, php-format
+msgid "Image is larger than the maximum upload size of %s."
+msgstr ""
+
+#: src/Media/UploadValidator.php:50
+msgid "Image upload could not be verified."
+msgstr ""
+
+#: src/Media/UploadValidator.php:62
+msgid "Only JPG, PNG, GIF, and WebP uploads are supported."
+msgstr ""
+
+#: src/Media/UploadValidator.php:85
+msgid "Image dimensions could not be read. Please choose another image."
+msgstr ""
+
+#. translators: 1: uploaded width in pixels, 2: maximum width in pixels
+#: src/Media/UploadValidator.php:111
+#, php-format
+msgid "Image width is %1$dpx. The maximum allowed width is %2$dpx."
+msgstr ""
+
+#. translators: 1: uploaded height in pixels, 2: maximum height in pixels
+#: src/Media/UploadValidator.php:120
+#, php-format
+msgid "Image height is %1$dpx. The maximum allowed height is %2$dpx."
+msgstr ""
+
+#: src/Migration/DryRun.php:38
+msgid "No Million Dollar Script 2 banners table was found for this prefix."
+msgstr ""
+
+#: src/Migration/DryRun.php:42
+msgid "No Million Dollar Script 2 blocks table was found for this prefix."
+msgstr ""
+
+#: src/Migration/DryRun.php:46
+msgid "No Million Dollar Script 2 page-wizard pages were detected. The importer can still migrate grids and orders."
+msgstr ""
+
+#: src/Migration/Importer.php:463
+msgid "Migration import completed."
+msgstr ""
+
+#: src/Migration/Importer.php:467
+msgid "Migration import is paused."
+msgstr ""
+
+#: src/Migration/Importer.php:471
+msgid "Migration import stopped before completion. Review the warnings and retry."
+msgstr ""
+
+#. translators: 1: stage label, 2: percent complete
+#: src/Migration/Importer.php:476
+#, php-format
+msgid "Importing %1$s. %2$d%% complete."
+msgstr ""
+
+#: src/Migration/Importer.php:477
+msgid "migration data"
+msgstr ""
+
+#: src/Orders/OrderRenewal.php:70
+msgid "This order is not eligible for renewal."
+msgstr ""
+
+#: src/Orders/OrderRenewal.php:96
+msgid "Renewal checkout could not be created."
+msgstr ""
+
+#: src/Orders/ReservationService.php:84
+#: src/Orders/ReservationService.php:93
+msgid "One or more selected blocks are no longer available."
+msgstr ""
+
+#: src/Orders/ReservationService.php:174
+msgid "Selection reserved and order created."
+msgstr ""
+
+#: src/Orders/ReservationService.php:233
+msgid "Selected package is not available for this grid."
+msgstr ""
+
+#: src/Orders/ReservationService.php:263
+msgid "This grid has reached its active order limit."
+msgstr ""
+
+#: src/Orders/ReservationService.php:269
+msgid "Selected package has reached its active order limit."
+msgstr ""
+
+#: src/Orders/ReservationService.php:309
+msgid "Select only one block for this grid."
+msgstr ""
+
+#: src/Orders/ReservationService.php:322
+msgid "You must select blocks that touch each other."
+msgstr ""
+
+#: src/Orders/ReservationService.php:335
+#: src/Orders/ReservationService.php:344
+msgid "Selected blocks must include row and column coordinates."
+msgstr ""
+
+#: src/Orders/ReservationService.php:350
+#: src/Orders/ReservationService.php:354
+msgid "Selected blocks are outside the grid."
+msgstr ""
+
+#. translators: %s: stats unit label such as blocks or pixels.
+#: src/Pages/Concerns/RendersPagePanels.php:41
+#: templates/frontend/pages/stats.php:15
+#: templates/frontend/pages/stats.php:18
+msgid "blocks"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:142
+#: src/Pages/Concerns/RendersPagePanels.php:143
+#: src/Pages/Concerns/RendersPagePanels.php:146
+#: src/Pages/Concerns/RendersPagePanels.php:147
+#: src/Pages/Concerns/RendersPagePanels.php:148
+#: src/Pages/Concerns/RendersPagePanels.php:149
+#: src/Pages/Concerns/RendersPagePanels.php:150
+#: src/Pages/Concerns/RendersPagePanels.php:153
+#: src/Pages/Concerns/RendersPagePanels.php:352
+#: templates/frontend/pages/grid-picker.php:70
+#: assets/mds3/js/blocks.js:755
+msgid "Open grid"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:144
+msgid "Open checkout"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:145
+msgid "My account"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:181
+msgid "No active grids are available yet."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:183
+#: src/Pages/Concerns/RendersPagePanels.php:214
+#: templates/frontend/pages/grid-picker.php:21
+msgid "Choose a grid"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:243
+#: templates/admin/pages/grids.php:372
+#: templates/admin/pages/orders.php:434
+#: templates/admin/partials/dashboard-extension-cards.php:150
+msgid "Previous"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:285
+#: templates/admin/pages/grids.php:377
+#: templates/admin/pages/orders.php:438
+#: templates/admin/partials/dashboard-extension-cards.php:152
+msgid "Next"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:345
+msgid "Order pixels"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:346
+msgid "View advertisers"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:347
+msgid "View statistics"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:348
+#: src/Pages/Concerns/RendersPagePanels.php:349
+msgid "Continue"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:357
+msgid "Choose the grid where you want to place your ad."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:358
+msgid "Choose a grid to view its published advertisers."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:359
+msgid "Choose a grid to view its current availability."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:362
+#: templates/frontend/pages/grid-picker.php:22
+msgid "Choose the grid you want to continue with."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:431
+#: templates/frontend/grid/shell.php:87
+#: templates/frontend/pages/advertiser-list.php:17
+#: templates/frontend/pages/order-upload.php:27
+msgid "Image"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:433
+#: templates/frontend/pages/advertiser-list.php:19
+msgid "Website"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:434
+#: templates/admin/pages/grids.php:145
+#: templates/admin/partials/packages-panel.php:24
+#: templates/frontend/pages/advertiser-list.php:20
+msgid "Description"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:435
+#: templates/frontend/grid/shell.php:98
+#: templates/frontend/pages/advertiser-list.php:21
+#: templates/frontend/pages/order-upload.php:38
+msgid "Alt text"
+msgstr ""
+
+#. translators: %d: advertiser placement ID.
+#: src/Pages/Concerns/RendersPagePanels.php:486
+#, php-format
+msgid "Advertiser #%d"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:573
+#: templates/frontend/pages/order-summary.php:13
+msgid "Order Summary"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:627
+msgid "Renewal request could not be verified."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:645
+msgid "Renewal checkout is not configured. Contact the site owner for help renewing this placement."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:654
+msgid "Renewal checkout is ready."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:666
+msgid "Manage Upload"
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:692
+msgid "Select available blocks on the grid to create an order."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:693
+msgid "Ad content is now attached to the reserved grid placement."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:694
+msgid "Confirm the selected blocks from the grid checkout flow."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:695
+msgid "Complete payment through the connected commerce checkout."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:696
+msgid "Review orders and account details from your account area."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:697
+msgid "Your order has been received."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:698
+msgid "Advertisers are shown directly on the grid."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:699
+msgid "Upload artwork after reserving blocks on the grid."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:700
+msgid "No active orders were found for this account."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:703
+msgid "This page was migrated from Million Dollar Script 2."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:726
+msgid "This reservation can be released automatically if payment is not completed."
+msgstr ""
+
+#: src/Pages/Concerns/RendersPagePanels.php:727
+msgid "This order can be released automatically if payment is not completed."
+msgstr ""
+
+#. translators: %s: reservation expiration date and time
+#: src/Pages/Concerns/RendersPagePanels.php:740
+#, php-format
+msgid "Your selected blocks are held until %s. Complete payment before then to keep this reservation."
+msgstr ""
+
+#. translators: %s: order cleanup date and time
+#: src/Pages/Concerns/RendersPagePanels.php:745
+#, php-format
+msgid "This order is awaiting payment. If payment is not completed, the reserved blocks can be released after %s."
+msgstr ""
+
+#: src/Pages/PageRepository.php:34
+#: assets/mds3/js/blocks.js:140
+msgid "Pixel Grid"
+msgstr ""
+
+#: src/Pages/PageRepository.php:35
+msgid "Order Pixels"
+msgstr ""
+
+#: src/Pages/PageRepository.php:36
+msgid "Write Content"
+msgstr ""
+
+#: src/Pages/PageRepository.php:37
+msgid "Confirm Order"
+msgstr ""
+
+#: src/Pages/PageRepository.php:38
+#: templates/admin/pages/orders.php:275
+msgid "Payment"
+msgstr ""
+
+#: src/Pages/PageRepository.php:39
+#: templates/frontend/pages/manage-orders.php:13
+msgid "Manage Pixels"
+msgstr ""
+
+#: src/Pages/PageRepository.php:40
+msgid "Thank You"
+msgstr ""
+
+#: src/Pages/PageRepository.php:41
+#: templates/frontend/pages/advertiser-list.php:37
+msgid "Advertiser List"
+msgstr ""
+
+#: src/Pages/PageRepository.php:42
+#: templates/admin/pages/orders.php:283
+msgid "Upload"
+msgstr ""
+
+#: src/Pages/PageRepository.php:43
+msgid "No Orders"
+msgstr ""
+
+#: src/Pages/PageRepository.php:44
+msgid "Statistics Page"
+msgstr ""
+
+#: src/Pages/PageRepository.php:80
+msgid "A valid page and page type are required."
+msgstr ""
+
+#: src/Rendering/Concerns/ManagesImageGridAccount.php:42
+msgid "ImageGrid API URL and API key are required."
+msgstr ""
+
+#: src/Rendering/Concerns/ManagesImageGridAccount.php:47
+msgid "The ImageGrid extension did not provide a connection test handler."
+msgstr ""
+
+#: src/Rendering/Concerns/ManagesImageGridAccount.php:99
+msgid "Configured"
+msgstr ""
+
+#: src/Rendering/Concerns/ManagesImageGridAccount.php:99
+msgid "Local fallback"
+msgstr ""
+
+#: src/Rendering/Concerns/ManagesImageGridAccount.php:100
+msgid "ImageGrid account configured"
+msgstr ""
+
+#: src/Rendering/Concerns/ManagesImageGridAccount.php:100
+msgid "Local rendering only"
+msgstr ""
+
+#. translators: %s: quota key
+#: src/Rendering/Concerns/SubmitsImageGridJobs.php:40
+#, php-format
+msgid "ImageGrid quota check failed for %s. Local rendering was used instead."
+msgstr ""
+
+#: src/Rendering/Concerns/SubmitsImageGridJobs.php:77
+msgid "Render job not found."
+msgstr ""
+
+#: src/Rendering/Concerns/SubmitsImageGridJobs.php:144
+msgid "Remote ImageGrid rendering is handled by the ImageGrid extension."
+msgstr ""
+
+#: src/Rendering/Concerns/SubmitsImageGridJobs.php:155
+msgid "ImageGrid API is not configured."
+msgstr ""
+
+#: src/Rendering/Concerns/SubmitsImageGridJobs.php:161
+msgid "ImageGrid render payload is invalid."
+msgstr ""
+
+#: src/Rendering/Concerns/SubmitsImageGridJobs.php:181
+msgid "ImageGrid render submission failed."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:32
+msgid "Automation key"
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:44
+msgid "API key could not be created."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:111
+msgid "Active API key not found."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:123
+msgid "API key could not be rotated."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:141
+msgid "API key is required."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:149
+msgid "Unknown or revoked API key."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:151
+msgid "API key is invalid or revoked."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:156
+#: src/Rest/ApiKeyRepository.php:158
+msgid "API key scope does not permit this action."
+msgstr ""
+
+#: src/Rest/ApiKeyRepository.php:162
+#: src/Rest/ApiKeyRepository.php:164
+msgid "API key rate limit exceeded."
+msgstr ""
+
+#: src/Rest/Concerns/AuthorizesApiRequests.php:21
+msgid "This API endpoint is disabled by policy."
+msgstr ""
+
+#: src/Rest/Concerns/AuthorizesApiRequests.php:37
+msgid "A valid WordPress REST nonce is required for this Million Dollar Script API endpoint."
+msgstr ""
+
+#: src/Rest/Concerns/AuthorizesApiRequests.php:41
+msgid "This API endpoint requires an authenticated WordPress administrator by policy."
+msgstr ""
+
+#: src/Rest/Concerns/AuthorizesApiRequests.php:46
+msgid "Authentication is required for this Million Dollar Script API endpoint."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:23
+msgid "List public grids."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:24
+msgid "Create grids."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:25
+msgid "Read a public grid."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:26
+msgid "Update or archive grids."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:27
+msgid "List grid blocks."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:28
+msgid "Update grid availability regions."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:29
+msgid "List grid packages."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:30
+msgid "Create or update grid packages."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:31
+msgid "List grid price rules."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:32
+msgid "Create or update grid price rules."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:33
+msgid "List public placements."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:34
+msgid "Create placements."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:35
+msgid "Create block reservations."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:36
+msgid "Read orders."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:37
+msgid "Read one order."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:38
+msgid "Update order state."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:39
+msgid "Read order items."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:40
+msgid "Read grid render status."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:41
+msgid "Read grid render preflight data."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:42
+msgid "Run grid render preflight."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:43
+msgid "Submit render jobs."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:44
+msgid "Read render job status."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:45
+msgid "Run migration dry runs and imports."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:49
+msgid "Manage ImageGrid account connection checks."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:54
+msgid "Read extension catalog."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:55
+msgid "Read extension capabilities."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:56
+msgid "Read setup extension selections."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:57
+msgid "Read Million Dollar Script endpoint and extension discovery metadata."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:58
+msgid "Read the OpenAPI contract for Million Dollar Script and active extensions."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:59
+msgid "Read extension catalog and capabilities."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:60
+msgid "Read administrator API discovery metadata."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:61
+msgid "Manage API keys."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:62
+msgid "Revoke an API key."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:63
+msgid "Rotate an API key."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:64
+msgid "Read API audit logs."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsEndpointManifest.php:65
+msgid "Manage API keys, policies, and audit logs."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsOpenApiDocument.php:38
+msgid "Million Dollar Script API"
+msgstr ""
+
+#: src/Rest/Concerns/BuildsOpenApiDocument.php:40
+msgid "Discovery contract for Million Dollar Script core and extension APIs."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsOpenApiDocument.php:117
+msgid "Successful response."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsOpenApiDocument.php:118
+msgid "Authentication is required."
+msgstr ""
+
+#: src/Rest/Concerns/BuildsOpenApiDocument.php:119
+msgid "The authenticated actor is not allowed to use this endpoint."
+msgstr ""
+
+#: src/Rest/Concerns/HandlesOrderEndpoints.php:44
+msgid "Unsupported order status."
+msgstr ""
+
+#: src/Rest/Concerns/HandlesOrderEndpoints.php:54
+msgid "Order status could not be updated."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:22
+msgid "General"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:23
+msgid "Default Currency"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:23
+msgid "Used for standalone/manual checkout. WooCommerce or another payment provider can lock this to the store currency."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:24
+msgid "Currency Symbol"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:24
+msgid "Used with the default currency when no payment provider controls display currency."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:25
+msgid "Legacy Public Endpoint Slug"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:25
+msgid "Preserved for older Million Dollar Script 2 integrations. Current sites use pages, shortcodes, blocks, AJAX, and REST endpoints instead."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:26
+msgid "Theme Mode"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:27
+#: templates/admin/pages/setup.php:118
+msgid "Payment Provider"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:27
+msgid "Extensions register available checkout adapters here. The core plugin keeps checkout routing provider-neutral."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:29
+msgid "URLs & Redirects"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:30
+msgid "Account Page URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:31
+msgid "Register Page URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:32
+msgid "Login Page URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:33
+msgid "Forgot Password Page URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:34
+msgid "Checkout URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:35
+msgid "Thank You Page URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:36
+msgid "Confirm Orders Page"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:37
+msgid "Enable Million Dollar Script Pixel Pages"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:38
+msgid "Exclude Million Dollar Script Pixels From Search"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:39
+msgid "Million Dollar Script Pixel URL Base"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:40
+msgid "Million Dollar Script Pixel Slug Pattern"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:41
+msgid "URL Cloaking"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:42
+msgid "Validate Advertiser URLs"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:43
+msgid "Redirect Available Blocks"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:44
+msgid "Available Block Redirect URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:45
+msgid "Advertiser Link Target"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:47
+msgid "Display & Interaction"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:48
+msgid "Primary Background Color"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:49
+msgid "Secondary Background Color"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:50
+msgid "Primary Text Color"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:51
+msgid "Primary Button Background"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:52
+msgid "Primary Button Text"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:53
+msgid "Display Pixel Background"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:54
+msgid "Pixel Selection Method"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:55
+msgid "Multi-block Selection"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:56
+msgid "Selection Shape Rule"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:56
+msgid "Adjacency required"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:56
+msgid "Square or rectangle required"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:56
+msgid "None - blocks can be anywhere"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:57
+msgid "Show Uploaded Image In Advanced Mode"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:58
+msgid "Resize Uploaded Pixels Automatically"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:59
+msgid "Show Grid Dropdown On Manage Pixels"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:60
+msgid "Invert Pixel Selection"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:61
+msgid "Stats Display Mode"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:61
+msgid "Pixels - show sold/available pixels"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:61
+msgid "Blocks - show sold/available blocks"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:62
+msgid "Show Grid View Controls"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:62
+msgid "Adds optional View all and View images buttons below public grids. Grids fit the full board by default."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:63
+msgid "Show Block Popup"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:64
+msgid "Popup Interaction Method"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:65
+msgid "Max Popup Size"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:66
+msgid "Max Popup Image Size"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:69
+msgid "Popup Template"
+msgstr ""
+
+#. translators: %text%, %url%, %image%, and %alt_text% are literal popup template placeholders.
+#: src/Settings/SettingsSchema.php:74
+#, php-format
+msgid "Optional HTML template for occupied block popups. Supports %text%, %url%, %image%, and %alt_text%. Leave blank to use the built-in layout."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:77
+msgid "Login"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:78
+msgid "Login Redirect URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:79
+msgid "Logout Redirect URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:80
+msgid "Login Header Image"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:81
+msgid "Login Header Text"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:83
+msgid "Orders & Uploads"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:84
+msgid "Allow Guest Orders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:85
+msgid "Expire Orders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:85
+msgid "When enabled, Million Dollar Script cleans up unpaid, expired, cancelled, or denied orders after the timing rules below."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:86
+msgid "Auto-complete Manual Payments"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:87
+msgid "Order Locking"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:88
+msgid "Minutes To Keep Expired Orders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:88
+msgid "Use -1 for immediate cleanup after an order expires, or 0 to retain expired order records."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:89
+msgid "Minutes To Keep Confirmed Orders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:89
+msgid "Applies to paid orders after their placement duration ends."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:90
+msgid "Minutes To Keep Unconfirmed Orders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:90
+msgid "Controls how long unpaid reservations remain available for customers to finish checkout."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:91
+msgid "Minutes To Keep Cancelled Orders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:91
+msgid "Use this retention window for cancelled or denied orders kept for admin reference."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:92
+msgid "Make Popup Text Optional"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:93
+msgid "Use Rich Text Popup Field"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:93
+msgid "Adds a simple formatting toolbar for customer popup text. Only basic tags are saved: paragraphs, line breaks, bold, and italic."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:94
+msgid "Make URL Optional"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:95
+msgid "Make Image Optional"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:96
+msgid "Max Upload Width"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:96
+#: src/Settings/SettingsSchema.php:334
+msgid "Maximum uploaded artwork width in pixels. Use 0 for no explicit plugin limit; the server upload limit still applies."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:97
+msgid "Max Upload Height"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:97
+#: src/Settings/SettingsSchema.php:335
+msgid "Maximum uploaded artwork height in pixels. Use 0 for no explicit plugin limit; smaller limits are safer on shared hosting."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:99
+msgid "Order Emails"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:101
+msgid "Extension Server URL"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:101
+msgid "Used for extension catalog, license, and update checks. Local development can point this to the local extension server."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:102
+msgid "Create Extension Portal Accounts"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:102
+msgid "Leave disabled unless the extension server is configured to provision portal users for this site."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:103
+msgid "Disable Anonymous Version Analytics"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:104
+msgid "Delete Data On Uninstall"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:105
+msgid "Plugin Updates Channel"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:106
+msgid "Enable Logging"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:107
+msgid "Update Language Files"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:108
+msgid "Transliterate Slugs"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:110
+msgid "Rendering"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:144
+msgid "Active setting"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:145
+msgid "Compatibility only"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:146
+msgid "Planned setting"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:147
+msgid "Extension-owned"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:155
+msgid "This setting is used by the current Million Dollar Script runtime."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:156
+msgid "This value is kept for Million Dollar Script 2 migration, import/export, and custom code compatibility, but it is not shown as a live control in the main settings form."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:157
+msgid "This setting is reserved for planned functionality and is preserved during import/export, but it is not shown as a live control until the feature is implemented."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:158
+msgid "This setting belongs to an extension and should be managed by that extension when it is active."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:198
+msgid "Email Customers When Payment Is Requested"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:198
+#: src/Settings/SettingsSchema.php:199
+#: src/Settings/SettingsSchema.php:200
+#: src/Settings/SettingsSchema.php:201
+msgid "Payment Requested"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:199
+msgid "Email Admin When Payment Is Requested"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:200
+msgid "Payment Requested Subject"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:201
+msgid "Payment Requested Message"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:203
+msgid "Email Customers When Orders Are Paid"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:203
+#: src/Settings/SettingsSchema.php:204
+#: src/Settings/SettingsSchema.php:205
+#: src/Settings/SettingsSchema.php:206
+msgid "Order Paid"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:204
+msgid "Email Admin When Orders Are Paid"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:205
+msgid "Order Paid Subject"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:206
+msgid "Order Paid Message"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:208
+msgid "Email Customers When Renewals Are Paid"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:208
+#: src/Settings/SettingsSchema.php:209
+#: src/Settings/SettingsSchema.php:210
+#: src/Settings/SettingsSchema.php:211
+msgid "Renewal Paid"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:209
+msgid "Email Admin When Renewals Are Paid"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:210
+msgid "Renewal Paid Subject"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:211
+msgid "Renewal Paid Message"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:213
+msgid "Email Customers When Orders Expire"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:213
+#: src/Settings/SettingsSchema.php:214
+#: src/Settings/SettingsSchema.php:215
+#: src/Settings/SettingsSchema.php:216
+msgid "Order Expired"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:214
+msgid "Email Admin When Orders Expire"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:215
+msgid "Order Expired Subject"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:216
+msgid "Order Expired Message"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:218
+msgid "Email Customers When Orders Are Denied"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:218
+#: src/Settings/SettingsSchema.php:219
+#: src/Settings/SettingsSchema.php:220
+#: src/Settings/SettingsSchema.php:221
+msgid "Order Denied"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:219
+msgid "Email Admin When Orders Are Denied"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:220
+msgid "Order Denied Subject"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:221
+msgid "Order Denied Message"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:223
+msgid "Email Admin When Placements Are Published"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:223
+#: src/Settings/SettingsSchema.php:224
+#: src/Settings/SettingsSchema.php:225
+msgid "Placement Published"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:224
+msgid "Placement Published Subject"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:225
+msgid "Placement Published Message"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:227
+msgid "Email Customers Renewal Reminders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:227
+#: src/Settings/SettingsSchema.php:228
+#: src/Settings/SettingsSchema.php:229
+#: src/Settings/SettingsSchema.php:230
+#: src/Settings/SettingsSchema.php:231
+#: src/Settings/SettingsSchema.php:232
+#: src/Settings/SettingsSchema.php:233
+msgid "Renewal Reminders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:228
+msgid "Email Admin Renewal Reminders"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:229
+msgid "First Renewal Reminder Days"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:230
+msgid "Second Renewal Reminder Days"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:231
+msgid "Third Renewal Reminder Days"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:232
+msgid "Renewal Reminder Subject"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:232
+msgid "Your Order Will Expire Soon"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:233
+msgid "Renewal Reminder Message"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:238
+msgid "Controls whether this email is sent through direct WordPress mail."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:278
+msgid "Three-letter currency code used for standalone orders. When a payment provider owns currency, this follows the provider store currency."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:279
+msgid "Currency symbol shown in Million Dollar Script screens. When a payment provider owns currency, this follows the provider store symbol."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:280
+msgid "Legacy endpoint slug preserved for older custom integrations. Current Million Dollar Script pages and API routes do not use this value."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:281
+msgid "Controls whether Million Dollar Script frontend views and admin screens follow the visitor system theme or force a light/dark style."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:282
+msgid "Selects the checkout adapter used by Million Dollar Script and monetization extensions. Payment providers are installed as extensions."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:283
+msgid "Page URL customers use to view their Million Dollar Script account area."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:284
+msgid "Page URL customers use to create an account."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:285
+msgid "Page URL customers use to log in."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:286
+msgid "Page URL customers use to reset a password."
+msgstr ""
+
+#. translators: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, and %PIXELID% are literal checkout URL placeholders.
+#: src/Settings/SettingsSchema.php:288
+#, php-format
+msgid "Standalone checkout URL used when no payment provider is handling payment. Supports legacy placeholder tokens: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, and %PIXELID%."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:289
+msgid "Page URL shown after checkout or order confirmation."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:290
+msgid "Requires customers to confirm an order before it moves forward."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:291
+msgid "Enables generated pages for individual advertiser pixel placements."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:292
+msgid "Keeps generated Million Dollar Script pixel pages out of WordPress search results."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:293
+msgid "Base URL segment used for generated Million Dollar Script pixel pages."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:294
+msgid "Pattern used for generated Million Dollar Script pixel page slugs."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:295
+msgid "Choose Yes to send grid clicks directly to advertiser URLs. Choose No to route clicks through the Million Dollar Script redirect endpoint so click handling and compatible analytics can run first."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:296
+msgid "Checks advertiser URLs before accepting them."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:297
+msgid "Sends visitors who click available grid blocks to the configured redirect URL."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:298
+msgid "Destination URL for available grid blocks when redirects are enabled."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:299
+msgid "Browser target used when visitors open advertiser links."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:300
+msgid "Main background color for Million Dollar Script frontend views."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:301
+msgid "Secondary surface color used by Million Dollar Script frontend panels and controls."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:302
+msgid "Primary text color used by Million Dollar Script frontend views."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:303
+msgid "Background color for primary Million Dollar Script buttons."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:304
+msgid "Text color for primary Million Dollar Script buttons."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:305
+msgid "Shows the configured background behind grid pixels."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:306
+msgid "Uses AJAX for block selection instead of full page refreshes."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:307
+msgid "Shows the customer upload preview while advanced placement controls are open."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:308
+msgid "Automatically resizes uploaded images to fit the purchased block area."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:309
+msgid "Shows a grid selector on customer manage-pixels screens."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:310
+msgid "Inverts the selection behavior used by legacy manage-pixels screens."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:311
+msgid "Controls whether stats boxes show sold/available inventory as pixels or sellable blocks."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:312
+msgid "Shows optional View all and View images buttons below public grids. Leave disabled for the simpler full-grid default."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:313
+msgid "Shows advertiser details in a popup over occupied blocks."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:314
+msgid "Controls whether block popups open on hover or click."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:315
+msgid "Maximum popup width in pixels."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:316
+msgid "Maximum popup image width in pixels."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:317
+msgid "Optional HTML template for occupied block popups. Use %image% where the uploaded placement image should appear."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:318
+msgid "URL customers are sent to after login."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:319
+msgid "URL customers are sent to after logout."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:320
+msgid "WordPress media image shown above Million Dollar Script login forms."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:321
+msgid "Short text shown near the Million Dollar Script login header image."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:322
+msgid "Allows customers to place orders without creating a WordPress account."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:323
+msgid "Expires unpaid or stale orders according to the timing settings below."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:324
+msgid "Automatically completes standalone/manual orders after upload when no checkout URL or gateway webhook will confirm payment."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:325
+msgid "Temporarily locks selected blocks while checkout is pending."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:326
+msgid "Minutes to keep expired orders before cancelling them. Use 0 to leave expired orders unchanged, or -1 to cancel immediately."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:327
+msgid "Minutes to keep orders awaiting payment before expiring them and releasing reserved blocks. Use 0 to disable, or -1 for immediate cleanup."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:328
+msgid "Minutes to keep reserved orders before expiring them and releasing reserved blocks. Use 0 to disable, or -1 for immediate cleanup."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:329
+msgid "Minutes to keep cancelled, failed, refunded, or denied orders before marking them deleted. Records remain in the database for audit. Use 0 to disable, or -1 for immediate cleanup."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:330
+msgid "Allows customers to omit popup text from their placement."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:331
+msgid "Uses a simple rich text editor for customer popup copy while saving only basic safe formatting."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:332
+msgid "Allows customers to omit the advertiser destination URL."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:333
+msgid "Allows customers to submit an order without uploading artwork immediately."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:336
+msgid "Sends customers a notice when an order moves to payment requested or checkout pending."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:337
+msgid "Sends the site administrator a copy of payment requested notices."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:338
+msgid "Subject used for payment requested notices. Supports %ORDER_ID%, %SITE_NAME%, %CUSTOMER_EMAIL%, and related order placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:339
+msgid "Message used for payment requested notices. Supports %ORDER_ID%, %PIXEL_COUNT%, %PRICE%, %STATUS%, %MANAGE_URL%, %SITE_NAME%, %SITE_URL%, and customer placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:340
+msgid "Sends customers a notice when an order is paid and active."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:341
+msgid "Sends the site administrator a copy of paid order notices."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:342
+msgid "Subject used for paid order notices. Supports %ORDER_ID%, %SITE_NAME%, %CUSTOMER_EMAIL%, and related order placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:343
+msgid "Message used for paid order notices. Supports %ORDER_ID%, %PIXEL_COUNT%, %PRICE%, %STATUS%, %MANAGE_URL%, %SITE_NAME%, %SITE_URL%, and customer placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:344
+msgid "Sends customers a notice when a renewal payment completes."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:345
+msgid "Sends the site administrator a copy of renewal paid notices."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:346
+msgid "Subject used for renewal paid notices. Supports %ORDER_ID%, %SITE_NAME%, %CUSTOMER_EMAIL%, and related order placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:347
+msgid "Message used for renewal paid notices. Supports %ORDER_ID%, %PIXEL_COUNT%, %PRICE%, %STATUS%, %MANAGE_URL%, %SITE_NAME%, %SITE_URL%, and customer placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:348
+msgid "Sends customers a notice when a paid placement expires or an unpaid reservation is released by cleanup."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:349
+msgid "Sends the site administrator a copy of order expiration and cleanup notices."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:350
+msgid "Subject used for order expiration notices. Supports %ORDER_ID%, %SITE_NAME%, %CUSTOMER_EMAIL%, and related order placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:351
+msgid "Message used for order expiration notices. Supports %ORDER_ID%, %PIXEL_COUNT%, %PRICE%, %STATUS%, %MANAGE_URL%, %SITE_NAME%, %SITE_URL%, and customer placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:352
+msgid "Sends customers a notice when an order is denied by an administrator or integration."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:353
+msgid "Sends the site administrator a copy of order denied notices."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:354
+msgid "Subject used for order denied notices. Supports %ORDER_ID%, %SITE_NAME%, %CUSTOMER_EMAIL%, and related order placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:355
+msgid "Message used for order denied notices. Supports %ORDER_ID%, %PIXEL_COUNT%, %PRICE%, %STATUS%, %MANAGE_URL%, %SITE_NAME%, %SITE_URL%, and customer placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:356
+msgid "Sends the site administrator a notice when an active placement is saved or updated."
+msgstr ""
+
+#. translators: %ORDER_ID%, %GRID_NAME%, %PLACEMENT_URL%, and %MANAGE_URL% are literal email placeholders.
+#: src/Settings/SettingsSchema.php:358
+#, php-format
+msgid "Subject used for placement published notices. Supports %ORDER_ID%, %GRID_NAME%, %PLACEMENT_URL%, %MANAGE_URL%, and related order placeholders."
+msgstr ""
+
+#. translators: %ORDER_ID%, %GRID_NAME%, %PLACEMENT_URL%, %PLACEMENT_ALT%, %MANAGE_URL%, and %SITE_NAME% are literal email placeholders.
+#: src/Settings/SettingsSchema.php:360
+#, php-format
+msgid "Message used for placement published notices. Supports %ORDER_ID%, %GRID_NAME%, %PLACEMENT_URL%, %PLACEMENT_ALT%, %MANAGE_URL%, %SITE_NAME%, and customer placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:361
+msgid "Sends customers a reminder before a paid placement reaches its expiration date."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:362
+msgid "Sends the site administrator a copy of renewal reminder notices."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:363
+msgid "Number of days before expiration for the first reminder. Use 0 to disable this reminder."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:364
+msgid "Number of days before expiration for the second reminder. Use 0 to disable this reminder."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:365
+msgid "Number of days before expiration for the third reminder. Use 0 to disable this reminder."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:366
+msgid "Subject used for renewal reminder notices. Supports %DAYS_LEFT%, %ORDER_ID%, %SITE_NAME%, and related order placeholders."
+msgstr ""
+
+#. translators: %DAYS_LEFT%, %EXPIRES_AT%, %MANAGE_URL%, %PRICE%, and %SITE_NAME% are literal email placeholders.
+#: src/Settings/SettingsSchema.php:368
+#, php-format
+msgid "Message used for renewal reminder notices. Supports %DAYS_LEFT%, %EXPIRES_AT%, %MANAGE_URL%, %PRICE%, %SITE_NAME%, and related order placeholders."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:369
+msgid "Enables customers to select more than one block per order."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:370
+msgid "Controls whether customers must choose connected blocks, a complete square or rectangle, or any unrestricted set of blocks."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:371
+msgid "Base URL used by the Million Dollar Script extension catalog and license services."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:372
+msgid "Creates extension portal accounts automatically when the site connects to Million Dollar Script services."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:373
+msgid "Stops the existing update check from reporting the MDS, WordPress, PHP, and official extension versions and active states with a hashed site identifier. Other plugins, customer data, content, and credentials are not sent."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:374
+msgid "Deletes Million Dollar Script tables and options when the plugin is uninstalled."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:375
+msgid "Selects the update channel used for Million Dollar Script plugin updates."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:376
+msgid "Enables Million Dollar Script diagnostic logging."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:377
+msgid "Allows Million Dollar Script language files to be updated automatically."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:378
+msgid "Converts non-Latin characters in generated slugs when possible."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:381
+msgid "Controls this Million Dollar Script setting."
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:607
+msgid "<p>Your Million Dollar Script order on %SITE_NAME% is ready for payment.</p><p>Order #%ORDER_ID%<br>Pixels: %PIXEL_COUNT%<br>Price: %PRICE%<br>Status: %STATUS%</p><p>You can finish payment or manage the order here: <a href=\"%MANAGE_URL%\">%MANAGE_URL%</a></p><p>Contact %SITE_CONTACT_EMAIL% if you have questions.</p>"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:614
+msgid "<p>Your Million Dollar Script order on %SITE_NAME% is paid and active.</p><p>Order #%ORDER_ID%<br>Pixels: %PIXEL_COUNT%<br>Price: %PRICE%<br>Status: %STATUS%</p><p>You can manage your placement here: <a href=\"%MANAGE_URL%\">%MANAGE_URL%</a></p><p>Contact %SITE_CONTACT_EMAIL% if you have questions.</p>"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:621
+msgid "<p>Your Million Dollar Script renewal on %SITE_NAME% is paid and active.</p><p>Order #%ORDER_ID%<br>Pixels: %PIXEL_COUNT%<br>Renewal price: %PRICE%<br>Status: %STATUS%</p><p>You can manage your placement here: <a href=\"%MANAGE_URL%\">%MANAGE_URL%</a></p><p>Contact %SITE_CONTACT_EMAIL% if you have questions.</p>"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:628
+msgid "<p>Your Million Dollar Script order on %SITE_NAME% has expired.</p><p>Order #%ORDER_ID%<br>Pixels: %PIXEL_COUNT%<br>Price: %PRICE%<br>Status: %STATUS%</p><p>You can review the order here: <a href=\"%MANAGE_URL%\">%MANAGE_URL%</a></p><p>Contact %SITE_CONTACT_EMAIL% if you have questions.</p>"
+msgstr ""
+
+#: src/Settings/SettingsSchema.php:635
+msgid "<p>Your Million Dollar Script order on %SITE_NAME% was denied.</p><p>Order #%ORDER_ID%<br>Pixels: %PIXEL_COUNT%<br>Price: %PRICE%<br>Status: %STATUS%</p><p>You can review the order here: <a href=\"%MANAGE_URL%\">%MANAGE_URL%</a></p><p>Contact %SITE_CONTACT_EMAIL% if you have questions.</p>"
+msgstr ""
+
+#. translators: %SITE_NAME%, %GRID_NAME%, %ORDER_ID%, %PLACEMENT_URL%, and %MANAGE_URL% are literal email placeholders replaced before sending.
+#: src/Settings/SettingsSchema.php:643
+#, php-format
+msgid "<p>A Million Dollar Script placement was published on %SITE_NAME%.</p><p>Grid: %GRID_NAME%<br>Order #%ORDER_ID%<br>Advertiser URL: %PLACEMENT_URL%</p><p>Review the order here: <a href=\"%MANAGE_URL%\">%MANAGE_URL%</a></p>"
+msgstr ""
+
+#. translators: %SITE_NAME%, %DAYS_LEFT%, %ORDER_ID%, %PIXEL_COUNT%, %EXPIRES_AT%, %PRICE%, %MANAGE_URL%, and %SITE_CONTACT_EMAIL% are literal email placeholders replaced before sending.
+#: src/Settings/SettingsSchema.php:651
+#, php-format
+msgid "<p>Your Million Dollar Script order on %SITE_NAME% will expire in %DAYS_LEFT% days.</p><p>Order #%ORDER_ID%<br>Pixels: %PIXEL_COUNT%<br>Expires: %EXPIRES_AT%<br>Renewal price: %PRICE%</p><p>You can renew or manage the order here: <a href=\"%MANAGE_URL%\">%MANAGE_URL%</a></p><p>Contact %SITE_CONTACT_EMAIL% if you have questions.</p>"
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:35
+msgid "Choose a settings export JSON file."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:42
+msgid "Upload a valid Million Dollar Script settings JSON file."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:47
+msgid "Settings import files must be 1 MB or smaller."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:52
+msgid "The settings import file is empty."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:57
+msgid "The settings import file is not valid JSON."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:71
+msgid "This settings file was created by a newer import format."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:98
+msgid "The settings import file does not contain any settings."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:228
+msgid "The settings import file does not contain a settings object."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:233
+msgid "This setting has an unsupported value type."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:238
+msgid "Expected a number."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:242
+msgid "Expected a six-digit hex color."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:246
+msgid "This value is not available on this site."
+msgstr ""
+
+#: src/Settings/SettingsTransfer.php:328
+msgid "Empty"
+msgstr ""
+
+#: src/Setup/Installer.php:127
+msgid "Million Dollar Script requires PHP 8.1 or newer."
+msgstr ""
+
+#: src/Setup/Installer.php:135
+msgid "Million Dollar Script requires WordPress 6.0 or newer."
+msgstr ""
+
+#: src/Setup/PluginDependencyInstaller.php:62
+msgid "Unknown plugin dependency."
+msgstr ""
+
+#: src/Setup/PluginDependencyInstaller.php:66
+msgid "You do not have permission to install and activate plugins."
+msgstr ""
+
+#: src/Setup/PluginDependencyInstaller.php:81
+msgid "The plugin was installed, but WordPress could not find the expected plugin file."
+msgstr ""
+
+#: src/Setup/PluginDependencyInstaller.php:124
+msgid "WordPress.org did not return a plugin download link."
+msgstr ""
+
+#: src/Setup/PluginDependencyInstaller.php:138
+msgid "WordPress could not install the plugin automatically."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:16
+msgid "API settings saved."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:20
+msgid "API key revoked."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:24
+msgid "API key rotated."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:35
+msgid "Rotated API key"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:35
+msgid "New API key"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:39
+msgid "This key is shown once. Store it in the app, automation, or LLM tool that will use it."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:46
+msgid "Create scoped key"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:47
+msgid "Use scoped keys for apps, automations, and LLM tools that need controlled access to Million Dollar Script APIs."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:50
+msgid "API clients can send the key as a Bearer token or with the X-Million-Dollar-Script-API-Key header."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:55
+msgid "Key name"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:60
+#: templates/admin/partials/api-keys-table.php:20
+msgid "Scopes"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:63
+msgid "Examples: core.grid.read, core.grid.write, core.order.read, core.order.write, core.extension.read, core.render.write, core.*"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:64
+msgid "Hourly rate limit"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:65
+msgid "Create API key"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:70
+msgid "Active keys"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:77
+msgid "Endpoint policies"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:78
+msgid "Policies can be tightened per endpoint. Million Dollar Script will not save a policy that is weaker than the endpoint minimum."
+msgstr ""
+
+#: templates/admin/pages/api-access.php:85
+msgid "Save endpoint policies"
+msgstr ""
+
+#: templates/admin/pages/api-access.php:90
+msgid "Recent API audit log"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:13
+msgid "Million Dollar Script Dashboard"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:16
+msgid "Pixels to Profit"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:19
+msgid "Manage pixel grids, payments, extensions, and API access from one clear workspace."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:19
+msgid "Choose site capabilities, connect extensions, and expose secure APIs from one clear workspace."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:24
+#: assets/mds3/js/blocks.js:696
+msgid "Manage grids"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:24
+msgid "Create first grid"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:28
+msgid "Choose capabilities"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:31
+msgid "Explore extensions"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:49
+msgid "Services and upgrades"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:50
+msgid "Helpful add-ons, setup help, custom work, and hosting resources."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:56
+msgid "Dashboard metrics"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:58
+msgid "Configured advertising grids"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:59
+msgid "Waiting orders"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:59
+msgid "Reserved or awaiting payment"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:67
+msgid "Paid revenue"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:67
+msgid "Completed Million Dollar Script orders"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:70
+msgid "Standard pages"
+msgstr ""
+
+#. translators: %d: missing pages
+#: templates/admin/pages/dashboard.php:72
+#, php-format
+msgid "%d missing"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:74
+#: templates/admin/partials/setup-payment-dependencies.php:20
+msgid "Ready"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:74
+msgid "Required public pages"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:77
+msgid "Classic grid"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:77
+msgid "Enable it from setup when you want pixel-grid sales."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:78
+msgid "Active extensions"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:78
+msgid "Installed extensions currently running."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:79
+msgid "API endpoints"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:79
+msgid "Discoverable secure platform routes."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:80
+msgid "Catalog"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:80
+msgid "Extensions available from the catalog."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:88
+#: templates/admin/partials/dashboard-recent-orders.php:15
+msgid "Recent orders"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:89
+msgid "Newest reservations, payments, and advertiser uploads."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:91
+#: templates/frontend/grid/shell.php:148
+msgid "View all"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:99
+msgid "Capability setup"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:100
+msgid "Classic Pixel Grid is disabled, so grid pages, orders, and grid REST routes are not registered."
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:102
+#: templates/admin/pages/settings.php:45
+msgid "Open setup"
+msgstr ""
+
+#: templates/admin/pages/dashboard.php:104
+msgid "Enable Classic Pixel Grid for a traditional Million Dollar Script site, or keep core lean while you install another product extension."
+msgstr ""
+
+#: templates/admin/pages/docs.php:25
+msgid "Bundled Help"
+msgstr ""
+
+#: templates/admin/pages/docs.php:27
+msgid "Version-matched guides installed with Million Dollar Script and active extensions."
+msgstr ""
+
+#: templates/admin/pages/docs.php:40
+msgid "Search docs"
+msgstr ""
+
+#: templates/admin/pages/docs.php:41
+msgid "Search titles, topics, and text"
+msgstr ""
+
+#: templates/admin/pages/docs.php:44
+#: templates/admin/partials/order-detail-panel.php:44
+#: templates/frontend/grid/shell.php:77
+msgid "Package"
+msgstr ""
+
+#: templates/admin/pages/docs.php:46
+msgid "All packages"
+msgstr ""
+
+#. translators: 1: package title, 2: version
+#: templates/admin/pages/docs.php:53
+#, php-format
+msgid "%1$s %2$s"
+msgstr ""
+
+#: templates/admin/pages/docs.php:62
+#: templates/admin/pages/grids.php:289
+#: templates/admin/pages/orders.php:240
+#: templates/frontend/pages/grid-picker.php:31
+msgid "Search"
+msgstr ""
+
+#: templates/admin/pages/docs.php:64
+#: templates/admin/pages/orders.php:316
+msgid "Reset"
+msgstr ""
+
+#: templates/admin/pages/docs.php:72
+msgid "No bundled docs found"
+msgstr ""
+
+#: templates/admin/pages/docs.php:73
+msgid "Documentation will appear here when the installed package includes a valid docs manifest."
+msgstr ""
+
+#: templates/admin/pages/docs.php:79
+msgid "Documentation sections"
+msgstr ""
+
+#. translators: 1: package type, 2: version, 3: channel
+#: templates/admin/pages/docs.php:95
+#, php-format
+msgid "%1$s · %2$s · %3$s"
+msgstr ""
+
+#: templates/admin/pages/docs.php:121
+msgid "No matching docs"
+msgstr ""
+
+#: templates/admin/pages/docs.php:122
+msgid "Adjust the search or package filter to show more results."
+msgstr ""
+
+#. translators: 1: docs package version, 2: channel
+#: templates/admin/pages/docs.php:135
+#, php-format
+msgid "Version %1$s · %2$s channel"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:25
+msgid "Extension Catalog"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:26
+msgid "Million Dollar Script Extensions"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:27
+msgid "Add checkout adapters, rendering services, field tools, and premium capabilities from one trusted workspace."
+msgstr ""
+
+#: templates/admin/pages/extensions.php:30
+msgid "Check updates"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:32
+msgid "Client portal"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:42
+msgid "Catalog connection:"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:45
+msgid "Configured:"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:48
+msgid "Connected:"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:55
+msgid "Connection details"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:67
+msgid "Extension summary"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:70
+msgid "Updates"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:71
+#: templates/admin/partials/dashboard-extension-cards.php:87
+#: templates/admin/partials/extensions-list.php:73
+msgid "Premium"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:76
+msgid "Server"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:79
+msgid "Public"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:90
+msgid "Discover Extensions"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:91
+msgid "Install free tools or connect a license for premium capabilities."
+msgstr ""
+
+#: templates/admin/pages/extensions.php:100
+msgid "Installed Extensions"
+msgstr ""
+
+#: templates/admin/pages/extensions.php:101
+msgid "Manage active capabilities, licenses, and available updates for this site."
+msgstr ""
+
+#: templates/admin/pages/grids.php:73
+msgid "All"
+msgstr ""
+
+#. translators: %d: number of grids imported.
+#: templates/admin/pages/grids.php:104
+#, php-format
+msgid "%d grid was imported."
+msgid_plural "%d grids were imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/pages/grids.php:113
+msgid "Imported grid"
+msgstr ""
+
+#: templates/admin/pages/grids.php:127
+#: templates/admin/pages/grids.php:358
+msgid "Edit Grid"
+msgstr ""
+
+#: templates/admin/pages/grids.php:128
+msgid "Grid edit sections"
+msgstr ""
+
+#: templates/admin/pages/grids.php:144
+#: templates/admin/pages/grids.php:222
+#: templates/admin/pages/grids.php:320
+#: templates/admin/partials/packages-panel.php:23
+#: templates/admin/partials/packages-panel.php:44
+msgid "Title"
+msgstr ""
+
+#: templates/admin/pages/grids.php:146
+#: templates/admin/pages/grids.php:223
+#: assets/mds3/js/blocks.js:1071
+#: assets/mds3/js/blocks.js:1220
+#: assets/mds3/js/blocks.js:1361
+#: assets/mds3/js/blocks.js:1422
+msgid "Width"
+msgstr ""
+
+#: templates/admin/pages/grids.php:147
+msgid "For a classic million-pixel grid, use 1000."
+msgstr ""
+
+#: templates/admin/pages/grids.php:149
+#: templates/admin/pages/grids.php:226
+#: assets/mds3/js/blocks.js:1081
+#: assets/mds3/js/blocks.js:1371
+msgid "Height"
+msgstr ""
+
+#: templates/admin/pages/grids.php:150
+msgid "For a classic million-pixel grid, use 1000 so the grid can fill a square viewport."
+msgstr ""
+
+#: templates/admin/pages/grids.php:152
+#: templates/admin/pages/grids.php:229
+msgid "Block Width"
+msgstr ""
+
+#: templates/admin/pages/grids.php:153
+msgid "A 10-pixel block on a 1000-pixel grid creates 100 columns."
+msgstr ""
+
+#: templates/admin/pages/grids.php:155
+#: templates/admin/pages/grids.php:232
+msgid "Block Height"
+msgstr ""
+
+#: templates/admin/pages/grids.php:156
+msgid "Keep this equal to block width for square classic-style selections."
+msgstr ""
+
+#: templates/admin/pages/grids.php:158
+#: templates/admin/pages/grids.php:235
+#: templates/admin/partials/price-rules-panel.php:30
+msgid "Price Per Block"
+msgstr ""
+
+#: templates/admin/pages/grids.php:159
+msgid "Used when no package or price zone overrides the selected blocks."
+msgstr ""
+
+#: templates/admin/pages/grids.php:161
+#: templates/admin/partials/packages-panel.php:27
+#: templates/admin/partials/price-rules-panel.php:31
+msgid "Currency"
+msgstr ""
+
+#: templates/admin/pages/grids.php:164
+msgid "The active payment provider owns currency, so this grid uses the provider store currency."
+msgstr ""
+
+#: templates/admin/pages/grids.php:165
+msgid "Locked to the active payment provider currency."
+msgstr ""
+
+#: templates/admin/pages/grids.php:165
+msgid "Historical orders keep their saved currency even if this value changes later."
+msgstr ""
+
+#: templates/admin/pages/grids.php:167
+#: templates/admin/pages/grids.php:238
+#: templates/admin/pages/grids.php:322
+#: assets/mds3/js/blocks.js:1091
+#: assets/mds3/js/blocks.js:1136
+#: assets/mds3/js/blocks.js:1381
+#: assets/mds3/js/blocks.js:1479
+msgid "Renderer"
+msgstr ""
+
+#: templates/admin/pages/grids.php:168
+msgid "Automatic mode uses the best available renderer for this grid and active extensions."
+msgstr ""
+
+#: templates/admin/pages/grids.php:170
+#: templates/admin/pages/grids.php:241
+msgid "Show Stats With Grid"
+msgstr ""
+
+#: templates/admin/pages/grids.php:171
+#: templates/admin/pages/grids.php:242
+msgid "Shows sold and available inventory above this grid on public read-only and order pages."
+msgstr ""
+
+#: templates/admin/pages/grids.php:174
+msgid "Ordering Rules"
+msgstr ""
+
+#: templates/admin/pages/grids.php:176
+#: templates/admin/pages/grids.php:244
+msgid "Minimum Blocks Per Order"
+msgstr ""
+
+#: templates/admin/pages/grids.php:177
+msgid "Set the smallest selection customers can reserve in one order."
+msgstr ""
+
+#: templates/admin/pages/grids.php:179
+#: templates/admin/pages/grids.php:245
+msgid "Maximum Blocks Per Order"
+msgstr ""
+
+#: templates/admin/pages/grids.php:180
+msgid "Use 0 when customers may buy any available selection size."
+msgstr ""
+
+#: templates/admin/pages/grids.php:182
+msgid "Maximum Orders"
+msgstr ""
+
+#: templates/admin/pages/grids.php:183
+msgid "Use 0 for no grid-level order cap."
+msgstr ""
+
+#: templates/admin/pages/grids.php:185
+#: templates/admin/pages/grids.php:246
+msgid "Order Duration Days"
+msgstr ""
+
+#: templates/admin/pages/grids.php:186
+msgid "Use 0 for no placement duration limit on paid orders."
+msgstr ""
+
+#: templates/admin/pages/grids.php:188
+msgid "Auto Publish Uploads"
+msgstr ""
+
+#: templates/admin/pages/grids.php:189
+msgid "Auto Approve Orders"
+msgstr ""
+
+#: templates/admin/pages/grids.php:190
+msgid "Unavailable Blocks Covered"
+msgstr ""
+
+#: templates/admin/pages/grids.php:191
+msgid "Background Color"
+msgstr ""
+
+#: templates/admin/pages/grids.php:192
+#: templates/admin/pages/grids.php:321
+#: templates/admin/pages/orders.php:244
+#: templates/admin/pages/orders.php:368
+#: templates/admin/partials/dashboard-recent-orders.php:20
+#: templates/admin/partials/order-detail-panel.php:28
+#: templates/admin/partials/packages-panel.php:34
+#: templates/admin/partials/packages-panel.php:49
+#: templates/admin/partials/price-rules-panel.php:39
+#: templates/admin/partials/price-rules-panel.php:54
+#: templates/frontend/pages/manage-orders.php:24
+#: templates/frontend/pages/order-summary.php:16
+msgid "Status"
+msgstr ""
+
+#: templates/admin/pages/grids.php:193
+msgid "Save grid"
+msgstr ""
+
+#: templates/admin/pages/grids.php:216
+#: templates/admin/pages/grids.php:217
+msgid "Create Grid"
+msgstr ""
+
+#: templates/admin/pages/grids.php:224
+msgid "The default 1000-pixel width matches the classic grid scale."
+msgstr ""
+
+#: templates/admin/pages/grids.php:227
+msgid "The default 1000-pixel height lets the grid expand as a full square."
+msgstr ""
+
+#: templates/admin/pages/grids.php:230
+msgid "Ten-pixel blocks create a classic 100 by 100 block grid."
+msgstr ""
+
+#: templates/admin/pages/grids.php:233
+msgid "Use the same value as block width for square selections."
+msgstr ""
+
+#: templates/admin/pages/grids.php:236
+msgid "The starter price before packages or zones are added."
+msgstr ""
+
+#: templates/admin/pages/grids.php:239
+msgid "Automatic is recommended for new grids."
+msgstr ""
+
+#: templates/admin/pages/grids.php:247
+#: templates/admin/pages/setup.php:179
+msgid "Create grid"
+msgstr ""
+
+#: templates/admin/pages/grids.php:253
+#: templates/admin/pages/grids.php:254
+msgid "Import Grids"
+msgstr ""
+
+#: templates/admin/pages/grids.php:255
+msgid "Import a Million Dollar Script grid configuration export. Imported grids are created as new grids; existing grids, orders, paid placements, and uploaded ad media are not overwritten."
+msgstr ""
+
+#: templates/admin/pages/grids.php:260
+msgid "Import grids"
+msgstr ""
+
+#: templates/admin/pages/grids.php:267
+msgid "Grid status filters"
+msgstr ""
+
+#: templates/admin/pages/grids.php:287
+#: templates/admin/pages/grids.php:288
+#: templates/frontend/pages/grid-picker.php:28
+msgid "Search grids"
+msgstr ""
+
+#. translators: 1: first visible grid number, 2: last visible grid number, 3: total grids.
+#: templates/admin/pages/grids.php:298
+#, php-format
+msgid "Showing %1$d-%2$d of %3$d grids."
+msgstr ""
+
+#: templates/admin/pages/grids.php:303
+msgid "Export selected"
+msgstr ""
+
+#: templates/admin/pages/grids.php:304
+msgid "Exports grid configuration, packages, price zones, and admin availability settings. Orders and uploaded ad media are summarized only."
+msgstr ""
+
+#: templates/admin/pages/grids.php:309
+msgid "No grids match the current filters."
+msgstr ""
+
+#: templates/admin/pages/grids.php:311
+msgid "No grids have been created yet."
+msgstr ""
+
+#: templates/admin/pages/grids.php:318
+msgid "Select grid"
+msgstr ""
+
+#: templates/admin/pages/grids.php:319
+#: templates/admin/pages/orders.php:367
+msgid "ID"
+msgstr ""
+
+#: templates/admin/pages/grids.php:323
+msgid "Dimensions"
+msgstr ""
+
+#: templates/admin/pages/grids.php:324
+#: templates/frontend/pages/manage-orders.php:26
+msgid "Updated"
+msgstr ""
+
+#: templates/admin/pages/grids.php:328
+msgid "Embed"
+msgstr ""
+
+#: templates/admin/pages/grids.php:330
+#: templates/admin/pages/orders.php:376
+#: templates/admin/partials/api-keys-table.php:23
+#: templates/admin/partials/availability-panel.php:66
+#: templates/admin/partials/packages-panel.php:50
+#: templates/admin/partials/price-rules-panel.php:55
+#: templates/frontend/pages/manage-orders.php:27
+msgid "Actions"
+msgstr ""
+
+#. translators: %s: grid title.
+#: templates/admin/pages/grids.php:339
+#, php-format
+msgid "Select %s"
+msgstr ""
+
+#: templates/admin/pages/grids.php:359
+#: templates/admin/pages/settings.php:180
+msgid "Export"
+msgstr ""
+
+#: templates/admin/pages/grids.php:360
+#: templates/admin/partials/packages-panel.php:64
+#: templates/admin/partials/price-rules-panel.php:69
+msgid "Archive"
+msgstr ""
+
+#: templates/admin/pages/grids.php:370
+#: templates/frontend/pages/grid-picker.php:78
+msgid "Grid pages"
+msgstr ""
+
+#. translators: 1: current page number, 2: total pages.
+#: templates/admin/pages/grids.php:375
+#: templates/admin/pages/orders.php:436
+#, php-format
+msgid "Page %1$d of %2$d"
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:18
+msgid "Hosted Rendering"
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:19
+msgid "ImageGrid"
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:20
+msgid "Connect the ImageGrid extension when a site needs hosted rendering, large-grid processing, or CDN delivery beyond local WordPress rendering."
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:27
+msgid "ImageGrid extension"
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:28
+msgid "ImageGrid settings, API keys, quotas, and CDN access are managed by the ImageGrid extension. Million Dollar Script keeps local rendering available as the fallback."
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:37
+msgid "Rendering guidance"
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:38
+msgid "Use local rendering for ordinary grids. Consider ImageGrid when dimensions, upload processing, tile counts, or CDN delivery needs are beyond what a shared host can handle reliably."
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:42
+msgid "Read ImageGrid docs"
+msgstr ""
+
+#: templates/admin/pages/imagegrid.php:43
+msgid "Review rendering settings"
+msgstr ""
+
+#: templates/admin/pages/migration.php:17
+msgid "Million Dollar Script 2 Migration Dry Run"
+msgstr ""
+
+#: templates/admin/pages/migration.php:19
+msgid "This screen inventories Million Dollar Script 2 tables, options, pages, users, and media references. It never drops or mutates Million Dollar Script 2 tables."
+msgstr ""
+
+#: templates/admin/pages/migration.php:23
+msgid "Classic Pixel Grid is required before importing Million Dollar Script 2 grid data. You can still review this dry run without importing anything."
+msgstr ""
+
+#: templates/admin/pages/migration.php:24
+#: templates/admin/partials/mds2-upgrade-step.php:48
+#: templates/admin/partials/migration-recovery-panel.php:95
+#: templates/admin/partials/standard-pages-panel.php:19
+msgid "Enable Classic Pixel Grid"
+msgstr ""
+
+#: templates/admin/pages/migration.php:30
+msgid "Million Dollar Script 2 Table Prefix"
+msgstr ""
+
+#: templates/admin/pages/migration.php:31
+msgid "Run dry run"
+msgstr ""
+
+#: templates/admin/pages/migration.php:35
+msgid "Migration import completed. Review grids, migrated pages, and the latest verification report."
+msgstr ""
+
+#: templates/admin/pages/migration.php:39
+msgid "Migration import started. Keep this page open to process batches automatically, or return later to continue."
+msgstr ""
+
+#: templates/admin/pages/migration.php:43
+msgid "Migration import continued. Review the latest verification report before deactivating Million Dollar Script 2."
+msgstr ""
+
+#: templates/admin/pages/migration.php:47
+msgid "Migration import ran again. Review the latest verification report and warning list."
+msgstr ""
+
+#: templates/admin/pages/migration.php:51
+msgid "Migration import paused. Resume it when you are ready to continue processing batches."
+msgstr ""
+
+#. translators: %s: migration error
+#: templates/admin/pages/migration.php:60
+#, php-format
+msgid "Migration import failed: %s"
+msgstr ""
+
+#: templates/admin/pages/migration.php:69
+msgid "Standard pages are ready. Existing migrated pages were preserved."
+msgstr ""
+
+#: templates/admin/pages/migration.php:78
+msgid "Migration warnings"
+msgstr ""
+
+#: templates/admin/pages/migration.php:79
+msgid "Review these before importing again or deactivating Million Dollar Script 2."
+msgstr ""
+
+#: templates/admin/pages/migration.php:83
+msgid "Dry run warnings:"
+msgstr ""
+
+#: templates/admin/pages/migration.php:94
+msgid "Latest import warnings:"
+msgstr ""
+
+#: templates/admin/pages/migration.php:109
+msgid "Source Tables"
+msgstr ""
+
+#: templates/admin/pages/migration.php:113
+#: templates/admin/pages/migration.php:154
+msgid "Table"
+msgstr ""
+
+#: templates/admin/pages/migration.php:114
+#: templates/admin/pages/migration.php:155
+msgid "Exists"
+msgstr ""
+
+#: templates/admin/pages/migration.php:115
+#: templates/admin/pages/migration.php:156
+#: templates/admin/partials/availability-panel.php:62
+#: templates/admin/partials/price-rules-panel.php:50
+#: templates/admin/partials/region-editor.php:23
+msgid "Rows"
+msgstr ""
+
+#: templates/admin/pages/migration.php:129
+msgid "Pages And Options"
+msgstr ""
+
+#. translators: 1: detected legacy option count, 2: detected legacy page count.
+#: templates/admin/pages/migration.php:133
+#, php-format
+msgid "Detected %1$d Million Dollar Script option records and %2$d Million Dollar Script pages."
+msgstr ""
+
+#: templates/admin/pages/migration.php:150
+msgid "Target Tables"
+msgstr ""
+
+#: templates/admin/pages/migration.php:175
+msgid "Start migration import"
+msgstr ""
+
+#: templates/admin/pages/orders.php:87
+msgid "Million Dollar Script 2"
+msgstr ""
+
+#: templates/admin/pages/orders.php:88
+#: templates/admin/pages/orders.php:92
+msgid "Standalone"
+msgstr ""
+
+#: templates/admin/pages/orders.php:89
+msgid "WooCommerce"
+msgstr ""
+
+#: templates/admin/pages/orders.php:95
+msgid "All payment states"
+msgstr ""
+
+#: templates/admin/pages/orders.php:97
+msgid "Unpaid / awaiting payment"
+msgstr ""
+
+#: templates/admin/pages/orders.php:98
+msgid "Failed / cancelled"
+msgstr ""
+
+#: templates/admin/pages/orders.php:102
+msgid "All upload states"
+msgstr ""
+
+#: templates/admin/pages/orders.php:103
+msgid "Has upload"
+msgstr ""
+
+#: templates/admin/pages/orders.php:104
+msgid "Missing upload"
+msgstr ""
+
+#: templates/admin/pages/orders.php:107
+msgid "All terms"
+msgstr ""
+
+#: templates/admin/pages/orders.php:108
+msgid "Active term"
+msgstr ""
+
+#: templates/admin/pages/orders.php:109
+msgid "Expired term"
+msgstr ""
+
+#: templates/admin/pages/orders.php:110
+#: templates/admin/pages/orders.php:186
+msgid "Renewable"
+msgstr ""
+
+#: templates/admin/pages/orders.php:111
+msgid "Renewal started"
+msgstr ""
+
+#: templates/admin/pages/orders.php:112
+msgid "Has term"
+msgstr ""
+
+#: templates/admin/pages/orders.php:113
+#: templates/admin/pages/orders.php:177
+msgid "No fixed term"
+msgstr ""
+
+#: templates/admin/pages/orders.php:116
+msgid "All placements"
+msgstr ""
+
+#: templates/admin/pages/orders.php:117
+msgid "Active placement"
+msgstr ""
+
+#: templates/admin/pages/orders.php:118
+msgid "Pending placement"
+msgstr ""
+
+#: templates/admin/pages/orders.php:119
+msgid "No active placement"
+msgstr ""
+
+#: templates/admin/pages/orders.php:120
+msgid "No placement record"
+msgstr ""
+
+#: templates/admin/pages/orders.php:121
+msgid "Cancelled placement"
+msgstr ""
+
+#: templates/admin/pages/orders.php:122
+msgid "Archived placement"
+msgstr ""
+
+#: templates/admin/pages/orders.php:136
+msgid "pending"
+msgstr ""
+
+#: templates/admin/pages/orders.php:137
+msgid "cancelled"
+msgstr ""
+
+#: templates/admin/pages/orders.php:138
+msgid "archived"
+msgstr ""
+
+#: templates/admin/pages/orders.php:148
+msgid "No placement"
+msgstr ""
+
+#: templates/admin/pages/orders.php:149
+msgid "No image has been saved yet."
+msgstr ""
+
+#. translators: 1: upload count, 2: placement count.
+#: templates/admin/pages/orders.php:156
+#, php-format
+msgid "%1$s uploads; %2$s placements"
+msgstr ""
+
+#. translators: 1: active placement count, 2: comma-separated placement statuses.
+#: templates/admin/pages/orders.php:162
+#, php-format
+msgid "%1$d active; %2$s"
+msgstr ""
+
+#: templates/admin/pages/orders.php:164
+msgid "no status"
+msgstr ""
+
+#: templates/admin/pages/orders.php:178
+msgid "Does not expire automatically."
+msgstr ""
+
+#: templates/admin/pages/orders.php:182
+msgid "Expires"
+msgstr ""
+
+#. translators: %s: expiration date.
+#: templates/admin/pages/orders.php:191
+#, php-format
+msgid "Renewal started; %s"
+msgstr ""
+
+#. translators: 1: updated count, 2: skipped count, 3: status
+#: templates/admin/pages/orders.php:211
+#, php-format
+msgid "Updated %1$d order(s), skipped %2$d, target status: %3$s."
+msgstr ""
+
+#: templates/admin/pages/orders.php:222
+msgid "Order queues"
+msgstr ""
+
+#. translators: %d: total order count.
+#: templates/admin/pages/orders.php:225
+#, php-format
+msgid "All (%d)"
+msgstr ""
+
+#: templates/admin/pages/orders.php:241
+msgid "Order, customer, grid"
+msgstr ""
+
+#: templates/admin/pages/orders.php:246
+msgid "All statuses"
+msgstr ""
+
+#: templates/admin/pages/orders.php:255
+msgid "All grids"
+msgstr ""
+
+#: templates/admin/pages/orders.php:266
+#: templates/admin/pages/orders.php:372
+msgid "Provider"
+msgstr ""
+
+#: templates/admin/pages/orders.php:268
+msgid "All providers"
+msgstr ""
+
+#: templates/admin/pages/orders.php:291
+#: templates/admin/pages/orders.php:374
+#: templates/frontend/pages/order-summary.php:19
+msgid "Term"
+msgstr ""
+
+#: templates/admin/pages/orders.php:299
+#: templates/admin/pages/orders.php:373
+msgid "Placement"
+msgstr ""
+
+#: templates/admin/pages/orders.php:307
+msgid "From"
+msgstr ""
+
+#: templates/admin/pages/orders.php:311
+msgid "To"
+msgstr ""
+
+#: templates/admin/pages/orders.php:315
+msgid "Filter"
+msgstr ""
+
+#. translators: 1: first visible order number, 2: last visible order number, 3: total orders.
+#: templates/admin/pages/orders.php:324
+#, php-format
+msgid "Showing %1$d-%2$d of %3$d orders."
+msgstr ""
+
+#: templates/admin/pages/orders.php:326
+msgid "No orders match the current filters."
+msgstr ""
+
+#: templates/admin/pages/orders.php:332
+msgid "Adjust the filters or create a new order from an interactive grid."
+msgstr ""
+
+#: templates/admin/pages/orders.php:334
+msgid "Apply this status to the selected orders?"
+msgstr ""
+
+#: templates/admin/pages/orders.php:350
+msgid "Bulk status"
+msgstr ""
+
+#: templates/admin/pages/orders.php:352
+msgid "Choose status"
+msgstr ""
+
+#: templates/admin/pages/orders.php:357
+msgid "Apply to selected"
+msgstr ""
+
+#: templates/admin/pages/orders.php:360
+msgid "Orders table"
+msgstr ""
+
+#: templates/admin/pages/orders.php:365
+msgid "Select all orders on this page"
+msgstr ""
+
+#: templates/admin/pages/orders.php:370
+#: templates/admin/partials/dashboard-recent-orders.php:21
+#: templates/admin/partials/order-detail-panel.php:30
+msgid "Customer"
+msgstr ""
+
+#: templates/admin/pages/orders.php:371
+#: templates/admin/partials/dashboard-recent-orders.php:22
+#: templates/admin/partials/order-detail-panel.php:29
+#: templates/admin/partials/order-detail-panel.php:130
+#: templates/frontend/pages/manage-orders.php:25
+#: templates/frontend/pages/order-summary.php:17
+msgid "Total"
+msgstr ""
+
+#: templates/admin/pages/orders.php:375
+#: templates/admin/partials/dashboard-recent-orders.php:23
+msgid "Created"
+msgstr ""
+
+#. translators: %d: order ID.
+#: templates/admin/pages/orders.php:386
+#, php-format
+msgid "Select order #%d"
+msgstr ""
+
+#. translators: %s: formatted grid count.
+#: templates/admin/pages/orders.php:394
+#, php-format
+msgid "%s grid"
+msgid_plural "%s grids"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/pages/orders.php:396
+msgid "No grid"
+msgstr ""
+
+#: templates/admin/pages/orders.php:413
+msgid "Inspect"
+msgstr ""
+
+#: templates/admin/pages/orders.php:415
+msgid "Mark paid"
+msgstr ""
+
+#: templates/admin/pages/orders.php:416
+msgid "Cancel"
+msgstr ""
+
+#: templates/admin/pages/orders.php:432
+msgid "Order pages"
+msgstr ""
+
+#: templates/admin/pages/settings.php:27
+msgid "Settings saved."
+msgstr ""
+
+#: templates/admin/pages/settings.php:35
+msgid "Settings imported. A backup of the previous settings was saved."
+msgstr ""
+
+#: templates/admin/pages/settings.php:44
+msgid "Classic Pixel Grid is disabled. Grid sales, order, upload, display, and rendering settings are hidden until you enable it from Setup."
+msgstr ""
+
+#: templates/admin/pages/settings.php:49
+msgid "Settings sections"
+msgstr ""
+
+#: templates/admin/pages/settings.php:87
+msgid "Order emails are sent through WordPress mail. Use an SMTP or mail logging plugin if this site needs delivery routing, retries, or message logs."
+msgstr ""
+
+#: templates/admin/pages/settings.php:88
+msgid "Common placeholders:"
+msgstr ""
+
+#: templates/admin/pages/settings.php:89
+msgid "Common email placeholders"
+msgstr ""
+
+#: templates/admin/pages/settings.php:148
+msgid "Stores the source table prefix used by the most recent Million Dollar Script 2 migration."
+msgstr ""
+
+#: templates/admin/pages/settings.php:155
+msgid "Compatibility settings preserved"
+msgstr ""
+
+#: templates/admin/pages/settings.php:156
+msgid "These values are still recognized for Million Dollar Script 2 migration, settings import/export, or planned parity, but they are not shown as active controls until they affect the current runtime."
+msgstr ""
+
+#: templates/admin/pages/settings.php:171
+msgid "Save settings"
+msgstr ""
+
+#: templates/admin/pages/settings.php:175
+msgid "Import / Export Settings"
+msgstr ""
+
+#: templates/admin/pages/settings.php:176
+msgid "Export a portable JSON backup of the settings on this page, or preview an import before applying changes."
+msgstr ""
+
+#: templates/admin/pages/settings.php:181
+msgid "Use this before changing a site, moving settings to another install, or testing a migration."
+msgstr ""
+
+#: templates/admin/pages/settings.php:185
+msgid "Download settings JSON"
+msgstr ""
+
+#: templates/admin/pages/settings.php:190
+msgid "Import"
+msgstr ""
+
+#: templates/admin/pages/settings.php:191
+msgid "Upload a settings JSON file to preview sanitized changes. Nothing is changed until you apply the preview."
+msgstr ""
+
+#: templates/admin/pages/settings.php:195
+msgid "Settings import file"
+msgstr ""
+
+#: templates/admin/pages/settings.php:197
+msgid "Preview import"
+msgstr ""
+
+#: templates/admin/pages/settings.php:204
+msgid "Import Preview"
+msgstr ""
+
+#. translators: 1: importable setting count, 2: submitted setting count.
+#: templates/admin/pages/settings.php:209
+#, php-format
+msgid "%1$d of %2$d submitted settings can be imported."
+msgstr ""
+
+#: templates/admin/pages/settings.php:220
+msgid "Setting"
+msgstr ""
+
+#: templates/admin/pages/settings.php:221
+msgid "Current"
+msgstr ""
+
+#: templates/admin/pages/settings.php:222
+#: templates/admin/partials/migration-recovery-panel.php:33
+msgid "Imported"
+msgstr ""
+
+#: templates/admin/pages/settings.php:236
+msgid "The import does not change any current settings."
+msgstr ""
+
+#: templates/admin/pages/settings.php:241
+msgid "Some settings are not recognized on this site and will be skipped:"
+msgstr ""
+
+#: templates/admin/pages/settings.php:248
+msgid "Some settings were rejected because their values are not safe for this site."
+msgstr ""
+
+#: templates/admin/pages/settings.php:261
+msgid "Apply imported settings"
+msgstr ""
+
+#: templates/admin/pages/settings.php:266
+msgid "Discard preview"
+msgstr ""
+
+#: templates/admin/pages/setup.php:16
+msgid "Setup preferences saved."
+msgstr ""
+
+#. translators: %d: number of activated extensions
+#: templates/admin/pages/setup.php:25
+#, php-format
+msgid "%d selected extension was activated."
+msgid_plural "%d selected extensions were activated."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of skipped extension actions
+#: templates/admin/pages/setup.php:39
+#, php-format
+msgid "%d selected extension needs attention before it can be activated."
+msgid_plural "%d selected extensions need attention before they can be activated."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/pages/setup.php:48
+msgid "Standard pages are ready."
+msgstr ""
+
+#: templates/admin/pages/setup.php:60
+msgid "Plugin dependency installed and activated."
+msgstr ""
+
+#. translators: 1: created count, 2: updated count
+#: templates/admin/pages/setup.php:78
+#, php-format
+msgid "Extension legal drafts processed. Created: %1$d. Updated: %2$d."
+msgstr ""
+
+#: templates/admin/pages/setup.php:101
+msgid "Launch essentials"
+msgstr ""
+
+#: templates/admin/pages/setup.php:102
+msgid "Choose the checkout path, confirm the grid, and create the public pages needed for visitors. Advanced capabilities can stay on their defaults until you need them."
+msgstr ""
+
+#: templates/admin/pages/setup.php:105
+msgid "Saved"
+msgstr ""
+
+#: templates/admin/pages/setup.php:105
+msgid "Needs review"
+msgstr ""
+
+#: templates/admin/pages/setup.php:110
+msgid "Setup Wizard"
+msgstr ""
+
+#: templates/admin/pages/setup.php:112
+msgid "Initial preferences have been saved."
+msgstr ""
+
+#: templates/admin/pages/setup.php:112
+msgid "Start with a checkout provider. You can revisit advanced capabilities after the site is working."
+msgstr ""
+
+#: templates/admin/pages/setup.php:119
+msgid "Choose standalone/manual checkout, or choose WooCommerce after the WooCommerce plugin and WooCommerce Checkout extension are active."
+msgstr ""
+
+#: templates/admin/pages/setup.php:120
+msgid "Setup will not save WooCommerce as the provider until both required pieces are ready."
+msgstr ""
+
+#: templates/admin/pages/setup.php:129
+#: templates/admin/partials/setup-extension-selector.php:13
+msgid "Site capabilities"
+msgstr ""
+
+#: templates/admin/pages/setup.php:130
+msgid "Classic Pixel Grid is selected by default. Add optional capabilities only when this site needs them."
+msgstr ""
+
+#: templates/admin/pages/setup.php:134
+msgid "Save setup preferences"
+msgstr ""
+
+#: templates/admin/pages/setup.php:150
+msgid "Core Plugin"
+msgstr ""
+
+#: templates/admin/pages/setup.php:151
+msgid "Million Dollar Script database tables and core plugin services are available."
+msgstr ""
+
+#: templates/admin/pages/setup.php:156
+msgid "First Grid"
+msgstr ""
+
+#. translators: 1: grid title, 2: dimensions
+#: templates/admin/pages/setup.php:162
+#, php-format
+msgid "First available grid: %1$s (%2$s)."
+msgstr ""
+
+#: templates/admin/pages/setup.php:169
+msgid "Public page mode"
+msgstr ""
+
+#: templates/admin/pages/setup.php:170
+msgid "The first grid page is view-only by default. Visitors place ads from the separate Order Pixels page, so this showcase page can stay read-only."
+msgstr ""
+
+#: templates/admin/pages/setup.php:173
+msgid "Public page settings"
+msgstr ""
+
+#: templates/admin/pages/setup.php:176
+msgid "Edit grid"
+msgstr ""
+
+#: templates/admin/pages/setup.php:178
+msgid "Create a grid before opening orders to customers."
+msgstr ""
+
+#: templates/admin/pages/setup.php:184
+#: templates/admin/partials/standard-pages-panel.php:16
+msgid "Standard Pages"
+msgstr ""
+
+#. translators: %d: missing pages
+#: templates/admin/pages/setup.php:190
+#, php-format
+msgid "%d standard page roles are missing. Existing assigned and migrated pages will be preserved."
+msgstr ""
+
+#: templates/admin/pages/setup.php:195
+#: templates/admin/partials/standard-pages-panel.php:22
+msgid "Create missing standard pages"
+msgstr ""
+
+#: templates/admin/pages/setup.php:197
+msgid "All standard Million Dollar Script page roles are mapped."
+msgstr ""
+
+#: templates/admin/pages/setup.php:198
+msgid "Review page map"
+msgstr ""
+
+#. translators: %s: provider label
+#: templates/admin/pages/setup.php:209
+#, php-format
+msgid "%s is active as the Million Dollar Script payment provider."
+msgstr ""
+
+#: templates/admin/pages/setup.php:216
+msgid "Standalone/manual checkout is active. Install and activate a payment provider extension such as WooCommerce or EDD when you want Million Dollar Script to hand checkout to a store or gateway."
+msgstr ""
+
+#: templates/admin/pages/setup.php:217
+msgid "Find payment extensions"
+msgstr ""
+
+#: templates/admin/pages/setup.php:223
+msgid "Million Dollar Script 2 Migration"
+msgstr ""
+
+#: templates/admin/pages/setup.php:224
+msgid "Run a dry run before importing Million Dollar Script 2 banners, pages, orders, media, packages, price zones, and settings."
+msgstr ""
+
+#: templates/admin/pages/setup.php:225
+msgid "Open migration"
+msgstr ""
+
+#: templates/admin/pages/setup.php:231
+msgid "Classic Pixel Grid is disabled. Grid pages, order checkout, and Million Dollar Script 2 grid migration are hidden until you enable it in the site capabilities above."
+msgstr ""
+
+#: templates/admin/pages/system-status.php:18
+msgid "Environment details useful for support, diagnostics, and launch checks."
+msgstr ""
+
+#: templates/admin/partials/api-audit-table.php:13
+msgid "No API requests have been logged yet."
+msgstr ""
+
+#: templates/admin/partials/api-audit-table.php:18
+msgid "Time"
+msgstr ""
+
+#: templates/admin/partials/api-audit-table.php:19
+msgid "Key"
+msgstr ""
+
+#: templates/admin/partials/api-audit-table.php:20
+msgid "Route"
+msgstr ""
+
+#: templates/admin/partials/api-audit-table.php:21
+#: templates/admin/partials/api-policies-table.php:16
+msgid "Scope"
+msgstr ""
+
+#: templates/admin/partials/api-audit-table.php:22
+msgid "Decision"
+msgstr ""
+
+#: templates/admin/partials/api-audit-table.php:23
+msgid "Message"
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:13
+msgid "No active API keys yet."
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:18
+msgid "Name"
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:19
+msgid "Prefix"
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:21
+msgid "Rate limit"
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:22
+msgid "Last used"
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:36
+msgid "Rotate"
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:36
+msgid "Rotate this API key? The old secret will stop working immediately."
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:37
+msgid "Revoke"
+msgstr ""
+
+#: templates/admin/partials/api-keys-table.php:37
+msgid "Revoke this API key? Apps and automations using it will lose access immediately."
+msgstr ""
+
+#: templates/admin/partials/api-policies-table.php:15
+msgid "Endpoint"
+msgstr ""
+
+#: templates/admin/partials/api-policies-table.php:17
+msgid "Minimum"
+msgstr ""
+
+#: templates/admin/partials/api-policies-table.php:18
+msgid "Policy"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:16
+msgid "Unavailable Regions"
+msgstr ""
+
+#. translators: 1: changed block count, 2: skipped block count.
+#: templates/admin/partials/availability-panel.php:25
+#, php-format
+msgid "Region update applied. %1$s blocks changed, %2$s protected blocks skipped."
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:35
+msgid "Virtual blocks:"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:47
+#: templates/admin/partials/price-rules-panel.php:24
+msgid "Row From"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:48
+#: templates/admin/partials/price-rules-panel.php:25
+msgid "Row To"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:49
+#: templates/admin/partials/price-rules-panel.php:26
+msgid "Column From"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:50
+#: templates/admin/partials/price-rules-panel.php:27
+msgid "Column To"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:51
+msgid "Set Status"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:52
+#: templates/admin/partials/availability-panel.php:65
+msgid "Note"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:53
+msgid "Apply region update"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:58
+msgid "Existing unavailable regions"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:63
+#: templates/admin/partials/price-rules-panel.php:51
+#: templates/admin/partials/region-editor.php:24
+msgid "Columns"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:77
+msgid "Load to edit"
+msgstr ""
+
+#: templates/admin/partials/availability-panel.php:87
+msgid "Mark available"
+msgstr ""
+
+#: templates/admin/partials/dashboard-extension-cards.php:16
+msgid "Open installed extension tools here, or browse the catalog for more capabilities."
+msgstr ""
+
+#. translators: 1: active extension count, 2: installed extension count
+#: templates/admin/partials/dashboard-extension-cards.php:23
+#, php-format
+msgid "%1$d active of %2$d installed"
+msgid_plural "%1$d active of %2$d installed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/partials/dashboard-extension-cards.php:30
+#: templates/admin/partials/dashboard-extension-cards.php:40
+msgid "Discover extensions"
+msgstr ""
+
+#: templates/admin/partials/dashboard-extension-cards.php:37
+msgid "No additional extension tools are installed yet."
+msgstr ""
+
+#: templates/admin/partials/dashboard-extension-cards.php:40
+msgid "Open extension catalog"
+msgstr ""
+
+#: templates/admin/partials/dashboard-extension-cards.php:90
+#: templates/admin/partials/extensions-list.php:84
+msgid "Update available"
+msgstr ""
+
+#. translators: %s: extension version
+#: templates/admin/partials/dashboard-extension-cards.php:97
+#: templates/admin/partials/extensions-list.php:92
+#, php-format
+msgid "v%s"
+msgstr ""
+
+#: templates/admin/partials/dashboard-extension-cards.php:149
+msgid "Extension cards"
+msgstr ""
+
+#: templates/admin/partials/dashboard-menu.php:12
+msgid "Million Dollar Script dashboard menu"
+msgstr ""
+
+#: templates/admin/partials/dashboard-recent-orders.php:13
+msgid "No orders have been created yet."
+msgstr ""
+
+#: templates/admin/partials/dashboard-recent-orders.php:19
+#: templates/frontend/pages/manage-orders.php:23
+#: templates/frontend/pages/order-summary.php:15
+msgid "Order"
+msgstr ""
+
+#: templates/admin/partials/dashboard-recent-orders.php:32
+msgid "Account user"
+msgstr ""
+
+#: templates/admin/partials/dashboard-system-status.php:21
+msgid "Open settings"
+msgstr ""
+
+#: templates/admin/partials/dashboard-system-status.php:22
+msgid "Open Site Health"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:29
+msgid "Manage capabilities"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:32
+msgid "Deactivate"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:34
+msgid "Activate"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:37
+msgid "Update"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:39
+msgid "Check update"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:49
+msgid "Install"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:53
+msgid "Buy license"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:58
+msgid "More info"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:70
+msgid "Manage license"
+msgstr ""
+
+#: templates/admin/partials/extension-actions.php:76
+msgid "Open license portal"
+msgstr ""
+
+#: templates/admin/partials/extension-claim-panel.php:13
+msgid "Claim Purchased License"
+msgstr ""
+
+#: templates/admin/partials/extension-claim-panel.php:14
+msgid "Complete the license claim after checkout, then Million Dollar Script will activate it for this site."
+msgstr ""
+
+#: templates/admin/partials/extension-license-controls.php:15
+msgid "License:"
+msgstr ""
+
+#: templates/admin/partials/extension-license-controls.php:18
+msgid "Deactivate license"
+msgstr ""
+
+#: templates/admin/partials/extension-license-controls.php:25
+#: templates/admin/partials/extension-license-controls.php:26
+msgid "License key"
+msgstr ""
+
+#: templates/admin/partials/extension-license-controls.php:28
+msgid "Activate license"
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:28
+msgid "Extension Setup"
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:29
+msgid "Active extensions can add setup shortcuts and optional draft legal pages here, so launch requirements stay in one place."
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:41
+msgid "Legal drafts available"
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:61
+msgid "Recommended draft pages"
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:62
+msgid "These drafts are starting points only, not legal advice. Review them with qualified counsel before publishing."
+msgstr ""
+
+#. translators: %s: WordPress post status
+#: templates/admin/partials/extension-onboarding-panel.php:71
+#, php-format
+msgid "Current page: %s"
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:72
+msgid "unknown"
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:88
+msgid "Edit page"
+msgstr ""
+
+#: templates/admin/partials/extension-onboarding-panel.php:105
+msgid "Create or update selected draft pages"
+msgstr ""
+
+#: templates/admin/partials/extensions-list.php:17
+msgid "No additional extensions are available from the connected catalog right now."
+msgstr ""
+
+#: templates/admin/partials/extensions-list.php:19
+msgid "No extensions found."
+msgstr ""
+
+#. translators: %s: update version
+#: templates/admin/partials/extensions-list.php:114
+#, php-format
+msgid "Update %s"
+msgstr ""
+
+#. translators: %s: catalog version
+#: templates/admin/partials/extensions-list.php:124
+#, php-format
+msgid "Catalog %s"
+msgstr ""
+
+#: templates/admin/partials/extensions-list.php:138
+msgid "Slug"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-actions.php:17
+msgid "Mode: ordering enabled"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-actions.php:18
+msgid "Mode: view-only"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-actions.php:24
+msgid "View Page"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-actions.php:27
+msgid "Edit Page"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-actions.php:30
+msgid "Enable ordering"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-actions.php:32
+msgid "Switch to view-only"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-actions.php:35
+msgid "Create Page"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-panel.php:17
+msgid "Grid pages are normal WordPress pages with a grid shortcode. New pages start in view-only mode so visitors can browse the launched grid."
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-panel.php:18
+msgid "You can leave this page view-only and let visitors order from the standard Order Pixels page. Enable ordering here only when this specific public grid page should accept selections directly."
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-panel.php:20
+msgid "Read-only showcase"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-panel.php:21
+msgid "Interactive order page"
+msgstr ""
+
+#: templates/admin/partials/grid-public-page-panel.php:22
+msgid "Classic canvas fallback"
+msgstr ""
+
+#: templates/admin/partials/image-field.php:12
+#: templates/admin/partials/image-field.php:18
+msgid "No image selected"
+msgstr ""
+
+#: templates/admin/partials/image-field.php:22
+msgid "Choose image"
+msgstr ""
+
+#: templates/admin/partials/imagegrid-settings-prompt.php:13
+msgid "ImageGrid remote rendering"
+msgstr ""
+
+#: templates/admin/partials/imagegrid-settings-prompt.php:14
+msgid "Million Dollar Script uses local rendering by default. ImageGrid settings are shown only after the ImageGrid extension is active, because API keys, quotas, and remote rendering are owned by that extension and the ImageGrid service."
+msgstr ""
+
+#: templates/admin/partials/imagegrid-settings-prompt.php:17
+msgid "Activate ImageGrid extension"
+msgstr ""
+
+#: templates/admin/partials/imagegrid-settings-prompt.php:19
+msgid "Find ImageGrid extension"
+msgstr ""
+
+#: templates/admin/partials/imagegrid-settings-prompt.php:21
+msgid "View ImageGrid service"
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:13
+msgid "Million Dollar Script 2 Upgrade Choice"
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:14
+msgid "Million Dollar Script detected whether an older Million Dollar Script 2 install is present. It will not import Million Dollar Script 2 data or deactivate the old plugin unless you choose that action here."
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:23
+msgid "No installed Million Dollar Script 2 plugin package was found."
+msgstr ""
+
+#. translators: 1: source prefix, 2: row count
+#: templates/admin/partials/mds2-upgrade-step.php:30
+#, php-format
+msgid "Migration source prefix: %1$s. Rows detected in core Million Dollar Script 2 tables: %2$s."
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:38
+msgid "Running Million Dollar Script 2 and Million Dollar Script together is allowed, but not recommended for long. Keep both only while you compare the new grid and migration results."
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:42
+msgid "Classic Pixel Grid is required before Million Dollar Script 2 grid data can be imported. Enable it in Site capabilities if you want to migrate the old grid."
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:46
+msgid "Review migration dry run"
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:51
+msgid "Keep Million Dollar Script 2 active for now"
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:53
+msgid "Import Million Dollar Script 2 data and deactivate Million Dollar Script 2"
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:55
+msgid "Deactivate Million Dollar Script 2 without importing"
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:57
+msgid "Import Million Dollar Script 2 data only"
+msgstr ""
+
+#: templates/admin/partials/mds2-upgrade-step.php:62
+msgid "Current choice: keep both plugins active. Million Dollar Script legacy shortcode/block aliases stay disabled until Million Dollar Script 2 is no longer active."
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:21
+msgid "Latest Import"
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:29
+msgid "Run ID"
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:37
+msgid "Skipped"
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:45
+msgid "Started"
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:57
+msgid "Migration data"
+msgstr ""
+
+#. translators: 1: processed rows, 2: source rows
+#: templates/admin/partials/migration-recovery-panel.php:67
+#, php-format
+msgid "Processed %1$d of %2$d migration work items."
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:90
+msgid "Pause"
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:93
+msgid "Batches keep Million Dollar Script 2 tables intact and update existing Million Dollar Script records through the migration map."
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:96
+msgid "Classic Pixel Grid is required before migration can continue."
+msgstr ""
+
+#: templates/admin/partials/migration-recovery-panel.php:102
+msgid "If retry stops with the same failure, keep Million Dollar Script 2 active and share this run ID with support."
+msgstr ""
+
+#: templates/admin/partials/migration-verification-report.php:12
+msgid "Latest Verification Report"
+msgstr ""
+
+#. translators: 1: status, 2: source prefix
+#: templates/admin/partials/migration-verification-report.php:17
+#, php-format
+msgid "Status: %1$s. Source prefix: %2$s. Million Dollar Script 2 tables dropped: no."
+msgstr ""
+
+#: templates/admin/partials/migration-verification-report.php:26
+msgid "Entity"
+msgstr ""
+
+#: templates/admin/partials/migration-verification-report.php:27
+msgid "Imported This Run"
+msgstr ""
+
+#: templates/admin/partials/migration-verification-report.php:28
+msgid "Mapped Total"
+msgstr ""
+
+#: templates/admin/partials/migration-verification-report.php:29
+msgid "Recovery Status"
+msgstr ""
+
+#. translators: %d: order ID
+#: templates/admin/partials/order-detail-panel.php:22
+#, php-format
+msgid "Order #%d"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:33
+msgid "Customer Manage Link"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:33
+msgid "Open upload manager"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:40
+msgid "Create renewal checkout"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:47
+msgid "Placement Rectangle"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:56
+msgid "Grid placement"
+msgstr ""
+
+#. translators: 1: width in pixels, 2: height in pixels.
+#: templates/admin/partials/order-detail-panel.php:61
+#, php-format
+msgid "%1$s x %2$s pixels"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:69
+msgid "Placement preview legend"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:70
+msgid "Preview legend"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:73
+#: templates/frontend/grid/shell.php:60
+#: assets/mds3/js/blocks.js:714
+#: assets/mds3/js/blocks.js:1246
+msgid "Sold"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:76
+msgid "Selected placement"
+msgstr ""
+
+#. translators: %s: grid title.
+#: templates/admin/partials/order-detail-panel.php:85
+#, php-format
+msgid "Placement preview for %s"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:98
+msgid "Placement preview zoom controls"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:108
+msgid "Status history"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:125
+msgid "Item"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:127
+msgid "Block"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:128
+msgid "Rectangle"
+msgstr ""
+
+#: templates/admin/partials/order-detail-panel.php:129
+msgid "Price Source"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:25
+msgid "Duration Days"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:26
+msgid "Package Price"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:30
+msgid "The active payment provider owns currency, so packages use the provider store currency."
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:32
+#: templates/admin/partials/packages-panel.php:47
+msgid "Max Orders"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:33
+msgid "Default Package"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:35
+msgid "Save package"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:37
+msgid "New package"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:45
+#: templates/admin/partials/price-rules-panel.php:53
+msgid "Price"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:46
+msgid "Duration"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:48
+msgid "Default"
+msgstr ""
+
+#: templates/admin/partials/packages-panel.php:63
+#: templates/admin/partials/price-rules-panel.php:68
+msgid "Edit"
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:28
+msgid "Legacy Block ID From"
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:29
+msgid "Legacy Block ID To"
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:34
+msgid "The active payment provider owns currency, so price zones use the provider store currency."
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:36
+msgid "Color"
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:37
+msgid "Color used to preview this price zone in the grid editor."
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:40
+msgid "Save price zone"
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:42
+msgid "New price zone"
+msgstr ""
+
+#: templates/admin/partials/price-rules-panel.php:52
+msgid "Legacy Blocks"
+msgstr ""
+
+#: templates/admin/partials/region-editor.php:17
+msgid "Grid editor zoom controls"
+msgstr ""
+
+#: templates/admin/partials/region-editor.php:28
+msgid "Zoom out"
+msgstr ""
+
+#: templates/admin/partials/region-editor.php:29
+msgid "Fit"
+msgstr ""
+
+#: templates/admin/partials/region-editor.php:30
+msgid "Zoom in"
+msgstr ""
+
+#: templates/admin/partials/settings-page-map.php:15
+msgid "Page Role"
+msgstr ""
+
+#: templates/admin/partials/settings-page-map.php:16
+msgid "Current Page"
+msgstr ""
+
+#: templates/admin/partials/settings-page-map.php:17
+msgid "Shortcode"
+msgstr ""
+
+#: templates/admin/partials/settings-page-map.php:28
+msgid "View"
+msgstr ""
+
+#: templates/admin/partials/settings-page-map.php:30
+msgid "Not assigned"
+msgstr ""
+
+#: templates/admin/partials/setup-extension-selector.php:14
+msgid "Choose the Million Dollar Script capabilities this site should use. The classic grid is selected by default, while paid extensions and extensions that use external services are never installed silently."
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:20
+msgid "Setup needed"
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:26
+msgid "WooCommerce Checkout"
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:27
+msgid "Use WooCommerce when you want store checkout, gateways, taxes, receipts, and WooCommerce order records for Million Dollar Script payments."
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:35
+msgid "WooCommerce plugin"
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:39
+#: templates/admin/partials/setup-payment-dependencies.php:65
+msgid "Installed and active."
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:40
+msgid "Required before WooCommerce can be selected as the payment provider."
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:52
+msgid "Activate WooCommerce"
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:52
+msgid "Install WooCommerce"
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:55
+msgid "Open WooCommerce setup"
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:61
+msgid "WooCommerce Checkout extension"
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:67
+msgid "Installed but inactive. Select it in site capabilities or activate it from Plugins."
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:69
+msgid "Available from the Extensions page as a free payment extension."
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:71
+msgid "Not listed by the current extension catalog. Reconnect or re-seed the local extension server, then refresh Extensions."
+msgstr ""
+
+#: templates/admin/partials/setup-payment-dependencies.php:77
+msgid "Open Extensions"
+msgstr ""
+
+#: templates/admin/partials/standard-pages-panel.php:18
+msgid "Classic Pixel Grid is disabled, so Million Dollar Script grid, checkout, upload, and account pages are not created yet."
+msgstr ""
+
+#: templates/admin/partials/standard-pages-panel.php:21
+msgid "Create or repair the standard Million Dollar Script page set. Existing assigned or migrated pages are preserved; only missing page roles are created as normal WordPress Pages."
+msgstr ""
+
+#: templates/frontend/grid/empty.php:13
+#: templates/frontend/pages/advertiser-list.php:43
+msgid "No grid is available yet."
+msgstr ""
+
+#: templates/frontend/grid/legend.php:12
+msgid "Grid legend"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:53
+msgid "Grid availability"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:68
+msgid "How to order"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:70
+msgid "Select the available blocks you want. On grids that allow larger areas, click opposite corners to select a rectangle."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:71
+msgid "Use the controls above the grid to choose a package, enter your email if requested, and reserve the selection."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:72
+msgid "After reserving, add your image, link, alt text, and popup text above the grid, then continue to payment."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:78
+msgid "Email address"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:79
+msgid "Sign in to reserve"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:89
+msgid "Shown inside the selected pixels. The preview updates as soon as the image is uploaded."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:93
+#: templates/frontend/pages/order-upload.php:33
+msgid "Destination URL"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:94
+#: templates/frontend/pages/order-upload.php:34
+msgid "https://example.com"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:95
+#: templates/frontend/pages/order-upload.php:35
+msgid "Where visitors go when they click your ad."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:99
+#: templates/frontend/pages/order-upload.php:39
+msgid "Short image description"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:100
+#: templates/frontend/pages/order-upload.php:40
+msgid "A short description for accessibility and image fallback text."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:103
+#: templates/frontend/grid/shell.php:104
+#: templates/frontend/grid/shell.php:112
+#: templates/frontend/pages/order-upload.php:43
+#: templates/frontend/pages/order-upload.php:44
+#: templates/frontend/pages/order-upload.php:52
+msgid "Popup text"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:107
+#: templates/frontend/pages/order-upload.php:47
+msgid "Popup text formatting"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:108
+#: templates/frontend/pages/order-upload.php:48
+msgid "Bold"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:109
+#: templates/frontend/pages/order-upload.php:49
+msgid "Italic"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:110
+#: templates/frontend/pages/order-upload.php:50
+msgid "Paragraph"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:115
+#: templates/frontend/pages/order-upload.php:55
+msgid "Shown in the block popup. Basic formatting is allowed."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:115
+#: templates/frontend/pages/order-upload.php:55
+msgid "Shown in the block popup."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:119
+#: templates/frontend/pages/order-upload.php:59
+msgid "Image fit"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:121
+#: templates/frontend/pages/order-upload.php:61
+msgid "Image fit help"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:122
+msgid "Cover fills the whole selected area and may crop edges. Contain shows the whole image and may leave empty space."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:126
+#: templates/frontend/pages/order-upload.php:66
+msgid "Cover"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:127
+#: templates/frontend/pages/order-upload.php:67
+msgid "Contain"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:129
+#: templates/frontend/pages/order-upload.php:69
+msgid "Changing this updates the preview immediately."
+msgstr ""
+
+#: templates/frontend/grid/shell.php:141
+msgid "Advertising grid"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:141
+msgid "Interactive advertising grid"
+msgstr ""
+
+#: templates/frontend/grid/shell.php:149
+msgid "View images"
+msgstr ""
+
+#. translators: %d: advertiser count.
+#: templates/frontend/pages/advertiser-list.php:28
+#: templates/frontend/pages/advertiser-list.php:62
+#, php-format
+msgid "%d advertiser"
+msgid_plural "%d advertisers"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/frontend/pages/advertiser-list.php:45
+msgid "No published advertisers are available yet."
+msgstr ""
+
+#: templates/frontend/pages/advertiser-list.php:49
+#: assets/mds3/js/blocks.js:726
+msgid "Search advertisers"
+msgstr ""
+
+#. translators: %d: advertiser count.
+#: templates/frontend/pages/advertiser-list.php:64
+#, php-format
+msgid "%d advertisers"
+msgstr ""
+
+#: templates/frontend/pages/advertiser-list.php:68
+msgid "No advertisers match your search."
+msgstr ""
+
+#: templates/frontend/pages/grid-picker.php:30
+msgid "Name, slug, or description"
+msgstr ""
+
+#. translators: 1: first visible grid number, 2: last visible grid number, 3: total active grids.
+#: templates/frontend/pages/grid-picker.php:42
+#, php-format
+msgid "Showing %1$d-%2$d of %3$d active grids."
+msgstr ""
+
+#: templates/frontend/pages/grid-picker.php:44
+msgid "No active grids match that search."
+msgstr ""
+
+#: templates/frontend/pages/manage-orders.php:15
+msgid "Use the private manage link from your order confirmation, or sign in to review orders connected to your account."
+msgstr ""
+
+#: templates/frontend/pages/manage-orders.php:16
+msgid "Sign in"
+msgstr ""
+
+#: templates/frontend/pages/manage-orders.php:18
+msgid "No active orders were found for your account."
+msgstr ""
+
+#: templates/frontend/pages/order-summary.php:31
+msgid "Manage upload"
+msgstr ""
+
+#: templates/frontend/pages/order-summary.php:33
+msgid "Continue payment"
+msgstr ""
+
+#: templates/frontend/pages/order-summary.php:41
+msgid "Renew placement"
+msgstr ""
+
+#. translators: %d: order ID.
+#: templates/frontend/pages/order-upload.php:18
+#, php-format
+msgid "Manage Order #%d"
+msgstr ""
+
+#: templates/frontend/pages/order-upload.php:29
+msgid "Shown inside the reserved pixels. The preview updates as soon as the image is uploaded."
+msgstr ""
+
+#: templates/frontend/pages/order-upload.php:62
+msgid "Cover fills the whole reserved area and may crop edges. Contain shows the whole image and may leave empty space."
+msgstr ""
+
+#: templates/frontend/pages/order-upload.php:71
+msgid "Save ad"
+msgstr ""
+
+#. translators: %s: stats unit label such as blocks or pixels.
+#: templates/frontend/pages/stats.php:15
+#, php-format
+msgid "sold %s"
+msgstr ""
+
+#. translators: %s: stats unit label such as blocks or pixels.
+#: templates/frontend/pages/stats.php:18
+#, php-format
+msgid "available %s"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:51
+msgid "Uses the first available grid when no grid is selected"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:60
+#: assets/mds3/js/blocks.js:1098
+#: assets/mds3/js/blocks.js:1388
+msgid "OpenLayers"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:69
+msgid "View-only grid"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:69
+msgid "Ordering enabled"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:74
+msgid "Visitors can view the grid here. Use an Order Pixels page or turn this off if visitors should order directly from this block."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:75
+msgid "Visitors can click available blocks in this grid and start an order from this block."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:86
+#: assets/mds3/js/blocks.js:97
+msgid "Show stats"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:89
+#: assets/mds3/js/blocks.js:98
+msgid "Hide stats"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:91
+#: assets/mds3/js/blocks.js:96
+msgid "Use grid setting"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:118
+#: assets/mds3/js/blocks.js:1032
+#: assets/mds3/js/blocks.js:1187
+msgid "First available grid"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:514
+#: assets/mds3/js/blocks.js:537
+msgid "Stats colors"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:516
+#: assets/mds3/js/blocks.js:541
+msgid "Number color"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:525
+#: assets/mds3/js/blocks.js:548
+msgid "Label color"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:555
+msgid "Background color"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:562
+msgid "Border color"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:600
+msgid "Site setting"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:660
+#: assets/mds3/js/blocks.js:1484
+msgid "First available"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:663
+msgid "Size"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:671
+msgid "Mode"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:690
+msgid "Example placements"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:691
+msgid "View-only display"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:691
+msgid "Ordering display"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:730
+msgid "Sample advertiser"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:731
+msgid "Accordion details"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:731
+msgid "Website and popup text"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:737
+msgid "Another advertiser"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:738
+msgid "Card layout"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:738
+msgid "Published placement"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:751
+msgid "Manage order"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:752
+msgid "Upload creative"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:753
+msgid "Continue checkout"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:754
+msgid "Order received"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:866
+msgid "Custom ID"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:907
+msgid "Not set"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:997
+msgid "Extension block"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1041
+msgid "Grid settings"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1061
+#: assets/mds3/js/blocks.js:1351
+msgid "Allow ordering from this grid"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1069
+msgid "Leave ordering off for the main public grid when you want visitors to use a separate Order Pixels page."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1074
+#: assets/mds3/js/blocks.js:1364
+msgid "CSS size such as 100%, 960px, or 80vw. Use {width} to match the selected grid."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1084
+#: assets/mds3/js/blocks.js:1374
+msgid "CSS size such as 1000px or 80vh. Use {height} to match the selected grid."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1094
+msgid "Automatic chooses the best renderer for the grid. OpenLayers is better for very large tiled grids; Classic is simpler for small grids."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1106
+#: assets/mds3/js/blocks.js:1396
+msgid "Stats display"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1109
+msgid "Choose whether this block follows the grid setting, always shows the stats box above the grid, or hides it on this page."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1122
+msgid "Select Million Dollar Script grid block"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1132
+msgid "Grid embed"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1140
+#: assets/mds3/js/blocks.js:1242
+#: assets/mds3/js/blocks.js:1480
+msgid "Stats"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1193
+msgid "Stats settings"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1205
+#: assets/mds3/js/blocks.js:1407
+msgid "Display unit"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1208
+#: assets/mds3/js/blocks.js:1410
+msgid "Choose whether the block follows the site-wide stats setting or always displays blocks or pixels."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1211
+#: assets/mds3/js/blocks.js:1413
+msgid "Use site setting"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1223
+#: assets/mds3/js/blocks.js:1425
+msgid "CSS size for the stats box, such as 240px, 100%, or 18rem."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1236
+msgid "Select Million Dollar Script stats block"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1242
+msgid "Inventory summary"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1255
+msgid "Unit"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1285
+msgid "Display a Million Dollar Script page panel or customer flow."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1318
+msgid "Page settings"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1320
+#: assets/mds3/js/blocks.js:1483
+msgid "Page type"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1359
+msgid "Order Pixels pages are always interactive so visitors can select available blocks."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1384
+msgid "Automatic chooses the best renderer for the grid."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1399
+msgid "Choose whether this page follows the grid setting, always shows the stats box above the grid, or hides it here."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1432
+msgid "List layout"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1437
+msgid "List"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1438
+msgid "Cards"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1439
+msgid "Accordion"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1446
+msgid "Visible list fields"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1449
+msgid "Comma-separated fields such as image,title,url,popup,alt. Leave empty for the default fields."
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1456
+msgid "Show advertiser search"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1470
+msgid "Select Million Dollar Script page block"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1475
+msgid "Customer flow"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1556
+msgid "Block settings"
+msgstr ""
+
+#: assets/mds3/js/blocks.js:1566
+msgid "Select Million Dollar Script extension block"
+msgstr ""

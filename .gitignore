@@ -1,0 +1,10 @@
+/.phpunit.result.cache
+/.phpcs.cache
+/coverage/
+/dist/
+/node_modules/
+/tmp/
+/vendor/
+/assets/mds3/vendor/
+*.log
+*.zip
