@@ -144,14 +144,7 @@ When reporting a problem, include the WordPress and PHP versions, Million Dollar
 
 == Changelog ==
 
-= 3.0.0 =
-* Added extension-scoped uninstall cleanup controls beneath the global Delete Data On Uninstall setting, with fail-safe data preservation when policy cannot be resolved.
-* Prevented a light canvas flash while navigating Million Dollar Script admin screens in dark or system-dark mode.
-
-* Rebuilt Million Dollar Script as a modular WordPress plugin with responsive grid navigation and visual ordering.
-* Added standalone checkout, optional WooCommerce adapter support, scoped API keys, and extension integration points.
-* Added dry-run Million Dollar Script 2 migration for grids, pages, orders, packages, prices, media, settings, email templates, and custom metadata.
-* Added order cleanup, expiration notices, renewal reminders, placement previews, and upload validation.
+Full release notes are published on the website at https://milliondollarscript.com/changelog/.
 
 == Upgrade Notice ==
 

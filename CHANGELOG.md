@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.1 - 2026-08-21
 
 - Declared compatibility with WordPress 7.1 after activation, REST, starter-site, grid-order, and WooCommerce checkout validation in the Playground 3.1.50 runtime.
 - Extended the existing anonymous core update telemetry with a versioned, bounded snapshot of official extension versions and active states, with opt-out enforcement and no arbitrary plugin inventory.
@@ -11,13 +11,11 @@
 - Combined and briefly cached order overview aggregations, with write invalidation and expiry so a persistent object cache is never required for correctness.
 - Expanded deterministic high-volume coverage for real order repository, overview, customer-order, expiration, cursor, and cache-hit paths through 500,000 orders.
 
-## 3.0.0-alpha.3 - 2026-08-11
 
 - Added a package-scoped private pre-alpha profile that connects invited test builds to the development catalog, package, update, account, and licensed-document services without changing ordinary release defaults.
 - Added a persistent WordPress admin warning for development-connected private pre-alpha builds and forced those builds to use the alpha core update channel.
 - Kept active extensions active after direct catalog updates while still reporting dependency or activation failures safely.
 
-## 3.0.0 - 2026-06-01
 
 - Rebuilt Million Dollar Script as a modular WordPress plugin with a clean runtime under the `MDS3\` namespace, compatibility constants for legacy extension checks, and a safer API-first extension surface.
 - Added Million Dollar Script 2 migration dry runs and imports for grids, pages, orders, packages, price rules, inventory, media originals, settings, custom ad post meta, and Fields values.
