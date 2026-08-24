@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.72 - 2026-08-24
+### Changed
+
+- declare compatibility with WordPress 7.1 after focused activation, order mapping, payment completion, and full-refund validation with WooCommerce 11.0.1 in both classic and HPOS storage modes on PHP 8.3
+- update development tooling: PHP_CodeSniffer 3.13.6, WordPressCS 3.4.1, and js-yaml 4.3.1 (development only; no runtime changes)
+
 ## 2.6.71 - 2026-08-12
 ### Changed
 
