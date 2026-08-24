@@ -1,6 +1,40 @@
 # Changelog
 
 ## 2.6.72 - 2026-08-24
+### Other
+
+- Merge remote-tracking branch 'origin/main' into HEAD
+
+### Chore
+
+- bump js-yaml to 4.3.1 (CVE-2026-59870)
+- bump squizlabs/php_codesniffer (#90)
+- bump wp-coding-standards/wpcs (#89)
+- declare WordPress 7.0.4 compatibility
+- certify WooCommerce 11.0.1 compatibility
+- certify WordPress 7.0.3 compatibility
+- update legacy plugin metadata
+
+### Documentation
+
+- finalize 2.6.71 changelog
+- finalize WooCommerce 11.0.1 certification
+
+### Added
+
+- report official extension adoption
+
+### Fixed
+
+- keep certified MDS2 release at 2.6.69
+- support authoritative HPOS orders
+
+### Tests
+
+- preserve generation-aware update filtering
+
+
+## 2.6.72 - 2026-08-24
 ### Changed
 
 - declare compatibility with WordPress 7.1 after focused activation, order mapping, payment completion, and full-refund validation with WooCommerce 11.0.1 in both classic and HPOS storage modes on PHP 8.3
