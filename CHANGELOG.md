@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.6.74 - 2026-08-25
+### Documentation
+
+- consolidate duplicate 2.6.74 sections
+- correct version heading to 2.6.74
+- finalize 2.6.71 changelog
+- finalize WooCommerce 11.0.1 certification
+
+### Fixed
+
+- retire beta/alpha channels, map to stable; release 2.6.73
+- keep certified MDS2 release at 2.6.69
+- support authoritative HPOS orders
+
+### Other
+
+- Merge remote-tracking branch 'origin/main' into HEAD
+
+### Chore
+
+- bump js-yaml to 4.3.1 (CVE-2026-59870)
+- bump squizlabs/php_codesniffer (#90)
+- bump wp-coding-standards/wpcs (#89)
+- declare WordPress 7.0.4 compatibility
+- certify WooCommerce 11.0.1 compatibility
+- certify WordPress 7.0.3 compatibility
+- update legacy plugin metadata
+
+### Added
+
+- report official extension adoption
+
+### Tests
+
+- preserve generation-aware update filtering
+
+
 ## 2.6.67 - 2026-07-17
 ### Fixed
 
