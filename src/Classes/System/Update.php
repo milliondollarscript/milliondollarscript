@@ -39,6 +39,11 @@ class Update {
 		global $MDSUpdateChecker;
 		$updates = Options::get_option( 'updates', 'stable' );
 
+		// Beta and alpha channels are no longer maintained; map to stable so those sites keep receiving updates.
+		if ( ! in_array( $updates, [ 'no', 'stable' ], true ) ) {
+			$updates = 'stable';
+		}
+
 		Logs::log(
 			sprintf(
 				'Core update checker bootstrap (MDS_VERSION=%s, updates=%s)',

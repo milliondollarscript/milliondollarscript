@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.73 - 2026-08-25
+### Fixed
+
+- Update channel options: removed the retired beta/alpha update channels from the settings UI and mapped stored beta/alpha values to stable at read time so those sites continue receiving stable updates.
+
 ## 2.6.72 - 2026-08-24
 ### Other
 
