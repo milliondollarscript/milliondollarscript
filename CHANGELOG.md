@@ -25,6 +25,7 @@
 - bump wp-coding-standards/wpcs (#89)
 - declare WordPress 7.0.4 compatibility
 - certify WooCommerce 11.0.1 compatibility
+- certify WordPress 7.1 compatibility
 - certify WordPress 7.0.3 compatibility
 - update legacy plugin metadata
 
