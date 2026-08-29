@@ -50,8 +50,9 @@ final class StarterNavigation {
         }
 
         // A navigation block without an explicit ref uses the most recently
-        // published wp_navigation post. Creating another one could silently
-        // change an existing block-theme header, so preserve that navigation.
+        // published wp_navigation post. Populate that default navigation with
+        // the MDS starter links so the wizard creates the expected top menu;
+        // a navigation this workflow already set up is left untouched.
         $existing_navigation = get_posts([
             'fields' => 'ids',
             'no_found_rows' => true,
@@ -63,29 +64,21 @@ final class StarterNavigation {
         ]);
         if ($existing_navigation) {
             $post_id = absint($existing_navigation[0]);
-            $result['reused']['navigation'] = $post_id;
-            return ['id' => $post_id, 'preserved' => true, 'type' => 'block'];
-        }
-
-        $content = '';
-        foreach ($this->navigation_items($pages) as $item) {
-            $content .= serialize_block([
-                'attrs' => [
-                    'id' => $item['post_id'],
-                    'kind' => 'post-type',
-                    'label' => $item['label'],
-                    'type' => 'page',
-                    'url' => get_permalink($item['post_id']),
-                ],
-                'blockName' => 'core/navigation-link',
-                'innerBlocks' => [],
-                'innerContent' => [],
-                'innerHTML' => '',
+            if ('yes' === get_post_meta($post_id, '_million_dollar_script_starter_navigation', true)) {
+                $result['reused']['navigation'] = $post_id;
+                return ['id' => $post_id, 'type' => 'block'];
+            }
+            wp_update_post([
+                'ID' => $post_id,
+                'post_content' => $this->build_navigation_content($pages),
             ]);
+            update_post_meta($post_id, '_million_dollar_script_starter_navigation', 'yes');
+            $result['reused']['navigation'] = $post_id;
+            return ['id' => $post_id, 'type' => 'block', 'populated' => true];
         }
 
         $post_id = wp_insert_post([
-            'post_content' => $content,
+            'post_content' => $this->build_navigation_content($pages),
             'post_status' => 'publish',
             'post_title' => __('Million Dollar Script Starter', 'million-dollar-script'),
             'post_type' => 'wp_navigation',
@@ -187,6 +180,31 @@ final class StarterNavigation {
         }
 
         return '';
+    }
+
+    /**
+     * Serialize the starter items as navigation-link blocks.
+     *
+     * @param array<string,int> $pages
+     */
+    private function build_navigation_content(array $pages) {
+        $content = '';
+        foreach ($this->navigation_items($pages) as $item) {
+            $content .= serialize_block([
+                'attrs' => [
+                    'id' => $item['post_id'],
+                    'kind' => 'post-type',
+                    'label' => $item['label'],
+                    'type' => 'page',
+                    'url' => get_permalink($item['post_id']),
+                ],
+                'blockName' => 'core/navigation-link',
+                'innerBlocks' => [],
+                'innerContent' => [],
+                'innerHTML' => '',
+            ]);
+        }
+        return $content;
     }
 
     /**

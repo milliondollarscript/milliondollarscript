@@ -167,7 +167,7 @@ trait ImportsLegacyOrderItemsAndPlacements {
             'link_url' => esc_url_raw($link ?: ($ad_meta['url'] ?? '')),
             'alt_text' => $alt_text,
             'popup_text' => wp_kses_post($popup_text ?: $alt),
-            'status' => 'paid' === self::order_status($order['status'] ?? '') ? 'active' : 'pending',
+            'status' => self::placement_status($order['status'] ?? ''),
             'sort_order' => 0,
             'updated_at' => current_time('mysql', true),
         ];

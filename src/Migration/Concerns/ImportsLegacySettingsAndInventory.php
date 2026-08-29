@@ -140,11 +140,8 @@ trait ImportsLegacySettingsAndInventory {
         $this->map->remember($this->source->source_prefix(), 'banner', $legacy_id, 'grid', $target_id, ['title' => $payload['title']]);
         $this->legacy_grids[$legacy_id] = array_merge($row, ['_mds3_grid_id' => $target_id]);
 
-        $grid = $repo->find($target_id);
-        if ($grid) {
-            GridPostType::ensure_page($grid);
-        }
-
+        // Pages are reconciled once after the pages stage, so a grid never gets a
+        // duplicate auto-created page before its existing MDS2 page is associated.
         return $target_id;
     }
 
@@ -330,7 +327,30 @@ trait ImportsLegacySettingsAndInventory {
         }
         $content = PageRepository::shortcode($type, $target_grid_id);
         $post = get_post($post_id);
+        $unmodified = !empty($candidate['unmodified']);
+        $replace_modified = !empty($this->page_options['replace_modified']);
+        $create_new = !empty($this->page_options['create_new']) && !$replace_modified;
 
+        // A modified MDS2 page is left untouched by default. The opt-ins decide
+        // whether to overwrite it in place (replace) or leave it and create a new
+        // separate page (create_new, which is ignored when replace is set).
+        if (!$unmodified && !$replace_modified) {
+            if ($create_new) {
+                $created_id = $this->create_new_page($type, $target_grid_id, $content, $repo);
+                if ($created_id) {
+                    $this->record_grid_page_disposition($target_grid_id, 'created_new');
+                    $this->record_page_outcome($post_id, $type, 'created_new', (string) get_the_title($post_id));
+                    return $created_id;
+                }
+            }
+
+            $this->record_grid_page_disposition($target_grid_id, 'left_unchanged');
+            $this->record_page_outcome($post_id, $type, 'left_unchanged', (string) get_the_title($post_id));
+            $this->record_migration_skip('page', $post_id, __('Its content differs from the original Million Dollar Script 2 page, so it was left unchanged.', 'million-dollar-script'));
+            return 0;
+        }
+
+        $this->record_grid_page_disposition($target_grid_id, 'in_place');
         if ($post && (string) $post->post_content !== $content) {
             if (!metadata_exists('post', $post_id, '_mds3_migration_original_content')) {
                 update_post_meta($post_id, '_mds3_migration_original_content', (string) $post->post_content);
@@ -361,7 +381,104 @@ trait ImportsLegacySettingsAndInventory {
         ]);
 
         $this->map->remember($this->source->source_prefix(), 'page', $post_id, 'page', $post_id, ['type' => $type, 'legacy_grid_id' => $legacy_grid_id]);
+        $this->record_page_outcome($post_id, $type, $unmodified ? 'updated_in_place' : 'replaced', (string) get_the_title($post_id));
 
         return $post_id;
+    }
+
+    private function create_new_page($type, $target_grid_id, $content, PageRepository $repo) {
+        if ('grid' === $type && $target_grid_id) {
+            $grid = (new GridRepository())->find($target_grid_id);
+            if ($grid) {
+                $post_id = GridPostType::ensure_page($grid);
+                if (!is_wp_error($post_id) && $post_id) {
+                    update_post_meta($post_id, '_mds3_migration_source', 'mds2');
+                    return absint($post_id);
+                }
+            }
+
+            return 0;
+        }
+
+        $label = (string) (PageRepository::standard_labels()[$type] ?? $type);
+        $post_id = wp_insert_post([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'post_title' => $label,
+            'post_name' => sanitize_title($label),
+            'post_content' => $content,
+        ], true);
+        if (is_wp_error($post_id) || !$post_id) {
+            return 0;
+        }
+
+        update_post_meta($post_id, '_mds3_page_type', $type);
+        if ($target_grid_id) {
+            update_post_meta($post_id, '_mds3_grid_id', $target_grid_id);
+        }
+        update_post_meta($post_id, '_mds3_migration_source', 'mds2');
+        update_option('mds3_page_' . $type . '_id', absint($post_id), false);
+        $repo->upsert($post_id, $type, [
+            'grid_id' => $target_grid_id,
+            'source' => 'mds2_created_new',
+            'configuration' => ['created_new' => true],
+        ]);
+
+        return absint($post_id);
+    }
+
+    private function record_grid_page_disposition($grid_id, $disposition) {
+        $grid_id = absint($grid_id);
+        if (!$grid_id) {
+            return;
+        }
+        $this->grid_page_disposition[$grid_id] = sanitize_key((string) $disposition);
+    }
+
+    private function record_page_outcome($post_id, $type, $outcome, $title) {
+        $this->page_outcomes[absint($post_id)] = [
+            'post_id' => absint($post_id),
+            'title' => (string) $title,
+            'type' => sanitize_key((string) $type),
+            'outcome' => sanitize_key((string) $outcome),
+        ];
+    }
+
+    /**
+     * Give a page to every imported grid that has none (an orphan grid), leaving
+     * alone grids whose MDS2 page was deliberately left unchanged or created new.
+     */
+    private function reconcile_grid_pages() {
+        global $wpdb;
+
+        $map_table = DB::table('migration_map');
+        $grid_ids = DB::table_exists($map_table)
+            ? (array) $wpdb->get_col($wpdb->prepare(
+                'SELECT mds3_id FROM ' . DB::ident($map_table) . " WHERE source_prefix = %s AND entity_type = 'banner' AND mds3_entity_type = 'grid'",
+                $this->source->source_prefix()
+            ))
+            : [];
+
+        $created = 0;
+        foreach (array_map('absint', array_filter($grid_ids)) as $grid_id) {
+            if (!$grid_id || isset($this->grid_page_disposition[$grid_id])) {
+                continue;
+            }
+            if (GridPostType::page_id($grid_id)) {
+                continue;
+            }
+
+            $grid = (new GridRepository())->find($grid_id);
+            if (!$grid) {
+                continue;
+            }
+
+            $post_id = GridPostType::ensure_page($grid);
+            if (!is_wp_error($post_id) && $post_id) {
+                $created++;
+            }
+        }
+
+        return $created;
     }
 }

@@ -153,8 +153,9 @@ trait BuildsGridAjaxPayloads {
         ];
     }
 
-    private function placement_payload(array $placement, array $settings = [], $mask = null) {
+    private function placement_payload(array $placement, array $settings = [], $mask = null, $order = null) {
         $source = (new OriginalImage())->resolve($placement['attachment_id'] ?? 0);
+        $manage_url = $this->placement_manage_url($placement, $order);
         $link_url = PlacementFieldContract::advertiser_url($placement['link_url'] ?? '');
         $popup_text = (string) ($placement['popup_text'] ?? '');
         $popup_text_html = $this->popup_text_html($popup_text, $settings);
@@ -183,6 +184,7 @@ trait BuildsGridAjaxPayloads {
             'advertiser_page_label' => sanitize_text_field((string) ($settings['advertiser-page-popup-label'] ?? __('View advertiser page', 'million-dollar-script'))),
             'advertiser_page_target' => '_blank' === ($settings['advertiser-page-link-target'] ?? '_self') ? '_blank' : '_self',
             'status' => sanitize_key($placement['status'] ?? 'pending'),
+            'manage_url' => $manage_url,
             'source' => [
                 'url' => $source['url'] ?? '',
                 'width' => absint($source['width'] ?? 0),
@@ -194,6 +196,33 @@ trait BuildsGridAjaxPayloads {
         $payload['popover_html'] = $this->popover_html($payload, $settings);
 
         return \MillionDollarScript\Core\Hooks::apply('million-dollar-script/placement/payload', $payload, $placement, $settings);
+    }
+
+    private function placement_manage_url(array $placement, ?array $order) {
+        $user_id = is_array($order) ? absint($order['user_id'] ?? 0) : 0;
+        if (!$user_id) {
+            $user_id = absint($placement['user_id'] ?? 0);
+        }
+        if (!$user_id || $user_id !== get_current_user_id()) {
+            return '';
+        }
+
+        $order_id = absint($order['id'] ?? ($placement['order_id'] ?? 0));
+        $order_key = (string) ($order['order_key'] ?? '');
+        if (!$order_id || '' === $order_key) {
+            return '';
+        }
+
+        $page_id = absint(get_option('mds3_page_upload_id', 0));
+        $url = $page_id ? get_permalink($page_id) : '';
+        if (!$url) {
+            return '';
+        }
+
+        return esc_url_raw(add_query_arg([
+            'mds3_order_id' => $order_id,
+            'mds3_order_key' => $order_key,
+        ], $url));
     }
 
     private function popup_text_html($popup_text, array $settings) {

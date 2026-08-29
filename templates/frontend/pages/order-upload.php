@@ -16,9 +16,15 @@ $url_visible = !isset($url_visible) || !empty($url_visible);
 $popup_text = (string) ($placement['popup_text'] ?? '');
 $popup_text_description_id = 'mds3-order-upload-popup-text-help-' . absint($order_id ?? 0);
 ?>
+<?php /* translators: %d: order ID. */ ?>
+<?php $mds3_heading = sprintf(__('Manage Order #%d', 'million-dollar-script'), absint($order_id ?? 0)); ?>
 <section class="mds3-page-panel mds3-order-upload-panel <?php echo esc_attr($theme_class ?? ''); ?>">
-    <?php /* translators: %d: order ID. */ ?>
-    <h2><?php echo esc_html(sprintf(__('Manage Order #%d', 'million-dollar-script'), absint($order_id ?? 0))); ?></h2>
+    <?php if (get_the_title() !== $mds3_heading) : ?>
+        <h2><?php echo esc_html($mds3_heading); ?></h2>
+    <?php endif; ?>
+    <?php if (!empty($back_url)) : ?>
+        <p class="mds3-panel-back"><a class="button mds3-button-secondary" href="<?php echo esc_url($back_url); ?>"><?php echo esc_html__('My pixels', 'million-dollar-script'); ?></a></p>
+    <?php endif; ?>
     <div class="mds3-current-placement" <?php echo empty($image) ? 'hidden' : ''; ?>><?php echo wp_kses_post($image); ?></div>
     <form class="mds3-placement-form mds3-order-upload-form" enctype="multipart/form-data" data-mds3-draft-scope="order-upload" data-mds3-order-id="<?php echo esc_attr(absint($order_id ?? 0)); ?>" novalidate>
         <input type="hidden" name="order_id" value="<?php echo esc_attr(absint($order_id ?? 0)); ?>" />

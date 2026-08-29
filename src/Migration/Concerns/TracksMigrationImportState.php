@@ -212,6 +212,7 @@ trait TracksMigrationImportState {
             'totals' => $totals,
             'skipped' => array_values($this->migration_skips),
             'repairs' => array_values($this->migration_repairs),
+            'page_outcomes' => array_values($this->page_outcomes),
             'warnings' => array_values(array_unique($this->warnings)),
         ];
     }

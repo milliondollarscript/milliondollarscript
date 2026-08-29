@@ -11,7 +11,12 @@
             credentials: 'same-origin',
             body: form
         }).then(function (response) {
-            return response.json();
+            return response.json().then(function (payload) {
+                if (payload && typeof payload === 'object') {
+                    payload.mds3HttpStatus = response.status;
+                }
+                return payload;
+            });
         });
     }
 
@@ -1332,6 +1337,22 @@
         );
     }
 
+    var GRID_SESSION_RELOAD_KEY = 'mds3GridSessionReload';
+
+    function reloadForExpiredSession() {
+        try {
+            if (window.sessionStorage.getItem(GRID_SESSION_RELOAD_KEY)) {
+                return false;
+            }
+            sessionStorage.setItem(GRID_SESSION_RELOAD_KEY, String(Date.now()));
+        } catch (error) {
+            return false;
+        }
+
+        window.location.reload();
+        return true;
+    }
+
     function Grid(element) {
         this.element = element;
         this.viewport = element.querySelector('.mds3-grid-viewport');
@@ -1346,6 +1367,9 @@
         this.readOnly = element.getAttribute('data-read-only') === 'true';
         this.rendererMode = element.getAttribute('data-renderer-mode') || 'auto';
         this.actions = element.querySelector('.mds3-grid-actions');
+        this.selectionSizeButton = element.querySelector('.mds3-selection-size');
+        this.selectionSize = 1;
+        this.selectionSizeDialog = null;
         this.summary = element.querySelector('.mds3-selection-summary');
         this.packageSelect = element.querySelector('.mds3-package-select');
         this.subscriptionPlanSelect = element.querySelector('.mds3-subscription-plan-select');
@@ -1406,13 +1430,23 @@
             nonce: gridConfig.nonce
         }).then(function (payload) {
             if (!payload || !payload.success) {
+                /* 403 here means the page nonce expired (long idle); a fresh page
+                   load mints a new nonce. Reload once; the flag guards against a
+                   loop and is cleared on a successful load. */
+                if (payload && payload.mds3HttpStatus === 403 && reloadForExpiredSession()) {
+                    return;
+                }
                 throw new Error('load failed');
             }
+            try {
+                window.sessionStorage.removeItem(GRID_SESSION_RELOAD_KEY);
+            } catch (error) {}
             self.state = payload.data;
             self.updateResponsiveViewport();
             self.updateInlineStats();
             self.populatePackages();
             self.updateTools();
+            self.updateSelectionSizeControl();
             self.updateCustomerControls();
             self.bindControls();
             self.preloadBackgroundImage();
@@ -1515,6 +1549,12 @@
                 event.preventDefault();
                 event.stopPropagation();
                 self.hideSelectionMessage();
+            });
+        }
+
+        if (this.selectionSizeButton) {
+            this.selectionSizeButton.addEventListener('click', function () {
+                self.openSelectionSizeDialog();
             });
         }
 
@@ -3183,6 +3223,211 @@
         };
     };
 
+    Grid.prototype.selectionSizeBounds = function () {
+        if (!this.state || !this.multiBlockEnabled()) {
+            return null;
+        }
+
+        var selection = this.selectionSettings();
+        var virtual = this.state.grid ? this.state.grid.virtual_blocks : null;
+        var total = virtual ? Math.max(1, virtual.rows * virtual.columns) : 0;
+        var min = Math.max(1, Number(selection.min_blocks) || 1);
+        var max = Number(selection.max_blocks) || 0;
+
+        if (!max) {
+            max = total || min;
+        }
+        if (total) {
+            max = Math.min(max, total);
+        }
+
+        return { min: min, max: Math.max(min, max) };
+    };
+
+    Grid.prototype.selectionSizeStorageKey = function () {
+        return 'mds3-selection-size:' + this.gridId;
+    };
+
+    Grid.prototype.effectiveSelectionSize = function (bounds) {
+        bounds = bounds || this.selectionSizeBounds();
+        if (!bounds) {
+            return 1;
+        }
+
+        var stored = null;
+        try {
+            var raw = window.localStorage.getItem(this.selectionSizeStorageKey());
+            stored = raw === null ? null : parseInt(raw, 10);
+        } catch (error) {
+            stored = null;
+        }
+        if (!Number.isFinite(stored)) {
+            stored = bounds.min;
+        }
+
+        return Math.min(bounds.max, Math.max(bounds.min, stored));
+    };
+
+    Grid.prototype.updateSelectionSizeControl = function () {
+        var button = this.selectionSizeButton;
+        if (!button) {
+            return;
+        }
+
+        var bounds = this.selectionSizeBounds();
+        if (!bounds || bounds.min === bounds.max) {
+            button.hidden = true;
+            return;
+        }
+
+        var value = this.effectiveSelectionSize(bounds);
+        this.selectionSize = value;
+        button.hidden = false;
+        if (this.actions && !this.readOnly && !this.currentOrder) {
+            this.actions.hidden = false;
+        }
+        button.title = i18n('selectionSizeHint', 'Choose how many blocks each click selects when you start a new selection.');
+        button.textContent = i18n('selectionSize', 'Selection size') + (value === bounds.min ? '' : ' \u00b7 ' + value);
+        if (this.selectionSizeDialog) {
+            var range = this.selectionSizeDialog.querySelector('input[type="range"]');
+            if (range) {
+                range.min = String(bounds.min);
+                range.max = String(bounds.max);
+                range.value = String(value);
+                var valueLabel = this.selectionSizeDialog.querySelector('.mds3-selection-size-value');
+                if (valueLabel) {
+                    valueLabel.textContent = String(value);
+                }
+            }
+        }
+    };
+
+    Grid.prototype.buildSelectionSizeDialog = function () {
+        if (this.selectionSizeDialog) {
+            return this.selectionSizeDialog;
+        }
+
+        var self = this;
+        var inputId = 'mds3-selection-size-' + this.gridId;
+        var dialog = document.createElement('dialog');
+        dialog.className = 'mds3-selection-size-dialog';
+
+        var form = document.createElement('form');
+        form.className = 'mds3-selection-size-form';
+        form.setAttribute('method', 'dialog');
+        form.innerHTML =
+            '<h3 class="mds3-selection-size-title">' + i18n('selectionSize', 'Selection size') + '</h3>' +
+            '<p class="mds3-selection-size-hint">' + i18n('selectionSizeHint', 'Choose how many blocks each click selects when you start a new selection.') + '</p>' +
+            '<div class="mds3-selection-size-row">' +
+                '<label for="' + inputId + '">' + i18n('blocksPerClick', 'Blocks per click') + '</label>' +
+                '<span class="mds3-selection-size-value">1</span>' +
+            '</div>' +
+            '<input type="range" id="' + inputId + '" min="1" max="1" step="1" value="1">' +
+            '<div class="mds3-selection-size-actions">' +
+                '<button type="submit" class="mds3-selection-size-done">' + i18n('selectionSizeDone', 'Done') + '</button>' +
+            '</div>';
+
+        form.querySelector('input[type="range"]').addEventListener('input', function (event) {
+            var value = Number(event.target.value) || 1;
+            form.querySelector('.mds3-selection-size-value').textContent = String(value);
+            self.selectionSize = value;
+            try {
+                window.localStorage.setItem(self.selectionSizeStorageKey(), String(value));
+            } catch (error) {}
+            self.updateSelectionSizeControl();
+        });
+
+        dialog.appendChild(form);
+        this.element.appendChild(dialog);
+        this.selectionSizeDialog = dialog;
+
+        return dialog;
+    };
+
+    Grid.prototype.openSelectionSizeDialog = function () {
+        var bounds = this.selectionSizeBounds();
+        if (!bounds || bounds.min === bounds.max) {
+            return;
+        }
+
+        var dialog = this.buildSelectionSizeDialog();
+        var range = dialog.querySelector('input[type="range"]');
+        var value = this.effectiveSelectionSize(bounds);
+        range.min = String(bounds.min);
+        range.max = String(bounds.max);
+        range.value = String(value);
+        dialog.querySelector('.mds3-selection-size-value').textContent = String(value);
+
+        if (typeof dialog.showModal === 'function') {
+            dialog.showModal();
+        }
+    };
+
+    Grid.prototype.selectionAreaAt = function (row, col) {
+        var bounds = this.selectionSizeBounds();
+        if (!bounds) {
+            return null;
+        }
+
+        var count = this.effectiveSelectionSize(bounds);
+        if (count <= 1) {
+            return null;
+        }
+
+        var virtual = this.state.grid.virtual_blocks;
+        if (this.selectionMode() === 'RECTANGLE') {
+            return this.anchoredRectangleAt(row, col, count, bounds.max, virtual.rows, virtual.columns);
+        }
+
+        /* Row-major BFS fill: every added cell touches an earlier one, so the
+           result is contiguous by construction. */
+        var found = [];
+        var seen = {};
+        var queue = [[row, col]];
+        var offsets = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+        seen[this.coordKey(row, col)] = true;
+
+        while (queue.length && found.length < count) {
+            var cell = queue.shift();
+            found.push({ row: cell[0], col: cell[1], key: this.coordKey(cell[0], cell[1]) });
+            offsets.forEach(function (offset) {
+                var nextRow = cell[0] + offset[0];
+                var nextCol = cell[1] + offset[1];
+                if (nextRow < 0 || nextRow >= virtual.rows || nextCol < 0 || nextCol >= virtual.columns) {
+                    return;
+                }
+                var nextKey = this.coordKey(nextRow, nextCol);
+                if (seen[nextKey] || !this.isCoordAvailable(nextRow, nextCol)) {
+                    return;
+                }
+                seen[nextKey] = true;
+                queue.push([nextRow, nextCol]);
+            }, this);
+        }
+
+        return found.length > 1 ? found : null;
+    };
+
+    Grid.prototype.anchoredRectangleAt = function (row, col, count, maxAllowed, rows, columns) {
+        for (var height = 1; height <= rows - row; height++) {
+            for (var width = 1; width <= columns - col; width++) {
+                var area = height * width;
+                if (area < count || area > maxAllowed) {
+                    continue;
+                }
+                var rectangle = this.rectangleFromCoords([
+                    { row: row, col: col },
+                    { row: row + height - 1, col: col + width - 1 }
+                ]);
+                if (rectangle) {
+                    return rectangle;
+                }
+            }
+        }
+
+        return null;
+    };
+
     Grid.prototype.uniqueCoords = function (coords) {
         var seen = {};
         var unique = [];
@@ -3744,6 +3989,13 @@
                 this.popover.appendChild(row);
             }, this);
         }
+        if (placement.manage_url) {
+            var manageLink = document.createElement('a');
+            manageLink.className = 'mds3-popover-manage-link';
+            manageLink.href = placement.manage_url;
+            manageLink.textContent = (gridConfig.i18n && gridConfig.i18n.managePlacement) || 'Manage this pixel';
+            this.popover.appendChild(manageLink);
+        }
 
         this.positionPopover(clientX, clientY, popoverWidth);
     };
@@ -3917,7 +4169,8 @@
                 return;
             }
         } else {
-            next = this.multiBlockEnabled() ? this.uniqueCoords(this.selected.concat([{ row: row, col: col, key: key }])) : [{ row: row, col: col, key: key }];
+            var area = !this.selected.length && this.multiBlockEnabled() ? this.selectionAreaAt(row, col) : null;
+            next = area || (this.multiBlockEnabled() ? this.uniqueCoords(this.selected.concat([{ row: row, col: col, key: key }])) : [{ row: row, col: col, key: key }]);
             if (mode === 'RECTANGLE') {
                 next = this.rectangleFromCoords(next);
                 if (!next) {
@@ -3964,7 +4217,8 @@
             return;
         }
 
-        this.actions.hidden = this.selected.length === 0;
+        var sizeControlVisible = !!(this.selectionSizeButton && !this.selectionSizeButton.hidden);
+        this.actions.hidden = this.selected.length === 0 && !sizeControlVisible;
         this.updateRestoreBar();
         this.updateCustomerControls();
         if (this.selected.length) {

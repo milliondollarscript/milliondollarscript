@@ -26,6 +26,7 @@ trait HandlesPlacementAjaxSubmission {
 
     public function submit_placement() {
         $this->verify_nonce();
+        $this->throttle_public_write('submit_placement', 30);
 
         $post = wp_unslash($_POST);
         $order_id = $this->param_absint($post, 'order_id');
@@ -202,6 +203,7 @@ trait HandlesPlacementAjaxSubmission {
 
     public function upload_placement_draft_image() {
         $this->verify_nonce();
+        $this->throttle_public_write('draft_upload', 10);
 
         $context = $this->verified_order_context(wp_unslash($_POST));
         if (is_wp_error($context)) {
@@ -222,6 +224,7 @@ trait HandlesPlacementAjaxSubmission {
 
     public function remove_placement_draft_image() {
         $this->verify_nonce();
+        $this->throttle_public_write('draft_remove', 10);
 
         $post = wp_unslash($_POST);
         $context = $this->verified_order_context($post);

@@ -300,6 +300,19 @@ if (!function_exists('delete_transient')) {
     }
 }
 
+if (!function_exists('get_transient')) {
+    function get_transient($transient) {
+        return $GLOBALS['mds3_test_transients'][$transient] ?? false;
+    }
+}
+
+if (!function_exists('set_transient')) {
+    function set_transient($transient, $value, $expiration = 0) {
+        $GLOBALS['mds3_test_transients'][$transient] = $value;
+        return true;
+    }
+}
+
 if (!function_exists('current_user_can')) {
     function current_user_can($capability) {
         if (array_key_exists((string) $capability, $GLOBALS['mds3_test_capabilities'] ?? [])) {

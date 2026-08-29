@@ -38,6 +38,7 @@ trait HandlesGridAjaxRequests {
         $blocks = array_values(array_filter($block_repo->for_grid($grid->id()), [$this, 'include_runtime_block']));
         $placements = (new PlacementRepository())->for_grid($grid->id(), ['active']);
         $placement_masks = (new OrderRepository())->item_masks(array_column($placements, 'order_id'));
+        $order_map = $this->orders_for_placements($placements);
         $settings = $this->settings();
 
         $tile = $this->tile_payload($grid);
@@ -46,10 +47,10 @@ trait HandlesGridAjaxRequests {
             'grid' => $this->grid_payload($grid),
             'blocks' => array_map([$this, 'block_payload'], $blocks),
             'availabilityRegions' => array_map([$this, 'availability_region_payload'], $block_repo->unavailable_regions($grid)),
-            'placements' => array_map(function ($placement) use ($settings, $placement_masks) {
+            'placements' => array_map(function ($placement) use ($settings, $placement_masks, $order_map) {
                 $order_id = absint($placement['order_id'] ?? 0);
 
-                return $this->placement_payload($placement, $settings, $placement_masks[$order_id] ?? []);
+                return $this->placement_payload($placement, $settings, $placement_masks[$order_id] ?? [], $order_map[$order_id] ?? null);
             }, $placements),
             'packages' => (new PackageRepository())->active_for_grid($grid->id()),
             'priceRules' => (new PriceRuleRepository())->active_for_grid($grid->id()),
@@ -60,6 +61,17 @@ trait HandlesGridAjaxRequests {
             'tileUrl' => $tile['url'],
             'tile' => $tile,
         ]);
+    }
+
+    private function orders_for_placements(array $placements) {
+        $order_ids = array_values(array_unique(array_filter(array_map('absint', array_column($placements, 'order_id')))));
+        $order_map = [];
+
+        foreach ((new OrderRepository())->for_ids($order_ids) as $order) {
+            $order_map[absint($order['id'] ?? 0)] = $order;
+        }
+
+        return $order_map;
     }
 
     private function tile_payload($grid) {
@@ -162,6 +174,7 @@ trait HandlesGridAjaxRequests {
 
     public function reserve() {
         $this->verify_nonce();
+        $this->throttle_public_write('reserve', 30);
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verify_nonce() rejects invalid public grid requests before input is read.
         $post = wp_unslash($_POST);
@@ -212,6 +225,17 @@ trait HandlesGridAjaxRequests {
         $nonce = sanitize_text_field($this->param($request, 'nonce'));
         if (!wp_verify_nonce($nonce, 'mds3_grid') && !wp_verify_nonce($nonce, 'mds_grid_nonce')) {
             wp_send_json_error(['message' => __('Security check failed.', 'million-dollar-script')], 403);
+        }
+    }
+
+    /**
+     * Per-IP cooldown for public write actions. The shared guest nonce only
+     * guards against cross-site forgery, so spam from a single IP is bounded
+     * here instead.
+     */
+    private function throttle_public_write(string $bucket, int $ttl): void {
+        if (ExtensionSupport::rate_limited($bucket, 'mds3_grid_write', $ttl)) {
+            wp_send_json_error(['message' => __('Please wait a moment and try again.', 'million-dollar-script')], 429);
         }
     }
 

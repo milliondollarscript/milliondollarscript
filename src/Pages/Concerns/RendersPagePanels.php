@@ -390,6 +390,7 @@ trait RendersPagePanels {
             return Template::render('frontend/pages/manage-orders.php', [
                 'login_url' => wp_login_url(get_permalink()),
                 'orders' => [],
+                'pixels' => [],
                 'requires_login' => true,
                 'theme_class' => $this->theme_class(),
             ], $this);
@@ -397,11 +398,21 @@ trait RendersPagePanels {
 
         global $wpdb;
 
+        $user_id = get_current_user_id();
+        $paged = max(1, absint($_GET['paged'] ?? 0));
+        $per_page = 20;
+        $total = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT COUNT(*) FROM ' . DB::ident(DB::table('orders')) . ' WHERE user_id = %d',
+                $user_id
+            )
+        );
         $orders = $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT * FROM ' . DB::ident(DB::table('orders')) . ' WHERE user_id = %d ORDER BY id DESC LIMIT %d',
-                get_current_user_id(),
-                50
+                'SELECT * FROM ' . DB::ident(DB::table('orders')) . ' WHERE user_id = %d ORDER BY id DESC LIMIT %d OFFSET %d',
+                $user_id,
+                $per_page,
+                ($paged - 1) * $per_page
             ),
             ARRAY_A
         );
@@ -410,6 +421,10 @@ trait RendersPagePanels {
         return Template::render('frontend/pages/manage-orders.php', [
             'login_url' => '',
             'orders' => $orders,
+            'paged' => $paged,
+            'per_page' => $per_page,
+            'total' => $total,
+            'pixels' => $this->pixels_for_orders($orders),
             'requires_login' => false,
             'theme_class' => $this->theme_class(),
         ], $this);
@@ -428,9 +443,12 @@ trait RendersPagePanels {
         $term_expires_at = !empty($metadata['expires_at']) ? mysql2date(get_option('date_format'), (string) $metadata['expires_at'], true) : '';
         $cleanup_notice = $this->order_cleanup_notice($order);
         $payment_url = $renewal_checkout_url ?: $this->order_payment_url($order);
-        $manage_url = $this->customer_order_url($order);
+        $status = sanitize_key((string) ($order['status'] ?? ''));
+        // Expired orders land on this panel themselves, so a manage link here would loop back to this page.
+        $manage_url = 'expired' === $status ? '' : $this->customer_order_url($order);
 
         return Template::render('frontend/pages/order-summary.php', [
+            'back_url' => esc_url_raw($this->pixels_back_url()),
             'cleanup_notice' => $cleanup_notice,
             'manage_url' => $manage_url,
             'metadata' => $metadata,
@@ -525,6 +543,7 @@ trait RendersPagePanels {
         $url_mode = PlacementFieldContract::url_mode($settings);
 
         return Template::render('frontend/pages/order-upload.php', [
+            'back_url' => esc_url_raw($this->pixels_back_url()),
             'image' => $image,
             'order' => $order,
             'order_id' => $order_id,
@@ -537,6 +556,62 @@ trait RendersPagePanels {
             'url_required' => PlacementFieldContract::is_required($url_mode),
             'url_visible' => PlacementFieldContract::is_visible($url_mode),
         ]);
+    }
+
+    private function pixels_back_url() {
+        $manage_page_id = absint(get_option('mds3_page_manage_id', 0));
+
+        return $manage_page_id
+            ? (string) get_permalink($manage_page_id)
+            : remove_query_arg(['mds3_order_id', 'mds3_order_key'], $this->current_request_url());
+    }
+
+    private function pixels_for_orders(array $orders) {
+        $order_ids = array_map('absint', array_column($orders, 'id'));
+        $pixels = [];
+        if (!$order_ids) {
+            return $pixels;
+        }
+
+        $grid_titles = [];
+        foreach ((new PlacementRepository())->for_orders($order_ids) as $placement) {
+            $order_id = absint($placement['order_id'] ?? 0);
+            if (!$order_id) {
+                continue;
+            }
+            if (isset($pixels[$order_id])) {
+                $pixels[$order_id]['count'] += 1;
+                continue;
+            }
+
+            $grid_id = absint($placement['grid_id'] ?? 0);
+            if (!array_key_exists($grid_id, $grid_titles)) {
+                $grid = (new GridRepository())->find($grid_id);
+                $grid_titles[$grid_id] = $grid ? (string) $grid->get('title', '') : '';
+            }
+
+            $pixels[$order_id] = [
+                'count' => 1,
+                'image' => !empty($placement['attachment_id']) ? wp_get_attachment_image(absint($placement['attachment_id']), 'thumbnail') : '',
+                'label' => sprintf(
+                    '%s · %d×%d @ %d,%d',
+                    $grid_titles[$grid_id] ?: __('Grid', 'million-dollar-script'),
+                    absint($placement['width'] ?? 0),
+                    absint($placement['height'] ?? 0),
+                    absint($placement['x'] ?? 0),
+                    absint($placement['y'] ?? 0)
+                ),
+            ];
+        }
+
+        foreach ($pixels as $order_id => $pixel) {
+            if ($pixel['count'] > 1) {
+                /* translators: %d: number of additional pixels in the same order. */
+                $pixels[$order_id]['label'] .= sprintf(' · +%d', $pixel['count'] - 1);
+            }
+        }
+
+        return $pixels;
     }
 
     private function copy($type) {

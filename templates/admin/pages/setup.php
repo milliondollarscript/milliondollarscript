@@ -330,13 +330,6 @@ if (!defined('ABSPATH')) {
                     <?php endif; ?>
                 </li>
 
-                <?php if (!empty($has_mds2_upgrade_context)) : ?>
-                    <li class="is-pending">
-                        <h2><?php esc_html_e('Million Dollar Script 2 Migration', 'million-dollar-script'); ?></h2>
-                        <p><?php esc_html_e('Run a dry run before importing Million Dollar Script 2 banners, pages, orders, media, packages, price zones, and settings.', 'million-dollar-script'); ?></p>
-                        <p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=mds3-migration')); ?>"><?php esc_html_e('Open migration', 'million-dollar-script'); ?></a></p>
-                    </li>
-                <?php endif; ?>
             <?php else : ?>
                 <li class="is-complete">
                     <h2><?php esc_html_e('Classic Pixel Grid', 'million-dollar-script'); ?></h2>

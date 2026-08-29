@@ -12,11 +12,18 @@ if (!defined('ABSPATH')) {
 $dry_run_warnings = is_array($report['warnings'] ?? null) ? $report['warnings'] : [];
 $latest_report = is_array($latest['report'] ?? null) ? $latest['report'] : [];
 $latest_warnings = is_array($latest_report['warnings'] ?? null) ? $latest_report['warnings'] : [];
+$active_legacy_plugins = array_values(array_filter(is_array($legacy_plugins ?? null) ? $legacy_plugins : [], static function ($plugin) {
+    return !empty($plugin['active']) || !empty($plugin['network_active']);
+}));
 ?>
 <div class="wrap mds3-admin">
     <h1><?php esc_html_e('Million Dollar Script 2 Migration Dry Run', 'million-dollar-script'); ?></h1>
     <section class="mds3-card">
         <p><?php esc_html_e('This screen inventories Million Dollar Script 2 tables, options, pages, users, and media references. It never drops or mutates Million Dollar Script 2 tables.', 'million-dollar-script'); ?></p>
+
+        <?php if (!empty($_GET['mds2_action'])) : ?>
+            <?php $this->mds2_action_notice(sanitize_key(wp_unslash($_GET['mds2_action'])), absint($_GET['deactivated'] ?? 0), absint($_GET['skipped'] ?? 0)); ?>
+        <?php endif; ?>
 
         <?php if (!$grid_enabled) : ?>
             <div class="notice notice-info inline">
@@ -172,8 +179,49 @@ $latest_warnings = is_array($latest_report['warnings'] ?? null) ? $latest_report
                 <?php wp_nonce_field('mds3_run_migration_import'); ?>
                 <input type="hidden" name="action" value="mds3_run_migration_import" />
                 <input type="hidden" name="source_prefix" value="<?php echo esc_attr($report['source_prefix'] ?? ''); ?>" />
+                <div class="mds3-mds2-page-options">
+                    <p class="description">
+                        <?php esc_html_e('Million Dollar Script 2 pages that were left untouched by the plugin are updated in place. Pages whose content you changed are left unchanged unless you choose otherwise below.', 'million-dollar-script'); ?>
+                    </p>
+                    <label>
+                        <input type="checkbox" name="mds2_replace_modified_pages" value="1" />
+                        <?php esc_html_e('Replace modified Million Dollar Script 2 pages in place (overwrites their content).', 'million-dollar-script'); ?>
+                    </label>
+                    <label class="mds3-mds2-create-new">
+                        <input type="checkbox" name="mds2_create_new_pages" value="1" />
+                        <?php esc_html_e('For modified pages, leave the original and create a new separate page.', 'million-dollar-script'); ?>
+                    </label>
+                    <script>
+                        (function () {
+                            var form = document.currentScript.closest('form');
+                            if (!form) {
+                                return;
+                            }
+                            var replace = form.querySelector('[name="mds2_replace_modified_pages"]');
+                            var createNew = form.querySelector('.mds3-mds2-create-new');
+                            function sync() {
+                                if (createNew) {
+                                    createNew.style.display = replace && replace.checked ? 'none' : '';
+                                }
+                            }
+                            if (replace) {
+                                replace.addEventListener('change', sync);
+                            }
+                            sync();
+                        })();
+                    </script>
+                </div>
                 <?php submit_button(__('Start migration import', 'million-dollar-script'), 'secondary'); ?>
             </form>
+        <?php endif; ?>
+
+        <?php if ($active_legacy_plugins) : ?>
+            <h2><?php esc_html_e('Million Dollar Script 2 Plugin', 'million-dollar-script'); ?></h2>
+            <p><?php esc_html_e('Finish the import and review the verification report below before deactivating Million Dollar Script 2.', 'million-dollar-script'); ?></p>
+            <div class="mds3-button-row mds3-mds2-actions">
+                <?php $this->inline_post_button('mds3_mds2_deactivate', 'mds3_mds2_deactivate', ['mds2_redirect' => 'migration'], __('Deactivate Million Dollar Script 2', 'million-dollar-script'), 'button-primary'); ?>
+                <?php $this->inline_post_button('mds3_mds2_keep_active', 'mds3_mds2_keep_active', ['mds2_redirect' => 'migration'], __('Keep Million Dollar Script 2 active for now', 'million-dollar-script'), 'button-secondary'); ?>
+            </div>
         <?php endif; ?>
 
         <?php if ($latest) : ?>

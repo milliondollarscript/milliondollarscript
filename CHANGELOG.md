@@ -1,3 +1,30 @@
+## 3.0.0-alpha.2 - 2026-08-29
+
+### Build
+
+- adopt git-cliff release-notes pipeline from MDS 2.0
+
+### Fixed
+
+- throttle public write AJAX per IP
+- auto-reload once when the page nonce expires on grid load
+
+### Added
+
+- move selection-size control to the actions row
+- add selection-size control for multi-block ordering
+- leave modified MDS2 pages unchanged with replace/create-new opt-ins
+- manage list pagination and theme-aware panel headings
+- customer pixel management with per-pixel details and owner-scoped manage links
+
+### Other
+
+- Fix mds3-setup slowness: fail-fast extension-server docs + catalog when server is down
+- Populate the default block navigation with the MDS starter menu during setup
+- Stop auto-creating the Main Grid grid and page on plugin activation
+- Consolidate MDS2 migration entry points into one clear path
+- Fix MDS2 migration status mapping so confirmed orders stay live
+
 # Changelog
 
 ## 3.0.0-alpha.1 - 2026-08-21

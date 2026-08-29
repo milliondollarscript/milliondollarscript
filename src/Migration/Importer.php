@@ -34,6 +34,9 @@ final class Importer {
     private array $warnings = [];
     private array $migration_skips = [];
     private array $migration_repairs = [];
+    private array $page_options = [];
+    private array $grid_page_disposition = [];
+    private array $page_outcomes = [];
 
     private const JOB_STAGES = [
         'settings',
@@ -46,6 +49,27 @@ final class Importer {
         'placements',
         'pages',
     ];
+
+    /**
+     * Opt-ins for how modified MDS2 pages are handled; used by the one-shot
+     * import(). The resumable path persists the same flags in the job state.
+     *
+     * @param array $options replace_modified / create_new booleans.
+     */
+    public function set_page_options(array $options) {
+        $this->page_options = self::normalize_page_options($options);
+
+        return $this;
+    }
+
+    private static function normalize_page_options(array $args) {
+        $replace_modified = !empty($args['replace_modified']);
+
+        return [
+            'replace_modified' => $replace_modified,
+            'create_new' => !empty($args['create_new']) && !$replace_modified,
+        ];
+    }
 
     /**
      * Import supported MDS2 records without mutating source tables.
@@ -78,6 +102,7 @@ final class Importer {
             $totals['warnings'] = count($this->warnings);
 
             $verification = $this->verification_report($totals);
+            $verification['orphan_grid_pages_created'] = $this->reconcile_grid_pages();
             $this->finish_run($run_id, 'completed', $totals, $verification);
 
             return [
@@ -137,6 +162,9 @@ final class Importer {
         $this->warnings = is_array($report['warnings'] ?? null) ? array_values(array_unique($report['warnings'])) : [];
         $this->migration_skips = $this->reconciliation_entries($report['skipped'] ?? []);
         $this->migration_repairs = $this->reconciliation_entries($report['repairs'] ?? []);
+        $this->page_options = self::normalize_page_options((array) ($job['page_options'] ?? []));
+        $this->grid_page_disposition = (array) ($job['grid_page_disposition'] ?? []);
+        $this->page_outcomes = (array) ($job['page_outcomes'] ?? []);
 
         $batch_size = max(1, min(500, absint($args['batch_size'] ?? $job['batch_size'] ?? 100)));
         $time_budget = max(1, min(20, (float) ($args['time_budget'] ?? $job['time_budget'] ?? 8)));
@@ -154,6 +182,14 @@ final class Importer {
                 $job['processed'][$stage] = absint($job['processed'][$stage] ?? 0) + absint($result['processed'] ?? 0);
                 $job['cursor'] = is_array($result['cursor'] ?? null) ? $result['cursor'] : [];
                 $job['last_message'] = $this->stage_label($stage);
+
+                if ('pages' === $stage) {
+                    $job['grid_page_disposition'] = $this->grid_page_disposition;
+                    $job['page_outcomes'] = array_values($this->page_outcomes);
+                    if (!empty($result['orphan_grid_pages_created'])) {
+                        $job['orphan_grid_pages_created'] = (int) $result['orphan_grid_pages_created'];
+                    }
+                }
 
                 if (!empty($result['done'])) {
                     $job['completed_stages'] = array_values(array_unique(array_merge($job['completed_stages'], [$stage])));
@@ -228,6 +264,8 @@ final class Importer {
         $this->warnings = [];
         $this->migration_skips = [];
         $this->migration_repairs = [];
+        $this->grid_page_disposition = [];
+        $this->page_outcomes = [];
     }
 
     private function empty_totals() {
@@ -266,6 +304,9 @@ final class Importer {
             'completed_stages' => [],
             'source_totals' => $this->job_source_totals($dry_run),
             'batch_size' => max(1, min(500, absint($args['batch_size'] ?? 100))),
+            'page_options' => self::normalize_page_options($args),
+            'grid_page_disposition' => [],
+            'page_outcomes' => [],
             'time_budget' => max(1, min(20, (float) ($args['time_budget'] ?? 8))),
             'started_by' => get_current_user_id(),
             'last_message' => '',
@@ -296,6 +337,9 @@ final class Importer {
             'completed_stages' => is_array($job['completed_stages'] ?? null) ? array_values(array_intersect(self::JOB_STAGES, $job['completed_stages'])) : [],
             'source_totals' => $source_totals,
             'batch_size' => max(1, min(500, absint($job['batch_size'] ?? 100))),
+            'page_options' => self::normalize_page_options((array) ($job['page_options'] ?? [])),
+            'grid_page_disposition' => (array) ($job['grid_page_disposition'] ?? []),
+            'page_outcomes' => (array) ($job['page_outcomes'] ?? []),
             'time_budget' => max(1, min(20, (float) ($job['time_budget'] ?? 8))),
             'started_by' => absint($job['started_by'] ?? 0),
             'last_message' => sanitize_text_field((string) ($job['last_message'] ?? '')),
@@ -376,13 +420,18 @@ final class Importer {
         }
 
         $next_offset = $offset + count($slice);
-
-        return [
+        $done = $next_offset >= count($candidates);
+        $result = [
             'cursor' => ['offset' => $next_offset],
-            'done' => $next_offset >= count($candidates),
+            'done' => $done,
             'imported' => $imported,
             'processed' => count($slice),
         ];
+        if ($done) {
+            $result['orphan_grid_pages_created'] = $this->reconcile_grid_pages();
+        }
+
+        return $result;
     }
 
     private function table_stage_definition($stage) {
@@ -513,55 +562,74 @@ final class Importer {
     }
 
     public static function block_status($legacy_status, $fallback_order_status = '') {
-        $status = sanitize_key($legacy_status ?: $fallback_order_status);
+        $status = sanitize_key($legacy_status);
+        $order_status = sanitize_key($fallback_order_status);
+
+        // MDS2 keeps block rows 'ordered' long after their order has expired, so the
+        // order status is authoritative when a block is tied to an order.
+        if ('' !== $order_status) {
+            switch (self::order_status($order_status)) {
+                case 'paid':
+                    return 'sold';
+                case 'reserved':
+                case 'pending_payment':
+                    return 'reserved';
+                default:
+                    // expired, cancelled, denied, deleted — release the block for resale.
+                    return 'available';
+            }
+        }
+
         switch ($status) {
             case 'sold':
-            case 'paid':
-            case 'completed':
-            case 'renew_paid':
+            case 'ordered':
                 return 'sold';
             case 'reserved':
-            case 'ordered':
-            case 'pending':
-            case 'confirmed':
-            case 'new':
-            case 'renew_wait':
                 return 'reserved';
             case 'nfs':
-            case 'denied':
-            case 'cancelled':
-            case 'deleted':
-            case 'expired':
                 return 'unavailable';
             case 'free':
+            case 'available':
             case '':
-                return 'available';
             default:
-                return $status;
+                return 'available';
         }
     }
 
     public static function order_status($legacy_status) {
         switch (sanitize_key($legacy_status)) {
+            case 'confirmed':
             case 'paid':
             case 'completed':
             case 'renew_paid':
                 return 'paid';
-            case 'confirmed':
-            case 'pending':
             case 'new':
-            case 'renew_wait':
+            case 'pending':
                 return 'pending_payment';
+            case 'expired':
+            case 'renew_wait':
+                return 'expired';
             case 'cancelled':
                 return 'cancelled';
             case 'deleted':
                 return 'deleted';
             case 'denied':
                 return 'denied';
-            case 'expired':
-                return 'expired';
             default:
-                return 'pending';
+                // Valid MDS3 status so unmapped rows stay visible and can be
+                // reviewed by the admin or aged out by the unpaid cleanup job.
+                return 'pending_payment';
         }
+    }
+
+    public static function placement_status($legacy_order_status) {
+        $status = self::order_status($legacy_order_status);
+        if ('paid' === $status) {
+            return 'active';
+        }
+        if (in_array($status, ['reserved', 'pending_payment'], true)) {
+            return 'pending';
+        }
+        return 'cancelled';
     }
 }

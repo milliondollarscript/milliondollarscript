@@ -48,23 +48,6 @@ trait RendersMigrationPanels {
                     $skipped
                 );
                 break;
-            case 'migrated_deactivated':
-                $class = 'notice-success';
-                $message = sprintf(
-                    /* translators: %d: plugin count */
-                    __('Million Dollar Script 2 data was imported and %d Million Dollar Script 2 plugin was deactivated.', 'million-dollar-script'),
-                    $deactivated
-                );
-                break;
-            case 'migrated_deactivation_partial':
-                $class = 'notice-warning';
-                $message = sprintf(
-                    /* translators: 1: deactivated plugins, 2: skipped plugins */
-                    __('Million Dollar Script 2 data was imported, but deactivation was partial. Deactivated: %1$d. Skipped: %2$d.', 'million-dollar-script'),
-                    $deactivated,
-                    $skipped
-                );
-                break;
             case 'import_failed':
                 $class = 'notice-error';
                 $error = sanitize_text_field(rawurldecode(wp_unslash($_GET['mds2_error'] ?? '')));
@@ -174,6 +157,7 @@ trait RendersMigrationPanels {
         $warnings = is_array($report['warnings'] ?? null) ? $report['warnings'] : [];
         $skipped = is_array($report['skipped'] ?? null) ? $report['skipped'] : [];
         $repairs = is_array($report['repairs'] ?? null) ? $report['repairs'] : [];
+        $page_outcomes = is_array($report['page_outcomes'] ?? null) ? $report['page_outcomes'] : [];
         $run_status = sanitize_key((string) ($run['status'] ?? ''));
         $warning_count = max(count($warnings), absint($totals['warnings'] ?? 0));
         $entities = [
@@ -200,6 +184,7 @@ trait RendersMigrationPanels {
         }
 
         Template::display('admin/partials/migration-verification-report.php', [
+            'page_outcomes' => $page_outcomes,
             'repairs' => $repairs,
             'rows' => $rows,
             'run' => $run,

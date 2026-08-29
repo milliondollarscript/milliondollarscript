@@ -245,6 +245,22 @@ final class PlacementRepository {
         return is_array($rows) ? $rows : [];
     }
 
+    /** @return array<int,array<string,mixed>> */
+    public function for_orders(array $order_ids) {
+        global $wpdb;
+
+        $ids = array_values(array_filter(array_map('absint', $order_ids)));
+        if (!$ids) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $sql = 'SELECT * FROM ' . DB::ident(DB::table('placements')) . ' WHERE order_id IN (' . $placeholders . ') ORDER BY id ASC';
+        $rows = $wpdb->get_results($wpdb->prepare($sql, $ids), ARRAY_A);
+
+        return is_array($rows) ? $rows : [];
+    }
+
     public function create(array $data) {
         global $wpdb;
 

@@ -9,8 +9,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
+<?php $mds3_heading = (string) ($title ?? __('Order Summary', 'million-dollar-script')); ?>
 <section class="mds3-page-panel mds3-order-summary-panel <?php echo esc_attr($theme_class ?? ''); ?>">
-    <h2><?php echo esc_html($title ?? __('Order Summary', 'million-dollar-script')); ?></h2>
+    <?php if (get_the_title() !== $mds3_heading) : ?>
+        <h2><?php echo esc_html($mds3_heading); ?></h2>
+    <?php endif; ?>
     <dl class="mds3-order-summary">
         <div><dt><?php echo esc_html__('Order', 'million-dollar-script'); ?></dt><dd>#<?php echo esc_html(absint($order['id'] ?? 0)); ?></dd></div>
         <div><dt><?php echo esc_html__('Status', 'million-dollar-script'); ?></dt><dd><?php echo esc_html($this->status_label($order['status'] ?? '')); ?></dd></div>
@@ -28,7 +31,9 @@ if (!defined('ABSPATH')) {
         <p class="mds3-grid-status"><?php echo esc_html($cleanup_notice); ?></p>
     <?php endif; ?>
     <div class="mds3-page-actions">
-        <a class="button" href="<?php echo esc_url($manage_url ?? ''); ?>"><?php echo esc_html__('Manage upload', 'million-dollar-script'); ?></a>
+        <?php if (!empty($manage_url)) : ?>
+            <a class="button" href="<?php echo esc_url($manage_url); ?>"><?php echo esc_html__('Manage upload', 'million-dollar-script'); ?></a>
+        <?php endif; ?>
         <?php if (!empty($payment_url)) : ?>
             <a class="button" href="<?php echo esc_url($payment_url); ?>"><?php echo esc_html__('Continue payment', 'million-dollar-script'); ?></a>
         <?php endif; ?>
@@ -40,6 +45,9 @@ if (!defined('ABSPATH')) {
                 <input type="hidden" name="_wpnonce" value="<?php echo esc_attr($renewal_nonce ?? ''); ?>" />
                 <button type="submit" class="button"><?php echo esc_html__('Renew placement', 'million-dollar-script'); ?></button>
             </form>
+        <?php endif; ?>
+        <?php if (!empty($back_url)) : ?>
+            <a class="button mds3-button-secondary" href="<?php echo esc_url($back_url); ?>"><?php echo esc_html__('My pixels', 'million-dollar-script'); ?></a>
         <?php endif; ?>
     </div>
 </section>

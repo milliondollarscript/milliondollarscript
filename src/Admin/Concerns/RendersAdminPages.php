@@ -77,7 +77,6 @@ trait RendersAdminPages {
         $setup_complete = 'yes' === get_option('mds3_setup_complete', 'no');
         $legacy_plugins = LegacyPlugin::detected_plugins();
         $legacy_source = LegacyPlugin::source_status_for_setup($settings['legacy_mds2_source_prefix'] ?? '');
-        $has_mds2_upgrade_context = $this->has_mds2_upgrade_context($legacy_plugins, $legacy_source);
         $extension_setup = new ExtensionSetup();
         $extension_choices = $extension_setup->choices();
         $selected_extensions = $extension_setup->selected_slugs($extension_choices);
@@ -135,7 +134,6 @@ trait RendersAdminPages {
             'extension_setup' => $extension_setup,
             'grid' => $grid,
             'grid_enabled' => $grid_enabled,
-            'has_mds2_upgrade_context' => $has_mds2_upgrade_context,
             'legacy_plugins' => $legacy_plugins,
             'legacy_source' => $legacy_source,
             'missing_pages' => $missing_pages,
@@ -475,6 +473,7 @@ trait RendersAdminPages {
         Template::display('admin/pages/migration.php', [
             'grid_enabled' => $grid_enabled,
             'latest' => $latest,
+            'legacy_plugins' => LegacyPlugin::detected_plugins(),
             'report' => $report,
             'source_prefix' => $source_prefix,
         ], $this);

@@ -39,6 +39,21 @@ final class OrderRepository {
         return is_array($row) ? $row : null;
     }
 
+    /** @return array<int,array<string,mixed>> */
+    public function for_ids(array $ids) {
+        global $wpdb;
+
+        $ids = array_values(array_filter(array_map('absint', $ids)));
+        if (!$ids) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $rows = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . DB::ident(DB::table('orders')) . ' WHERE id IN (' . $placeholders . ') ORDER BY id ASC', $ids), ARRAY_A);
+
+        return is_array($rows) ? $rows : [];
+    }
+
     public function find_by_key($order_key) {
         global $wpdb;
 

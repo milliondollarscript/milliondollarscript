@@ -51,7 +51,6 @@ final class Admin implements Component {
         add_action('admin_post_mds3_save_api_policies', [$this, 'save_api_policies']);
         add_action('admin_post_mds3_mds2_keep_active', [$this, 'keep_mds2_active']);
         add_action('admin_post_mds3_mds2_deactivate', [$this, 'deactivate_mds2']);
-        add_action('admin_post_mds3_mds2_import_deactivate', [$this, 'import_and_deactivate_mds2']);
         add_action('admin_post_mds3_ensure_standard_pages', [$this, 'ensure_standard_pages']);
         add_action('admin_post_mds3_create_extension_setup_pages', [$this, 'create_extension_setup_pages']);
         add_action('admin_post_mds3_create_extension_legal_pages', [$this, 'create_extension_legal_pages']);

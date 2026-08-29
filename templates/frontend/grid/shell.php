@@ -94,6 +94,7 @@ if (!empty($style_vars) && is_array($style_vars)) {
             <input class="mds3-customer-email" type="email" name="email" autocomplete="email" inputmode="email" placeholder="<?php echo esc_attr__('Email address', 'million-dollar-script'); ?>" aria-label="<?php echo esc_attr__('Email address', 'million-dollar-script'); ?>" hidden />
             <a class="mds3-login-required" hidden><?php echo esc_html__('Sign in to reserve', 'million-dollar-script'); ?></a>
             <button type="button" class="mds3-reserve"><?php echo esc_html__('Reserve selection', 'million-dollar-script'); ?></button>
+            <button type="button" class="mds3-selection-size" data-mds3-selection-size hidden><?php echo esc_html__('Selection size', 'million-dollar-script'); ?></button>
             <button type="button" class="mds3-clear"><?php echo esc_html__('Clear', 'million-dollar-script'); ?></button>
         </div>
         <form class="mds3-placement-form" enctype="multipart/form-data" data-mds3-draft-scope="grid-placement" novalidate hidden>

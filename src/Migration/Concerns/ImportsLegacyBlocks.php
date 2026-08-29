@@ -57,7 +57,7 @@ trait ImportsLegacyBlocks {
         $order_id = !empty($row['order_id'])
             ? $this->map->target_id($this->source->source_prefix(), 'order', absint($row['order_id']), 'order')
             : 0;
-        $status = self::block_status($row['status'] ?? '', $row['__order_status'] ?? '');
+        $status = self::block_status($row['status'] ?? '', $this->block_row_order_status($row));
         $metadata = $this->legacy_block_metadata($row);
 
         $payload = [
@@ -106,6 +106,32 @@ trait ImportsLegacyBlocks {
         }
 
         return $target_id;
+    }
+
+    private function block_row_order_status(array $row) {
+        $order_status = (string) ($row['__order_status'] ?? '');
+        if ('' !== $order_status) {
+            return $order_status;
+        }
+
+        // Raw MDS2 block rows are imported without a join to the orders table,
+        // so resolve the order status when the block is tied to an order.
+        if (empty($row['order_id'])) {
+            return '';
+        }
+
+        global $wpdb;
+        $orders_table = $this->source->table('orders');
+        if (!DB::table_exists($orders_table)) {
+            return '';
+        }
+
+        $order_status = $wpdb->get_var($wpdb->prepare(
+            'SELECT status FROM ' . DB::ident($orders_table) . ' WHERE order_id = %d',
+            absint($row['order_id'])
+        ));
+
+        return (string) $order_status;
     }
 
     private function ensure_order_block(array $order, $legacy_block_id) {

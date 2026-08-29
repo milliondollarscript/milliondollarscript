@@ -447,11 +447,19 @@ final class RemoteDocsClient implements Component {
             ];
         }
 
+        if (ExtensionCatalog::server_down_fresh()) {
+            return [
+                'success' => false,
+                'state' => 'temporarily_unavailable',
+                'message' => __('Extension server temporarily unreachable.', 'million-dollar-script'),
+            ];
+        }
+
         $payload = array_merge(ExtensionServer::compatibility_args(), $payload);
 
         $url = $base_url . '/api/public/docs/packages/' . rawurlencode($slug) . '/' . ltrim((string) $suffix, '/');
         $response = wp_remote_post($url, [
-            'timeout' => 12,
+            'timeout' => 2,
             'headers' => [
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
@@ -460,12 +468,15 @@ final class RemoteDocsClient implements Component {
         ]);
 
         if (is_wp_error($response)) {
+            ExtensionCatalog::record_reachability(false);
             return [
                 'success' => false,
                 'state' => 'temporarily_unavailable',
                 'message' => $response->get_error_message(),
             ];
         }
+
+        ExtensionCatalog::record_reachability(true, $base_url);
 
         $code = (int) wp_remote_retrieve_response_code($response);
         $decoded = json_decode((string) wp_remote_retrieve_body($response), true);

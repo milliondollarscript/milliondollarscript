@@ -195,6 +195,7 @@ final class GridShortcode implements Component {
                 'rectangleRequired' => __('Selection must form a complete rectangle or square.', 'million-dollar-script'),
                 'selectionUnavailable' => __('One or more blocks in that selection are unavailable.', 'million-dollar-script'),
                 'adDetails' => __('Advertiser', 'million-dollar-script'),
+                'managePlacement' => __('Manage this pixel', 'million-dollar-script'),
                 'invalidUrl' => __('Enter a valid website URL.', 'million-dollar-script'),
                 'selectionReady' => __('Selection is ready.', 'million-dollar-script'),
                 'fitGrid' => __('Fit grid', 'million-dollar-script'),
@@ -240,6 +241,10 @@ final class GridShortcode implements Component {
                 'draftOrderRestore' => __('Restore progress', 'million-dollar-script'),
                 'draftOrderRestored' => __('Order progress restored.', 'million-dollar-script'),
                 'finishCurrentOrder' => __('Finish the current order before selecting more blocks.', 'million-dollar-script'),
+                'selectionSize' => __('Selection size', 'million-dollar-script'),
+                'selectionSizeHint' => __('Choose how many blocks each click selects when you start a new selection.', 'million-dollar-script'),
+                'blocksPerClick' => __('Blocks per click', 'million-dollar-script'),
+                'selectionSizeDone' => __('Done', 'million-dollar-script'),
             ],
         ];
     }

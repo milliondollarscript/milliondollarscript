@@ -58,8 +58,6 @@ final class Installer {
         self::set_defaults();
         self::upgrade_early_alpha_saved_defaults();
         self::normalize_known_alpha_saved_defaults();
-        self::create_default_grid();
-        update_option('mds3_ensure_grid_pages', 'yes', false);
         add_option('mds3_setup_complete', 'no', '', false);
         set_transient('mds3_setup_redirect', 'yes', 90);
         update_option('mds3_flush_rewrite_rules', 'yes', false);

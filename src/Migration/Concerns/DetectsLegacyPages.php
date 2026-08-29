@@ -28,7 +28,47 @@ trait DetectsLegacyPages {
 
         ksort($candidates);
 
-        return array_values($candidates);
+        $result = [];
+        foreach ($candidates as $post_id => $candidate) {
+            $candidate['unmodified'] = $this->page_is_unmodified($this->legacy_page_content($post_id));
+            $result[] = $candidate;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Original MDS2 content of a page, falling back to the live content on first pass.
+     */
+    public function legacy_page_content($post_id) {
+        $post_id = absint($post_id);
+        $original = (string) get_post_meta($post_id, '_mds3_migration_original_content', true);
+
+        return '' !== $original ? $original : (string) get_post_field('post_content', $post_id);
+    }
+
+    /**
+     * True when a page holds only MDS2 shortcodes/blocks and no author-added content.
+     */
+    public function page_is_unmodified($content) {
+        $content = (string) $content;
+        if ('' === trim($content)) {
+            return false;
+        }
+
+        $stripped = $content;
+        if (function_exists('get_shortcode_regex')) {
+            $legacy_tags = [
+                'milliondollarscript', 'million_dollar_script', 'mds', 'mds_grid',
+                'pixel_grid', 'pixel_advertising', 'ad_grid', 'pixel_board',
+                'mds_display', 'pixel_display', 'advertisement_grid', 'mds_widget',
+            ];
+            $stripped = (string) preg_replace('/' . get_shortcode_regex($legacy_tags) . '/s', '', $stripped);
+        }
+        $stripped = (string) preg_replace('/<!--.*?-->/s', '', $stripped);
+        $stripped = (string) strip_tags($stripped);
+
+        return '' === trim($stripped);
     }
 
     public function pages_report() {

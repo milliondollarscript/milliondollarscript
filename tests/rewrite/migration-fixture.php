@@ -80,7 +80,7 @@ if (DB::table_exists(DB::table('migration_map'))) {
     }
 }
 
-$fixture_titles = ['Legacy Fixture Grid', 'Legacy Fixture Secondary Grid', 'Legacy Fixture Order', 'Legacy Fixture Block', 'Legacy Fixture List Without Grid', 'Foreign Legacy Fixture Page', 'Native MDS3 Fixture Page', 'Native MDS3 Unmanaged Fixture Page', 'MDS2 Fixture Ad', $legacy_long_title];
+$fixture_titles = ['Legacy Fixture Grid', 'Legacy Fixture Secondary Grid', 'Legacy Fixture Modified Grid', 'Legacy Fixture Order', 'Legacy Fixture Block', 'Legacy Fixture List Without Grid', 'Foreign Legacy Fixture Page', 'Native MDS3 Fixture Page', 'Native MDS3 Unmanaged Fixture Page', 'MDS2 Fixture Ad', $legacy_long_title];
 $placeholders = implode(',', array_fill(0, count($fixture_titles), '%s'));
 $old_fixture_posts = $wpdb->get_col($wpdb->prepare('SELECT ID FROM ' . DB::ident($wpdb->posts) . " WHERE post_title IN ({$placeholders})", $fixture_titles));
 foreach ($old_fixture_posts as $old_post_id) {
@@ -315,6 +315,15 @@ $secondary_grid_page = wp_insert_post([
     'post_title' => 'Legacy Fixture Secondary Grid',
     'post_content' => '[milliondollarscript id="9" type="grid"]',
 ]);
+// A grid page the customer edited after install: it still has the legacy
+// shortcode but also carries their own content, so it counts as modified.
+$modified_grid_page = wp_insert_post([
+    'post_type' => 'page',
+    'post_status' => 'publish',
+    'post_title' => 'Legacy Fixture Modified Grid',
+    'post_name' => 'legacy-fixture-modified-grid',
+    'post_content' => "[milliondollarscript id=\"11\" type=\"grid\"]\n\n<h1>Customer heading</h1>\n<p>My own note added by the site owner.</p>",
+]);
 $order_page = wp_insert_post([
     'post_type' => 'page',
     'post_status' => 'publish',
@@ -470,6 +479,34 @@ $wpdb->insert($source_prefix . 'banners', [
     'nfs_covered' => 'N',
     'enabled' => 'Y',
 ]);
+$wpdb->insert($source_prefix . 'banners', [
+    'banner_id' => 11,
+    'grid_width' => 40,
+    'grid_height' => 30,
+    'days_expire' => 0,
+    'price_per_block' => 1.0,
+    'name' => 'Fixture Modified Legacy Grid',
+    'currency' => 'USD',
+    'max_orders' => 0,
+    'block_width' => 10,
+    'block_height' => 10,
+    'grid_block' => 'grid-modified',
+    'nfs_block' => '',
+    'tile' => '',
+    'usr_grid_block' => '',
+    'usr_nfs_block' => '',
+    'usr_ord_block' => '',
+    'usr_res_block' => '',
+    'usr_sel_block' => '',
+    'usr_sol_block' => '',
+    'max_blocks' => 0,
+    'min_blocks' => 1,
+    'bgcolor' => '#dddddd',
+    'auto_publish' => 'N',
+    'auto_approve' => 'N',
+    'nfs_covered' => 'N',
+    'enabled' => 'Y',
+]);
 $wpdb->insert($source_prefix . 'packages', [
     'package_id' => 3,
     'banner_id' => 7,
@@ -599,8 +636,8 @@ $wpdb->insert($source_prefix . 'blocks', [
 ]);
 
 $dry_run = (new DryRun())->report($source_prefix);
-if (2 !== (int) ($dry_run['tables']['banners']['rows'] ?? 0) || 4 > (int) ($dry_run['pages']['count'] ?? 0)) {
-    throw new RuntimeException('Dry run did not detect fixture tables/pages.');
+if (3 !== (int) ($dry_run['tables']['banners']['rows'] ?? 0) || 4 > (int) ($dry_run['pages']['count'] ?? 0)) {
+    throw new RuntimeException('Dry run did not detect fixture tables/pages. banners=' . (int) ($dry_run['tables']['banners']['rows'] ?? 0) . ' pages=' . (int) ($dry_run['pages']['count'] ?? 0));
 }
 $dry_run_page_ids = array_map('absint', wp_list_pluck((array) ($dry_run['pages']['candidates'] ?? []), 'post_id'));
 foreach ([$foreign_legacy_page, $native_mds3_page, $unmanaged_mds3_page] as $current_page_id) {
@@ -1147,6 +1184,65 @@ if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $source_prefix . 'banne
 }
 
 $wpdb->query($wpdb->prepare('DELETE FROM ' . DB::ident($custom_fields_table) . " WHERE field_key IN ({$field_placeholders})", $fixture_field_keys));
+
+// Detection heuristic: a bare-legacy page is unmodified, while customer-added
+// content (a heading or prose around the legacy shortcode) marks it modified.
+$detector = new \MillionDollarScript\V3\Migration\LegacySource($source_prefix);
+if (!$detector->page_is_unmodified('[milliondollarscript id="7" type="grid"]')) {
+    throw new RuntimeException('A bare legacy shortcode page should be detected as unmodified.');
+}
+if ($detector->page_is_unmodified("[milliondollarscript id=\"11\" type=\"grid\"]\n\n<h1>Customer heading</h1>\n<p>My own note.</p>")) {
+    throw new RuntimeException('A page with customer-added content should be detected as modified.');
+}
+
+// The default import must leave a customer-modified MDS2 grid page intact: no
+// clobbered content, no original-content backup, no grid reassignment.
+$modified_default_content = (string) get_post_field('post_content', $modified_grid_page);
+if (false === strpos($modified_default_content, 'Customer heading') || false === strpos($modified_default_content, 'My own note added by the site owner.')) {
+    throw new RuntimeException('Default import clobbered a modified MDS2 grid page instead of leaving it unchanged.');
+}
+if (metadata_exists('post', $modified_grid_page, '_mds3_migration_original_content')) {
+    throw new RuntimeException('A left-unchanged modified page must not have an original-content backup.');
+}
+if (absint(get_post_meta($modified_grid_page, '_mds3_grid_id', true))) {
+    throw new RuntimeException('A left-unchanged modified grid page must not be reassigned to an MDS3 grid.');
+}
+
+// The create_new opt-in must create a separate MDS3 page for the modified grid
+// while leaving the customer's original page byte-for-byte intact.
+$modified_grid_id = absint($wpdb->get_var($wpdb->prepare(
+    'SELECT mds3_id FROM ' . DB::ident(DB::table('migration_map')) . " WHERE source_prefix = %s AND entity_type = 'banner' AND legacy_id = '11' AND mds3_entity_type = 'grid' LIMIT 1",
+    $source_prefix
+)));
+$create_new_result = (new Importer())->set_page_options(['create_new' => true])->import($source_prefix);
+if (is_wp_error($create_new_result)) {
+    throw new RuntimeException('create_new import failed: ' . $create_new_result->get_error_message());
+}
+if ($modified_grid_id) {
+    $new_grid_page_id = \MillionDollarScript\V3\Grid\GridPostType::page_id($modified_grid_id);
+    if (!$new_grid_page_id || $new_grid_page_id === $modified_grid_page) {
+        throw new RuntimeException('create_new did not create a separate page for the modified grid.');
+    }
+}
+$create_new_content = (string) get_post_field('post_content', $modified_grid_page);
+if (false === strpos($create_new_content, 'My own note added by the site owner.')) {
+    throw new RuntimeException('create_new modified the original modified grid page.');
+}
+if ((string) $create_new_content !== (string) $modified_default_content) {
+    throw new RuntimeException('create_new changed the original modified grid page content.');
+}
+
+$create_new_outcomes = (array) ($create_new_result['verification']['page_outcomes'] ?? []);
+$modified_outcome = null;
+foreach ($create_new_outcomes as $outcome) {
+    if (absint($outcome['post_id'] ?? 0) === $modified_grid_page) {
+        $modified_outcome = $outcome;
+        break;
+    }
+}
+if (!$modified_outcome || 'created_new' !== ($modified_outcome['outcome'] ?? '')) {
+    throw new RuntimeException('create_new did not report the modified grid page as created_new.');
+}
 
 echo wp_json_encode([
     'dry_run_pages' => $dry_run['pages']['count'],

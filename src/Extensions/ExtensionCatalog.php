@@ -44,6 +44,10 @@ final class ExtensionCatalog {
      */
     private $last_bundle_notice = null;
 
+    const SERVER_PROBE_TRANSIENT = 'mds3_extsrv_probe';
+    const SERVER_PROBE_UP_TTL = 300;
+    const SERVER_PROBE_DOWN_TTL = 60;
+
     public function catalog($force_update_checks = false) {
         $installed = array_merge($this->bundled(), $this->installed());
         $available = $this->available();
@@ -315,6 +319,10 @@ final class ExtensionCatalog {
             return [];
         }
 
+        if ($this->server_probe_down_fresh()) {
+            return [];
+        }
+
         $errors = [];
         $candidates = array_values(array_unique(array_filter(array_merge(
             $this->last_available_base_url ? [$this->last_available_base_url] : [],
@@ -322,7 +330,7 @@ final class ExtensionCatalog {
         ))));
         foreach ($candidates as $base_url) {
             $url = rtrim($base_url, '/') . '/api/public/products?' . http_build_query(array_merge(ExtensionServer::compatibility_args(), ['type' => 'bundle']), '', '&', PHP_QUERY_RFC3986);
-            $response = wp_remote_get($url, ['timeout' => 10]);
+            $response = wp_remote_get($url, ['timeout' => 2]);
             if (is_wp_error($response)) {
                 $errors[] = $this->server_error_line($base_url, $response->get_error_message());
                 continue;
@@ -437,10 +445,21 @@ final class ExtensionCatalog {
             return ['base_url' => '', 'rows' => []];
         }
 
+        if ($this->server_probe_down_fresh()) {
+            $this->last_server_notice = [
+                'type' => 'error',
+                'message' => __('The extension catalog could not be reached. Installed extensions can still be managed.', 'million-dollar-script'),
+                'configured_url' => rtrim($configured, '/'),
+                'errors' => [__('Extension server recently unreachable; retrying shortly.', 'million-dollar-script')],
+            ];
+
+            return ['base_url' => '', 'rows' => []];
+        }
+
         $errors = [];
         $candidates = $this->extension_server_candidates($configured);
         foreach ($candidates as $base_url) {
-            $response = wp_remote_get($this->public_extensions_url($base_url), ['timeout' => 10]);
+            $response = wp_remote_get($this->public_extensions_url($base_url), ['timeout' => 2]);
             if (is_wp_error($response)) {
                 $errors[] = $this->server_error_line($base_url, $response->get_error_message());
                 continue;
@@ -461,6 +480,7 @@ final class ExtensionCatalog {
             }
 
             $this->last_available_base_url = rtrim($base_url, '/');
+            $this->remember_server_probe($this->last_available_base_url);
             if ($this->last_available_base_url !== rtrim($configured, '/')) {
                 $this->last_server_notice = [
                     'type' => 'warning',
@@ -477,6 +497,7 @@ final class ExtensionCatalog {
             ];
         }
 
+        $this->remember_server_probe('');
         $this->last_server_notice = [
             'type' => 'error',
             'message' => __('The extension catalog could not be reached. Installed extensions can still be managed.', 'million-dollar-script'),
@@ -485,6 +506,47 @@ final class ExtensionCatalog {
         ];
 
         return ['base_url' => '', 'rows' => []];
+    }
+
+    private static function server_probe_down_fresh() {
+        $state = get_transient(self::SERVER_PROBE_TRANSIENT);
+        if (!is_array($state) || empty($state['ts']) || !empty($state['ok'])) {
+            return false;
+        }
+
+        return (time() - (int) $state['ts']) < self::SERVER_PROBE_DOWN_TTL;
+    }
+
+    private static function remember_server_probe($url) {
+        $url = rtrim((string) $url, '/');
+        set_transient(
+            self::SERVER_PROBE_TRANSIENT,
+            ['ok' => '' !== $url, 'url' => $url, 'ts' => time()],
+            '' !== $url ? self::SERVER_PROBE_UP_TTL : self::SERVER_PROBE_DOWN_TTL
+        );
+    }
+
+    /**
+     * Whether the extension server was recently confirmed unreachable.
+     *
+     * Shared so render-path consumers (catalog, docs) fail fast on a down
+     * server instead of each waiting out full request timeouts.
+     *
+     * @return bool
+     */
+    public static function server_down_fresh() {
+        return self::server_probe_down_fresh();
+    }
+
+    /**
+     * Record an extension-server reachability probe for other consumers.
+     *
+     * @param bool   $reachable Whether the server answered.
+     * @param string $url       Base URL that answered (used when reachable).
+     * @return void
+     */
+    public static function record_reachability($reachable, $url = '') {
+        self::remember_server_probe($reachable ? $url : '');
     }
 
     private function extension_server_candidates($configured) {
