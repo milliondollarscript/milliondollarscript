@@ -28,6 +28,7 @@ if ($user) {
         throw new RuntimeException('Could not create the demo user: ' . $user_id->get_error_message());
     }
     $user_id = (int) $user_id;
+}
 
 $grid = (new GridRepository())->create([
     'title' => 'Demo Grid',
@@ -91,7 +92,7 @@ foreach ([['x' => 20, 'y' => 5], ['x' => 40, 'y' => 5]] as $pos) {
 }
 
 printf(
-    "Demo seeded. login=mds3-demo pass=mds3-demo grid_id=%d order_id=%d order_key=%s manage=http://localhost:8081/manage-pixels/ grid=http://localhost:8081/demo-grid/\n",
+    "Demo seeded. login=mds3-demo pass=mds3-demo grid_id=%d order_id=%d order_key=%s manage=http://localhost:8080/manage-pixels/ grid=http://localhost:8080/demo-grid/\n",
     $grid->id(),
     $order_id,
     (string) $order['order_key']

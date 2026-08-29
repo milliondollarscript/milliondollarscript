@@ -1,3 +1,14 @@
+## 3.0.0-alpha.3 - 2026-08-29
+
+### Chore
+
+- regenerate language template for current code
+
+### Fixed
+
+- close unterminated branch in demo seed fixture
+- anchor multi-block first click to the clicked cell with hover preview
+
 ## 3.0.0-alpha.2 - 2026-08-29
 
 ### Build

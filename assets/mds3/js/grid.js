@@ -1791,6 +1791,16 @@
             source: this.olSource
         }));
 
+        this.previewSource = new window.ol.source.Vector();
+        layers.push(new window.ol.layer.Vector({
+            source: this.previewSource,
+            style: new window.ol.style.Style({
+                stroke: new window.ol.style.Stroke({ color: 'rgba(37, 99, 235, 0.95)', width: 2, lineDash: [6, 4] }),
+                fill: new window.ol.style.Fill({ color: 'rgba(37, 99, 235, 0.1)' })
+            }),
+            zIndex: 10
+        }));
+
         this.map = new window.ol.Map({
             target: this.mapElement,
             layers: layers,
@@ -1833,6 +1843,9 @@
 
             var placement = self.placementAt(event.coordinate[0], -event.coordinate[1]);
             self.mapElement.style.cursor = placement ? 'pointer' : (self.readOnly ? '' : 'crosshair');
+            if (!self.readOnly) {
+                self.updateSelectionPreview(event, placement);
+            }
             if (!self.popoversEnabled() || self.popoverTrigger() === 'click') {
                 return;
             }
@@ -1843,6 +1856,7 @@
         });
 
         this.mapElement.addEventListener('mouseleave', function (event) {
+            self.clearSelectionPreview();
             if (!self.eventMovingIntoPopover(event) && !self.popoverPinned) {
                 self.hidePopover();
             }
@@ -3379,53 +3393,239 @@
             return this.anchoredRectangleAt(row, col, count, bounds.max, virtual.rows, virtual.columns);
         }
 
-        /* Row-major BFS fill: every added cell touches an earlier one, so the
-           result is contiguous by construction. */
-        var found = [];
-        var seen = {};
-        var queue = [[row, col]];
-        var offsets = [[0, 1], [1, 0], [0, -1], [-1, 0]];
-        seen[this.coordKey(row, col)] = true;
+        return this.anchoredBlockAreaAt(row, col, count);
+    };
 
-        while (queue.length && found.length < count) {
-            var cell = queue.shift();
-            found.push({ row: cell[0], col: cell[1], key: this.coordKey(cell[0], cell[1]) });
-            offsets.forEach(function (offset) {
-                var nextRow = cell[0] + offset[0];
-                var nextCol = cell[1] + offset[1];
-                if (nextRow < 0 || nextRow >= virtual.rows || nextCol < 0 || nextCol >= virtual.columns) {
-                    return;
+    // Grid-aligned anchored area for the first click of a multi-block
+    // selection: the most square-shaped rectangle that holds `count` cells,
+    // anchored at the clicked cell (MDS2-style) and shifted to stay inside
+    // the grid near the edges. Fills row-major, skipping cells that are not
+    // selectable, so the initial selection is always orderable. MDS2 used a
+    // side x side square because its slider counted the side length; the
+    // MDS3 slider counts total blocks, so this targets the exact count.
+    Grid.prototype.anchoredBlockAreaAt = function (row, col, count) {
+        var virtual = this.state.grid.virtual_blocks;
+        var rows = virtual.rows;
+        var columns = virtual.columns;
+        if (!rows || !columns || count <= 1) {
+            return null;
+        }
+
+        var width = Math.min(columns, Math.max(1, Math.ceil(Math.sqrt(count))));
+        var height = Math.min(rows, Math.ceil(count / width));
+        var anchorCol = Math.min(col, columns - width);
+        var anchorRow = Math.min(row, rows - height);
+
+        var found = [];
+        for (var r = anchorRow; r < anchorRow + height && found.length < count; r++) {
+            for (var c = anchorCol; c < anchorCol + width && found.length < count; c++) {
+                if (this.isCoordAvailable(r, c)) {
+                    found.push({ row: r, col: c, key: this.coordKey(r, c) });
                 }
-                var nextKey = this.coordKey(nextRow, nextCol);
-                if (seen[nextKey] || !this.isCoordAvailable(nextRow, nextCol)) {
-                    return;
-                }
-                seen[nextKey] = true;
-                queue.push([nextRow, nextCol]);
-            }, this);
+            }
+        }
+
+        // Holes (taken cells) can disconnect the filled region. Keep only
+        // the part connected to the clicked cell so the adjacency rule never
+        // rejects the initial selection.
+        if (found.length > 1 && !this.isContiguous(found)) {
+            found = this.coordsConnectedTo(found, row, col);
         }
 
         return found.length > 1 ? found : null;
     };
 
-    Grid.prototype.anchoredRectangleAt = function (row, col, count, maxAllowed, rows, columns) {
-        for (var height = 1; height <= rows - row; height++) {
-            for (var width = 1; width <= columns - col; width++) {
-                var area = height * width;
-                if (area < count || area > maxAllowed) {
-                    continue;
+    Grid.prototype.coordsConnectedTo = function (coords, row, col) {
+        var byKey = {};
+        coords.forEach(function (coord) {
+            byKey[coord.key] = coord;
+        });
+
+        var startKey = this.coordKey(row, col);
+        if (!byKey[startKey]) {
+            return [];
+        }
+
+        var kept = {};
+        var queue = [byKey[startKey]];
+        kept[startKey] = true;
+
+        while (queue.length) {
+            var coord = queue.shift();
+            [
+                this.coordKey(coord.row - 1, coord.col),
+                this.coordKey(coord.row + 1, coord.col),
+                this.coordKey(coord.row, coord.col - 1),
+                this.coordKey(coord.row, coord.col + 1)
+            ].forEach(function (key) {
+                if (!byKey[key] || kept[key]) {
+                    return;
                 }
-                var rectangle = this.rectangleFromCoords([
-                    { row: row, col: col },
-                    { row: row + height - 1, col: col + width - 1 }
-                ]);
-                if (rectangle) {
-                    return rectangle;
+                kept[key] = true;
+                queue.push(byKey[key]);
+            }, this);
+        }
+
+        return coords.filter(function (coord) {
+            return kept[coord.key];
+        });
+    };
+
+    // Hover preview of the first-click block area (mouse/pen only; touch has
+    // no hover, so taps keep the current behavior).
+    Grid.prototype.updateSelectionPreview = function (event, placement) {
+        if (!this.previewSource || event.pointerType === 'touch' || placement) {
+            this.clearSelectionPreview();
+            return;
+        }
+
+        if (this.currentOrder || this.selected.length) {
+            this.clearSelectionPreview();
+            return;
+        }
+
+        var grid = this.state.grid;
+        var point = this.normalizeGridPoint(event.coordinate[0], -event.coordinate[1]);
+        var bounds = this.selectionSizeBounds();
+        if (!point || !bounds || !bounds.max || this.effectiveSelectionSize(bounds) <= 1) {
+            this.clearSelectionPreview();
+            return;
+        }
+
+        var row = Math.floor(point.y / grid.block_height);
+        var col = Math.floor(point.x / grid.block_width);
+        var area = this.isCoordAvailable(row, col) ? this.selectionAreaAt(row, col) : null;
+        if (!area) {
+            this.clearSelectionPreview();
+            return;
+        }
+
+        var minRow = area[0].row;
+        var maxRow = area[0].row;
+        var minCol = area[0].col;
+        var maxCol = area[0].col;
+        area.forEach(function (coord) {
+            if (coord.row < minRow) { minRow = coord.row; }
+            if (coord.row > maxRow) { maxRow = coord.row; }
+            if (coord.col < minCol) { minCol = coord.col; }
+            if (coord.col > maxCol) { maxCol = coord.col; }
+        });
+
+        var x0 = minCol * grid.block_width;
+        var x1 = (maxCol + 1) * grid.block_width;
+        var y0 = minRow * grid.block_height;
+        var y1 = (maxRow + 1) * grid.block_height;
+        var ring = [
+            [x0, -y1],
+            [x1, -y1],
+            [x1, -y0],
+            [x0, -y0],
+            [x0, -y1]
+        ];
+
+        if (!this.previewFeature) {
+            this.previewFeature = new window.ol.Feature({
+                geometry: new window.ol.geom.Polygon([ring])
+            });
+            this.previewSource.addFeature(this.previewFeature);
+        } else {
+            this.previewFeature.getGeometry().setCoordinates([ring]);
+        }
+    };
+
+    Grid.prototype.clearSelectionPreview = function () {
+        if (!this.previewSource) {
+            return;
+        }
+        this.previewSource.clear();
+        this.previewFeature = null;
+    };
+
+    Grid.prototype.anchoredRectangleAt = function (row, col, count, maxAllowed, rows, columns) {
+        var dims = this.rectangleDimensionsFor(count, maxAllowed, rows, columns);
+        if (!dims) {
+            return null;
+        }
+
+        var width = dims.width;
+        var height = dims.height;
+        var anchorCol = Math.min(col, columns - width);
+        var anchorRow = Math.min(row, rows - height);
+
+        var preferred = this.rectangleFromCoords([
+            { row: anchorRow, col: anchorCol },
+            { row: anchorRow + height - 1, col: anchorCol + width - 1 }
+        ]);
+        if (preferred) {
+            return preferred;
+        }
+
+        // The anchored rectangle overlaps taken cells; use the nearest anchor
+        // whose full rectangle is free so the initial selection stays
+        // reservable. ponytail: bounded BFS, may miss far anchors on huge
+        // heavily-filled grids.
+        var checked = {};
+        var queue = [[anchorRow, anchorCol]];
+        checked[anchorRow + ':' + anchorCol] = true;
+
+        while (queue.length) {
+            var at = queue.shift();
+            for (var dr = -1; dr <= 1; dr++) {
+                for (var dc = -1; dc <= 1; dc++) {
+                    if (!dr && !dc) {
+                        continue;
+                    }
+                    var r = at[0] + dr;
+                    var c = at[1] + dc;
+                    if (r < 0 || c < 0 || r > rows - height || c > columns - width) {
+                        continue;
+                    }
+                    var key = r + ':' + c;
+                    if (checked[key]) {
+                        continue;
+                    }
+                    checked[key] = true;
+                    if (Object.keys(checked).length >= 2000) {
+                        return null;
+                    }
+                    var rectangle = this.rectangleFromCoords([
+                        { row: r, col: c },
+                        { row: r + height - 1, col: c + width - 1 }
+                    ]);
+                    if (rectangle) {
+                        return rectangle;
+                    }
+                    queue.push([r, c]);
                 }
             }
         }
 
         return null;
+    };
+
+    // Rectangle dims for the initial selection: smallest area >= count that
+    // is <= maxAllowed, then most square. MDS3 sliders count total blocks
+    // (MDS2 counted the side), so the area may exceed the requested count,
+    // never fall below it.
+    Grid.prototype.rectangleDimensionsFor = function (count, maxAllowed, rows, columns) {
+        var best = null;
+        for (var width = 1; width <= columns; width++) {
+            var height = Math.max(1, Math.ceil(count / width));
+            if (height > rows) {
+                continue;
+            }
+            var area = width * height;
+            if (area > maxAllowed) {
+                continue;
+            }
+            var diff = area - count;
+            var score = Math.abs(width - height);
+            if (!best || diff < best.diff || (diff === best.diff && score < best.score)) {
+                best = { width: width, height: height, area: area, diff: diff, score: score };
+            }
+        }
+
+        return best ? { width: best.width, height: best.height } : null;
     };
 
     Grid.prototype.uniqueCoords = function (coords) {
@@ -4186,6 +4386,7 @@
         this.selected = next;
         this.setStatus('');
         this.hideSelectionMessage();
+        this.clearSelectionPreview();
         this.redraw();
     };
 
