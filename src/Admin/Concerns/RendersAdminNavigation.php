@@ -34,6 +34,12 @@ trait RendersAdminNavigation {
             $this->admin_bar_add_item($admin_bar, $root_id, $item);
         }
 
+        $admin_bar->add_node([
+            'id' => $root_id . '-clear-cache',
+            'parent' => $root_id,
+            'title' => $this->admin_bar_clear_cache_form(),
+        ]);
+
         $extensions_id = $root_id . '-extensions';
         $admin_bar->add_node([
             'id' => $extensions_id,
@@ -229,6 +235,10 @@ trait RendersAdminNavigation {
         });
 
         return $normalized;
+    }
+
+    private function admin_bar_clear_cache_form() {
+        return '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" class="mds3-clear-cache-form">' . wp_nonce_field('mds3_clear_cache', '_wpnonce', false, false) . '<input type="hidden" name="action" value="mds3_clear_cache" /><button type="submit" class="mds3-clear-cache-button">' . esc_html__('Clear cache', 'million-dollar-script') . '</button></form>';
     }
 
     private function admin_bar_add_item($admin_bar, $parent_id, array $item) {

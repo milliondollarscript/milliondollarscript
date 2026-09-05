@@ -1,3 +1,23 @@
+## 3.0.0-alpha.4 - 2026-09-05
+
+### Other
+
+- Add Clear cache admin action: rotate tile cache keys, keep or delete tile files, clear MDS transients
+- Warn in console when OpenLayers assets are missing
+- Unify placement placeholder tokens across slug pattern and popup template
+- Add full-page advertiser link to placement popups with legacy MDS2 fallback
+- Fix MDS2 migration block coordinates: convert block units to pixels
+- Scope grid background color to the grid element instead of painting the whole page (Vikunja #7)
+- Fix duplicated popup text on migrated MDS2 orders
+- Fix order popup draft preview hidden behind oversized outline stroke (Vikunja #2)
+- Stop auto-creating the default grid on ensure() upgrades
+
+### Fixed
+
+- recover flattened image_data media on legacy order import
+- allow opening the MDS2 migration screen before Finish setup
+- import SettingsSchema so standalone order save does not fatal
+
 ## 3.0.0-alpha.3 - 2026-08-29
 
 ### Chore

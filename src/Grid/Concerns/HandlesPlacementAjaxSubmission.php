@@ -14,6 +14,7 @@ use MillionDollarScript\V3\Media\PlacementRepository;
 use MillionDollarScript\V3\Media\UploadValidator;
 use MillionDollarScript\V3\Orders\CheckoutRouter;
 use MillionDollarScript\V3\Orders\OrderRepository;
+use MillionDollarScript\V3\Settings\SettingsSchema;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -173,11 +174,12 @@ trait HandlesPlacementAjaxSubmission {
             $placement = $placement_repo->find($placement['id']) ?: $placement;
         }
         $redirect_url = (!$is_manage_context && $was_unpaid) ? ($checkout['checkout_url'] ?: ($checkout['after_upload_url'] ?? '')) : '';
+        $legacy_page_urls = $this->legacy_popup_page_urls($settings, [absint($placement['id'] ?? 0)]);
 
         \MillionDollarScript\Core\Hooks::do('million-dollar-script/placement/saved', $placement ?: [], $order, $post);
 
         wp_send_json_success([
-            'placement' => $this->placement_payload($placement ?: []),
+            'placement' => $this->placement_payload($placement ?: [], $settings, null, null, $legacy_page_urls),
             'redirect_url' => esc_url_raw($redirect_url),
             'order_status' => sanitize_key((string) ($order['status'] ?? '')),
             'message' => __('Image received from the original upload.', 'million-dollar-script'),

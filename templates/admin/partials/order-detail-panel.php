@@ -37,6 +37,9 @@ $move_notice = is_array($move_notice ?? null) ? $move_notice : [];
         <?php if ($manage_url) : ?>
             <p><strong><?php esc_html_e('Customer Manage Link', 'million-dollar-script'); ?>:</strong> <a href="<?php echo esc_url($manage_url); ?>"><?php esc_html_e('Open upload manager', 'million-dollar-script'); ?></a></p>
         <?php endif; ?>
+        <?php if (!empty($advertiser_page_url)) : ?>
+            <p><strong><?php esc_html_e('Advertiser Page', 'million-dollar-script'); ?>:</strong> <a href="<?php echo esc_url($advertiser_page_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Open advertiser page', 'million-dollar-script'); ?></a></p>
+        <?php endif; ?>
         <?php if (!empty($renewal_available)) : ?>
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="mds3-inline-form">
                 <input type="hidden" name="action" value="mds3_start_order_renewal" />

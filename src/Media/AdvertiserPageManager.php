@@ -155,6 +155,68 @@ final class AdvertiserPageManager {
         return $post_id ? (string) get_permalink($post_id) : '';
     }
 
+    /**
+     * Public URLs of legacy MDS2 pixel pages still mapped to these placements.
+     *
+     * Migrated sites keep their MDS2 advertiser posts live while MDS 3.0's own
+     * advertiser pages are disabled, so popups can still offer the full page.
+     *
+     * @param array $placement_ids MDS 3.0 placement IDs.
+     * @return array<int,string> Placement ID to public legacy URL.
+     */
+    public function legacy_public_urls(array $placement_ids) {
+        global $wpdb;
+
+        $placement_ids = array_values(array_unique(array_filter(array_map('absint', $placement_ids))));
+        if (!$placement_ids || !post_type_exists('mds-pixel')) {
+            return [];
+        }
+
+        $legacy_by_placement = [];
+        $map_rows = $wpdb->get_results($wpdb->prepare(
+            'SELECT mds3_id, metadata FROM ' . DB::ident(DB::table('migration_map')) .
+            ' WHERE entity_type = %s AND mds3_entity_type = %s AND mds3_id IN (' . str_repeat('%d,', count($placement_ids) - 1) . '%d)',
+            array_merge(['placement', 'placement'], $placement_ids)
+        ), ARRAY_A);
+        foreach (is_array($map_rows) ? $map_rows : [] as $row) {
+            $metadata = json_decode((string) ($row['metadata'] ?? ''), true);
+            $legacy_id = absint(is_array($metadata) ? ($metadata['legacy_ad_id'] ?? 0) : 0);
+            $placement_id = absint($row['mds3_id']);
+            if ($legacy_id && $placement_id && empty($legacy_by_placement[$placement_id])) {
+                $legacy_by_placement[$placement_id] = $legacy_id;
+            }
+        }
+        if (!$legacy_by_placement) {
+            return [];
+        }
+
+        $legacy_ids = array_values(array_unique(array_values($legacy_by_placement)));
+        $posts = get_posts([
+            'post_type' => 'mds-pixel',
+            'post_status' => 'publish',
+            'post__in' => $legacy_ids,
+            'orderby' => 'ID',
+            'order' => 'ASC',
+            'posts_per_page' => count($legacy_ids),
+            'no_found_rows' => true,
+        ]);
+
+        $urls = [];
+        foreach ($posts as $post) {
+            $permalink = get_permalink($post);
+            if (!$permalink) {
+                continue;
+            }
+            foreach ($legacy_by_placement as $placement_id => $legacy_id) {
+                if ($legacy_id === (int) $post->ID && empty($urls[$placement_id])) {
+                    $urls[$placement_id] = $permalink;
+                }
+            }
+        }
+
+        return $urls;
+    }
+
     public function preview_slug_migration($limit = 5000) {
         global $wpdb;
 

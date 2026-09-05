@@ -175,8 +175,6 @@
     }
 
     function forceLightThemeChrome() {
-        var roots;
-        var links;
         var controls;
         var buttons;
         var secondaryButtons;
@@ -184,7 +182,6 @@
         var shellPanels;
         var themeRoot = document.querySelector('.mds3-theme-light.mds3-grid-shell, .mds3-theme-light.mds3-page-panel');
         var background = themeVariable(themeRoot, '--mds3-grid-bg', '#ffffff');
-        var panel = themeVariable(themeRoot, '--mds3-grid-panel', '#f8fafc');
         var line = themeVariable(themeRoot, '--mds3-grid-line-soft', '#e5e7eb');
         var text = themeVariable(themeRoot, '--mds3-grid-text', '#111827');
         var muted = themeVariable(themeRoot, '--mds3-grid-muted', '#4b5563');
@@ -194,26 +191,6 @@
         if (!themeRoot) {
             return;
         }
-
-        document.documentElement.classList.add('mds3-force-light-page');
-        roots = [
-            document.documentElement,
-            document.body,
-            document.querySelector('.wp-site-blocks')
-        ];
-        document.querySelectorAll('.wp-block-template-part, .wp-site-blocks > header, .wp-site-blocks > footer, body > header, body > footer').forEach(function (element) {
-            roots.push(element);
-        });
-        roots.forEach(function (element) {
-            importantStyle(element, 'background-color', background);
-            importantStyle(element, 'color', text);
-            importantStyle(element, 'color-scheme', 'light');
-        });
-
-        links = document.querySelectorAll('.wp-site-blocks a:not(.button):not(.mds3-checkout-link)');
-        links.forEach(function (link) {
-            importantStyle(link, 'color', accent);
-        });
 
         controls = document.querySelectorAll('.mds3-theme-light .mds3-placement-form input, .mds3-theme-light .mds3-placement-form select, .mds3-theme-light .mds3-placement-form textarea, .mds3-theme-light .mds3-package-select, .mds3-theme-light .mds3-advertiser-list-toolbar input[type="search"]');
         controls.forEach(function (control) {
@@ -1755,6 +1732,11 @@
             return;
         }
 
+        if (this.rendererMode !== 'classic' && this.mapElement && !canUseOpenLayers()) {
+            // ponytail: console warning only; add an admin notice if missing-asset grids recur across tester sites.
+            console.warn('[MDS3] OpenLayers failed to load (window.ol is missing), so the grid is using classic rendering without wheel zoom or pan. Verify that assets/mds3/vendor/ol/ol.js and ol.css exist (not 404) on this site.');
+        }
+
         this.element.classList.remove('mds3-openlayers');
     };
 
@@ -2526,10 +2508,22 @@
         var rect = this.placementDisplayRect(transform, placement, false);
         var masks = this.placementMaskRects(transform, placement, rect);
 
+        // Scale the stroke to the displayed size: at low zoom a fixed 2px line
+        // plus an 8px dash is wider than the placement rect and paints over
+        // the draft image entirely (Vikunja #2).
+        var size = 0;
+        if (masks.length) {
+            masks.forEach(function (mask) {
+                size = Math.max(size, Math.min(mask.width, mask.height));
+            });
+        } else {
+            size = Math.min(rect.width, rect.height);
+        }
+
         ctx.save();
         ctx.strokeStyle = '#2563eb';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 4]);
+        ctx.lineWidth = Math.max(0.5, Math.min(2, size * 0.15));
+        ctx.setLineDash(size >= 24 ? [8, 4] : [Math.max(2, size * 0.4), Math.max(1.5, size * 0.3)]);
         if (masks.length) {
             masks.forEach(function (mask) {
                 ctx.strokeRect(mask.x + 1, mask.y + 1, Math.max(1, mask.width - 2), Math.max(1, mask.height - 2));
@@ -3817,8 +3811,8 @@
         }
     };
 
-    Grid.prototype.createPlacementAnchor = function (placement, label, className) {
-        var href = this.placementHref(placement);
+    Grid.prototype.createPlacementAnchor = function (placement, label, className, href) {
+        href = href || this.placementHref(placement);
         var link;
 
         if (!href) {
@@ -3836,6 +3830,13 @@
         return link;
     };
 
+    Grid.prototype.applyAdvertiserPageTarget = function (link, placement) {
+        link.target = placement.advertiser_page_target === '_blank' ? '_blank' : '_self';
+        if (link.target === '_blank') {
+            link.rel = 'noopener noreferrer';
+        }
+    };
+
     Grid.prototype.createPopoverImage = function (placement, source, title, maxImageSize) {
         var image = document.createElement('img');
         image.className = 'mds3-popover-image';
@@ -3849,7 +3850,19 @@
     };
 
     Grid.prototype.createLinkedPopoverImage = function (placement, image) {
-        var link = this.createPlacementAnchor(placement, '', 'mds3-popover-image-link');
+        var href = this.placementHref(placement);
+        var isPageLink = false;
+
+        if (!href) {
+            href = String(placement.advertiser_page_url || '').trim();
+            isPageLink = !!href;
+        }
+
+        if (!href) {
+            return image;
+        }
+
+        var link = this.createPlacementAnchor(placement, '', 'mds3-popover-image-link', href);
 
         if (!link) {
             return image;
@@ -3857,6 +3870,9 @@
 
         link.textContent = '';
         link.setAttribute('aria-label', placement.alt_text || placement.link_url || gridConfig.i18n.adDetails);
+        if (isPageLink) {
+            this.applyAdvertiserPageTarget(link, placement);
+        }
         link.appendChild(image);
 
         return link;
@@ -4144,7 +4160,14 @@
             this.popover.appendChild(imageNode);
         }
         var strong = document.createElement('strong');
-        strong.textContent = title;
+        var pageHref = String(placement.advertiser_page_url || '').trim();
+        var pageTitleLink = pageHref ? this.createPlacementAnchor(placement, title, 'mds3-popover-title-link', pageHref) : null;
+        if (pageTitleLink) {
+            this.applyAdvertiserPageTarget(pageTitleLink, placement);
+            strong.appendChild(pageTitleLink);
+        } else {
+            strong.textContent = title;
+        }
         this.popover.appendChild(strong);
         if (url) {
             link = this.createPlacementAnchor(placement, url.replace(/^https?:\/\//, ''), 'mds3-popover-url');

@@ -40,6 +40,7 @@ trait HandlesGridAjaxRequests {
         $placement_masks = (new OrderRepository())->item_masks(array_column($placements, 'order_id'));
         $order_map = $this->orders_for_placements($placements);
         $settings = $this->settings();
+        $legacy_page_urls = $this->legacy_popup_page_urls($settings, array_column($placements, 'id'));
 
         $tile = $this->tile_payload($grid);
 
@@ -47,10 +48,10 @@ trait HandlesGridAjaxRequests {
             'grid' => $this->grid_payload($grid),
             'blocks' => array_map([$this, 'block_payload'], $blocks),
             'availabilityRegions' => array_map([$this, 'availability_region_payload'], $block_repo->unavailable_regions($grid)),
-            'placements' => array_map(function ($placement) use ($settings, $placement_masks, $order_map) {
+            'placements' => array_map(function ($placement) use ($settings, $placement_masks, $order_map, $legacy_page_urls) {
                 $order_id = absint($placement['order_id'] ?? 0);
 
-                return $this->placement_payload($placement, $settings, $placement_masks[$order_id] ?? [], $order_map[$order_id] ?? null);
+                return $this->placement_payload($placement, $settings, $placement_masks[$order_id] ?? [], $order_map[$order_id] ?? null, $legacy_page_urls);
             }, $placements),
             'packages' => (new PackageRepository())->active_for_grid($grid->id()),
             'priceRules' => (new PriceRuleRepository())->active_for_grid($grid->id()),

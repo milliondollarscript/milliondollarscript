@@ -202,6 +202,10 @@ trait ImportsLegacyBlocks {
         if ((0 === $x && 0 === $y && $legacy_block_id > 0) || !array_key_exists('x', $row) || !array_key_exists('y', $row)) {
             $x = ($legacy_block_id % max(1, $dimensions['blocks_wide'])) * $dimensions['block_width'];
             $y = intdiv($legacy_block_id, max(1, $dimensions['blocks_wide'])) * $dimensions['block_height'];
+        } else {
+            // Legacy MDS2 x/y are block units; native MDS3 blocks store pixels.
+            $x *= $dimensions['block_width'];
+            $y *= $dimensions['block_height'];
         }
 
         return [

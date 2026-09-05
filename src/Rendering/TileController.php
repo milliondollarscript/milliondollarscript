@@ -102,6 +102,76 @@ final class TileController implements Component {
         return substr(hash('sha256', wp_json_encode($seed)), 0, 20);
     }
 
+    /**
+     * Move a grid's cached tiles from one cache key directory to another.
+     *
+     * Used when rotating cache keys: the browser fetches the new tile URLs
+     * and the server serves the existing files instead of regenerating them.
+     *
+     * @param int    $grid_id Grid ID.
+     * @param string $old_key Previous cache key directory name.
+     * @param string $new_key New cache key directory name.
+     * @return bool True when files were moved.
+     */
+    public static function move_tile_cache($grid_id, $old_key, $new_key): bool {
+        $grid_id = absint($grid_id);
+        $old_key = sanitize_key((string) $old_key);
+        $new_key = sanitize_key((string) $new_key);
+        if (!$grid_id || !$old_key || !$new_key || $old_key === $new_key) {
+            return false;
+        }
+
+        $upload = wp_upload_dir();
+        if (!empty($upload['error']) || empty($upload['basedir'])) {
+            return false;
+        }
+
+        $grid_dir = trailingslashit($upload['basedir']) . 'mds3-tiles/grid-' . $grid_id;
+        $from = $grid_dir . '/' . $old_key;
+        $to = $grid_dir . '/' . $new_key;
+        if (!is_dir($from) || is_dir($to)) {
+            return false;
+        }
+
+        return (bool) @rename($from, $to);
+    }
+
+    /**
+     * Delete every locally cached grid tile (all grids, all cache keys).
+     *
+     * Tiles regenerate on the next public request.
+     *
+     * @return int Number of grid cache directories removed.
+     */
+    public static function clear_tile_cache(): int {
+        $upload = wp_upload_dir();
+        if (!empty($upload['error']) || empty($upload['basedir'])) {
+            return 0;
+        }
+
+        $root = trailingslashit($upload['basedir']) . 'mds3-tiles';
+        if (!is_dir($root)) {
+            return 0;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+        $filesystem = new \WP_Filesystem_Direct(null);
+
+        $removed = 0;
+        foreach (scandir($root) ?: [] as $entry) {
+            if ('.' === $entry || '..' === $entry) {
+                continue;
+            }
+            if (is_dir(trailingslashit($root) . $entry) && $filesystem->delete(trailingslashit($root) . $entry, 'd', true)) {
+                $removed++;
+            }
+        }
+        $filesystem->delete($root, 'd', true);
+
+        return $removed;
+    }
+
     public static function public_tile_url_template($grid, $cache_key = '', $format = 'png') {
         $base = self::public_tile_base($grid, $cache_key);
         if (!$base) {

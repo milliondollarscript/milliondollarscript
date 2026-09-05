@@ -568,6 +568,24 @@ $wpdb->insert($source_prefix . 'orders', [
     'published' => 'Y',
     'block_info' => '',
 ]);
+$wpdb->insert($source_prefix . 'orders', [
+    'order_id' => 57,
+    'user_id' => 1,
+    'blocks' => '2',
+    'status' => 'completed',
+    'order_date' => '2025-03-02 03:04:05',
+    'date_published' => '2025-03-03 00:00:00',
+    'price' => 2.5,
+    'quantity' => 1,
+    'banner_id' => 7,
+    'currency' => 'USD',
+    'days_expire' => 30,
+    'package_id' => 0,
+    'ad_id' => $ad_id,
+    'approved' => 'Y',
+    'published' => 'Y',
+    'block_info' => '',
+]);
 
 foreach ([[0, 0, 0], [1, 10, 0], [100, 0, 10], [101, 10, 10]] as $block) {
     $wpdb->insert($source_prefix . 'blocks', [
@@ -592,6 +610,29 @@ foreach ([[0, 0, 0], [1, 10, 0], [100, 0, 10], [101, 10, 10]] as $block) {
         'view_count' => 3,
     ]);
 }
+// Mirrors MDS2 behavior: order checkout copies the ad popup text into
+// blocks.alt_text, so the migrated placement must not render it twice.
+$wpdb->insert($source_prefix . 'blocks', [
+    'block_id' => 2,
+    'user_id' => 1,
+    'status' => 'sold',
+    'x' => 20,
+    'y' => 0,
+    'image_data' => '',
+    'url' => 'https://example.com/ad',
+    'alt_text' => '<p>Fixture popup text <strong>with image</strong></p>',
+    'file_name' => $image_path,
+    'mime_type' => 'image/png',
+    'approved' => 'Y',
+    'published' => 'Y',
+    'currency' => 'USD',
+    'order_id' => 57,
+    'price' => 2.5,
+    'banner_id' => 7,
+    'ad_id' => $ad_id,
+    'click_count' => 0,
+    'view_count' => 0,
+]);
 $wpdb->insert($source_prefix . 'blocks', [
     'block_id' => 5,
     'user_id' => 0,
@@ -671,6 +712,23 @@ $target_order = (new OrderRepository())->find($target_order_id);
 $target_order_metadata = json_decode((string) ($target_order['metadata'] ?? ''), true);
 if (!is_array($target_order_metadata)) {
     throw new RuntimeException('Imported order metadata did not decode.');
+}
+// Legacy MDS2 block rows stored x/y in block units (column/row indices); the
+// native MDS3 blocks and the derived placement rect must be in pixels.
+// Order 55 spans block cells (0,0), (10,0), (0,10), (10,10) on banner 7's
+// 100x100 grid with 10px blocks, so the rect is 110x110, not the 20x20 a raw
+// block-unit copy would produce.
+$rect = (new OrderRepository())->item_rect($target_order_id);
+if (!is_array($rect) || [0, 0, 110, 110] !== [$rect['x'], $rect['y'], $rect['width'], $rect['height']]) {
+    throw new RuntimeException('Multi-block legacy order did not import with pixel coordinates: ' . wp_json_encode($rect));
+}
+$target_order_57_id = absint($wpdb->get_var($wpdb->prepare(
+    'SELECT mds3_id FROM ' . DB::ident(DB::table('migration_map')) . " WHERE source_prefix = %s AND entity_type = 'order' AND legacy_id = '57' AND mds3_entity_type = 'order' LIMIT 1",
+    $source_prefix
+)));
+$rect_57 = (new OrderRepository())->item_rect($target_order_57_id);
+if (!is_array($rect_57) || [200, 0, 10, 10] !== [$rect_57['x'], $rect_57['y'], $rect_57['width'], $rect_57['height']]) {
+    throw new RuntimeException('Single-block legacy order did not import with pixel coordinates: ' . wp_json_encode($rect_57));
 }
 $target_placement_id = absint($wpdb->get_var($wpdb->prepare(
     'SELECT mds3_id FROM ' . DB::ident(DB::table('migration_map')) . " WHERE source_prefix = %s AND entity_type = 'placement' AND legacy_id = '55' AND mds3_entity_type = 'placement' LIMIT 1",
@@ -787,6 +845,18 @@ $mapped_count = static function ($entity_type, $mds3_entity_type) use ($wpdb, $s
     ));
 };
 
+$dup_alt_placement = $wpdb->get_row($wpdb->prepare(
+    'SELECT alt_text, popup_text FROM ' . DB::ident(DB::table('placements')) . ' WHERE id = %d',
+    $mapped_target_id('placement', '57', 'placement')
+), ARRAY_A);
+if (
+    !$dup_alt_placement ||
+    '' !== trim((string) ($dup_alt_placement['alt_text'] ?? '')) ||
+    false === strpos(wp_strip_all_tags((string) ($dup_alt_placement['popup_text'] ?? '')), 'Fixture popup text with image')
+) {
+    throw new RuntimeException('Migrated placement duplicated the legacy block alt text into both popup fields.');
+}
+
 $pre_recovery = [
     'grid_id' => $grid_id,
     'order_id' => $target_order_id,
@@ -858,11 +928,11 @@ if (
     1 !== $checks['packages'] ||
     1 !== $checks['price_rules'] ||
     1 !== $checks['orders'] ||
-    5 !== $checks['blocks'] ||
+    6 !== $checks['blocks'] ||
     4 !== $checks['order_items'] ||
-    1 !== $checks['placements'] ||
+    2 !== $checks['placements'] ||
     $pre_recovery['pages'] !== $checks['pages'] ||
-    6 !== $checks['mapped_blocks']
+    7 !== $checks['mapped_blocks']
 ) {
     throw new RuntimeException('Recovery rerun duplicated or missed imported entities: ' . wp_json_encode($checks));
 }
@@ -1031,7 +1101,7 @@ if (!is_array($zone_item_metadata) || 'price_rule' !== ($zone_item_metadata['pri
     throw new RuntimeException('Reservation item did not record price-rule pricing metadata.');
 }
 
-$nfs_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 5]], ['email' => 'nfs@example.com']);
+$nfs_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 50]], ['email' => 'nfs@example.com']);
 if (!is_wp_error($nfs_reservation)) {
     throw new RuntimeException('Migrated NFS/unavailable block was reservable.');
 }
@@ -1039,13 +1109,13 @@ if (!is_wp_error($nfs_reservation)) {
 $availability = (new BlockRepository())->set_region_status($grid_entity, [
     'row_from' => 0,
     'row_to' => 0,
-    'col_from' => 5,
-    'col_to' => 5,
+    'col_from' => 50,
+    'col_to' => 50,
 ], 'available', ['note' => 'fixture release']);
 if (is_wp_error($availability) || empty($availability['changed'])) {
     throw new RuntimeException('Unavailable region could not be released.');
 }
-$released_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 5]], ['email' => 'released@example.com']);
+$released_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 50]], ['email' => 'released@example.com']);
 if (is_wp_error($released_reservation) || 2.5 !== (float) ($released_reservation['order']['total'] ?? 0)) {
     throw new RuntimeException('Released block did not reserve at base grid price.');
 }

@@ -119,3 +119,25 @@
 #adminmenu .mds3-sidebar-extension-submenu li > a:focus {
     color: #ffffff;
 }
+
+/* Admin bar "Clear cache" action. */
+#wp-admin-bar-mds3-admin-bar-clear-cache .mds3-clear-cache-form {
+    display: inline;
+}
+
+#wp-admin-bar-mds3-admin-bar-clear-cache .mds3-clear-cache-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    line-height: inherit;
+    margin: 0;
+    padding: 0;
+}
+
+#wp-admin-bar-mds3-admin-bar-clear-cache .mds3-clear-cache-button:hover,
+#wp-admin-bar-mds3-admin-bar-clear-cache .mds3-clear-cache-button:focus {
+    color: #72aee6;
+}

@@ -139,7 +139,13 @@ trait ImportsLegacyOrderItemsAndPlacements {
         $alt = $this->first_order_block_value($legacy_order_id, 'alt_text');
         $ad_meta = $this->ad_meta(absint($order['ad_id'] ?? 0));
         $popup_text = (string) ($ad_meta['text'] ?? '');
-        $alt_text = sanitize_text_field($alt ?: wp_strip_all_tags($popup_text));
+        // MDS2 copied the ad popup text into blocks.alt_text, so a legacy
+        // block alt is only a real description when it is not that same text;
+        // the built-in popup layout renders both fields as separate lines.
+        $alt_text = sanitize_text_field(wp_strip_all_tags((string) $alt));
+        if ($alt_text !== '' && $alt_text === trim(wp_strip_all_tags($popup_text ?: $alt))) {
+            $alt_text = '';
+        }
         $legacy_ad_id = absint($order['ad_id'] ?? 0);
         $legacy_post = $legacy_ad_id && 'mds-pixel' === get_post_type($legacy_ad_id) ? get_post($legacy_ad_id) : null;
         $title_resolution = AdvertiserPageTitle::resolve([

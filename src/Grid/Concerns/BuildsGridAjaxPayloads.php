@@ -153,14 +153,15 @@ trait BuildsGridAjaxPayloads {
         ];
     }
 
-    private function placement_payload(array $placement, array $settings = [], $mask = null, $order = null) {
+    private function placement_payload(array $placement, array $settings = [], $mask = null, $order = null, array $legacy_page_urls = []) {
         $source = (new OriginalImage())->resolve($placement['attachment_id'] ?? 0);
         $manage_url = $this->placement_manage_url($placement, $order);
         $link_url = PlacementFieldContract::advertiser_url($placement['link_url'] ?? '');
         $popup_text = (string) ($placement['popup_text'] ?? '');
         $popup_text_html = $this->popup_text_html($popup_text, $settings);
-        $advertiser_page_url = AdvertiserPageUrls::page_link_enabled($settings)
-            ? (new AdvertiserPageManager())->public_url(absint($placement['id'] ?? 0))
+        $placement_id = absint($placement['id'] ?? 0);
+        $advertiser_page_url = ($placement_id && $this->popup_page_link_enabled($settings))
+            ? ((new AdvertiserPageManager())->public_url($placement_id) ?: (string) ($legacy_page_urls[$placement_id] ?? ''))
             : '';
 
         $payload = [
@@ -196,6 +197,25 @@ trait BuildsGridAjaxPayloads {
         $payload['popover_html'] = $this->popover_html($payload, $settings);
 
         return \MillionDollarScript\Core\Hooks::apply('million-dollar-script/placement/payload', $payload, $placement, $settings);
+    }
+
+    private function popup_page_link_enabled(array $settings) {
+        return 'yes' === SettingsSchema::sanitize('advertiser-page-popup-link', $settings['advertiser-page-popup-link'] ?? 'yes');
+    }
+
+    /**
+     * Legacy MDS2 pixel page URLs, used while MDS 3.0 advertiser pages are off.
+     *
+     * @param array $settings Resolved MDS 3.0 settings.
+     * @param array $placement_ids MDS 3.0 placement IDs.
+     * @return array<int,string> Placement ID to public legacy URL.
+     */
+    private function legacy_popup_page_urls(array $settings, array $placement_ids) {
+        if (!$this->popup_page_link_enabled($settings) || AdvertiserPageUrls::enabled($settings)) {
+            return [];
+        }
+
+        return (new AdvertiserPageManager())->legacy_public_urls($placement_ids);
     }
 
     private function placement_manage_url(array $placement, ?array $order) {
@@ -240,10 +260,14 @@ trait BuildsGridAjaxPayloads {
             return '';
         }
 
+        $alt_text = (string) ($payload['alt_text'] ?? '');
         $replacements = [
+            '%title%' => '' !== trim($alt_text)
+                ? esc_html($alt_text)
+                : (string) ($payload['popup_text_html'] ?? ''),
             '%text%' => (string) ($payload['popup_text_html'] ?? ''),
             '%url%' => esc_html((string) ($payload['link_url'] ?? '')),
-            '%alt_text%' => esc_html((string) ($payload['alt_text'] ?? '')),
+            '%alt_text%' => esc_html($alt_text),
             '%advertiser_page_url%' => esc_url((string) ($payload['advertiser_page_url'] ?? '')),
             '%advertiser_page_link%' => !empty($payload['advertiser_page_url'])
                 ? '<a class="mds3-popover-page-link" href="' . esc_url((string) $payload['advertiser_page_url']) . '" target="' . esc_attr((string) ($payload['advertiser_page_target'] ?? '_self')) . '">' . esc_html((string) ($payload['advertiser_page_label'] ?? '')) . '</a>'

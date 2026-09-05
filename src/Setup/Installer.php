@@ -7,7 +7,6 @@
 
 namespace MillionDollarScript\V3\Setup;
 
-use MillionDollarScript\V3\Extensions\ExtensionRuntime;
 use MillionDollarScript\V3\Grid\GridRepository;
 use MillionDollarScript\V3\Media\AdvertiserPageManager;
 use MillionDollarScript\V3\Orders\OrderCleanup;
@@ -42,8 +41,14 @@ final class Installer {
         self::set_defaults();
         self::upgrade_early_alpha_saved_defaults();
         self::normalize_known_alpha_saved_defaults();
-        self::create_default_grid();
-        update_option('mds3_ensure_grid_pages', 'yes', false);
+        // Upgrade guard for existing installs: ensure the public page of a
+        // grid that already exists. Never auto-create a default grid here —
+        // fresh installs create one from the setup wizard and MDS2
+        // migrations import the source grids, so a silent default becomes
+        // a duplicate "Main Grid" page.
+        if ((new GridRepository())->first_active()) {
+            update_option('mds3_ensure_grid_pages', 'yes', false);
+        }
         OrderExpirationBackfill::maybe_schedule();
     }
 
@@ -384,32 +389,4 @@ final class Installer {
         update_option('mds3_cleaned_extension_legal_grid_metadata', MILLION_DOLLAR_SCRIPT_VERSION, false);
     }
 
-    /**
-     * Create an initial grid so the plugin has a usable first screen.
-     *
-     * @return void
-     */
-    private static function create_default_grid() {
-        if (!(new ExtensionRuntime())->is_enabled('mds-grid')) {
-            return;
-        }
-
-        $repo = new GridRepository();
-        if ($repo->first_active()) {
-            return;
-        }
-
-        $settings = get_option('mds3_settings', []);
-        $repo->create([
-            'title' => 'Main Grid',
-            'description' => 'Your first Million Dollar Script advertising grid.',
-            'width' => 1000,
-            'height' => 1000,
-            'block_width' => 10,
-            'block_height' => 10,
-            'price_per_block' => 1,
-            'currency' => $settings['currency'] ?? 'USD',
-            'status' => 'active',
-        ]);
-    }
 }

@@ -29,6 +29,10 @@ class MDS3_SQLite_Test_Database {
 }
 class MDS3_MySQL_Test_Database extends MDS3_SQLite_Test_Database {}
 
+if (!defined('ARRAY_A')) {
+    define('ARRAY_A', 'ARRAY_A');
+}
+
 $original_wpdb = $GLOBALS['wpdb'] ?? null;
 $GLOBALS['wpdb'] = new MDS3_SQLite_Test_Database();
 if ("JSON_EXTRACT(metadata, '$.expires_at')" !== \MillionDollarScript\V3\Support\DB::json_scalar('metadata', "'$.expires_at'")) {
@@ -1117,7 +1121,17 @@ mds3_assert_same([
     ['row' => 0, 'col' => 1],
 ]), 'Expected duplicate reservation coordinates to be normalized before reservation.');
 
-$GLOBALS['wpdb'] = (object) ['prefix' => 'wp_'];
+$GLOBALS['wpdb'] = new class {
+    public $prefix = 'wp_';
+
+    public function prepare($query, ...$args) {
+        return $query;
+    }
+
+    public function get_row($query, $output = OBJECT) {
+        return null;
+    }
+};
 $legacy = new \MillionDollarScript\V3\Migration\LegacySource('wp_mds_;DROP TABLE ');
 mds3_assert_same('wp_mds_DROPTABLE', $legacy->source_prefix(), 'Expected legacy source prefixes to be restricted to identifier characters.');
 
@@ -1852,7 +1866,46 @@ $empty_custom_popup = $placement_payload->invoke($ajax, [
     'popup-template' => '<div>%text%</div>',
 ]);
 mds3_assert_same('', $empty_custom_popup['popover_html'], 'Expected empty custom layouts to fall back to the built-in accessible popup.');
-
+$title_popup = $placement_payload->invoke($ajax, [
+    'id' => 94,
+    'grid_id' => 7,
+    'attachment_id' => 0,
+    'alt_text' => 'Brand Name',
+    'popup_text' => 'Plain popup',
+    'status' => 'active',
+], [
+    'popup-template' => '<div>%title%</div>',
+]);
+mds3_assert_same(true, false !== strpos($title_popup['popover_html'], 'Brand Name'), 'Expected %title% in popups to use the alt text when present.');
+$title_fallback_popup = $placement_payload->invoke($ajax, [
+    'id' => 95,
+    'grid_id' => 7,
+    'attachment_id' => 0,
+    'alt_text' => '',
+    'popup_text' => 'Plain popup',
+    'status' => 'active',
+], [
+    'popup-template' => '<div>%title%</div>',
+]);
+mds3_assert_same(true, false !== strpos($title_fallback_popup['popover_html'], 'Plain popup'), 'Expected %title% in popups to fall back to popup text when alt text is empty.');
+mds3_assert_same(
+    'fixture-advertiser-91',
+    \MillionDollarScript\V3\Media\AdvertiserPageUrls::build_slug([
+        'id' => 91,
+        'alt_text' => 'Fixture Advertiser',
+        'order_id' => 42,
+    ], ['slug' => 'main-grid'], ['mds-pixel-slug-structure' => '%alt_text%-%placement_id%']),
+    'Expected %alt_text% slug tokens to use the raw placement alt text.'
+);
+mds3_assert_same(
+    '92',
+    \MillionDollarScript\V3\Media\AdvertiserPageUrls::build_slug([
+        'id' => 92,
+        'alt_text' => '',
+        'popup_text' => 'Fallback text',
+    ], ['slug' => 'main-grid'], ['mds-pixel-slug-structure' => '%alt_text%-%placement_id%']),
+    'Expected empty %alt_text% slug tokens to resolve blank while other tokens remain.'
+);
 $advertiser_page_settings = [
     'mds-pixel-template' => 'yes',
     'mds-pixel-base' => 'Featured Advertisers',

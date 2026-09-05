@@ -24,8 +24,66 @@ trait ResolvesLegacyMedia {
         }
 
         $file = $this->first_order_block_value(absint($order['order_id'] ?? 0), 'file_name');
+        if ($file && ($attachment_id = $this->attachment_from_path($file))) {
+            return $attachment_id;
+        }
 
-        return $file ? $this->attachment_from_path($file) : 0;
+        return $this->attachment_from_flattened_image_data(absint($order['order_id'] ?? 0));
+    }
+
+    /**
+     * Last-resort media recovery for MDS2 blocks.
+     *
+     * MDS2 stored the ad image itself as base64 in `blocks.image_data` (see the legacy
+     * GridImageGenerator / get-order-image.php). When neither the ad post meta nor a
+     * resolvable block file_name points at media, decode that payload and register it
+     * as an attachment so the placement keeps its original image.
+     */
+    private function attachment_from_flattened_image_data($legacy_order_id) {
+        global $wpdb;
+
+        $legacy_order_id = absint($legacy_order_id);
+        $table = $this->source->table('blocks');
+        if (!DB::table_exists($table)) {
+            return 0;
+        }
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                'SELECT image_data, block_id FROM ' . DB::ident($table) . " WHERE order_id = %d AND image_data <> '' ORDER BY block_id ASC LIMIT 1",
+                $legacy_order_id
+            ),
+            ARRAY_A
+        );
+        if (!$row) {
+            return 0;
+        }
+
+        $binary = base64_decode((string) $row['image_data'], true);
+        if (false === $binary) {
+            return 0;
+        }
+        $info = @getimagesizefromstring($binary);
+        if (!is_array($info)) {
+            return 0;
+        }
+
+        $upload = wp_upload_dir();
+        if (is_wp_error($upload)) {
+            return 0;
+        }
+        $directory = trailingslashit($upload['basedir']) . 'milliondollarscript/migrated';
+        if (!is_dir($directory) && !mkdir($directory, 0755, true)) {
+            return 0;
+        }
+        $extension = 'image/jpeg' === $info['mime'] ? 'jpg' : ('image/gif' === $info['mime'] ? 'gif' : 'png');
+        $target = $directory . '/order-' . $legacy_order_id . '-block-' . absint($row['block_id']) . '.' . $extension;
+        if (!file_exists($target) && false === file_put_contents($target, $binary)) {
+            return 0;
+        }
+
+        // Reuses the existing path/attachment resolution (idempotent on re-import).
+        return $this->attachment_from_path($target);
     }
 
     private function attachment_from_ad($ad_id) {

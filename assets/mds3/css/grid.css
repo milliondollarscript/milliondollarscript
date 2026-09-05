@@ -755,6 +755,15 @@
     margin-top: 0;
 }
 
+.mds3-popover-title-link {
+    color: inherit;
+}
+
+.mds3-popover-title-link:hover,
+.mds3-popover-title-link:focus {
+    color: var(--mds3-grid-popover-link-hover);
+}
+
 .mds3-popover-manage-link {
     border: 1px solid var(--mds3-grid-popover-border);
     border-radius: 8px;

@@ -44,15 +44,10 @@ final class AdvertiserPageUrls {
         return '' !== $pattern ? $pattern : '%placement_id%';
     }
 
-    public static function page_link_enabled(array $settings = []) {
-        $settings = $settings ?: self::settings();
-
-        return self::enabled($settings) && 'yes' === SettingsSchema::sanitize('advertiser-page-popup-link', $settings['advertiser-page-popup-link'] ?? 'yes');
-    }
-
     public static function build_slug(array $placement, array $grid, array $settings = []) {
         $pattern = self::pattern($settings ?: self::settings());
-        $title = sanitize_text_field((string) ($placement['alt_text'] ?? ''));
+        $alt_text = sanitize_text_field((string) ($placement['alt_text'] ?? ''));
+        $title = $alt_text;
         if ('' === $title) {
             $title = sanitize_text_field(wp_strip_all_tags((string) ($placement['popup_text'] ?? '')));
         }
@@ -64,6 +59,7 @@ final class AdvertiserPageUrls {
             '%grid%' => (string) ($grid['slug'] ?? $grid['id'] ?? ''),
             '%title%' => $title,
             '%text%' => $title,
+            '%alt_text%' => $alt_text,
             // MDS2 accepted identity tokens. MDS 3.0 deliberately resolves them
             // to an empty value so new public URLs never expose account names.
             '%username%' => '',

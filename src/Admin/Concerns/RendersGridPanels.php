@@ -13,6 +13,8 @@ use MillionDollarScript\V3\Grid\GridPostType;
 use MillionDollarScript\V3\Grid\GridRepository;
 use MillionDollarScript\V3\Grid\PackageRepository;
 use MillionDollarScript\V3\Grid\PriceRuleRepository;
+use MillionDollarScript\V3\Media\AdvertiserPageManager;
+use MillionDollarScript\V3\Media\PlacementRepository;
 use MillionDollarScript\V3\Orders\OrderPlacementMovePlanner;
 use MillionDollarScript\V3\Orders\OrderRepository;
 use MillionDollarScript\V3\Orders\OrderRenewal;
@@ -260,6 +262,12 @@ trait RendersGridPanels {
         $status_labels = $this->order_status_labels();
 
         $manage_url = $this->order_manage_url($order);
+        $order_placements = (new PlacementRepository())->for_order(absint($order['id'] ?? 0));
+        $first_placement_id = $order_placements ? absint($order_placements[0]['id'] ?? 0) : 0;
+        $page_manager = new AdvertiserPageManager();
+        $advertiser_page_url = $first_placement_id
+            ? ($page_manager->public_url($first_placement_id) ?: (string) ($page_manager->legacy_public_urls([$first_placement_id])[$first_placement_id] ?? ''))
+            : '';
         $item_rows = [];
         $placement_events = [];
         $status_events = [];
@@ -327,6 +335,7 @@ trait RendersGridPanels {
         }
 
         Template::display('admin/partials/order-detail-panel.php', [
+            'advertiser_page_url' => $advertiser_page_url,
             'inline' => $inline,
             'item_rows' => $item_rows,
             'manage_url' => $manage_url,

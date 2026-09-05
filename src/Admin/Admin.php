@@ -18,6 +18,7 @@ if (!defined('ABSPATH')) {
 
 final class Admin implements Component {
     use Concerns\HandlesAdminActions;
+    use Concerns\HandlesCacheAdminActions;
     use Concerns\RendersAdminPages;
     use Concerns\RendersAdminNavigation;
     use Concerns\RendersDashboardPanels;
@@ -57,6 +58,7 @@ final class Admin implements Component {
         add_action('admin_post_mds3_create_extension_onboarding_pages', [$this, 'create_extension_onboarding_pages']);
         add_action('admin_post_mds3_run_migration_import', [$this, 'run_migration_import']);
         add_action('admin_post_mds3_pause_migration_import', [$this, 'pause_migration_import']);
+        add_action('admin_post_mds3_clear_cache', [$this, 'clear_cache']);
         add_action('wp_ajax_mds3_migration_step', [$this, 'ajax_migration_step']);
 
         if ($this->grid_enabled()) {
@@ -278,7 +280,10 @@ final class Admin implements Component {
         $page = sanitize_key(wp_unslash($_GET['page'] ?? ''));
         $allowed_pages = \MillionDollarScript\Core\Hooks::apply(
             'million-dollar-script/setup/allowed-admin-pages',
-            ['mds3-setup', 'mds3-extensions']
+            // mds3-migration is reachable pre-setup on purpose: the MDS2 step in the
+            // setup wizard links to it for a dry-run review, and the import itself
+            // is an explicit admin-post action that stays gated by its own checks.
+            ['mds3-setup', 'mds3-extensions', 'mds3-migration']
         );
         $allowed_pages = array_values(array_unique(array_filter(array_map('sanitize_key', is_array($allowed_pages) ? $allowed_pages : []))));
         if ('yes' === get_transient('mds3_setup_redirect') && !isset($_GET['activate-multi']) && !in_array($page, $allowed_pages, true)) {

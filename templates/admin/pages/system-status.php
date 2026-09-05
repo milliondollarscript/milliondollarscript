@@ -23,6 +23,50 @@ $network_diagnostics = is_array($network_diagnostics ?? null) ? $network_diagnos
         </div>
         <?php $this->dashboard_system_status($settings); ?>
     </section>
+
+    <?php if (!empty($_GET['mds3_cache_cleared'])) : ?>
+        <?php
+        $tile_dirs_removed = absint($_GET['mds3_tile_dirs_removed'] ?? 0);
+        $grids_rotated = absint($_GET['mds3_grids_rotated'] ?? 0);
+        $transients_cleared = absint($_GET['mds3_transients_cleared'] ?? 0);
+        $cache_cleared_message = sprintf(
+            /* translators: 1: grid count, 2: transient count */
+            _n('MDS cache cleared. Rotated cache keys for %1$d grid and removed %2$d plugin transient.', 'MDS cache cleared. Rotated cache keys for %1$d grids and removed %2$d plugin transients.', $grids_rotated, 'million-dollar-script'),
+            $grids_rotated,
+            $transients_cleared
+        );
+        ?>
+        <div class="notice notice-success inline"><p>
+            <?php echo esc_html($cache_cleared_message); ?>
+            <?php if ($tile_dirs_removed > 0) : ?>
+                <?php echo esc_html(sprintf(/* translators: 1: tile directory count */ _n('Also deleted %1$d cached tile directory.', 'Also deleted %1$d cached tile directories.', $tile_dirs_removed, 'million-dollar-script'), $tile_dirs_removed)); ?>
+            <?php endif; ?>
+        </p></div>
+    <?php endif; ?>
+
+    <section class="mds3-card">
+        <div class="mds3-card-heading">
+            <div>
+                <h2><?php esc_html_e('Cache', 'million-dollar-script'); ?></h2>
+                <p><?php esc_html_e('Clear the plugin cache without touching grid data, orders, or external CDN/page caches.', 'million-dollar-script'); ?></p>
+            </div>
+        </div>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="mds3_clear_cache">
+            <?php wp_nonce_field('mds3_clear_cache'); ?>
+            <p><?php esc_html_e('Clear cache rotates each grid\'s tile cache key so browsers and proxies re-download the existing tile files instead of serving stale ones, and removes short-lived plugin transients. Existing tiles are kept and served as-is; nothing is regenerated. Grids using ImageGrid keep serving their remote tiles; nothing is sent to, or cleared from, any external service.', 'million-dollar-script'); ?></p>
+            <p>
+                <label>
+                    <input type="checkbox" name="mds3_delete_tile_files" value="1">
+                    <?php esc_html_e('Also delete cached tile files. This makes tiles regenerate from scratch on the next view, which can be slow for large grids.', 'million-dollar-script'); ?>
+                </label>
+            </p>
+            <p class="submit">
+                <button type="submit" class="button button-primary"><?php esc_html_e('Clear cache', 'million-dollar-script'); ?></button>
+            </p>
+        </form>
+    </section>
+
     <section class="mds3-card">
         <div class="mds3-card-heading">
             <div>
