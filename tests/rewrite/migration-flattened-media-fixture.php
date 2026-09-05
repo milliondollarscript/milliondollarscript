@@ -2,7 +2,7 @@
 /**
  * WP-CLI fixture for MDS3 migration media recovery.
  *
- * Live-site order 96 scenario (Vikunja #3): MDS2 blocks carry the ad image
+ * Migration scenario: MDS2 blocks carry the ad image
  * only as base64 PNG in image_data. The ad post has no image meta and the
  * blocks have no file_name. The import must recover the image (decode,
  * write a file, register an attachment) and import the placement with no

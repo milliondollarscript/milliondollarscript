@@ -2510,7 +2510,7 @@
 
         // Scale the stroke to the displayed size: at low zoom a fixed 2px line
         // plus an 8px dash is wider than the placement rect and paints over
-        // the draft image entirely (Vikunja #2).
+        // the draft image entirely.
         var size = 0;
         if (masks.length) {
             masks.forEach(function (mask) {

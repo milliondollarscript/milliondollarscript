@@ -7,9 +7,9 @@
 - Unify placement placeholder tokens across slug pattern and popup template
 - Add full-page advertiser link to placement popups with legacy MDS2 fallback
 - Fix MDS2 migration block coordinates: convert block units to pixels
-- Scope grid background color to the grid element instead of painting the whole page (Vikunja #7)
+- Scope grid background color to the grid element instead of painting the whole page
 - Fix duplicated popup text on migrated MDS2 orders
-- Fix order popup draft preview hidden behind oversized outline stroke (Vikunja #2)
+- Fix order popup draft preview hidden behind oversized outline stroke
 - Stop auto-creating the default grid on ensure() upgrades
 
 ### Fixed
