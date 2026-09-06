@@ -70,15 +70,31 @@ trait HandlesMigrationAdminActions {
             exit;
         }
 
-        $repo = new PageRepository();
         $grid = (new GridRepository())->first_active();
-        $grid_id = $grid ? $grid->id() : 0;
         $replace_modified = !empty($_POST['mds2_replace_modified_pages']);
         $create_new = !empty($_POST['mds2_create_new_pages']) && !$replace_modified;
+
+        self::ensure_standard_pages_core($grid ? $grid->id() : 0, $replace_modified, $create_new);
+
+        wp_safe_redirect(admin_url('admin.php?page=' . $page . '&pages=ensured'));
+        exit;
+    }
+
+    /**
+     * Create or adopt the standard pages for a grid. Returns type => post_id
+     * for every page that already exists or was created/adopted. Split out of
+     * the admin action so it is testable without the redirect/exit.
+     */
+    public static function ensure_standard_pages_core($grid_id, $replace_modified, $create_new) {
+        $repo = new PageRepository();
+        $grid = $grid_id ? (new GridRepository())->find(absint($grid_id)) : null;
+        $grid_id = $grid ? $grid->id() : 0;
+        $result = [];
 
         foreach (PageRepository::standard_labels() as $type => $label) {
             $post_id = absint(get_option('mds3_page_' . $type . '_id', 0));
             if ($post_id && get_post($post_id)) {
+                $result[$type] = $post_id;
                 continue;
             }
 
@@ -90,22 +106,24 @@ trait HandlesMigrationAdminActions {
             $page_grid_id = 'grid' === $type ? $grid_id : 0;
 
             if ('grid' === $type && $grid) {
-                $post_id = $this->wizard_grid_page_id($grid, $replace_modified, $create_new);
-                if (is_wp_error($post_id) || !$post_id) {
-                    continue;
-                }
+                $post_id = self::wizard_grid_page_id($grid, $replace_modified, $create_new);
             } else {
-                $post_id = wp_insert_post([
-                    'post_type' => 'page',
-                    'post_status' => 'publish',
-                    'post_title' => (string) $label,
-                    'post_name' => sanitize_title((string) $label),
-                    'post_content' => PageRepository::shortcode($type, $page_grid_id),
-                ], true);
-
-                if (is_wp_error($post_id)) {
-                    continue;
+                // Adopt the site's existing MDS2 page of this type instead of
+                // stacking a duplicate next to it.
+                $post_id = self::wizard_standard_page_id($type, $replace_modified, $page_grid_id);
+                if (!$post_id) {
+                    $post_id = wp_insert_post([
+                        'post_type' => 'page',
+                        'post_status' => 'publish',
+                        'post_title' => (string) $label,
+                        'post_name' => sanitize_title((string) $label),
+                        'post_content' => PageRepository::shortcode($type, $page_grid_id),
+                    ], true);
                 }
+            }
+
+            if (is_wp_error($post_id) || !$post_id) {
+                continue;
             }
 
             update_post_meta($post_id, '_mds3_page_type', $type);
@@ -123,17 +141,53 @@ trait HandlesMigrationAdminActions {
                     'created_by' => 'mds3_standard_pages',
                 ],
             ]);
+
+            $result[$type] = absint($post_id);
         }
 
-        wp_safe_redirect(admin_url('admin.php?page=' . $page . '&pages=ensured'));
-        exit;
+        return $result;
+    }
+
+    /**
+     * Standard page for the wizard. Adopts the first MDS2 page candidate of
+     * this type (unmodified, or when replace is opted in) in place; returns 0
+     * when there is no candidate or the page is modified without replace.
+     */
+    private static function wizard_standard_page_id($type, $replace_modified, $page_grid_id) {
+        $candidate = self::wizard_first_page_candidate($type);
+        if (!$candidate || (empty($candidate['unmodified']) && !$replace_modified)) {
+            return 0;
+        }
+
+        $post_id = absint($candidate['post_id']);
+        $content = PageRepository::shortcode($type, $page_grid_id);
+        $post = get_post($post_id);
+        if ($post && (string) $post->post_content !== $content) {
+            if (!metadata_exists('post', $post_id, '_mds3_migration_original_content')) {
+                update_post_meta($post_id, '_mds3_migration_original_content', (string) $post->post_content);
+            }
+            wp_update_post(['ID' => $post_id, 'post_content' => $content]);
+        }
+
+        return $post_id;
+    }
+
+    private static function wizard_first_page_candidate($type) {
+        $source = new LegacySource();
+        foreach ($source->page_candidates() as $candidate) {
+            if ($type === sanitize_key($candidate['type'] ?? '')) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**
      * Grid page for the standard-pages wizard. Adopts an existing MDS2 grid page
      * (unmodified, or when replace is opted in) instead of stacking a duplicate.
      */
-    private function wizard_grid_page_id($grid, $replace_modified, $create_new) {
+    private static function wizard_grid_page_id($grid, $replace_modified, $create_new) {
         $candidate = $this->wizard_first_grid_candidate();
         if ($candidate) {
             $unmodified = !empty($candidate['unmodified']);
@@ -155,7 +209,7 @@ trait HandlesMigrationAdminActions {
         return GridPostType::ensure_page($grid);
     }
 
-    private function wizard_first_grid_candidate() {
+    private static function wizard_first_grid_candidate() {
         $source = new LegacySource();
         foreach ($source->page_candidates() as $candidate) {
             if ('grid' === ($candidate['type'] ?? '')) {

@@ -6,6 +6,7 @@
  * wp --path=/var/www/html eval-file wp-content/plugins/million-dollar-script/tests/rewrite/migration-fixture.php
  */
 
+use MillionDollarScript\V3\Admin\Admin;
 use MillionDollarScript\V3\Media\OriginalImage;
 use MillionDollarScript\V3\Blocks\BlockRepository;
 use MillionDollarScript\V3\Grid\GridAjax;
@@ -14,6 +15,7 @@ use MillionDollarScript\V3\Migration\DryRun;
 use MillionDollarScript\V3\Migration\Importer;
 use MillionDollarScript\V3\Orders\OrderRepository;
 use MillionDollarScript\V3\Orders\ReservationService;
+use MillionDollarScript\V3\Pages\PageRepository;
 use MillionDollarScript\V3\Support\DB;
 
 if (!defined('ABSPATH')) {
@@ -80,7 +82,7 @@ if (DB::table_exists(DB::table('migration_map'))) {
     }
 }
 
-$fixture_titles = ['Legacy Fixture Grid', 'Legacy Fixture Secondary Grid', 'Legacy Fixture Modified Grid', 'Legacy Fixture Order', 'Legacy Fixture Block', 'Legacy Fixture List Without Grid', 'Foreign Legacy Fixture Page', 'Native MDS3 Fixture Page', 'Native MDS3 Unmanaged Fixture Page', 'MDS2 Fixture Ad', $legacy_long_title];
+$fixture_titles = ['Legacy Fixture Grid', 'Legacy Fixture Secondary Grid', 'Legacy Fixture Modified Grid', 'Legacy Fixture Order', 'Legacy Fixture Block', 'Legacy Fixture List Without Grid', 'Foreign Legacy Fixture Page', 'Native MDS3 Fixture Page', 'Native MDS3 Unmanaged Fixture Page', 'MDS2 Fixture Ad', 'Legacy Fixture Thank You', $legacy_long_title];
 $placeholders = implode(',', array_fill(0, count($fixture_titles), '%s'));
 $old_fixture_posts = $wpdb->get_col($wpdb->prepare('SELECT ID FROM ' . DB::ident($wpdb->posts) . " WHERE post_title IN ({$placeholders})", $fixture_titles));
 foreach ($old_fixture_posts as $old_post_id) {
@@ -1312,6 +1314,69 @@ foreach ($create_new_outcomes as $outcome) {
 }
 if (!$modified_outcome || 'created_new' !== ($modified_outcome['outcome'] ?? '')) {
     throw new RuntimeException('create_new did not report the modified grid page as created_new.');
+}
+
+// "Create missing standard pages" must adopt an existing MDS2 page of the
+// type instead of stacking a duplicate next to it (client hit this on a live
+// site: fresh MDS3 pages appeared beside the untouched MDS2 pages).
+$pre_ensure_options = [];
+foreach (array_keys(PageRepository::standard_labels()) as $option_type) {
+    $pre_ensure_options[$option_type] = absint(get_option('mds3_page_' . $option_type . '_id', 0));
+}
+$thank_you_legacy_page = wp_insert_post([
+    'post_type' => 'page',
+    'post_status' => 'publish',
+    'post_title' => 'Legacy Fixture Thank You',
+    'post_name' => 'legacy-fixture-thank-you',
+    'post_content' => "[milliondollarscript type=\"thankyou\"]\n\n<p>Client's custom thank-you note.</p>",
+]);
+
+// Modified page, no replace opt-in: the wizard creates a fresh page and
+// leaves the customer's page intact.
+$no_replace_result = Admin::ensure_standard_pages_core($grid_id, false, false);
+if (!isset($no_replace_result['thank-you']) || $no_replace_result['thank-you'] === $thank_you_legacy_page) {
+    throw new RuntimeException('Modified MDS2 thank-you page was adopted without the replace opt-in.');
+}
+if (false === strpos((string) get_post_field('post_content', $thank_you_legacy_page), 'Client\'s custom thank-you note')) {
+    throw new RuntimeException('No-replace standard page run modified the customer MDS2 page.');
+}
+// Already-adopted types keep their existing page (no duplicate).
+if (!isset($no_replace_result['list']) || $no_replace_result['list'] !== $list_page_without_grid) {
+    throw new RuntimeException('Standard pages wizard re-created an already-adopted list page.');
+}
+
+// Replace opt-in: the modified legacy page is adopted in place and its
+// original content is preserved.
+wp_delete_post($no_replace_result['thank-you'], true);
+delete_option('mds3_page_thank-you_id');
+$replace_result = Admin::ensure_standard_pages_core($grid_id, true, false);
+if (!isset($replace_result['thank-you']) || $replace_result['thank-you'] !== $thank_you_legacy_page) {
+    throw new RuntimeException('Replace opt-in did not adopt the modified MDS2 thank-you page in place.');
+}
+if ((string) get_post_field('post_content', $thank_you_legacy_page) !== PageRepository::shortcode('thank-you', 0)) {
+    throw new RuntimeException('Adopted thank-you page was not rewritten to the MDS3 shortcode.');
+}
+if (false === strpos((string) get_post_meta($thank_you_legacy_page, '_mds3_migration_original_content', true), 'Client\'s custom thank-you note')) {
+    throw new RuntimeException('Original customer content was not preserved on the adopted thank-you page.');
+}
+if ('thank-you' !== (string) get_post_meta($thank_you_legacy_page, '_mds3_page_type', true)) {
+    throw new RuntimeException('Adopted thank-you page was not registered as an MDS3 standard page.');
+}
+
+// Restore the page options the test started without (fixture isolation).
+foreach ($pre_ensure_options as $option_type => $pre_option) {
+    if ($pre_option) {
+        continue;
+    }
+    $post_id = absint(get_option('mds3_page_' . $option_type . '_id', 0));
+    if (!$post_id || !get_post($post_id)) {
+        continue;
+    }
+    if (PageRepository::labels()[$option_type] === get_the_title($post_id)) {
+        // A page the wizard created during this test.
+        wp_delete_post($post_id, true);
+    }
+    delete_option('mds3_page_' . $option_type . '_id');
 }
 
 echo wp_json_encode([

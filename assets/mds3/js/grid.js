@@ -1111,9 +1111,22 @@
         button.textContent = busy ? i18n(busyLabelKey || 'uploading', 'Saving...') : button.getAttribute('data-mds3-label');
     }
 
+    function placementFormPreviewScope(form) {
+        if (!form) {
+            return null;
+        }
+
+        var panel = form.closest('.mds3-order-upload-panel');
+        if (panel) {
+            return panel;
+        }
+
+        return form.classList.contains('mds3-placement-form') ? form : null;
+    }
+
     function updateOrderUploadPreview(form, placement) {
-        var panel = form ? form.closest('.mds3-order-upload-panel') : null;
-        var preview = panel ? panel.querySelector('.mds3-current-placement') : null;
+        var scope = placementFormPreviewScope(form);
+        var preview = scope ? scope.querySelector('.mds3-current-placement') : null;
         var fileInput = form ? form.querySelector('input[type="file"][name="image"]') : null;
         var source = placement && placement.source ? placement.source : {};
         var fitMode = namedFieldValue(form, 'fit_mode') || placement.fit_mode || 'cover';
@@ -5008,6 +5021,7 @@
                 return;
             }
             self.form.reset();
+            updateOrderUploadPreview(self.form, payload.data && payload.data.placement);
             setOrderUploadBusy(self.form, false);
             self.updateUploadValidity(true);
             self.redraw();
@@ -5199,8 +5213,8 @@
     };
 
     function rememberOrderUploadPreview(form, force) {
-        var panel = form ? form.closest('.mds3-order-upload-panel') : null;
-        var preview = panel ? panel.querySelector('.mds3-current-placement') : null;
+        var scope = placementFormPreviewScope(form);
+        var preview = scope ? scope.querySelector('.mds3-current-placement') : null;
         if (!form || !preview || (form.mds3OriginalPreviewCaptured && !force)) {
             return;
         }
@@ -5212,8 +5226,8 @@
     }
 
     function restoreOrderUploadPreview(form) {
-        var panel = form ? form.closest('.mds3-order-upload-panel') : null;
-        var preview = panel ? panel.querySelector('.mds3-current-placement') : null;
+        var scope = placementFormPreviewScope(form);
+        var preview = scope ? scope.querySelector('.mds3-current-placement') : null;
         var imageInput = namedField(form, 'image');
         if (!form || !preview) {
             return;

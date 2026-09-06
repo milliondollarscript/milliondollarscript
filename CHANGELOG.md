@@ -1,3 +1,10 @@
+## 3.0.0-alpha.5 - 2026-09-06
+
+### Other
+
+- Show the uploaded ad image in the grid page placement form
+- Adopt existing MDS2 standard pages in the migration wizard instead of duplicating them
+
 ## 3.0.0-alpha.4 - 2026-09-05
 
 ### Other

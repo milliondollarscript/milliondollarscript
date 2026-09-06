@@ -106,6 +106,7 @@ if (!empty($style_vars) && is_array($style_vars)) {
                 <small><?php echo esc_html__('Shown inside the selected pixels. The preview updates as soon as the image is uploaded.', 'million-dollar-script'); ?></small>
                 <button type="button" class="mds3-draft-image-remove" hidden><?php echo esc_html__('Remove image', 'million-dollar-script'); ?></button>
             </label>
+            <div class="mds3-current-placement" hidden></div>
             <?php if ($url_visible) : ?>
                 <label class="mds3-placement-field">
                     <span><?php echo esc_html__('Destination URL', 'million-dollar-script'); ?></span>
