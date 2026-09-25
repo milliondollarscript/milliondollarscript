@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.6.77 - 2026-09-25
+### Chore
+
+- raise WC tested up to 11.1.2 after WP 7.1.2 / WC 11.1.2 certification
+- update bundled libraries
+- certify WooCommerce 11.1.0 compatibility
+- bump js-yaml
+- bump @humanfs/node
+
+### Other
+
+- Merge pull request #92 from milliondollarscript/dependabot/npm_and_yarn/npm_and_yarn-56e86fd9c9
+- Merge pull request #91 from milliondollarscript/dependabot/npm_and_yarn/npm_and_yarn-94863fc568
+
+### Documentation
+
+- add missing WordPress 7.1 certification to 2.6.74 notes
+
+
 ## 2.6.74 - 2026-08-25
 ### Documentation
 
