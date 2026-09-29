@@ -8,6 +8,7 @@
 namespace MillionDollarScript\V3\Grid\Concerns;
 
 use MillionDollarScript\V3\Blocks\BlockRepository;
+use MillionDollarScript\V3\Grid\GridRepository;
 use MillionDollarScript\V3\Media\PlacementDraftRepository;
 use MillionDollarScript\V3\Media\PlacementFieldContract;
 use MillionDollarScript\V3\Media\PlacementRepository;
@@ -53,7 +54,7 @@ trait HandlesPlacementAjaxSubmission {
 
         $submission_validation = \MillionDollarScript\Core\Hooks::apply('million-dollar-script/validate/placement/submission', true, $order, $post);
         if (is_wp_error($submission_validation)) {
-            wp_send_json_error(['message' => $submission_validation->get_error_message()], 400);
+            wp_send_json_error($this->field_error_payload($submission_validation), 400);
         }
 
         $placement_repo = new PlacementRepository();
@@ -108,11 +109,11 @@ trait HandlesPlacementAjaxSubmission {
             }
         }
 
-        $status = 'paid' === ($order['status'] ?? '') ? 'active' : 'pending';
-        $settings = $this->settings();
+        $settings = PlacementFieldContract::settings_for_grid($this->settings(), $rect['grid_id'] ?? 0);
+        $status = ('paid' === ($order['status'] ?? '') && !empty($settings['auto-publish'])) ? 'active' : 'pending';
         $validated_fields = PlacementFieldContract::validate($post, $settings, $existing_placement ?: []);
         if (is_wp_error($validated_fields)) {
-            wp_send_json_error(['message' => $validated_fields->get_error_message()], 400);
+            wp_send_json_error($this->field_error_payload($validated_fields), 400);
         }
         $fit_mode = $validated_fields['fit_mode'];
         $link_url = $validated_fields['link_url'];
@@ -173,13 +174,16 @@ trait HandlesPlacementAjaxSubmission {
             $placement_repo->update_status_by_order($order_id, 'active');
             $placement = $placement_repo->find($placement['id']) ?: $placement;
         }
-        $redirect_url = (!$is_manage_context && $was_unpaid) ? ($checkout['checkout_url'] ?: ($checkout['after_upload_url'] ?? '')) : '';
-        $legacy_page_urls = $this->legacy_popup_page_urls($settings, [absint($placement['id'] ?? 0)]);
+        // Without a checkout step there is nowhere to send the advertiser: stay on the grid
+        // so the popup can show the saved ad. The Thank You page is a post-payment
+        // destination, not a post-upload one.
+        $redirect_url = (!$is_manage_context && $was_unpaid) ? (string) ($checkout['checkout_url'] ?? '') : '';
 
         \MillionDollarScript\Core\Hooks::do('million-dollar-script/placement/saved', $placement ?: [], $order, $post);
 
+        $this->charge_public_write_throttle();
         wp_send_json_success([
-            'placement' => $this->placement_payload($placement ?: [], $settings, null, null, $legacy_page_urls),
+            'placement' => $this->placement_payload($placement ?: [], $settings, null, null),
             'redirect_url' => esc_url_raw($redirect_url),
             'order_status' => sanitize_key((string) ($order['status'] ?? '')),
             'message' => __('Image received from the original upload.', 'million-dollar-script'),
@@ -218,6 +222,7 @@ trait HandlesPlacementAjaxSubmission {
             wp_send_json_error(['message' => $draft->get_error_message()], $this->error_status($draft, 400));
         }
 
+        $this->charge_public_write_throttle();
         wp_send_json_success([
             'draft' => $repo->payload($draft),
             'message' => __('Image saved for this order.', 'million-dollar-script'),
@@ -240,6 +245,7 @@ trait HandlesPlacementAjaxSubmission {
             wp_send_json_error(['message' => $removed->get_error_message()], $this->error_status($removed, 400));
         }
 
+        $this->charge_public_write_throttle();
         wp_send_json_success([
             'draft' => null,
             'message' => __('Draft image removed.', 'million-dollar-script'),
@@ -269,7 +275,7 @@ trait HandlesPlacementAjaxSubmission {
             return [$order, $placement];
         }
 
-        $auto_complete = 'yes' === SettingsSchema::sanitize('auto-approve', $settings['auto-approve'] ?? 'no');
+        $auto_complete = $this->auto_approve_for_grids($orders, $order_id, $settings);
         $updated = $orders->update($order_id, ['status' => $auto_complete ? 'paid' : 'pending_payment']);
         if (is_wp_error($updated)) {
             return [$order, $placement];
@@ -285,6 +291,33 @@ trait HandlesPlacementAjaxSubmission {
         }
 
         return [$order, $placement];
+    }
+
+    /**
+     * Auto-approval for an order: each grid's own choice wins over the global setting
+     * (blank = inherit), and a grid that says "do not approve" holds the order back for
+     * review so a mixed basket is never activated against the site owner's wishes.
+     *
+     * @param int[] $grid_ids
+     */
+    private function auto_approve_for_grids(OrderRepository $orders, $order_id, array $settings) {
+        $auto_complete = 'yes' === SettingsSchema::sanitize('auto-approve', $settings['auto-approve'] ?? 'no');
+        $explicit = [];
+
+        foreach ((new GridRepository())->all() as $grid) {
+            $choice = strtoupper((string) ($grid->settings()['auto_approve'] ?? ''));
+            if ('' === $choice) {
+                continue;
+            }
+            foreach ($orders->items($order_id) as $item) {
+                if (absint($item['grid_id'] ?? 0) === $grid->id()) {
+                    $explicit[] = ('Y' === $choice);
+                    break;
+                }
+            }
+        }
+
+        return $explicit ? !in_array(false, $explicit, true) : $auto_complete;
     }
 
     private function fit_mode($fit_mode) {
@@ -346,6 +379,36 @@ trait HandlesPlacementAjaxSubmission {
             'order' => $order,
             'rect' => $rect,
         ];
+    }
+
+    /**
+     * AJAX error payload for a rejected submission. The message alone leaves the
+     * visitor guessing which input to fix, so the offending form field is named
+     * too: extensions can set it in WP_Error data (['field' => 'name']), and the
+     * core field errors are mapped from their error codes.
+     */
+    private function field_error_payload(\WP_Error $error): array {
+        $payload = ['message' => $error->get_error_message()];
+        $data = is_array($error->get_error_data()) ? $error->get_error_data() : [];
+        $field = isset($data['field']) ? (string) $data['field'] : '';
+        // Extension fields arrive as mds_fields[key]; keep the brackets so the form can find the input.
+        if ('' !== $field && !preg_match('/^[A-Za-z0-9_\[\]\-]+$/', $field)) {
+            $field = '';
+        }
+        if ('' === $field) {
+            $fields = [
+                'million_dollar_script_url_required' => 'link_url',
+                'million_dollar_script_url_invalid' => 'link_url',
+                'million_dollar_script_popup_invalid' => 'popup_text',
+                'million_dollar_script_popup_required' => 'popup_text',
+                'million_dollar_script_popup_too_long' => 'popup_text',
+            ];
+            $field = $fields[$error->get_error_code()] ?? '';
+        }
+        if ('' !== $field) {
+            $payload['field'] = $field;
+        }
+        return $payload;
     }
 
 }

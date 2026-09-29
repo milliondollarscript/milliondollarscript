@@ -51,10 +51,12 @@ final class Importer {
     ];
 
     /**
-     * Opt-ins for how modified MDS2 pages are handled; used by the one-shot
-     * import(). The resumable path persists the same flags in the job state.
+     * Per-page upgrade choices; used by the one-shot import(). The resumable
+     * path persists the same choices in the job state.
      *
-     * @param array $options replace_modified / create_new booleans.
+     * @param array $options upgrade_in_place => list of legacy page IDs to
+     * overwrite in place. Modified pages without an entry keep their content
+     * and get a fresh MDS3 page instead (reported in the page outcomes).
      */
     public function set_page_options(array $options) {
         $this->page_options = self::normalize_page_options($options);
@@ -63,12 +65,14 @@ final class Importer {
     }
 
     private static function normalize_page_options(array $args) {
-        $replace_modified = !empty($args['replace_modified']);
+        $upgrade_in_place = [];
+        foreach (array_map('absint', (array) ($args['upgrade_in_place'] ?? [])) as $post_id) {
+            if ($post_id > 0) {
+                $upgrade_in_place[$post_id] = true;
+            }
+        }
 
-        return [
-            'replace_modified' => $replace_modified,
-            'create_new' => !empty($args['create_new']) && !$replace_modified,
-        ];
+        return ['upgrade_in_place' => $upgrade_in_place];
     }
 
     /**

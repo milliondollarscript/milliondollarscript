@@ -107,7 +107,10 @@ final class Plugin {
         add_action('init', [$this, 'load_textdomain'], 0);
         add_action('init', [Installer::class, 'ensure'], 1);
         add_action(OrderExpirationBackfill::HOOK, [OrderExpirationBackfill::class, 'run_scheduled']);
-        add_action('plugins_loaded', [$this, 'register_extensions'], 30);
+        // Extensions translate their registration names, and WordPress 6.7
+        // rejects a text domain that is loaded before init, so registration runs
+        // after the translation hooks (core at init/0, extensions at init/10).
+        add_action('init', [$this, 'register_extensions'], 20);
 
         $this->components = [
             new Admin(),
@@ -151,8 +154,8 @@ final class Plugin {
     }
 
     /**
-     * Give MDS-owned extensions a stable registration event after all active
-     * plugin files have loaded.
+     * Give MDS-owned extensions a stable registration event once translations
+     * are available.
      *
      * @return void
      */

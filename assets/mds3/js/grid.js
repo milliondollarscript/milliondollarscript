@@ -16,6 +16,21 @@
                     payload.mds3HttpStatus = response.status;
                 }
                 return payload;
+            }, function () {
+                // A non-JSON body — proxy error page, expired-session login page, PHP
+                // fatal, 413 from the web server — used to reject, and every caller
+                // reported it as "The grid could not be loaded." even when the grid was
+                // fine and it was a save that failed. Resolve a normal failure payload
+                // so the caller's own message path runs instead.
+                return {
+                    success: false,
+                    mds3HttpStatus: response.status,
+                    data: {
+                        message: response.status === 413
+                            ? i18n('uploadTooLarge', 'The uploaded image is too large. Try a smaller file.')
+                            : i18n('unexpectedResponse', 'The server returned an unexpected response. Please reload the page and try again.')
+                    }
+                };
             });
         });
     }
@@ -381,6 +396,66 @@
         });
     }
 
+    function initializeTextLimits(root) {
+        (root || document).querySelectorAll('textarea[name="popup_text"][data-mds3-max-chars]').forEach(function (source) {
+            var max = parseInt(source.getAttribute('data-mds3-max-chars'), 10) || 0;
+            var form = source.closest('form');
+            var counter;
+            var input;
+            var rich = source.hasAttribute('data-mds3-rich-text-source');
+
+            function visibleText() {
+                var text = source.value;
+                if (rich) {
+                    var scratch = document.createElement('div');
+                    scratch.innerHTML = text;
+                    Array.prototype.slice.call(scratch.querySelectorAll('br')).forEach(function (br) {
+                        br.replaceWith('\n');
+                    });
+                    text = scratch.textContent || '';
+                }
+                return text.replace(/\r/g, '').trim();
+            }
+
+            function characterCount() {
+                return Array.from(visibleText()).length;
+            }
+
+            function update() {
+                var length = characterCount();
+                if (!counter) {
+                    return;
+                }
+                counter.hidden = false;
+                counter.textContent = length + ' / ' + max;
+                counter.classList.toggle('is-at-limit', length >= max);
+            }
+
+            if (max <= 0 || !form || form.getAttribute('data-mds3-text-limit-bound') === 'true') {
+                return;
+            }
+
+            form.setAttribute('data-mds3-text-limit-bound', 'true');
+            counter = form.querySelector('[data-mds3-text-count]');
+            input = rich ? form.querySelector('[data-mds3-rich-text-input]') : null;
+
+            source.addEventListener('input', update);
+            source.addEventListener('focus', update);
+            if (input) {
+                input.addEventListener('beforeinput', function (event) {
+                    var data = typeof event.data === 'string' ? event.data : '';
+                    var remaining = max - characterCount();
+                    if (data.length > Math.max(0, remaining)) {
+                        event.preventDefault();
+                        update();
+                    }
+                });
+                input.addEventListener('focus', update);
+            }
+            update();
+        });
+    }
+
     function initializeRichTextEditors(root) {
         (root || document).querySelectorAll('[data-mds3-rich-text-editor]').forEach(function (editor) {
             var input = editor.querySelector('[data-mds3-rich-text-input]');
@@ -473,7 +548,19 @@
     function setDraftImageControlState(form, hasImage) {
         var imageInput = namedField(form, 'image');
         var remove = draftImageRemoveButton(form);
+        var savedNote = form ? form.querySelector('.mds3-image-saved-note') : null;
+        var imageHint = form ? form.querySelector('.mds3-image-hint') : null;
 
+        if (savedNote) {
+            if (form.mds3OriginalHasSaved === undefined) {
+                form.mds3OriginalHasSaved = !savedNote.hidden;
+            }
+            var showSaved = hasImage || form.mds3OriginalHasSaved;
+            savedNote.hidden = !showSaved;
+            if (imageHint) {
+                imageHint.hidden = showSaved;
+            }
+        }
         if (imageInput) {
             if (hasImage) {
                 imageInput.required = false;
@@ -1129,10 +1216,16 @@
         var preview = scope ? scope.querySelector('.mds3-current-placement') : null;
         var fileInput = form ? form.querySelector('input[type="file"][name="image"]') : null;
         var source = placement && placement.source ? placement.source : {};
-        var fitMode = namedFieldValue(form, 'fit_mode') || placement.fit_mode || 'cover';
+        var fitMode = (placement && placement.fit_mode) || namedFieldValue(form, 'fit_mode') || 'cover';
         var image;
 
-        if (!preview || !source.url) {
+        if (!preview) {
+            return;
+        }
+
+        if (!source.url) {
+            preview.innerHTML = '';
+            preview.hidden = true;
             return;
         }
 
@@ -1277,7 +1370,7 @@
 
         return request(payload).then(function (response) {
             if (!response || !response.success || !response.data || !response.data.draft) {
-                throw new Error(response && response.data && response.data.message ? response.data.message : gridConfig.i18n.error);
+                throw new Error(response && response.data && response.data.message ? response.data.message : gridConfig.i18n.actionFailed);
             }
 
             return response.data.draft;
@@ -1359,6 +1452,7 @@
         this.actions = element.querySelector('.mds3-grid-actions');
         this.selectionSizeButton = element.querySelector('.mds3-selection-size');
         this.selectionSize = 1;
+        this.selectionSide = 1;
         this.selectionSizeDialog = null;
         this.summary = element.querySelector('.mds3-selection-summary');
         this.packageSelect = element.querySelector('.mds3-package-select');
@@ -1394,6 +1488,7 @@
         this.backgroundImageUrl = '';
         this.focusedPlacementIndex = -1;
         this.activePopoverPlacementId = '';
+        this.activePopoverPlacement = null;
         this.popoverHovered = false;
         this.popoverPinned = false;
         this.interactionFocused = false;
@@ -1473,11 +1568,17 @@
             this.popover.addEventListener('mouseenter', function () {
                 self.popoverHovered = true;
             });
-            this.popover.addEventListener('mouseleave', function () {
+            this.popover.addEventListener('mouseleave', function (event) {
                 self.popoverHovered = false;
-                if (!self.popoverPinned) {
-                    self.hidePopover();
+                if (self.popoverPinned) {
+                    return;
                 }
+                // Moving back onto the grid re-enters the placement that opened this popup.
+                // Hiding here made the popup flicker; the next pointer move swaps or hides it.
+                if (event && event.relatedTarget && self.viewport && self.viewport.contains(event.relatedTarget)) {
+                    return;
+                }
+                self.hidePopover();
             });
         }
 
@@ -1605,8 +1706,17 @@
             if (this.form) {
                 bindAdvertiserUrlInputs(this.form);
                 initializeRichTextEditors(this.form);
+                initializeTextLimits(this.form);
                 this.ensureUploadValidity();
-                this.form.addEventListener('input', function () {
+                this.form.addEventListener('input', function (event) {
+                    var wrap = event.target && event.target.closest ? fieldErrorContainer(event.target) : null;
+                    var note = wrap ? wrap.querySelector('.mds3-field-error') : null;
+                    if (note) {
+                        if (event.target.getAttribute && event.target.getAttribute('aria-describedby') === note.id) {
+                            event.target.removeAttribute('aria-describedby');
+                        }
+                        note.remove();
+                    }
                     self.updateUploadValidity(false);
                 });
                 this.form.addEventListener('change', function () {
@@ -1722,8 +1832,14 @@
 
         packages.forEach(function (pkg) {
             var option = document.createElement('option');
+            var price = Number(pkg.price);
             option.value = pkg.id;
-            option.textContent = pkg.title + (Number(pkg.price) > 0 ? ' (' + pkg.currency + ' ' + Number(pkg.price).toFixed(2) + ')' : '');
+            // A package price is charged per block, so the option has to say so: a bare
+            // "$10,000.00" beside "$250.00 per block" reads as a flat total for the
+            // whole selection and understates a multi-block buy.
+            option.textContent = pkg.title + (price > 0
+                ? ' (' + pkg.currency + ' ' + price.toFixed(2) + ' ' + i18n('perBlockShort', 'per block') + ')'
+                : '');
             if (pkg.is_default) {
                 option.selected = true;
             }
@@ -1804,7 +1920,10 @@
                 center: [grid.width / 2, -grid.height / 2],
                 zoom: 0,
                 minZoom: -8,
-                maxZoom: 12
+                maxZoom: 12,
+                // A two-finger gesture must never tilt the grid: this pins the
+                // view rotation to 0 whatever interaction tries to change it.
+                enableRotation: false
             })
         });
         this.captureWheelZoomInteractions();
@@ -1845,7 +1964,10 @@
                 return;
             }
 
-            if (placement && event.originalEvent) {
+            if (placement && event.originalEvent && !self.placementOpensAdvertiserPage(placement)) {
+                if (self.isShownPopoverPlacement(placement)) {
+                    return;
+                }
                 self.showPopover(placement, event.originalEvent.clientX, event.originalEvent.clientY, { pinned: false });
             }
         });
@@ -2281,21 +2403,14 @@
         });
     };
 
-    Grid.prototype.fitNextPlacement = function () {
-        var placements = this.imagePlacements();
-        if (!this.map || !this.state || !placements.length) {
-            return;
-        }
-
-        this.focusedPlacementIndex = (this.focusedPlacementIndex + 1) % placements.length;
-        var placement = placements[this.focusedPlacementIndex];
+    Grid.prototype.fitPlacement = function (placement) {
+        var grid = this.state.grid;
         var minX = placement.x;
         var minY = placement.y;
         var maxX = placement.x + placement.width;
         var maxY = placement.y + placement.height;
 
         var pad = Math.max(40, Math.max(maxX - minX, maxY - minY) * 4);
-        var grid = this.state.grid;
         minX = Math.max(0, minX - pad);
         minY = Math.max(0, minY - pad);
         maxX = Math.min(grid.width, maxX + pad);
@@ -2306,6 +2421,29 @@
             nearest: false,
             maxZoom: 8
         });
+    };
+
+    Grid.prototype.fitNextPlacement = function () {
+        var placements = this.imagePlacements();
+        if (!this.map || !this.state || !placements.length) {
+            return;
+        }
+
+        this.focusedPlacementIndex = (this.focusedPlacementIndex + 1) % placements.length;
+        this.fitPlacement(placements[this.focusedPlacementIndex]);
+    };
+
+    // The upload form sits above the grid, so the ad a visitor just saved is
+    // normally off-screen when the save completes. Bring it into view.
+    Grid.prototype.revealPlacement = function (placement) {
+        if (!this.map || !this.state || !this.state.grid || !placement) {
+            return;
+        }
+        var frame = this.mapElement || this.element;
+        if (frame.scrollIntoView) {
+            frame.scrollIntoView({ block: 'center' });
+        }
+        this.fitPlacement(placement);
     };
 
     Grid.prototype.openLayersCanvas = function (extent, resolution, pixelRatio, size) {
@@ -2432,9 +2570,9 @@
 
         ctx.save();
         maskRects = this.clipPlacement(ctx, transform, placement, rect);
-        ctx.fillStyle = '#f1f5f9';
+        ctx.fillStyle = themeVariable(this.element, '--mds3-grid-panel', '#f1f5f9');
         ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-        ctx.strokeStyle = '#94a3b8';
+        ctx.strokeStyle = themeVariable(this.element, '--mds3-grid-line', '#94a3b8');
         ctx.lineWidth = 1;
         if (maskRects.length) {
             maskRects.forEach(function (mask) {
@@ -2534,7 +2672,7 @@
         }
 
         ctx.save();
-        ctx.strokeStyle = '#2563eb';
+        ctx.strokeStyle = themeVariable(this.element, '--mds3-grid-accent', '#2563eb');
         ctx.lineWidth = Math.max(0.5, Math.min(2, size * 0.15));
         ctx.setLineDash(size >= 24 ? [8, 4] : [Math.max(2, size * 0.4), Math.max(1.5, size * 0.3)]);
         if (masks.length) {
@@ -2635,12 +2773,12 @@
 
         ctx.clearRect(0, 0, transform.width, transform.height);
         if (drawBase) {
-            ctx.fillStyle = '#f8fafc';
+            ctx.fillStyle = themeVariable(this.element, '--mds3-grid-panel', '#f8fafc');
             ctx.fillRect(0, 0, transform.width, transform.height);
             ctx.fillStyle = themeVariable(this.element, '--mds3-grid-bg', '#ffffff');
             ctx.fillRect(offsetX, offsetY, grid.width * scale, grid.height * scale);
             this.drawGridBackgroundImage(ctx, transform);
-            ctx.strokeStyle = '#94a3b8';
+            ctx.strokeStyle = themeVariable(this.element, '--mds3-grid-line', '#94a3b8');
             ctx.lineWidth = 1;
             ctx.strokeRect(offsetX, offsetY, grid.width * scale, grid.height * scale);
 
@@ -2858,7 +2996,7 @@
         }
 
         ctx.save();
-        ctx.strokeStyle = options.strokeStyle || '#e5e7eb';
+        ctx.strokeStyle = options.strokeStyle || themeVariable(this.element, '--mds3-grid-line-soft', '#e5e7eb');
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (c = startCol; c <= endCol; c++) {
@@ -3225,7 +3363,9 @@
 
         if (pkg && Number(pkg.price || 0) > 0) {
             return {
-                total: Number(pkg.price || 0),
+                // Package prices are per block (MDS2 parity: price * block_count), so a
+                // selection of N blocks costs N times the advertised package price.
+                total: Number(pkg.price || 0) * Math.max(1, this.selected.length),
                 currency: pkg.currency || currency,
                 packageTitle: pkg.title || ''
             };
@@ -3266,11 +3406,26 @@
     };
 
     Grid.prototype.selectionSizeStorageKey = function () {
-        return 'mds3-selection-size:' + this.gridId;
+        return 'mds3-selection-side:' + this.gridId;
     };
 
-    Grid.prototype.effectiveSelectionSize = function (bounds) {
-        bounds = bounds || this.selectionSizeBounds();
+    // The control works in sides (a 2x2 selection is 4 blocks), so the block
+    // bounds from settings become a side bound. Square only: other shapes are a
+    // possible future extension, and this is the one place that does the math.
+    Grid.prototype.selectionSideBounds = function () {
+        var bounds = this.selectionSizeBounds();
+        if (!bounds) {
+            return null;
+        }
+
+        var min = Math.max(1, Math.round(Math.sqrt(bounds.min)));
+        var max = Math.max(min, Math.floor(Math.sqrt(bounds.max)));
+
+        return { min: min, max: max, blocksMin: min * min, blocksMax: max * max };
+    };
+
+    Grid.prototype.effectiveSelectionSide = function (bounds) {
+        bounds = bounds || this.selectionSideBounds();
         if (!bounds) {
             return 1;
         }
@@ -3289,36 +3444,75 @@
         return Math.min(bounds.max, Math.max(bounds.min, stored));
     };
 
-    Grid.prototype.updateSelectionSizeControl = function () {
+    Grid.prototype.setSelectionSide = function (side) {
+        var bounds = this.selectionSideBounds();
+        if (!bounds) {
+            return 1;
+        }
+
+        var value = Math.min(bounds.max, Math.max(bounds.min, Math.round(Number(side) || bounds.min)));
+        this.selectionSide = value;
+        this.selectionSize = value * value;
+        try {
+            window.localStorage.setItem(this.selectionSizeStorageKey(), String(value));
+        } catch (error) {}
+        this.updateSelectionSizeControl();
+
+        return value;
+    };
+
+    // Kept for callers that think in blocks: the selection area is always a
+    // complete square, so the count is the side squared.
+    Grid.prototype.effectiveSelectionSize = function () {
+        var side = this.effectiveSelectionSide();
+
+        return side * side;
+    };
+
+    Grid.prototype.updateSelectionSizeControl = function (options) {
         var button = this.selectionSizeButton;
         if (!button) {
             return;
         }
+        var forceFields = !!(options && options.forceFields);
 
-        var bounds = this.selectionSizeBounds();
+        var bounds = this.selectionSideBounds();
         if (!bounds || bounds.min === bounds.max) {
             button.hidden = true;
             return;
         }
 
-        var value = this.effectiveSelectionSize(bounds);
-        this.selectionSize = value;
+        var side = this.effectiveSelectionSide(bounds);
+        this.selectionSide = side;
+        this.selectionSize = side * side;
         button.hidden = false;
         if (this.actions && !this.readOnly && !this.currentOrder) {
             this.actions.hidden = false;
         }
         button.title = i18n('selectionSizeHint', 'Choose how many blocks each click selects when you start a new selection.');
-        button.textContent = i18n('selectionSize', 'Selection size') + (value === bounds.min ? '' : ' \u00b7 ' + value);
+        button.textContent = i18n('selectionSize', 'Selection size') + (side === bounds.min ? '' : ' \u00b7 ' + side + '\u00d7' + side);
         if (this.selectionSizeDialog) {
             var range = this.selectionSizeDialog.querySelector('input[type="range"]');
             if (range) {
                 range.min = String(bounds.min);
                 range.max = String(bounds.max);
-                range.value = String(value);
-                var valueLabel = this.selectionSizeDialog.querySelector('.mds3-selection-size-value');
-                if (valueLabel) {
-                    valueLabel.textContent = String(value);
-                }
+                range.value = String(side);
+            }
+            var sizeField = this.selectionSizeDialog.querySelector('input[name="mds3-selection-side"]');
+            if (sizeField) {
+                sizeField.min = String(bounds.min);
+                sizeField.max = String(bounds.max);
+                sizeField.value = String(side);
+            }
+            var blocksField = this.selectionSizeDialog.querySelector('input[name="mds3-selection-blocks"]');
+            if (blocksField && (forceFields || document.activeElement !== blocksField)) {
+                blocksField.min = String(bounds.blocksMin);
+                blocksField.max = String(bounds.blocksMax);
+                blocksField.value = String(side * side);
+            }
+            var valueLabel = this.selectionSizeDialog.querySelector('.mds3-selection-size-value');
+            if (valueLabel) {
+                valueLabel.textContent = String(side * side);
             }
         }
     };
@@ -3344,18 +3538,51 @@
                 '<span class="mds3-selection-size-value">1</span>' +
             '</div>' +
             '<input type="range" id="' + inputId + '" min="1" max="1" step="1" value="1">' +
+            '<div class="mds3-selection-size-fields">' +
+                '<div class="mds3-selection-size-field">' +
+                    '<label for="' + inputId + '-side">' + i18n('selectionSizeSide', 'Size') + '</label>' +
+                    '<input type="number" name="mds3-selection-side" id="' + inputId + '-side" min="1" max="1" step="1" value="1" inputmode="numeric">' +
+                '</div>' +
+                '<div class="mds3-selection-size-field">' +
+                    '<label for="' + inputId + '-blocks">' + i18n('selectionSizeBlocks', 'Blocks') + '</label>' +
+                    '<input type="number" name="mds3-selection-blocks" id="' + inputId + '-blocks" min="1" max="1" step="1" value="1" inputmode="numeric">' +
+                '</div>' +
+            '</div>' +
             '<div class="mds3-selection-size-actions">' +
                 '<button type="submit" class="mds3-selection-size-done">' + i18n('selectionSizeDone', 'Done') + '</button>' +
             '</div>';
 
-        form.querySelector('input[type="range"]').addEventListener('input', function (event) {
-            var value = Number(event.target.value) || 1;
-            form.querySelector('.mds3-selection-size-value').textContent = String(value);
-            self.selectionSize = value;
-            try {
-                window.localStorage.setItem(self.selectionSizeStorageKey(), String(value));
-            } catch (error) {}
-            self.updateSelectionSizeControl();
+        var range = form.querySelector('input[type="range"]');
+        var sizeField = form.querySelector('input[name="mds3-selection-side"]');
+        var blocksField = form.querySelector('input[name="mds3-selection-blocks"]');
+
+        range.addEventListener('input', function () {
+            self.setSelectionSide(range.value);
+        });
+
+        sizeField.addEventListener('input', function () {
+            self.setSelectionSide(sizeField.value);
+        });
+
+        // Blocks is the free-form entry: the side follows it immediately (a step
+        // up snaps to the next square, a step down to the previous one) and the
+        // field itself settles on that square a second later, as MDS2's control
+        // does, so typing is never fought over mid-edit.
+        var blocksTimer = 0;
+        blocksField.addEventListener('input', function () {
+            var requested = Number(blocksField.value);
+            if (!Number.isFinite(requested) || blocksField.value === '') {
+                return;
+            }
+
+            var side = requested > self.selectionSide * self.selectionSide
+                ? Math.ceil(Math.sqrt(requested))
+                : Math.floor(Math.sqrt(requested));
+            self.setSelectionSide(side);
+            window.clearTimeout(blocksTimer);
+            blocksTimer = window.setTimeout(function () {
+                self.updateSelectionSizeControl({ forceFields: true });
+            }, 1000);
         });
 
         dialog.appendChild(form);
@@ -3366,21 +3593,16 @@
     };
 
     Grid.prototype.openSelectionSizeDialog = function () {
-        var bounds = this.selectionSizeBounds();
+        var bounds = this.selectionSideBounds();
         if (!bounds || bounds.min === bounds.max) {
             return;
         }
 
-        var dialog = this.buildSelectionSizeDialog();
-        var range = dialog.querySelector('input[type="range"]');
-        var value = this.effectiveSelectionSize(bounds);
-        range.min = String(bounds.min);
-        range.max = String(bounds.max);
-        range.value = String(value);
-        dialog.querySelector('.mds3-selection-size-value').textContent = String(value);
+        this.buildSelectionSizeDialog();
+        this.updateSelectionSizeControl();
 
-        if (typeof dialog.showModal === 'function') {
-            dialog.showModal();
+        if (typeof this.selectionSizeDialog.showModal === 'function') {
+            this.selectionSizeDialog.showModal();
         }
     };
 
@@ -3390,7 +3612,7 @@
             return null;
         }
 
-        var count = this.effectiveSelectionSize(bounds);
+        var count = this.effectiveSelectionSize();
         if (count <= 1) {
             return null;
         }
@@ -3404,12 +3626,11 @@
     };
 
     // Grid-aligned anchored area for the first click of a multi-block
-    // selection: the most square-shaped rectangle that holds `count` cells,
-    // anchored at the clicked cell (MDS2-style) and shifted to stay inside
-    // the grid near the edges. Fills row-major, skipping cells that are not
-    // selectable, so the initial selection is always orderable. MDS2 used a
-    // side x side square because its slider counted the side length; the
-    // MDS3 slider counts total blocks, so this targets the exact count.
+    // selection: a complete side x side square anchored at the clicked cell
+    // (MDS2-style) and shifted to stay inside the grid near the edges. Fills
+    // row-major, skipping cells that are not selectable, so the initial
+    // selection is always orderable. The count is always a perfect square - the
+    // control works in sides - so the area is never left partly unfilled.
     Grid.prototype.anchoredBlockAreaAt = function (row, col, count) {
         var virtual = this.state.grid.virtual_blocks;
         var rows = virtual.rows;
@@ -3486,7 +3707,7 @@
             return;
         }
 
-        if (this.currentOrder || this.selected.length) {
+        if (this.currentOrder) {
             this.clearSelectionPreview();
             return;
         }
@@ -3782,9 +4003,35 @@
         }
 
         var placement = this.placementAt(point.x, point.y);
-        if (placement) {
+        if (placement && !this.placementOpensAdvertiserPage(placement)) {
+            if (this.isShownPopoverPlacement(placement)) {
+                return;
+            }
             this.showPopover(placement, event.clientX, event.clientY, { pinned: false });
+            return;
         }
+
+        if (!this.popoverHovered && !this.popoverPinned) {
+            this.hidePopover();
+        }
+    };
+
+    /**
+     * Is this placement the popup already on screen?
+     *
+     * Hover re-showed the popup on every pointer move, which rebuilt its DOM under the
+     * cursor (flicker) and dragged it to the new pointer position ("it moves").
+     *
+     * @param {Object} placement Placement.
+     * @return {boolean} True when that placement's popup is already displayed.
+     */
+    Grid.prototype.isShownPopoverPlacement = function (placement) {
+        if (!this.popover || this.popover.hidden || !placement) {
+            return false;
+        }
+
+        return placement === this.activePopoverPlacement ||
+            (!!this.activePopoverPlacementId && String(placement.id || '') === this.activePopoverPlacementId);
     };
 
     Grid.prototype.interactionSettings = function () {
@@ -3796,7 +4043,8 @@
     };
 
     Grid.prototype.popoverTrigger = function () {
-        return String(this.interactionSettings().tooltip_trigger || 'mouseenter').toLowerCase() === 'click' ? 'click' : 'mouseenter';
+        // Click is the default so a tap opens the popup; hover is opt-in.
+        return String(this.interactionSettings().tooltip_trigger || 'click').toLowerCase() === 'mouseenter' ? 'mouseenter' : 'click';
     };
 
     Grid.prototype.eventMovingIntoPopover = function (event) {
@@ -3810,6 +4058,28 @@
 
     Grid.prototype.placementHref = function (placement) {
         return String((placement && (placement.click_url || placement.link_url)) || '').trim();
+    };
+
+    Grid.prototype.placementOpensAdvertiserPage = function (placement) {
+        return !!(placement && placement.advertiser_page_click === 'page' && String(placement.advertiser_page_url || '').trim());
+    };
+
+    Grid.prototype.openAdvertiserPage = function (placement) {
+        var url = String((placement && placement.advertiser_page_url) || '').trim();
+        if (!url) {
+            return false;
+        }
+
+        if (placement.advertiser_page_target === '_blank') {
+            var opened = window.open(url, '_blank', 'noopener');
+            if (opened) {
+                opened.opener = null;
+            }
+        } else {
+            window.location.href = url;
+        }
+
+        return true;
     };
 
     Grid.prototype.linkTarget = function () {
@@ -4104,7 +4374,15 @@
         this.popoverBackdrop.className = 'mds3-grid-popover-backdrop';
         this.popoverBackdrop.setAttribute('aria-hidden', 'true');
         this.popoverBackdrop.hidden = true;
-        this.viewport.insertBefore(this.popoverBackdrop, this.popover || this.viewport.firstChild);
+
+        // The popover is portaled to document.body, so the backdrop has to join
+        // that parent; inserting against the viewport throws and leaves the
+        // popover unpositioned.
+        var parent = (this.popover && this.popover.parentNode) || this.viewport;
+        if (parent !== this.viewport) {
+            this.popoverBackdrop.classList.add('mds3-grid-popover-backdrop-portaled');
+        }
+        parent.insertBefore(this.popoverBackdrop, this.popover || parent.firstChild);
 
         return this.popoverBackdrop;
     };
@@ -4247,6 +4525,7 @@
             this.popoverBackdrop.hidden = true;
         }
         this.activePopoverPlacementId = '';
+        this.activePopoverPlacement = null;
         this.popoverHovered = false;
         this.popoverPinned = false;
     };
@@ -4298,7 +4577,7 @@
     };
 
     Grid.prototype.rejectSelection = function (message, event) {
-        this.setStatus(message);
+        this.setErrorStatus(message);
         this.showSelectionMessage(message, event);
         this.showSelectionValidity(false, message, false);
     };
@@ -4346,6 +4625,10 @@
     Grid.prototype.activatePlacement = function (placement, event) {
         if (!placement) {
             return false;
+        }
+
+        if (this.placementOpensAdvertiserPage(placement)) {
+            return this.openAdvertiserPage(placement);
         }
 
         if (this.popoversEnabled() && this.popoverTrigger() === 'click') {
@@ -4405,7 +4688,11 @@
                 return;
             }
         } else {
-            var area = !this.selected.length && this.multiBlockEnabled() ? this.selectionAreaAt(row, col) : null;
+            // Read the current selection size on every click, not only when no
+            // selection exists yet: changing the control mid-selection must apply
+            // to the next click instead of forcing a Clear first. selectionAreaAt()
+            // returns null at size 1, so plain block-by-block clicks are unchanged.
+            var area = this.multiBlockEnabled() ? this.selectionAreaAt(row, col) : null;
             next = area || (this.multiBlockEnabled() ? this.uniqueCoords(this.selected.concat([{ row: row, col: col, key: key }])) : [{ row: row, col: col, key: key }]);
             if (mode === 'RECTANGLE') {
                 next = this.rectangleFromCoords(next);
@@ -4668,6 +4955,14 @@
             hideDraftImageNotice(this.form);
         }
         setDraftImageControlState(this.form, true);
+        var previewSource = (draft && draft.source && draft.source.url) || sourceUrl;
+        if (previewSource) {
+            updateOrderUploadPreview(this.form, {
+                source: { url: previewSource },
+                alt_text: namedFieldValue(this.form, 'alt_text'),
+                fit_mode: namedFieldValue(this.form, 'fit_mode') || 'cover'
+            });
+        }
         this.updateUploadValidity(false);
         this.redraw();
     };
@@ -4680,6 +4975,7 @@
         this.draftPlacement = null;
         clearDraftImageFields(this.form);
         setDraftImageControlState(this.form, false);
+        updateOrderUploadPreview(this.form, null);
         this.updateUploadValidity(false);
         this.redraw();
     };
@@ -4722,7 +5018,7 @@
                 return;
             }
             self.clearDraftImage();
-            self.setStatus(error.message || gridConfig.i18n.error);
+            self.setErrorStatus(error.message || gridConfig.i18n.actionFailed);
         });
     };
 
@@ -4738,11 +5034,11 @@
                 return;
             }
 
-            showDraftImageNotice(self.form, draft, function (serverDraft) {
-                self.applyDraftImage(serverDraft, '');
-                saveFormDraft(self.form, { preserveExistingFields: true });
-                self.setStatus(i18n('draftImagePreviewReady', 'Image preview updated.'));
-            });
+            // A draft image lives server-side, so it is always restorable: render
+            // its preview as soon as the order is resumed instead of waiting for a
+            // separate "Restore" click, which left the preview blank.
+            self.applyDraftImage(draft, '');
+            saveFormDraft(self.form, { preserveExistingFields: true });
         }).catch(function () {});
     };
 
@@ -4758,7 +5054,7 @@
             saveFormDraft(self.form, { preserveExistingFields: true });
             self.setStatus(i18n('draftImageRemoved', 'Draft image removed.'));
         }).catch(function (error) {
-            self.setStatus(error.message || i18n('draftImageRemoveError', 'Draft image could not be removed.'));
+            self.setErrorStatus(error.message || i18n('draftImageRemoveError', 'Draft image could not be removed.'));
         });
     };
 
@@ -4832,7 +5128,7 @@
             blocks: this.selected
         }).then(function (payload) {
             if (!payload || !payload.success) {
-                self.setStatus(payload && payload.data && payload.data.message ? payload.data.message : gridConfig.i18n.error);
+                self.setErrorStatus(payload && payload.data && payload.data.message ? payload.data.message : gridConfig.i18n.actionFailed);
                 self.setReserveBusy(false);
                 return;
             }
@@ -4851,7 +5147,7 @@
             self.setReserveBusy(false);
             self.redraw();
         }).catch(function () {
-            self.setStatus(gridConfig.i18n.error);
+            self.setErrorStatus(gridConfig.i18n.actionFailed);
             self.setReserveBusy(false);
         });
     };
@@ -4953,8 +5249,6 @@
         if (this.submitButton) {
             if (this.checkoutUrl) {
                 this.submitButton.textContent = i18n('continueCheckout', 'Continue to checkout');
-            } else if (this.afterUploadUrl) {
-                this.submitButton.textContent = i18n('continue', 'Continue');
             } else {
                 this.submitButton.textContent = i18n('saveAd', 'Save ad');
             }
@@ -5001,7 +5295,9 @@
 
         request(form).then(function (payload) {
             if (!payload || !payload.success) {
-                self.setStatus(payload && payload.data && payload.data.message ? payload.data.message : gridConfig.i18n.error);
+                var data = (payload && payload.data) || {};
+                self.setErrorStatus(data.message || gridConfig.i18n.saveFailed);
+                self.focusRejectedField(data.field, data.message);
                 self.uploading = false;
                 setOrderUploadBusy(self.form, false);
                 return;
@@ -5023,13 +5319,67 @@
             self.form.reset();
             updateOrderUploadPreview(self.form, payload.data && payload.data.placement);
             setOrderUploadBusy(self.form, false);
-            self.updateUploadValidity(true);
+            self.updateUploadValidity(false);
+            hideFormMessage(self.form);
             self.redraw();
+
+            // With no checkout step the visitor stays on this page, so say what
+            // happened to the ad and show it, rather than leaving "Ad saved."
+            // as the only sign that anything happened.
+            var saved = payload.data && payload.data.placement;
+            if (saved) {
+                self.setStatus('active' === saved.status
+                    ? i18n('adSavedLive', 'Ad saved. It is live on the grid.')
+                    : i18n('adSavedPending', 'Ad saved. It appears once the order is confirmed.'));
+                self.revealPlacement(saved);
+            }
         }).catch(function () {
             self.uploading = false;
             setOrderUploadBusy(self.form, false);
-            self.setStatus(gridConfig.i18n.error);
+            self.setErrorStatus(gridConfig.i18n.saveFailed);
         });
+    };
+
+    // A server-side rejection names the field it failed on, so mark that input,
+    // scroll it into view and focus it instead of leaving the visitor to match a
+    // sentence against the form.
+    // The field block that owns an input: the core form wraps fields in a label,
+    // the popup-text block and extension-rendered fields use their own container.
+    function fieldErrorContainer(input) {
+        return input.closest('.mds3-placement-field') || richTextFocusTarget(input).parentElement;
+    }
+
+    Grid.prototype.focusRejectedField = function (field, message) {
+        if (!this.form || !field) {
+            return;
+        }
+        var input = this.form.querySelector('[name="' + field + '"]');
+        if (!input) {
+            return;
+        }
+        setFieldValidity(input, message || ' ');
+        var target = richTextFocusTarget(input);
+        // The message belongs next to the thing it is about, not only in the
+        // status bar at the bottom of the form.
+        var wrap = fieldErrorContainer(input);
+        if (wrap && message && !wrap.querySelector('.field-error-message')) {
+            // An extension field may already show its own note next to the input;
+            // do not stack a second one on top of it.
+            var note = wrap.querySelector('.mds3-field-error');
+            if (!note) {
+                note = document.createElement('p');
+                note.className = 'mds3-field-error';
+                note.setAttribute('role', 'alert');
+                note.id = 'mds3-field-error-' + String(field).replace(/[^a-zA-Z0-9_-]/g, '-');
+                wrap.appendChild(note);
+            }
+            note.textContent = message;
+            input.setAttribute('aria-describedby', note.id);
+        }
+        target.scrollIntoView({ block: 'center' });
+        if (!input.disabled) {
+            target.focus({ preventScroll: true });
+        }
     };
 
     Grid.prototype.selectionValidationMessage = function () {
@@ -5209,6 +5559,17 @@
     Grid.prototype.setStatus = function (message) {
         if (this.status) {
             this.status.textContent = message || '';
+            if (!message) {
+                this.status.classList.remove('mds3-status-error');
+            }
+        }
+    };
+
+    // Same line, marked as a failure so it reads as a problem rather than news.
+    Grid.prototype.setErrorStatus = function (message) {
+        this.setStatus(message);
+        if (this.status && message) {
+            this.status.classList.add('mds3-status-error');
         }
     };
 
@@ -5305,7 +5666,7 @@
                     setDraftImageControlState(form, false);
                     restoreOrderUploadPreview(form);
                     if (status) {
-                        status.textContent = error.message || gridConfig.i18n.error;
+                        status.textContent = error.message || gridConfig.i18n.actionFailed;
                     }
                 });
             });
@@ -5370,6 +5731,7 @@
 
             bindAdvertiserUrlInputs(form);
             initializeRichTextEditors(form);
+            initializeTextLimits(form);
             bindOrderUploadDraftControls(form);
             bindFormDraft(form, 'upload:order:' + (form.getAttribute('data-mds3-order-id') || (form.querySelector('input[name="order_id"]') ? form.querySelector('input[name="order_id"]').value : '0')));
             form.addEventListener('input', refreshVisibleMessage);
@@ -5398,7 +5760,7 @@
 
                 request(payload).then(function (response) {
                     if (!response || !response.success) {
-                        throw new Error(response && response.data && response.data.message ? response.data.message : gridConfig.i18n.error);
+                        throw new Error(response && response.data && response.data.message ? response.data.message : gridConfig.i18n.actionFailed);
                     }
 
                     if (status) {
@@ -5422,7 +5784,7 @@
                 }).catch(function (error) {
                     setOrderUploadBusy(form, false);
                     if (status) {
-                        status.textContent = error.message || gridConfig.i18n.error;
+                        status.textContent = error.message || gridConfig.i18n.actionFailed;
                     }
                 });
             });

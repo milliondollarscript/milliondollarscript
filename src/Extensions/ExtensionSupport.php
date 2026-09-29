@@ -154,18 +154,30 @@ final class ExtensionSupport {
     }
 
     public static function rate_limited($key, $prefix = 'mds_ext_rate', $ttl = 45) {
-        $key = sanitize_key((string) $key);
-        $prefix = sanitize_key((string) $prefix) ?: 'mds_ext_rate';
-        $ttl = max(1, absint($ttl));
-        $hash = md5(self::remote_ip() . '|' . $key);
-        $transient = substr($prefix . '_' . $hash, 0, 172);
-
-        if (get_transient($transient)) {
+        if (self::is_rate_limited($key, $prefix)) {
             return true;
         }
-
-        set_transient($transient, 1, $ttl);
-
+        self::record_rate_limit($key, $prefix, $ttl);
         return false;
+    }
+
+    /**
+     * Peek at a rate-limit slot without consuming it. Pair with
+     * record_rate_limit() when only a request that actually changed something
+     * should spend the visitor's cooldown.
+     */
+    public static function is_rate_limited($key, $prefix = 'mds_ext_rate') {
+        $transient = self::rate_limit_key($key, $prefix);
+        return (bool) get_transient($transient);
+    }
+
+    public static function record_rate_limit($key, $prefix = 'mds_ext_rate', $ttl = 45) {
+        set_transient(self::rate_limit_key($key, $prefix), 1, max(1, absint($ttl)));
+    }
+
+    private static function rate_limit_key($key, $prefix) {
+        $key = sanitize_key((string) $key);
+        $prefix = sanitize_key((string) $prefix) ?: 'mds_ext_rate';
+        return substr($prefix . '_' . md5(self::remote_ip() . '|' . $key), 0, 172);
     }
 }

@@ -49,6 +49,25 @@ final class PopupText {
         return trim(wp_strip_all_tags((string) $value));
     }
 
+    /**
+     * Shorten copy for the block popup at a word boundary. The advertiser page keeps the full text.
+     */
+    public static function truncate($value, $limit) {
+        $limit = max(0, (int) $limit);
+        $text = trim(preg_replace('/\s+/u', ' ', wp_strip_all_tags((string) $value)));
+        if (0 === $limit || mb_strlen($text) <= $limit) {
+            return $text;
+        }
+
+        $cut = mb_substr($text, 0, $limit);
+        $space = mb_strrpos($cut, ' ');
+        if (false !== $space && $space > (int) ($limit * 0.6)) {
+            $cut = mb_substr($cut, 0, $space);
+        }
+
+        return rtrim($cut, " \t\n\r\0\x0B.,;:!?-") . '…';
+    }
+
     public static function allowed_html() {
         $allowed = [
             'br' => [],

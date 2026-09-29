@@ -180,6 +180,32 @@ try {
     $anonymous_payload = $payload_method->invoke($ajax, $placement_row, [], [], $paid_order);
     mds3_mu_assert(is_array($anonymous_payload) && '' === ($anonymous_payload['manage_url'] ?? 'missing'), 'Expected anonymous grid payloads to omit the manage URL.');
     wp_set_current_user($previous_user);
+
+    // Grid-level auto approve is tri-state: '' inherits the global setting, 'Y'/'N' override it.
+    $auto_host = new class {
+        use \MillionDollarScript\V3\Grid\Concerns\HandlesPlacementAjaxSubmission;
+    };
+    $auto_method = new ReflectionMethod($auto_host, 'auto_approve_for_grids');
+    $auto_method->setAccessible(true);
+    $set_auto_approve = static function ($choice) use ($grid) {
+        $repo = new GridRepository();
+        $settings = $repo->find($grid->id())->settings();
+        $settings['auto_approve'] = $choice;
+        $repo->update($grid->id(), ['settings' => $settings]);
+        return (string) ($repo->find($grid->id())->settings()['auto_approve'] ?? 'missing');
+    };
+    $auto_approve_for = static function ($choice, $global) use ($set_auto_approve, $auto_method, $auto_host, $order_repo, $paid_order_id) {
+        $set_auto_approve($choice);
+        return (bool) $auto_method->invoke($auto_host, $order_repo, $paid_order_id, ['auto-approve' => $global]);
+    };
+    mds3_mu_assert(true === $auto_approve_for('', 'yes'), 'Expected a grid without an auto approve choice to follow the global yes.');
+    mds3_mu_assert(false === $auto_approve_for('', 'no'), 'Expected a grid without an auto approve choice to follow the global no.');
+    mds3_mu_assert(true === $auto_approve_for('Y', 'no'), 'Expected grid auto approve yes to override a global no.');
+    mds3_mu_assert(false === $auto_approve_for('N', 'yes'), 'Expected grid auto approve no to override a global yes.');
+    mds3_mu_assert('N' === $set_auto_approve('N'), 'Expected an explicit auto approve choice to store as-is.');
+    // The admin form posts flat field names; that path normalises unknown values to inherit.
+    (new GridRepository())->update($grid->id(), ['auto_approve' => 'maybe']);
+    mds3_mu_assert('' === (string) ((new GridRepository())->find($grid->id())->settings()['auto_approve'] ?? 'x'), 'Expected an unknown posted auto approve value to fall back to inherit.');
 } finally {
     unset($_GET['mds3_order_id'], $_GET['mds3_order_key']);
     (new GridRepository())->delete($grid->id());

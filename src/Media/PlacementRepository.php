@@ -362,19 +362,49 @@ final class PlacementRepository {
             return false;
         }
 
-        $updated = $wpdb->update(
-            DB::table('placements'),
-            [
-                'status' => $this->status($status),
-                'updated_at' => current_time('mysql', true),
-            ],
-            ['order_id' => absint($order_id)]
-        );
+        $order_id = absint($order_id);
+        $where = 'order_id = %d';
+        $where_args = [$order_id];
+        if ('active' === $status) {
+            // A grid with "Auto Publish Uploads" off keeps a paid upload pending
+            // until an admin approves it.
+            $held = $this->grids_holding_paid_uploads($order_id);
+            if ($held) {
+                $where .= ' AND grid_id NOT IN (' . implode(',', array_fill(0, count($held), '%d')) . ')';
+                $where_args = array_merge($where_args, $held);
+            }
+        }
+
+        $updated = $wpdb->query($wpdb->prepare(
+            'UPDATE ' . DB::table('placements') . ' SET status = %s, updated_at = %s WHERE ' . $where,
+            array_merge([$this->status($status), current_time('mysql', true)], $where_args)
+        ));
         if (false !== $updated) {
-            \MillionDollarScript\Core\Hooks::do('million-dollar-script/placements/order/saved', absint($order_id));
+            \MillionDollarScript\Core\Hooks::do('million-dollar-script/placements/order/saved', $order_id);
         }
 
         return false !== $updated;
+    }
+
+    /**
+     * Grid ids for this order's placements that hold paid uploads for admin review.
+     *
+     * @return int[]
+     */
+    private function grids_holding_paid_uploads($order_id) {
+        global $wpdb;
+
+        $grid_ids = $wpdb->get_col($wpdb->prepare('SELECT grid_id FROM ' . DB::table('placements') . ' WHERE order_id = %d', $order_id));
+        $grids = new \MillionDollarScript\V3\Grid\GridRepository();
+        $held = [];
+        foreach (array_unique(array_map('absint', (array) $grid_ids)) as $grid_id) {
+            $grid = $grid_id ? $grids->find($grid_id) : null;
+            if ($grid && !PlacementFieldContract::auto_publish($grid->settings())) {
+                $held[] = $grid_id;
+            }
+        }
+
+        return $held;
     }
 
     private function fit_mode($fit_mode) {

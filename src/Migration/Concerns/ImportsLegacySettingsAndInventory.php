@@ -328,20 +328,17 @@ trait ImportsLegacySettingsAndInventory {
         $content = PageRepository::shortcode($type, $target_grid_id);
         $post = get_post($post_id);
         $unmodified = !empty($candidate['unmodified']);
-        $replace_modified = !empty($this->page_options['replace_modified']);
-        $create_new = !empty($this->page_options['create_new']) && !$replace_modified;
+        $upgrade_in_place = isset($this->page_options['upgrade_in_place'][$post_id]);
 
-        // A modified MDS2 page is left untouched by default. The opt-ins decide
-        // whether to overwrite it in place (replace) or leave it and create a new
-        // separate page (create_new, which is ignored when replace is set).
-        if (!$unmodified && !$replace_modified) {
-            if ($create_new) {
-                $created_id = $this->create_new_page($type, $target_grid_id, $content, $repo);
-                if ($created_id) {
-                    $this->record_grid_page_disposition($target_grid_id, 'created_new');
-                    $this->record_page_outcome($post_id, $type, 'created_new', (string) get_the_title($post_id));
-                    return $created_id;
-                }
+        // A modified MDS2 page without its per-page "upgrade in place" box is
+        // left untouched and gets a fresh MDS3 page instead. The outcome is
+        // reported in the import's page outcomes so the new page is visible.
+        if (!$unmodified && !$upgrade_in_place) {
+            $created_id = $this->create_new_page($type, $target_grid_id, $content, $repo);
+            if ($created_id) {
+                $this->record_grid_page_disposition($target_grid_id, 'created_new');
+                $this->record_page_outcome($post_id, $type, 'created_new', (string) get_the_title($post_id));
+                return $created_id;
             }
 
             $this->record_grid_page_disposition($target_grid_id, 'left_unchanged');

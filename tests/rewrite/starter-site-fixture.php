@@ -6,6 +6,7 @@
  * wp --path=/var/www/html eval-file wp-content/plugins/million-dollar-script/tests/rewrite/starter-site-fixture.php
  */
 
+use MillionDollarScript\V3\Setup\StarterNavigation;
 use MillionDollarScript\V3\Setup\StarterSite;
 
 if (!defined('ABSPATH')) {
@@ -31,6 +32,9 @@ $starter_navigation = [];
 $starter_navigation_created = false;
 $existing_navigation_content = [];
 $original_contact_shortcode = $GLOBALS['shortcode_tags']['mds_contact_form'] ?? null;
+$original_stylesheet = get_option('stylesheet');
+$registered_locations_before = null;
+$fixture_menu_ids = [];
 
 foreach (get_posts([
     'post_status' => 'publish',
@@ -174,7 +178,81 @@ try {
     if ($about_was_created && '<p>Administrator-edited About content.</p>' !== (string) get_post_field('post_content', $about_id)) {
         throw new RuntimeException('Idempotent starter-site repair overwrote edited page content.');
     }
+
+    // A classic theme usually already shows a menu of its own. The starter
+    // links have to join that menu instead of a parallel menu parked in a
+    // spare location the theme renders in a drawer or footer.
+    $classic_theme = null;
+    foreach (['kadence', 'Divi'] as $candidate) {
+        if (wp_get_theme($candidate)->exists()) {
+            $classic_theme = $candidate;
+            break;
+        }
+    }
+
+    if (null === $classic_theme) {
+        echo "Skipped classic-theme menu check: no classic theme installed.\n";
+    } else {
+        switch_theme($classic_theme);
+        $registered_locations_before = $GLOBALS['_wp_registered_nav_menus'] ?? [];
+        $GLOBALS['_wp_registered_nav_menus'] = array_merge(['primary' => 'Primary location'], (array) $registered_locations_before);
+
+        $site_menu_id = wp_create_nav_menu('Fixture Existing Site Menu');
+        if (is_wp_error($site_menu_id)) {
+            throw new RuntimeException('Could not create the fixture site menu.');
+        }
+        $site_menu_id = absint($site_menu_id);
+        $fixture_menu_ids[] = $site_menu_id;
+        if (is_wp_error(wp_update_nav_menu_item($site_menu_id, 0, [
+            'menu-item-object' => 'page',
+            'menu-item-object-id' => $existing_front_id,
+            'menu-item-status' => 'publish',
+            'menu-item-type' => 'post_type',
+        ]))) {
+            throw new RuntimeException('Could not add an item to the fixture site menu.');
+        }
+
+        $locations = (array) get_theme_mod('nav_menu_locations', []);
+        $locations['primary'] = $site_menu_id;
+        set_theme_mod('nav_menu_locations', $locations);
+
+        $nav_result = [];
+        $joined = (new StarterNavigation())->ensure($status['pages'], [], $nav_result);
+        if ('classic' !== ($joined['type'] ?? '')) {
+            throw new RuntimeException('Classic theme did not take the classic navigation path.');
+        }
+        if (absint($joined['id'] ?? 0) !== $site_menu_id) {
+            throw new RuntimeException('Starter links did not join the menu the theme already shows.');
+        }
+        if ('primary' !== ($joined['location'] ?? '')) {
+            throw new RuntimeException('Starter navigation moved the visible menu out of its location.');
+        }
+        if (!empty($nav_result['errors'])) {
+            throw new RuntimeException('Starter navigation reported errors: ' . implode('; ', array_map('strval', $nav_result['errors'])));
+        }
+        $item_count = count((array) wp_get_nav_menu_items($site_menu_id));
+        if ($item_count < 7) {
+            throw new RuntimeException('Starter links were not added to the existing site menu.');
+        }
+
+        (new StarterNavigation())->ensure($status['pages'], $joined, $nav_result);
+        if (count((array) wp_get_nav_menu_items($site_menu_id)) !== $item_count) {
+            throw new RuntimeException('A second starter-site run duplicated menu items.');
+        }
+        if (get_option('stylesheet') !== $original_stylesheet) {
+            switch_theme($original_stylesheet);
+        }
+    }
 } finally {
+    if (null !== $registered_locations_before) {
+        $GLOBALS['_wp_registered_nav_menus'] = $registered_locations_before;
+    }
+    foreach ($fixture_menu_ids as $menu_id) {
+        wp_delete_nav_menu(absint($menu_id));
+    }
+    if (get_option('stylesheet') !== $original_stylesheet) {
+        switch_theme($original_stylesheet);
+    }
     if (null === $original_contact_shortcode) {
         remove_shortcode('mds_contact_form');
     } else {

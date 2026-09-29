@@ -18,7 +18,10 @@ $to = $total ? min($total, $page * $per_page) : 0;
 $search_id = 'mds3-grid-picker-search';
 ?>
 <section class="mds3-page-panel mds3-grid-picker-panel <?php echo esc_attr($theme_class ?? ''); ?>">
-    <h2><?php echo esc_html($title ?? __('Choose a grid', 'million-dollar-script')); ?></h2>
+    <?php $mds3_heading = (string) ($title ?? __('Choose a grid', 'million-dollar-script')); ?>
+    <?php if ('' !== $mds3_heading && get_the_title() !== $mds3_heading) : ?>
+        <h2><?php echo esc_html($mds3_heading); ?></h2>
+    <?php endif; ?>
     <p><?php echo esc_html($copy ?? __('Choose the grid you want to continue with.', 'million-dollar-script')); ?></p>
 
     <form class="mds3-grid-picker-search" method="get" action="<?php echo esc_url($form_action ?? ''); ?>" role="search">

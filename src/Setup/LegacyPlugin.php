@@ -8,6 +8,7 @@
 namespace MillionDollarScript\V3\Setup;
 
 use MillionDollarScript\V3\Migration\LegacySource;
+use MillionDollarScript\V3\Pages\PageRepository;
 use MillionDollarScript\V3\Support\DB;
 
 if (!defined('ABSPATH')) {
@@ -255,6 +256,67 @@ final class LegacyPlugin {
         $source = new LegacySource($source_prefix);
 
         return DB::table_exists($source->page_metadata_table()) || DB::table_exists($source->page_config_table());
+    }
+
+    /**
+     * Whether this site has anything the migration could work on.
+     *
+     * Keeps the migration out of the admin on a fresh install while still
+     * offering it to any site with Million Dollar Script 2 plugin files, tables,
+     * or page settings, and to a site whose upgrade choice was already recorded.
+     *
+     * @param string $source_prefix Legacy table prefix. Empty uses the saved setting.
+     * @return bool
+     */
+    public static function has_legacy_context($source_prefix = '') {
+        static $context = [];
+
+        $key = (string) $source_prefix;
+        if (isset($context[$key])) {
+            return $context[$key];
+        }
+
+        if ('' === $key) {
+            $settings = get_option('mds3_settings', []);
+            $key = (string) (is_array($settings) ? ($settings['legacy_mds2_source_prefix'] ?? '') : '');
+        }
+
+        // ponytail: recomputed once per request; move to a short-lived transient if admin profiles show these queries.
+        return $context[$key] = self::legacy_source_exists($key);
+    }
+
+    /**
+     * Whether Million Dollar Script 2 page settings still point at real pages.
+     *
+     * @return bool
+     */
+    public static function has_legacy_pages() {
+        foreach (PageRepository::option_aliases() as $aliases) {
+            foreach ($aliases as $alias) {
+                $post_id = absint(get_option($alias, 0));
+                if ($post_id && get_post($post_id)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static function legacy_source_exists($source_prefix) {
+        if (self::detected_plugins()) {
+            return true;
+        }
+
+        if (self::has_source_data($source_prefix)) {
+            return true;
+        }
+
+        if (self::choice()) {
+            return true;
+        }
+
+        return self::has_legacy_pages();
     }
 
     /**

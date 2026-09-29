@@ -37,7 +37,8 @@ trait RendersAdminNavigation {
         $admin_bar->add_node([
             'id' => $root_id . '-clear-cache',
             'parent' => $root_id,
-            'title' => $this->admin_bar_clear_cache_form(),
+            'title' => __('Clear cache', 'million-dollar-script'),
+            'href' => wp_nonce_url(self::clear_cache_url(), 'mds3_clear_cache'),
         ]);
 
         $extensions_id = $root_id . '-extensions';
@@ -237,8 +238,17 @@ trait RendersAdminNavigation {
         return $normalized;
     }
 
-    private function admin_bar_clear_cache_form() {
-        return '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" class="mds3-clear-cache-form">' . wp_nonce_field('mds3_clear_cache', '_wpnonce', false, false) . '<input type="hidden" name="action" value="mds3_clear_cache" /><button type="submit" class="mds3-clear-cache-button">' . esc_html__('Clear cache', 'million-dollar-script') . '</button></form>';
+    /**
+     * admin-post action URL that returns the current screen afterwards, so the
+     * admin-bar action does not bounce the user to System Status.
+     */
+    public static function clear_cache_url() {
+        $current = home_url(isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/');
+
+        return add_query_arg([
+            'action' => 'mds3_clear_cache',
+            'mds3_return' => wp_validate_redirect($current, admin_url('admin.php?page=mds3-system-status')),
+        ], admin_url('admin-post.php'));
     }
 
     private function admin_bar_add_item($admin_bar, $parent_id, array $item) {

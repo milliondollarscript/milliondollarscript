@@ -43,7 +43,7 @@ trait BuildsGridAjaxPayloads {
             'enable_cloaking' => $direct_links ? 'YES' : 'NO',
             'click_mode' => $direct_links ? 'direct' : 'redirect',
             'enable_mouseover' => SettingsSchema::sanitize('enable-mouseover', $settings['enable-mouseover'] ?? 'yes'),
-            'tooltip_trigger' => SettingsSchema::sanitize('tooltip-trigger', $settings['tooltip-trigger'] ?? 'mouseenter'),
+            'tooltip_trigger' => SettingsSchema::sanitize('tooltip-trigger', $settings['tooltip-trigger'] ?? 'click'),
             'max_popup_size' => absint(SettingsSchema::sanitize('max-popup-size', $settings['max-popup-size'] ?? 320)),
             'max_image_size' => absint(SettingsSchema::sanitize('max-image-size', $settings['max-image-size'] ?? 300)),
         ];
@@ -153,16 +153,22 @@ trait BuildsGridAjaxPayloads {
         ];
     }
 
-    private function placement_payload(array $placement, array $settings = [], $mask = null, $order = null, array $legacy_page_urls = []) {
+    private function placement_payload(array $placement, array $settings = [], $mask = null, $order = null) {
         $source = (new OriginalImage())->resolve($placement['attachment_id'] ?? 0);
         $manage_url = $this->placement_manage_url($placement, $order);
         $link_url = PlacementFieldContract::advertiser_url($placement['link_url'] ?? '');
         $popup_text = (string) ($placement['popup_text'] ?? '');
+        $popup_limit = max(0, absint(SettingsSchema::sanitize('popup-text-max-chars', $settings['popup-text-max-chars'] ?? 0)));
         $popup_text_html = $this->popup_text_html($popup_text, $settings);
         $placement_id = absint($placement['id'] ?? 0);
-        $advertiser_page_url = ($placement_id && $this->popup_page_link_enabled($settings))
-            ? ((new AdvertiserPageManager())->public_url($placement_id) ?: (string) ($legacy_page_urls[$placement_id] ?? ''))
+        $click_mode = PlacementFieldContract::advertiser_page_click_mode($settings);
+        $advertiser_page_url = ($placement_id && ($this->popup_page_link_enabled($settings) || 'page' === $click_mode))
+            ? (new AdvertiserPageManager())->public_url($placement_id)
             : '';
+        if ('page' === $click_mode && '' === $advertiser_page_url) {
+            // Nothing published to open for this placement, so keep the popup.
+            $click_mode = 'popup';
+        }
 
         $payload = [
             'id' => absint($placement['id'] ?? 0),
@@ -179,11 +185,12 @@ trait BuildsGridAjaxPayloads {
             'link_url' => $link_url,
             'click_url' => $this->placement_click_url($placement, $settings, $link_url),
             'alt_text' => sanitize_text_field($placement['alt_text'] ?? ''),
-            'popup_text' => PopupText::plain($popup_text),
+            'popup_text' => PopupText::truncate(PopupText::plain($popup_text), $popup_limit),
             'popup_text_html' => $popup_text_html,
             'advertiser_page_url' => esc_url_raw($advertiser_page_url),
             'advertiser_page_label' => sanitize_text_field((string) ($settings['advertiser-page-popup-label'] ?? __('View advertiser page', 'million-dollar-script'))),
             'advertiser_page_target' => '_blank' === ($settings['advertiser-page-link-target'] ?? '_self') ? '_blank' : '_self',
+            'advertiser_page_click' => $click_mode,
             'status' => sanitize_key($placement['status'] ?? 'pending'),
             'manage_url' => $manage_url,
             'source' => [
@@ -201,21 +208,6 @@ trait BuildsGridAjaxPayloads {
 
     private function popup_page_link_enabled(array $settings) {
         return 'yes' === SettingsSchema::sanitize('advertiser-page-popup-link', $settings['advertiser-page-popup-link'] ?? 'yes');
-    }
-
-    /**
-     * Legacy MDS2 pixel page URLs, used while MDS 3.0 advertiser pages are off.
-     *
-     * @param array $settings Resolved MDS 3.0 settings.
-     * @param array $placement_ids MDS 3.0 placement IDs.
-     * @return array<int,string> Placement ID to public legacy URL.
-     */
-    private function legacy_popup_page_urls(array $settings, array $placement_ids) {
-        if (!$this->popup_page_link_enabled($settings) || AdvertiserPageUrls::enabled($settings)) {
-            return [];
-        }
-
-        return (new AdvertiserPageManager())->legacy_public_urls($placement_ids);
     }
 
     private function placement_manage_url(array $placement, ?array $order) {
@@ -249,6 +241,11 @@ trait BuildsGridAjaxPayloads {
         $popup_text = (string) $popup_text;
         if ('' === trim($popup_text)) {
             return '';
+        }
+
+        $limit = max(0, absint(SettingsSchema::sanitize('popup-text-max-chars', $settings['popup-text-max-chars'] ?? 0)));
+        if ($limit > 0) {
+            return PopupText::html(PopupText::truncate($popup_text, $limit), [ 'popup-rich-text' => 'no' ]);
         }
 
         return PopupText::html($popup_text, $settings);

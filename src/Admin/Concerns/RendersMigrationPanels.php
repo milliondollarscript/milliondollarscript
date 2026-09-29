@@ -105,15 +105,11 @@ trait RendersMigrationPanels {
     }
 
     private function has_mds2_upgrade_context(array $legacy_plugins, array $legacy_source) {
-        if (!empty($legacy_plugins) || !empty($legacy_source['has_data']) || absint($legacy_source['rows'] ?? 0) > 0) {
+        if (!empty($_GET['mds2_action']) || !empty($_GET['mds2_error'])) {
             return true;
         }
 
-        if (LegacyPlugin::choice()) {
-            return true;
-        }
-
-        return !empty($_GET['mds2_action']) || !empty($_GET['mds2_error']);
+        return LegacyPlugin::has_legacy_context((string) ($legacy_source['source_prefix'] ?? ''));
     }
 
     private function latest_migration_run($source_prefix = '') {

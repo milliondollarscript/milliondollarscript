@@ -30,7 +30,11 @@ final class CustomerPlacementService {
             'alt_text',
             'popup_text',
         ])));
-        $validated = PlacementFieldContract::validate($merged, $this->settings(), $current);
+        $validated = PlacementFieldContract::validate(
+            $merged,
+            PlacementFieldContract::settings_for_grid($this->settings(), $current['grid_id'] ?? 0),
+            $current
+        );
         if (is_wp_error($validated)) {
             return $validated;
         }

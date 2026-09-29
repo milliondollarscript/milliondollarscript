@@ -38,7 +38,7 @@ final class AdvertiserPages implements Component {
         add_action('million-dollar-script/admin/settings/imported', [$this, 'settings_imported'], 10, 3);
         add_filter('million-dollar-script/admin/validate/settings', [$this, 'validate_settings'], 10, 3);
         add_action(self::SYNC_HOOK, [$this, 'synchronize_batch']);
-        add_action('million-dollar-script/admin/settings/after-form', [$this, 'settings_tools']);
+        add_action('million-dollar-script/admin/settings/advertiser-tools', [$this, 'advertiser_tools']);
         add_action('admin_post_mds3_preview_advertiser_slugs', [$this, 'preview_slugs']);
         add_action('admin_post_mds3_apply_advertiser_slugs', [$this, 'apply_slugs']);
         add_action('admin_post_mds3_sync_advertiser_pages', [$this, 'start_sync']);
@@ -228,13 +228,21 @@ final class AdvertiserPages implements Component {
 
     public function validate_settings($errors, $raw, $current) {
         $errors = is_wp_error($errors) ? $errors : new \WP_Error();
-        $base = trim((string) ($raw['mds-pixel-base'] ?? ''));
+        $raw = is_array($raw) ? $raw : [];
+        $current = is_array($current) ? $current : [];
+        // The URL base and slug pattern only matter while advertiser pages are
+        // published, and a settings submission from another context may not carry
+        // them at all, so fall back to the stored values and skip when disabled.
+        if ('yes' !== SettingsSchema::sanitize('mds-pixel-template', $raw['mds-pixel-template'] ?? ($current['mds-pixel-template'] ?? 'no'))) {
+            return $errors;
+        }
+        $base = trim((string) ($raw['mds-pixel-base'] ?? ($current['mds-pixel-base'] ?? '')));
         if ('' === sanitize_title($base) || false !== strpos($base, '/') || false !== strpos($base, '?') || false !== strpos($base, '#')) {
             $errors->add('million_dollar_script_advertiser_base_invalid', __('Advertiser Page URL Base must be one non-empty URL segment without slashes, query strings, or fragments.', 'million-dollar-script'));
         } elseif ($this->base_conflicts(sanitize_title($base))) {
             $errors->add('million_dollar_script_advertiser_base_conflict', __('Advertiser Page URL Base conflicts with a reserved WordPress route, an existing page, or another public post type.', 'million-dollar-script'));
         }
-        $pattern = trim((string) ($raw['mds-pixel-slug-structure'] ?? ''));
+        $pattern = trim((string) ($raw['mds-pixel-slug-structure'] ?? ($current['mds-pixel-slug-structure'] ?? '')));
         if ('' === $pattern || strlen($pattern) > 180 || false !== strpos($pattern, '/') || false !== strpos($pattern, '?') || false !== strpos($pattern, '#')) {
             $errors->add('million_dollar_script_advertiser_pattern_invalid', __('Advertiser Page Slug Pattern must be 180 characters or fewer and cannot contain slashes, query strings, or fragments.', 'million-dollar-script'));
         }
@@ -262,8 +270,27 @@ final class AdvertiserPages implements Component {
     public function start_sync() {
         $this->admin_guard('mds3_sync_advertiser_pages');
         delete_option(self::SYNC_CURSOR_OPTION);
-        $this->synchronize_batch();
+        $this->drain_sync();
         $this->settings_redirect(['advertiser_sync_started' => 1]);
+    }
+
+    /**
+     * Run backfill batches until the queue is empty or the time budget runs out.
+     *
+     * A single batch covers 100 placements and hands the remainder to cron, which
+     * only runs when someone loads a page. On a site with a few hundred placements
+     * that left storefront links missing until the admin clicked "Synchronize now",
+     * so the first pass is drained here instead.
+     */
+    private function drain_sync($budget_seconds = 15) {
+        $deadline = microtime(true) + max(1, (int) $budget_seconds);
+        do {
+            $this->synchronize_batch();
+        } while (absint(get_option(self::SYNC_CURSOR_OPTION, 0)) > 0 && microtime(true) < $deadline);
+        $next = wp_next_scheduled(self::SYNC_HOOK);
+        if ($next && absint(get_option(self::SYNC_CURSOR_OPTION, 0)) === 0) {
+            wp_unschedule_event($next, self::SYNC_HOOK);
+        }
     }
 
     public function preview_slugs() {
@@ -293,23 +320,37 @@ final class AdvertiserPages implements Component {
         ]);
     }
 
-    public function settings_tools($settings) {
+    public function advertiser_tools($settings) {
+        $settings = is_array($settings) ? $settings : [];
+        if ('yes' !== SettingsSchema::sanitize('mds-pixel-template', $settings['mds-pixel-template'] ?? 'no')) {
+            // The repair and migration tools only mean something once there are
+            // public advertiser pages to repair or move.
+            echo '<div class="mds3-settings-callout"><p>' . esc_html__('Individual advertiser pages are turned off. Set “Enable Individual Advertiser Pages” to Yes and save to publish a page for each active placement; the synchronize and slug-migration tools appear here afterwards.', 'million-dollar-script') . '</p></div>';
+            return;
+        }
         $preview = get_transient(self::PREVIEW_TRANSIENT . get_current_user_id());
         $legacy_template = locate_template('mds-pixel/single-mds-pixel.php');
         $continue_after = absint($_GET['advertiser_slugs_after'] ?? 0);
         ?>
         <div class="mds3-settings-callout mds3-advertiser-page-tools">
-            <h3><?php esc_html_e('Advertiser page maintenance', 'million-dollar-script'); ?></h3>
             <?php if (!empty($_GET['advertiser_sync_started'])) : ?>
-                <div class="notice notice-success inline"><p><?php esc_html_e('Advertiser page synchronization started. Additional batches will continue through WordPress cron.', 'million-dollar-script'); ?></p></div>
+                <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Advertiser page synchronization started. Additional batches will continue through WordPress cron.', 'million-dollar-script'); ?></p></div>
             <?php endif; ?>
             <?php if (isset($_GET['advertiser_slugs_changed'])) : ?>
-                <div class="notice notice-success inline"><p><?php echo esc_html(sprintf(__('Changed %d advertiser page URLs in this batch.', 'million-dollar-script'), absint($_GET['advertiser_slugs_changed']))); ?></p></div>
+                <div class="notice notice-success is-dismissible"><p><?php echo esc_html(sprintf(__('Changed %d advertiser page URLs in this batch.', 'million-dollar-script'), absint($_GET['advertiser_slugs_changed']))); ?></p></div>
             <?php endif; ?>
             <?php if (!empty($_GET['advertiser_slug_error'])) : ?>
-                <div class="notice notice-error inline"><p><?php echo esc_html(sanitize_text_field(wp_unslash($_GET['advertiser_slug_error']))); ?></p></div>
+                <div class="notice notice-error"><p><?php echo esc_html(sanitize_text_field(wp_unslash($_GET['advertiser_slug_error']))); ?></p></div>
             <?php endif; ?>
-            <p><?php esc_html_e('Synchronize placement pages after enabling this feature. Preview slug changes before applying a permanent URL migration; previous exact URLs are retained as 301 redirects.', 'million-dollar-script'); ?></p>
+            <?php if (is_array($preview)) :
+                $preview_truncated = !empty($preview['truncated']);
+                ?>
+                <div class="notice notice-info is-dismissible" role="status">
+                    <p><?php echo esc_html(sprintf(__('Preview checked %1$d pages; %2$d URLs would change.%3$s', 'million-dollar-script'), absint($preview['checked'] ?? 0), absint($preview['changed'] ?? 0), $preview_truncated ? ' ' . __('The preview was capped at 5,000 pages.', 'million-dollar-script') : '')); ?></p>
+                </div>
+            <?php endif; ?>
+            <p><?php esc_html_e('This page repairs and migrates public advertiser pages. Run “Synchronize” after enabling advertiser pages or after bulk placement changes so each published placement has a current public page. You only need the slug migration if you changed the Advertiser Page URL Base or slug pattern in Settings and want existing pages to move to the new URLs; the migration permanently changes public URLs and keeps the exact previous URLs working as 301 redirects. If you never changed the base or pattern, no migration is needed.', 'million-dollar-script'); ?></p>
+            <p><?php esc_html_e('“Preview slug migration” is a safe dry run: it counts how many pages would change without touching anything. “Apply” performs the change in batches of 250 pages and asks you to confirm the permanent URL changes first.', 'million-dollar-script'); ?></p>
             <p><strong><?php esc_html_e('URL preview:', 'million-dollar-script'); ?></strong> <code><?php echo esc_html(home_url('/' . AdvertiserPageUrls::base(is_array($settings) ? $settings : []) . '/example-placement/')); ?></code></p>
             <div class="mds3-advertiser-page-preview" aria-label="<?php esc_attr_e('Safe advertiser page preview', 'million-dollar-script'); ?>">
                 <span><?php esc_html_e('Featured advertiser', 'million-dollar-script'); ?></span>
@@ -332,9 +373,8 @@ final class AdvertiserPages implements Component {
                     <button type="submit" class="button"><?php esc_html_e('Preview slug migration', 'million-dollar-script'); ?></button>
                 </form>
             </div>
-            <?php if (is_array($preview)) : ?>
-                <p><?php echo esc_html(sprintf(__('Preview checked %1$d pages; %2$d URLs would change.%3$s', 'million-dollar-script'), absint($preview['checked'] ?? 0), absint($preview['changed'] ?? 0), !empty($preview['truncated']) ? ' ' . __('The preview was capped at 5,000 pages.', 'million-dollar-script') : '')); ?></p>
-                <?php if (!empty($preview['changed']) || $continue_after) : ?>
+            <?php if (is_array($preview)) :
+                if (!empty($preview['changed']) || $continue_after) : ?>
                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                         <?php wp_nonce_field('mds3_apply_advertiser_slugs'); ?>
                         <input type="hidden" name="action" value="mds3_apply_advertiser_slugs" />
@@ -357,6 +397,9 @@ final class AdvertiserPages implements Component {
         if ($old_base !== $new_base || AdvertiserPageUrls::enabled($saved) !== AdvertiserPageUrls::enabled($current)) {
             update_option('mds3_flush_rewrite_rules', 'yes', false);
             delete_option(self::SYNC_CURSOR_OPTION);
+            // Create the pages inline so the links exist as soon as the option is
+            // saved; anything left past the budget continues through cron.
+            $this->drain_sync();
             if (!wp_next_scheduled(self::SYNC_HOOK)) {
                 wp_schedule_single_event(time() + 5, self::SYNC_HOOK);
             }
@@ -398,7 +441,7 @@ final class AdvertiserPages implements Component {
     }
 
     private function settings_redirect(array $args = []) {
-        wp_safe_redirect(add_query_arg(array_merge(['page' => 'mds3-settings', 'tab' => 'settings-urls-redirects'], $args), admin_url('admin.php')));
+        wp_safe_redirect(add_query_arg(array_merge(['page' => 'mds3-settings', 'tab' => 'advertiser-pages'], $args), admin_url('admin.php')));
         exit;
     }
 }

@@ -161,10 +161,14 @@ trait BuildsPaymentCheckouts {
         $groups = [];
         foreach ((new OrderRepository())->items(absint($order_id)) as $item) {
             $grid_id = absint($item['grid_id'] ?? 0);
-            $key = $grid_id ?: 'order';
+            $unit_price = round((float) ($item['unit_price'] ?? 0), 2);
+            // Blocks that share a unit price are grouped so the payment provider
+            // can show a genuine quantity x unit price line for them.
+            $key = ($grid_id ?: 'order') . '|' . sprintf('%.2f', $unit_price);
             if (!isset($groups[$key])) {
                 $groups[$key] = [
                     'grid_id' => $grid_id,
+                    'unit_price' => $unit_price,
                     'amount' => 0.0,
                     'quantity' => 0,
                     'block_count' => 0,
@@ -183,11 +187,17 @@ trait BuildsPaymentCheckouts {
 
         return array_map(function ($group) {
             $block_count = max(1, absint($group['block_count'] ?? 0));
+            $quantity = max(1, absint($group['quantity'] ?? 0));
+            $amount = round((float) ($group['amount'] ?? 0), 2);
+            $unit_price = round((float) ($group['unit_price'] ?? 0), 2);
 
             return [
                 'name' => self::grouped_item_name(absint($group['grid_id'] ?? 0), $block_count),
-                'amount' => round((float) ($group['amount'] ?? 0), 2),
-                'quantity' => max(1, absint($group['quantity'] ?? 0)),
+                'amount' => $amount,
+                'quantity' => $quantity,
+                // Only reported when it multiplies back to the line total, so a
+                // provider can never render a quantity that contradicts the charge.
+                'unit_price' => abs(round($unit_price * $quantity, 2) - $amount) < 0.005 ? $unit_price : null,
                 'metadata' => [
                     'grid_id' => absint($group['grid_id'] ?? 0),
                     'block_count' => $block_count,

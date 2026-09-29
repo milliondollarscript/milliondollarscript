@@ -8,9 +8,11 @@
 namespace MillionDollarScript\V3\Admin;
 
 use MillionDollarScript\V3\Extensions\ExtensionRuntime;
+use MillionDollarScript\V3\Setup\LegacyPlugin;
 use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Support\BrowserConfig;
 use MillionDollarScript\V3\Support\Component;
+use MillionDollarScript\V3\Support\ThemeMode;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -45,6 +47,8 @@ final class Admin implements Component {
         add_action('admin_post_mds3_save_setup', [$this, 'save_setup']);
         add_action('admin_post_mds3_install_plugin_dependency', [$this, 'install_plugin_dependency']);
         add_action('wp_ajax_mds3_install_plugin_dependency', [$this, 'ajax_install_plugin_dependency']);
+        add_action('wp_ajax_mds3_setup_starter_site', [$this, 'ajax_setup_starter_site']);
+        add_action('wp_ajax_mds3_setup_create_first_grid', [$this, 'ajax_setup_create_first_grid']);
         add_action('admin_post_million_dollar_script_refresh_docs', [$this, 'refresh_docs']);
         add_action('admin_post_mds3_create_api_key', [$this, 'create_api_key']);
         add_action('admin_post_mds3_rotate_api_key', [$this, 'rotate_api_key']);
@@ -199,7 +203,7 @@ final class Admin implements Component {
         add_submenu_page('mds3', __('API Access', 'million-dollar-script'), __('API Access', 'million-dollar-script'), 'manage_options', 'mds3-api', [$this, 'api_access']);
         add_submenu_page('mds3', __('Settings', 'million-dollar-script'), __('Settings', 'million-dollar-script'), 'manage_options', 'mds3-settings', [$this, 'settings']);
         add_submenu_page('mds3', __('Setup', 'million-dollar-script'), __('Setup', 'million-dollar-script'), 'manage_options', 'mds3-setup', [$this, 'setup']);
-        if ($this->grid_enabled()) {
+        if ($this->grid_enabled() && LegacyPlugin::has_legacy_context()) {
             add_submenu_page('mds3', __('Migration', 'million-dollar-script'), __('Migration', 'million-dollar-script'), 'manage_options', 'mds3-migration', [$this, 'migration']);
         }
         add_submenu_page('mds3', __('System Status', 'million-dollar-script'), __('System Status', 'million-dollar-script'), 'manage_options', 'mds3-system-status', [$this, 'system_status']);
@@ -214,11 +218,7 @@ final class Admin implements Component {
     }
 
     private function admin_theme_mode() {
-        $settings = get_option('mds3_settings', []);
-        $mode = is_array($settings) ? ($settings['theme_mode'] ?? 'light') : 'light';
-        $mode = SettingsSchema::sanitize('theme_mode', $mode);
-
-        return in_array($mode, ['light', 'dark', 'system'], true) ? $mode : 'light';
+        return ThemeMode::mode();
     }
 
     private function grid_enabled() {

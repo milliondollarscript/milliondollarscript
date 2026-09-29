@@ -75,6 +75,7 @@ if ($settings_transfer_active) {
                 <form method="post" class="mds3-settings-save-form <?php echo esc_attr($settings_transfer_active ? 'is-transfer-active' : ''); ?>" data-settings-save-form action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                     <?php wp_nonce_field('mds3_save_settings'); ?>
                     <input type="hidden" name="action" value="mds3_save_settings" />
+                    <input type="hidden" name="settings_tab" value="<?php echo esc_attr($active_tab); ?>" />
                 <?php foreach ($groups as $group => $fields) : ?>
                     <?php
                     $tab_id = 'settings-' . sanitize_title($group);
@@ -121,6 +122,7 @@ if ($settings_transfer_active) {
                                     'description' => $field['description'] ?? '',
                                     'disabled' => $locked_currency_field,
                                     'docs' => $field['docs'] ?? '',
+                                    'dependent' => $field['dependent'] ?? '',
                                     'hidden_value' => $locked_currency_field ? $value : null,
                                     'wide' => !empty($field['wide']),
                                 ]);
@@ -195,6 +197,12 @@ if ($settings_transfer_active) {
                 <?php submit_button(__('Save settings', 'million-dollar-script')); ?>
                 </form>
                 <?php \MillionDollarScript\Core\Hooks::do('million-dollar-script/admin/settings/after-form', $settings); ?>
+
+                <?php if (in_array('Advertiser Pages', $tabs, true)) : ?>
+                    <section class="mds3-settings-panel <?php echo esc_attr('settings-advertiser-pages' === $active_tab ? 'is-active' : ''); ?>" data-settings-panel="settings-advertiser-pages">
+                        <?php \MillionDollarScript\Core\Hooks::do('million-dollar-script/admin/settings/advertiser-tools', $settings); ?>
+                    </section>
+                <?php endif; ?>
 
                 <section class="mds3-settings-panel mds3-settings-transfer <?php echo esc_attr($settings_transfer_active ? 'is-active' : ''); ?>" data-settings-panel="<?php echo esc_attr($settings_transfer_tab); ?>">
         <h2><?php esc_html_e('Import / Export Settings', 'million-dollar-script'); ?></h2>

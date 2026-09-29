@@ -19,6 +19,7 @@ use MillionDollarScript\V3\Pages\PageRepository;
 use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Support\DB;
 use MillionDollarScript\V3\Support\Template;
+use MillionDollarScript\V3\Support\ThemeMode;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -106,12 +107,7 @@ trait RendersPagePanels {
     }
 
     private function theme_class() {
-        $settings = get_option('mds3_settings', []);
-        $mode = is_array($settings) ? ($settings['theme_mode'] ?? 'light') : 'light';
-        $mode = SettingsSchema::sanitize('theme_mode', $mode);
-        $mode = in_array($mode, ['light', 'dark', 'system'], true) ? $mode : 'light';
-
-        return 'mds3-theme-' . $mode . ' wp-dark-mode-ignore';
+        return 'mds3-theme-' . ThemeMode::mode() . ' wp-dark-mode-ignore';
     }
 
     private function panel($type, $grid_id, array $args = []) {
@@ -539,6 +535,7 @@ trait RendersPagePanels {
         $placement = $placements ? $placements[0] : [];
         $image = !empty($placement['attachment_id']) ? wp_get_attachment_image(absint($placement['attachment_id']), 'medium') : '';
         $settings = wp_parse_args(is_array(get_option('mds3_settings', [])) ? get_option('mds3_settings', []) : [], SettingsSchema::defaults());
+        $settings = PlacementFieldContract::settings_for_grid($settings, $placement['grid_id'] ?? 0);
         $popup_text_mode = PlacementFieldContract::popup_text_mode($settings);
         $url_mode = PlacementFieldContract::url_mode($settings);
 
@@ -550,6 +547,7 @@ trait RendersPagePanels {
             'order_key' => $order_key,
             'placement' => $placement,
             'popup_rich_text' => 'yes' === SettingsSchema::sanitize('popup-rich-text', $settings['popup-rich-text'] ?? 'no'),
+            'popup_text_max_chars' => PlacementFieldContract::text_max_chars($settings),
             'popup_text_required' => PlacementFieldContract::is_required($popup_text_mode),
             'popup_text_visible' => PlacementFieldContract::is_visible($popup_text_mode),
             'theme_class' => $this->theme_class(),

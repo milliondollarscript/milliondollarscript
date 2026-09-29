@@ -285,7 +285,7 @@ final class GridRepository {
 
         $settings_keys = [
             'settings', 'renderer_mode', 'days_expire', 'max_orders', 'max_blocks', 'min_blocks',
-            'auto_publish', 'auto_approve', 'nfs_covered', 'show_public_stats', 'background_color',
+            'auto_publish', 'auto_approve', 'nfs_covered', 'show_public_stats', 'popup_text_max_chars', 'popup_display_max_chars', 'advertiser_page_click_mode', 'background_color',
             'background_image_id', 'background_image_fit', 'background_image_position',
             'background_image_repeat', 'background_image_opacity',
         ];
@@ -416,10 +416,32 @@ final class GridRepository {
             }
         }
 
-        foreach (['auto_publish', 'auto_approve', 'nfs_covered', 'show_public_stats'] as $key) {
+        foreach (['auto_publish', 'nfs_covered', 'show_public_stats'] as $key) {
             if (array_key_exists($key, $data)) {
                 $settings[$key] = 'Y' === strtoupper((string) $data[$key]) ? 'Y' : 'N';
             }
+        }
+
+        if (array_key_exists('auto_approve', $data)) {
+            // Tri-state: '' inherits the global setting, 'Y'/'N' override it for this grid.
+            $choice = strtoupper(trim((string) $data['auto_approve']));
+            $settings['auto_approve'] = in_array($choice, ['Y', 'N'], true) ? $choice : '';
+        }
+
+        if (array_key_exists('popup_text_max_chars', $data)) {
+            $raw = trim(sanitize_text_field((string) $data['popup_text_max_chars']));
+            $settings['popup_text_max_chars'] = '' === $raw ? '' : (string) absint($raw);
+        }
+
+        if (array_key_exists('popup_display_max_chars', $data)) {
+            $raw = trim(sanitize_text_field((string) $data['popup_display_max_chars']));
+            $settings['popup_display_max_chars'] = '' === $raw ? '' : (string) absint($raw);
+        }
+
+        if (array_key_exists('advertiser_page_click_mode', $data)) {
+            // Tri-state: '' inherits the global setting, 'popup'/'page' override it for this grid.
+            $choice = strtolower(trim((string) $data['advertiser_page_click_mode']));
+            $settings['advertiser_page_click_mode'] = in_array($choice, ['popup', 'page'], true) ? $choice : '';
         }
 
         if (array_key_exists('background_color', $data)) {

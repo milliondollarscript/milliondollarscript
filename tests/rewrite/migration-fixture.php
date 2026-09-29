@@ -24,6 +24,17 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 
+// Fixture isolation: remember the site's own pages and page-map options before
+// this run touches anything, so cleanup can delete only what this run created.
+// Keying cleanup off page titles instead deleted a real site's pages the first
+// time the fixture ran against a site whose map had been cleared earlier in the
+// same run.
+$baseline_page_ids = array_map('intval', (array) $wpdb->get_col('SELECT ID FROM ' . DB::ident($wpdb->posts) . " WHERE post_type = 'page'"));
+$baseline_page_options = [];
+foreach (array_keys(PageRepository::standard_labels()) as $baseline_type) {
+    $baseline_page_options[$baseline_type] = absint(get_option('mds3_page_' . $baseline_type . '_id', 0));
+}
+
 $source_prefix = $wpdb->prefix . 'mdsfixture_';
 $charset = $wpdb->get_charset_collate();
 $legacy_long_title = "This legacy advertiser title contains the complete sponsor description, campaign background, and visitor guidance that should remain readable as body content instead of becoming one oversized heading.\nIt also includes a second line from the old single-line field workflow.";
@@ -1286,7 +1297,7 @@ $modified_grid_id = absint($wpdb->get_var($wpdb->prepare(
     'SELECT mds3_id FROM ' . DB::ident(DB::table('migration_map')) . " WHERE source_prefix = %s AND entity_type = 'banner' AND legacy_id = '11' AND mds3_entity_type = 'grid' LIMIT 1",
     $source_prefix
 )));
-$create_new_result = (new Importer())->set_page_options(['create_new' => true])->import($source_prefix);
+$create_new_result = (new Importer())->set_page_options(['upgrade_in_place' => []])->import($source_prefix);
 if (is_wp_error($create_new_result)) {
     throw new RuntimeException('create_new import failed: ' . $create_new_result->get_error_message());
 }
@@ -1319,10 +1330,6 @@ if (!$modified_outcome || 'created_new' !== ($modified_outcome['outcome'] ?? '')
 // "Create missing standard pages" must adopt an existing MDS2 page of the
 // type instead of stacking a duplicate next to it (client hit this on a live
 // site: fresh MDS3 pages appeared beside the untouched MDS2 pages).
-$pre_ensure_options = [];
-foreach (array_keys(PageRepository::standard_labels()) as $option_type) {
-    $pre_ensure_options[$option_type] = absint(get_option('mds3_page_' . $option_type . '_id', 0));
-}
 $thank_you_legacy_page = wp_insert_post([
     'post_type' => 'page',
     'post_status' => 'publish',
@@ -1331,9 +1338,11 @@ $thank_you_legacy_page = wp_insert_post([
     'post_content' => "[milliondollarscript type=\"thankyou\"]\n\n<p>Client's custom thank-you note.</p>",
 ]);
 
-// Modified page, no replace opt-in: the wizard creates a fresh page and
-// leaves the customer's page intact.
-$no_replace_result = Admin::ensure_standard_pages_core($grid_id, false, false);
+// Modified page, not in the in-place upgrade set: the wizard creates a fresh
+// page and leaves the customer's page intact. Clear any option an earlier
+// migration run wrote so this flow starts from a clean slate.
+delete_option('mds3_page_thank-you_id');
+$no_replace_result = Admin::ensure_standard_pages_core($grid_id, []);
 if (!isset($no_replace_result['thank-you']) || $no_replace_result['thank-you'] === $thank_you_legacy_page) {
     throw new RuntimeException('Modified MDS2 thank-you page was adopted without the replace opt-in.');
 }
@@ -1345,11 +1354,11 @@ if (!isset($no_replace_result['list']) || $no_replace_result['list'] !== $list_p
     throw new RuntimeException('Standard pages wizard re-created an already-adopted list page.');
 }
 
-// Replace opt-in: the modified legacy page is adopted in place and its
-// original content is preserved.
+// In-place upgrade opt-in: the modified legacy page is adopted in place and
+// its original content is preserved.
 wp_delete_post($no_replace_result['thank-you'], true);
 delete_option('mds3_page_thank-you_id');
-$replace_result = Admin::ensure_standard_pages_core($grid_id, true, false);
+$replace_result = Admin::ensure_standard_pages_core($grid_id, [$thank_you_legacy_page => true]);
 if (!isset($replace_result['thank-you']) || $replace_result['thank-you'] !== $thank_you_legacy_page) {
     throw new RuntimeException('Replace opt-in did not adopt the modified MDS2 thank-you page in place.');
 }
@@ -1363,20 +1372,68 @@ if ('thank-you' !== (string) get_post_meta($thank_you_legacy_page, '_mds3_page_t
     throw new RuntimeException('Adopted thank-you page was not registered as an MDS3 standard page.');
 }
 
-// Restore the page options the test started without (fixture isolation).
-foreach ($pre_ensure_options as $option_type => $pre_option) {
-    if ($pre_option) {
+// A page the customer does not have yet: when creation fails, the wizard must
+// report the failure instead of claiming the standard pages are ready.
+$fail_type = 'no-orders';
+$fail_previous_option = absint(get_option('mds3_page_' . $fail_type . '_id', 0));
+delete_option('mds3_page_' . $fail_type . '_id');
+add_filter('wp_insert_post_empty_content', '__return_true');
+$failed_run = Admin::ensure_standard_pages_core($grid_id, []);
+remove_filter('wp_insert_post_empty_content', '__return_true');
+if (isset($failed_run[$fail_type])) {
+    throw new RuntimeException('Standard pages wizard reported a page it did not create.');
+}
+$failed_notice = get_transient('mds3_pages_failed_notice');
+$failed_types = is_array($failed_notice) ? array_column($failed_notice, 'type') : [];
+if (!in_array($fail_type, $failed_types, true)) {
+    throw new RuntimeException('A failed standard page was not reported to the admin.');
+}
+// A clean re-run heals the page and clears the failure notice.
+$healed_run = Admin::ensure_standard_pages_core($grid_id, []);
+if (!isset($healed_run[$fail_type])) {
+    throw new RuntimeException('A failed standard page could not be created on retry.');
+}
+if (false !== get_transient('mds3_pages_failed_notice')) {
+    throw new RuntimeException('The standard pages failure notice survived a clean run.');
+}
+if ($fail_previous_option) {
+    update_option('mds3_page_' . $fail_type . '_id', $fail_previous_option, false);
+}
+
+// Restore the page map the site started with, and force-delete only the pages
+// this run created (ids absent from the pre-run snapshot). Never keyed off
+// titles: a site's own "Order Pixels" page carries the same label.
+foreach ($baseline_page_options as $option_type => $baseline_option) {
+    $option_key = 'mds3_page_' . $option_type . '_id';
+    $current_option = absint(get_option($option_key, 0));
+    if ($baseline_option) {
+        if ($current_option !== $baseline_option) {
+            update_option($option_key, $baseline_option, false);
+        }
         continue;
     }
-    $post_id = absint(get_option('mds3_page_' . $option_type . '_id', 0));
-    if (!$post_id || !get_post($post_id)) {
+    if ($current_option) {
+        if (!in_array($current_option, $baseline_page_ids, true) && get_post($current_option)) {
+            wp_delete_post($current_option, true);
+        }
+        delete_option($option_key);
+    }
+}
+
+// Pages this run created that no option points at any more - the failed-page
+// retry heals a page it never maps. Anything absent from the pre-run snapshot is
+// ours by construction, so this sweep cannot reach a customer page, and it keeps
+// repeated runs from leaving one orphan per pass.
+$mapped_page_ids = array_filter(array_map(static fn($type) => absint(get_option('mds3_page_' . $type . '_id', 0)), array_keys(PageRepository::standard_labels())));
+$new_page_ids = array_diff(array_map('intval', (array) $wpdb->get_col('SELECT ID FROM ' . DB::ident($wpdb->posts) . " WHERE post_type = 'page'")), $baseline_page_ids);
+foreach ($new_page_ids as $new_page_id) {
+    if (in_array($new_page_id, $mapped_page_ids, true) || !get_post_meta($new_page_id, '_mds3_page_type', true)) {
         continue;
     }
-    if (PageRepository::labels()[$option_type] === get_the_title($post_id)) {
-        // A page the wizard created during this test.
-        wp_delete_post($post_id, true);
+    if (DB::table_exists(DB::table('pages'))) {
+        $wpdb->delete(DB::table('pages'), ['post_id' => $new_page_id]);
     }
-    delete_option('mds3_page_' . $option_type . '_id');
+    wp_delete_post($new_page_id, true);
 }
 
 echo wp_json_encode([

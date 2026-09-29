@@ -19,6 +19,16 @@ if (!defined('ABSPATH')) {
 
 final class GridStats {
 
+    /**
+     * Whether the grid's "Unavailable Blocks Covered" toggle counts not-for-sale
+     * area as taken inventory. Off by default, which leaves those blocks out of
+     * both the available and sold counts.
+     */
+    public static function counts_unavailable_as_covered(array $grid_settings = []) {
+        return 'Y' === strtoupper(trim((string) ($grid_settings['nfs_covered'] ?? 'N')));
+    }
+
+
     public function public_inventory(Grid $grid, array $settings = [], $unit = '') {
         $geometry = $grid->geometry();
         $total = $geometry->total_blocks();
@@ -30,6 +40,7 @@ final class GridStats {
         $unavailable = min($total, absint($counts['unavailable'] ?? 0));
         $held_sold = max(0, $raw_sold - $published);
         $reserved = min($total, $raw_reserved + $held_sold);
+        $covered = self::counts_unavailable_as_covered($grid->settings()) ? $unavailable : 0;
         $available = max(0, $total - min($total, $published + $reserved + $unavailable));
         $unit = $this->unit($settings, $unit);
         $multiplier = 'pixels' === $unit ? max(1, absint($grid->get('block_width', 1)) * absint($grid->get('block_height', 1))) : 1;
@@ -38,11 +49,11 @@ final class GridStats {
             'grid_id' => $grid->id(),
             'total_blocks' => $total,
             'available_blocks' => $available,
-            'sold_blocks' => $published,
+            'sold_blocks' => $published + $covered,
             'reserved_blocks' => $reserved,
             'unavailable_blocks' => $unavailable,
             'available' => $available * $multiplier,
-            'sold' => $published * $multiplier,
+            'sold' => ($published + $covered) * $multiplier,
             'unit' => $unit,
             'unit_label' => 'pixels' === $unit ? __('Pixels', 'million-dollar-script') : __('Blocks', 'million-dollar-script'),
             'diagnostics' => [

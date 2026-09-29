@@ -48,6 +48,12 @@ function popup_fixture_legacy_helper(array $settings, array $placement_ids) {
     return $ref->invoke(new GridAjax(), $settings, $placement_ids);
 }
 
+function get_grid_fixture_setting($grid_id, $key) {
+    $grid = (new GridRepository())->find(absint($grid_id));
+
+    return $grid ? ($grid->settings()[$key] ?? null) : null;
+}
+
 $grid = null;
 $placement_id = 0;
 $legacy_post_id = 0;
@@ -156,6 +162,80 @@ try {
         throw new RuntimeException('Unmapped placement resolved an unexpected full page URL.');
     }
     $GLOBALS['wpdb']->delete(DB::table('placements'), ['id' => absint($unmapped_id)]);
+
+    // Popup character limit: global setting, per-grid override, and the advertiser page keeps the full text.
+    $long_text = 'Alpha bravo charlie delta echo foxtrot golf hotel india juliett';
+    $limited_placement = array_merge($placement, ['popup_text' => $long_text]);
+
+    $global_limit_payload = popup_fixture_payload($limited_placement, popup_fixture_settings(['popup-text-max-chars' => 30]));
+    if ('Alpha bravo charlie delta…' !== (string) $global_limit_payload['popup_text']) {
+        throw new RuntimeException('Global popup limit did not shorten at a word boundary: ' . var_export($global_limit_payload['popup_text'], true));
+    }
+
+    $no_limit_payload = popup_fixture_payload($limited_placement, popup_fixture_settings(['popup-text-max-chars' => 0]));
+    if ($long_text !== (string) $no_limit_payload['popup_text']) {
+        throw new RuntimeException('popup-text-max-chars=0 should leave the popup text intact.');
+    }
+
+    if (10 !== \MillionDollarScript\V3\Media\PlacementFieldContract::popup_display_max_chars(['popup-text-max-chars' => 20], ['popup_display_max_chars' => '10'])) {
+        throw new RuntimeException('Per-grid popup limit did not override the global limit.');
+    }
+    if (20 !== \MillionDollarScript\V3\Media\PlacementFieldContract::popup_display_max_chars(['popup-text-max-chars' => 20], ['popup_display_max_chars' => ''])) {
+        throw new RuntimeException('Blank per-grid popup limit should inherit the global limit.');
+    }
+
+    $override_limit = \MillionDollarScript\V3\Media\PlacementFieldContract::popup_display_max_chars(
+        popup_fixture_settings(['popup-text-max-chars' => 30]),
+        ['popup_display_max_chars' => '11']
+    );
+    $grid_override_payload = popup_fixture_payload($limited_placement, popup_fixture_settings(['popup-text-max-chars' => $override_limit]));
+    if ('Alpha bravo…' !== (string) $grid_override_payload['popup_text']) {
+        throw new RuntimeException('Per-grid popup limit was not applied to the payload: ' . var_export($grid_override_payload['popup_text'], true));
+    }
+
+    // The full-page advertiser view renders from the stored text, not the popup payload.
+    if ($long_text !== \MillionDollarScript\V3\Grid\PopupText::plain($long_text)) {
+        throw new RuntimeException('Advertiser page text should stay intact.');
+    }
+
+    // Placement click mode: global setting, per-grid override, and the popup fallback.
+    $click_contract = \MillionDollarScript\V3\Media\PlacementFieldContract::class;
+    if ('popup' !== $click_contract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => ''])) {
+        throw new RuntimeException('Blank per-grid click mode should inherit the global popup mode.');
+    }
+    if ('page' !== $click_contract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => 'page'])) {
+        throw new RuntimeException('Per-grid click mode did not override the global setting.');
+    }
+    if ('popup' !== $click_contract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => 'bogus'])) {
+        throw new RuntimeException('Unknown per-grid click mode should fall back to the global setting.');
+    }
+
+    $default_click_payload = popup_fixture_payload($placement, $settings, $legacy_urls);
+    if ('popup' !== (string) ($default_click_payload['advertiser_page_click'] ?? '')) {
+        throw new RuntimeException('Placement clicks should default to the popup.');
+    }
+
+    $page_click_payload = popup_fixture_payload($placement, popup_fixture_settings(['advertiser-page-click-mode' => 'page']), $legacy_urls);
+    if ('page' !== (string) ($page_click_payload['advertiser_page_click'] ?? '') || $expected_legacy_url !== (string) ($page_click_payload['advertiser_page_url'] ?? '')) {
+        throw new RuntimeException('Page click mode did not expose the advertiser page: ' . var_export($page_click_payload['advertiser_page_click'] ?? null, true));
+    }
+
+    $page_click_unmapped_payload = popup_fixture_payload($unmapped, popup_fixture_settings(['advertiser-page-click-mode' => 'page']));
+    if ('popup' !== (string) ($page_click_unmapped_payload['advertiser_page_click'] ?? '')) {
+        throw new RuntimeException('A placement with no published page should keep the popup in page click mode.');
+    }
+
+    $stored_click_settings = (new GridRepository())->update($grid->id(), ['advertiser_page_click_mode' => 'bogus']);
+    if (is_wp_error($stored_click_settings)) {
+        throw new RuntimeException('Could not store the fixture click mode: ' . $stored_click_settings->get_error_message());
+    }
+    if ('' !== (string) get_grid_fixture_setting($grid->id(), 'advertiser_page_click_mode')) {
+        throw new RuntimeException('An unknown per-grid click mode should be stored as inherit.');
+    }
+    (new GridRepository())->update($grid->id(), ['advertiser_page_click_mode' => 'page']);
+    if ('page' !== (string) get_grid_fixture_setting($grid->id(), 'advertiser_page_click_mode')) {
+        throw new RuntimeException('The per-grid click mode did not persist.');
+    }
 
     echo "popup-page-link: ok (legacy fallback -> " . get_permalink($legacy_post_id) . "); unmapped placements stay unlinked\n";
 } finally {

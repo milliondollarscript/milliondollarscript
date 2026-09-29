@@ -120,9 +120,10 @@ if (!empty($style_vars) && is_array($style_vars)) {
                 <small><?php echo esc_html__('A short description for accessibility and image fallback text.', 'million-dollar-script'); ?></small>
             </label>
             <?php if ($popup_text_visible) : ?>
+            <?php $popup_text_max_chars = max(0, (int) ($popup_text_max_chars ?? 0)); ?>
             <div class="mds3-placement-popup-text">
                 <label for="mds3-popup-text-<?php echo esc_attr($grid_id); ?>"><span><?php echo esc_html__('Popup text', 'million-dollar-script'); ?></span></label>
-                <textarea id="mds3-popup-text-<?php echo esc_attr($grid_id); ?>" class="<?php echo esc_attr($popup_rich_text ? 'mds3-rich-text-source' : ''); ?>" name="popup_text" rows="3" placeholder="<?php echo esc_attr__('Popup text', 'million-dollar-script'); ?>" aria-describedby="<?php echo esc_attr($popup_text_description_id); ?>"<?php echo $popup_rich_text ? ' data-mds3-rich-text-source="true" aria-hidden="true" tabindex="-1"' : ''; ?><?php echo $popup_text_required ? ' required' : ''; ?>></textarea>
+                <textarea id="mds3-popup-text-<?php echo esc_attr($grid_id); ?>" class="<?php echo esc_attr($popup_rich_text ? 'mds3-rich-text-source' : ''); ?>" name="popup_text" rows="3" placeholder="<?php echo esc_attr__('Popup text', 'million-dollar-script'); ?>" aria-describedby="<?php echo esc_attr($popup_text_description_id); ?>"<?php echo $popup_rich_text ? ' data-mds3-rich-text-source="true" aria-hidden="true" tabindex="-1"' : ''; ?><?php echo $popup_text_max_chars ? ' data-mds3-max-chars="' . esc_attr($popup_text_max_chars) . '" maxlength="' . esc_attr($popup_text_max_chars) . '"' : ''; ?><?php echo $popup_text_required ? ' required' : ''; ?>></textarea>
                 <?php if ($popup_rich_text) : ?>
                     <div class="mds3-rich-text-editor" data-mds3-rich-text-editor>
                         <div class="mds3-rich-text-toolbar" role="toolbar" aria-label="<?php echo esc_attr__('Popup text formatting', 'million-dollar-script'); ?>">
@@ -130,10 +131,13 @@ if (!empty($style_vars) && is_array($style_vars)) {
                             <button type="button" data-mds3-rich-command="italic" aria-label="<?php echo esc_attr__('Italic', 'million-dollar-script'); ?>"><em>I</em></button>
                             <button type="button" data-mds3-rich-command="paragraph" aria-label="<?php echo esc_attr__('Paragraph', 'million-dollar-script'); ?>">P</button>
                         </div>
-                        <div class="mds3-rich-text-area" role="textbox" aria-multiline="true" contenteditable="true" data-mds3-rich-text-input data-placeholder="<?php echo esc_attr__('Popup text', 'million-dollar-script'); ?>" aria-describedby="<?php echo esc_attr($popup_text_description_id); ?>"></div>
+                        <div class="mds3-rich-text-area" role="textbox" aria-multiline="true" contenteditable="true" data-mds3-rich-text-input data-placeholder="<?php echo esc_attr__('Popup text', 'million-dollar-script'); ?>" aria-describedby="<?php echo esc_attr($popup_text_description_id); ?>"<?php echo $popup_text_max_chars ? ' data-mds3-max-chars="' . esc_attr($popup_text_max_chars) . '"' : ''; ?>></div>
                     </div>
                 <?php endif; ?>
                 <small id="<?php echo esc_attr($popup_text_description_id); ?>"><?php echo esc_html($popup_rich_text ? __('Shown in the block popup. Basic formatting is allowed.', 'million-dollar-script') : __('Shown in the block popup.', 'million-dollar-script')); ?></small>
+                <?php if ($popup_text_max_chars) : ?>
+                    <small class="mds3-text-limit-count" data-mds3-text-count hidden></small>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
             <label class="mds3-placement-field mds3-placement-fit-field">

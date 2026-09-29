@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     <input type="hidden" name="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($hidden_value); ?>" />
 <?php endif; ?>
 
-<p class="<?php echo esc_attr($field_class); ?>">
+<p class="<?php echo esc_attr($field_class); ?>"<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attribute fragment is built from escaped schema values in RendersFormFields. ?><?php echo $dependent_attrs; ?>>
     <?php if ('image' === $type) : ?>
         <span class="mds3-field-label"><span class="mds3-field-label-text"><?php echo esc_html($label); ?></span><?php echo wp_kses_post($help_markup); ?></span>
     <?php elseif ('editor' === $type) : ?>
@@ -50,7 +50,11 @@ if (!defined('ABSPATH')) {
         $input_value = 'color' === $type && !preg_match('/^#[0-9a-fA-F]{6}$/', (string) $value) ? '#000000' : $value;
         $input_type = 'color' === $type ? 'text' : $type;
         $input_attrs = 'color' === $type ? ' class="mds3-color-picker" data-default-color="' . esc_attr($input_value) . '"' : '';
+        $color_chip = 'color' === $type
+            ? '<span class="mds3-color-chip" data-mds3-color-chip="' . esc_attr($id) . '" style="background-color: ' . esc_attr((string) $input_value) . '" aria-hidden="true"></span>'
+            : '';
         ?>
+        <?php echo $color_chip; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Inline style uses an escaped hex value. ?>
         <input id="<?php echo esc_attr($id); ?>" type="<?php echo esc_attr($input_type); ?>" name="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($input_value); ?>"<?php echo $step ? ' step="' . esc_attr($step) . '"' : ''; ?><?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attribute fragments contain only escaped schema values and fixed markup. ?><?php echo $autocomplete_attr . $input_attrs . $number_attrs . $common; ?> />
     <?php endif; ?>
     <?php if ('editor' !== $type) : ?>

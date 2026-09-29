@@ -66,6 +66,35 @@ trait HandlesGridAdminActions {
         exit;
     }
 
+    /**
+     * Create (or reuse) the first grid from the setup wizard without a page navigation.
+     */
+    public function ajax_setup_create_first_grid() {
+        check_ajax_referer('mds3_setup_create_grid', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Permission denied.', 'million-dollar-script')], 403);
+        }
+
+        $repo = new GridRepository();
+        $grid = $repo->first_active() ?: ($repo->all()[0] ?? null);
+        if (!$grid) {
+            $defaults = ['title' => 'Main Grid', 'status' => 'active'];
+            $data = \MillionDollarScript\Core\Hooks::apply('million-dollar-script/admin/sanitize/grid', $defaults, null, 'create');
+            $grid = $repo->create(is_array($data) ? $data : $defaults);
+            if (is_wp_error($grid)) {
+                wp_send_json_error(['message' => $grid->get_error_message()], 400);
+            }
+            GridPostType::ensure_page($grid);
+            \MillionDollarScript\Core\Hooks::do('million-dollar-script/admin/grid/saved', $grid, $defaults, null, 'create');
+        }
+
+        wp_send_json_success([
+            'title' => (string) $grid->get('title', ''),
+            'dimensions' => ((int) $grid->get('width', 0)) . 'x' . ((int) $grid->get('height', 0)),
+            'edit_url' => admin_url('admin.php?page=mds3-grids&grid_id=' . absint($grid->id())),
+        ]);
+    }
+
     public function update_grid() {
         $grid_id = absint($_POST['grid_id'] ?? 0);
         check_admin_referer('mds3_update_grid_' . $grid_id);

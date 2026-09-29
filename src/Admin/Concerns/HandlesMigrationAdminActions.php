@@ -71,12 +71,17 @@ trait HandlesMigrationAdminActions {
         }
 
         $grid = (new GridRepository())->first_active();
-        $replace_modified = !empty($_POST['mds2_replace_modified_pages']);
-        $create_new = !empty($_POST['mds2_create_new_pages']) && !$replace_modified;
+        $upgrade_in_place = array_filter(array_map('absint', (array) ($_POST['mds2_upgrade_pages'] ?? [])));
 
-        self::ensure_standard_pages_core($grid ? $grid->id() : 0, $replace_modified, $create_new);
+        self::ensure_standard_pages_core($grid ? $grid->id() : 0, $upgrade_in_place);
 
-        wp_safe_redirect(admin_url('admin.php?page=' . $page . '&pages=ensured'));
+        $failed = get_transient('mds3_pages_failed_notice');
+        $args = ['page' => $page, 'pages' => 'ensured'];
+        if (is_array($failed) && $failed) {
+            $args['pages_failed'] = count($failed);
+        }
+
+        wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
         exit;
     }
 
@@ -84,45 +89,51 @@ trait HandlesMigrationAdminActions {
      * Create or adopt the standard pages for a grid. Returns type => post_id
      * for every page that already exists or was created/adopted. Split out of
      * the admin action so it is testable without the redirect/exit.
+     *
+     * A detected MDS2 page is upgraded in place when it is unmodified or its
+     * ID is in $upgrade_in_place; otherwise it is left untouched and a fresh
+     * MDS3 page is created instead (listed in the pages-created notice).
      */
-    public static function ensure_standard_pages_core($grid_id, $replace_modified, $create_new) {
+    public static function ensure_standard_pages_core($grid_id, array $upgrade_in_place = []) {
         $repo = new PageRepository();
         $grid = $grid_id ? (new GridRepository())->find(absint($grid_id)) : null;
         $grid_id = $grid ? $grid->id() : 0;
         $result = [];
+        $created = [];
+        $failed = [];
+        // Page detection scans posts and the legacy metadata table, so run it once
+        // for the whole step instead of once per page type.
+        $candidates_by_type = self::wizard_page_candidates_by_type();
 
         foreach (PageRepository::standard_labels() as $type => $label) {
-            $post_id = absint(get_option('mds3_page_' . $type . '_id', 0));
-            if ($post_id && get_post($post_id)) {
-                $result[$type] = $post_id;
-                continue;
-            }
-
-            if ('grid' === $type && !$grid) {
-                // The grid page is created with the grid; never an empty page.
-                continue;
-            }
-
+            $candidate = $candidates_by_type[$type] ?? null;
+            $existing_id = absint(get_option('mds3_page_' . $type . '_id', 0));
             $page_grid_id = 'grid' === $type ? $grid_id : 0;
 
-            if ('grid' === $type && $grid) {
-                $post_id = self::wizard_grid_page_id($grid, $replace_modified, $create_new);
+            if ($candidate && self::wizard_candidate_upgraded($candidate, $upgrade_in_place)) {
+                $post_id = self::wizard_adopt_candidate_page($candidate, $type, $page_grid_id);
+            } elseif ($existing_id && get_post($existing_id)) {
+                // Already adopted (possibly by an earlier run): keep it.
+                $post_id = $existing_id;
+            } elseif ('grid' === $type && $grid) {
+                // The grid page is created with the grid; never an empty page.
+                $post_id = GridPostType::ensure_page($grid);
+                if (!is_wp_error($post_id) && $post_id) {
+                    $created[] = ['post_id' => $post_id, 'title' => (string) $grid->get('title', $label), 'url' => (string) get_permalink($post_id)];
+                }
             } else {
-                // Adopt the site's existing MDS2 page of this type instead of
-                // stacking a duplicate next to it.
-                $post_id = self::wizard_standard_page_id($type, $replace_modified, $page_grid_id);
-                if (!$post_id) {
-                    $post_id = wp_insert_post([
-                        'post_type' => 'page',
-                        'post_status' => 'publish',
-                        'post_title' => (string) $label,
-                        'post_name' => sanitize_title((string) $label),
-                        'post_content' => PageRepository::shortcode($type, $page_grid_id),
-                    ], true);
+                $post_id = self::wizard_create_standard_page($type, $label, $grid, $page_grid_id);
+                if ($post_id) {
+                    $created[] = ['post_id' => $post_id, 'title' => (string) $label, 'url' => (string) get_permalink($post_id)];
                 }
             }
 
             if (is_wp_error($post_id) || !$post_id) {
+                $failed[] = [
+                    'type' => $type,
+                    'title' => (string) $label,
+                    'message' => is_wp_error($post_id) ? (string) $post_id->get_error_message() : '',
+                ];
                 continue;
             }
 
@@ -145,20 +156,52 @@ trait HandlesMigrationAdminActions {
             $result[$type] = absint($post_id);
         }
 
+        if ($created) {
+            set_transient('mds3_pages_created_notice', $created, 5 * MINUTE_IN_SECONDS);
+        }
+
+        if ($failed) {
+            set_transient('mds3_pages_failed_notice', $failed, 5 * MINUTE_IN_SECONDS);
+        } else {
+            delete_transient('mds3_pages_failed_notice');
+        }
+
         return $result;
     }
 
     /**
-     * Standard page for the wizard. Adopts the first MDS2 page candidate of
-     * this type (unmodified, or when replace is opted in) in place; returns 0
-     * when there is no candidate or the page is modified without replace.
+     * Render (and clear) the one-shot admin notice listing MDS3 pages that the
+     * standard-pages step created next to untouched MDS2 pages.
      */
-    private static function wizard_standard_page_id($type, $replace_modified, $page_grid_id) {
-        $candidate = self::wizard_first_page_candidate($type);
-        if (!$candidate || (empty($candidate['unmodified']) && !$replace_modified)) {
-            return 0;
+    public function render_pages_created_notice() {
+        $created = get_transient('mds3_pages_created_notice');
+        if (!is_array($created) || !$created) {
+            return;
         }
+        delete_transient('mds3_pages_created_notice');
 
+        echo '<div class="notice notice-success is-dismissible"><p><strong>'
+            . esc_html__('Million Dollar Script 2 pages kept; these new Million Dollar Script 3 pages were created instead:', 'million-dollar-script')
+            . '</strong></p><ul>';
+        foreach ($created as $item) {
+            $url = (string) ($item['url'] ?? '');
+            $title = (string) ($item['title'] ?? '');
+            echo '<li>' . ($url && $title ? '<a href="' . esc_url($url) . '">' : '')
+                . esc_html($title ? $title : __('(untitled)', 'million-dollar-script'))
+                . ($url && $title ? '</a>' : '') . '</li>';
+        }
+        echo '</ul></div>';
+    }
+
+    private static function wizard_candidate_upgraded(array $candidate, array $upgrade_in_place) {
+        return !empty($candidate['unmodified']) || isset($upgrade_in_place[absint($candidate['post_id'])]);
+    }
+
+    /**
+     * Adopt a detected MDS2 page in place: preserve its original content and
+     * rewrite it to the current MDS3 shortcode.
+     */
+    private static function wizard_adopt_candidate_page(array $candidate, $type, $page_grid_id) {
         $post_id = absint($candidate['post_id']);
         $content = PageRepository::shortcode($type, $page_grid_id);
         $post = get_post($post_id);
@@ -172,53 +215,55 @@ trait HandlesMigrationAdminActions {
         return $post_id;
     }
 
-    private static function wizard_first_page_candidate($type) {
-        $source = new LegacySource();
-        foreach ($source->page_candidates() as $candidate) {
-            if ($type === sanitize_key($candidate['type'] ?? '')) {
-                return $candidate;
+    private static function wizard_create_standard_page($type, $label, $grid, $page_grid_id) {
+        $post_id = wp_insert_post([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'post_title' => (string) $label,
+            'post_name' => sanitize_title((string) $label),
+            'post_content' => PageRepository::shortcode($type, $page_grid_id),
+        ], true);
+
+        if (is_wp_error($post_id) || !$post_id) {
+            return 0;
+        }
+
+        return $post_id;
+    }
+
+    public function render_pages_failed_notice() {
+        $failed = get_transient('mds3_pages_failed_notice');
+        if (!is_array($failed) || !$failed) {
+            return;
+        }
+        delete_transient('mds3_pages_failed_notice');
+
+        echo '<div class="notice notice-error is-dismissible"><p><strong>'
+            . esc_html__('These standard pages could not be created:', 'million-dollar-script')
+            . '</strong></p><ul>';
+        foreach ($failed as $item) {
+            $title = (string) ($item['title'] ?? '');
+            $message = (string) ($item['message'] ?? '');
+            echo '<li>' . esc_html($title ? $title : __('(untitled)', 'million-dollar-script'))
+                . ($message ? ' <code>' . esc_html($message) . '</code>' : '') . '</li>';
+        }
+        echo '</ul></div>';
+    }
+
+    private static function wizard_page_candidates_by_type() {
+        $by_type = [];
+        foreach ((new LegacySource())->page_candidates() as $candidate) {
+            $type = sanitize_key((string) ($candidate['type'] ?? ''));
+            if ($type && !isset($by_type[$type])) {
+                $by_type[$type] = $candidate;
             }
         }
 
-        return null;
+        return $by_type;
     }
 
-    /**
-     * Grid page for the standard-pages wizard. Adopts an existing MDS2 grid page
-     * (unmodified, or when replace is opted in) instead of stacking a duplicate.
-     */
-    private static function wizard_grid_page_id($grid, $replace_modified, $create_new) {
-        $candidate = $this->wizard_first_grid_candidate();
-        if ($candidate) {
-            $unmodified = !empty($candidate['unmodified']);
-            if ($unmodified || $replace_modified) {
-                $post_id = absint($candidate['post_id']);
-                $content = PageRepository::shortcode('grid', $grid->id());
-                $post = get_post($post_id);
-                if ($post && (string) $post->post_content !== $content) {
-                    if (!metadata_exists('post', $post_id, '_mds3_migration_original_content')) {
-                        update_post_meta($post_id, '_mds3_migration_original_content', (string) $post->post_content);
-                    }
-                    wp_update_post(['ID' => $post_id, 'post_content' => $content]);
-                }
 
-                return $post_id;
-            }
-        }
 
-        return GridPostType::ensure_page($grid);
-    }
-
-    private static function wizard_first_grid_candidate() {
-        $source = new LegacySource();
-        foreach ($source->page_candidates() as $candidate) {
-            if ('grid' === ($candidate['type'] ?? '')) {
-                return $candidate;
-            }
-        }
-
-        return null;
-    }
 
     public function run_migration_import() {
         check_admin_referer('mds3_run_migration_import');
@@ -239,8 +284,7 @@ trait HandlesMigrationAdminActions {
 
         $importer = new Importer();
         $page_options = [
-            'replace_modified' => !empty($_POST['mds2_replace_modified_pages']),
-            'create_new' => !empty($_POST['mds2_create_new_pages']),
+            'upgrade_in_place' => array_filter(array_map('absint', (array) ($_POST['mds2_upgrade_pages'] ?? []))),
         ];
         $result = $run_id ? $importer->run_resumable_step($run_id, ['resume' => true]) : $importer->start_resumable($source_prefix, $page_options);
         if (is_wp_error($result)) {

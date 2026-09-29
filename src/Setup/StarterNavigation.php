@@ -104,6 +104,18 @@ final class StarterNavigation {
         }
 
         $menu = 'classic' === ($navigation['type'] ?? '') ? wp_get_nav_menu_object(absint($navigation['id'] ?? 0)) : false;
+        $location = sanitize_key((string) ($navigation['location'] ?? ''));
+        if (!$menu) {
+            // Most classic themes already show a menu of their own. Add the
+            // starter links to that menu instead of creating a parallel one
+            // and hunting for a spare location the theme may render in a
+            // drawer or footer where visitors never see it.
+            $visible = $this->menu_at_visible_location();
+            if ($visible) {
+                $menu = $visible['menu'];
+                $location = $visible['location'];
+            }
+        }
         if (!$menu) {
             $name = __('Million Dollar Script Starter', 'million-dollar-script');
             $suffix = 1;
@@ -156,21 +168,52 @@ final class StarterNavigation {
             update_post_meta(absint($item_id), '_million_dollar_script_starter_item', $item['key']);
         }
 
-        $location = sanitize_key((string) ($navigation['location'] ?? ''));
-        if (!$location) {
+        if ('' === $location) {
             $location = $this->assign_available_menu_location($menu_id);
         }
 
         return array_filter(['id' => $menu_id, 'location' => $location, 'type' => 'classic']);
     }
 
+    /**
+     * The menu a visitor can already see: the first preferred location the
+     * theme registers that is assigned to an existing menu.
+     *
+     * @return array{menu:WP_Term,location:string}|null
+     */
+    private function menu_at_visible_location() {
+        $registered = get_registered_nav_menus();
+        $locations = get_theme_mod('nav_menu_locations', []);
+        if (!is_array($locations)) {
+            return null;
+        }
+
+        foreach ($this->preferred_menu_locations() as $location) {
+            if (empty($locations[$location]) || !isset($registered[$location])) {
+                continue;
+            }
+            $menu = wp_get_nav_menu_object(absint($locations[$location]));
+            if ($menu) {
+                return ['menu' => $menu, 'location' => $location];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function preferred_menu_locations() {
+        return array_unique(array_merge(['primary', 'menu-1', 'header', 'main'], array_keys(get_registered_nav_menus())));
+    }
+
     private function assign_available_menu_location($menu_id) {
         $registered = get_registered_nav_menus();
         $locations = get_theme_mod('nav_menu_locations', []);
         $locations = is_array($locations) ? $locations : [];
-        $preferred = ['primary', 'menu-1', 'header', 'main'];
 
-        foreach (array_unique(array_merge($preferred, array_keys($registered))) as $location) {
+        foreach ($this->preferred_menu_locations() as $location) {
             if (!isset($registered[$location]) || !empty($locations[$location])) {
                 continue;
             }

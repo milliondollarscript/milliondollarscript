@@ -140,7 +140,7 @@ final class ReservationService {
         }
 
         if ($package && (float) ($package['price'] ?? 0) > 0) {
-            $items = $this->apply_package_price($items, (float) $package['price']);
+            $items = self::apply_package_price($items, (float) $package['price']);
         }
 
         $order_repo = new OrderRepository();
@@ -286,15 +286,17 @@ final class ReservationService {
         return true;
     }
 
-    private function apply_package_price(array $items, $package_price) {
-        $count = max(1, count($items));
-        $remaining = round((float) $package_price, 2);
+    /**
+     * A package price is charged per block, as it always was in the legacy
+     * plugin (package price x number of blocks), so selecting more blocks
+     * costs proportionally more.
+     */
+    public static function apply_package_price(array $items, $package_price) {
+        $unit_price = round((float) $package_price, 2);
 
-        foreach ($items as $index => $item) {
-            $price = $index === $count - 1 ? $remaining : round((float) $package_price / $count, 2);
-            $remaining = round($remaining - $price, 2);
-            $items[$index]['unit_price'] = $price;
-            $items[$index]['total'] = $price;
+        foreach (array_keys($items) as $index) {
+            $items[$index]['unit_price'] = $unit_price;
+            $items[$index]['total'] = $unit_price;
             $items[$index]['metadata']['price_source'] = 'package';
             $items[$index]['metadata']['price_rule_id'] = 0;
         }

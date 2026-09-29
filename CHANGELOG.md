@@ -1,3 +1,41 @@
+## 3.0.0-alpha.6 - 2026-09-29
+
+### Added
+
+- Charge by the block: the package price now applies to every selected block, and the per-block price is shown while ordering and on the order.
+- Choose what a placement click does: open the placement popup or take the visitor straight to that ad's full advertiser page. Set it site-wide and override it on any individual grid.
+- Character limit and live character count for the ad text field, with a per-grid override.
+- Grid background colour picker with a colour swatch in the settings control.
+- Per-grid controls for Auto Publish and for covering unavailable blocks are now honoured by the ordering flow.
+- Advertiser Pages has its own Settings tab with its URL base, synchronise and slug-migration tools, and it appears in the admin menu after Orders.
+- The migration wizard lets you choose exactly which MDS2 pages to upgrade, with the matching page group open by default.
+- The starter site adds its links to the menu your theme already shows.
+- The active theme mode is available to extensions through the public core API.
+
+### Changed
+
+- The popup follows the ad your pointer is over, and the default popup interaction method is click.
+- A rejected ad submission is recoverable: the message names the field, marks it, scrolls to it and focuses it, and a corrected re-submit is no longer blocked by the anti-spam wait.
+- Field errors are readable and announced to screen readers, in both light and dark palettes.
+- Saving settings returns you to the tab you were editing.
+- Save and order failures report what actually failed instead of a generic message.
+- The migration is offered only when an MDS2 installation is actually present.
+- Advertiser page tools appear only when individual advertiser pages are enabled, and the notice explains what to do next.
+- Vendored OpenLayers updated to 10.10.0.
+
+### Fixed
+
+- The uploaded ad image previews immediately and is shown again when an order is resumed.
+- Selection size takes effect on the next click instead of requiring Clear first.
+- Per-grid Auto Approve is honoured, and self-managed payment sites keep the customer on the grid after saving an ad.
+- The colour swatch renders inside the picker button instead of above it.
+- Extensions no longer register before translations are loaded, so their labels appear correctly.
+- The extension catalogue tolerates slower hosts instead of timing out.
+- Advertiser page backfill runs to completion when you start it.
+- Standard pages that cannot be created are reported instead of silently skipped.
+- A duplicate panel heading no longer appears when a WordPress page title matches the panel title.
+- The setup wizard's first-grid and starter-site actions give progress feedback, and the disabled starter-site button explains why.
+
 ## 3.0.0-alpha.5 - 2026-09-06
 
 ### Other

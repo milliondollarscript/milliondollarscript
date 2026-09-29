@@ -372,6 +372,13 @@
     display: none;
 }
 
+/* The popover is portaled to document.body, so its backdrop covers the window
+   rather than the grid element. */
+.mds3-grid-popover-backdrop-portaled {
+    position: fixed;
+    z-index: 99999;
+}
+
 .mds3-grid-popover.mds3-grid-popover-animating[data-mds3-popover-animation="fadeIn"] {
     animation: mds3-popover-fade-in 0.22s ease-out;
 }
@@ -612,6 +619,36 @@
     font-weight: 700;
 }
 
+/* Manual entry alongside the slider: Size is the side of the square, Blocks is
+   the side squared. */
+.mds3-selection-size-fields {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.mds3-selection-size-field {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    font-size: 12px;
+    gap: 4px;
+}
+
+.mds3-selection-size-field input {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    box-sizing: border-box;
+    min-height: 36px;
+    padding: 0 10px;
+    width: 100%;
+}
+
+.mds3-selection-size-field input:focus-visible {
+    outline: 2px solid var(--mds3-grid-focus);
+    outline-offset: 1px;
+}
+
 .mds3-selection-size-form input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -757,6 +794,25 @@
 
 .mds3-popover-title-link {
     color: inherit;
+}
+
+/* The advertiser-page link is the popup's primary action, not another line of
+   body text. */
+.mds3-popover-page-link {
+    border: 1px solid var(--mds3-grid-popover-border);
+    border-radius: 6px;
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 10px;
+    padding: 6px 8px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.mds3-popover-page-link:hover,
+.mds3-popover-page-link:focus {
+    text-decoration: underline;
 }
 
 .mds3-popover-title-link:hover,
@@ -1415,6 +1471,20 @@
     outline-offset: 1px;
 }
 
+.mds3-placement-form .mds3-field-error {
+    border-left: 3px solid #dc2626;
+    color: #b42318;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0;
+    padding: 2px 0 2px 10px;
+}
+
+.mds3-grid-status.mds3-status-error {
+    color: #b42318;
+}
+
 .mds3-empty,
 .mds3-grid-error {
     border: 1px solid var(--mds3-grid-line-soft);
@@ -1492,6 +1562,14 @@
     display: flex;
     gap: 10px;
     margin-top: 14px;
+}
+
+.mds3-placement-field .mds3-image-saved-note {
+    color: #15803d;
+}
+
+.mds3-theme-dark .mds3-placement-field .mds3-image-saved-note {
+    color: #4ade80;
 }
 
 .mds3-current-placement {
@@ -2406,6 +2484,11 @@ body:has(.mds3-theme-dark.mds3-page-panel) .wp-block-template-part {
     color: #fed7aa;
 }
 
+.mds3-theme-dark .mds3-placement-form .mds3-field-error,
+.mds3-theme-dark .mds3-grid-status.mds3-status-error {
+    color: #fca5a5;
+}
+
 .mds3-theme-dark .mds3-placement-form .mds3-draft-notice,
 .mds3-theme-dark .mds3-placement-form .mds3-draft-image-notice {
     background: #172554;
@@ -2546,6 +2629,11 @@ body:has(.mds3-theme-dark.mds3-page-panel) .wp-block-template-part {
         color: #fed7aa;
     }
 
+    .mds3-theme-system .mds3-placement-form .mds3-field-error,
+    .mds3-theme-system .mds3-grid-status.mds3-status-error {
+        color: #fca5a5;
+    }
+
     .mds3-theme-system .mds3-placement-form .mds3-draft-notice,
     .mds3-theme-system .mds3-placement-form .mds3-draft-image-notice {
         background: #172554;
@@ -2610,4 +2698,16 @@ body:has(.mds3-theme-dark.mds3-page-panel) .wp-block-template-part {
         background: #0f172a;
         border-color: var(--mds3-grid-line);
     }
+}
+
+.mds3-text-limit-count {
+    display: block;
+    margin-top: 0.25rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.72;
+}
+
+.mds3-text-limit-count.is-at-limit {
+    color: var(--mds3-grid-config-accent, #b3261e);
+    opacity: 1;
 }

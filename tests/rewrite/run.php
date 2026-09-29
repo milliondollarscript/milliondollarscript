@@ -173,10 +173,28 @@ if (!class_exists('WP_Error')) {
         private $message;
         private $data;
 
+        private $codes = [];
+
         public function __construct($code = '', $message = '', $data = []) {
             $this->code = $code;
             $this->message = $message;
             $this->data = $data;
+            if ('' !== $code) {
+                $this->codes[] = $code;
+            }
+        }
+
+        public function add($code, $message = '', $data = '') {
+            $this->codes[] = $code;
+            if ('' === $this->code) {
+                $this->code = $code;
+                $this->message = $message;
+                $this->data = $data;
+            }
+        }
+
+        public function get_error_codes() {
+            return $this->codes;
         }
 
         public function get_error_code() {
@@ -348,6 +366,12 @@ if (!function_exists('get_plugins')) {
 if (!function_exists('is_plugin_active')) {
     function is_plugin_active($plugin) {
         return in_array((string) $plugin, $GLOBALS['mds3_test_active_plugins'] ?? [], true);
+    }
+}
+
+if (!function_exists('get_post')) {
+    function get_post($post_id = 0) {
+        return isset($GLOBALS['mds3_test_posts'][absint($post_id)]) ? (object) [ 'ID' => absint($post_id) ] : null;
     }
 }
 
@@ -1148,6 +1172,63 @@ mds3_assert_same(false, $legacy_detector->invoke(null, 'mds-woocommerce/mds-wooc
     'Version' => '1.0.0',
 ]), 'Expected MDS-owned extensions not to be treated as the MDS2 core plugin.');
 
+// Migration availability: a fresh install must not be offered a migration, and any
+// real MDS2 trace (tables, page settings, or a recorded upgrade choice) must keep it.
+$legacy_context = new ReflectionMethod(\MillionDollarScript\V3\Setup\LegacyPlugin::class, 'legacy_source_exists');
+$legacy_context->setAccessible(true);
+$previous_wpdb = $GLOBALS['wpdb'];
+$previous_test_plugins = $GLOBALS['mds3_test_plugins'] ?? [];
+$previous_test_posts = $GLOBALS['mds3_test_posts'] ?? [];
+$migration_page_options = [];
+foreach (\MillionDollarScript\V3\Pages\PageRepository::option_aliases() as $migration_aliases) {
+    foreach ($migration_aliases as $migration_alias) {
+        $migration_page_options[$migration_alias] = $GLOBALS['mds3_test_options'][$migration_alias] ?? null;
+        unset($GLOBALS['mds3_test_options'][$migration_alias]);
+    }
+}
+$GLOBALS['wpdb'] = new class {
+    public $prefix = 'wp_';
+
+    public function prepare($query, ...$args) {
+        return $query;
+    }
+
+    public function get_var($query) {
+        return null;
+    }
+
+    public function get_row($query, $output = null) {
+        return null;
+    }
+
+    public function get_results($query, $output = null) {
+        return [];
+    }
+};
+$GLOBALS['mds3_test_plugins'] = [];
+$GLOBALS['mds3_test_posts'] = [];
+$no_legacy_source = $legacy_context->invoke(null, 'wp_mds_absent_');
+$GLOBALS['mds3_test_options']['mds_grid-page'] = 4311;
+$GLOBALS['mds3_test_posts'] = [4311 => true];
+$legacy_pages_only = $legacy_context->invoke(null, 'wp_mds_absent_');
+$GLOBALS['mds3_test_posts'] = [];
+delete_option('mds_grid-page');
+$GLOBALS['mds3_test_options']['mds3_mds2_upgrade_choice'] = 'migrated';
+$recorded_choice = $legacy_context->invoke(null, 'wp_mds_absent_');
+delete_option('mds3_mds2_upgrade_choice');
+$GLOBALS['mds3_test_plugins'] = $previous_test_plugins;
+$GLOBALS['mds3_test_posts'] = $previous_test_posts;
+$GLOBALS['wpdb'] = $previous_wpdb;
+foreach ($migration_page_options as $migration_alias => $migration_value) {
+    if (null === $migration_value) {
+        continue;
+    }
+    $GLOBALS['mds3_test_options'][$migration_alias] = $migration_value;
+}
+mds3_assert_same(false, $no_legacy_source, 'Expected a fresh install with no MDS2 tables, pages, or plugins to hide the migration.');
+mds3_assert_same(true, $legacy_pages_only, 'Expected MDS2 page settings to keep the migration available when no tables were found.');
+mds3_assert_same(true, $recorded_choice, 'Expected a recorded upgrade choice to keep the migration available.');
+
 $resolver = new \MillionDollarScript\V3\Extensions\ExtensionDependencyResolver();
 $installed_extensions = [
     [
@@ -1854,6 +1935,11 @@ mds3_assert_same('http://example.com/ad', \MillionDollarScript\V3\Media\Placemen
 mds3_assert_same('https://example.com/ad', \MillionDollarScript\V3\Media\PlacementFieldContract::advertiser_url('https://https://example.com/ad'), 'Expected duplicate https protocols to collapse.');
 mds3_assert_same('https://example.com/ad', \MillionDollarScript\V3\Media\PlacementFieldContract::advertiser_url('//example.com/ad'), 'Expected protocol-relative advertiser URLs to default to https.');
 mds3_assert_same('', \MillionDollarScript\V3\Media\PlacementFieldContract::advertiser_url('not a url'), 'Expected invalid advertiser URLs to be rejected.');
+mds3_assert_same(true, \MillionDollarScript\V3\Media\PlacementFieldContract::auto_publish([]), 'Expected a grid without an auto publish setting to publish paid uploads.');
+mds3_assert_same(true, \MillionDollarScript\V3\Media\PlacementFieldContract::auto_publish(['auto_publish' => 'Y']), 'Expected auto publish on to publish paid uploads.');
+mds3_assert_same(false, \MillionDollarScript\V3\Media\PlacementFieldContract::auto_publish(['auto_publish' => 'N']), 'Expected auto publish off to hold a paid upload for review.');
+mds3_assert_same(false, \MillionDollarScript\V3\Grid\GridStats::counts_unavailable_as_covered([]), 'Expected unavailable blocks to stay out of the covered count by default.');
+mds3_assert_same(true, \MillionDollarScript\V3\Grid\GridStats::counts_unavailable_as_covered(['nfs_covered' => 'Y']), 'Expected unavailable blocks to count as covered grid area when the grid asks for it.');
 $empty_custom_popup = $placement_payload->invoke($ajax, [
     'id' => 92,
     'grid_id' => 7,
@@ -1979,6 +2065,93 @@ $grid_footer_position = strpos((string) $grid_shell_source, 'class="mds3-grid-fo
 $grid_hint_position = strpos((string) $grid_shell_source, 'class="mds3-grid-interaction-hint"');
 mds3_assert_same(true, false !== $grid_footer_position, 'Expected the grid viewer to render an external footer.');
 mds3_assert_same(true, false !== $grid_hint_position && $grid_hint_position > $grid_footer_position, 'Expected wheel-zoom guidance to render in the footer instead of over the advertising canvas.');
+
+if (!defined('OBJECT')) {
+    define('OBJECT', 'OBJECT');
+}
+if (!function_exists('get_page_by_path')) {
+    function get_page_by_path($path, $output = OBJECT, $post_type = 'page') {
+        return null;
+    }
+}
+if (!function_exists('get_post_types')) {
+    function get_post_types($args = [], $output = 'names') {
+        return [];
+    }
+}
+
+// Round-2 alpha feedback: advertiser page settings must only be validated while in use.
+$GLOBALS['mds3_test_options']['mds3_settings'] = ['mds-pixel-template' => 'no', 'mds-pixel-base' => '', 'mds-pixel-slug-structure' => '%grid%-%order_id%-%text%'];
+$advertiser_pages_validator = new \MillionDollarScript\V3\Media\AdvertiserPages();
+$advertiser_pages_on = ['mds-pixel-template' => 'yes', 'mds-pixel-base' => 'deals', 'mds-pixel-slug-structure' => '%grid%-%order_id%-%text%'];
+$advertiser_pages_off = ['mds-pixel-template' => 'no', 'mds-pixel-base' => '', 'mds-pixel-slug-structure' => '%grid%-%order_id%-%text%'];
+$advertiser_pages_validate = static function (array $raw, array $current) use ($advertiser_pages_validator) {
+    return $advertiser_pages_validator->validate_settings(new WP_Error(), $raw, $current)->get_error_codes();
+};
+mds3_assert_same(
+    [],
+    $advertiser_pages_validate($advertiser_pages_on, $advertiser_pages_off),
+    'Expected advertiser pages to switch on in one save once the revealed fields carry values.'
+);
+mds3_assert_same(
+    ['million_dollar_script_advertiser_base_invalid'],
+    $advertiser_pages_validate(['mds-pixel-template' => 'yes', 'mds-pixel-base' => '', 'mds-pixel-slug-structure' => '%grid%-%order_id%-%text%'], $advertiser_pages_off),
+    'Expected the now-visible URL base to be required when advertiser pages switch on.'
+);
+mds3_assert_same(
+    [],
+    $advertiser_pages_validate($advertiser_pages_off, $advertiser_pages_on),
+    'Expected advertiser pages to switch off without a URL base.'
+);
+mds3_assert_same(
+    ['million_dollar_script_advertiser_base_invalid'],
+    $advertiser_pages_validate(['mds-pixel-template' => 'yes', 'mds-pixel-base' => 'deals/weekly', 'mds-pixel-slug-structure' => '%grid%-%order_id%-%text%'], $advertiser_pages_on),
+    'Expected slashes in the URL base to be rejected while enabled.'
+);
+mds3_assert_same(
+    ['million_dollar_script_advertiser_pattern_invalid'],
+    $advertiser_pages_validate(['mds-pixel-template' => 'yes', 'mds-pixel-base' => 'deals', 'mds-pixel-slug-structure' => ''], $advertiser_pages_on),
+    'Expected an empty slug pattern to be rejected while enabled.'
+);
+mds3_assert_same(
+    [],
+    $advertiser_pages_validate(['mds-pixel-tab' => 'grid'], $advertiser_pages_on),
+    'Expected a settings save from another tab to keep using the stored advertiser page values.'
+);
+mds3_assert_same(
+    [],
+    $advertiser_pages_validate(['mds-pixel-tab' => 'grid'], $advertiser_pages_off),
+    'Expected a settings save from another tab to pass while advertiser pages are off.'
+);
+mds3_assert_same(
+    ['million_dollar_script_advertiser_base_conflict'],
+    $advertiser_pages_validate(['mds-pixel-template' => 'yes', 'mds-pixel-base' => 'feed', 'mds-pixel-slug-structure' => '%grid%-%order_id%-%text%'], $advertiser_pages_on),
+    'Expected a reserved URL base to be rejected while enabled.'
+);
+
+// A package price is charged once per selected block, the way MDS2 priced packages
+// (price * block_count). Dividing it across the selection silently under-charged
+// every multi-block package order.
+$package_items = \MillionDollarScript\V3\Orders\ReservationService::apply_package_price(array(
+    array('unit_price' => 250.00, 'total' => 250.00, 'metadata' => array()),
+    array('unit_price' => 250.00, 'total' => 250.00, 'metadata' => array()),
+    array('unit_price' => 250.00, 'total' => 250.00, 'metadata' => array()),
+), 6.00);
+mds3_assert_same(
+    array(6.0, 6.0, 6.0),
+    array_column($package_items, 'unit_price'),
+    'Expected every block of a package order to carry the package price as its unit price.'
+);
+mds3_assert_same(
+    18.0,
+    array_sum(array_column($package_items, 'total')),
+    'Expected a three block package order to total three times the package price.'
+);
+mds3_assert_same(
+    array('package', 'package', 'package'),
+    array_map(static function ($item) { return $item['metadata']['price_source']; }, $package_items),
+    'Expected package-priced blocks to record the package as their price source.'
+);
 
 require __DIR__ . '/service-signature-fixture.php';
 require __DIR__ . '/extension-bundle-fixture.php';

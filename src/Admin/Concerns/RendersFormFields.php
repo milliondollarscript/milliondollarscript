@@ -37,6 +37,11 @@ trait RendersFormFields {
         if (!empty($args['wide'])) {
             $field_class .= ' mds3-field-wide';
         }
+        $dependent_attrs = '';
+        if (!empty($args['dependent']) && is_scalar($args['dependent'])) {
+            $dependent_parts = array_pad(explode('=', (string) $args['dependent'], 2), 2, 'yes');
+            $dependent_attrs = ' data-mds3-dependent="' . esc_attr(sanitize_key($dependent_parts[0])) . '" data-mds3-dependent-value="' . esc_attr((string) $dependent_parts[1]) . '"';
+        }
         $common = ($disabled ? ' disabled="disabled" aria-disabled="true"' : '') . ($readonly ? ' readonly="readonly"' : '');
         $common .= $description_id ? ' aria-describedby="' . esc_attr($description_id) . '"' : '';
         $autocomplete = array_key_exists('autocomplete', $args) && is_scalar($args['autocomplete']) ? sanitize_key((string) $args['autocomplete']) : '';
@@ -74,6 +79,7 @@ trait RendersFormFields {
         Template::display('admin/partials/form-field.php', [
             'autocomplete_attr' => $autocomplete_attr,
             'common' => $common,
+            'dependent_attrs' => $dependent_attrs,
             'description' => $description,
             'description_markup' => FieldHelp::description($description, $description_id),
             'disabled' => $disabled,
@@ -181,8 +187,11 @@ trait RendersFormFields {
             'max_orders' => __('Maximum active orders allowed for this item. Use 0 for no limit.', 'million-dollar-script'),
             'days_expire' => __('Number of days before pending orders expire. Use 0 to disable day-based expiry.', 'million-dollar-script'),
             'auto_publish' => __('Publishes customer uploads immediately after payment when enabled.', 'million-dollar-script'),
-            'auto_approve' => __('Approves orders automatically instead of requiring manual review.', 'million-dollar-script'),
+            'popup_text_max_chars' => __('Character limit for the customer ad text field on this grid. Blank inherits the global limit; 0 means no limit.', 'million-dollar-script'),
+            'popup_display_max_chars' => __('Character limit for the text shown in this grid’s popups. Blank inherits the global limit; 0 shows the full text, which the advertiser page always keeps.', 'million-dollar-script'),
+            'auto_approve' => __('Overrides the site-wide auto approve option for this grid. Leave on “Use global setting” to follow it.', 'million-dollar-script'),
             'nfs_covered' => __('Controls whether unavailable blocks count as covered grid area.', 'million-dollar-script'),
+            'advertiser_page_click_mode' => __('Overrides the site-wide placement click option for this grid. Leave on “Use global setting” to follow it.', 'million-dollar-script'),
             'background_color' => __('Background color shown behind this grid.', 'million-dollar-script'),
             'background_image_id' => __('Optional image shown behind available grid space. Paid placements, availability states, selections, controls, and popovers remain above it.', 'million-dollar-script'),
             'status' => __('Controls whether this item is active, paused, or archived.', 'million-dollar-script'),

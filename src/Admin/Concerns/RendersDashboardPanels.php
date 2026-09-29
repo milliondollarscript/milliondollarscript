@@ -13,6 +13,7 @@ use MillionDollarScript\V3\Docs\DocsRegistry;
 use MillionDollarScript\V3\Extensions\ExtensionLicenseManager;
 use MillionDollarScript\V3\Extensions\ExtensionOnboarding;
 use MillionDollarScript\V3\Extensions\ExtensionServer;
+use MillionDollarScript\V3\Setup\LegacyPlugin;
 use MillionDollarScript\V3\Support\DB;
 use MillionDollarScript\V3\Support\Template;
 
@@ -64,7 +65,7 @@ trait RendersDashboardPanels {
             ['label' => __('Setup', 'million-dollar-script'), 'url' => admin_url('admin.php?page=mds3-setup'), 'icon' => 'dashicons-admin-tools'],
             ['label' => __('View site', 'million-dollar-script'), 'url' => home_url('/'), 'icon' => 'dashicons-external', 'target' => '_blank'],
         ];
-        if ($this->grid_enabled()) {
+        if ($this->grid_enabled() && LegacyPlugin::has_legacy_context()) {
             array_splice($launch_items, 1, 0, [
                 ['label' => __('Migration', 'million-dollar-script'), 'url' => admin_url('admin.php?page=mds3-migration'), 'icon' => 'dashicons-migrate'],
             ]);

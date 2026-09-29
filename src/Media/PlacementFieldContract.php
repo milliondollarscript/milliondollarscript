@@ -27,6 +27,74 @@ final class PlacementFieldContract {
         return self::mode('text-optional', $settings['text-optional'] ?? 'no');
     }
 
+    /**
+     * Effective ad text character limit, with the grid-level override taking precedence.
+     * A blank grid override inherits the global setting; 0 means no limit.
+     */
+    public static function text_max_chars(array $settings, array $grid_settings = []) {
+        $override = $grid_settings['popup_text_max_chars'] ?? null;
+        $value = (null === $override || '' === trim((string) $override))
+            ? ($settings['text-max-chars'] ?? 0)
+            : $override;
+
+        return max(0, absint($value));
+    }
+
+    /**
+     * Resolve the popup display limit: a per-grid override wins over the global setting.
+     */
+    public static function popup_display_max_chars(array $settings, array $grid_settings = []) {
+        $override = $grid_settings['popup_display_max_chars'] ?? null;
+        $value = (null === $override || '' === trim((string) $override))
+            ? ($settings['popup-text-max-chars'] ?? 0)
+            : $override;
+
+        return max(0, absint($value));
+    }
+
+    /**
+     * Resolve what a placement click does: a per-grid override wins over the global setting.
+     * A blank grid override inherits the global setting.
+     *
+     * @return string 'popup' or 'page'
+     */
+    public static function advertiser_page_click_mode(array $settings, array $grid_settings = []) {
+        $override = strtolower(trim((string) ($grid_settings['advertiser_page_click_mode'] ?? '')));
+        $value = in_array($override, ['popup', 'page'], true)
+            ? $override
+            : strtolower(trim((string) ($settings['advertiser-page-click-mode'] ?? 'popup')));
+
+        return 'page' === $value ? 'page' : 'popup';
+    }
+
+    /**
+     * Whether a paid order's uploaded creative goes live on the grid straight away.
+     * The grid toggle defaults to publishing; only an explicit "N" holds the upload
+     * for an admin to approve.
+     */
+    public static function auto_publish(array $grid_settings = []) {
+        return 'N' !== strtoupper(trim((string) ($grid_settings['auto_publish'] ?? 'Y')));
+    }
+
+    /**
+     * Apply grid-level overrides to a global settings array so validation and rendering agree.
+     */
+    public static function settings_for_grid(array $settings, $grid_id) {
+        $grid = absint($grid_id) > 0 ? (new \MillionDollarScript\V3\Grid\GridRepository())->find(absint($grid_id)) : null;
+        if (!$grid) {
+            $settings['auto-publish'] = true;
+
+            return $settings;
+        }
+
+        $settings['text-max-chars'] = (string) self::text_max_chars($settings, $grid->settings());
+        $settings['popup-text-max-chars'] = (string) self::popup_display_max_chars($settings, $grid->settings());
+        $settings['advertiser-page-click-mode'] = self::advertiser_page_click_mode($settings, $grid->settings());
+        $settings['auto-publish'] = self::auto_publish($grid->settings());
+
+        return $settings;
+    }
+
     public static function is_visible($mode) {
         return self::HIDDEN !== $mode;
     }
@@ -65,6 +133,18 @@ final class PlacementFieldContract {
             $popup_text = PopupText::sanitize($submitted_text, $settings);
             if (self::is_required($popup_text_mode) && '' === PopupText::plain($popup_text)) {
                 return new \WP_Error('million_dollar_script_popup_required', __('Enter the popup text for this placement.', 'million-dollar-script'), ['status' => 400]);
+            }
+            $popup_text_max = self::text_max_chars($settings);
+            if ($popup_text_max > 0 && mb_strlen(PopupText::plain($popup_text)) > $popup_text_max) {
+                return new \WP_Error(
+                    'million_dollar_script_popup_too_long',
+                    sprintf(
+                        /* translators: %d: maximum number of characters. */
+                        __('Ad text must be %d characters or fewer.', 'million-dollar-script'),
+                        $popup_text_max
+                    ),
+                    ['status' => 400]
+                );
             }
         }
 

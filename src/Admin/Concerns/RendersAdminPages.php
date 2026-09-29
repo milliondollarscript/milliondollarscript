@@ -467,6 +467,12 @@ trait RendersAdminPages {
     public function migration() {
         $grid_enabled = $this->grid_enabled();
         $source_prefix = $this->sanitize_source_prefix(wp_unslash($_GET['source_prefix'] ?? ''));
+
+        if ('' === $source_prefix && !LegacyPlugin::has_legacy_context()) {
+            Template::display('admin/partials/migration-no-source.php', ['grid_enabled' => $grid_enabled], $this);
+            return;
+        }
+
         $report = (new DryRun())->report($source_prefix);
         $latest = $this->latest_migration_run($report['source_prefix'] ?? '');
 
@@ -484,6 +490,7 @@ trait RendersAdminPages {
         $settings = Currency::settings_with_effective_values($settings);
         $provider_currency_locked = Currency::provider_locks_currency($settings);
         $groups = $this->settings_groups();
+        $groups = $this->settings_groups_with_advertiser_dependencies($groups);
         $tabs = array_keys($groups);
         $extra_tabs = [
             'upgrade' => __('Upgrade Compatibility', 'million-dollar-script'),
@@ -504,6 +511,40 @@ trait RendersAdminPages {
             'settings' => $settings,
             'tabs' => $tabs,
         ], $this);
+    }
+
+    /**
+     * Advertiser-page options live on their own Settings tab. The dependent options
+     * stay in the form and admin.js reveals them when the feature is switched on.
+     * Removing them from the form instead made the feature impossible to switch on:
+     * the URL base and slug pattern were absent from the submission, so the save
+     * failed validation while the only control that could enable them was visible.
+     */
+    private function settings_groups_with_advertiser_dependencies(array $groups) {
+        $dependent = [
+            'exclude-from-search',
+            'mds-pixel-base',
+            'mds-pixel-slug-structure',
+            'advertiser-page-popup-link',
+            'advertiser-page-popup-label',
+            'advertiser-page-link-target',
+            'advertiser-page-click-mode',
+        ];
+
+        foreach ($groups as $group => $fields) {
+            if ('advertiser-pages' !== $this->settings_group_slug($group)) {
+                continue;
+            }
+            $groups[$group] = array_map(static function ($field) use ($dependent) {
+                if (in_array((string) ($field['key'] ?? ''), $dependent, true)) {
+                    $field['dependent'] = 'mds-pixel-template=yes';
+                }
+
+                return $field;
+            }, array_values($fields));
+        }
+
+        return $groups;
     }
 
     public function system_status() {

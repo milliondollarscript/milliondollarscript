@@ -47,6 +47,16 @@ final class ExtensionCatalog {
     const SERVER_PROBE_TRANSIENT = 'mds3_extsrv_probe';
     const SERVER_PROBE_UP_TTL = 300;
     const SERVER_PROBE_DOWN_TTL = 60;
+    /**
+     * Catalog request budget in seconds.
+     *
+     * Two seconds looked fine against a same-host server and marked the server
+     * down on any slower host — a browser-proxied WordPress Playground, a cold
+     * container, a catalog behind a slow proxy — and the down marker then
+     * suppressed retries for a minute, so an install could never see the
+     * catalog at all. Fifteen seconds is the slowest observed cold fetch.
+     */
+    const SERVER_REQUEST_TIMEOUT = 15;
 
     public function catalog($force_update_checks = false) {
         $installed = array_merge($this->bundled(), $this->installed());
@@ -330,7 +340,7 @@ final class ExtensionCatalog {
         ))));
         foreach ($candidates as $base_url) {
             $url = rtrim($base_url, '/') . '/api/public/products?' . http_build_query(array_merge(ExtensionServer::compatibility_args(), ['type' => 'bundle']), '', '&', PHP_QUERY_RFC3986);
-            $response = wp_remote_get($url, ['timeout' => 2]);
+            $response = wp_remote_get($url, ['timeout' => self::SERVER_REQUEST_TIMEOUT]);
             if (is_wp_error($response)) {
                 $errors[] = $this->server_error_line($base_url, $response->get_error_message());
                 continue;
@@ -459,7 +469,7 @@ final class ExtensionCatalog {
         $errors = [];
         $candidates = $this->extension_server_candidates($configured);
         foreach ($candidates as $base_url) {
-            $response = wp_remote_get($this->public_extensions_url($base_url), ['timeout' => 2]);
+            $response = wp_remote_get($this->public_extensions_url($base_url), ['timeout' => self::SERVER_REQUEST_TIMEOUT]);
             if (is_wp_error($response)) {
                 $errors[] = $this->server_error_line($base_url, $response->get_error_message());
                 continue;

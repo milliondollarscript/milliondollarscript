@@ -185,6 +185,12 @@ $extra_grid_columns = $this->grid_list_extra_columns($grid_list_context);
                         $this->field('show_public_stats', __('Show Stats With Grid', 'million-dollar-script'), 'select', $editing_settings['show_public_stats'] ?? 'Y', '', ['Y', 'N'], [
                             'description' => __('Shows sold and available inventory above this grid on public read-only and order pages.', 'million-dollar-script'),
                         ]);
+                        $this->field('popup_text_max_chars', __('Ad Text Character Limit', 'million-dollar-script'), 'number', $editing_settings['popup_text_max_chars'] ?? '', '', [], [
+                            'description' => __('Leave blank to use the global ad text limit. Enter 0 for no limit on this grid.', 'million-dollar-script'),
+                        ]);
+                        $this->field('popup_display_max_chars', __('Popup Character Limit', 'million-dollar-script'), 'number', $editing_settings['popup_display_max_chars'] ?? '', '', [], [
+                            'description' => __('Leave blank to use the global popup limit. Enter 0 to show the full text in this grid’s popups.', 'million-dollar-script'),
+                        ]);
                         ?>
                         <h3><?php esc_html_e('Ordering Rules', 'million-dollar-script'); ?></h3>
                         <?php
@@ -200,9 +206,18 @@ $extra_grid_columns = $this->grid_list_extra_columns($grid_list_context);
                         $this->field('days_expire', __('Order Duration Days', 'million-dollar-script'), 'number', $editing_settings['days_expire'] ?? 0, '', [], [
                             'description' => __('Use 0 for no placement duration limit on paid orders.', 'million-dollar-script'),
                         ]);
-                        $this->field('auto_publish', __('Auto Publish Uploads', 'million-dollar-script'), 'select', $editing_settings['auto_publish'] ?? 'N', '', ['N', 'Y']);
-                        $this->field('auto_approve', __('Auto Approve Orders', 'million-dollar-script'), 'select', $editing_settings['auto_approve'] ?? 'N', '', ['N', 'Y']);
+                        $this->field('auto_publish', __('Auto Publish Uploads', 'million-dollar-script'), 'select', $editing_settings['auto_publish'] ?? 'Y', '', ['N', 'Y']);
+                        $this->field('auto_approve', __('Auto Approve Orders', 'million-dollar-script'), 'select', $editing_settings['auto_approve'] ?? '', '', [
+                            '' => __('Use global setting', 'million-dollar-script'),
+                            'N' => __('No', 'million-dollar-script'),
+                            'Y' => __('Yes', 'million-dollar-script'),
+                        ], ['description' => __('Leave on “Use global setting” to follow the site-wide auto approve option, or override it for this grid.', 'million-dollar-script')]);
                         $this->field('nfs_covered', __('Unavailable Blocks Covered', 'million-dollar-script'), 'select', $editing_settings['nfs_covered'] ?? 'N', '', ['N', 'Y']);
+                        $this->field('advertiser_page_click_mode', __('Placement Clicks', 'million-dollar-script'), 'select', $editing_settings['advertiser_page_click_mode'] ?? '', '', [
+                            '' => __('Use global setting', 'million-dollar-script'),
+                            'popup' => __('Show the popup', 'million-dollar-script'),
+                            'page' => __('Open the full advertiser page', 'million-dollar-script'),
+                        ], ['description' => __('Leave on “Use global setting” to follow the site-wide placement click option, or override it for this grid.', 'million-dollar-script')]);
                         ?>
                         <h3><?php esc_html_e('Grid Background', 'million-dollar-script'); ?></h3>
                         <p><?php esc_html_e('Use a background image for unfilled inventory while keeping the background color as a reliable fallback. Background images are rendered locally so ads and interaction layers always remain visible.', 'million-dollar-script'); ?></p>
@@ -292,6 +307,12 @@ $extra_grid_columns = $this->grid_list_extra_columns($grid_list_context);
             ]);
             $this->field('show_public_stats', __('Show Stats With Grid', 'million-dollar-script'), 'select', 'Y', '', ['Y', 'N'], [
                 'description' => __('Shows sold and available inventory above this grid on public read-only and order pages.', 'million-dollar-script'),
+            ]);
+            $this->field('popup_text_max_chars', __('Ad Text Character Limit', 'million-dollar-script'), 'number', '', '', [], [
+                'description' => __('Leave blank to use the global ad text limit. Enter 0 for no limit on this grid.', 'million-dollar-script'),
+            ]);
+            $this->field('popup_display_max_chars', __('Popup Character Limit', 'million-dollar-script'), 'number', '', '', [], [
+                'description' => __('Leave blank to use the global popup limit. Enter 0 to show the full text in this grid’s popups.', 'million-dollar-script'),
             ]);
             $this->field('min_blocks', __('Minimum Blocks Per Order', 'million-dollar-script'), 'number', '1');
             $this->field('max_blocks', __('Maximum Blocks Per Order', 'million-dollar-script'), 'number', '0');

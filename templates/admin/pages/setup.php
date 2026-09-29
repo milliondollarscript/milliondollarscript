@@ -20,6 +20,8 @@ if (!defined('ABSPATH')) {
         <div class="notice notice-success inline"><p><?php esc_html_e('Setup preferences saved.', 'million-dollar-script'); ?></p></div>
     <?php endif; ?>
 
+    <?php $this->render_pages_created_notice(); ?>
+
     <?php if (!empty($_GET['extensions_activated'])) : ?>
         <div class="notice notice-success inline">
             <p>
@@ -48,9 +50,12 @@ if (!defined('ABSPATH')) {
         </div>
     <?php endif; ?>
 
-    <?php if (!empty($_GET['pages'])) : ?>
+    <?php if (!empty($_GET['pages']) && empty($_GET['pages_failed'])) : ?>
         <div class="notice notice-success inline"><p><?php esc_html_e('Standard pages are ready.', 'million-dollar-script'); ?></p></div>
     <?php endif; ?>
+
+    <?php $this->render_pages_created_notice(); ?>
+    <?php $this->render_pages_failed_notice(); ?>
 
     <?php if (!empty($_GET['pages_error'])) : ?>
         <div class="notice notice-error inline"><p><?php echo esc_html(sanitize_text_field(rawurldecode(wp_unslash($_GET['pages_error'])))); ?></p></div>
@@ -238,8 +243,72 @@ if (!defined('ABSPATH')) {
                         </div>
                         <p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=mds3-grids&grid_id=' . $grid->id())); ?>"><?php esc_html_e('Edit grid', 'million-dollar-script'); ?></a></p>
                     <?php else : ?>
-                        <p><?php esc_html_e('Create a grid before opening orders to customers.', 'million-dollar-script'); ?></p>
-                        <p><a class="button button-primary" href="<?php echo esc_url(admin_url('admin.php?page=mds3-grids')); ?>"><?php esc_html_e('Create grid', 'million-dollar-script'); ?></a></p>
+                        <div data-mds3-first-grid-step>
+                            <p><?php esc_html_e('Create a grid before opening orders to customers.', 'million-dollar-script'); ?></p>
+                            <p><button type="button" class="button button-primary" data-mds3-create-first-grid><?php esc_html_e('Create grid', 'million-dollar-script'); ?></button></p>
+                            <div class="mds3-starter-site-result" data-mds3-create-first-grid-result hidden></div>
+                            <span class="screen-reader-text" aria-live="polite" data-mds3-create-first-grid-status></span>
+                        </div>
+                        <script>
+                            (function () {
+                                var btn = document.querySelector('[data-mds3-create-first-grid]');
+                                var step = document.querySelector('[data-mds3-first-grid-step]');
+                                var result = step.querySelector('[data-mds3-create-first-grid-result]');
+                                var live = step.querySelector('[data-mds3-create-first-grid-status]');
+                                if (!btn || !window.ajaxurl) {
+                                    return;
+                                }
+                                btn.addEventListener('click', function () {
+                                    btn.disabled = true;
+                                    btn.textContent = 'Creating\u2026';
+                                    result.hidden = true;
+                                    var body = new URLSearchParams();
+                                    body.set('action', 'mds3_setup_create_first_grid');
+                                    body.set('nonce', '<?php echo esc_js(wp_create_nonce("mds3_setup_create_grid")); ?>');
+                                    fetch(window.ajaxurl, { method: 'POST', credentials: 'same-origin', body: body })
+                                        .then(function (r) {
+                                            return r.json();
+                                        })
+                                        .then(function (json) {
+                                            var data = (json && json.data) || {};
+                                            if (!json || !json.success) {
+                                                result.hidden = false;
+                                                result.className = 'mds3-starter-site-result is-error';
+                                                result.textContent = data.message || 'The grid could not be created. Try again.';
+                                                live.textContent = result.textContent;
+                                                btn.disabled = false;
+                                                btn.textContent = 'Create grid';
+                                                return;
+                                            }
+                                            var li = step.closest('li');
+                                            if (li) {
+                                                li.classList.remove('is-pending');
+                                                li.classList.add('is-complete');
+                                            }
+                                            step.textContent = '';
+                                            var info = document.createElement('p');
+                                            info.textContent = 'First available grid: ' + data.title + ' (' + data.dimensions + ').';
+                                            var linkRow = document.createElement('p');
+                                            var edit = document.createElement('a');
+                                            edit.className = 'button';
+                                            edit.href = data.edit_url;
+                                            edit.textContent = 'Edit grid';
+                                            linkRow.appendChild(edit);
+                                            step.appendChild(info);
+                                            step.appendChild(linkRow);
+                                            live.textContent = info.textContent;
+                                        })
+                                        .catch(function () {
+                                            result.hidden = false;
+                                            result.className = 'mds3-starter-site-result is-error';
+                                            result.textContent = 'Grid request failed. Try again.';
+                                            live.textContent = result.textContent;
+                                            btn.disabled = false;
+                                            btn.textContent = 'Create grid';
+                                        });
+                                });
+                            })();
+                        </script>
                     <?php endif; ?>
                 </li>
 
@@ -255,10 +324,12 @@ if (!defined('ABSPATH')) {
                             ));
                             ?>
                         </p>
-                        <?php $this->inline_post_button('mds3_ensure_standard_pages', 'mds3_ensure_standard_pages', ['redirect_to' => 'setup'], __('Create missing standard pages', 'million-dollar-script'), 'button-primary'); ?>
+                        <?php $this->standard_pages_panel(false, [], 'setup'); ?>
                     <?php else : ?>
                         <p><?php esc_html_e('All standard Million Dollar Script page roles are mapped.', 'million-dollar-script'); ?></p>
-                        <p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=mds3-migration')); ?>"><?php esc_html_e('Review page map', 'million-dollar-script'); ?></a></p>
+                        <?php if ($this->has_mds2_upgrade_context($legacy_plugins, $legacy_source)) : ?>
+                            <p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=mds3-migration')); ?>"><?php esc_html_e('Review page map', 'million-dollar-script'); ?></a></p>
+                        <?php endif; ?>
                     <?php endif; ?>
                     <div class="mds3-starter-site-option<?php echo !empty($starter_site_status['configured']) ? ' is-configured' : ''; ?>">
                         <div class="mds3-starter-site-option__heading">
@@ -269,16 +340,85 @@ if (!defined('ABSPATH')) {
                                     : __('Ready', 'million-dollar-script')); ?></span>
                             <?php endif; ?>
                         </div>
-                        <p><?php esc_html_e('Create editable Blog, Contact, and About pages plus navigation for Home, Blog, Order Pixels, Manage Pixels, Contact, and About. Existing pages, front-page choices, and assigned menus are preserved.', 'million-dollar-script'); ?></p>
-                        <label class="mds3-starter-site-option__choice">
-                            <input type="checkbox" name="mds3_create_starter_site" value="1" form="mds3-setup-preferences"<?php disabled(!empty($missing_pages)); ?> />
-                            <span>
-                                <strong><?php echo esc_html(!empty($starter_site_status['configured'])
-                                    ? __('Repair missing starter items when setup is saved', 'million-dollar-script')
-                                    : __('Create the optional starter site when setup is saved', 'million-dollar-script')); ?></strong>
-                                <small><?php esc_html_e('The Contact page shows a clear fallback until the free Contact Form extension is active, then displays the form automatically.', 'million-dollar-script'); ?></small>
-                            </span>
-                        </label>
+                        <p><?php esc_html_e('Create editable Blog, Contact, and About pages plus navigation for Home, Blog, Order Pixels, Manage Pixels, Contact, and About. Existing pages, front-page choices, and assigned menus are preserved. The Contact page shows a clear fallback until the free Contact Form extension is active, then displays the form automatically.', 'million-dollar-script'); ?></p>
+                        <div class="mds3-starter-site-option__choice">
+                            <button type="button" class="button" data-mds3-starter-site-run<?php disabled(!empty($missing_pages)); ?>>
+                                <?php echo esc_html(!empty($starter_site_status['configured'])
+                                    ? __('Repair missing starter items', 'million-dollar-script')
+                                    : __('Create starter site', 'million-dollar-script')); ?>
+                            </button>
+                            <span class="screen-reader-text" aria-live="polite" data-mds3-starter-site-status></span>
+                        </div>
+                        <?php if (!empty($missing_pages)) : ?>
+                            <p class="description"><?php esc_html_e('This button unlocks once the standard pages above are created.', 'million-dollar-script'); ?></p>
+                        <?php endif; ?>
+                        <div class="mds3-starter-site-result" data-mds3-starter-site-result hidden></div>
+                        <script>
+                            (function () {
+                                var option = document.currentScript.closest('.mds3-starter-site-option');
+                                if (!option) {
+                                    return;
+                                }
+                                var btn = option.querySelector('[data-mds3-starter-site-run]');
+                                var result = option.querySelector('[data-mds3-starter-site-result]');
+                                var live = option.querySelector('[data-mds3-starter-site-status]');
+                                if (!btn || !result || !window.ajaxurl) {
+                                    return;
+                                }
+                                btn.addEventListener('click', function () {
+                                    btn.disabled = true;
+                                    var label = btn.textContent;
+                                    btn.textContent = 'Working\u2026';
+                                    result.hidden = true;
+                                    var body = new URLSearchParams();
+                                    body.set('action', 'mds3_setup_starter_site');
+                                    body.set('nonce', '<?php echo esc_js(wp_create_nonce("mds3_create_starter_site")); ?>');
+                                    fetch(window.ajaxurl, {
+                                        method: 'POST',
+                                        credentials: 'same-origin',
+                                        body: body
+                                    })
+                                        .then(function (r) {
+                                            return r.json();
+                                        })
+                                        .then(function (json) {
+                                            var data = (json && json.data) || {};
+                                            var errors = data.errors || [];
+                                            result.hidden = false;
+                                            if (!json || !json.success) {
+                                                result.className = 'mds3-starter-site-result is-error';
+                                                result.textContent = (data.message || 'Starter site could not be created.');
+                                                live.textContent = result.textContent;
+                                                btn.textContent = label;
+                                                return;
+                                            }
+                                            if (errors.length) {
+                                                result.className = 'mds3-starter-site-result is-error';
+                                                result.textContent = 'Some starter items need attention: ' + errors.join(' ') + ' ' + 'Run again to repair.';
+                                            } else if (data.navigation_needs_review) {
+                                                result.className = 'mds3-starter-site-result is-success';
+                                                result.textContent = 'Starter pages are ready. Your existing navigation was preserved \u2014 add the starter pages through Appearance > Menus or the Site Editor when you want them in the header.';
+                                            } else {
+                                                result.className = 'mds3-starter-site-result is-success';
+                                                result.textContent = 'Starter pages and navigation are ready.';
+                                            }
+                                            live.textContent = result.textContent;
+                                            btn.textContent = 'Repair missing starter items';
+                                            option.classList.add('is-configured');
+                                        })
+                                        .catch(function () {
+                                            result.hidden = false;
+                                            result.className = 'mds3-starter-site-result is-error';
+                                            result.textContent = 'Starter site request failed. Try again.';
+                                            live.textContent = result.textContent;
+                                            btn.textContent = label;
+                                        })
+                                        .finally(function () {
+                                            btn.disabled = false;
+                                        });
+                                });
+                            })();
+                        </script>
                         <?php if (!empty($missing_pages)) : ?>
                             <p class="description"><?php esc_html_e('Create the missing standard pages first to enable this option.', 'million-dollar-script'); ?></p>
                         <?php elseif (!empty($starter_site_status['navigation_needs_review'])) : ?>

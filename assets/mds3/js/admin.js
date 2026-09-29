@@ -1908,11 +1908,41 @@
     };
 
     function bindColorPickers() {
+        syncColorChips();
+        document.addEventListener('input', function (event) {
+            if (event.target && event.target.classList && event.target.classList.contains('mds3-color-picker')) {
+                syncColorChip(event.target);
+            }
+        });
+
         if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.wpColorPicker) {
             return;
         }
 
         window.jQuery('.mds3-color-picker').wpColorPicker();
+        syncColorChips();
+    }
+
+    // The grid background colour must be visible in the admin control even when the
+    // WP colour picker fails to initialise, so the swatch chip is kept in step here.
+    function syncColorChip(input) {
+        var chip = document.querySelector('[data-mds3-color-chip="' + (input && input.id ? input.id : '') + '"]');
+        if (!chip || !input) {
+            return;
+        }
+        // Once the WP picker has built its own button, move the swatch inside that
+        // button so it overlays the control; with no picker it stays inline.
+        var container = input.closest('.wp-picker-container');
+        var button = container ? container.querySelector('.wp-color-result') : null;
+        if (button && chip.parentElement !== button) {
+            button.appendChild(chip);
+        }
+        var value = String(input.value || '').trim();
+        chip.style.backgroundColor = /^#[0-9a-fA-F]{3,8}$/.test(value) ? value : 'transparent';
+    }
+
+    function syncColorChips() {
+        Array.prototype.forEach.call(document.querySelectorAll('.mds3-color-picker'), syncColorChip);
     }
 
     function bindHelpTooltips() {
@@ -2321,6 +2351,19 @@
             });
         }, true);
 
+        document.querySelectorAll('[data-mds3-dependent]').forEach(function (field) {
+            var control = document.querySelector('[name="' + field.getAttribute('data-mds3-dependent') + '"]');
+            if (!control) {
+                return;
+            }
+            var expected = field.getAttribute('data-mds3-dependent-value') || 'yes';
+            var sync = function () {
+                field.hidden = control.value !== expected;
+            };
+            control.addEventListener('change', sync);
+            sync();
+        });
+
         document.querySelectorAll('.mds3-settings-tabs').forEach(function (tabs, tabsIndex) {
             var container = tabs.closest('[data-mds3-tab-container]') || tabs.closest('form');
             if (!container) {
@@ -2348,6 +2391,9 @@
                 });
                 container.querySelectorAll('[data-settings-save-form]').forEach(function (form) {
                     form.classList.toggle('is-transfer-active', target === 'settings-transfer');
+                });
+                document.querySelectorAll('input[name="settings_tab"]').forEach(function (input) {
+                    input.value = target;
                 });
                 if (focus) {
                     button.focus();

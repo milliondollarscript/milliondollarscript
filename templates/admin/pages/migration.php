@@ -72,9 +72,12 @@ $active_legacy_plugins = array_values(array_filter(is_array($legacy_plugins ?? n
             </div>
         <?php endif; ?>
 
-        <?php if (!empty($_GET['pages'])) : ?>
+        <?php if (!empty($_GET['pages']) && empty($_GET['pages_failed'])) : ?>
             <div class="notice notice-success inline"><p><?php esc_html_e('Standard pages are ready. Existing migrated pages were preserved.', 'million-dollar-script'); ?></p></div>
         <?php endif; ?>
+
+        <?php $this->render_pages_created_notice(); ?>
+        <?php $this->render_pages_failed_notice(); ?>
 
         <?php if (!empty($_GET['pages_error'])) : ?>
             <div class="notice notice-error inline"><p><?php echo esc_html(sanitize_text_field(rawurldecode(wp_unslash($_GET['pages_error'])))); ?></p></div>
@@ -152,7 +155,7 @@ $active_legacy_plugins = array_values(array_filter(is_array($legacy_plugins ?? n
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-        <?php $this->standard_pages_panel(false); ?>
+        <?php $this->standard_pages_panel(false, $report['pages']['candidates'] ?? [], 'migration', 'mds3-ensure-standard-pages mds3-migration-import'); ?>
 
         <h2><?php esc_html_e('Target Tables', 'million-dollar-script'); ?></h2>
         <table class="widefat striped">
@@ -175,42 +178,11 @@ $active_legacy_plugins = array_values(array_filter(is_array($legacy_plugins ?? n
         </table>
 
         <?php if ($grid_enabled) : ?>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <form id="mds3-migration-import" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <?php wp_nonce_field('mds3_run_migration_import'); ?>
                 <input type="hidden" name="action" value="mds3_run_migration_import" />
                 <input type="hidden" name="source_prefix" value="<?php echo esc_attr($report['source_prefix'] ?? ''); ?>" />
-                <div class="mds3-mds2-page-options">
-                    <p class="description">
-                        <?php esc_html_e('Million Dollar Script 2 pages that were left untouched by the plugin are updated in place. Pages whose content you changed are left unchanged unless you choose otherwise below.', 'million-dollar-script'); ?>
-                    </p>
-                    <label>
-                        <input type="checkbox" name="mds2_replace_modified_pages" value="1" />
-                        <?php esc_html_e('Replace modified Million Dollar Script 2 pages in place (overwrites their content).', 'million-dollar-script'); ?>
-                    </label>
-                    <label class="mds3-mds2-create-new">
-                        <input type="checkbox" name="mds2_create_new_pages" value="1" />
-                        <?php esc_html_e('For modified pages, leave the original and create a new separate page.', 'million-dollar-script'); ?>
-                    </label>
-                    <script>
-                        (function () {
-                            var form = document.currentScript.closest('form');
-                            if (!form) {
-                                return;
-                            }
-                            var replace = form.querySelector('[name="mds2_replace_modified_pages"]');
-                            var createNew = form.querySelector('.mds3-mds2-create-new');
-                            function sync() {
-                                if (createNew) {
-                                    createNew.style.display = replace && replace.checked ? 'none' : '';
-                                }
-                            }
-                            if (replace) {
-                                replace.addEventListener('change', sync);
-                            }
-                            sync();
-                        })();
-                    </script>
-                </div>
+                <p class="description"><?php esc_html_e('The page upgrade choices in the Standard Pages section above apply to this import.', 'million-dollar-script'); ?></p>
                 <?php submit_button(__('Start migration import', 'million-dollar-script'), 'secondary'); ?>
             </form>
         <?php endif; ?>

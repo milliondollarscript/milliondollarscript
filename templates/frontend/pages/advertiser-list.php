@@ -37,7 +37,10 @@ $search_id = 'mds3-advertiser-search-' . wp_rand(1000, 9999);
     style="<?php echo esc_attr(implode(';', $styles)); ?>"
     data-mds3-advertiser-list
 >
-    <h2><?php echo esc_html__('Advertiser List', 'million-dollar-script'); ?></h2>
+    <?php $mds3_heading = __('Advertiser List', 'million-dollar-script'); ?>
+    <?php if (get_the_title() !== $mds3_heading) : ?>
+        <h2><?php echo esc_html($mds3_heading); ?></h2>
+    <?php endif; ?>
     <?php if ($all_grids) : ?>
         <p class="mds3-advertiser-list-grid"><?php echo esc_html__('Published advertisers across all active grids.', 'million-dollar-script'); ?></p>
     <?php elseif (!empty($grid)) : ?>

@@ -152,6 +152,19 @@ try {
         throw new RuntimeException('A non-public placement remained accessible through its page facade.');
     }
 
+    if (!has_action('million-dollar-script/admin/settings/advertiser-tools')) {
+        throw new RuntimeException('Advertiser page tools were not registered on the Advertiser Pages settings tab.');
+    }
+    if (!array_key_exists('Advertiser Pages', \MillionDollarScript\V3\Settings\SettingsSchema::groups())) {
+        throw new RuntimeException('The advertiser page options are not grouped under their own Advertiser Pages settings tab.');
+    }
+    if (file_exists(__DIR__ . '/../../templates/admin/pages/advertiser-pages.php')) {
+        throw new RuntimeException('The standalone Advertiser Pages admin screen should live under Settings instead.');
+    }
+    if (method_exists(\MillionDollarScript\V3\Admin\Admin::class, 'advertiser_pages')) {
+        throw new RuntimeException('The standalone Advertiser Pages admin screen should render through Settings instead.');
+    }
+
     echo "Advertiser page fixture passed.\n";
 } finally {
     $wpdb->query('ROLLBACK');

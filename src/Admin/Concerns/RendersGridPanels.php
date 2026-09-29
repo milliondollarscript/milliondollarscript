@@ -13,6 +13,7 @@ use MillionDollarScript\V3\Grid\GridPostType;
 use MillionDollarScript\V3\Grid\GridRepository;
 use MillionDollarScript\V3\Grid\PackageRepository;
 use MillionDollarScript\V3\Grid\PriceRuleRepository;
+use MillionDollarScript\V3\Migration\LegacySource;
 use MillionDollarScript\V3\Media\AdvertiserPageManager;
 use MillionDollarScript\V3\Media\PlacementRepository;
 use MillionDollarScript\V3\Orders\OrderPlacementMovePlanner;
@@ -164,10 +165,17 @@ trait RendersGridPanels {
         }
     }
 
-    private function standard_pages_panel($standalone = true) {
+    private function standard_pages_panel($standalone = true, array $candidates = [], $redirect_to = 'migration', $form_ids = '') {
+        if (!$candidates) {
+            $candidates = (new LegacySource())->page_candidates();
+        }
+
         Template::display('admin/partials/standard-pages-panel.php', [
             'grid_enabled' => $this->grid_enabled(),
             'standalone' => $standalone,
+            'candidates' => $candidates,
+            'redirect_to' => $redirect_to,
+            'form_ids' => $form_ids,
         ], $this);
     }
 
@@ -266,7 +274,7 @@ trait RendersGridPanels {
         $first_placement_id = $order_placements ? absint($order_placements[0]['id'] ?? 0) : 0;
         $page_manager = new AdvertiserPageManager();
         $advertiser_page_url = $first_placement_id
-            ? ($page_manager->public_url($first_placement_id) ?: (string) ($page_manager->legacy_public_urls([$first_placement_id])[$first_placement_id] ?? ''))
+            ? $page_manager->public_url($first_placement_id)
             : '';
         $item_rows = [];
         $placement_events = [];

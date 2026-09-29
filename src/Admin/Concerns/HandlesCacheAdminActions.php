@@ -25,7 +25,9 @@ trait HandlesCacheAdminActions {
 
         global $wpdb;
 
-        $delete_tile_files = !empty($_POST['mds3_delete_tile_files']);
+        // The admin-bar action arrives as a GET link; the System Status form posts
+        // the tile-file checkbox, so read either.
+        $delete_tile_files = !empty($_REQUEST['mds3_delete_tile_files']);
         $tile_dirs_removed = 0;
         $grids_rotated = 0;
         $repository = new GridRepository();
@@ -74,13 +76,19 @@ trait HandlesCacheAdminActions {
             '_transient_timeout_' . $prefix . '%'
         ));
 
+        // Return to the screen the action was triggered from (admin bar link);
+        // the System Status form sends no mds3_return and stays there.
+        $return = isset($_REQUEST['mds3_return']) ? wp_validate_redirect(wp_unslash($_REQUEST['mds3_return']), '') : '';
+        if ('' === $return) {
+            $return = admin_url('admin.php?page=mds3-system-status');
+        }
+
         wp_safe_redirect(add_query_arg([
-            'page' => 'mds3-system-status',
             'mds3_cache_cleared' => 1,
             'mds3_grids_rotated' => absint($grids_rotated),
             'mds3_transients_cleared' => absint($transients_cleared),
             'mds3_tile_dirs_removed' => absint($tile_dirs_removed),
-        ], admin_url('admin.php')));
+        ], $return));
         exit;
     }
 }

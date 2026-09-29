@@ -3,7 +3,7 @@
  * Plugin Name: Million Dollar Script
  * Plugin URI: https://milliondollarscript.com
  * Description: WordPress-first pixel grid advertising plugin.
- * Version: 3.0.0
+ * Version: 3.0.0-alpha.6
  * Author: Million Dollar Script
  * Author URI: https://milliondollarscript.com
  * Text Domain: million-dollar-script
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('MILLION_DOLLAR_SCRIPT_VERSION', '3.0.0');
+define('MILLION_DOLLAR_SCRIPT_VERSION', '3.0.0-alpha.6');
 define('MILLION_DOLLAR_SCRIPT_PRODUCT_FAMILY', 'modern');
 define('MILLION_DOLLAR_SCRIPT_CORE_API_VERSION', 1);
 define('MILLION_DOLLAR_SCRIPT_DISTRIBUTION', 'direct');

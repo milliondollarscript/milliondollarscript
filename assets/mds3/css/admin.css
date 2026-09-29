@@ -1617,6 +1617,33 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     margin: 0;
 }
 
+.mds3-starter-site-result {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+}
+
+.mds3-starter-site-result.is-success {
+    background: #edfaef;
+    border-left-color: #2c8a44;
+}
+
+.mds3-starter-site-result.is-error {
+    background: #fdeef0;
+    border-left-color: #b32d2e;
+}
+
+@media (prefers-color-scheme: dark) {
+    .mds3-starter-site-result.is-success {
+        background: rgba(44, 138, 68, 0.15);
+    }
+
+    .mds3-starter-site-result.is-error {
+        background: rgba(179, 45, 46, 0.15);
+    }
+}
+
 .mds3-starter-site-option__choice {
     align-items: flex-start;
     display: flex;
@@ -1873,6 +1900,44 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     max-width: 110px;
 }
 
+/* Colour swatch shown next to every colour field, independent of the WP picker. */
+.mds3-admin .mds3-color-chip {
+    background-image: linear-gradient(45deg, rgba(128, 128, 128, 0.25) 25%, transparent 25%, transparent 75%, rgba(128, 128, 128, 0.25) 75%),
+        linear-gradient(45deg, rgba(128, 128, 128, 0.25) 25%, transparent 25%, transparent 75%, rgba(128, 128, 128, 0.25) 75%);
+    background-position: 0 0, 6px 6px;
+    background-size: 12px 12px;
+    border: 1px solid rgba(128, 128, 128, 0.45);
+    border-radius: 3px;
+    display: inline-block;
+    height: 24px;
+    margin-right: 8px;
+    vertical-align: middle;
+    width: 24px;
+}
+
+/*
+ * Once the WP picker is built the chip is moved inside its button, at the left
+ * edge where the button shows the picked colour. Core gives .wp-color-result no
+ * positioning context, so the container supplies it.
+ */
+.mds3-admin .wp-color-result,
+.mds3-admin .wp-picker-container {
+    position: relative;
+}
+
+.mds3-admin .wp-picker-container .mds3-color-chip {
+    display: block;
+    height: 16px;
+    margin-right: 0;
+    pointer-events: none;
+    left: 8px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    z-index: 1;
+}
+
 .mds3-admin input:disabled,
 .mds3-admin select:disabled,
 .mds3-admin textarea:disabled {
@@ -1923,6 +1988,10 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     display: grid;
     gap: 18px;
     max-width: 840px;
+}
+
+.mds3-field[hidden] {
+    display: none !important;
 }
 
 .mds3-settings-form p {
@@ -2310,6 +2379,75 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     border-radius: 8px;
     margin: 16px 0;
     padding: 14px;
+}
+
+.mds3-upgrade-accordion {
+    margin: 10px 0 14px;
+}
+
+.mds3-upgrade-accordion__parent {
+    display: block;
+    font-size: 14px;
+    margin: 0 0 8px;
+}
+
+.mds3-upgrade-accordion__item {
+    background: var(--mds3-admin-surface);
+    border: 1px solid var(--mds3-admin-border);
+    border-radius: 8px;
+    margin: 0 0 6px;
+}
+
+.mds3-upgrade-accordion__item > summary {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+    padding: 10px 12px;
+}
+
+.mds3-upgrade-accordion__item > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mds3-upgrade-accordion__item > summary::before {
+    content: "\25B8";
+    color: #7a869a;
+    flex: 0 0 auto;
+}
+
+.mds3-upgrade-accordion__item[open] > summary::before {
+    content: "\25BE";
+}
+
+.mds3-upgrade-accordion__item.is-locked > summary::before {
+    content: "\2713";
+    color: #00a32a;
+}
+
+.mds3-upgrade-accordion__type {
+    background: var(--mds3-admin-border);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+}
+
+.mds3-upgrade-accordion__state {
+    color: #646970;
+    font-size: 12px;
+}
+
+.mds3-upgrade-accordion__view {
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.mds3-upgrade-accordion__body {
+    border-top: 1px solid var(--mds3-admin-border);
+    padding: 10px 12px;
 }
 
 .mds3-inline-form {

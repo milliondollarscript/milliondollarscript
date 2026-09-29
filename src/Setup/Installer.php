@@ -30,6 +30,7 @@ final class Installer {
         self::upgrade_legacy_user_facing_defaults();
         self::upgrade_early_alpha_saved_defaults();
         self::normalize_known_alpha_saved_defaults();
+        self::upgrade_popup_interaction_default();
         self::cleanup_extension_legal_page_grid_metadata();
 
         if (get_option('mds3_db_version') === InstallerSchema::VERSION && InstallerSchema::required_tables_exist()) {
@@ -249,6 +250,29 @@ final class Installer {
         }
 
         update_option('mds3_upgraded_early_alpha_saved_defaults', MILLION_DOLLAR_SCRIPT_VERSION, false);
+    }
+
+    /**
+     * Move existing alpha sites onto the click-first popup default.
+     *
+     * Popup interaction defaulted to hover, which does nothing on a touch
+     * screen. Only the exact saved old default is switched, once, so a later
+     * deliberate choice of hover survives.
+     *
+     * @return void
+     */
+    private static function upgrade_popup_interaction_default() {
+        if (get_option('mds3_upgraded_popup_interaction_default')) {
+            return;
+        }
+
+        $settings = get_option('mds3_settings', []);
+        if (is_array($settings) && 'mouseenter' === strtolower(trim((string) ($settings['tooltip-trigger'] ?? '')))) {
+            $settings['tooltip-trigger'] = SettingsSchema::defaults()['tooltip-trigger'] ?? 'click';
+            update_option('mds3_settings', $settings, false);
+        }
+
+        update_option('mds3_upgraded_popup_interaction_default', MILLION_DOLLAR_SCRIPT_VERSION, false);
     }
 
     /**

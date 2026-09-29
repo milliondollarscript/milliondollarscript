@@ -12,6 +12,7 @@ use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Support\BrowserConfig;
 use MillionDollarScript\V3\Support\Component;
 use MillionDollarScript\V3\Support\Template;
+use MillionDollarScript\V3\Support\ThemeMode;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -30,8 +31,8 @@ final class GridShortcode implements Component {
     }
 
     public function register_assets() {
-        wp_register_style('mds3-openlayers', MILLION_DOLLAR_SCRIPT_ASSETS_URL . 'vendor/ol/ol.css', [], '10.9.0');
-        wp_register_script('mds3-openlayers', MILLION_DOLLAR_SCRIPT_ASSETS_URL . 'vendor/ol/ol.js', [], '10.9.0', true);
+        wp_register_style('mds3-openlayers', MILLION_DOLLAR_SCRIPT_ASSETS_URL . 'vendor/ol/ol.css', [], '10.10.0');
+        wp_register_script('mds3-openlayers', MILLION_DOLLAR_SCRIPT_ASSETS_URL . 'vendor/ol/ol.js', [], '10.10.0', true);
         wp_register_style('mds3-grid', MILLION_DOLLAR_SCRIPT_ASSETS_URL . 'css/grid.css', ['mds3-openlayers'], self::asset_version('css/grid.css'));
         wp_register_script('mds3-grid', MILLION_DOLLAR_SCRIPT_ASSETS_URL . 'js/grid.js', ['mds3-openlayers'], self::asset_version('js/grid.js'), true);
         BrowserConfig::add('mds3-grid', 'grid', $this->config());
@@ -96,6 +97,7 @@ final class GridShortcode implements Component {
             'natural_width' => $natural_width,
             'placement_fields' => $placement_fields,
             'popup_rich_text' => 'yes' === SettingsSchema::sanitize('popup-rich-text', $settings['popup-rich-text'] ?? 'no'),
+            'popup_text_max_chars' => PlacementFieldContract::text_max_chars($settings, $grid_settings),
             'popup_text_mode' => $popup_text_mode,
             'popup_text_required' => PlacementFieldContract::is_required($popup_text_mode),
             'popup_text_visible' => PlacementFieldContract::is_visible($popup_text_mode),
@@ -166,11 +168,7 @@ final class GridShortcode implements Component {
     }
 
     private function theme_mode() {
-        $settings = get_option('mds3_settings', []);
-        $mode = is_array($settings) ? ($settings['theme_mode'] ?? 'light') : 'light';
-        $mode = SettingsSchema::sanitize('theme_mode', $mode);
-
-        return in_array($mode, ['light', 'dark', 'system'], true) ? $mode : 'light';
+        return ThemeMode::mode();
     }
 
     private function config() {
@@ -185,12 +183,20 @@ final class GridShortcode implements Component {
                 'clear' => __('Clear', 'million-dollar-script'),
                 'reserved' => __('Selection reserved.', 'million-dollar-script'),
                 'defaultPricing' => __('Default pricing', 'million-dollar-script'),
+                /* translators: Shown after a package price, which is charged once per selected block. */
+                'perBlockShort' => __('per block', 'million-dollar-script'),
                 'continue' => __('Continue', 'million-dollar-script'),
                 'continueCheckout' => __('Continue to checkout', 'million-dollar-script'),
                 'saveAd' => __('Save ad', 'million-dollar-script'),
                 'savingAd' => __('Saving ad...', 'million-dollar-script'),
                 'adSaved' => __('Ad saved.', 'million-dollar-script'),
+                'adSavedLive' => __('Ad saved. It is live on the grid.', 'million-dollar-script'),
+                'adSavedPending' => __('Ad saved. It appears once the order is confirmed.', 'million-dollar-script'),
                 'error' => __('The grid could not be loaded.', 'million-dollar-script'),
+                'actionFailed' => __('The request could not be completed. Please try again.', 'million-dollar-script'),
+                'saveFailed' => __('The ad could not be saved. Please try again.', 'million-dollar-script'),
+                'unexpectedResponse' => __('The server returned an unexpected response. Please reload the page and try again.', 'million-dollar-script'),
+                'uploadTooLarge' => __('The uploaded image is too large. Try a smaller file.', 'million-dollar-script'),
                 'adjacentRequired' => __('Select blocks that touch the current selection.', 'million-dollar-script'),
                 'rectangleRequired' => __('Selection must form a complete rectangle or square.', 'million-dollar-script'),
                 'selectionUnavailable' => __('One or more blocks in that selection are unavailable.', 'million-dollar-script'),

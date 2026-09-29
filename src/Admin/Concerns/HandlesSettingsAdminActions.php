@@ -32,9 +32,15 @@ trait HandlesSettingsAdminActions {
         $current = get_option('mds3_settings', []);
         $current = is_array($current) ? $current : [];
         $raw_post = wp_unslash($_POST);
+        // Keep the admin on the tab they were editing; an unknown tab falls back to the first one on render.
+        $tab = isset($raw_post['settings_tab']) ? sanitize_key(wp_unslash($raw_post['settings_tab'])) : '';
+        $return_url = admin_url('admin.php?page=mds3-settings');
+        if ('' !== $tab) {
+            $return_url = add_query_arg('tab', $tab, $return_url);
+        }
         $errors = \MillionDollarScript\Core\Hooks::apply('million-dollar-script/admin/validate/settings', new \WP_Error(), $raw_post, $current);
         if (is_wp_error($errors) && $errors->has_errors()) {
-            wp_safe_redirect(add_query_arg('settings_error', wp_strip_all_tags($errors->get_error_message()), admin_url('admin.php?page=mds3-settings')));
+            wp_safe_redirect(add_query_arg('settings_error', wp_strip_all_tags($errors->get_error_message()), $return_url));
             exit;
         }
 
@@ -53,7 +59,7 @@ trait HandlesSettingsAdminActions {
         ExtensionCleanupPolicy::save_inclusions((array) ($raw_post['mds3_extension_cleanup_included'] ?? []));
         \MillionDollarScript\Core\Hooks::do('million-dollar-script/admin/settings/saved', $saved, $raw_post, $current);
 
-        wp_safe_redirect(admin_url('admin.php?page=mds3-settings&updated=1'));
+        wp_safe_redirect(add_query_arg('updated', '1', $return_url));
         exit;
     }
 
@@ -198,6 +204,21 @@ trait HandlesSettingsAdminActions {
             'starter_site_errors' => count($starter_site_result['errors'] ?? []),
         ], admin_url('admin.php')));
         exit;
+    }
+
+    public function ajax_setup_starter_site() {
+        check_ajax_referer('mds3_create_starter_site', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Permission denied.', 'million-dollar-script')], 403);
+        }
+
+        $result = (new StarterSite())->create();
+        set_transient('mds3_starter_site_result_' . get_current_user_id(), $result, 60);
+        wp_send_json_success([
+            'errors' => array_values(array_map('strval', (array) ($result['errors'] ?? []))),
+            'navigation_needs_review' => !empty($result['status']['navigation_needs_review']),
+            'configured' => !empty((new StarterSite())->status()['configured']),
+        ]);
     }
 
     public function install_plugin_dependency() {

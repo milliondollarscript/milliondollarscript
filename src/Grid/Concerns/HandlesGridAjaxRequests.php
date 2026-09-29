@@ -39,8 +39,7 @@ trait HandlesGridAjaxRequests {
         $placements = (new PlacementRepository())->for_grid($grid->id(), ['active']);
         $placement_masks = (new OrderRepository())->item_masks(array_column($placements, 'order_id'));
         $order_map = $this->orders_for_placements($placements);
-        $settings = $this->settings();
-        $legacy_page_urls = $this->legacy_popup_page_urls($settings, array_column($placements, 'id'));
+        $settings = \MillionDollarScript\V3\Media\PlacementFieldContract::settings_for_grid($this->settings(), $grid->id());
 
         $tile = $this->tile_payload($grid);
 
@@ -48,10 +47,10 @@ trait HandlesGridAjaxRequests {
             'grid' => $this->grid_payload($grid),
             'blocks' => array_map([$this, 'block_payload'], $blocks),
             'availabilityRegions' => array_map([$this, 'availability_region_payload'], $block_repo->unavailable_regions($grid)),
-            'placements' => array_map(function ($placement) use ($settings, $placement_masks, $order_map, $legacy_page_urls) {
+            'placements' => array_map(function ($placement) use ($settings, $placement_masks, $order_map) {
                 $order_id = absint($placement['order_id'] ?? 0);
 
-                return $this->placement_payload($placement, $settings, $placement_masks[$order_id] ?? [], $order_map[$order_id] ?? null, $legacy_page_urls);
+                return $this->placement_payload($placement, $settings, $placement_masks[$order_id] ?? [], $order_map[$order_id] ?? null);
             }, $placements),
             'packages' => (new PackageRepository())->active_for_grid($grid->id()),
             'priceRules' => (new PriceRuleRepository())->active_for_grid($grid->id()),
@@ -200,6 +199,7 @@ trait HandlesGridAjaxRequests {
             wp_send_json_error(['message' => $result->get_error_message()], 409);
         }
 
+        $this->charge_public_write_throttle();
         wp_send_json_success($result);
     }
 
@@ -233,11 +233,30 @@ trait HandlesGridAjaxRequests {
      * Per-IP cooldown for public write actions. The shared guest nonce only
      * guards against cross-site forgery, so spam from a single IP is bounded
      * here instead.
+     *
+     * The cooldown is charged only when the write actually persists
+     * (charge_public_write_throttle()). A rejected attempt - invalid ad text, a
+     * block that is already taken, a bad upload - changed nothing, so it must
+     * not lock the visitor out of correcting and re-submitting; the retry would
+     * otherwise come back as a duplicate of the attempt that did nothing.
      */
+    private $pending_public_write = null;
+    private $pending_public_write_ttl = 0;
+
     private function throttle_public_write(string $bucket, int $ttl): void {
-        if (ExtensionSupport::rate_limited($bucket, 'mds3_grid_write', $ttl)) {
+        if (ExtensionSupport::is_rate_limited($bucket, 'mds3_grid_write')) {
             wp_send_json_error(['message' => __('Please wait a moment and try again.', 'million-dollar-script')], 429);
         }
+        $this->pending_public_write = $bucket;
+        $this->pending_public_write_ttl = $ttl;
+    }
+
+    private function charge_public_write_throttle(): void {
+        if (null === $this->pending_public_write) {
+            return;
+        }
+        ExtensionSupport::record_rate_limit($this->pending_public_write, 'mds3_grid_write', $this->pending_public_write_ttl);
+        $this->pending_public_write = null;
     }
 
     private function can_access_grid($grid) {
