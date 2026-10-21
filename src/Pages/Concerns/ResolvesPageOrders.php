@@ -12,6 +12,8 @@ use MillionDollarScript\V3\Orders\OrderRepository;
 use MillionDollarScript\V3\Pages\PageRepository;
 use MillionDollarScript\V3\Commerce\Currency;
 
+use MillionDollarScript\V3\Support\PageUrls;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -65,6 +67,11 @@ trait ResolvesPageOrders {
         $settings = is_array($settings) ? $settings : [];
         $url = esc_url_raw((string) ($settings['checkout-url'] ?? ''));
         if (!$url || false !== strpos($url, '%')) {
+            $url = esc_url_raw((string) $fallback);
+        }
+        // A Checkout URL pointed at the page being viewed is not a route anywhere: the button
+        // reloads the screen it is on. Send the customer to the fallback instead.
+        if (PageUrls::is_same_page($url, PageUrls::requested_page())) {
             $url = esc_url_raw((string) $fallback);
         }
 

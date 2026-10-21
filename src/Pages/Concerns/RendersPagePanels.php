@@ -13,11 +13,15 @@ use MillionDollarScript\V3\Grid\GridStats;
 use MillionDollarScript\V3\Grid\GridRepository;
 use MillionDollarScript\V3\Media\PlacementFieldContract;
 use MillionDollarScript\V3\Media\PlacementRepository;
+use MillionDollarScript\V3\Media\UploadValidator;
+use MillionDollarScript\V3\Orders\CheckoutRouter;
+use MillionDollarScript\V3\Orders\OrderConfirmation;
 use MillionDollarScript\V3\Orders\OrderRepository;
 use MillionDollarScript\V3\Orders\OrderRenewal;
 use MillionDollarScript\V3\Pages\PageRepository;
 use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Support\DB;
+use MillionDollarScript\V3\Support\PageUrls;
 use MillionDollarScript\V3\Support\Template;
 use MillionDollarScript\V3\Support\ThemeMode;
 
@@ -118,7 +122,14 @@ trait RendersPagePanels {
             return $this->advertiser_list($grid_id, $args);
         }
 
-        if (!$grid_id && $this->page_type_needs_grid_choice($type)) {
+        // A visitor who arrives with their own order in the address is not asking "which grid
+        // do you want" - they have just placed an ad, and the page they were sent to is about
+        // that order. On a site whose Thank You or Payment page is not tied to one grid, the
+        // chooser below used to win, so the receipt never appeared. Read the order first; the
+        // chooser still answers the page for anyone who has no order to look at.
+        $order = in_array($type, ['confirm-order', 'payment', 'thank-you'], true) ? $this->request_order() : null;
+
+        if (null === $order && !$grid_id && $this->page_type_needs_grid_choice($type)) {
             $picker = $this->grid_picker($type);
             if ($picker) {
                 return $picker;
@@ -133,7 +144,6 @@ trait RendersPagePanels {
         }
 
         if (in_array($type, ['confirm-order', 'payment', 'thank-you'], true)) {
-            $order = $this->request_order();
             if ($order) {
                 return $this->order_summary_panel($type, $order);
             }
@@ -337,8 +347,21 @@ trait RendersPagePanels {
 
     private function current_request_url() {
         $request_uri = isset($_SERVER['REQUEST_URI']) ? esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])) : '/';
+        $path = wp_parse_url($request_uri, PHP_URL_PATH);
+        if (null === $path) {
+            $path = '/';
+        }
+        // A site installed in a subdirectory already carries that path in the
+        // request, and home_url() adds it again: keep only the part below the
+        // site so a paginated list does not point at /subdirectory/subdirectory/.
+        $site = wp_parse_url(home_url('/'), PHP_URL_PATH);
+        $site = is_string($site) ? untrailingslashit($site) : '';
+        if ('' !== $site && 0 === strpos($path, $site)) {
+            $path = substr($path, strlen($site));
+        }
+        $query = wp_parse_url($request_uri, PHP_URL_QUERY);
 
-        return home_url($request_uri ?: '/');
+        return home_url('/' . ltrim((string) $path, '/') . ($query ? '?' . $query : ''));
     }
 
     private function grid_picker_action_label($type) {
@@ -434,21 +457,57 @@ trait RendersPagePanels {
         $renewal_notice = '';
         $renewal_checkout_url = '';
         $order = $this->maybe_start_order_renewal($order, $renewals, $renewal_error, $renewal_notice, $renewal_checkout_url);
+        $confirm_error = '';
+        $confirm_notice = '';
+        $order = $this->maybe_confirm_order($order, $confirm_error, $confirm_notice);
         $metadata = json_decode((string) ($order['metadata'] ?? ''), true);
         $metadata = is_array($metadata) ? $metadata : [];
         $term_expires_at = !empty($metadata['expires_at']) ? mysql2date(get_option('date_format'), (string) $metadata['expires_at'], true) : '';
-        $cleanup_notice = $this->order_cleanup_notice($order);
-        $payment_url = $renewal_checkout_url ?: $this->order_payment_url($order);
+        $placements = (new PlacementRepository())->for_order(absint($order['id'] ?? 0));
+        // A site that asks its customers to review an order keeps the payment route to itself
+        // until they do: a "Continue payment" button on the review screen would let a customer
+        // skip the step the site asked for.
+        $awaiting_confirmation = (new OrderConfirmation())->await_confirmation($order, $this->site_settings(), $placements);
+        $cleanup_notice = $this->order_cleanup_notice($order, $awaiting_confirmation);
+        $payment_url = $awaiting_confirmation ? '' : ($renewal_checkout_url ?: $this->order_payment_url($order));
+        // A Checkout URL pointed at this screen produced a "Continue payment" link that
+        // reloaded the page it was on, which a customer reads as a dead button. Saving that
+        // value is refused; this covers one stored earlier or written by another tool.
+        if ('' !== $payment_url && PageUrls::is_same_page($payment_url, PageUrls::requested_page())) {
+            $payment_url = '';
+        }
         $status = sanitize_key((string) ($order['status'] ?? ''));
         // Expired orders land on this panel themselves, so a manage link here would loop back to this page.
         $manage_url = 'expired' === $status ? '' : $this->customer_order_url($order);
 
+        // The same words the order page uses. A customer who reaches this panel through a
+        // thank-you link, the "my pixels" list, or an ended listing gets one explanation of
+        // where they stand rather than a table of labels.
+        $panel_settings = wp_parse_args(is_array(get_option('mds3_settings', [])) ? (array) get_option('mds3_settings', []) : [], SettingsSchema::defaults());
+        $panel_settings = PlacementFieldContract::settings_for_grid($panel_settings, $this->order_grid_id($order));
+        $preview_attachment = 0;
+        foreach ($placements as $placement_row) {
+            if (!empty($placement_row['attachment_id'])) {
+                $preview_attachment = absint($placement_row['attachment_id']);
+                break;
+            }
+        }
+
         return Template::render('frontend/pages/order-summary.php', [
             'back_url' => esc_url_raw($this->pixels_back_url()),
             'cleanup_notice' => $cleanup_notice,
+            'confirm_available' => $awaiting_confirmation,
+            'confirm_attachment' => $awaiting_confirmation ? $preview_attachment : 0,
+            'confirm_error' => $confirm_error,
+            'confirm_notice' => $confirm_notice,
+            'confirm_nonce' => $awaiting_confirmation ? wp_create_nonce('mds3_confirm_order_' . absint($order['id'] ?? 0)) : '',
             'manage_url' => $manage_url,
             'metadata' => $metadata,
             'order' => $order,
+            'order_state' => $this->customer_order_state($order, $placements, $panel_settings, $payment_url, $awaiting_confirmation),
+            // A reservation the customer has filled in is not the same thing to them as the
+            // internal word for it: at this point the order is waiting on them, not on the site.
+            'status_label' => $awaiting_confirmation ? __('Awaiting confirmation', 'million-dollar-script') : '',
             'payment_url' => $payment_url,
             'renewal_available' => $renewals->can_renew($order) && !$renewal_checkout_url,
             'renewal_error' => $renewal_error,
@@ -516,6 +575,82 @@ trait RendersPagePanels {
         return $order;
     }
 
+    /**
+     * The customer's Confirm action on a review step.
+     *
+     * MDS2's confirm page had one button, and what it did depended on whether the order owed
+     * money: a free order was completed there, anything else moved on to payment
+     * (milliondollarscript-two/src/Core/users/confirm_order.php:368). The same rule is here,
+     * and the order then goes wherever saving the ad would have taken it - an outside payment
+     * page, the customer's own order page, or the thank-you page - so confirming cannot send a
+     * customer somewhere other than the path the site is set up for.
+     */
+    private function maybe_confirm_order(array $order, &$error, &$notice) {
+        $method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']))) : '';
+        if ('POST' !== $method) {
+            return $order;
+        }
+
+        $post = wp_unslash($_POST);
+        if ('confirm_order' !== sanitize_key((string) ($post['mds3_action'] ?? ''))) {
+            return $order;
+        }
+
+        $order_id = absint($order['id'] ?? 0);
+        if ($order_id !== absint($post['order_id'] ?? 0)) {
+            return $order;
+        }
+
+        if (
+            empty($post['order_key']) ||
+            !hash_equals((string) ($order['order_key'] ?? ''), sanitize_text_field((string) $post['order_key']))
+        ) {
+            $error = __('Order could not be verified.', 'million-dollar-script');
+            return $order;
+        }
+
+        if (empty($post['_wpnonce']) || !wp_verify_nonce(sanitize_text_field((string) $post['_wpnonce']), 'mds3_confirm_order_' . $order_id)) {
+            $error = __('That confirmation could not be verified. Refresh the page and try again.', 'million-dollar-script');
+            return $order;
+        }
+
+        $settings = $this->site_settings();
+        $confirmation = new OrderConfirmation();
+        if (!$confirmation->await_confirmation($order, $settings)) {
+            // Pressing Confirm twice, or on an order that has already moved on: there is nothing
+            // to do, and nothing a customer needs to be told is wrong.
+            return $order;
+        }
+
+        $updated = $confirmation->advance(new OrderRepository(), new PlacementRepository(), $order, $settings);
+        if (is_wp_error($updated)) {
+            $error = $updated->get_error_message();
+            return $order;
+        }
+
+        $order = $updated;
+        $checkout = (new CheckoutRouter())->payload($order);
+        $redirect = esc_url_raw((string) (new CheckoutRouter())->after_upload_url($order, $checkout, $settings, false));
+        if ('' !== $redirect && !headers_sent()) {
+            wp_safe_redirect($redirect);
+            exit;
+        }
+
+        $notice = __('Your order is confirmed.', 'million-dollar-script');
+
+        return $order;
+    }
+
+    /**
+     * Site settings with the defaults applied, for a decision that belongs to the site rather
+     * than to one grid. Per-grid choices are read where they are used.
+     */
+    private function site_settings() {
+        $stored = get_option('mds3_settings', []);
+
+        return wp_parse_args(is_array($stored) ? $stored : [], SettingsSchema::defaults());
+    }
+
     private function order_upload_panel($order_id, $order_key) {
         $order = (new OrderRepository())->find($order_id);
         if (!$order || !hash_equals((string) ($order['order_key'] ?? ''), (string) $order_key)) {
@@ -534,7 +669,7 @@ trait RendersPagePanels {
         $placements = (new PlacementRepository())->for_order($order_id);
         $placement = $placements ? $placements[0] : [];
         $image = !empty($placement['attachment_id']) ? wp_get_attachment_image(absint($placement['attachment_id']), 'medium') : '';
-        $settings = wp_parse_args(is_array(get_option('mds3_settings', [])) ? get_option('mds3_settings', []) : [], SettingsSchema::defaults());
+        $settings = wp_parse_args(is_array(get_option('mds3_settings', [])) ? (array) get_option('mds3_settings', []) : [], SettingsSchema::defaults());
         $settings = PlacementFieldContract::settings_for_grid($settings, $placement['grid_id'] ?? 0);
         $popup_text_mode = PlacementFieldContract::popup_text_mode($settings);
         $url_mode = PlacementFieldContract::url_mode($settings);
@@ -545,6 +680,7 @@ trait RendersPagePanels {
             'order' => $order,
             'order_id' => $order_id,
             'order_key' => $order_key,
+            'order_state' => $this->customer_order_state($order, $placements, $settings, $this->order_payment_url($order), (new OrderConfirmation())->await_confirmation($order, $this->site_settings(), $placements)),
             'placement' => $placement,
             'popup_rich_text' => 'yes' === SettingsSchema::sanitize('popup-rich-text', $settings['popup-rich-text'] ?? 'no'),
             'popup_text_max_chars' => PlacementFieldContract::text_max_chars($settings),
@@ -553,7 +689,220 @@ trait RendersPagePanels {
             'theme_class' => $this->theme_class(),
             'url_required' => PlacementFieldContract::is_required($url_mode),
             'url_visible' => PlacementFieldContract::is_visible($url_mode),
+            'upload_size_hint' => UploadValidator::size_hint_sentence($settings),
         ]);
+    }
+
+    /**
+     * What the customer's order page says about where their order stands.
+     *
+     * This is the screen a customer arrives on straight after saving an ad, and the one their
+     * order link opens later, so it has to answer three questions in plain words: is my ad on
+     * the grid, does anything still need doing, and who is going to do it. Until now the page
+     * only had the ad form in it, so on the manual-payment path - the default on a fresh
+     * install - a customer could reach it and find nothing about their order at all
+     * (llm-task b95cc2f5).
+     *
+     * Every sentence here is built out of facts this screen can see: the order's status, the
+     * state of its creatives, whether the site has a payment route, and whether this grid
+     * reviews ads before they appear. That is deliberate, because the mistakes this copy must
+     * not make are thanking someone for a payment that never arrived, promising a review the
+     * site never asked for, or offering a button that goes nowhere.
+     *
+     * @return array{headline:string,detail:string,tone:string,payment_url:string,shows_until:string}
+     */
+    /**
+     * The site owner's own instructions for paying outside the plugin, or '' when they have not
+     * written any. Kept as written, line breaks included, because a bank account and a payment
+     * reference are not a sentence.
+     */
+    private function payment_instructions(array $settings) {
+        $raw = trim((string) ($settings['payment-instructions'] ?? ''));
+
+        return '' === $raw ? '' : wp_kses_post($raw);
+    }
+
+    private function customer_order_state(array $order, array $placements, array $settings, $payment_url, $awaiting_confirmation = false) {
+        $status = sanitize_key((string) ($order['status'] ?? ''));
+        $creative_states = [];
+        foreach ($placements as $placement) {
+            $creative_states[] = sanitize_key((string) ($placement['status'] ?? ''));
+        }
+
+        $on_grid = in_array('active', $creative_states, true);
+        $awaiting_review = in_array('pending', $creative_states, true);
+        $reviews_ads = !empty($settings) && array_key_exists('auto-publish', $settings) && !$settings['auto-publish'];
+        $payment_url = esc_url_raw((string) $payment_url);
+
+        $metadata = json_decode((string) ($order['metadata'] ?? ''), true);
+        // Only a term that is still running gets a date sentence: on imported records the
+        // stored end date can already be past while the artwork is still up, and "It shows
+        // until November" is not something to tell a customer. Absent or past, say nothing.
+        $expires_at = (is_array($metadata) && !empty($metadata['expires_at'])) ? strtotime((string) $metadata['expires_at']) : false;
+        $shows_until = ($expires_at && $expires_at > time()) ? (string) wp_date(get_option('date_format'), $expires_at) : '';
+
+        // The same two facts - is anything showing, and is anything waiting - give the same
+        // answer whatever route got the order there.
+        $on_the_grid = static function ($awaiting_review, $shows_until) {
+            $state = [
+                'headline' => __('Your ad is on the grid.', 'million-dollar-script'),
+                'tone' => 'live',
+            ];
+            $state['detail'] = $awaiting_review
+                ? __('Some of your pixels are still waiting to be checked by the site.', 'million-dollar-script')
+                : __('What you see here is what visitors see. Anything you change on this page replaces it.', 'million-dollar-script');
+            $state['shows_until'] = $shows_until;
+
+            return $state;
+        };
+        $not_on_the_grid = static function ($headline, $detail = '') {
+            return ['headline' => $headline, 'detail' => $detail, 'tone' => 'closed'];
+        };
+
+        switch ($status) {
+            case 'pending_payment':
+                $state = [
+                    'headline' => __('Your order is waiting for payment.', 'million-dollar-script'),
+                    'tone' => 'awaiting',
+                ];
+                if ('' !== $payment_url) {
+                    $state['detail'] = __('Choose Continue payment below to finish it. Your ad is saved on this page and does not go on the grid until the payment comes through.', 'million-dollar-script');
+                } elseif ($reviews_ads) {
+                    $state['detail'] = __('Nothing more is needed from you right now. The site confirms the payment and then checks your ad before it appears on the grid.', 'million-dollar-script');
+                } else {
+                    $state['detail'] = __('Nothing more is needed from you right now. The site confirms the payment, and your ad goes on the grid as soon as it has.', 'million-dollar-script');
+                }
+
+                // A site that takes payment outside the plugin still has to tell the customer how.
+                // This is the site owner's own wording, shown only when there is no payment page to
+                // send them to; with a payment page the button above is the whole answer.
+                $instructions = '' !== $payment_url ? '' : $this->payment_instructions($settings);
+
+                return array_merge($state, [
+                    'payment_url' => $payment_url,
+                    'payment_instructions' => $instructions,
+                    'shows_until' => '',
+                ]);
+            case 'paid':
+            case 'completed':
+            case 'renew_paid':
+                if ($on_grid) {
+                    return array_merge($on_the_grid($awaiting_review, $shows_until), ['payment_url' => '', 'shows_until' => $shows_until]);
+                }
+                if ($awaiting_review) {
+                    return [
+                        'headline' => __('Payment received. Your ad is waiting to be checked.', 'million-dollar-script'),
+                        'detail' => $reviews_ads
+                            ? __('This grid looks at each ad before it goes up. You can still change the image or text here while you wait.', 'million-dollar-script')
+                            : __('Your ad is not on the grid yet. You can still change the image or text here.', 'million-dollar-script'),
+                        'tone' => 'awaiting',
+                        'payment_url' => '',
+                        'shows_until' => '',
+                    ];
+                }
+
+                return array_merge(
+                    $not_on_the_grid(
+                        __('This listing has ended.', 'million-dollar-script'),
+                        __('Your ad is no longer on the grid. The order and your artwork are kept for your records.', 'million-dollar-script')
+                    ),
+                    ['payment_url' => '', 'shows_until' => '']
+                );
+            case 'reserved':
+            case 'draft':
+                if ($awaiting_confirmation) {
+                    // What the customer is asked to do, and what the words here may promise, are
+                    // the same thing: the auto-approval rule the Confirm action itself uses
+                    // decides whether payment follows or the ad goes up. Where the order then
+                    // stands is explained by the screen the customer lands on next, which already
+                    // says that in the same words the order page uses.
+                    $state = [
+                        'headline' => __('Check your order, then confirm it.', 'million-dollar-script'),
+                        'detail' => __('Your pixels are held while you look. Nothing moves forward until you confirm.', 'million-dollar-script'),
+                        'tone' => 'awaiting',
+                        'payment_url' => '',
+                        'shows_until' => '',
+                    ];
+                    $confirmation = new OrderConfirmation();
+                    $publishes_here = $confirmation->handled_by_site($order, $settings)
+                        && $confirmation->auto_approve_for_grids(new OrderRepository(), absint($order['id'] ?? 0), $settings);
+                    $state['confirm_label'] = ((float) ($order['total'] ?? 0) > 0 && !$publishes_here)
+                        ? __('Confirm and continue to payment', 'million-dollar-script')
+                        : __('Confirm order', 'million-dollar-script');
+                    // Panels that are not the review page itself - the order page, a thank-you
+                    // link, the pixels list - need the way there, or the customer reads one screen
+                    // that says the ad is unfinished and another that says it only needs a click.
+                    $state['confirm_url'] = (new CheckoutRouter())->confirm_order_url($order);
+
+                    return $state;
+                }
+
+                return [
+                    'headline' => __('These pixels are held for you.', 'million-dollar-script'),
+                    'detail' => __('Add your image and text below to finish your ad.', 'million-dollar-script'),
+                    'tone' => 'awaiting',
+                    'payment_url' => $payment_url,
+                    'shows_until' => '',
+                ];
+            case 'expired':
+                return array_merge(
+                    $not_on_the_grid(
+                        __('This listing has ended.', 'million-dollar-script'),
+                        __('Your ad is no longer on the grid.', 'million-dollar-script')
+                    ),
+                    ['payment_url' => '', 'shows_until' => '']
+                );
+            case 'cancelled':
+            case 'canceled':
+                return array_merge(
+                    $not_on_the_grid(
+                        __('This order was cancelled.', 'million-dollar-script'),
+                        __('Your ad is not on the grid.', 'million-dollar-script')
+                    ),
+                    ['payment_url' => '', 'shows_until' => '']
+                );
+            case 'denied':
+                return array_merge(
+                    $not_on_the_grid(
+                        __('The site did not approve this ad.', 'million-dollar-script'),
+                        __('It is not on the grid.', 'million-dollar-script')
+                    ),
+                    ['payment_url' => '', 'shows_until' => '']
+                );
+            case 'failed':
+                return array_merge(
+                    $not_on_the_grid(
+                        __('The payment did not go through.', 'million-dollar-script'),
+                        __('Your ad is not on the grid.', 'million-dollar-script')
+                    ),
+                    ['payment_url' => $payment_url, 'shows_until' => '']
+                );
+            case 'refunded':
+                return array_merge(
+                    $not_on_the_grid(
+                        __('This order was refunded.', 'million-dollar-script'),
+                        __('Your ad is not on the grid.', 'million-dollar-script')
+                    ),
+                    ['payment_url' => '', 'shows_until' => '']
+                );
+            case 'deleted':
+                return array_merge(
+                    $not_on_the_grid(
+                        __('This order has been removed.', 'million-dollar-script'),
+                        __('Your ad is not on the grid.', 'million-dollar-script')
+                    ),
+                    ['payment_url' => '', 'shows_until' => '']
+                );
+            default:
+                if ($on_grid) {
+                    return array_merge($on_the_grid($awaiting_review, $shows_until), ['payment_url' => '', 'shows_until' => $shows_until]);
+                }
+
+                return array_merge(
+                    $not_on_the_grid(__('Your ad is not on the grid.', 'million-dollar-script')),
+                    ['payment_url' => '', 'shows_until' => '']
+                );
+        }
     }
 
     private function pixels_back_url() {
@@ -628,7 +977,7 @@ trait RendersPagePanels {
         return $copy[$type] ?? __('This page was migrated from Million Dollar Script 2.', 'million-dollar-script');
     }
 
-    private function order_cleanup_notice(array $order) {
+    private function order_cleanup_notice(array $order, $awaiting_confirmation = false) {
         $status = sanitize_key((string) ($order['status'] ?? ''));
         if (!in_array($status, ['reserved', 'pending_payment'], true)) {
             return '';
@@ -640,16 +989,19 @@ trait RendersPagePanels {
             return '';
         }
 
-        $setting_key = 'reserved' === $status ? 'minutes-unconfirmed' : 'minutes-confirmed';
-        $minutes = (int) SettingsSchema::sanitize($setting_key, $settings[$setting_key] ?? SettingsSchema::defaults()[$setting_key] ?? 0);
+        $minutes = \MillionDollarScript\V3\Orders\OrderCleanup::unpaid_hold_minutes($status);
         if (0 === $minutes) {
             return '';
         }
 
         if (-1 === $minutes) {
-            return 'reserved' === $status
-                ? __('This reservation can be released automatically if payment is not completed.', 'million-dollar-script')
-                : __('This order can be released automatically if payment is not completed.', 'million-dollar-script');
+            if ('reserved' === $status) {
+                return $awaiting_confirmation
+                    ? __('This reservation can be released automatically if the order is not confirmed.', 'million-dollar-script')
+                    : __('This reservation can be released automatically if payment is not completed.', 'million-dollar-script');
+            }
+
+            return __('This order can be released automatically if payment is not completed.', 'million-dollar-script');
         }
 
         $expires_at = $this->order_cleanup_expires_at($order, $minutes, $status);
@@ -662,7 +1014,9 @@ trait RendersPagePanels {
         return 'reserved' === $status
             ? sprintf(
                 /* translators: %s: reservation expiration date and time */
-                __('Your selected blocks are held until %s. Complete payment before then to keep this reservation.', 'million-dollar-script'),
+                $awaiting_confirmation
+                    ? __('Your selected blocks are held until %s. Confirm the order before then to keep them.', 'million-dollar-script')
+                    : __('Your selected blocks are held until %s. Complete payment before then to keep this reservation.', 'million-dollar-script'),
                 $expires_label
             )
             : sprintf(

@@ -53,10 +53,24 @@ final class ExtensionDependencyResolver {
         $installed = null === $installed ? (new ExtensionCatalog())->installed() : $installed;
         $missing = $this->missing_requirements($item, $installed);
         if ($missing) {
+            $name = $this->extension_label($item);
+            $needed = $this->requirement_labels($missing, $installed);
+            $needed_list = implode(', ', $needed);
+
+            if (1 === count($needed)) {
+                return new \WP_Error('mds3_extension_missing_dependencies', sprintf(
+                    /* translators: 1: the extension being switched on, 2: the extension it depends on. */
+                    __('%1$s needs %2$s switched on first. Switch that one on, then try again.', 'million-dollar-script'),
+                    $name,
+                    $needed_list
+                ));
+            }
+
             return new \WP_Error('mds3_extension_missing_dependencies', sprintf(
-                /* translators: %s: missing extension capabilities */
-                __('Missing required extension capability: %s', 'million-dollar-script'),
-                implode(', ', $missing)
+                /* translators: 1: the extension being switched on, 2: list of the extensions it depends on. */
+                __('%1$s needs these switched on first: %2$s. Switch them on, then try again.', 'million-dollar-script'),
+                $name,
+                $needed_list
             ));
         }
 
@@ -93,7 +107,7 @@ final class ExtensionDependencyResolver {
                 if ($this->is_requirement_satisfied_without($requirement, $plugin_file, $installed)) {
                     continue;
                 }
-                $blocked_by[] = (string) ($candidate['name'] ?? $candidate['slug'] ?? $requirement);
+                $blocked_by[] = $this->extension_label($candidate);
             }
         }
 
@@ -155,6 +169,41 @@ final class ExtensionDependencyResolver {
         }
 
         return array_values(array_unique(array_filter($capabilities)));
+    }
+
+    /**
+     * Name a dependency the way the owner sees it, so the message says which extension to switch on.
+     *
+     * A requirement is written as a capability, which is why the previous message read
+     * "Missing required extension capability: mds-seo-basic" on a live site — the owner could not
+     * tell which card that named. The installed catalogue carries the display title.
+     *
+     * @param array<int,string> $requirements
+     * @param array<int,array<string,mixed>> $installed
+     * @return array<int,string>
+     */
+    private function requirement_labels(array $requirements, array $installed) {
+        $labels = [];
+
+        foreach ($requirements as $requirement) {
+            $capability = $this->capability((string) $requirement);
+            $label = '';
+
+            foreach ($installed as $candidate) {
+                if (in_array($capability, $this->provided_by((array) $candidate), true)) {
+                    $label = $this->extension_label((array) $candidate);
+                    if ('' !== $label) {
+                        break;
+                    }
+                }
+            }
+
+            $labels[] = '' !== $label ? $label : (string) $capability;
+        }
+
+        return array_values(array_unique(array_filter($labels, static function ($label) {
+            return '' !== trim((string) $label);
+        })));
     }
 
     public function provided_by(array $item) {
@@ -263,6 +312,24 @@ final class ExtensionDependencyResolver {
         }
 
         return array_values(array_unique($items));
+    }
+
+    /**
+     * The extension name as the Extensions screen shows it. A bare slug in a notice
+     * reads like a fault code, and the catalogue keeps the real name under "name".
+     */
+    private function extension_label(array $item) {
+        foreach (array('name', 'title') as $key) {
+            $label = trim((string) ($item[$key] ?? ''));
+            if ('' !== $label) {
+                // Same form the Extensions screen uses: the brand prefix is not part of the name
+                // a site owner reads back.
+                $short = trim(preg_replace('/^Million Dollar Script(?:\s*-\s*|\s+)/i', '', $label));
+                return '' !== $short ? $short : $label;
+            }
+        }
+
+        return (string) ($item['slug'] ?? '');
     }
 
     private function capability($value) {

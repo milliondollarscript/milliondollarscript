@@ -57,14 +57,69 @@ add_filter('million-dollar-script/extension/onboarding/items', static function (
     return $items;
 });
 
+// A second declaration that the setup flow was never asked for. An active extension may still put
+// its own card in front of a site - the companion plugin does, on purpose - but a card that does
+// not ask to always show must not arrive just because some other extension was chosen.
+add_filter('million-dollar-script/extension/onboarding/items', static function (array $items) {
+    $items['not-selected-extension'] = [
+        'name' => 'Not Selected Extension',
+        'summary' => 'Should only appear when it is selected or asks to always show.',
+        'priority' => 6,
+        'actions' => [],
+        'setup_pages' => [],
+        'legal_documents' => [],
+    ];
+
+    return $items;
+});
+
 try {
     $onboarding = new ExtensionOnboarding();
     $items = $onboarding->items(['fixture-extension']);
-    if (1 !== count($items)) {
-        throw new RuntimeException('Expected one onboarding item for the selected fixture extension.');
+    $slugs = array_values(array_map(static function (array $item) {
+        return (string) ($item['slug'] ?? '');
+    }, $items));
+
+    // The card that was asked for has to be there, and the one that was not must not be. Anything
+    // else present can only be an extension that declared itself always worth showing; that is the
+    // companion's deliberate behaviour, and counting exactly one card would fight it.
+    if (!in_array('fixture-extension', $slugs, true)) {
+        throw new RuntimeException('The selected extension was not offered in its own onboarding items: ' . wp_json_encode($slugs));
+    }
+    if (in_array('not-selected-extension', $slugs, true)) {
+        throw new RuntimeException('An extension that was not selected was offered anyway: ' . wp_json_encode($slugs));
+    }
+    $declared = (array) apply_filters('million-dollar-script/extension/onboarding/items', [], [
+        'selected_slugs' => ['fixture-extension'],
+        'catalog' => [],
+    ]);
+    $always_show = [];
+    foreach ($declared as $key => $item) {
+        if (is_array($item) && !empty($item['always_show'])) {
+            $always_show[] = (string) ($item['slug'] ?? (string) $key);
+        }
+    }
+    $unexpected = [];
+    foreach ($slugs as $slug) {
+        if ('fixture-extension' === $slug) {
+            continue;
+        }
+        if (!in_array((string) $slug, $always_show, true)) {
+            $unexpected[] = $slug;
+        }
+    }
+    if ($unexpected) {
+        throw new RuntimeException('Onboarding offered cards that were neither selected nor declared always-shown: ' . wp_json_encode($unexpected));
     }
 
-    if ('Fixture Extension' !== (string) ($items[0]['name'] ?? '')) {
+    $requested = null;
+    foreach ($items as $item) {
+        if ('fixture-extension' === (string) ($item['slug'] ?? '')) {
+            $requested = $item;
+            break;
+        }
+    }
+    if ('Fixture Extension' !== (string) ($requested['name'] ?? '')) {
         throw new RuntimeException('Onboarding item was not normalized with the expected name.');
     }
 

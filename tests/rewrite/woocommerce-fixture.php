@@ -134,6 +134,21 @@ if ('paid' !== ($order['status'] ?? '') || 'sold' !== ($block_after['status'] ??
     throw new RuntimeException('WooCommerce payment state did not sync back to MDS3.');
 }
 
+// The store reports what it was paid. Here the two orders agree, which is the case that must
+// stay quiet: an amount recorded, and no mismatch raised. The differing case is covered by
+// tests/rewrite/payment-source-repeat-signal-fixture.php.
+$paid_meta = (array) json_decode((string) ($order['metadata'] ?? '{}'), true);
+$expected_amount = number_format((float) ($order['total'] ?? 0), 2, '.', '');
+if ($expected_amount !== (string) ($paid_meta['provider_paid_total'] ?? '')) {
+    throw new RuntimeException('The amount the store reported was not recorded: ' . wp_json_encode([
+        'asked' => $expected_amount,
+        'recorded' => $paid_meta['provider_paid_total'] ?? null,
+    ]));
+}
+if (array_key_exists('provider_amount_mismatch', $paid_meta)) {
+    throw new RuntimeException('A matching WooCommerce payment was flagged as an amount mismatch.');
+}
+
 $_GET['mds3_order_id'] = $order_id;
 $_GET['mds3_order_key'] = $order['order_key'] ?? '';
 $summary_html = do_shortcode('[mds3_page type="thank-you" grid_id="' . absint($grid->id()) . '"]');

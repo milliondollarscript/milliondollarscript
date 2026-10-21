@@ -1,3 +1,61 @@
+## 3.0.0-alpha.7 - 2026-10-21
+
+### Added
+
+- The migration tells you what it actually did. A run finishes with a report that separates what moved from what still needs your attention, counts progress in records, and lists rejected rows instead of dropping them quietly.
+- An import that stops stays stopped until you choose to continue it. A checkpoint left by another build restarts cleanly instead of being re-read.
+- Ad artwork the old site kept is found wherever it lives: attached to an order, collected through a form, filed under a name that site invented, or present but never recorded. Where the old site only kept a copy at cell size, the report says so.
+- Ads the old site had not approved arrive held back rather than published. An order the old site left at its confirmation step is no longer treated as paid.
+- The report explains in one line what a record made by an older build means, and states what the site inherited about orders - including whether ads paid for later went live on their own.
+- Auto-complete Manual Payments is back. When you take payment outside the checkout - by bank transfer, cheque, or invoice - the ad goes live as soon as the customer has finished, and the order in your shop stays where it is until you record the money. The migration carries over whatever the old site did, and says which choice it took.
+- Customers are told where their order stands, and when your site takes payment itself, how to pay. A customer who comes back is told where they left off.
+- The review step does what the setting promises: the ad waits for your approval before it goes on the grid, and the customer is never asked about the sale.
+- Grid controls can be folded away, and the fold control sits beside the other grid controls rather than on the map. A grid is never drawn taller than the window, and an ordering grid opens at a size a finger can press.
+- Asking to see a whole grid brings it into view.
+- A grid you can buy from answers the first click; a display grid still waits for a hover.
+- You choose what a browser window resize does to a customer's view of the grid.
+- Export and erasure requests are answered for the records Million Dollar Script keeps about a person.
+- The order screen shows the advertiser's own answers beside the ad they describe, and shows the amount your shop charged next to the amount the order asked for.
+- Setup asks before it changes anything you might have set up yourself - before creating pages a site may not need, and before touching your theme's navigation. Each setup step now says where it stands in words.
+
+### Changed
+
+- Images are drawn from the copy made for the block they fill, so a grid full of ads loads a small part of the bytes when the full picture is larger than its block. The full image is still used wherever it is shown whole.
+- Clicking elsewhere on a grid keeps the shape you had just sized instead of growing it back, and a drag that runs past the edge no longer jumps the selection to the corner.
+- The pointer names the block a click would take back.
+- Pressing another control in the grid closes the ad popup.
+- The action that moves an order forward sits at the end of its row, away from the buttons that do nothing to it.
+- Publishing from the order screen means it. A payment signal that is not a payment no longer takes a live ad down.
+- A refused upload explains itself at the field it belongs to, marks that field, and leaves the image visible while you replace it.
+- A number a setting cannot hold is refused instead of accepted and forgotten, and leaving a field blank keeps the default.
+- Theme mode is described by what it does to your site rather than by a reference to someone's device.
+- Advertiser lists name people, not row numbers.
+- An ad gets its advertiser page as it goes live - nobody has to press Synchronize first.
+- Screens are named by what they hold rather than by the shape of your site's web address, and a site kept in a subfolder stops linking to itself twice.
+- The settings text now names the date an unpaid order gives its space back.
+
+### Fixed
+
+- A finished order stops landing on the page that asks for payment, a site with no thank-you page still finishes, no customer is handed a payment link that leads nowhere, and saving an ad leaves the customer at their order instead of stranding them.
+- A customer sees their own order rather than being asked to choose a grid, and every order screen can reach the review step.
+- An ad recorded off its grid is drawn where the old site drew it, and block coordinates are kept exactly as the old plugin wrote them.
+- An ad whose link to a page had gone dead still gets a page.
+- An image far smaller than its block is shown honestly instead of stretched to fill.
+- Choosing inside an existing selection keeps what you selected; an option allows the older behaviour where you want it.
+- A page setting that points at nothing, and an empty checkout URL, now say who acts next instead of leaving the site half-working.
+- A page role the site does not recognise is no longer read as a filled-in page, which had hidden the choice to create one.
+- An extension requirement met by an extension that is not listed is no longer reported as a missing capability, and an extension that needs another is named by its name.
+- The settings chips in the setup wizard no longer stretch to uneven heights, and page-choice hints sit inside their own item.
+- A fixture that cannot exercise the thing it describes says so by name rather than failing for an unrelated reason.
+- WooCommerce and WordPress no longer tell site owners that Million Dollar Script has not been tested with their version: the plugin now names the exact WordPress and WooCommerce releases it was certified against.
+- Roughly three hundred on-screen messages were absent from the translation template, so translators could not reach them. The template now covers the current screens.
+
+### Before you upgrade
+
+- A brand-new WooCommerce store starts in **Coming soon** mode with no payment method switched on, so nothing can be paid for until you change both. Set **WooCommerce -> Settings -> Site visibility** to Live and turn on at least one payment method; the checkout readiness screens now name this and link straight to both.
+- Where the old site only kept an ad image at cell size, it is shown at that size and is not enlarged. The migration report lists those ads.
+- Order paths through the paid extensions are still being checked against the new destination rules. The grid, standalone checkout, and WooCommerce checkout paths are covered.
+
 ## 3.0.0-alpha.6 - 2026-09-29
 
 ### Added

@@ -22,6 +22,10 @@ final class OrderRepository {
 
     private const ACTIVE_STATUSES = ['reserved', 'pending_payment', 'paid'];
 
+    // What the storefront treats as "you were in the middle of this": the blocks are still
+    // held and either the ad or the payment is outstanding.
+    private const IN_PROGRESS_STATUSES = ['reserved', 'pending_payment'];
+
     private const ITEM_MASK_BATCH_SIZE = 500;
 
     private const OVERVIEW_CACHE_KEY = 'mds3_order_overview_v1';
@@ -212,6 +216,37 @@ final class OrderRepository {
         return $updated;
     }
 
+    /**
+     * Remove orders and their lines for good.
+     *
+     * Everything else in this class changes a status - including "deleted", which
+     * is what the site's own retention rules do and leaves the record readable for
+     * accounting. This is for a request from the person the order is about, where
+     * the point is that the record is gone. Lines go first so nothing briefly
+     * points at an order that no longer exists.
+     *
+     * @param int[] $order_ids
+     * @return array{orders:int,items:int}
+     */
+    public function delete_permanently(array $order_ids) {
+        global $wpdb;
+
+        $ids = array_values(array_unique(array_filter(array_map('absint', $order_ids))));
+        if (!$ids) {
+            return ['orders' => 0, 'items' => 0];
+        }
+
+        $in = implode(',', array_fill(0, count($ids), '%d'));
+        $items = absint($wpdb->query(
+            $wpdb->prepare('DELETE FROM ' . DB::ident(DB::table('order_items')) . ' WHERE order_id IN (' . $in . ')', $ids)
+        ));
+        $orders = absint($wpdb->query(
+            $wpdb->prepare('DELETE FROM ' . DB::ident(DB::table('orders')) . ' WHERE id IN (' . $in . ')', $ids)
+        ));
+
+        return ['orders' => $orders, 'items' => $items];
+    }
+
     public function recent($limit = 20) {
         return $this->query(['limit' => $limit]);
     }
@@ -338,6 +373,41 @@ final class OrderRepository {
         set_transient(self::OVERVIEW_CACHE_KEY, $summary, self::OVERVIEW_CACHE_TTL);
 
         return $summary;
+    }
+
+    /**
+     * The order a signed-in visitor was in the middle of, if any.
+     *
+     * The storefront keeps a reservation it just made on screen, and an order confirmation
+     * carries a private link back to the order. Neither answers the customer who comes back
+     * a day later and asks where they left off (llm-task e9f4451c). Only unfinished orders
+     * count; a paid, cancelled or expired one is finished as far as the storefront is
+     * concerned and belongs on the account list instead. The most recent wins so the offer
+     * names one thing - a customer with several orders can choose from the account list.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function in_progress_order($user_id, $grid_id = 0) {
+        $user_id = absint($user_id);
+        if (!$user_id) {
+            return null;
+        }
+
+        $args = array(
+            'user_id' => $user_id,
+            'statuses' => self::IN_PROGRESS_STATUSES,
+            'orderby' => 'id',
+            'order' => 'desc',
+            'limit' => 1,
+        );
+        $grid_id = absint($grid_id);
+        if ($grid_id) {
+            $args['grid_id'] = $grid_id;
+        }
+
+        $rows = $this->query($args);
+
+        return $rows ? $rows[0] : null;
     }
 
     public function active_count_for_grid($grid_id) {

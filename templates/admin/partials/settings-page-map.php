@@ -26,6 +26,11 @@ if (!defined('ABSPATH')) {
                         <a href="<?php echo esc_url($row['edit_url']); ?>"><?php echo esc_html($row['title']); ?></a>
                         <code>#<?php echo esc_html($row['post_id']); ?></code>
                         <a href="<?php echo esc_url($row['permalink']); ?>"><?php esc_html_e('View', 'million-dollar-script'); ?></a>
+                    <?php elseif (!empty($row['cleared'])) : ?>
+                        <!-- The option was pointing at a page that is gone. Say so: an empty
+                             row reads as "never configured", which sends an admin looking in
+                             the wrong place. -->
+                        <?php esc_html_e('Not assigned - the saved page no longer exists, so that setting was cleared. Create the page and select it below.', 'million-dollar-script'); ?>
                     <?php else : ?>
                         <?php esc_html_e('Not assigned', 'million-dollar-script'); ?>
                     <?php endif; ?>

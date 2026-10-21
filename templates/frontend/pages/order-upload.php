@@ -25,6 +25,33 @@ $popup_text_description_id = 'mds3-order-upload-popup-text-help-' . absint($orde
     <?php if (!empty($back_url)) : ?>
         <p class="mds3-panel-back"><a class="button mds3-button-secondary" href="<?php echo esc_url($back_url); ?>"><?php echo esc_html__('My pixels', 'million-dollar-script'); ?></a></p>
     <?php endif; ?>
+    <?php $mds3_order_state = is_array($order_state ?? null) ? $order_state : []; ?>
+    <?php if (!empty($mds3_order_state['headline'])) : ?>
+        <div class="mds3-order-state mds3-order-state-<?php echo esc_attr($mds3_order_state['tone'] ?? 'neutral'); ?>">
+            <p class="mds3-order-state-headline"><?php echo esc_html((string) $mds3_order_state['headline']); ?></p>
+            <?php if (!empty($mds3_order_state['detail'])) : ?>
+                <p class="mds3-order-state-detail"><?php echo esc_html((string) $mds3_order_state['detail']); ?></p>
+            <?php endif; ?>
+            <?php if (!empty($mds3_order_state['shows_until'])) : ?>
+                <?php /* translators: %s: date the listing stops showing. */ ?>
+                <p class="mds3-order-state-until"><?php echo esc_html(sprintf(__('It shows until %s.', 'million-dollar-script'), (string) $mds3_order_state['shows_until'])); ?></p>
+            <?php endif; ?>
+            <?php if (!empty($mds3_order_state['payment_url'])) : ?>
+                <p class="mds3-order-state-actions">
+                    <a class="button" href="<?php echo esc_url((string) $mds3_order_state['payment_url']); ?>"><?php echo esc_html__('Continue payment', 'million-dollar-script'); ?></a>
+                </p>
+            <?php endif; ?>
+            <?php if (!empty($mds3_order_state['payment_instructions'])) : ?>
+                <?php /* The site's own words for paying outside the plugin. Its line breaks are a bank account and a payment reference, so they are kept. */ ?>
+                <div class="mds3-order-state-payment"><?php echo wp_kses_post(wpautop((string) $mds3_order_state['payment_instructions'])); ?></div>
+            <?php endif; ?>
+            <?php if (!empty($mds3_order_state['confirm_url'])) : ?>
+                <p class="mds3-order-state-actions">
+                    <a class="button" href="<?php echo esc_url((string) $mds3_order_state['confirm_url']); ?>"><?php echo esc_html__('Confirm your order', 'million-dollar-script'); ?></a>
+                </p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
     <div class="mds3-current-placement" <?php echo empty($image) ? 'hidden' : ''; ?>><?php echo wp_kses_post($image); ?></div>
     <form class="mds3-placement-form mds3-order-upload-form" enctype="multipart/form-data" data-mds3-draft-scope="order-upload" data-mds3-order-id="<?php echo esc_attr(absint($order_id ?? 0)); ?>" novalidate>
         <input type="hidden" name="order_id" value="<?php echo esc_attr(absint($order_id ?? 0)); ?>" />
@@ -37,6 +64,10 @@ $popup_text_description_id = 'mds3-order-upload-popup-text-help-' . absint($orde
             <input type="file" name="image" accept="image/*" <?php echo !empty($image) ? '' : 'required'; ?> />
             <small class="mds3-image-hint" <?php echo empty($image) ? '' : 'hidden'; ?>><?php echo esc_html__('Shown inside the reserved pixels. The preview updates as soon as the image is uploaded.', 'million-dollar-script'); ?></small>
             <small class="mds3-image-saved-note" <?php echo empty($image) ? 'hidden' : ''; ?>><?php echo esc_html__('Current image is saved and shown above. Choosing a file here replaces it.', 'million-dollar-script'); ?></small>
+            <?php if (!empty($upload_size_hint)) : ?>
+                <?php // Shown whether or not an image is already saved - replacing a file needs the same size. ?>
+                <small class="mds3-image-hint mds3-image-size-hint"><?php echo esc_html($upload_size_hint); ?></small>
+            <?php endif; ?>
             <button type="button" class="mds3-draft-image-remove" hidden><?php echo esc_html__('Remove image', 'million-dollar-script'); ?></button>
         </label>
         <?php if ($url_visible) : ?>

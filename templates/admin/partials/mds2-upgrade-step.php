@@ -10,8 +10,12 @@ if (!defined('ABSPATH')) {
 }
 ?>
 <li class="<?php echo esc_attr($is_complete ? 'is-complete' : 'is-pending'); ?> mds3-mds2-upgrade-step">
-    <h2><?php esc_html_e('Million Dollar Script 2 Migration', 'million-dollar-script'); ?></h2>
-    <p><?php esc_html_e('Million Dollar Script detected an older Million Dollar Script 2 install. Open the migration to review a dry run, then start the import on that screen. Nothing is imported or deleted until you start the import.', 'million-dollar-script'); ?></p>
+    <h2><?php esc_html_e('Million Dollar Script 2 Migration', 'million-dollar-script'); ?><?php $this->step_status($is_complete ? 'complete' : 'pending'); ?></h2>
+    <?php if ($import_summary) : ?>
+        <p><?php esc_html_e('Your older Million Dollar Script 2 data has been imported into Million Dollar Script. The original tables are kept, so you can review the dry run and run the import again at any time.', 'million-dollar-script'); ?></p>
+    <?php else : ?>
+        <p><?php esc_html_e('Million Dollar Script detected an older Million Dollar Script 2 install. Open the migration to review a dry run, then start the import on that screen. Nothing is imported or deleted until you start the import.', 'million-dollar-script'); ?></p>
+    <?php endif; ?>
 
     <?php if ($plugin_rows) : ?>
         <ul class="mds3-inline-list mds3-plugin-detection-list">
@@ -34,6 +38,44 @@ if (!defined('ABSPATH')) {
         ?>
     </p>
 
+    <?php if ($import_summary) : ?>
+        <p>
+            <?php
+            echo esc_html(sprintf(
+                /* translators: 1: run id, 2: imported record count, 3: skipped count, 4: repaired count, 5: warning count */
+                __('Import run %1$s completed %2$s: %3$d records imported, %4$d skipped, %5$d repaired, %6$d warnings.', 'million-dollar-script'),
+                absint($import_run['id'] ?? 0),
+                (string) ($import_summary['completed_at'] ?? ''),
+                absint($import_summary['imported_total'] ?? 0),
+                absint($import_summary['skipped'] ?? 0),
+                absint($import_summary['repaired'] ?? 0),
+                absint($import_summary['warnings'] ?? 0)
+            ));
+            ?>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=mds3-migration')); ?>"><?php esc_html_e('Review the verification report', 'million-dollar-script'); ?></a>
+        </p>
+
+        <?php
+        // The customer site is the live example of this: an import started by an earlier
+        // alpha, read later by a newer one. One sentence, written once in the summary, so
+        // this screen and the migration screen cannot word the same fact differently.
+        $older_build_note = trim((string) ($import_summary['older_build_note'] ?? ''));
+        if ('' !== $older_build_note) : ?>
+            <div class="notice notice-info inline">
+                <p><?php echo esc_html($older_build_note); ?></p>
+            </div>
+        <?php endif; ?>
+
+        <?php if ('' !== (string) ($import_summary['coverage_note'] ?? '')) : ?>
+            <div class="notice notice-warning inline">
+                <p>
+                    <?php echo esc_html((string) $import_summary['coverage_note']); ?>
+                    <?php esc_html_e('Deactivating Million Dollar Script 2 now leaves those records only in the new site, where they are missing. Correct the old data and run the import again, or keep both plugins active until they are dealt with.', 'million-dollar-script'); ?>
+                </p>
+            </div>
+        <?php endif; ?>
+    <?php endif; ?>
+
     <?php if ($active) : ?>
         <div class="notice notice-warning inline"><p><?php esc_html_e('Running Million Dollar Script 2 and Million Dollar Script together is allowed while you compare the old grid with the migration results. Deactivate Million Dollar Script 2 once the import looks right.', 'million-dollar-script'); ?></p></div>
     <?php endif; ?>
@@ -49,7 +91,7 @@ if (!defined('ABSPATH')) {
         <?php endif; ?>
         <?php if ($active) : ?>
             <?php $this->inline_post_button('mds3_mds2_keep_active', 'mds3_mds2_keep_active', ['mds2_redirect' => 'setup'], __('Keep Million Dollar Script 2 active for now', 'million-dollar-script'), 'button-secondary'); ?>
-            <?php $this->inline_post_button('mds3_mds2_deactivate', 'mds3_mds2_deactivate', ['mds2_redirect' => 'setup'], __('Deactivate Million Dollar Script 2 without importing', 'million-dollar-script'), 'button-secondary'); ?>
+            <?php $this->inline_post_button('mds3_mds2_deactivate', 'mds3_mds2_deactivate', ['mds2_redirect' => 'setup'], $import_summary ? __('Deactivate Million Dollar Script 2') : __('Deactivate Million Dollar Script 2 without importing', 'million-dollar-script'), 'button-secondary'); ?>
         <?php endif; ?>
     </div>
 

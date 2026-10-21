@@ -8,6 +8,7 @@
 namespace MillionDollarScript\V3\Grid;
 
 use MillionDollarScript\V3\Media\PlacementFieldContract;
+use MillionDollarScript\V3\Media\UploadValidator;
 use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Support\BrowserConfig;
 use MillionDollarScript\V3\Support\Component;
@@ -88,8 +89,15 @@ final class GridShortcode implements Component {
         $popup_text_mode = PlacementFieldContract::popup_text_mode($settings);
         $url_mode = PlacementFieldContract::url_mode($settings);
 
+        // A customer who came back to a grid they had already started an order on should be
+        // told, not left to hunt through the page for it (llm-task e9f4451c).
+        $resume_order = $read_only ? null : (new \MillionDollarScript\V3\Orders\OrderRepository())->in_progress_order(get_current_user_id(), $grid->id());
+        $resume_order_url = $resume_order ? \MillionDollarScript\V3\Orders\OrderUrls::customer_view_url($resume_order) : '';
+
         return Template::render('frontend/grid/shell.php', [
             'grid' => $grid,
+            'resume_order_url' => $resume_order_url,
+            'fit_on_resize' => 'yes' === SettingsSchema::sanitize('grid-fit-on-resize', $settings['grid-fit-on-resize'] ?? 'yes'),
             'height' => $height,
             'height_ratio' => $height_ratio,
             'legend' => $legend,
@@ -110,6 +118,7 @@ final class GridShortcode implements Component {
             'theme_class' => $theme_class,
             'url_required' => PlacementFieldContract::is_required($url_mode),
             'url_visible' => PlacementFieldContract::is_visible($url_mode),
+            'upload_size_hint' => UploadValidator::size_hint_sentence($settings),
             'width' => $width,
         ]);
     }
@@ -182,6 +191,9 @@ final class GridShortcode implements Component {
                 'reserving' => __('Reserving selection...', 'million-dollar-script'),
                 'clear' => __('Clear', 'million-dollar-script'),
                 'reserved' => __('Selection reserved.', 'million-dollar-script'),
+                // Shown once, on an ordering grid too small to fit legibly on the screen, next to the
+                // controls that give the whole grid back.
+                'startingRegionHint' => __('Showing a part of the grid at a size you can press. Use Fit grid to see all of it, or drag to move around.', 'million-dollar-script'),
                 'defaultPricing' => __('Default pricing', 'million-dollar-script'),
                 /* translators: Shown after a package price, which is charged once per selected block. */
                 'perBlockShort' => __('per block', 'million-dollar-script'),

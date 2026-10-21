@@ -20,7 +20,9 @@ use MillionDollarScript\V3\Grid\GridShortcode;
 use MillionDollarScript\V3\Media\AdvertiserPages;
 use MillionDollarScript\V3\Orders\OrderCleanup;
 use MillionDollarScript\V3\Orders\OrderNotifications;
+use MillionDollarScript\V3\Orders\PaymentBypass;
 use MillionDollarScript\V3\Pages\PageShortcodes;
+use MillionDollarScript\V3\Privacy\PersonalDataRequests;
 use MillionDollarScript\V3\Rendering\TileController;
 use MillionDollarScript\V3\Rest\Api;
 use MillionDollarScript\V3\Setup\Installer;
@@ -119,7 +121,9 @@ final class Plugin {
             new RemoteDocsClient(),
             new OrderCleanup(),
             new OrderNotifications(),
+            new PaymentBypass(),
             new Payments(),
+            new PersonalDataRequests(),
             new StarterSite(),
             new AdvertiserPages(),
             new MemoryStatus(),

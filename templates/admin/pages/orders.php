@@ -178,6 +178,27 @@ $term_summary = static function (array $order) use ($order_metadata) {
     $status = sanitize_key((string) ($order['status'] ?? ''));
 
     if (!$expires_ts) {
+        // An unpaid order is not term-limited, but the space it holds is still due back on a
+        // date the site controls. Saying it never expires hides the one number an owner can act
+        // on, and the date shown here is the one the scheduled cleanup works to.
+        if (in_array($status, array('reserved', 'pending_payment'), true)) {
+            $release_ts = strtotime((string) \MillionDollarScript\V3\Orders\OrderCleanup::unpaid_hold_deadline(
+                $status,
+                (string) ($order['updated_at'] ?? '')
+            ));
+            if ($release_ts) {
+                return [
+                    'primary' => $release_ts <= time() ? __('Returning now', 'million-dollar-script') : __('Space returns', 'million-dollar-script'),
+                    'secondary' => wp_date(get_option('date_format') . ' ' . get_option('time_format'), $release_ts),
+                ];
+            }
+
+            return [
+                'primary' => __('Nothing releases it', 'million-dollar-script'),
+                'secondary' => __('Cancel the order to free the space.', 'million-dollar-script'),
+            ];
+        }
+
         return [
             'primary' => __('No fixed term', 'million-dollar-script'),
             'secondary' => __('Does not expire automatically.', 'million-dollar-script'),

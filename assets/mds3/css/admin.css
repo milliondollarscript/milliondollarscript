@@ -1,4 +1,5 @@
-.mds3-admin {
+.mds3-admin,
+.mds3-toast-region {
     --mds3-admin-bg: #f6f7f7;
     --mds3-admin-surface: #ffffff;
     --mds3-admin-surface-subtle: #f9fafb;
@@ -43,7 +44,8 @@ body.mds3-admin-theme-dark {
     color-scheme: dark;
 }
 
-body.mds3-admin-theme-dark .mds3-admin {
+body.mds3-admin-theme-dark .mds3-admin,
+body.mds3-admin-theme-dark .mds3-toast-region {
     --mds3-admin-bg: #0f1115;
     --mds3-admin-surface: #171a21;
     --mds3-admin-surface-subtle: #20242d;
@@ -121,7 +123,8 @@ body.mds3-admin-theme-dark .mds3-admin textarea {
         color-scheme: dark;
     }
 
-    body.mds3-admin-theme-system .mds3-admin {
+    body.mds3-admin-theme-system .mds3-admin,
+    body.mds3-admin-theme-system .mds3-toast-region {
         --mds3-admin-bg: #0f1115;
         --mds3-admin-surface: #171a21;
         --mds3-admin-surface-subtle: #20242d;
@@ -1270,8 +1273,40 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
 }
 
 .mds3-setup-steps h2 {
+    align-items: center;
+    display: flex;
     font-size: 17px;
+    gap: 10px;
     margin: 0 0 8px;
+}
+
+/*
+ * The recorded state of a step, written out. The coloured edge on the step card
+ * is decoration; this is what tells someone what is actually done.
+ */
+.mds3-setup-step-status {
+    background: var(--mds3-admin-surface);
+    border: 1px solid var(--mds3-admin-border);
+    border-radius: 999px;
+    color: var(--mds3-admin-muted);
+    flex: none;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    margin-inline-start: auto;
+    padding: 4px 10px;
+    white-space: nowrap;
+}
+
+.mds3-setup-step-status.is-complete {
+    background: var(--mds3-admin-accent-soft);
+    border-color: var(--mds3-admin-accent-border);
+    color: var(--mds3-admin-accent-strong);
+}
+
+.mds3-setup-step-status.is-pending {
+    border-color: rgba(217, 119, 6, 0.45);
+    color: var(--mds3-admin-warn);
 }
 
 .mds3-setup-steps p {
@@ -1330,11 +1365,12 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
 .mds3-setup-checkout-review {
     display: grid;
     gap: 10px;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     margin: 14px 0;
 }
 
 .mds3-setup-checkout-review > div {
+    align-content: start;
     background: var(--mds3-admin-surface);
     border: 1px solid var(--mds3-admin-border);
     border-radius: 8px;
@@ -1343,8 +1379,15 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     padding: 12px;
 }
 
+/*
+ * A card in a row is as tall as the tallest card in it. Without this, the card's
+ * own rows absorb that extra height and the status chip grows with them - the same
+ * one-line word rendered as a pill of two different heights on one screen.
+ */
 .mds3-setup-checkout-review .mds3-inline-status {
+    align-self: start;
     justify-self: start;
+    white-space: nowrap;
 }
 
 .mds3-setup-checkout-review small {
@@ -1617,6 +1660,26 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     margin: 0;
 }
 
+/* The navigation question the owner answers before running the step. The select
+   itself is styled by the shared admin form rules. (llm-task efdcfa60) */
+.mds3-starter-site-nav-mode {
+    display: grid;
+    gap: 6px;
+}
+
+.mds3-starter-site-nav-mode-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.mds3-starter-site-nav-mode-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex: none;
+}
+
 .mds3-starter-site-result {
     margin-top: 8px;
     padding: 8px 12px;
@@ -1634,6 +1697,13 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     border-left-color: #b32d2e;
 }
 
+/* The starter pages were made and the site owner still has one thing to decide: not a
+   failure, and not finished either. */
+.mds3-starter-site-result.is-warning {
+    background: #fdf6e7;
+    border-left-color: #a17400;
+}
+
 @media (prefers-color-scheme: dark) {
     .mds3-starter-site-result.is-success {
         background: rgba(44, 138, 68, 0.15);
@@ -1641,6 +1711,10 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
 
     .mds3-starter-site-result.is-error {
         background: rgba(179, 45, 46, 0.15);
+    }
+
+    .mds3-starter-site-result.is-warning {
+        background: rgba(161, 116, 0, 0.18);
     }
 }
 
@@ -2379,6 +2453,33 @@ body.mds3-admin-theme-dark .mds3-dashboard-extensions-panel {
     border-radius: 8px;
     margin: 16px 0;
     padding: 14px;
+}
+
+/* The panel holds two different things: the page roles a store cannot work
+   without, and the extra pages an owner may ask for. Give each a heading so a
+   page that is Created below is not read as a page that is required above. */
+.mds3-standard-pages-panel__title {
+    font-size: 13px;
+    margin: 18px 0 6px;
+}
+
+.mds3-page-role-list {
+    display: grid;
+    gap: 6px;
+    list-style: none;
+    margin: 8px 0 14px;
+    padding: 0;
+}
+
+.mds3-page-role-list__item {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mds3-page-role-list__page {
+    color: var(--mds3-admin-muted);
 }
 
 .mds3-upgrade-accordion {
@@ -3778,6 +3879,19 @@ body.mds3-admin-theme-dark .mds3-extension-license-popover {
     margin: 8px 0 0;
 }
 
+.mds3-migration-auto-retry {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+    margin: 12px 0 4px;
+}
+
+.mds3-migration-auto-retry input {
+    flex: none;
+    height: 16px;
+    width: 16px;
+}
+
 .mds3-migration-actions {
     align-items: center;
     display: flex;
@@ -3798,6 +3912,54 @@ body.mds3-admin-theme-dark .mds3-extension-license-popover {
 
 .mds3-order-summary p {
     margin: 0;
+}
+
+/*
+ * Ad visibility. A settled order can still be withheld from the grid, so this states which
+ * of the two facts applies and offers the one action that changes it. Quiet on purpose - it
+ * describes a state, it is not an alert, and the same block reads correctly whether the
+ * order is showing or not.
+ *
+ * The action sits below the words rather than pinned right: this screen's container is as
+ * wide as the placement map below it, wider than the window, and a right-aligned control
+ * lands off-screen on a normal admin width.
+ */
+.mds3-order-publication {
+    background: var(--mds3-admin-surface-subtle);
+    border: 1px solid var(--mds3-admin-border);
+    border-left: 3px solid var(--mds3-admin-muted);
+    border-radius: 8px;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+}
+
+.mds3-order-publication.is-live {
+    border-left-color: var(--mds3-admin-success);
+}
+
+.mds3-order-publication-copy {
+    max-width: 640px;
+}
+
+.mds3-order-publication-copy h3 {
+    font-size: 13px;
+    margin: 0 0 4px;
+}
+
+.mds3-order-publication-copy p {
+    margin: 0;
+}
+
+.mds3-order-publication-reason {
+    color: var(--mds3-admin-muted);
+    margin-top: 4px;
+}
+
+.mds3-order-publication-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
 }
 
 .mds3-order-queues,

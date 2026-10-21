@@ -34,8 +34,10 @@ final class AdvertiserPageManager {
 
         $post_id = absint($placement['public_post_id'] ?? 0);
         if (!$post_id || self::POST_TYPE !== get_post_type($post_id)) {
+            $this->clear_unusable_page_link($post_id, absint($placement['id']));
             $post_id = $this->mapped_post_id(absint($placement['id']));
         }
+        $post_id = $this->page_is_available($post_id, absint($placement['id']));
 
         $legacy_post = !empty($args['legacy_post_id']) ? get_post(absint($args['legacy_post_id'])) : null;
         if (!$post_id && $legacy_post && 'mds-pixel' === $legacy_post->post_type) {
@@ -55,7 +57,14 @@ final class AdvertiserPageManager {
                     // surviving placement instead of being reassigned.
                     $legacy_post = null;
                 } else {
-                    $post_id = $mapped_id;
+                    $post_id = $this->page_is_available($mapped_id, absint($placement['id']));
+                    if (!$post_id) {
+                        // The page this MDS2 ad pointed at already belongs to
+                        // another placement, so its exact URL stays with that
+                        // placement. Taking it anyway failed the unique link and
+                        // left this ad with no page at all.
+                        $legacy_post = null;
+                    }
                 }
             }
         }
@@ -249,6 +258,69 @@ final class AdvertiserPageManager {
         $order_status = sanitize_key((string) ($placement['order_status'] ?? ''));
 
         return empty($placement['order_id']) || in_array($order_status, ['paid', 'renew_paid'], true);
+    }
+
+    /**
+     * Drop a page link that cannot be shown.
+     *
+     * A migration attempt that stopped partway left placements on the customer's
+     * site pointing at pages that its cleanup then removed. The dead value kept
+     * that post id claimed, so when the next run created a page and WordPress
+     * reused the id, the unique link rejected it and 35 of their 101 ads ended
+     * up with no page at all. A link to a page of a type that is never rendered
+     * (an attachment, for instance) blocks the same way.
+     */
+    private function clear_unusable_page_link($post_id, $placement_id) {
+        global $wpdb;
+
+        $post_id = absint($post_id);
+        if (!$post_id) {
+            return;
+        }
+        $type = get_post_type($post_id);
+        if (self::POST_TYPE === $type || 'mds-pixel' === $type) {
+            return;
+        }
+        $wpdb->update(
+            DB::table('placements'),
+            ['public_post_id' => null],
+            ['id' => absint($placement_id), 'public_post_id' => $post_id]
+        );
+    }
+
+    /**
+     * A public page belongs to exactly one placement.
+     *
+     * A site whose first migration attempt was interrupted, or that was migrated
+     * by an older build, can hold a page whose _placement_id meta names one
+     * placement while another placement's row already points at that page. The
+     * row is what the grid, the report and the migration map read, so trust it:
+     * claiming the page anyway failed the unique link, left the second ad with
+     * no page at all, and overwrote the first ad's heading with the second's.
+     * Give this placement a page of its own and hand the disputed page back to
+     * the placement that really owns it.
+     */
+    private function page_is_available($post_id, $placement_id) {
+        global $wpdb;
+
+        $post_id = absint($post_id);
+        if (!$post_id) {
+            return 0;
+        }
+        $owner = absint($wpdb->get_var($wpdb->prepare(
+            'SELECT id FROM ' . DB::ident(DB::table('placements')) . ' WHERE public_post_id = %d AND id <> %d LIMIT 1',
+            $post_id,
+            $placement_id
+        )));
+        if (!$owner) {
+            return $post_id;
+        }
+        if (absint(get_post_meta($post_id, '_million_dollar_script_placement_id', true)) !== $owner) {
+            update_post_meta($post_id, '_million_dollar_script_placement_id', $owner);
+            clean_post_cache($post_id);
+        }
+
+        return 0;
     }
 
     private function mapped_post_id($placement_id) {

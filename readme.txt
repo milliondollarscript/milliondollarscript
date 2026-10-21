@@ -1,9 +1,10 @@
 === Million Dollar Script ===
 Tags: advertising, pixel grid, monetization, ecommerce, woocommerce
 Requires at least: 6.0
-Tested up to: 7.1
+Tested up to: 7.1.3
+WC tested up to: 11.2.1
 Requires PHP: 8.1
-Stable tag: 3.0.0-alpha.6
+Stable tag: 3.0.0-alpha.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 

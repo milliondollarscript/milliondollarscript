@@ -6,9 +6,16 @@
  * block rows 'ordered' for both live and expired orders, so the mapping must be
  * order-status-driven:
  *
- *   confirmed (live pixel)  -> order paid, block sold, placement active
- *   new (unpaid)            -> order pending_payment, block reserved, placement pending
- *   expired (dead term)     -> order expired, block available (released), placement cancelled
+ *   confirmed + recorded payment -> order paid, block sold, placement active
+ *   confirmed, nothing recorded  -> order pending_payment, block reserved, placement pending
+ *   new (unpaid)                 -> order pending_payment, block reserved, placement pending
+ *   expired (dead term)          -> order expired, block available (released), placement cancelled
+ *
+ * "confirmed" is not a paid state in Million Dollar Script 2 - it is what a customer's
+ * confirmation produces before payment - so an order left there arrives owing money unless
+ * that site recorded payment: a row in its transactions table, or a WooCommerce order it
+ * linked from the ad (see ReadsLegacyOrderPayments). Both paths are exercised here, the
+ * second only on a site that has WooCommerce.
  *
  * Run with:
  * wp --path=/var/www/html eval-file wp-content/plugins/million-dollar-script/tests/rewrite/migration-statuses-fixture.php
@@ -29,7 +36,7 @@ $charset = $wpdb->get_charset_collate();
 // --- Static mapping contract -------------------------------------------------
 
 $expected_order_status = [
-    'confirmed' => 'paid',
+    'confirmed' => 'pending_payment',
     'paid' => 'paid',
     'completed' => 'paid',
     'renew_paid' => 'paid',
@@ -51,8 +58,20 @@ if ('pending_payment' !== Importer::order_status('')) {
     throw new RuntimeException('Expected an empty legacy order status to fall back to pending_payment.');
 }
 
+// An order the older site left at the confirmation step is paid only when that site
+// recorded payment for it.
+if ('paid' !== Importer::order_status('confirmed', true)) {
+    throw new RuntimeException('Expected a confirmed order with recorded payment to map to paid.');
+}
+if ('pending_payment' !== Importer::order_status('confirmed', false)) {
+    throw new RuntimeException('Expected a confirmed order without recorded payment to stay awaiting payment.');
+}
+if ('paid' !== Importer::order_status('completed', false)) {
+    throw new RuntimeException('Expected a completed order to map to paid whatever the payment records say.');
+}
+
 $expected_block_status = [
-    ['ordered', 'confirmed', 'sold'],
+    ['ordered', 'confirmed', 'reserved'],
     ['ordered', 'paid', 'sold'],
     ['ordered', 'completed', 'sold'],
     ['ordered', 'expired', 'available'],
@@ -72,9 +91,12 @@ foreach ($expected_block_status as [$legacy, $order, $expected]) {
         throw new RuntimeException("Expected block '{$legacy}' under order '{$order}' to map to '{$expected}', got '{$actual}'.");
     }
 }
+if ('sold' !== Importer::block_status('ordered', 'confirmed', true)) {
+    throw new RuntimeException('Expected a block whose order was confirmed and paid to read as sold.');
+}
 
 $expected_placement_status = [
-    'confirmed' => 'active',
+    'confirmed' => 'pending',
     'paid' => 'active',
     'new' => 'pending',
     'pending' => 'pending',
@@ -87,10 +109,13 @@ foreach ($expected_placement_status as $legacy => $expected) {
         throw new RuntimeException("Expected legacy order '{$legacy}' to map to placement '{$expected}', got '{$actual}'.");
     }
 }
+if ('active' !== Importer::placement_status('confirmed', true)) {
+    throw new RuntimeException('Expected the creative of a confirmed, paid order to stay live.');
+}
 
 // --- Source data --------------------------------------------------------------
 
-foreach (['banners', 'blocks', 'orders'] as $suffix) {
+foreach (['banners', 'blocks', 'orders', 'transactions'] as $suffix) {
     $wpdb->query('DROP TABLE IF EXISTS ' . DB::ident($source_prefix . $suffix));
 }
 
@@ -176,6 +201,19 @@ $wpdb->query("CREATE TABLE " . DB::ident($source_prefix . 'orders') . " (
     PRIMARY KEY (order_id)
 ) {$charset}");
 
+$wpdb->query("CREATE TABLE " . DB::ident($source_prefix . 'transactions') . " (
+    transaction_id INT NOT NULL AUTO_INCREMENT,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    order_id INT NOT NULL DEFAULT 0,
+    type VARCHAR(32) NOT NULL DEFAULT '',
+    amount FLOAT NOT NULL DEFAULT 0,
+    currency CHAR(3) NOT NULL DEFAULT 'USD',
+    txn_id VARCHAR(128) NOT NULL DEFAULT '',
+    reason VARCHAR(255) NOT NULL DEFAULT '',
+    origin VARCHAR(32) NOT NULL DEFAULT '',
+    PRIMARY KEY (transaction_id)
+) {$charset}");
+
 // Media + advertiser post (reused across re-runs).
 $upload = wp_upload_dir();
 $image_dir = trailingslashit($upload['basedir']) . 'milliondollarscript/images';
@@ -210,6 +248,37 @@ $ad_id = $ad_post ? absint($ad_post->ID) : wp_insert_post([
 update_post_meta($ad_id, '_milliondollarscript_image', $attachment_id);
 update_post_meta($ad_id, '_milliondollarscript_url', 'https://example.com/status-ad');
 update_post_meta($ad_id, '_milliondollarscript_text', 'Status fixture popup text');
+
+/**
+ * Another ad in the older site's shape - same picture, a different post - so one order
+ * can carry recorded payment and another can carry none.
+ */
+$status_fixture_ad = static function ($slug, $title) use ($attachment_id) {
+    $existing = get_page_by_path($slug, OBJECT, 'mds-pixel');
+    $id = $existing ? absint($existing->ID) : absint(wp_insert_post([
+        'post_type' => 'mds-pixel',
+        'post_status' => 'publish',
+        'post_title' => $title,
+        'post_name' => $slug,
+    ]));
+    if (!$id) {
+        throw new RuntimeException('Could not create the fixture ad post ' . $slug . '.');
+    }
+    update_post_meta($id, '_milliondollarscript_image', $attachment_id);
+    update_post_meta($id, '_milliondollarscript_url', 'https://example.com/status-ad');
+    update_post_meta($id, '_milliondollarscript_text', 'Status fixture popup text');
+
+    return $id;
+};
+
+$fixture_ad_posts = [$ad_id];
+$ad_id_unpaid = $status_fixture_ad('mdsstatus-advertiser-unpaid', 'Status Fixture Unpaid Advertiser');
+$fixture_ad_posts[] = $ad_id_unpaid;
+$ad_id_wc = 0;
+if (function_exists('wc_create_order')) {
+    $ad_id_wc = $status_fixture_ad('mdsstatus-advertiser-woocommerce', 'Status Fixture WooCommerce Advertiser');
+    $fixture_ad_posts[] = $ad_id_wc;
+}
 
 $wpdb->insert($source_prefix . 'banners', [
     'banner_id' => 70,
@@ -295,13 +364,85 @@ $wpdb->insert($source_prefix . 'orders', [
     'block_info' => '',
 ]);
 
+// An order the older site left at the confirmation step with nothing recorded as paid:
+// the advertiser had confirmed the ad, and the money was never taken.
+$wpdb->insert($source_prefix . 'orders', [
+    'order_id' => 63,
+    'user_id' => 1,
+    'blocks' => '203',
+    'status' => 'confirmed',
+    'order_date' => '2026-09-02 11:00:00',
+    'date_published' => '2026-09-02 11:05:00',
+    'price' => 5,
+    'quantity' => 1,
+    'banner_id' => 70,
+    'currency' => 'USD',
+    'days_expire' => 365,
+    'package_id' => 0,
+    'ad_id' => $ad_id_unpaid,
+    'approved' => 'Y',
+    'published' => 'Y',
+    'block_info' => '',
+]);
+
+// The same confirmation step, with the payment that site recorded in its own
+// transactions table: that order is paid.
+$wpdb->insert($source_prefix . 'transactions', [
+    'date' => '2026-06-01 10:30:00',
+    'order_id' => 60,
+    'type' => 'payment',
+    'amount' => 10,
+    'currency' => 'USD',
+    'txn_id' => 'status-fixture-charge',
+    'reason' => '',
+    'origin' => 'fixture',
+]);
+
+// A third order at the confirmation step, paid the way most of these sites take payment -
+// through WooCommerce, whose order id the older plugin stores on the ad post.
+$wc_order_id = 0;
+if ($ad_id_wc) {
+    $wc_order = wc_create_order();
+    if (is_wp_error($wc_order)) {
+        throw new RuntimeException('Could not create the WooCommerce fixture order: ' . $wc_order->get_error_message());
+    }
+    $wc_order->set_status('completed');
+    $wc_order->save();
+    $wc_order_id = absint($wc_order->get_id());
+    update_post_meta($ad_id_wc, '_wc_order_id', $wc_order_id);
+
+    $wpdb->insert($source_prefix . 'orders', [
+        'order_id' => 64,
+        'user_id' => 1,
+        'blocks' => '204',
+        'status' => 'confirmed',
+        'order_date' => '2026-09-03 09:00:00',
+        'date_published' => '2026-09-03 09:10:00',
+        'price' => 5,
+        'quantity' => 1,
+        'banner_id' => 70,
+        'currency' => 'USD',
+        'days_expire' => 365,
+        'package_id' => 0,
+        'ad_id' => $ad_id_wc,
+        'approved' => 'Y',
+        'published' => 'Y',
+        'block_info' => '',
+    ]);
+}
+
 // MDS2 leaves confirmed AND expired blocks with status 'ordered'.
 $status_fixture_blocks = [
-    [200, 'ordered', 60, 'Y', 'Y', $image_path],
-    [201, 'reserved', 61, 'N', '', ''],
-    [202, 'ordered', 62, 'N', '', $image_path],
+    [200, 'ordered', 60, 'Y', 'Y', $image_path, $ad_id],
+    [201, 'reserved', 61, 'N', '', '', $ad_id],
+    [202, 'ordered', 62, 'N', '', $image_path, $ad_id],
+    [203, 'ordered', 63, 'Y', 'Y', $image_path, $ad_id_unpaid],
 ];
-foreach ($status_fixture_blocks as [$block_id, $status, $order_id, $approved, $published, $file]) {
+if ($ad_id_wc) {
+    $status_fixture_blocks[] = [204, 'ordered', 64, 'Y', 'Y', $image_path, $ad_id_wc];
+}
+foreach ($status_fixture_blocks as $fixture_block) {
+    list($block_id, $status, $order_id, $approved, $published, $file, $block_ad_id) = $fixture_block;
     $wpdb->insert($source_prefix . 'blocks', [
         'block_id' => $block_id,
         'user_id' => 1,
@@ -319,7 +460,7 @@ foreach ($status_fixture_blocks as [$block_id, $status, $order_id, $approved, $p
         'order_id' => $order_id,
         'price' => 5,
         'banner_id' => 70,
-        'ad_id' => $ad_id,
+        'ad_id' => $block_ad_id,
         'click_count' => 0,
         'view_count' => 0,
     ]);
@@ -359,24 +500,64 @@ $placement_status = static function ($legacy_id) use ($wpdb) {
         (string) $legacy_id
     ));
 };
+$order_metadata = static function ($legacy_id) use ($wpdb) {
+    $json = (string) $wpdb->get_var($wpdb->prepare(
+        "SELECT metadata FROM " . DB::ident(DB::table('orders')) . " WHERE commerce_provider = 'legacy_mds2' AND commerce_order_id = %s LIMIT 1",
+        (string) $legacy_id
+    ));
+    $decoded = json_decode($json, true);
+
+    return is_array($decoded) ? $decoded : [];
+};
 
 $block_200 = $mapped_block_id('70:200');
 $block_201 = $mapped_block_id('70:201');
 $block_202 = $mapped_block_id('70:202');
+$block_203 = $mapped_block_id('70:203');
+$block_204 = $ad_id_wc ? $mapped_block_id('70:204') : 0;
 
-if (!$block_200 || !$block_201 || !$block_202) {
+if (!$block_200 || !$block_201 || !$block_202 || !$block_203 || ($ad_id_wc && !$block_204)) {
     throw new RuntimeException('Expected the status fixture blocks to be mapped.');
 }
 
-// Live confirmed order: pixel must be visible and the term must be active.
+// A confirmed order the older site recorded payment for: pixel live, term active.
 if ('paid' !== $order_status(60)) {
-    throw new RuntimeException('Expected MDS2 confirmed order to import as paid, got ' . var_export($order_status(60), true) . '.');
+    throw new RuntimeException('Expected a confirmed order with a recorded charge to import as paid, got ' . var_export($order_status(60), true) . '.');
 }
 if ('sold' !== $block_status($block_200)) {
     throw new RuntimeException('Expected the confirmed order block to import as sold, got ' . var_export($block_status($block_200), true) . '.');
 }
 if ('active' !== $placement_status(60)) {
     throw new RuntimeException('Expected the confirmed order placement to import as active, got ' . var_export($placement_status(60), true) . '.');
+}
+
+// An order left at the confirmation step with nothing recorded as paid stays one the
+// customer can still finish: the money is not claimed, and the cell is not sold.
+if ('pending_payment' !== $order_status(63)) {
+    throw new RuntimeException('Expected a confirmed order with no recorded payment to import as pending_payment, got ' . var_export($order_status(63), true) . '.');
+}
+if ('reserved' !== $block_status($block_203)) {
+    throw new RuntimeException('Expected the unpaid confirmed order block to import as reserved, got ' . var_export($block_status($block_203), true) . '.');
+}
+if ('pending' !== $placement_status(63)) {
+    throw new RuntimeException('Expected the unpaid confirmed order placement to import as pending, got ' . var_export($placement_status(63), true) . '.');
+}
+if (isset($order_metadata(63)['paid_at'])) {
+    throw new RuntimeException('An order nothing was recorded as paid for still carries a paid date.');
+}
+
+// The same step paid through WooCommerce is a paid order, because that is the payment the
+// older site recorded.
+if ($ad_id_wc) {
+    if ('paid' !== $order_status(64)) {
+        throw new RuntimeException('Expected a confirmed order with a paid WooCommerce order to import as paid, got ' . var_export($order_status(64), true) . '.');
+    }
+    if ('sold' !== $block_status($block_204)) {
+        throw new RuntimeException('Expected the WooCommerce-paid block to import as sold, got ' . var_export($block_status($block_204), true) . '.');
+    }
+    if ('active' !== $placement_status(64)) {
+        throw new RuntimeException('Expected the WooCommerce-paid placement to import as active, got ' . var_export($placement_status(64), true) . '.');
+    }
 }
 
 // Unpaid new order: held, visible for review, not yet live.
@@ -401,16 +582,39 @@ if ('cancelled' !== $placement_status(62)) {
     throw new RuntimeException('Expected the expired order placement to import as cancelled, got ' . var_export($placement_status(62), true) . '.');
 }
 
-// Only the confirmed pixel is live on the grid.
+// Only the paid creatives are live on the grid: the recorded charge, and the WooCommerce
+// payment where that path ran. The order left at the confirmation step is not.
+$expected_active = $ad_id_wc ? 2 : 1;
 $active_placements = (int) $wpdb->get_var(
     $wpdb->prepare(
-        'SELECT COUNT(*) FROM ' . DB::ident(DB::table('placements')) . ' p JOIN ' . DB::ident(DB::table('orders')) . ' o ON o.id = p.order_id WHERE o.commerce_provider = %s AND o.commerce_order_id IN (\'60\',\'61\',\'62\') AND p.status = %s',
+        'SELECT COUNT(*) FROM ' . DB::ident(DB::table('placements')) . ' p JOIN ' . DB::ident(DB::table('orders')) . ' o ON o.id = p.order_id WHERE o.commerce_provider = %s AND o.commerce_order_id IN (\'60\',\'61\',\'62\',\'63\',\'64\') AND p.status = %s',
         'legacy_mds2',
         'active'
     )
 );
-if (1 !== $active_placements) {
-    throw new RuntimeException('Expected exactly one active placement across the fixture orders, got ' . $active_placements . '.');
+if ($expected_active !== $active_placements) {
+    throw new RuntimeException('Expected ' . $expected_active . ' active placements across the fixture orders, got ' . $active_placements . '.');
 }
 
-echo 'MDS3 migration status-mapping fixture passed.' . PHP_EOL;
+// The report says what the site now holds: orders counted by the state they arrived in,
+// and the ones that came from the confirmation step named separately.
+$order_outcomes = (array) ($result['verification']['order_status_outcomes'] ?? []);
+$counts = isset($order_outcomes['counts']) && is_array($order_outcomes['counts']) ? $order_outcomes['counts'] : [];
+$expected_counts = ['paid' => 1, 'pending_payment' => 2, 'expired' => 1];
+if ($ad_id_wc) {
+    $expected_counts['paid'] = 2;
+}
+foreach ($expected_counts as $expected_status => $expected_count) {
+    if (absint($counts[$expected_status] ?? 0) !== $expected_count) {
+        throw new RuntimeException('The migration report did not count ' . $expected_count . " orders as '{$expected_status}': " . wp_json_encode($counts));
+    }
+}
+if (1 !== absint($order_outcomes['confirmed_without_payment'] ?? 0)) {
+    throw new RuntimeException('The migration report did not single out the order left unpaid at the confirmation step: ' . wp_json_encode($order_outcomes));
+}
+
+if ($wc_order_id) {
+    wp_delete_post($wc_order_id, true);
+}
+
+echo 'MDS3 migration status-mapping fixture passed.' . ($ad_id_wc ? ' (WooCommerce path included)' : ' (no WooCommerce on this site: the WooCommerce path was not exercised)') . PHP_EOL;

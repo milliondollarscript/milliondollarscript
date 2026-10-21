@@ -44,6 +44,7 @@ if (!empty($style_vars) && is_array($style_vars)) {
     data-grid-id="<?php echo esc_attr($grid_id); ?>"
     data-read-only="<?php echo esc_attr($read_only ? 'true' : 'false'); ?>"
     data-responsive-height="<?php echo esc_attr($responsive_height ? 'true' : 'false'); ?>"
+    data-fit-on-resize="<?php echo esc_attr(($fit_on_resize ?? true) ? 'true' : 'false'); ?>"
     data-renderer-mode="<?php echo esc_attr($renderer ?? 'auto'); ?>"
     style="<?php echo esc_attr(implode(';', $style_declarations)); ?>"
 >
@@ -69,6 +70,11 @@ if (!empty($style_vars) && is_array($style_vars)) {
         <?php endif; ?>
     </header>
     <?php if (!$read_only) : ?>
+        <?php if (!empty($resume_order_url)) : ?>
+            <p class="mds3-grid-resume" role="note">
+                <a class="mds3-grid-resume-link" href="<?php echo esc_url($resume_order_url); ?>"><?php esc_html_e('Continue the order you already have on this grid.', 'million-dollar-script'); ?></a>
+            </p>
+        <?php endif; ?>
         <div class="mds3-grid-order-help" role="note">
             <strong><?php esc_html_e('How to order', 'million-dollar-script'); ?></strong>
             <ol>
@@ -104,6 +110,10 @@ if (!empty($style_vars) && is_array($style_vars)) {
                 <span><?php echo esc_html__('Image', 'million-dollar-script'); ?></span>
                 <input type="file" name="image" accept="image/*" required />
                 <small><?php echo esc_html__('Shown inside the selected pixels. The preview updates as soon as the image is uploaded.', 'million-dollar-script'); ?></small>
+                <?php if (!empty($upload_size_hint)) : ?>
+                    <?php // Stated before a file is chosen, so a refusal is not how a customer first learns what the ad accepts. ?>
+                    <small class="mds3-image-hint mds3-image-size-hint"><?php echo esc_html($upload_size_hint); ?></small>
+                <?php endif; ?>
                 <button type="button" class="mds3-draft-image-remove" hidden><?php echo esc_html__('Remove image', 'million-dollar-script'); ?></button>
             </label>
             <div class="mds3-current-placement" hidden></div>

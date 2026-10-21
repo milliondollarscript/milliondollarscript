@@ -20,14 +20,96 @@ Open **Million Dollar Script > System Status** or **Tools > Site Health** to see
 
 ## Standard Pages
 
-The setup wizard can create the standard pages used by the core grid workflow:
+The setup wizard creates the pages a store works with:
 
 - A read-only public grid page for browsing published placements.
 - An order page with the interactive grid.
-- Manage Pixels, Upload, Stats, and Advertiser List pages.
+- Manage Pixels and Upload pages, where a customer finds their own ads again.
 - Legal pages when the legal-page setup option is selected.
 
+The remaining pages each hold a step a site may not use, so they are created only
+when asked for on the same screen. Every box there starts unchecked:
+
+- Write Content, for typing the ad text away from the grid.
+- Confirm Order, which asks a customer to check an order before its ad goes on the
+  grid. It belongs with **Ask Customers To Confirm Orders** under Settings > Orders:
+  with that switched off the page has nothing to do, and without the page that step
+  is skipped and the customer goes on to payment or to their own order.
+- Payment, which shows what an order costs and what it still owes on its own page.
+- Thank You, the page an order lands on when it is finished.
+- Advertiser List, a public list of the advertisers on a grid.
+- No Orders, shown instead of a grid that has no ads up.
+
+A page that already exists is used whichever boxes are chosen — a page in this
+site, or one carried over from an earlier version of Million Dollar Script.
+Leaving a box unchecked only means no page is made for it.
+
 The read-only grid page is intended for visitors who only want to view the board. The order page is intended for customers who want to select blocks and reserve pixels.
+
+## Page Addresses
+
+The pages live at addresses of their own, such as `/order/` or `/upload/`. Those
+addresses only work when WordPress is allowed to build them, and a brand-new
+WordPress site does not start that way: **Settings > Permalinks** ships set to
+**Plain**, which addresses pages as `?page_id=12` instead.
+
+Set it before you send anyone to the site:
+
+1. Open **Settings > Permalinks**.
+2. Choose **Post name** and save.
+3. Open the grid page and the order page from the front end to confirm they open.
+
+With Plain still in place, opening `/order/` shows your blog or a Not Found page,
+and the links in order emails and customer notices do not reach the page they name.
+Advertiser pages and the pages a migrated site brings over need the same setting.
+
+## Navigation
+
+A WordPress theme with no menu assigned lists **every published page** in the
+header. On an advertising site that is a long list: the grid, the order pages, plus
+a page per advertiser once the site has been running or migrated for a while.
+
+Choose the pages customers should reach, in the order you want them:
+
+- The public grid page.
+- The order page.
+- Manage Pixels and Upload, so a customer can find their own ad again.
+
+Where you do that depends on the theme. A block theme (the themes that ship with
+recent WordPress versions) uses **Appearance > Editor**, then the navigation area;
+the classic **Appearance > Menus** screen is not present in a block theme. A classic
+theme uses **Appearance > Menus**.
+
+### Adding pages to your menu
+
+A block theme:
+
+1. Open **Appearance > Editor**, then choose **Navigation**.
+2. Choose the navigation your theme shows in the header.
+3. Remove the links you do not want, and add the pages listed above in the order you
+   want customers to see them. Save.
+
+A classic theme:
+
+1. Open **Appearance > Menus**.
+2. Create a menu, or select the one your theme already uses.
+3. Add the pages listed above, then under **Menu settings** tick the location the theme
+   calls primary or main and save.
+
+Both routes change only the links in that menu. The pages themselves are not touched.
+
+### The starter-site step and your existing menu
+
+**Create starter site** can write the navigation for you, but it does not touch your
+navigation unless you tell it to. **Replace my existing navigation with the starter pages**
+is off; while it is off this step writes no menu, adds no links to a menu you have, and
+rewrites nothing it wrote before — it leaves navigation exactly as it is and tells you what
+is still missing, with a link back to this page.
+
+Turn it on when you would rather start from the starter pages than edit your own menu. It
+then removes the links your current navigation holds and writes the starter pages in their
+place, or writes them as a new menu if the site has none. Your pages are not deleted — only
+the links are replaced.
 
 ## Payment Provider
 
@@ -57,6 +139,8 @@ If custom code still reads one of those older settings, it can continue to read 
 
 Use **Extensions** to install optional capabilities such as WooCommerce checkout, ImageGrid rendering, SponsorBoard, or other package-owned features. Extensions should match the major Million Dollar Script version they were built for.
 
+Setup reports what it did with the extensions you selected: the ones it activated, and — by name — any that could not be set up because something they need is missing or switched off, and any that are not installed yet. An extension that is not installed yet is left untouched: install it from **Extensions** whenever you want it on the site.
+
 ### Private Tester Access
 
 An extension server administrator can issue a temporary tester access key without creating a customer account or purchase. On **Million Dollar Script > Extensions**, open **Extension server tester access**, enter the supplied key, and choose **Connect tester access**.
@@ -72,6 +156,8 @@ Before sending traffic to the site, confirm:
 - System Status reports a PHP memory limit of at least 256 MB.
 - The public grid page opens without requiring login.
 - The order page shows an interactive grid.
+- Every page opens at its own address rather than showing the blog or a Not Found page.
+- The header lists the pages you chose, not every published page on the site.
 - Test reservations create orders with the expected price and currency.
 - Manage/upload links work for the customer email address.
 - WordPress mail is delivering messages, or an SMTP plugin is configured.

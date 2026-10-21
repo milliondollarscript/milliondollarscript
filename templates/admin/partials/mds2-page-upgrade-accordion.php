@@ -38,7 +38,7 @@ $upgrade_modified = array_filter((array) $candidates, static function ($candidat
     return empty($candidate['unmodified']);
 });
 ?>
-<div class="mds3-upgrade-accordion">
+<div class="mds3-upgrade-accordion" data-extra-forms="<?php echo esc_attr(json_encode(array_values($upgrade_extra_form_ids))); ?>">
     <p class="description">
         <?php esc_html_e('Unmodified Million Dollar Script 2 pages are updated in place. For pages whose content you changed, check the box to upgrade them in place (the original content is saved) or leave it unchecked to keep that page and create a new Million Dollar Script 3 page instead.', 'million-dollar-script'); ?>
     </p>
@@ -101,78 +101,5 @@ $upgrade_modified = array_filter((array) $candidates, static function ($candidat
     <?php if ($candidates) : ?>
     </details>
     <?php endif; ?>
-    <script>
-        (function () {
-            var root = document.currentScript.closest('.mds3-upgrade-accordion');
-            if (!root) {
-                return;
-            }
-            var parent = root.querySelector('[data-upgrade-parent]');
-            var checks = Array.prototype.slice.call(root.querySelectorAll('[data-upgrade-check]:not(:disabled)'));
-            function syncParent() {
-                if (!parent || !checks.length) {
-                    return;
-                }
-                var all = checks.every(function (c) {
-                    return c.checked;
-                });
-                var none = checks.every(function (c) {
-                    return !c.checked;
-                });
-                parent.checked = all;
-                parent.indeterminate = !all && !none;
-            }
-            if (parent && checks.length) {
-                parent.addEventListener('change', function () {
-                    var target = parent.checked;
-                    checks.forEach(function (c) {
-                        c.checked = target;
-                    });
-                    syncParent();
-                });
-            }
-            checks.forEach(function (c) {
-                c.addEventListener('change', syncParent);
-            });
-            // Checkbox clicks inside a <summary> must not toggle the disclosure.
-            Array.prototype.forEach.call(root.querySelectorAll('summary input'), function (i) {
-                i.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                });
-            });
-            // Extra forms (beyond the DOM-owning one) receive the checked ids
-            // as hidden inputs at submit time. They parse after this script,
-            // so bind once the document is ready.
-            function bindExtraForms() {
-                <?php echo json_encode(array_values($upgrade_extra_form_ids)); ?>.forEach(function (id) {
-                    var form = document.getElementById(id);
-                    if (!form) {
-                        return;
-                    }
-                    form.addEventListener('submit', function () {
-                        Array.prototype.forEach.call(form.querySelectorAll('input[data-mds3-upgrade-sync]'), function (h) {
-                            h.remove();
-                        });
-                        checks.forEach(function (c) {
-                            if (!c.checked) {
-                                return;
-                            }
-                            var h = document.createElement('input');
-                            h.type = 'hidden';
-                            h.name = c.name;
-                            h.value = c.value;
-                            h.setAttribute('data-mds3-upgrade-sync', '');
-                            form.appendChild(h);
-                        });
-                    });
-                });
-            }
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', bindExtraForms);
-            } else {
-                bindExtraForms();
-            }
-            syncParent();
-        })();
-    </script>
+    <?php \MillionDollarScript\V3\Support\Template::display('admin/partials/choice-accordion-script.php'); ?>
 </div>

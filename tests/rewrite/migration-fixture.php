@@ -600,14 +600,18 @@ $wpdb->insert($source_prefix . 'orders', [
     'block_info' => '',
 ]);
 
-foreach ([[0, 0, 0], [1, 10, 0], [100, 0, 10], [101, 10, 10]] as $block) {
+// Banner 7 is 100 blocks wide with 10px blocks. MDS2 writes block x/y as pixel
+// offsets, not block indexes - x = (block_id % grid_width) * block_width - so the
+// fixture derives them with the plugin's own arithmetic. Hard-coded multiples of 10
+// cannot tell the two conventions apart, which is how a scaling regression survived.
+foreach ([0, 1, 100, 101] as $block_id) {
     $wpdb->insert($source_prefix . 'blocks', [
-        'block_id' => $block[0],
+        'block_id' => $block_id,
         'user_id' => 1,
         'status' => 'sold',
-        'x' => $block[1],
-        'y' => $block[2],
-        'image_data' => 0 === $block[0] ? 'flattened' : '',
+        'x' => ($block_id % 100) * 10,
+        'y' => intdiv($block_id, 100) * 10,
+        'image_data' => 0 === $block_id ? 'flattened' : '',
         'url' => 'https://example.com/ad',
         'alt_text' => 'Fixture alt text',
         'file_name' => $image_path,
@@ -689,6 +693,52 @@ $wpdb->insert($source_prefix . 'blocks', [
     'view_count' => 0,
 ]);
 
+// A placement whose legacy row overflowed both the alt and the link column. MDS2
+// copied the whole ad text into blocks.alt_text and kept free text in the
+// advertiser-link column. On a real migrated site 39 of 101 orders lost their
+// placement this way ("Data too long for column 'alt_text'") and the run report
+// said nothing, because the failed insert was never checked.
+$oversized_ad_text = 'Fixture popup text with image ' . str_repeat('Sell the copy desk and its matching stool at a reduced rate for the spring relaunch. ', 20);
+$wpdb->insert($source_prefix . 'orders', [
+    'order_id' => 58,
+    'user_id' => 1,
+    'blocks' => '60',
+    'status' => 'completed',
+    'order_date' => '2025-04-02 03:04:05',
+    'date_published' => '2025-04-03 00:00:00',
+    'price' => 2.5,
+    'quantity' => 1,
+    'banner_id' => 7,
+    'currency' => 'USD',
+    'days_expire' => 30,
+    'package_id' => 0,
+    'ad_id' => $ad_id,
+    'approved' => 'Y',
+    'published' => 'Y',
+    'block_info' => '',
+]);
+$wpdb->insert($source_prefix . 'blocks', [
+    'block_id' => 60,
+    'user_id' => 1,
+    'status' => 'sold',
+    'x' => (60 % 100) * 10,
+    'y' => intdiv(60, 100) * 10,
+    'image_data' => '',
+    'url' => 'Follow the spring sale, ask in store',
+    'alt_text' => '<p>' . $oversized_ad_text . '</p>',
+    'file_name' => $image_path,
+    'mime_type' => 'image/png',
+    'approved' => 'Y',
+    'published' => 'Y',
+    'currency' => 'USD',
+    'order_id' => 58,
+    'price' => 2.5,
+    'banner_id' => 7,
+    'ad_id' => $ad_id,
+    'click_count' => 0,
+    'view_count' => 0,
+]);
+
 $dry_run = (new DryRun())->report($source_prefix);
 if (3 !== (int) ($dry_run['tables']['banners']['rows'] ?? 0) || 4 > (int) ($dry_run['pages']['count'] ?? 0)) {
     throw new RuntimeException('Dry run did not detect fixture tables/pages. banners=' . (int) ($dry_run['tables']['banners']['rows'] ?? 0) . ' pages=' . (int) ($dry_run['pages']['count'] ?? 0));
@@ -726,22 +776,37 @@ $target_order_metadata = json_decode((string) ($target_order['metadata'] ?? ''),
 if (!is_array($target_order_metadata)) {
     throw new RuntimeException('Imported order metadata did not decode.');
 }
-// Legacy MDS2 block rows stored x/y in block units (column/row indices); the
-// native MDS3 blocks and the derived placement rect must be in pixels.
-// Order 55 spans block cells (0,0), (10,0), (0,10), (10,10) on banner 7's
-// 100x100 grid with 10px blocks, so the rect is 110x110, not the 20x20 a raw
-// block-unit copy would produce.
+// MDS2 block rows already hold pixel offsets, so an imported block must land where
+// MDS2 itself would have drawn it. Order 55 holds blocks 0, 1, 100 and 101 of a
+// 100-wide grid with 10px blocks: the 20x20 area at (0,0), not the 110x110 area an
+// extra multiplication by the block size produces.
 $rect = (new OrderRepository())->item_rect($target_order_id);
-if (!is_array($rect) || [0, 0, 110, 110] !== [$rect['x'], $rect['y'], $rect['width'], $rect['height']]) {
-    throw new RuntimeException('Multi-block legacy order did not import with pixel coordinates: ' . wp_json_encode($rect));
+if (!is_array($rect) || [0, 0, 20, 20] !== [$rect['x'], $rect['y'], $rect['width'], $rect['height']]) {
+    throw new RuntimeException('Multi-block legacy order did not import at the position MDS2 would draw: ' . wp_json_encode($rect));
+}
+// Every migrated block must sit on its own grid cell. The block index is the grid
+// position, so deriving the pixel offset from it is the check that fails when a
+// scale is applied twice: block 1 would land at x=100, ten cells away from (10,0).
+foreach ([0, 1, 100, 101] as $legacy_block_id) {
+    $expected_x = ($legacy_block_id % 100) * 10;
+    $expected_y = intdiv($legacy_block_id, 100) * 10;
+    $at_position = absint($wpdb->get_var($wpdb->prepare(
+        'SELECT COUNT(*) FROM ' . DB::ident(DB::table('blocks')) . ' WHERE grid_id = %d AND x = %d AND y = %d',
+        $grid_id,
+        $expected_x,
+        $expected_y
+    )));
+    if (1 !== $at_position) {
+        throw new RuntimeException('Imported legacy block ' . $legacy_block_id . ' is not at its grid position (' . $expected_x . ',' . $expected_y . ').');
+    }
 }
 $target_order_57_id = absint($wpdb->get_var($wpdb->prepare(
     'SELECT mds3_id FROM ' . DB::ident(DB::table('migration_map')) . " WHERE source_prefix = %s AND entity_type = 'order' AND legacy_id = '57' AND mds3_entity_type = 'order' LIMIT 1",
     $source_prefix
 )));
 $rect_57 = (new OrderRepository())->item_rect($target_order_57_id);
-if (!is_array($rect_57) || [200, 0, 10, 10] !== [$rect_57['x'], $rect_57['y'], $rect_57['width'], $rect_57['height']]) {
-    throw new RuntimeException('Single-block legacy order did not import with pixel coordinates: ' . wp_json_encode($rect_57));
+if (!is_array($rect_57) || [20, 0, 10, 10] !== [$rect_57['x'], $rect_57['y'], $rect_57['width'], $rect_57['height']]) {
+    throw new RuntimeException('Single-block legacy order did not import at the position MDS2 would draw: ' . wp_json_encode($rect_57));
 }
 $target_placement_id = absint($wpdb->get_var($wpdb->prepare(
     'SELECT mds3_id FROM ' . DB::ident(DB::table('migration_map')) . " WHERE source_prefix = %s AND entity_type = 'placement' AND legacy_id = '55' AND mds3_entity_type = 'placement' LIMIT 1",
@@ -870,6 +935,38 @@ if (
     throw new RuntimeException('Migrated placement duplicated the legacy block alt text into both popup fields.');
 }
 
+// The overflowing row above must still import: the alt is bounded to what the column
+// holds, the full copy stays in the popup text, a value that is not a link is not
+// stored as one, and both normalizations are reported instead of silent.
+$oversized_order_id = $mapped_target_id('order', '58', 'order');
+$oversized_placement = $wpdb->get_row($wpdb->prepare(
+    'SELECT alt_text, popup_text, link_url FROM ' . DB::ident(DB::table('placements')) . ' WHERE order_id = %d ORDER BY id ASC LIMIT 1',
+    $oversized_order_id
+), ARRAY_A);
+$oversized_alt = (string) ($oversized_placement['alt_text'] ?? '');
+if (
+    !$oversized_placement ||
+    $oversized_alt === '' ||
+    mb_strlen($oversized_alt) > 500 ||
+    mb_strlen($oversized_alt) >= mb_strlen($oversized_ad_text) ||
+    false === strpos(wp_strip_all_tags((string) ($oversized_placement['popup_text'] ?? '')), 'Fixture popup text with image') ||
+    false !== strpos((string) ($oversized_placement['link_url'] ?? ''), 'Follow the spring sale') ||
+    false === strpos((string) ($oversized_placement['link_url'] ?? ''), 'https://')
+) {
+    throw new RuntimeException('Oversized legacy alt text and non-link advertiser value were not normalized into a surviving placement: ' . wp_json_encode([
+        'order_id' => $oversized_order_id,
+        'alt_len' => mb_strlen($oversized_alt),
+        'link_url' => (string) ($oversized_placement['link_url'] ?? ''),
+    ]));
+}
+$reported_repairs = wp_json_encode(array_column((array) ($result['verification']['repairs'] ?? []), 'reason'));
+if (
+    false === strpos($reported_repairs, 'alt text held the full ad text') ||
+    false === strpos($reported_repairs, 'is not a link, so it was not imported')
+) {
+    throw new RuntimeException('The migration did not report how it normalized the oversized alt text and the non-link advertiser value.');
+}
+
 $pre_recovery = [
     'grid_id' => $grid_id,
     'order_id' => $target_order_id,
@@ -941,11 +1038,11 @@ if (
     1 !== $checks['packages'] ||
     1 !== $checks['price_rules'] ||
     1 !== $checks['orders'] ||
-    6 !== $checks['blocks'] ||
+    7 !== $checks['blocks'] ||
     4 !== $checks['order_items'] ||
-    2 !== $checks['placements'] ||
+    3 !== $checks['placements'] ||
     $pre_recovery['pages'] !== $checks['pages'] ||
-    7 !== $checks['mapped_blocks']
+    8 !== $checks['mapped_blocks']
 ) {
     throw new RuntimeException('Recovery rerun duplicated or missed imported entities: ' . wp_json_encode($checks));
 }
@@ -1012,7 +1109,13 @@ if (
     metadata_exists('post', $native_mds3_page, '_mds3_migration_original_content') ||
     '' !== (string) get_post_meta($native_mds3_page, '_mds3_migration_source', true)
 ) {
-    throw new RuntimeException('Migration modified a page owned by the current Million Dollar Script installation.');
+    throw new RuntimeException(
+        'Migration modified a page owned by the current Million Dollar Script installation.'
+        . ' page=' . $native_mds3_page
+        . ' grid_meta=' . var_export(get_post_meta($native_mds3_page, '_mds3_grid_id', true), true)
+        . ' source=' . var_export(get_post_meta($native_mds3_page, '_mds3_migration_source', true), true)
+        . ' content=' . var_export(mb_substr((string) get_post_field('post_content', $native_mds3_page), 0, 240), true)
+    );
 }
 $list_html = do_shortcode('[mds3_page type="list" grid_id="' . absint($grid_id) . '"]');
 if (false === strpos($list_html, 'Fixture alt text') || false === strpos($list_html, 'https://example.com/ad')) {
@@ -1033,7 +1136,10 @@ unset($_GET['mds3_order_id'], $_GET['mds3_order_key']);
 if (false === strpos($summary_html, '#' . absint($target_order_id)) || false === strpos($summary_html, 'Manage upload')) {
     throw new RuntimeException('Order-key summary page did not render imported order data.');
 }
-$settings = get_option('mds3_settings', []);
+// The fixture asserts untruncated popup copy, so it must not inherit the site's
+// own popup character limit: get_option('mds3_settings') carries whatever a local
+// install happens to use, and a small limit would shorten the copy here.
+$settings = array_merge((array) get_option('mds3_settings', []), ['popup-text-max-chars' => 0]);
 if (!is_array($settings) || 'https://example.com/account' !== ($settings['account-page'] ?? '')) {
     throw new RuntimeException('MDS2 account page setting was not mapped.');
 }
@@ -1114,7 +1220,9 @@ if (!is_array($zone_item_metadata) || 'price_rule' !== ($zone_item_metadata['pri
     throw new RuntimeException('Reservation item did not record price-rule pricing metadata.');
 }
 
-$nfs_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 50]], ['email' => 'nfs@example.com']);
+// The fixture's NFS block is legacy block 5, which sits at x=50 on a 10px grid -
+// that is row 0, column 5. (The old coordinate scaling placed it at column 50.)
+$nfs_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 5]], ['email' => 'nfs@example.com']);
 if (!is_wp_error($nfs_reservation)) {
     throw new RuntimeException('Migrated NFS/unavailable block was reservable.');
 }
@@ -1122,13 +1230,13 @@ if (!is_wp_error($nfs_reservation)) {
 $availability = (new BlockRepository())->set_region_status($grid_entity, [
     'row_from' => 0,
     'row_to' => 0,
-    'col_from' => 50,
-    'col_to' => 50,
+    'col_from' => 5,
+    'col_to' => 5,
 ], 'available', ['note' => 'fixture release']);
 if (is_wp_error($availability) || empty($availability['changed'])) {
     throw new RuntimeException('Unavailable region could not be released.');
 }
-$released_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 50]], ['email' => 'released@example.com']);
+$released_reservation = (new ReservationService())->reserve($grid_entity, [['row' => 0, 'col' => 5]], ['email' => 'released@example.com']);
 if (is_wp_error($released_reservation) || 2.5 !== (float) ($released_reservation['order']['total'] ?? 0)) {
     throw new RuntimeException('Released block did not reserve at base grid price.');
 }

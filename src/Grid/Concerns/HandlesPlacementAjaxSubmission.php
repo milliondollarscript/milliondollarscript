@@ -7,15 +7,14 @@
 
 namespace MillionDollarScript\V3\Grid\Concerns;
 
-use MillionDollarScript\V3\Blocks\BlockRepository;
-use MillionDollarScript\V3\Grid\GridRepository;
 use MillionDollarScript\V3\Media\PlacementDraftRepository;
 use MillionDollarScript\V3\Media\PlacementFieldContract;
 use MillionDollarScript\V3\Media\PlacementRepository;
 use MillionDollarScript\V3\Media\UploadValidator;
 use MillionDollarScript\V3\Orders\CheckoutRouter;
+use MillionDollarScript\V3\Orders\OrderConfirmation;
 use MillionDollarScript\V3\Orders\OrderRepository;
-use MillionDollarScript\V3\Settings\SettingsSchema;
+use MillionDollarScript\V3\Orders\PublishGate;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -87,7 +86,7 @@ trait HandlesPlacementAjaxSubmission {
             $filename = sanitize_file_name($file['name'] ?? '');
             $upload_check = (new UploadValidator())->validate($file, $filename, $this->settings());
             if (is_wp_error($upload_check)) {
-                wp_send_json_error(['message' => $upload_check->get_error_message()], 400);
+                wp_send_json_error($this->field_error_payload($upload_check, 'image'), 400);
             }
 
             require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -105,7 +104,7 @@ trait HandlesPlacementAjaxSubmission {
             ]);
 
             if (is_wp_error($attachment_id)) {
-                wp_send_json_error(['message' => $attachment_id->get_error_message()], 400);
+                wp_send_json_error($this->field_error_payload($attachment_id, 'image'), 400);
             }
         }
 
@@ -171,13 +170,15 @@ trait HandlesPlacementAjaxSubmission {
             $order = $refreshed_order;
         }
         if ('paid' === sanitize_key((string) ($order['status'] ?? '')) && !empty($placement['id']) && 'active' !== sanitize_key((string) ($placement['status'] ?? ''))) {
-            $placement_repo->update_status_by_order($order_id, 'active');
+            PublishGate::publish($order_id, PublishGate::AD_SAVED);
             $placement = $placement_repo->find($placement['id']) ?: $placement;
         }
-        // Without a checkout step there is nowhere to send the advertiser: stay on the grid
-        // so the popup can show the saved ad. The Thank You page is a post-payment
-        // destination, not a post-upload one.
-        $redirect_url = (!$is_manage_context && $was_unpaid) ? (string) ($checkout['checkout_url'] ?? '') : '';
+        // Without a checkout step there is nowhere to send the advertiser for payment. That
+        // used to mean staying on the grid with "Ad saved." and no route to what was just
+        // booked - which is the default state of a fresh install, where the site takes payment
+        // by hand (llm-task e46ff359). The order's own page is the destination; a site with no
+        // such page keeps the previous behaviour of staying put.
+        $redirect_url = $this->post_save_redirect($order, $checkout, $is_manage_context, $was_unpaid);
 
         \MillionDollarScript\Core\Hooks::do('million-dollar-script/placement/saved', $placement ?: [], $order, $post);
 
@@ -188,6 +189,32 @@ trait HandlesPlacementAjaxSubmission {
             'order_status' => sanitize_key((string) ($order['status'] ?? '')),
             'message' => __('Image received from the original upload.', 'million-dollar-script'),
         ]);
+    }
+
+    /**
+     * Where an ad save sends the customer.
+     *
+     * A payment page wins when the site has one. Otherwise an order that still owes payment
+     * gets the customer's own order page, so the manual-payment path ends somewhere the
+     * customer can see and act on instead of a success message on a grid. An order the site
+     * settled by itself goes to the thank-you page (the flow the plugin documents, in
+     * docs/orders.md under "The Customer's Order Path": review, confirm, then thank you - the
+     * shape the tester asked back). An edit made from the order page itself stays where it
+     * is, and a site with none of these pages stays put rather than being sent somewhere
+     * invented.
+     *
+     * The rules themselves live in CheckoutRouter::after_upload_url(), because the customer's
+     * Confirm action sends them to the same place an ad save would have.
+     */
+    private function post_save_redirect(array $order, array $checkout, $is_manage_context, $was_unpaid) {
+        if ($is_manage_context || !$was_unpaid) {
+            return '';
+        }
+
+        $settings = $this->settings();
+        $awaiting = (new OrderConfirmation())->await_confirmation($order, $settings);
+
+        return esc_url_raw((string) (new CheckoutRouter())->after_upload_url($order, $checkout, $settings, $awaiting));
     }
 
     public function placement_draft_state() {
@@ -219,7 +246,9 @@ trait HandlesPlacementAjaxSubmission {
         $repo = new PlacementDraftRepository();
         $draft = $repo->upload($context['orders'], $context['order'], $context['rect'], 'image', $this->settings());
         if (is_wp_error($draft)) {
-            wp_send_json_error(['message' => $draft->get_error_message()], $this->error_status($draft, 400));
+            // A rejected file is the customer's next action, so name the control it
+            // belongs to; the form marks that field and shows the reason beside it.
+            wp_send_json_error($this->field_error_payload($draft, 'image'), $this->error_status($draft, 400));
         }
 
         $this->charge_public_write_throttle();
@@ -268,56 +297,26 @@ trait HandlesPlacementAjaxSubmission {
 
     private function finalize_standalone_manual_order(OrderRepository $orders, PlacementRepository $placements, $order_id, array $order, array $placement) {
         $settings = $this->settings();
-        $provider = sanitize_key((string) ($order['commerce_provider'] ?? 'standalone')) ?: 'standalone';
-        $status = sanitize_key((string) ($order['status'] ?? ''));
+        $confirmation = new OrderConfirmation();
 
-        if ('standalone' !== $provider || !empty($settings['checkout-url']) || in_array($status, ['paid', 'cancelled', 'failed', 'refunded', 'expired', 'denied', 'deleted'], true)) {
+        // A site that asks its customers to review the order holds it here until they confirm it.
+        // The blocks stay held, and "Minutes To Keep Unconfirmed Orders" still releases them -
+        // which is how MDS2 treated an order nobody had confirmed.
+        if ($confirmation->await_confirmation($order, $settings)) {
             return [$order, $placement];
         }
 
-        $auto_complete = $this->auto_approve_for_grids($orders, $order_id, $settings);
-        $updated = $orders->update($order_id, ['status' => $auto_complete ? 'paid' : 'pending_payment']);
+        $updated = $confirmation->advance($orders, $placements, $order, $settings);
         if (is_wp_error($updated)) {
             return [$order, $placement];
         }
 
         $order = $updated;
-        if ($auto_complete) {
-            (new BlockRepository())->mark_by_order($order_id, 'sold');
-            $placements->update_status_by_order($order_id, 'active');
-            if (!empty($placement['id'])) {
-                $placement = $placements->find($placement['id']) ?: $placement;
-            }
+        if (!empty($placement['id'])) {
+            $placement = $placements->find($placement['id']) ?: $placement;
         }
 
         return [$order, $placement];
-    }
-
-    /**
-     * Auto-approval for an order: each grid's own choice wins over the global setting
-     * (blank = inherit), and a grid that says "do not approve" holds the order back for
-     * review so a mixed basket is never activated against the site owner's wishes.
-     *
-     * @param int[] $grid_ids
-     */
-    private function auto_approve_for_grids(OrderRepository $orders, $order_id, array $settings) {
-        $auto_complete = 'yes' === SettingsSchema::sanitize('auto-approve', $settings['auto-approve'] ?? 'no');
-        $explicit = [];
-
-        foreach ((new GridRepository())->all() as $grid) {
-            $choice = strtoupper((string) ($grid->settings()['auto_approve'] ?? ''));
-            if ('' === $choice) {
-                continue;
-            }
-            foreach ($orders->items($order_id) as $item) {
-                if (absint($item['grid_id'] ?? 0) === $grid->id()) {
-                    $explicit[] = ('Y' === $choice);
-                    break;
-                }
-            }
-        }
-
-        return $explicit ? !in_array(false, $explicit, true) : $auto_complete;
     }
 
     private function fit_mode($fit_mode) {
@@ -384,10 +383,11 @@ trait HandlesPlacementAjaxSubmission {
     /**
      * AJAX error payload for a rejected submission. The message alone leaves the
      * visitor guessing which input to fix, so the offending form field is named
-     * too: extensions can set it in WP_Error data (['field' => 'name']), and the
-     * core field errors are mapped from their error codes.
+     * too: extensions can set it in WP_Error data (['field' => 'name']), the core
+     * field and upload errors are mapped from their error codes, and a caller that
+     * already knows which control failed can say so.
      */
-    private function field_error_payload(\WP_Error $error): array {
+    private function field_error_payload(\WP_Error $error, $fallback_field = ''): array {
         $payload = ['message' => $error->get_error_message()];
         $data = is_array($error->get_error_data()) ? $error->get_error_data() : [];
         $field = isset($data['field']) ? (string) $data['field'] : '';
@@ -402,8 +402,22 @@ trait HandlesPlacementAjaxSubmission {
                 'million_dollar_script_popup_invalid' => 'popup_text',
                 'million_dollar_script_popup_required' => 'popup_text',
                 'million_dollar_script_popup_too_long' => 'popup_text',
+                // Upload failures belong at the file control. Without this the only place
+                // the customer sees them is the status line at the bottom of the form.
+                'mds3_draft_upload_missing' => 'image',
+                'mds3_upload_failed' => 'image',
+                'mds3_upload_empty' => 'image',
+                'mds3_upload_invalid' => 'image',
+                'mds3_upload_too_large' => 'image',
+                'mds3_upload_type_invalid' => 'image',
+                'mds3_upload_image_invalid' => 'image',
+                'mds3_upload_width_too_large' => 'image',
+                'mds3_upload_height_too_large' => 'image',
             ];
             $field = $fields[$error->get_error_code()] ?? '';
+        }
+        if ('' === $field) {
+            $field = (string) $fallback_field;
         }
         if ('' !== $field) {
             $payload['field'] = $field;

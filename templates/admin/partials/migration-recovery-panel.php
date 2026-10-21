@@ -11,11 +11,15 @@ if (!defined('ABSPATH')) {
 
 $status_class = sanitize_html_class((string) ($summary['status_class'] ?? 'completed'));
 $is_resumable = !empty($summary['is_resumable']);
-$is_running = 'running' === (string) ($summary['status_class'] ?? '');
+$auto_run = !empty($auto_run) && in_array((string) ($summary['status_class'] ?? ''), ['running', 'paused', 'failed'], true);
+$can_retry = in_array((string) ($summary['status_class'] ?? ''), ['running', 'paused', 'failed'], true);
 $progress_percent = max(0, min(100, absint($summary['progress_percent'] ?? 0)));
 $continue_run_id = in_array((string) ($summary['status_class'] ?? ''), ['running', 'paused', 'failed'], true) ? absint($run['id'] ?? 0) : 0;
+// The finish control follows the recorded run status, not the presentation class:
+// a completed import that reported warnings still completed.
+$import_finished = 'completed' === sanitize_key((string) ($run['status'] ?? ''));
 ?>
-<div class="mds3-migration-status-panel is-<?php echo esc_attr($status_class); ?>"<?php echo $is_running ? ' data-mds3-migration-job="1" data-run-id="' . esc_attr(absint($run['id'] ?? 0)) . '" data-auto-run="1"' : ''; ?>>
+<div class="mds3-migration-status-panel is-<?php echo esc_attr($status_class); ?>"<?php echo $auto_run ? ' data-mds3-migration-job="1" data-run-id="' . esc_attr(absint($run['id'] ?? 0)) . '" data-auto-run="1"' : ''; ?>>
     <div class="mds3-card-heading">
         <div>
             <h2><?php echo esc_html($summary['title'] ?? __('Latest Import', 'million-dollar-script')); ?></h2>
@@ -53,6 +57,12 @@ $continue_run_id = in_array((string) ($summary['status_class'] ?? ''), ['running
             <dt><?php esc_html_e('Completed', 'million-dollar-script'); ?></dt>
             <dd><?php echo esc_html($summary['completed_at'] ?? ''); ?></dd>
         </div>
+        <?php
+        // A run left by an earlier build is worth naming, because the numbers above were
+        // written under that build's rules. It is not a metric, so it is not in a metric
+        // box: the sentence comes from the summary and appears with the actions it belongs
+        // to. When both versions are the same there is nothing to say.
+        ?>
     </dl>
 
     <?php if ($is_resumable) : ?>
@@ -66,14 +76,19 @@ $continue_run_id = in_array((string) ($summary['status_class'] ?? ''), ['running
             </div>
             <p data-mds3-migration-progress-message>
                 <?php
-                echo esc_html(sprintf(
-                    /* translators: 1: processed rows, 2: source rows */
-                    __('Processed %1$d of %2$d migration work items.', 'million-dollar-script'),
-                    absint($summary['processed_total'] ?? 0),
-                    absint($summary['source_total'] ?? 0)
-                ));
+                $progress_text = trim((string) ($summary['progress_text'] ?? ''));
+                if ('' !== $progress_text) {
+                    echo esc_html($progress_text);
+                }
                 ?>
             </p>
+        </div>
+    <?php endif; ?>
+
+    <?php $older_build_note = trim((string) ($summary['older_build_note'] ?? '')); ?>
+    <?php if ('' !== $older_build_note) : ?>
+        <div class="notice notice-info inline">
+            <p><?php echo esc_html($older_build_note); ?></p>
         </div>
     <?php endif; ?>
 
@@ -86,7 +101,7 @@ $continue_run_id = in_array((string) ($summary['status_class'] ?? ''), ['running
                 'source_prefix' => (string) ($run['source_prefix'] ?? ''),
             ], (string) ($summary['action_label'] ?? __('Run import again', 'million-dollar-script')), !empty($summary['needs_attention']) ? 'button-primary' : 'button-secondary');
             ?>
-            <?php if ($is_running) : ?>
+            <?php if ($auto_run) : ?>
                 <?php
                 $this->inline_post_button('mds3_pause_migration_import', 'mds3_pause_migration_import', [
                     'run_id' => absint($run['id'] ?? 0),
@@ -94,7 +109,19 @@ $continue_run_id = in_array((string) ($summary['status_class'] ?? ''), ['running
                 ], __('Pause', 'million-dollar-script'), 'button-secondary');
                 ?>
             <?php endif; ?>
+            <?php if ($can_retry) : ?>
+                <?php // Opt-in, off by default: a run that stopped may have stopped for a reason. ?>
+                <label class="mds3-migration-auto-retry">
+                    <input type="checkbox" data-mds3-migration-auto-retry />
+                    <span><?php esc_html_e("Keep going on my own if a batch stops with an error", 'million-dollar-script'); ?></span>
+                </label>
+                <p class="description"><?php esc_html_e('Left off, each stopped batch is reported and you choose Process next batch again. Turn this on for a large site on shared hosting where batches stop for unimportant reasons; it stops trying after three in a row either way.', 'million-dollar-script'); ?></p>
+            <?php endif; ?>
             <span><?php esc_html_e('Batches keep Million Dollar Script 2 tables intact and update existing Million Dollar Script records through the migration map.', 'million-dollar-script'); ?></span>
+            <?php if ($import_finished) : ?>
+                <?php // The import is done and the wizard has no other way out of it (Vikunja #31 item 5). ?>
+                <a class="button button-primary" href="<?php echo esc_url(admin_url('admin.php?page=mds3')); ?>"><?php esc_html_e('Open the dashboard', 'million-dollar-script'); ?></a>
+            <?php endif; ?>
         <?php else : ?>
             <a class="button button-primary" href="<?php echo esc_url(admin_url('admin.php?page=mds3-setup')); ?>"><?php esc_html_e('Enable Classic Pixel Grid', 'million-dollar-script'); ?></a>
             <span><?php esc_html_e('Classic Pixel Grid is required before migration can continue.', 'million-dollar-script'); ?></span>

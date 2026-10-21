@@ -11,6 +11,7 @@ use MillionDollarScript\V3\Extensions\ExtensionSupport;
 
 use MillionDollarScript\V3\Commerce\Payments;
 use MillionDollarScript\V3\Commerce\Currency;
+use MillionDollarScript\V3\Media\PlacementRepository;
 use MillionDollarScript\V3\Orders\OrderPlacementMover;
 use MillionDollarScript\V3\Orders\OrderRepository;
 use MillionDollarScript\V3\Orders\OrderRenewal;
@@ -42,6 +43,69 @@ trait HandlesOrderAdminActions {
 
         wp_safe_redirect(admin_url('admin.php?page=mds3-orders&order_id=' . $order_id));
         exit;
+    }
+
+    /**
+     * Publish or take down what a paid order is showing on the grid.
+     *
+     * Payment and publication are different questions, and the older plugin knew that: an
+     * order could be paid and still read "Not Yet Published" to its owner. The status
+     * control above answers the money; this answers whether the artwork is up. A site that
+     * reviews uploads before they appear - by grid setting, or because a migrated record
+     * arrived unapproved - needs a way forward, and a paid order needs a way back down
+     * without anyone touching the money state or cancelling an order that is settled.
+     *
+     * Only a paid order is offered this, and only a paid order acts on it: if the state
+     * moved between the page load and the click, the redirect shows the current truth
+     * instead of publishing something nobody has paid for.
+     */
+    public function publish_placement() {
+        $this->set_placement_publication('active');
+    }
+
+    public function unpublish_placement() {
+        $this->set_placement_publication('pending');
+    }
+
+    private function set_placement_publication($status) {
+        $order_id = absint($_POST['order_id'] ?? 0);
+        $action = 'active' === $status ? 'mds3_publish_placement' : 'mds3_unpublish_placement';
+        check_admin_referer($action . '_' . $order_id);
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('Permission denied.', 'million-dollar-script'));
+        }
+
+        $order = $order_id ? (new OrderRepository())->find($order_id) : null;
+        if ($order) {
+            $this->apply_placement_publication($order, $status);
+        }
+
+        wp_safe_redirect(admin_url('admin.php?page=mds3-orders&order_id=' . $order_id));
+        exit;
+    }
+
+    /**
+     * Change what a settled order is showing. Split from the request handling so the rule
+     * itself can be checked: only a paid order has artwork to publish, and an order whose
+     * money state moved between the page load and the click must not be published by an
+     * old page. Returns whether anything changed.
+     *
+     * The change is made explicitly, so a grid set to review paid uploads does not hold it
+     * back: that setting decides what a payment does on its own, and it must not also veto
+     * the approval it is asking somebody to make.
+     */
+    private function apply_placement_publication(array $order, $status): bool
+    {
+        if ('paid' !== (string) ($order['status'] ?? '')) {
+            return false;
+        }
+
+        $order_id = absint($order['id'] ?? 0);
+        if (!$order_id) {
+            return false;
+        }
+
+        return (new PlacementRepository())->update_status_by_order($order_id, sanitize_key((string) $status), true);
     }
 
     public function bulk_order_status() {

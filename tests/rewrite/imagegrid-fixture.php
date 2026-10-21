@@ -16,7 +16,11 @@ if (!defined('ABSPATH')) {
 }
 
 if (!class_exists('\\MillionDollarScript\\Extensions\\ImageGrid\\Main')) {
-    throw new RuntimeException('ImageGrid fixture requires the mds-imagegrid extension to be active.');
+    // A run that cannot exercise an extension has to say which one, and where it is
+    // exercised, instead of reporting a failure: the extension gate activates every
+    // extension before its fixtures run, and that is where this belongs.
+    fwrite(STDERR, "MDS3-SKIP: needs mds-imagegrid active; scripts/mds3-extensions-gate.sh activates it and runs this fixture there.\n");
+    return;
 }
 
 if (!class_exists('MDS3_ImageGrid_Fixture_Client')) {

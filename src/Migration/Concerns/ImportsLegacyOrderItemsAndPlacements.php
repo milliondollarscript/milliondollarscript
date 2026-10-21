@@ -65,7 +65,7 @@ trait ImportsLegacyOrderItemsAndPlacements {
                 continue;
             }
 
-            $wpdb->insert(DB::table('order_items'), [
+            $item_id = $this->migration_insert(DB::table('order_items'), [
                 'order_id' => $target_order_id,
                 'grid_id' => absint($block['grid_id'] ?? 0),
                 'block_id' => $target_block_id,
@@ -84,9 +84,9 @@ trait ImportsLegacyOrderItemsAndPlacements {
                     'height' => absint($block['height'] ?? 0),
                 ]),
                 'created_at' => current_time('mysql', true),
-            ]);
+            ], 'order_item', $legacy_order_id . ':' . $legacy_block_id);
 
-            if ($wpdb->insert_id) {
+            if ($item_id) {
                 $count++;
             }
         }
@@ -100,11 +100,90 @@ trait ImportsLegacyOrderItemsAndPlacements {
             return 0;
         }
 
+        $this->release_deleted_page_links();
+
         $count = 0;
         foreach ($this->legacy_rows('orders', ['order_id']) as $order) {
             if ($this->import_placement_row($order)) {
                 $count++;
             }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Whether a migrated creative comes out showing.
+     *
+     * The older plugin kept the money question and the showing question apart on purpose.
+     * mds.orders.status is payment. mds.orders.approved is the site owner's review
+     * decision, seeded from the grid's AUTO_APPROVE when the blocks were reserved
+     * (Classes/Orders/Blocks.php:333), and the customer copy said so in plain words:
+     * "Your order has been received and is pending approval. Your order will be published
+     * as soon as the payment is cleared." A PAID order could legitimately sit unapproved.
+     *
+     * This plugin asks the same question one way - a placement is active, or pending until
+     * someone publishes it - so the paid path can no longer answer it from payment alone.
+     * Where the older site positively recorded that it was holding a record, the imported
+     * placement stays pending: a site does not start showing work its owner was reviewing,
+     * and the record lands in a queue with a control to publish it.
+     *
+     * Only a recorded no holds a record. mds.orders.published is deliberately NOT a gate:
+     * it is written as 'N' whenever an order is created (Classes/Orders/Orders.php:843) and
+     * a paid ad on an older site may simply never have had that flag flipped. An advertiser
+     * who paid and then watched their ad disappear after an update is the worse of the two
+     * mistakes, so the unapproved flag holds and the published flag is only ever reported.
+     */
+    private function placement_import_status(array $order, $legacy_order_id) {
+        $status = self::placement_status($order['status'] ?? '', $this->legacy_order_paid((int) ($order['order_id'] ?? 0), (int) ($order['ad_id'] ?? 0)));
+        if ('active' !== $status || !$this->legacy_record_is_held($order)) {
+            return $status;
+        }
+
+        $this->record_migration_repair('placement', $legacy_order_id, __('Held for review: the older site recorded this order as not approved.', 'million-dollar-script'));
+
+        return 'pending';
+    }
+
+    /**
+     * True only when the source row says no. An empty column is not a no - older installs
+     * left it unset, and treating unset as a refusal would hide paid ads.
+     */
+    private function legacy_record_is_held(array $order): bool
+    {
+        $approved = strtoupper(trim((string) ($order['approved'] ?? '')));
+
+        return in_array($approved, ['N', 'NO', '0'], true);
+    }
+
+    /**
+     * Free advertiser-page ids that no longer name a page.
+     *
+     * A migration attempt that stopped partway can leave placements pointing at
+     * pages that its cleanup then removed. The dead ids stay claimed, so when a
+     * later run creates a page and WordPress hands out that same post id, the
+     * unique link rejects it and the ad is left with no page at all: on the
+     * customer's site that cost 35 of 101 ads their page (Vikunja #30).
+     */
+    private function release_deleted_page_links() {
+        global $wpdb;
+
+        $page_type = \MillionDollarScript\V3\Media\AdvertiserPageManager::POST_TYPE;
+        $count = (int) $wpdb->query(
+            'UPDATE ' . DB::table('placements') . ' p LEFT JOIN ' . $wpdb->posts . ' o ON o.ID = p.public_post_id'
+            . " SET p.public_post_id = NULL WHERE p.public_post_id IS NOT NULL AND (o.ID IS NULL OR o.post_type NOT IN ('" . $page_type . "', 'mds-pixel'))"
+        );
+        if ($count) {
+            $this->record_migration_repair(
+                'placement',
+                'page-links',
+                sprintf(_n(
+                    '%s page link pointed at a page that no longer exists; it was cleared so a page could be created again.',
+                    '%s page links pointed at pages that no longer exist; they were cleared so pages could be created again.',
+                    $count,
+                    'million-dollar-script'
+                ), number_format_i18n($count))
+            );
         }
 
         return $count;
@@ -159,6 +238,9 @@ trait ImportsLegacyOrderItemsAndPlacements {
             // concise heading independently.
             $popup_text = wp_kses_post((string) ($legacy_post->post_title ?? ''));
         }
+        // The full ad copy always goes to popup_text (longtext); alt_text is only
+        // ever a short description, so the two are prepared separately.
+        $popup_text_value = wp_kses_post($popup_text ?: $alt);
         $payload = [
             'grid_id' => absint($rect['grid_id'] ?? 0),
             'block_id' => !empty($rect['block_id']) ? absint($rect['block_id']) : null,
@@ -170,10 +252,10 @@ trait ImportsLegacyOrderItemsAndPlacements {
             'width' => max(1, absint($rect['width'] ?? 1)),
             'height' => max(1, absint($rect['height'] ?? 1)),
             'fit_mode' => 'cover',
-            'link_url' => esc_url_raw($link ?: ($ad_meta['url'] ?? '')),
-            'alt_text' => $alt_text,
-            'popup_text' => wp_kses_post($popup_text ?: $alt),
-            'status' => self::placement_status($order['status'] ?? ''),
+            'link_url' => $this->placement_link_url($link, (string) ($ad_meta['url'] ?? ''), $legacy_order_id),
+            'alt_text' => $this->placement_alt_text($alt_text, wp_strip_all_tags($popup_text_value), (string) ($title_resolution['title'] ?? ''), $legacy_order_id),
+            'popup_text' => $popup_text_value,
+            'status' => $this->placement_import_status($order, $legacy_order_id),
             'sort_order' => 0,
             'updated_at' => current_time('mysql', true),
         ];
@@ -189,11 +271,12 @@ trait ImportsLegacyOrderItemsAndPlacements {
             }
         }
         if ($target_id && $this->target_exists('placements', $target_id)) {
-            $wpdb->update(DB::table('placements'), $payload, ['id' => $target_id]);
+            if (!$this->migration_update(DB::table('placements'), $payload, ['id' => $target_id], 'placement', $legacy_order_id)) {
+                return 0;
+            }
         } else {
             $payload['created_at'] = current_time('mysql', true);
-            $wpdb->insert(DB::table('placements'), $payload);
-            $target_id = absint($wpdb->insert_id);
+            $target_id = $this->migration_insert(DB::table('placements'), $payload, 'placement', $legacy_order_id);
         }
 
         if ($target_id) {
@@ -221,5 +304,104 @@ trait ImportsLegacyOrderItemsAndPlacements {
         }
 
         return $target_id;
+    }
+
+    /**
+     * A usable link for the placement, from the legacy advertiser-link column and
+     * then from the ad record.
+     *
+     * MDS2 stores whatever the site owner typed into that field, so a value that is
+     * not a URL (ad copy, a note, a file path) is reported and left out rather than
+     * stored as a broken link - or, once it overflowed the link column, taking the
+     * whole placement with it. A bare domain keeps working by gaining a scheme, which
+     * is also reported.
+     *
+     * The 500-character limit is the link_url column in src/Setup/InstallerSchema.php;
+     * it is handled here rather than by widening the column, because a value that long
+     * is not a usable link.
+     */
+    private function placement_link_url($legacy_value, string $ad_meta_url, $legacy_order_id): string
+    {
+        $limit = 500;
+        foreach ([(string) $legacy_value, $ad_meta_url] as $candidate) {
+            $candidate = trim((string) $candidate);
+            if ('' === $candidate) {
+                continue;
+            }
+
+            if (
+                !preg_match('#^[a-z][a-z0-9+.\-]*://#i', $candidate)
+                && preg_match('~^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}([/?#]|$)~i', $candidate)
+            ) {
+                $this->record_migration_repair('placement', $legacy_order_id, sprintf('The advertiser link "%s" had no protocol, so https:// was added.', self::migration_text_excerpt($candidate)));
+                $candidate = 'https://' . $candidate;
+            }
+
+            $url = esc_url_raw($candidate);
+            if (filter_var($url, FILTER_VALIDATE_URL)) {
+                if (strlen($url) > $limit) {
+                    $this->record_migration_repair('placement', $legacy_order_id, sprintf('The advertiser link is %d characters, longer than the link field allows, so the link was not imported and the placement was.', strlen($url)));
+
+                    return '';
+                }
+
+                return $url;
+            }
+
+            $this->record_migration_repair('placement', $legacy_order_id, sprintf('The advertiser link "%s" is not a link, so it was not imported.', self::migration_text_excerpt($candidate)));
+        }
+
+        return '';
+    }
+
+    /**
+     * Short alt text that fits the alt column.
+     *
+     * MDS2 copied the entire ad text into blocks.alt_text, which both overflowed the
+     * column (failing the insert and losing the placement outright, 39 of them on one
+     * migrated site) and put paragraphs into an image alt attribute. The full copy
+     * stays in popup_text; an oversized alt is replaced with the same concise heading
+     * the advertiser page uses, and the substitution is reported.
+     *
+     * The 500-character limit is the alt_text column in src/Setup/InstallerSchema.php.
+     * The column is deliberately not widened: alt_text is surfaced as an image alt and
+     * as the advertiser page heading, so multi-paragraph ad prose does not belong
+     * there - the full copy already has a home in popup_text (longtext).
+     */
+    private function placement_alt_text(string $alt_text, string $popup_text, string $heading, $legacy_order_id): string
+    {
+        $limit = 500;
+        if ('' === $alt_text || self::migration_text_length($alt_text) <= $limit) {
+            return $alt_text;
+        }
+
+        $short = trim($heading);
+        if ('' === $short) {
+            $short = trim(wp_strip_all_tags($popup_text));
+        }
+        if (self::migration_text_length($short) > $limit) {
+            $short = (function_exists('mb_substr') ? mb_substr($short, 0, $limit - 1) : substr($short, 0, $limit - 1)) . '…';
+        }
+
+        $this->record_migration_repair('placement', $legacy_order_id, sprintf(
+            'The alt text held the full ad text (%d characters), which does not fit the alt field. The complete copy was kept as the popup text and the alt was shortened to %d characters.',
+            self::migration_text_length($alt_text),
+            self::migration_text_length($short),
+        ));
+
+        return $short;
+    }
+
+    private static function migration_text_length(string $text): int
+    {
+        return function_exists('mb_strlen') ? mb_strlen($text) : strlen($text);
+    }
+
+    /**
+     * A value quoted in the run report stays short enough to read in a list.
+     */
+    private static function migration_text_excerpt(string $text): string
+    {
+        return self::migration_text_length($text) <= 80 ? $text : (function_exists('mb_substr') ? mb_substr($text, 0, 79) : substr($text, 0, 79)) . '…';
     }
 }

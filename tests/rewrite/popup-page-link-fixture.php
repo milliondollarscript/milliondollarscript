@@ -1,6 +1,17 @@
 <?php
 /**
- * WP-CLI fixture: popup full-page link, including legacy MDS2 page fallback.
+ * WP-CLI fixture: what a grid popup and a placement click do about the advertiser's
+ * own page, and how far the popup text is shortened.
+ *
+ * This used to carry a second story as well - falling back to the older plugin's
+ * pixel page when a migrated ad had no MDS 3.0 page. That fallback was removed on
+ * purpose (MDS 3.0 does not read Million Dollar Script 2 tables outside a
+ * migration), so the page link now resolves through the MDS 3.0 advertiser page
+ * the site itself publishes. What remains protected here is the part that has
+ * always mattered: the popup link toggle gates the link, a placement that is not
+ * on the grid gets no link, a limited popup is shortened at a word boundary while
+ * the advertiser page keeps the full text, and a click mode that asks for a page
+ * the site does not have falls back to the popup rather than to a dead link.
  *
  * Usage:
  * wp --path=/var/www/html eval-file wp-content/plugins/million-dollar-script/tests/rewrite/popup-page-link-fixture.php
@@ -8,9 +19,10 @@
 
 use MillionDollarScript\V3\Grid\GridAjax;
 use MillionDollarScript\V3\Grid\GridRepository;
+use MillionDollarScript\V3\Grid\PopupText;
 use MillionDollarScript\V3\Media\AdvertiserPageManager;
+use MillionDollarScript\V3\Media\PlacementFieldContract;
 use MillionDollarScript\V3\Media\PlacementRepository;
-use MillionDollarScript\V3\Migration\MigrationMap;
 use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Support\DB;
 
@@ -21,31 +33,29 @@ if (!defined('ABSPATH')) {
 $original_settings = get_option('mds3_settings', []);
 $original_settings = is_array($original_settings) ? $original_settings : [];
 
+/**
+ * Site settings as an advertiser-page site would have them, with one override
+ * applied per call.
+ */
 function popup_fixture_settings(array $overrides = []) {
-    $settings = wp_parse_args(get_option('mds3_settings', []), SettingsSchema::defaults());
-    $settings['mds-pixel-template'] = 'no';
+    $settings = wp_parse_args((array) get_option('mds3_settings', []), SettingsSchema::defaults());
+    $settings['mds-pixel-template'] = 'yes';
     $settings['advertiser-page-popup-link'] = 'yes';
+
     return array_merge($settings, $overrides);
 }
 
-function popup_fixture_payload($placement, array $settings, array $legacy_urls = []) {
+/**
+ * The grid payload for one placement, through the class that serves it.
+ */
+function popup_fixture_payload(array $placement, array $settings) {
     static $ref = null;
     if (null === $ref) {
         $ref = new ReflectionMethod(GridAjax::class, 'placement_payload');
         $ref->setAccessible(true);
     }
 
-    return $ref->invoke(new GridAjax(), $placement, $settings, null, null, $legacy_urls);
-}
-
-function popup_fixture_legacy_helper(array $settings, array $placement_ids) {
-    static $ref = null;
-    if (null === $ref) {
-        $ref = new ReflectionMethod(GridAjax::class, 'legacy_popup_page_urls');
-        $ref->setAccessible(true);
-    }
-
-    return $ref->invoke(new GridAjax(), $settings, $placement_ids);
+    return $ref->invoke(new GridAjax(), $placement, $settings);
 }
 
 function get_grid_fixture_setting($grid_id, $key) {
@@ -56,28 +66,16 @@ function get_grid_fixture_setting($grid_id, $key) {
 
 $grid = null;
 $placement_id = 0;
-$legacy_post_id = 0;
+$off_grid_id = 0;
+$page_post_id = 0;
 $fixture_attachment = 0;
 
 try {
-    // Stand-in for the MDS2 pixel CPT, which the migration leaves live.
-    if (!post_type_exists('mds-pixel')) {
-        register_post_type('mds-pixel', [
-            'label' => 'Popup Fixture Pixel',
-            'public' => true,
-            'supports' => ['title'],
-        ]);
-    }
-
-    $legacy_post_id = wp_insert_post([
-        'post_type' => 'mds-pixel',
-        'post_status' => 'publish',
-        'post_title' => 'Popup Fixture Pixel Page',
-        'post_name' => 'popup-page-link-fixture-' . wp_generate_password(6, false, false),
-    ]);
-    if (is_wp_error($legacy_post_id)) {
-        throw new RuntimeException('Could not create legacy fixture pixel post: ' . $legacy_post_id->get_error_message());
-    }
+    // Advertiser pages are a site switch, and the page link is only published for
+    // a site that has it on.
+    $start_settings = wp_parse_args($original_settings, SettingsSchema::defaults());
+    $start_settings['mds-pixel-template'] = 'yes';
+    update_option('mds3_settings', $start_settings, false);
 
     $fixture_attachment = wp_insert_attachment(['post_type' => 'attachment', 'post_status' => 'inherit'], '', 0);
     if (is_wp_error($fixture_attachment)) {
@@ -113,55 +111,49 @@ try {
         throw new RuntimeException('Fixture placement row was not found.');
     }
 
-    // Map the placement to the legacy pixel post the way the migration does.
-    (new MigrationMap())->remember($GLOBALS['wpdb']->prefix . 'mds_', 'placement', '900001', 'placement', $placement_id, ['legacy_ad_id' => $legacy_post_id]);
-
-    $expected_legacy_url = (string) get_permalink($legacy_post_id);
-    $legacy_urls = (new AdvertiserPageManager())->legacy_public_urls([$placement_id]);
-    if (!isset($legacy_urls[$placement_id]) || $expected_legacy_url !== (string) $legacy_urls[$placement_id]) {
-        throw new RuntimeException('Legacy page URL lookup did not resolve the mapped MDS2 pixel page.');
+    // The site's own page for this ad, published the way the plugin publishes it.
+    $page_post_id = (new AdvertiserPageManager())->synchronize($placement_id);
+    if (is_wp_error($page_post_id)) {
+        throw new RuntimeException('Could not publish the fixture advertiser page: ' . $page_post_id->get_error_message());
+    }
+    $expected_page_url = (string) get_permalink($page_post_id);
+    if ('' === $expected_page_url) {
+        throw new RuntimeException('The fixture advertiser page has no URL.');
+    }
+    if ($expected_page_url !== (string) (new AdvertiserPageManager())->public_url($placement_id)) {
+        throw new RuntimeException('The advertiser page for a placement did not resolve to the published page.');
     }
 
-    $settings = popup_fixture_settings();
-    $payload = popup_fixture_payload($placement, $settings, $legacy_urls);
-    if ($expected_legacy_url !== (string) ($payload['advertiser_page_url'] ?? '')) {
-        throw new RuntimeException('Popup payload did not fall back to the legacy MDS2 page URL: ' . var_export($payload['advertiser_page_url'] ?? null, true));
+    // A popup on a site with the link switched on points at that page.
+    $payload = popup_fixture_payload($placement, popup_fixture_settings());
+    if ($expected_page_url !== (string) ($payload['advertiser_page_url'] ?? '')) {
+        throw new RuntimeException('Popup payload did not link the advertiser page: ' . var_export($payload['advertiser_page_url'] ?? null, true));
     }
 
-    $helper_urls = popup_fixture_legacy_helper($settings, [$placement_id]);
-    if ($helper_urls !== $legacy_urls) {
-        throw new RuntimeException('Batch legacy lookup helper did not return the mapped URLs.');
-    }
-
-    // With MDS 3.0 pages enabled there is no legacy fallback.
-    $enabled_settings = popup_fixture_settings(['mds-pixel-template' => 'yes']);
-    if ([] !== popup_fixture_legacy_helper($enabled_settings, [$placement_id])) {
-        throw new RuntimeException('Legacy fallback leaked while MDS 3.0 advertiser pages are enabled.');
-    }
-
-    // The popup link toggle still gates everything.
-    $disabled_settings = popup_fixture_settings(['advertiser-page-popup-link' => 'no']);
-    $disabled_payload = popup_fixture_payload($placement, $disabled_settings);
-    if ('' !== (string) ($disabled_payload['advertiser_page_url'] ?? '')) {
+    // The popup link toggle still gates the link even when the page exists.
+    $off_payload = popup_fixture_payload($placement, popup_fixture_settings(['advertiser-page-popup-link' => 'no']));
+    if ('' !== (string) ($off_payload['advertiser_page_url'] ?? '')) {
         throw new RuntimeException('Popup page link ignored the advertiser-page-popup-link=no setting.');
     }
 
-    // An unmapped placement has no full page at all.
-    $unmapped_id = (new PlacementRepository())->create([
+    // An ad that is not on the grid has no page to link, so it stays unlinked.
+    $off_grid_id = (new PlacementRepository())->create([
         'grid_id' => $grid->id(),
         'attachment_id' => $fixture_attachment,
         'x' => 1,
         'y' => 0,
         'width' => 1,
         'height' => 1,
-        'status' => 'active',
+        'status' => 'pending',
     ]);
-    $unmapped = (new PlacementRepository())->find($unmapped_id);
-    $unmapped_payload = popup_fixture_payload($unmapped, $settings);
-    if ('' !== (string) ($unmapped_payload['advertiser_page_url'] ?? '')) {
-        throw new RuntimeException('Unmapped placement resolved an unexpected full page URL.');
+    if (is_wp_error($off_grid_id)) {
+        throw new RuntimeException('Could not create the off-grid fixture placement: ' . $off_grid_id->get_error_message());
     }
-    $GLOBALS['wpdb']->delete(DB::table('placements'), ['id' => absint($unmapped_id)]);
+    $off_grid = (new PlacementRepository())->find($off_grid_id);
+    $off_grid_payload = popup_fixture_payload($off_grid, popup_fixture_settings());
+    if ('' !== (string) ($off_grid_payload['advertiser_page_url'] ?? '')) {
+        throw new RuntimeException('A placement that is not on the grid resolved an advertiser page URL.');
+    }
 
     // Popup character limit: global setting, per-grid override, and the advertiser page keeps the full text.
     $long_text = 'Alpha bravo charlie delta echo foxtrot golf hotel india juliett';
@@ -177,14 +169,14 @@ try {
         throw new RuntimeException('popup-text-max-chars=0 should leave the popup text intact.');
     }
 
-    if (10 !== \MillionDollarScript\V3\Media\PlacementFieldContract::popup_display_max_chars(['popup-text-max-chars' => 20], ['popup_display_max_chars' => '10'])) {
+    if (10 !== PlacementFieldContract::popup_display_max_chars(['popup-text-max-chars' => 20], ['popup_display_max_chars' => '10'])) {
         throw new RuntimeException('Per-grid popup limit did not override the global limit.');
     }
-    if (20 !== \MillionDollarScript\V3\Media\PlacementFieldContract::popup_display_max_chars(['popup-text-max-chars' => 20], ['popup_display_max_chars' => ''])) {
+    if (20 !== PlacementFieldContract::popup_display_max_chars(['popup-text-max-chars' => 20], ['popup_display_max_chars' => ''])) {
         throw new RuntimeException('Blank per-grid popup limit should inherit the global limit.');
     }
 
-    $override_limit = \MillionDollarScript\V3\Media\PlacementFieldContract::popup_display_max_chars(
+    $override_limit = PlacementFieldContract::popup_display_max_chars(
         popup_fixture_settings(['popup-text-max-chars' => 30]),
         ['popup_display_max_chars' => '11']
     );
@@ -194,35 +186,36 @@ try {
     }
 
     // The full-page advertiser view renders from the stored text, not the popup payload.
-    if ($long_text !== \MillionDollarScript\V3\Grid\PopupText::plain($long_text)) {
+    if ($long_text !== PopupText::plain($long_text)) {
         throw new RuntimeException('Advertiser page text should stay intact.');
     }
 
     // Placement click mode: global setting, per-grid override, and the popup fallback.
-    $click_contract = \MillionDollarScript\V3\Media\PlacementFieldContract::class;
-    if ('popup' !== $click_contract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => ''])) {
+    if ('popup' !== PlacementFieldContract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => ''])) {
         throw new RuntimeException('Blank per-grid click mode should inherit the global popup mode.');
     }
-    if ('page' !== $click_contract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => 'page'])) {
+    if ('page' !== PlacementFieldContract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => 'page'])) {
         throw new RuntimeException('Per-grid click mode did not override the global setting.');
     }
-    if ('popup' !== $click_contract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => 'bogus'])) {
+    if ('popup' !== PlacementFieldContract::advertiser_page_click_mode(['advertiser-page-click-mode' => 'popup'], ['advertiser_page_click_mode' => 'bogus'])) {
         throw new RuntimeException('Unknown per-grid click mode should fall back to the global setting.');
     }
 
-    $default_click_payload = popup_fixture_payload($placement, $settings, $legacy_urls);
+    $default_click_payload = popup_fixture_payload($placement, popup_fixture_settings());
     if ('popup' !== (string) ($default_click_payload['advertiser_page_click'] ?? '')) {
         throw new RuntimeException('Placement clicks should default to the popup.');
     }
 
-    $page_click_payload = popup_fixture_payload($placement, popup_fixture_settings(['advertiser-page-click-mode' => 'page']), $legacy_urls);
-    if ('page' !== (string) ($page_click_payload['advertiser_page_click'] ?? '') || $expected_legacy_url !== (string) ($page_click_payload['advertiser_page_url'] ?? '')) {
+    $page_click_payload = popup_fixture_payload($placement, popup_fixture_settings(['advertiser-page-click-mode' => 'page']));
+    if ('page' !== (string) ($page_click_payload['advertiser_page_click'] ?? '') || $expected_page_url !== (string) ($page_click_payload['advertiser_page_url'] ?? '')) {
         throw new RuntimeException('Page click mode did not expose the advertiser page: ' . var_export($page_click_payload['advertiser_page_click'] ?? null, true));
     }
 
-    $page_click_unmapped_payload = popup_fixture_payload($unmapped, popup_fixture_settings(['advertiser-page-click-mode' => 'page']));
-    if ('popup' !== (string) ($page_click_unmapped_payload['advertiser_page_click'] ?? '')) {
-        throw new RuntimeException('A placement with no published page should keep the popup in page click mode.');
+    // Asking for a page this site does not publish must fall back to the popup,
+    // not send the visitor to a link that goes nowhere.
+    $page_click_off_grid_payload = popup_fixture_payload($off_grid, popup_fixture_settings(['advertiser-page-click-mode' => 'page']));
+    if ('popup' !== (string) ($page_click_off_grid_payload['advertiser_page_click'] ?? '') || '' !== (string) ($page_click_off_grid_payload['advertiser_page_url'] ?? '')) {
+        throw new RuntimeException('A placement with no published page did not keep the popup in page click mode.');
     }
 
     $stored_click_settings = (new GridRepository())->update($grid->id(), ['advertiser_page_click_mode' => 'bogus']);
@@ -237,19 +230,21 @@ try {
         throw new RuntimeException('The per-grid click mode did not persist.');
     }
 
-    echo "popup-page-link: ok (legacy fallback -> " . get_permalink($legacy_post_id) . "); unmapped placements stay unlinked\n";
+    echo 'popup-page-link: ok (page link -> ' . $expected_page_url . "); ads that are not on the grid stay unlinked\n";
 } finally {
     global $wpdb;
 
     if ($placement_id) {
         $wpdb->delete(DB::table('placements'), ['id' => absint($placement_id)]);
     }
-    $wpdb->delete(DB::table('migration_map'), ['mds3_id' => absint($placement_id)], ['%d']);
+    if ($off_grid_id) {
+        $wpdb->delete(DB::table('placements'), ['id' => absint($off_grid_id)]);
+    }
+    if ($page_post_id && !is_wp_error($page_post_id)) {
+        wp_delete_post(absint($page_post_id), true);
+    }
     if ($grid && !is_wp_error($grid)) {
         (new GridRepository())->delete($grid->id());
-    }
-    if ($legacy_post_id) {
-        wp_delete_post($legacy_post_id, true);
     }
     if ($fixture_attachment) {
         wp_delete_post($fixture_attachment, true);

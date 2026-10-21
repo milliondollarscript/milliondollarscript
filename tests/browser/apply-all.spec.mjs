@@ -1,12 +1,14 @@
 /**
- * Regression check for the "Apply to all modified pages" control in the MDS2
- * page-upgrade accordion (setup wizard and migration screen).
+ * Regression check for the parent checkbox shared by the two admin page
+ * accordions: "Apply to all modified pages" in the Million Dollar Script 2
+ * upgrade-in-place chooser, and "Create every additional page" in the chooser of
+ * optional pages. Both are on the setup wizard and the migration screen.
  *
- * The accordion markup and its inline script are rendered by
- * templates/admin/partials/mds2-page-upgrade-accordion.php. The fixture below
- * mirrors the rendered shape (one locked unmodified page, two modified pages);
- * the script under test is read out of that template at run time, so editing
- * the template changes this check.
+ * The markup is rendered by templates/admin/partials/mds2-page-upgrade-accordion.php
+ * and create-pages-accordion.php. The script under test is the one both include:
+ * it is read out of templates/admin/partials/choice-accordion-script.php at run
+ * time, so editing that script changes this check. The fixture below mirrors the
+ * rendered shape (one locked item, two free items).
  *
  * Run from the plugin repo root with the workspace Playwright install:
  *   node tests/browser/apply-all.spec.mjs
@@ -18,14 +20,13 @@ import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const template = fs.readFileSync(path.join(repoRoot, 'templates/admin/partials/mds2-page-upgrade-accordion.php'), 'utf8');
+const template = fs.readFileSync(path.join(repoRoot, 'templates/admin/partials/choice-accordion-script.php'), 'utf8');
 
 const script = template.match(/<script>([\s\S]*?)<\/script>/);
 if (!script) {
-    throw new Error('accordion template has no inline script');
+    throw new Error('the shared accordion script was not found where the accordions load it');
 }
-// The only PHP in the script is the list of extra form ids; none here.
-const js = script[1].replace(/<\?php[\s\S]*?\?>/, '[]');
+const js = script[1];
 
 const markup = `
 <div class="mds3-upgrade-accordion">

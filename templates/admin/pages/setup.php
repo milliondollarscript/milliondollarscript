@@ -8,6 +8,40 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// A block theme has no Appearance > Menus screen, so the wording and the link depend on the
+// theme in use (llm-task efdcfa60).
+$navigation_hint = \MillionDollarScript\V3\Setup\StarterNavigation::editor_hint();
+
+// One copy of the "your menu was left as it was" message, so the banner shown after a page
+// reload and the message the button reports cannot drift apart. The link is the plugin's own
+// documentation, where the steps for adding the pages to a menu by hand are written out
+// (efdcfa60).
+$navigation_docs_url = add_query_arg(
+    array(
+        'page' => 'mds3-docs',
+        'package' => 'million-dollar-script',
+        'doc' => 'setup',
+    ),
+    admin_url('admin.php')
+);
+$navigation_replace_label = __('Replace my existing navigation with the starter pages', 'million-dollar-script');
+
+// The sentence the step carries under its description. It is built once and shared with the
+// script below, so the text a site owner reads after pressing the button is the same text a
+// page refresh would show - they were drifting apart on the dev site (llm-task 4b4d2053).
+$navigation_review_info_html = sprintf(
+    /* translators: 1: link to the screen where this theme's navigation is edited */
+    __('Your existing navigation or occupied menu location was left as it is. Add the pages customers need - the grid page, the order page, and Manage Pixels and Upload - through %1$s when you want them in the site header.', 'million-dollar-script'),
+    '<a href="' . esc_url($navigation_hint['url']) . '">' . esc_html($navigation_hint['label']) . '</a>'
+);
+$navigation_kept_message = sprintf(
+    /* translators: 1: opening link tag, 2: closing link tag, 3: label of the option that writes the navigation */
+    __('Your navigation was left exactly as it was - nothing was added to it, replaced in it, or created by this step, because that is only done when you ask for it. To add the pages yourself, see %1$sAdding pages to your menu%2$s. To have them written for you, turn on “%3$s” and run this again: your current navigation is then replaced completely.', 'million-dollar-script'),
+    '<a href="' . esc_url($navigation_docs_url) . '">',
+    '</a>',
+    $navigation_replace_label
+);
 ?>
 <div class="wrap mds3-admin">
     <h1><?php esc_html_e('Setup', 'million-dollar-script'); ?></h1>
@@ -21,6 +55,7 @@ if (!defined('ABSPATH')) {
     <?php endif; ?>
 
     <?php $this->render_pages_created_notice(); ?>
+    <?php $this->render_pages_nothing_notice(); ?>
 
     <?php if (!empty($_GET['extensions_activated'])) : ?>
         <div class="notice notice-success inline">
@@ -36,17 +71,27 @@ if (!defined('ABSPATH')) {
         </div>
     <?php endif; ?>
 
-    <?php if (!empty($_GET['extension_errors'])) : ?>
-        <div class="notice notice-warning inline">
-            <p>
-                <?php
-                echo esc_html(sprintf(
-                    /* translators: %d: number of skipped extension actions */
-                    _n('%d selected extension needs attention before it can be activated.', '%d selected extensions need attention before they can be activated.', absint($_GET['extension_errors']), 'million-dollar-script'),
-                    absint($_GET['extension_errors'])
-                ));
-                ?>
-            </p>
+    <?php $extension_setup_result = is_array($extension_setup_result ?? null) ? $extension_setup_result : []; ?>
+    <?php if (!empty($extension_setup_result['blocked'])) : ?>
+        <div class="notice notice-error inline">
+            <p><strong><?php esc_html_e('These selected extensions could not be set up:', 'million-dollar-script'); ?></strong></p>
+            <ul>
+                <?php foreach ((array) $extension_setup_result['blocked'] as $extension_blocker) : ?>
+                    <li><?php echo esc_html((string) $extension_blocker); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($extension_setup_result['not_installed'])) : ?>
+        <div class="notice notice-info inline">
+            <p><strong><?php esc_html_e('These selected extensions were not activated:', 'million-dollar-script'); ?></strong></p>
+            <ul>
+                <?php foreach ((array) $extension_setup_result['not_installed'] as $extension_not_installed) : ?>
+                    <li><?php echo esc_html((string) $extension_not_installed); ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <p class="description"><?php esc_html_e('Nothing else changed on this site. You can install any of them from Extensions whenever you want them.', 'million-dollar-script'); ?></p>
         </div>
     <?php endif; ?>
 
@@ -56,6 +101,7 @@ if (!defined('ABSPATH')) {
 
     <?php $this->render_pages_created_notice(); ?>
     <?php $this->render_pages_failed_notice(); ?>
+    <?php $this->render_pages_nothing_notice(); ?>
 
     <?php if (!empty($_GET['pages_error'])) : ?>
         <div class="notice notice-error inline"><p><?php echo esc_html(sanitize_text_field(rawurldecode(wp_unslash($_GET['pages_error'])))); ?></p></div>
@@ -63,14 +109,16 @@ if (!defined('ABSPATH')) {
 
     <?php if (!empty($_GET['starter_site'])) : ?>
         <?php $starter_site_has_errors = !empty($starter_site_result['errors']); ?>
-        <?php $starter_site_navigation_needs_review = !empty($starter_site_result['status']['navigation_needs_review']); ?>
-        <div class="notice <?php echo esc_attr($starter_site_has_errors ? 'notice-warning' : 'notice-success'); ?> inline">
+        <?php $starter_site_navigation_needs_review = !empty($starter_site_result['status']['navigation_needs_review']) || !empty($starter_site_result['status']['navigation_untouched']); ?>
+        <div class="notice <?php echo esc_attr($starter_site_has_errors || $starter_site_navigation_needs_review ? 'notice-warning' : 'notice-success'); ?> inline">
             <p>
-                <?php echo esc_html($starter_site_has_errors
-                    ? __('Setup was saved, but some optional starter-site items need attention.', 'million-dollar-script')
-                    : ($starter_site_navigation_needs_review
-                        ? __('Starter pages are ready. Review the preserved navigation to add any links you want to publish.', 'million-dollar-script')
-                        : __('Starter pages and navigation are ready.', 'million-dollar-script'))); ?>
+                <?php if ($starter_site_has_errors) : ?>
+                    <p><?php esc_html_e('Setup was saved, but some optional starter-site items need attention.', 'million-dollar-script'); ?></p>
+                <?php elseif ($starter_site_navigation_needs_review) : ?>
+                    <p><?php echo wp_kses_post($navigation_kept_message); ?></p>
+                <?php else : ?>
+                    <p><?php esc_html_e('Starter pages and navigation are ready.', 'million-dollar-script'); ?></p>
+                <?php endif; ?>
             </p>
             <?php if ($starter_site_has_errors) : ?>
                 <ul>
@@ -78,6 +126,21 @@ if (!defined('ABSPATH')) {
                         <li><?php echo esc_html((string) $message); ?></li>
                     <?php endforeach; ?>
                 </ul>
+            <?php endif; ?>
+            <?php if (!empty($starter_site_result['navigation_note'])) : ?>
+                <?php $starter_navigation_note = is_array($starter_site_result['navigation_note']) ? $starter_site_result['navigation_note'] : []; ?>
+                <p>
+                    <?php
+                    $starter_navigation_items = absint($starter_navigation_note['items'] ?? 0);
+                    echo esc_html(sprintf(
+                        /* translators: 1: menu name, 2: number of menu items added, 3: where a site owner edits navigation in their theme */
+                        _n('Links to the starter pages were added to your existing menu “%1$s” (%2$d item). Remove or reorder them in %3$s.', 'Links to the starter pages were added to your existing menu “%1$s” (%2$d items). Remove or reorder them in %3$s.', $starter_navigation_items, 'million-dollar-script'),
+                        (string) ($starter_navigation_note['menu'] ?? ''),
+                        $starter_navigation_items,
+                        $navigation_hint['label']
+                    ));
+                    ?>
+                </p>
             <?php endif; ?>
         </div>
     <?php endif; ?>
@@ -168,7 +231,7 @@ if (!defined('ABSPATH')) {
         </div>
         <ol class="mds3-setup-steps">
             <li class="<?php echo esc_attr($setup_complete ? 'is-complete' : ($setup_ready ? 'is-ready-to-finish' : 'is-pending')); ?>">
-                <h2><?php esc_html_e('Setup Wizard', 'million-dollar-script'); ?></h2>
+                <h2><?php esc_html_e('Setup Wizard', 'million-dollar-script'); ?><?php $this->step_status($setup_complete ? 'complete' : 'pending'); ?></h2>
                 <p>
                     <?php
                     echo esc_html($setup_complete
@@ -196,7 +259,7 @@ if (!defined('ABSPATH')) {
                         ], $this);
                         ?>
                     </div>
-                    <details class="mds3-setup-advanced"<?php echo !empty($_GET['extension_errors']) ? ' open' : ''; ?>>
+                    <details class="mds3-setup-advanced"<?php echo !empty($extension_setup_result['blocked']) ? ' open' : ''; ?>>
                         <summary><?php esc_html_e('Site capabilities', 'million-dollar-script'); ?></summary>
                         <p><?php esc_html_e('Classic Pixel Grid is selected by default. Add optional capabilities only when this site needs them.', 'million-dollar-script'); ?></p>
                         <?php $this->setup_extension_selector($extension_choices, $selected_extensions, $extension_setup); ?>
@@ -215,13 +278,13 @@ if (!defined('ABSPATH')) {
             ?>
 
             <li class="is-complete">
-                <h2><?php esc_html_e('Core Plugin', 'million-dollar-script'); ?></h2>
+                <h2><?php esc_html_e('Core Plugin', 'million-dollar-script'); ?><?php $this->step_status('complete'); ?></h2>
                 <p><?php esc_html_e('Million Dollar Script database tables and core plugin services are available.', 'million-dollar-script'); ?></p>
             </li>
 
             <?php if ($grid_enabled) : ?>
                 <li class="<?php echo esc_attr($grid ? 'is-complete' : 'is-pending'); ?>">
-                    <h2><?php esc_html_e('First Grid', 'million-dollar-script'); ?></h2>
+                    <h2><?php esc_html_e('First Grid', 'million-dollar-script'); ?><?php $this->step_status($grid ? 'complete' : 'pending'); ?></h2>
                     <?php if ($grid) : ?>
                         <p>
                             <?php
@@ -284,6 +347,12 @@ if (!defined('ABSPATH')) {
                                             if (li) {
                                                 li.classList.remove('is-pending');
                                                 li.classList.add('is-complete');
+                                                var status = li.querySelector('[data-mds3-step-status]');
+                                                if (status) {
+                                                    status.className = 'mds3-setup-step-status is-complete';
+                                                    status.setAttribute('data-mds3-step-status', 'complete');
+                                                    status.textContent = 'Completed';
+                                                }
                                             }
                                             step.textContent = '';
                                             var info = document.createElement('p');
@@ -312,18 +381,32 @@ if (!defined('ABSPATH')) {
                     <?php endif; ?>
                 </li>
 
+                <?php $flow_pages = $this->order_flow_pages_missing(); ?>
                 <li class="<?php echo esc_attr($missing_pages ? 'is-pending' : 'is-complete'); ?>">
-                    <h2><?php esc_html_e('Standard Pages', 'million-dollar-script'); ?></h2>
-                    <?php if ($missing_pages) : ?>
+                    <h2><?php esc_html_e('Standard Pages', 'million-dollar-script'); ?><?php $this->step_status($missing_pages ? 'pending' : 'complete'); ?></h2>
+                    <?php if ($missing_pages || $flow_pages) : ?>
+                        <?php if ($missing_pages) : ?>
                         <p>
                             <?php
                             echo esc_html(sprintf(
-                                /* translators: %d: missing pages */
-                                __('%d standard page roles are missing. Existing assigned and migrated pages will be preserved.', 'million-dollar-script'),
-                                count($missing_pages)
+                                /* translators: %s: comma-separated list of missing page role names */
+                                __('These pages your store needs are not created yet: %s. The list under this step shows each role and the page that covers it. Existing assigned and migrated pages are preserved.', 'million-dollar-script'),
+                                implode(', ', array_values(array_map('strval', (array) $missing_pages)))
                             ));
                             ?>
                         </p>
+                        <?php endif; ?>
+                        <?php if ($flow_pages) : ?>
+                        <p>
+                            <?php
+                            echo esc_html(sprintf(
+                                /* translators: %s: comma-separated list of page step names such as Thank You, Payment */
+                                __('Not created, and an order reaches these steps: %s. Without them an order ends on the customer’s own order page, which shows the order but has no thank-you and no payment step of its own. Tick the ones you want and they are created as ordinary WordPress pages; leave them and nothing changes.', 'million-dollar-script'),
+                                implode(', ', $flow_pages)
+                            ));
+                            ?>
+                        </p>
+                        <?php endif; ?>
                         <?php $this->standard_pages_panel(false, [], 'setup'); ?>
                     <?php else : ?>
                         <p><?php esc_html_e('All standard Million Dollar Script page roles are mapped.', 'million-dollar-script'); ?></p>
@@ -335,12 +418,12 @@ if (!defined('ABSPATH')) {
                         <div class="mds3-starter-site-option__heading">
                             <h3><?php esc_html_e('Optional starter site', 'million-dollar-script'); ?></h3>
                             <?php if (!empty($starter_site_status['configured'])) : ?>
-                                <span class="mds3-inline-status is-ready"><?php echo esc_html(!empty($starter_site_status['navigation_needs_review'])
+                                <span class="mds3-inline-status is-ready" data-mds3-starter-site-chip><?php echo esc_html(!empty($starter_site_status['navigation_needs_review'])
                                     ? __('Review navigation', 'million-dollar-script')
                                     : __('Ready', 'million-dollar-script')); ?></span>
                             <?php endif; ?>
                         </div>
-                        <p><?php esc_html_e('Create editable Blog, Contact, and About pages plus navigation for Home, Blog, Order Pixels, Manage Pixels, Contact, and About. Existing pages, front-page choices, and assigned menus are preserved. The Contact page shows a clear fallback until the free Contact Form extension is active, then displays the form automatically.', 'million-dollar-script'); ?></p>
+                        <p><?php esc_html_e('Create editable Blog, Contact, and About pages. Navigation is written only when you tick the box below; until then your pages, your front-page choice and your menus are untouched. The Contact page shows a clear fallback until the free Contact Form extension is active, then displays the form automatically.', 'million-dollar-script'); ?></p>
                         <div class="mds3-starter-site-option__choice">
                             <button type="button" class="button" data-mds3-starter-site-run<?php disabled(!empty($missing_pages)); ?>>
                                 <?php echo esc_html(!empty($starter_site_status['configured'])
@@ -350,8 +433,28 @@ if (!defined('ABSPATH')) {
                             <span class="screen-reader-text" aria-live="polite" data-mds3-starter-site-status></span>
                         </div>
                         <?php if (!empty($missing_pages)) : ?>
-                            <p class="description"><?php esc_html_e('This button unlocks once the standard pages above are created.', 'million-dollar-script'); ?></p>
+                            <p class="description">
+                                <?php
+                                echo esc_html(sprintf(
+                                    /* translators: %s: comma-separated list of page role names that still have no page */
+                                    __('This needs those pages first: %s. Create them above and this becomes available.', 'million-dollar-script'),
+                                    implode(', ', array_values(array_map('strval', (array) $missing_pages)))
+                                ));
+                                ?>
+                            </p>
                         <?php endif; ?>
+                        <?php
+                        // Off unless the site owner asks for it: overwriting a menu they wrote is
+                        // something they choose, never something that happens beside them (efdcfa60).
+                        $navigation_replace_checked = 'replace' === (string) ($starter_site_status['navigation']['mode'] ?? 'keep');
+                        ?>
+                        <label class="mds3-starter-site-nav-mode">
+                            <span class="mds3-starter-site-nav-mode-row">
+                                <input type="checkbox" value="replace" data-mds3-starter-site-nav-replace<?php checked($navigation_replace_checked); ?>>
+                                <span class="mds3-starter-site-nav-mode-label"><?php echo esc_html($navigation_replace_label); ?></span>
+                            </span>
+                            <span class="description"><?php esc_html_e('Off by default. With it off your navigation keeps every link it has. With it on, the links your current navigation holds are removed and the starter pages are written in their place - your pages themselves are not deleted.', 'million-dollar-script'); ?></span>
+                        </label>
                         <div class="mds3-starter-site-result" data-mds3-starter-site-result hidden></div>
                         <script>
                             (function () {
@@ -362,6 +465,7 @@ if (!defined('ABSPATH')) {
                                 var btn = option.querySelector('[data-mds3-starter-site-run]');
                                 var result = option.querySelector('[data-mds3-starter-site-result]');
                                 var live = option.querySelector('[data-mds3-starter-site-status]');
+                                var navMode = option.querySelector('[data-mds3-starter-site-nav-replace]');
                                 if (!btn || !result || !window.ajaxurl) {
                                     return;
                                 }
@@ -373,6 +477,7 @@ if (!defined('ABSPATH')) {
                                     var body = new URLSearchParams();
                                     body.set('action', 'mds3_setup_starter_site');
                                     body.set('nonce', '<?php echo esc_js(wp_create_nonce("mds3_create_starter_site")); ?>');
+                                    body.set('navigation_mode', navMode && navMode.checked ? 'replace' : 'keep');
                                     fetch(window.ajaxurl, {
                                         method: 'POST',
                                         credentials: 'same-origin',
@@ -395,14 +500,37 @@ if (!defined('ABSPATH')) {
                                             if (errors.length) {
                                                 result.className = 'mds3-starter-site-result is-error';
                                                 result.textContent = 'Some starter items need attention: ' + errors.join(' ') + ' ' + 'Run again to repair.';
-                                            } else if (data.navigation_needs_review) {
+                                            } else if (data.navigation_replaced) {
                                                 result.className = 'mds3-starter-site-result is-success';
-                                                result.textContent = 'Starter pages are ready. Your existing navigation was preserved \u2014 add the starter pages through Appearance > Menus or the Site Editor when you want them in the header.';
+                                                result.textContent = 'Starter pages are ready, and your navigation now lists them.';
+                                            } else if (data.navigation_needs_review || data.navigation_untouched) {
+                                                result.className = 'mds3-starter-site-result is-warning';
+                                                result.innerHTML = <?php echo wp_json_encode($navigation_kept_message); ?>;
                                             } else {
                                                 result.className = 'mds3-starter-site-result is-success';
                                                 result.textContent = 'Starter pages and navigation are ready.';
                                             }
                                             live.textContent = result.textContent;
+                                            // The step's own information text must say what a page refresh
+                                            // would say now, not what it said when the page loaded - they
+                                            // disagreed on the dev site (llm-task 4b4d2053).
+                                            var info = option.querySelector('[data-mds3-starter-site-info]');
+                                            var chip = option.querySelector('[data-mds3-starter-site-chip]');
+                                            var navigationUnchanged = !!(data.navigation_needs_review || data.navigation_untouched);
+                                            if (info) {
+                                                if (navigationUnchanged) {
+                                                    info.innerHTML = <?php echo wp_json_encode($navigation_review_info_html); ?>;
+                                                    info.hidden = false;
+                                                } else {
+                                                    info.innerHTML = '';
+                                                    info.hidden = true;
+                                                }
+                                            }
+                                            if (chip) {
+                                                chip.textContent = navigationUnchanged
+                                                    ? <?php echo wp_json_encode(__('Review navigation', 'million-dollar-script')); ?>
+                                                    : <?php echo wp_json_encode(__('Ready', 'million-dollar-script')); ?>;
+                                            }
                                             btn.textContent = 'Repair missing starter items';
                                             option.classList.add('is-configured');
                                         })
@@ -421,14 +549,25 @@ if (!defined('ABSPATH')) {
                         </script>
                         <?php if (!empty($missing_pages)) : ?>
                             <p class="description"><?php esc_html_e('Create the missing standard pages first to enable this option.', 'million-dollar-script'); ?></p>
-                        <?php elseif (!empty($starter_site_status['navigation_needs_review'])) : ?>
-                            <p class="description"><?php esc_html_e('Your existing navigation or occupied menu location was preserved. Add the starter pages through Appearance > Editor or Appearance > Menus when you want them in the site header.', 'million-dollar-script'); ?></p>
                         <?php endif; ?>
+                        <p class="description" data-mds3-starter-site-info<?php echo empty($starter_site_status['navigation_needs_review']) ? ' hidden' : ''; ?>>
+                            <?php echo empty($starter_site_status['navigation_needs_review']) ? '' : wp_kses($navigation_review_info_html, array('a' => array('href' => array()))); ?>
+                        </p>
                     </div>
                 </li>
 
-                <li id="mds3-setup-commerce" class="is-complete">
-                    <h2><?php esc_html_e('Commerce', 'million-dollar-script'); ?></h2>
+            <?php
+            // A WooCommerce checkout is only finished when its own readiness list
+            // is clear; standalone/manual checkout needs nothing more here.
+            $commerce_needs_review = 'woocommerce' === $active_payment_provider && !empty(array_filter(
+                (array) ($payment_provider_readiness['items'] ?? []),
+                static function ($item) {
+                    return is_array($item) && empty($item['ready']);
+                }
+            ));
+            ?>
+                <li id="mds3-setup-commerce" class="<?php echo esc_attr($commerce_needs_review ? 'is-pending' : 'is-complete'); ?>">
+                    <h2><?php esc_html_e('Commerce', 'million-dollar-script'); ?><?php $this->step_status($commerce_needs_review ? 'pending' : 'complete'); ?></h2>
                     <?php if ('standalone' !== $active_payment_provider) : ?>
                         <p>
                             <?php
@@ -471,8 +610,8 @@ if (!defined('ABSPATH')) {
                 </li>
 
             <?php else : ?>
-                <li class="is-complete">
-                    <h2><?php esc_html_e('Classic Pixel Grid', 'million-dollar-script'); ?></h2>
+                <li class="is-pending">
+                    <h2><?php esc_html_e('Classic Pixel Grid', 'million-dollar-script'); ?><?php $this->step_status('pending'); ?></h2>
                     <p><?php esc_html_e('Classic Pixel Grid is disabled. Grid pages, order checkout, and Million Dollar Script 2 grid migration are hidden until you enable it in the site capabilities above.', 'million-dollar-script'); ?></p>
                 </li>
             <?php endif; ?>

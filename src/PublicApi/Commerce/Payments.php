@@ -82,6 +82,22 @@ final class Payments {
         return (bool) InternalPayments::mark_source_paid($source, $source_id, $context);
     }
 
+    /**
+     * Take an order forward when nothing is going to confirm the money: a bank transfer, a
+     * cheque, payment on collection, or an order with nothing to pay.
+     *
+     * A payment provider calls this when its own flow has stopped waiting, because a WooCommerce
+     * order paid by bank transfer sits awaiting payment until someone acts. Whether that is
+     * allowed is the site's decision, not the provider's - it comes from the site's manual
+     * payment setting, each grid's own review setting, the order's total, and whether this
+     * customer is allowed to order without paying. The order records which of those applied.
+     *
+     * @return bool true when the order was moved to paid
+     */
+    public static function accept_manual_payment($source, $source_id, array $context = []): bool {
+        return (bool) InternalPayments::accept_manual_payment($source, $source_id, $context);
+    }
+
     public static function mark_source_cancelled($source, $source_id, array $context = []): bool {
         return (bool) InternalPayments::mark_source_cancelled($source, $source_id, $context);
     }

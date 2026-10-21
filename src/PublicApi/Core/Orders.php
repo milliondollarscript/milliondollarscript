@@ -31,6 +31,22 @@ final class Orders {
     }
 
     /**
+     * Put an order's ad on the grid now, if every integration with a say agrees.
+     *
+     * An integration that answered the publish gate with a hold calls this when its
+     * own moment arrives - a reveal date, a renewal, a scheduling window. It asks the
+     * same question core asks at checkout, so a released ad goes through the same
+     * rules as one published then, and there is no second path that could disagree
+     * about what "published" means. It does not sell the pixel again and it does not
+     * change the order's payment or lifecycle fields.
+     *
+     * @return bool whether the ad was placed on the grid
+     */
+    public static function publish_ad($id, string $context = 'extension_ready'): bool {
+        return \MillionDollarScript\V3\Orders\PublishGate::publish(absint($id), $context);
+    }
+
+    /**
      * Return customer-safe orders for a verified user ID and/or email address.
      *
      * Callers must establish the principal before passing it here. Raw order

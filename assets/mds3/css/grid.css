@@ -138,6 +138,40 @@
     padding: 14px 20px 16px;
 }
 
+/* The one thing a returning customer needs first, above the instructions that explain
+   the steps to someone starting over. */
+.mds3-grid-resume {
+    align-items: center;
+    background: #eff6ff;
+    border-bottom: 1px solid #bfdbfe;
+    display: flex;
+    gap: 12px;
+    margin: 0;
+    padding: 12px 20px;
+}
+
+.mds3-grid-resume-link {
+    background: #1d4ed8;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 8px 14px;
+    text-decoration: none;
+}
+
+.mds3-grid-resume-link:hover,
+.mds3-grid-resume-link:focus-visible {
+    background: #1e3a8a;
+    color: #ffffff;
+}
+
+.mds3-theme-dark .mds3-grid-resume,
+.mds3-theme-dark .mds3-grid-order-help {
+    background: #172554;
+    border-bottom-color: #1e40af;
+}
+
 .mds3-grid-order-help strong {
     display: block;
     font-size: 14px;
@@ -167,15 +201,26 @@
 }
 
 .mds3-grid-shell.mds3-grid-responsive-height .mds3-grid-viewport {
+    /* The same cap the script applies, so a grid is never taller than the window
+       before the script has had a turn either: a box taller than the viewport
+       cannot be seen or scrolled to as a whole (llm-task 6c838ad8). */
     height: var(
         --mds3-grid-responsive-height,
-        min(var(--mds3-grid-height), calc((100vw - 32px) * var(--mds3-grid-height-ratio)))
+        min(
+            var(--mds3-grid-height),
+            calc((100vw - 32px) * var(--mds3-grid-height-ratio)),
+            calc(100vh - 140px)
+        )
     );
     min-height: min(
-        320px,
+        360px,
         var(
             --mds3-grid-responsive-height,
-            min(var(--mds3-grid-height), calc((100vw - 32px) * var(--mds3-grid-height-ratio)))
+            min(
+                var(--mds3-grid-height),
+                calc((100vw - 32px) * var(--mds3-grid-height-ratio)),
+                calc(100vh - 140px)
+            )
         )
     );
 }
@@ -204,6 +249,17 @@
 
 .mds3-grid-map .ol-viewport {
     background: var(--mds3-grid-panel);
+}
+
+/* A block this order selected, with the pointer over it: a click takes it back.
+   The pointing arrow is the point. The hand that offers to move the map cannot say which
+   block a click would drop, and at a normal zoom the difference was invisible, so removing
+   one selected block meant guessing. Dragging still pans and still shows the grabbing hand.
+   The badge colour mirrors --mds3-grid-accent; a data: URI cannot read a custom property. */
+.mds3-grid-map.mds3-grid-remove-target,
+.mds3-grid-map.mds3-grid-remove-target .ol-viewport,
+.mds3-grid-canvas.mds3-grid-remove-target {
+    cursor: url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'><path d='M3 2v17l4.6-4.4 3 6.4 2.8-1.3-3-6.2 6.2-.4z' fill='%23ffffff' stroke='%231f2937' stroke-width='1.4' stroke-linejoin='round'/><circle cx='19' cy='19' r='5.6' fill='%232563eb' stroke='%23ffffff' stroke-width='1.6'/><path d='M16.6 16.6 21.4 21.4M21.4 16.6 16.6 21.4' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round'/></svg>") 3 2, pointer;
 }
 
 .mds3-grid-viewport:focus-within,
@@ -280,6 +336,57 @@
     top: 5.25em;
 }
 
+/*
+ * One control rail rather than three separate boxes: zoom in, zoom out, and fit,
+ * evenly spaced in a single column at the top-left of the map - where the eye
+ * already goes for grid controls, and where it does not cover the selection or the
+ * order form. The control that folds them away lives above the grid instead.
+ */
+.mds3-grid-map .mds3-grid-controls {
+    align-content: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    left: 0.5em;
+    top: 0.5em;
+}
+
+.mds3-grid-map .mds3-grid-controls[hidden] {
+    display: none;
+}
+
+.mds3-grid-map .mds3-grid-controls-group {
+    align-content: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Inside the rail the controls are items, not panels of their own. */
+.mds3-grid-map .mds3-grid-controls .ol-zoom,
+.mds3-grid-map .mds3-grid-controls .mds3-fit-grid-control {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    position: static;
+}
+
+.mds3-grid-map .mds3-grid-controls .mds3-fit-grid-control button {
+    height: 32px;
+}
+
+.mds3-grid-controls-toggle-icon {
+    background:
+        radial-gradient(circle at 11px 4px, currentColor 3px, transparent 3.4px) left top / 16px 16px no-repeat,
+        radial-gradient(circle at 5px 12px, currentColor 3px, transparent 3.4px) left top / 16px 16px no-repeat,
+        linear-gradient(currentColor 0 0) left 4px / 16px 2px no-repeat,
+        linear-gradient(currentColor 0 0) left 11px / 16px 2px no-repeat;
+    display: block;
+    height: 16px;
+    width: 16px;
+}
+
 .mds3-grid-map .mds3-fit-grid-control button {
     overflow: visible;
     padding: 0;
@@ -303,7 +410,8 @@
     width: 16px;
 }
 
-.mds3-grid-map .mds3-fit-grid-control button::after {
+.mds3-grid-map .mds3-fit-grid-control button::after,
+.mds3-grid-map .mds3-grid-controls button::after {
     background: var(--mds3-grid-popover-bg);
     border: 1px solid var(--mds3-grid-popover-border);
     border-radius: 6px;
@@ -326,7 +434,9 @@
 }
 
 .mds3-grid-map .mds3-fit-grid-control button:hover::after,
-.mds3-grid-map .mds3-fit-grid-control button:focus-visible::after {
+.mds3-grid-map .mds3-fit-grid-control button:focus-visible::after,
+.mds3-grid-map .mds3-grid-controls button:hover::after,
+.mds3-grid-map .mds3-grid-controls button:focus-visible::after {
     opacity: 1;
 }
 
@@ -506,6 +616,12 @@
 @media (prefers-reduced-motion: reduce) {
     .mds3-grid-popover.mds3-grid-popover-animating {
         animation: none !important;
+    }
+
+    /* The busy ring stays - it is what tells you the press registered - but it stops turning. */
+    .mds3-reserve[aria-busy="true"]::before,
+    .mds3-placement-form button[aria-busy="true"]::before {
+        animation: none;
     }
 }
 
@@ -857,8 +973,49 @@
     background: #ffffff;
     border-top: 1px solid var(--mds3-grid-line-soft);
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     padding: 12px 20px;
+}
+
+/*
+ * The fold control sits at the left end of the row that already holds the grid's
+ * controls, and pushes everything else to the right where it was. It is styled as
+ * a control, not as an action: outlined like the rest of the grid's controls
+ * rather than filled like Reserve.
+ */
+.mds3-grid-actions .mds3-grid-controls-toggle {
+    background: var(--mds3-grid-bg);
+    border: 1px solid #cbd5e1;
+    color: var(--mds3-grid-text);
+    flex: 0 0 auto;
+    margin-inline-end: auto;
+    min-height: 36px;
+    padding: 0 10px;
+    width: 46px;
+}
+
+.mds3-grid-actions .mds3-grid-controls-toggle:hover,
+.mds3-grid-actions .mds3-grid-controls-toggle:focus,
+.mds3-grid-actions .mds3-grid-controls-toggle.is-folded:hover,
+.mds3-grid-actions .mds3-grid-controls-toggle.is-folded:focus {
+    /*
+     * The row's own hover rule fills these buttons with the accent colour, and the
+     * icon is drawn in the text colour - so tinting the icon accent too made it
+     * accent on accent and it simply vanished. On hover it inverts instead: accent
+     * fill, white icon, like every other control in the row.
+     */
+    background: var(--mds3-grid-accent-strong);
+    border-color: var(--mds3-grid-accent-strong);
+    color: var(--mds3-grid-button-text);
+    outline: 3px solid var(--mds3-grid-focus);
+    outline-offset: 1px;
+}
+
+.mds3-grid-actions .mds3-grid-controls-toggle.is-folded {
+    background: var(--mds3-grid-line-soft);
+    border-color: var(--mds3-grid-accent);
+    color: var(--mds3-grid-accent);
 }
 
 .mds3-grid-tools {
@@ -996,8 +1153,13 @@
     text-decoration: none;
 }
 
+/*
+ * The ring is generated, so without spacing the label sits right against it. The space
+ * goes on the ring itself, which works whether or not the button is a flex container.
+ */
 .mds3-reserve[aria-busy="true"]::before,
 .mds3-placement-form button[aria-busy="true"]::before {
+    margin-right: 8px;
     animation: mds3-spin 0.7s linear infinite;
     border: 2px solid currentColor;
     border-right-color: transparent;
@@ -1556,6 +1718,91 @@
 
 .mds3-panel-back {
     margin: 6px 0 0;
+}
+
+/*
+ * Where the customer's order stands. The block sits above the ad form because it is the
+ * first thing a customer wants to know when they open an order link. Colour is only used for
+ * the left accent: awaiting payment, showing, and finished are the three things worth
+ * signalling, and everything else comes from the theme tokens so the panel follows the
+ * plugin's own light and dark modes.
+ */
+.mds3-order-state {
+    --mds3-order-state-accent: var(--mds3-grid-muted);
+    background: var(--mds3-grid-panel);
+    border: 1px solid var(--mds3-grid-line-soft);
+    border-left: 3px solid var(--mds3-order-state-accent);
+    border-radius: 8px;
+    margin: 16px 0;
+    padding: 14px 16px;
+}
+
+.mds3-order-state p {
+    margin: 0;
+}
+
+.mds3-order-state p + p {
+    margin-top: 8px;
+}
+
+.mds3-order-state-headline {
+    color: var(--mds3-grid-text);
+    font-weight: 600;
+}
+
+.mds3-order-state-detail,
+.mds3-order-state-until {
+    color: var(--mds3-grid-muted);
+}
+
+.mds3-order-state-awaiting {
+    --mds3-order-state-accent: #b45309;
+}
+
+.mds3-order-state-live {
+    --mds3-order-state-accent: #15803d;
+}
+
+.mds3-order-state-closed {
+    --mds3-order-state-accent: #64748b;
+}
+
+.mds3-order-state-actions {
+    margin-top: 12px;
+}
+
+/*
+ * How to pay, in the site owner's own words, for the sites that take payment outside the
+ * plugin. It reads as something to copy details from rather than as another sentence of
+ * status: set slightly apart, with the same accent the state panel already carries.
+ */
+.mds3-order-state-payment {
+    border: 1px solid var(--mds3-grid-line-soft);
+    border-left: 3px solid var(--mds3-order-state-accent);
+    border-radius: 6px;
+    color: var(--mds3-grid-text);
+    margin-top: 12px;
+    padding: 10px 12px;
+}
+
+.mds3-order-state-payment p:first-child {
+    margin-top: 0;
+}
+
+.mds3-order-state-payment p:last-child {
+    margin-bottom: 0;
+}
+
+.mds3-theme-dark .mds3-order-state-awaiting {
+    --mds3-order-state-accent: #f59e0b;
+}
+
+.mds3-theme-dark .mds3-order-state-live {
+    --mds3-order-state-accent: #22c55e;
+}
+
+.mds3-theme-dark .mds3-order-state-closed {
+    --mds3-order-state-accent: #94a3b8;
 }
 
 .mds3-pagination {
@@ -2137,6 +2384,24 @@ body:has(.mds3-theme-light.mds3-page-panel) footer {
     background: #ffffff !important;
     border-color: #cbd5e1 !important;
     color: var(--mds3-grid-text) !important;
+}
+
+/* A light theme paints every control in this form with the same border, using !important,
+   so the rejected-control rule further up the file cannot change that border and the reason
+   text beside it loses to the page's own paragraph colour. Both belong here: on a light
+   site a refused field was marked to a screen reader and to nothing else. The ring is what
+   marks it visually - the border itself stays the theme's. */
+.mds3-theme-light .mds3-placement-form input[aria-invalid="true"],
+.mds3-theme-light .mds3-placement-form select[aria-invalid="true"],
+.mds3-theme-light .mds3-placement-form textarea[aria-invalid="true"] {
+    outline: 2px solid rgba(220, 38, 38, 0.55);
+    outline-offset: 1px;
+}
+
+.mds3-theme-light .mds3-placement-form .mds3-field-error {
+    border-left: 3px solid #dc2626 !important;
+    color: #b42318 !important;
+    font-weight: 600;
 }
 
 .mds3-theme-light .mds3-page-panel .button,

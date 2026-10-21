@@ -254,6 +254,7 @@ final class InstallerSchema {
             source_prefix varchar(191) NOT NULL,
             mode varchar(30) NOT NULL DEFAULT 'dry_run',
             status varchar(30) NOT NULL DEFAULT 'pending',
+            plugin_version varchar(40) NOT NULL DEFAULT '',
             totals longtext NULL,
             report longtext NULL,
             started_at datetime NULL,

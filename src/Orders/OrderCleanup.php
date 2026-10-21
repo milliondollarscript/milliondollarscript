@@ -97,12 +97,11 @@ final class OrderCleanup implements Component {
     private function stale_unpaid_order_ids($limit) {
         global $wpdb;
 
-        $settings = $this->settings();
         $clauses = [];
         $args = [];
         $now = gmdate('Y-m-d H:i:s');
 
-        $unconfirmed = $this->minutes($settings, 'minutes-unconfirmed');
+        $unconfirmed = self::unpaid_hold_minutes('reserved');
         if (0 !== $unconfirmed) {
             if (-1 === $unconfirmed) {
                 $clauses[] = 'o.status = %s';
@@ -116,7 +115,7 @@ final class OrderCleanup implements Component {
             }
         }
 
-        $confirmed = $this->minutes($settings, 'minutes-confirmed');
+        $confirmed = self::unpaid_hold_minutes('pending_payment');
         if (0 !== $confirmed) {
             if (-1 === $confirmed) {
                 $clauses[] = 'o.status = %s';
@@ -141,7 +140,7 @@ final class OrderCleanup implements Component {
     private function stale_status_order_ids(array $statuses, $setting_key, $limit) {
         global $wpdb;
 
-        $minutes = $this->minutes($this->settings(), $setting_key);
+        $minutes = self::hold_minutes($setting_key);
         if (0 === $minutes) {
             return [];
         }
@@ -195,14 +194,67 @@ final class OrderCleanup implements Component {
         return $changed;
     }
 
+    /**
+     * How long an order in this status keeps the space before the sweep releases it.
+     *
+     * The answer belongs to the settings, and every surface that talks about holding or
+     * returning a space has to read it from here - the sweep, an order row, and a block
+     * row cannot each keep their own idea of when the space comes back.
+     *
+     * @return int minutes of hold; 0 when the site never releases the space itself.
+     */
+    public static function unpaid_hold_minutes($status) {
+        $status = sanitize_key((string) $status);
+        if (!in_array($status, array('reserved', 'pending_payment'), true)) {
+            return 0;
+        }
+
+        return self::hold_minutes('pending_payment' === $status ? 'minutes-confirmed' : 'minutes-unconfirmed');
+    }
+
+    /**
+     * Read one of this component's own window settings (minutes-unconfirmed, minutes-confirmed,
+     * minutes-renew, minutes-cancel) as it is actually configured, including a site that has
+     * switched automatic expiry off.
+     *
+     * @return int minutes; 0 when nothing releases on this setting.
+     */
+    public static function hold_minutes($setting_key) {
+        $key = sanitize_key((string) $setting_key);
+        $defaults = SettingsSchema::defaults();
+        if (!array_key_exists($key, $defaults)) {
+            return 0;
+        }
+
+        $stored = get_option('mds3_settings', []);
+        $settings = wp_parse_args(is_array($stored) ? $stored : [], $defaults);
+
+        if ('yes' !== SettingsSchema::sanitize('expire-orders', $settings['expire-orders'] ?? 'yes')) {
+            return 0;
+        }
+
+        return (int) SettingsSchema::sanitize($key, $settings[$key] ?? $defaults[$key] ?? 0);
+    }
+
+    /**
+     * The moment an unpaid order gives up the space it holds, counted from $from_utc
+     * (when it entered the status it is waiting in). '' when nothing releases it.
+     */
+    public static function unpaid_hold_deadline($status, $from_utc) {
+        $minutes = self::unpaid_hold_minutes($status);
+        if (0 === $minutes) {
+            return '';
+        }
+
+        $from = $from_utc ? (int) strtotime((string) $from_utc) : 0;
+
+        return gmdate('Y-m-d H:i:s', ($from > 0 ? $from : time()) + ($minutes * MINUTE_IN_SECONDS));
+    }
+
     private function expiration_enabled() {
         $settings = $this->settings();
 
         return 'yes' === SettingsSchema::sanitize('expire-orders', $settings['expire-orders'] ?? 'yes');
-    }
-
-    private function minutes(array $settings, $key) {
-        return (int) SettingsSchema::sanitize($key, $settings[$key] ?? SettingsSchema::defaults()[$key] ?? 0);
     }
 
     private function settings() {

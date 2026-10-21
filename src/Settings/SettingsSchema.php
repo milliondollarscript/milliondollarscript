@@ -25,7 +25,7 @@ final class SettingsSchema {
                 ['key' => 'currency', 'label' => __('Default Currency', 'million-dollar-script'), 'type' => 'text', 'default' => 'USD', 'description' => __('Used for standalone/manual checkout. WooCommerce or another payment provider can lock this to the store currency.', 'million-dollar-script')],
                 ['key' => 'currency-symbol', 'label' => __('Currency Symbol', 'million-dollar-script'), 'type' => 'text', 'default' => '$', 'description' => __('Used with the default currency when no payment provider controls display currency.', 'million-dollar-script')],
                 ['key' => 'endpoint', 'label' => __('Legacy Endpoint Slug', 'million-dollar-script'), 'type' => 'text', 'default' => 'milliondollarscript', 'description' => __('Optional compatibility endpoint for links that used the plugin\'s older public URL. Current sites use pages, shortcodes, blocks, AJAX, and REST endpoints.', 'million-dollar-script')],
-                ['key' => 'theme_mode', 'label' => __('Theme Mode', 'million-dollar-script'), 'type' => 'select', 'default' => 'light', 'options' => ['system' => __('System', 'million-dollar-script'), 'light' => __('Light', 'million-dollar-script'), 'dark' => __('Dark', 'million-dollar-script')]],
+                ['key' => 'theme_mode', 'label' => __('Theme Mode', 'million-dollar-script'), 'type' => 'select', 'default' => 'light', 'options' => ['light' => __('Light', 'million-dollar-script'), 'dark' => __('Dark', 'million-dollar-script'), 'system' => __("Match the visitor's device", 'million-dollar-script')]],
                 ['key' => 'payment_provider', 'label' => __('Payment Provider', 'million-dollar-script'), 'type' => 'select', 'default' => 'standalone', 'options' => self::payment_provider_options(), 'description' => __('Extensions register available checkout adapters here. The core plugin keeps checkout routing provider-neutral.', 'million-dollar-script'), 'docs' => 'setup'],
             ],
             __('URLs & Redirects', 'million-dollar-script') => [
@@ -34,8 +34,9 @@ final class SettingsSchema {
                 ['key' => 'login-page', 'label' => __('Login Page URL', 'million-dollar-script'), 'type' => 'url', 'default' => ''],
                 ['key' => 'forgot-password-page', 'label' => __('Forgot Password Page URL', 'million-dollar-script'), 'type' => 'url', 'default' => ''],
                 ['key' => 'checkout-url', 'label' => __('Checkout URL', 'million-dollar-script'), 'type' => 'url', 'default' => ''],
+                ['key' => 'payment-instructions', 'label' => __('Payment Instructions', 'million-dollar-script'), 'type' => 'textarea', 'default' => ''],
                 ['key' => 'thank-you-page', 'label' => __('Thank You Page URL', 'million-dollar-script'), 'type' => 'url', 'default' => ''],
-                ['key' => 'confirm-orders', 'label' => __('Confirm Orders Page', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
+                ['key' => 'confirm-orders', 'label' => __('Ask Customers To Confirm Orders', 'million-dollar-script'), 'type' => 'select', 'default' => 'no', 'options' => ['yes', 'no'], 'description' => __('Sends customers to your Confirm Order page after they upload, so they review and confirm the order before it moves on. Needs a Confirm Order page; a site without one skips the step.', 'million-dollar-script')],
                 ['key' => 'enable-cloaking', 'label' => __('URL Cloaking', 'million-dollar-script'), 'type' => 'select', 'default' => 'YES', 'options' => ['YES', 'NO']],
                 ['key' => 'validate-link', 'label' => __('Validate Advertiser URLs', 'million-dollar-script'), 'type' => 'select', 'default' => 'NO', 'options' => ['YES', 'NO']],
                 ['key' => 'redirect-switch', 'label' => __('Redirect Available Blocks', 'million-dollar-script'), 'type' => 'select', 'default' => 'NO', 'options' => ['YES', 'NO']],
@@ -62,12 +63,15 @@ final class SettingsSchema {
                 ['key' => 'use-ajax', 'label' => __('Pixel Selection Method', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
                 ['key' => 'block-selection-mode', 'label' => __('Multi-block Selection', 'million-dollar-script'), 'type' => 'select', 'default' => 'YES', 'options' => ['YES' => __('Enabled', 'million-dollar-script'), 'NO' => __('Disabled', 'million-dollar-script')]],
                 ['key' => 'selection-adjacency-mode', 'label' => __('Selection Shape Rule', 'million-dollar-script'), 'type' => 'select', 'default' => 'ADJACENT', 'options' => ['ADJACENT' => __('Adjacency required', 'million-dollar-script'), 'RECTANGLE' => __('Square or rectangle required', 'million-dollar-script'), 'NONE' => __('None - blocks can be anywhere', 'million-dollar-script')]],
+                ['key' => 'selection-interior-click', 'label' => __('Clicking Inside a Selection', 'million-dollar-script'), 'type' => 'select', 'default' => 'EDGE', 'options' => ['EDGE' => __('Only the outer edge can be clicked off', 'million-dollar-script'), 'ANY' => __('Any block in the selection can be clicked off', 'million-dollar-script')]],
+                ['key' => 'grid-controls-button', 'label' => __('Offer To Hide Grid Controls', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes' => __('Offer the hide/show control', 'million-dollar-script'), 'no' => __('Keep the controls always visible', 'million-dollar-script')]],
                 ['key' => 'show_uploaded_image_in_advanced_mode', 'label' => __('Show Uploaded Image In Advanced Mode', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
                 ['key' => 'resize', 'label' => __('Resize Uploaded Pixels Automatically', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
                 ['key' => 'manage-pixels-grid-dropdown', 'label' => __('Show Grid Dropdown On Manage Pixels', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
                 ['key' => 'invert-pixels', 'label' => __('Invert Pixel Selection', 'million-dollar-script'), 'type' => 'select', 'default' => 'no', 'options' => ['yes', 'no']],
                 ['key' => 'stats-display-mode', 'label' => __('Stats Display Mode', 'million-dollar-script'), 'type' => 'select', 'default' => 'PIXELS', 'options' => ['PIXELS' => __('Pixels - show sold/available pixels', 'million-dollar-script'), 'BLOCKS' => __('Blocks - show sold/available blocks', 'million-dollar-script')]],
                 ['key' => 'show-grid-view-controls', 'label' => __('Show Grid View Controls', 'million-dollar-script'), 'type' => 'select', 'default' => 'no', 'options' => ['yes', 'no'], 'description' => __('Adds optional View all and View images buttons below public grids. Grids fit the full board by default.', 'million-dollar-script')],
+                ['key' => 'grid-fit-on-resize', 'label' => __('Fit The Grid When The Window Changes', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes' => __('Fit the whole grid again', 'million-dollar-script'), 'no' => __('Stay where the visitor was looking', 'million-dollar-script')], 'description' => __('Shows the whole grid again whenever a visitor changes the size of their window or turns a phone. Turn this off to leave the visitor on the part of the grid they had zoomed in to.')],
                 ['key' => 'enable-mouseover', 'label' => __('Show Block Popup', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
                 ['key' => 'tooltip-trigger', 'label' => __('Popup Interaction Method', 'million-dollar-script'), 'type' => 'select', 'default' => 'click', 'options' => ['click', 'mouseenter']],
                 ['key' => 'max-popup-size', 'label' => __('Max Popup Size', 'million-dollar-script'), 'type' => 'number', 'default' => 320],
@@ -91,10 +95,10 @@ final class SettingsSchema {
             __('Orders & Uploads', 'million-dollar-script') => [
                 ['key' => 'accounts-optional', 'label' => __('Allow Guest Orders', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
                 ['key' => 'expire-orders', 'label' => __('Expire Orders', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no'], 'description' => __('When enabled, Million Dollar Script cleans up unpaid, expired, cancelled, or denied orders after the timing rules below.', 'million-dollar-script')],
-                ['key' => 'auto-approve', 'label' => __('Auto-complete Manual Payments', 'million-dollar-script'), 'type' => 'select', 'default' => 'no', 'options' => ['yes', 'no'], 'description' => __('Leave this disabled unless you intentionally trust manual checkout reservations to become active without a gateway payment confirmation.', 'million-dollar-script')],
+                ['key' => 'auto-approve', 'label' => __('Auto-complete Manual Payments', 'million-dollar-script'), 'type' => 'select', 'default' => 'no', 'options' => ['yes', 'no'], 'description' => __('Turn this on if you take payment outside the checkout - by bank transfer, cheque or invoice. The ad goes live as soon as the customer has finished ordering, and the order in your shop stays where it is until you record the money. Leave it off to accept each of those orders yourself first.', 'million-dollar-script')],
                 ['key' => 'order-locking', 'label' => __('Order Locking', 'million-dollar-script'), 'type' => 'select', 'default' => 'yes', 'options' => ['yes', 'no']],
                 ['key' => 'minutes-renew', 'label' => __('Minutes To Keep Expired Orders', 'million-dollar-script'), 'type' => 'number', 'default' => 43200, 'description' => __('Use -1 for immediate cleanup after an order expires, or 0 to retain expired order records.', 'million-dollar-script')],
-                ['key' => 'minutes-confirmed', 'label' => __('Minutes To Keep Confirmed Orders', 'million-dollar-script'), 'type' => 'number', 'default' => 43200, 'description' => __('Applies to paid orders after their placement duration ends.', 'million-dollar-script')],
+                ['key' => 'minutes-confirmed', 'label' => __('Minutes To Keep Confirmed Orders', 'million-dollar-script'), 'type' => 'number', 'default' => 43200, 'description' => __('Applies to orders that have an ad and are waiting for payment.', 'million-dollar-script')],
                 ['key' => 'minutes-unconfirmed', 'label' => __('Minutes To Keep Unconfirmed Orders', 'million-dollar-script'), 'type' => 'number', 'default' => 60, 'description' => __('Controls how long unpaid reservations remain available for customers to finish checkout.', 'million-dollar-script')],
                 ['key' => 'minutes-cancel', 'label' => __('Minutes To Keep Cancelled Orders', 'million-dollar-script'), 'type' => 'number', 'default' => 43200, 'description' => __('Use this retention window for cancelled or denied orders kept for admin reference.', 'million-dollar-script')],
                 [
@@ -306,16 +310,18 @@ final class SettingsSchema {
             'currency' => __('Three-letter currency code used for standalone orders. When a payment provider owns currency, this follows the provider store currency.', 'million-dollar-script'),
             'currency-symbol' => __('Currency symbol shown in Million Dollar Script screens. When a payment provider owns currency, this follows the provider store symbol.', 'million-dollar-script'),
             'endpoint' => __('Legacy endpoint slug preserved for older custom integrations. Current Million Dollar Script pages and API routes do not use this value.', 'million-dollar-script'),
-            'theme_mode' => __('Controls whether Million Dollar Script frontend views and admin screens follow the visitor system theme or force a light/dark style.', 'million-dollar-script'),
+            'theme_mode' => __('Light or Dark for every Million Dollar Script page, whatever the visitor has on their device. Choose "Match the visitor\'s device" to follow the device instead. This setting never changes on its own.', 'million-dollar-script'),
             'payment_provider' => __('Selects the checkout adapter used by Million Dollar Script and monetization extensions. Payment providers are installed as extensions.', 'million-dollar-script'),
             'account-page' => __('Page URL customers use to view their Million Dollar Script account area.', 'million-dollar-script'),
             'register-page' => __('Page URL customers use to create an account.', 'million-dollar-script'),
             'login-page' => __('Page URL customers use to log in.', 'million-dollar-script'),
             'forgot-password-page' => __('Page URL customers use to reset a password.', 'million-dollar-script'),
             /* translators: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, and %PIXELID% are literal checkout URL placeholders. */
-            'checkout-url' => __('Standalone checkout URL used when no payment provider is handling payment. Supports legacy placeholder tokens: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, and %PIXELID%.', 'million-dollar-script'),
+            'checkout-url' => __('Standalone checkout URL used when no payment provider is handling payment. It must be the address of a page that can take payment - it cannot be a Million Dollar Script page such as Payment, Thank You, Upload or My Pixels. If you leave this empty, orders wait for payment and you mark each one paid from its order screen. Supports legacy placeholder tokens: %AMOUNT%, %CURRENCY%, %QUANTITY%, %ORDERID, %USERID%, %GRID%, and %PIXELID%.', 'million-dollar-script'),
+            /* translators: %s is the amount owed; the text is shown as the site owner writes it. */
+            'payment-instructions' => __('Shown to a customer whose order is waiting for payment when this site takes payment outside the plugin - by bank transfer, cheque, or in person. Write how you want them to pay and what to put on the payment so you can match it to their order, for example the account details and the order number. Leave this empty if you use a payment page: the customer is sent there instead, and this text is not shown.', 'million-dollar-script'),
             'thank-you-page' => __('Page URL shown after checkout or order confirmation.', 'million-dollar-script'),
-            'confirm-orders' => __('Requires customers to confirm an order before it moves forward.', 'million-dollar-script'),
+            'confirm-orders' => __('Holds an order until the customer confirms it. With it on, the customer is sent to the Confirm Order page after uploading: they review the order there, and confirming is what moves it to payment, or publishes an order that owes nothing. A site without a Confirm Order page skips the step. Off means the order moves on as soon as the artwork arrives.', 'million-dollar-script'),
             'mds-pixel-template' => __('Publishes privacy-safe individual pages only for active advertiser placements.', 'million-dollar-script'),
             'exclude-from-search' => __('Controls advertiser-page indexing, WordPress search, and XML sitemap inclusion.', 'million-dollar-script'),
             'mds-pixel-base' => __('Controls the public advertiser-page base and retains bounded redirect history.', 'million-dollar-script'),
@@ -342,6 +348,7 @@ final class SettingsSchema {
             'invert-pixels' => __('Inverts the selection behavior used by legacy manage-pixels screens.', 'million-dollar-script'),
             'stats-display-mode' => __('Controls whether stats boxes show sold/available inventory as pixels or sellable blocks.', 'million-dollar-script'),
             'show-grid-view-controls' => __('Shows optional View all and View images buttons below public grids. Leave disabled for the simpler full-grid default.', 'million-dollar-script'),
+            'grid-fit-on-resize' => __('Refits the grid to the window after a visitor resizes their window or rotates a phone, so the whole grid is on screen again. Disable it to keep the visitor on the part of the grid they were looking at.', 'million-dollar-script'),
             'enable-mouseover' => __('Shows advertiser details in a popup over occupied blocks.', 'million-dollar-script'),
             'tooltip-trigger' => __('Controls whether block popups open on click or on hover.', 'million-dollar-script'),
             'max-popup-size' => __('Maximum popup width in pixels.', 'million-dollar-script'),
@@ -353,7 +360,7 @@ final class SettingsSchema {
             'login-header-text' => __('Short text shown near the Million Dollar Script login header image.', 'million-dollar-script'),
             'accounts-optional' => __('Allows customers to place orders without creating a WordPress account.', 'million-dollar-script'),
             'expire-orders' => __('Expires unpaid or stale orders according to the timing settings below.', 'million-dollar-script'),
-            'auto-approve' => __('Automatically completes standalone/manual orders after upload when no checkout URL or gateway webhook will confirm payment.', 'million-dollar-script'),
+            'auto-approve' => __('Completes an order whose payment is never going to be confirmed by a gateway: a site with no payment page of its own, or a shop order paid by bank transfer, cheque or on collection. A grid that asks for review still holds the ad back, and an order with nothing to pay is never left waiting.', 'million-dollar-script'),
             'order-locking' => __('Temporarily locks selected blocks while checkout is pending.', 'million-dollar-script'),
             'minutes-renew' => __('Minutes to keep expired orders before cancelling them. Use 0 to leave expired orders unchanged, or -1 to cancel immediately.', 'million-dollar-script'),
             'minutes-confirmed' => __('Minutes to keep orders awaiting payment before expiring them and releasing reserved blocks. Use 0 to disable, or -1 for immediate cleanup.', 'million-dollar-script'),
@@ -402,6 +409,8 @@ final class SettingsSchema {
             'renewal-reminder-content' => __('Message used for renewal reminder notices. Supports %DAYS_LEFT%, %EXPIRES_AT%, %MANAGE_URL%, %PRICE%, %SITE_NAME%, and related order placeholders.', 'million-dollar-script'),
             'block-selection-mode' => __('Enables customers to select more than one block per order.', 'million-dollar-script'),
             'selection-adjacency-mode' => __('Controls whether customers must choose connected blocks, a complete square or rectangle, or any unrestricted set of blocks.', 'million-dollar-script'),
+            'selection-interior-click' => __('Decides what a click on a block that is already selected does. With the default, only a block on the outer edge of the selection can be clicked off; a click in the middle leaves the selection as it is, because a hole in the middle cannot be filled back in under the shape rule.', 'million-dollar-script'),
+            'grid-controls-button' => __('Adds a control to the grid that folds the zoom and fit buttons away, for customers who want the whole grid to themselves. Leaving this on keeps the zoom and fit buttons available to everyone; turning it off simply removes the fold/expand control, and the zoom and fit buttons stay on screen.', 'million-dollar-script'),
             'extension_server_url' => __('Base URL used by the Million Dollar Script extension catalog and license services.', 'million-dollar-script'),
             'extension_portal_auto_accounts' => __('Creates extension portal accounts automatically when the site connects to Million Dollar Script services.', 'million-dollar-script'),
             'disable_version_analytics' => __('Stops the existing update check from reporting the MDS, WordPress, PHP, and official extension versions and active states with a hashed site identifier. Other plugins, customer data, content, and credentials are not sent.', 'million-dollar-script'),
@@ -413,6 +422,54 @@ final class SettingsSchema {
         ];
 
         return \MillionDollarScript\Core\Hooks::apply('million-dollar-script/settings/help', $help[$key] ?? __('Controls this Million Dollar Script setting.', 'million-dollar-script'), $key);
+    }
+
+    /**
+     * Reject a typed value that cannot be the number a setting asks for.
+     *
+     * A number field stores what the owner typed, or nothing at all. Silently storing a
+     * different number was measured on a live site: "-5" became 5 and "abc" became 0 while
+     * the admin reported "Settings saved." — so an owner could set a reminder to day 0 without
+     * ever being told. An empty field is left to the field default, as before.
+     *
+     * @param array<string,mixed> $raw_post Unslashed submission from the settings form.
+     * @param array<string,array<string,mixed>> $fields Field definitions being saved.
+     */
+    public static function validate_number_fields(array $raw_post, array $fields) {
+        $errors = new \WP_Error();
+        $signed_keys = self::signed_integer_keys();
+
+        foreach ($fields as $key => $field) {
+            if (!is_array($field) || ('number' !== ($field['type'] ?? '')) || !isset($raw_post[$key])) {
+                continue;
+            }
+
+            $raw = trim((string) wp_unslash($raw_post[$key]));
+            if ('' === $raw) {
+                continue;
+            }
+
+            $signed = in_array((string) $key, $signed_keys, true);
+            $accepted = (bool) preg_match($signed ? '/^-?\d+$/D' : '/^\d+$/D', $raw);
+            if ($accepted && $signed && ((int) $raw) < -1) {
+                $accepted = false;
+            }
+
+            if ($accepted) {
+                continue;
+            }
+
+            $errors->add(
+                'mds3_number_' . $key,
+                sprintf(
+                    /* translators: %s: the name of the setting, as the site owner sees it. */
+                    __('“%s” needs a whole number. Your changes were not saved.', 'million-dollar-script'),
+                    (string) ($field['label'] ?? $key)
+                )
+            );
+        }
+
+        return $errors;
     }
 
     public static function sanitize($key, $value) {
@@ -649,6 +706,125 @@ final class SettingsSchema {
             $mapped[$key] = self::sanitize($key, $value);
         }
         return $mapped;
+    }
+
+    /**
+     * Where this site's answer about confirming orders comes from.
+     *
+     * MDS2 read that option with a default of yes - Core/users/confirm_order.php:283 and
+     * Classes/Forms/Forms.php:526 both pass 'yes' as the fallback - so an MDS2 site that never
+     * stored the option was running the review step. MDS3 ships it off, because site owners ask
+     * for fewer steps to payment, not more (Ryan, 2026-10-15: a new install keeps it off). The
+     * two defaults disagree only about a migrated site, so the disagreement is settled here
+     * rather than left to whichever default each plugin happens to use:
+     *
+     * 1. A stored MDS3 value that differs from what this plugin ships is a choice somebody
+     *    made here, and it wins. Re-running a migration must not undo a decision a site owner
+     *    took after the first one.
+     * 2. Otherwise an explicit MDS2 value is carried across, so the migrated site keeps the
+     *    flow its customers already knew.
+     * 3. Otherwise MDS2's own default applies - the step was on.
+     *
+     * @return array{value:string,source:string} source is mds3, mds2, or mds2_default
+     */
+    public static function confirm_orders_choice(array $legacy_options, array $current) {
+        if (array_key_exists('confirm-orders', $current)) {
+            $chosen = sanitize_key((string) $current['confirm-orders']);
+            if ('' !== $chosen && $chosen !== self::defaults()['confirm-orders']) {
+                return array('value' => $chosen, 'source' => 'mds3');
+            }
+        }
+
+        foreach (self::aliases('confirm-orders') as $alias) {
+            if (array_key_exists($alias, $legacy_options) && null !== $legacy_options[$alias] && '' !== $legacy_options[$alias]) {
+                return array('value' => sanitize_key((string) $legacy_options[$alias]), 'source' => 'mds2');
+            }
+        }
+
+        return array('value' => 'yes', 'source' => 'mds2_default');
+    }
+
+    public static function legacy_confirm_orders(array $legacy_options, array $current) {
+        $choice = self::confirm_orders_choice($legacy_options, $current);
+
+        return $choice['value'];
+    }
+
+    /**
+     * Where this site's answer about payments that arrive later comes from.
+     *
+     * This is the setting for a site that takes payment outside a gateway - bank transfer, cheque,
+     * an invoice - where nothing will ever tell the site the money is in. Both plugins ship it off,
+     * so they do not disagree about a site that never chose. What needs a rule is the second
+     * import: once a site has been migrated, the settings here are what the site runs, whether the
+     * first import carried them or somebody set them by hand, and an old site's answer must not
+     * come back to overwrite it. Before that first import, the old site's answer is the behaviour
+     * the customers already know, and it is carried across.
+     */
+    public static function auto_approve_choice(array $legacy_options, array $current, $previously_imported = false) {
+        if ($previously_imported && array_key_exists('auto-approve', $current)) {
+            $chosen = self::sanitize('auto-approve', (string) $current['auto-approve']);
+            if ('' !== $chosen) {
+                return array('value' => $chosen, 'source' => 'mds3');
+            }
+        }
+
+        foreach (self::aliases('auto-approve') as $alias) {
+            if (array_key_exists($alias, $legacy_options) && null !== $legacy_options[$alias] && '' !== $legacy_options[$alias]) {
+                return array('value' => sanitize_key((string) $legacy_options[$alias]), 'source' => 'mds2');
+            }
+        }
+
+        return array('value' => self::defaults()['auto-approve'], 'source' => 'default');
+    }
+
+    public static function legacy_auto_approve(array $legacy_options, array $current, $previously_imported = false) {
+        $choice = self::auto_approve_choice($legacy_options, $current, $previously_imported);
+
+        return $choice['value'];
+    }
+
+    /**
+     * Plain words for the migration report, about money that arrives later.
+     */
+    public static function describe_auto_approve_choice(array $legacy_options, array $current, $previously_imported = false) {
+        $choice = self::auto_approve_choice($legacy_options, $current, $previously_imported);
+        $accepted = 'yes' === $choice['value'];
+
+        if ('mds3' === $choice['source']) {
+            return $accepted
+                ? __('Ads paid for outside the checkout - by bank transfer, cheque or invoice - go live as soon as the customer has finished, without waiting for anyone to mark the payment. That is what this site is running, and running the migration again leaves it alone.', 'million-dollar-script')
+                : __('Ads paid for outside the checkout wait for you to accept the payment before they go live. That is what this site is running, and running the migration again leaves it alone - including if the old site took them as they came.', 'million-dollar-script');
+        }
+
+        if ($accepted) {
+            return __('Ads paid for outside the checkout - by bank transfer, cheque or invoice - go live as soon as the customer has finished, without waiting for someone to mark the payment. This is what the old site did, so nothing about ordering changes.', 'million-dollar-script');
+        }
+
+        return __('Ads paid for outside the checkout wait for you to accept the payment before they go live. Neither site was ever told otherwise, so this one keeps doing that.', 'million-dollar-script');
+    }
+
+    /**
+     * Plain words for the migration report, so a site owner is not left comparing two
+     * plugins' defaults to work out what their own site will do to customers.
+     */
+    public static function describe_confirm_orders_choice(array $legacy_options, array $current) {
+        $choice = self::confirm_orders_choice($legacy_options, $current);
+        $asking = 'yes' === $choice['value'];
+
+        if ('mds3' === $choice['source']) {
+            return $asking
+                ? __('Customers are asked to check each order before its ad goes on the grid. That is the choice this site already had, and the migrated site did not change it. Change it under Settings > Orders.', 'million-dollar-script')
+                : __('Customers are not asked to check an order, as this site already had it. The migrated site did not change that. Ask them to check an order first under Settings > Orders.', 'million-dollar-script');
+        }
+
+        if ('mds2' === $choice['source']) {
+            return $asking
+                ? __('Customers are asked to check each order before its ad goes on the grid, as they were on the site that was migrated. Change it under Settings > Orders.', 'million-dollar-script')
+                : __('Customers go on without checking an order, as they did on the site that was migrated. Ask them to check an order first under Settings > Orders.', 'million-dollar-script');
+        }
+
+        return __('The site that was migrated never set this, and that plugin asked customers to check each order by default, so this site does the same. Turn it off under Settings > Orders.', 'million-dollar-script');
     }
 
     private static function default_order_confirmed_content() {

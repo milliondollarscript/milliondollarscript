@@ -7,7 +7,9 @@
 
 namespace MillionDollarScript\V3\Migration\Concerns;
 
+use MillionDollarScript\V3\Support\Build;
 use MillionDollarScript\V3\Support\DB;
+use MillionDollarScript\V3\Migration\LegacyValue;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -133,7 +135,7 @@ trait TracksMigrationImportState {
     }
 
     private function parse_blocks_csv($csv) {
-        $value = maybe_unserialize($csv);
+        $value = LegacyValue::read($csv);
         if (is_string($value)) {
             $json = json_decode($value, true);
             if (is_array($json)) {
@@ -199,7 +201,19 @@ trait TracksMigrationImportState {
         return [
             'will_drop_mds2_tables' => false,
             'source_tables' => $this->source->table_report(),
+            // The version producing THIS report. A run may have been created by an
+            // older build - migration_runs.plugin_version records that - and a later
+            // pass through the same run writes a report carrying the current version.
+            // The two are deliberately different: which build made the record, and
+            // which build last described it.
+            'plugin_version' => Build::version(),
             'target_tables' => $this->source->target_report(),
+            // What the destination can hold, stated before the numbers. A site whose
+            // tables are not utf8mb4 loses characters in the database itself, with no
+            // error raised; naming the character set here is the only way the report
+            // can explain a value that arrived shorter than the older site had it.
+            'database' => $this->source->database_capability_report(),
+            'database_rejections' => array_values($this->database_rejections),
             'mapped' => [
                 'grids' => $this->map->mapped_count($this->source->source_prefix(), 'banner', 'grid'),
                 'packages' => $this->map->mapped_count($this->source->source_prefix(), 'package', 'package'),
@@ -210,11 +224,40 @@ trait TracksMigrationImportState {
                 'pages' => $this->map->mapped_count($this->source->source_prefix(), 'page', 'page'),
             ],
             'totals' => $totals,
+            'coverage' => $this->coverage_report(),
             'skipped' => array_values($this->migration_skips),
             'repairs' => array_values($this->migration_repairs),
             'page_outcomes' => array_values($this->page_outcomes),
+            'settings_outcomes' => array_values($this->settings_outcomes),
+            'order_status_outcomes' => $this->order_status_outcomes,
             'warnings' => array_values(array_unique($this->warnings)),
+            'notices' => array_values(array_unique($this->notices)),
         ];
+    }
+
+    /**
+     * Count the state one migrated order arrived in.
+     *
+     * A site owner reads this as "what do I now have": paid orders, orders still owing,
+     * expired, denied. The confirmed-without-payment counter is kept apart because those
+     * are orders the older site left mid-flow: the ads went quiet and the money was never
+     * taken, and that is worth naming rather than folding into a count of unpaid orders.
+     */
+    private function record_order_status_outcome($status, $legacy_status) {
+        $status = sanitize_key((string) $status);
+        if ('' === $status) {
+            return;
+        }
+
+        $counts = isset($this->order_status_outcomes['counts']) && is_array($this->order_status_outcomes['counts'])
+            ? $this->order_status_outcomes['counts']
+            : [];
+        $counts[$status] = absint($counts[$status] ?? 0) + 1;
+        $this->order_status_outcomes['counts'] = $counts;
+
+        if ('confirmed' === sanitize_key((string) $legacy_status) && 'pending_payment' === $status) {
+            $this->order_status_outcomes['confirmed_without_payment'] = absint($this->order_status_outcomes['confirmed_without_payment'] ?? 0) + 1;
+        }
     }
 
     private function create_run($source_prefix, $mode, $status, array $report) {
@@ -225,6 +268,10 @@ trait TracksMigrationImportState {
             'source_prefix' => (string) $source_prefix,
             'mode' => sanitize_key($mode),
             'status' => sanitize_key($status),
+            // Which build made this record. A site can hold runs written by several
+            // alphas - the customer site does - and a mixed history has to be readable
+            // rather than guessed. Rows written before this column existed keep ''.
+            'plugin_version' => Build::version(),
             'totals' => wp_json_encode([]),
             'report' => wp_json_encode($report),
             'started_at' => $now,
@@ -314,7 +361,7 @@ trait TracksMigrationImportState {
     private function legacy_order_term_metadata(array $row) {
         $days = absint($row['days_expire'] ?? 0);
         $term_started_at = $this->valid_mysql_date($row['date_published'] ?? '') ?: $this->valid_mysql_date($row['order_date'] ?? '');
-        $status = self::order_status($row['status'] ?? '');
+        $status = self::order_status($row['status'] ?? '', $this->legacy_order_paid((int) ($row['order_id'] ?? 0), (int) ($row['ad_id'] ?? 0)));
         $metadata = [];
 
         if ($days) {

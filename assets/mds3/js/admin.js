@@ -68,7 +68,10 @@
             container.setAttribute('data-mds3-toast-region', '');
             container.setAttribute('aria-live', 'polite');
             container.setAttribute('aria-relevant', 'additions');
-            document.body.appendChild(container);
+            // The admin colour tokens are declared on .mds3-admin. A region appended to
+            // <body> sits outside them, so every var() in the toast style resolves to
+            // nothing and the notice renders as bare text with a close button.
+            (document.querySelector('.mds3-admin') || document.body).appendChild(container);
         }
 
         toast = document.createElement('div');
@@ -983,7 +986,14 @@
             var percent = panel.querySelector('[data-mds3-migration-progress-percent]');
             var bar = panel.querySelector('[data-mds3-migration-progress-bar]');
             var message = panel.querySelector('[data-mds3-migration-progress-message]');
+            var autoRetry = panel.querySelector('[data-mds3-migration-auto-retry]');
             var isRunning = false;
+            // A stopped batch is not retried on its own unless the admin asked for
+            // it, and never more than this many times in a row: an import that was
+            // interrupted for a real reason should not loop forever (Vikunja #31
+            // item 3).
+            var retryLimit = 3;
+            var retries = 0;
 
             function completeReload() {
                 var url;
@@ -1015,11 +1025,28 @@
                 }
             }
 
-            function failProgress(text) {
+            function say(text) {
                 if (message) {
-                    message.textContent = text || ((config.i18n && config.i18n.migrationError) || 'Migration progress could not be updated.');
+                    message.textContent = text;
                 }
+            }
+
+            function stop(text) {
                 isRunning = false;
+                say(text || ((config.i18n && config.i18n.migrationError) || 'Migration progress could not be updated.'));
+            }
+
+            function stopped(text) {
+                if (autoRetry && autoRetry.checked && retries < retryLimit) {
+                    retries += 1;
+                    var label = (config.i18n && config.i18n.migrationRetrying) || 'Trying again on its own (%1$d of %2$d).';
+                    say(label.replace('%1$d', String(retries)).replace('%2$d', String(retryLimit)) + ' ' + (text || ''));
+                    window.setTimeout(step, 1200);
+                    return;
+                }
+
+                isRunning = false;
+                say((text || '') + ' ' + ((config.i18n && config.i18n.migrationRetryStopped) || 'The batch stopped. Choose Process next batch to try again.'));
             }
 
             function step() {
@@ -1050,14 +1077,18 @@
 
                     updateProgress(payload.data);
                     isRunning = false;
+                    retries = 0;
 
                     if (payload.data.completed) {
                         window.setTimeout(completeReload, 500);
                     } else if (payload.data.status === 'running') {
                         window.setTimeout(step, 250);
+                    } else if (payload.data.status !== 'paused') {
+                        // The server stopped this run. Only the opt-in keeps going.
+                        stopped(payload.data.message || '');
                     }
                 }).catch(function (error) {
-                    failProgress(error && error.message ? error.message : '');
+                    stopped(error && error.message ? error.message : '');
                 });
             }
 

@@ -10,6 +10,7 @@ namespace MillionDollarScript\V3\Setup;
 use MillionDollarScript\V3\Grid\GridRepository;
 use MillionDollarScript\V3\Media\AdvertiserPageManager;
 use MillionDollarScript\V3\Orders\OrderCleanup;
+use MillionDollarScript\V3\Pages\PageRepository;
 use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Support\DB;
 
@@ -28,10 +29,18 @@ final class Installer {
      */
     public static function ensure() {
         self::upgrade_legacy_user_facing_defaults();
+        self::upgrade_customer_order_page_title();
         self::upgrade_early_alpha_saved_defaults();
         self::normalize_known_alpha_saved_defaults();
         self::upgrade_popup_interaction_default();
         self::cleanup_extension_legal_page_grid_metadata();
+        // Runs on admin loads rather than once per version: a page can be deleted at any
+        // moment, and the fault it causes is silent - a link that quietly changes target.
+        // The repair and its explanation both belong where an admin can act on them, and a
+        // front-end visitor should not pay for ten post lookups on every request.
+        if (is_admin()) {
+            PageOptionAudit::run();
+        }
 
         if (get_option('mds3_db_version') === InstallerSchema::VERSION && InstallerSchema::required_tables_exist()) {
             OrderExpirationBackfill::maybe_schedule();
@@ -195,6 +204,37 @@ final class Installer {
                 ['back_link' => true]
             );
         }
+    }
+
+    /**
+     * Retitle the customer order page on sites that still carry the old default.
+     *
+     * The page a customer reaches after saving an ad holds the order state, the
+     * payment step, and the ad's own image, destination link and popup text. Its
+     * name described one control on it, which is what led a tester to report that
+     * page as blank: nothing on it asked for an upload. The address, the page type
+     * and the saved option are untouched - a site's menus, links and shortcode
+     * point at those, not at the title - and an owner who renamed the page keeps
+     * the title they wrote, so only the old default is replaced. The previous label
+     * stays addressable as a translation string so a site in another language is
+     * matched by whatever its default title actually was.
+     *
+     * @return void
+     */
+    private static function upgrade_customer_order_page_title() {
+        if (get_option('mds3_upgraded_customer_order_page_title')) {
+            return;
+        }
+
+        $page_id = absint(get_option('mds3_page_upload_id', 0));
+        $page = $page_id ? get_post($page_id) : null;
+        $new_label = (string) (PageRepository::labels()['upload'] ?? '');
+
+        if ($page && 'page' === $page->post_type && '' !== $new_label && __('Upload', 'million-dollar-script') === $page->post_title) {
+            wp_update_post(array('ID' => $page_id, 'post_title' => $new_label));
+        }
+
+        update_option('mds3_upgraded_customer_order_page_title', MILLION_DOLLAR_SCRIPT_VERSION, false);
     }
 
     /**

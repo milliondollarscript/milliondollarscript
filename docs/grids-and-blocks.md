@@ -12,6 +12,12 @@ Use **Million Dollar Script > Grids** to create and manage advertising grids. A 
 
 The grid editor provides zoom and fit controls for detailed maps. Price zones and unavailable areas must align with the grid's block boundaries. Public grids start fitted to their available container, including grids whose source dimensions are much larger than the page.
 
+### Choosing Dimensions and Block Size
+
+Dimensions are set per grid, and no size is treated as the expected one: 5 by 5 pixel blocks, 32 by 32 pixel blocks, a 460 by 98 board, and a 1000 by 4217 board are all ordinary configurations. Blocks are laid out from the top left as whole numbers of pixels, so a width or height that is not an exact multiple of the block size leaves the remaining strip unsold rather than creating a partial block. Blocks do not have to be square; a wider-than-tall block makes each single-block selection that shape, and prices, packages, and availability still work per block.
+
+Large boards stay usable because the public grid draws in tiles and starts fitted to the page. Generated board images and hosted rendering scale with the grid's pixel dimensions, so a very large grid takes longer to prepare and uses more rendering service credit. Ad uploads are checked against the site's maximum upload dimensions rather than against block size, so when blocks are large, raise those limits so advertisers can supply artwork that stays sharp at the size it is displayed.
+
 ### Background presentation
 
 Use **Grid Background** while editing a grid to choose a Media Library image, fit, position, repeat behavior, and opacity. The background color remains visible while the image loads, when the attachment is missing, and through transparent parts of the image.

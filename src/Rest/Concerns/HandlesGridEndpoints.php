@@ -217,7 +217,13 @@ trait HandlesGridEndpoints {
     }
 
     private function placement_payload(array $placement) {
-        $source = (new OriginalImage())->resolve($placement['attachment_id'] ?? 0);
+        // The cell size is passed so the resolver can offer the copy to draw with; the original
+        // stays in the payload for the full-size view.
+        $source = (new OriginalImage())->resolve(
+            $placement['attachment_id'] ?? 0,
+            absint($placement['width'] ?? 0),
+            absint($placement['height'] ?? 0)
+        );
         $advertiser_page_url = (new AdvertiserPageManager())->public_url(absint($placement['id'] ?? 0));
 
         return [
@@ -241,6 +247,11 @@ trait HandlesGridEndpoints {
                 'height' => absint($source['height'] ?? 0),
                 'megapixels' => (float) ($source['megapixels'] ?? 0),
                 'mime_type' => sanitize_text_field($source['mime_type'] ?? ''),
+                'display' => isset($source['display']) ? array(
+                    'url' => esc_url_raw((string) ($source['display']['url'] ?? '')),
+                    'width' => absint($source['display']['width'] ?? 0),
+                    'height' => absint($source['display']['height'] ?? 0),
+                ) : null,
             ],
             'mask' => $this->placement_mask_payload(absint($placement['order_id'] ?? 0)),
         ];

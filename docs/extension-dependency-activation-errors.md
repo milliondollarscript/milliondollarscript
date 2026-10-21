@@ -26,6 +26,12 @@ A capability name identifies a feature contract, not necessarily a plugin slug. 
 
 If an extension requires `inventory.grid`, enable Classic Pixel Grid or another compatible grid provider before activating it. Do not enable a provider that does not match the installed Million Dollar Script generation and version.
 
+### When The Provider Is Not Offered In Setup
+
+Some extensions exist to serve other extensions rather than to be chosen on their own, and the Setup screen does not list them. A requirement naming one of those extensions by its identifier is still satisfied when that extension is installed and switched on, because it provides its own identifier as a capability.
+
+When the message names another extension — for example `Search Visibility needs SEO Basic switched on. Activate it from Extensions, or deselect Search Visibility.` — install or activate that named extension from **Extensions**, or deselect the extension that needs it. An extension that is installed but switched off satisfies nothing: the requirement is met only while it is running on the site.
+
 ## Resolve a Conflict
 
 Review the conflicting extension and decide which capability the site should use. On staging:

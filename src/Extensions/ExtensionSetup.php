@@ -152,6 +152,10 @@ final class ExtensionSetup {
 
         $selected = array_values(array_unique($selected));
         $safety = 0;
+        // Requirements are resolved against the offered choices first. Only when one of them
+        // cannot be satisfied there do we look at the rest of what the site has installed,
+        // so the ordinary path costs nothing extra.
+        $wider_providers = null;
         do {
             $changed = false;
             foreach ($selected as $slug) {
@@ -162,6 +166,30 @@ final class ExtensionSetup {
 
                 foreach ($this->capability_list($item['requires'] ?? []) as $requirement) {
                     $provider_slug = $this->provider_slug_for($requirement, $by_slug);
+
+                    if (!$provider_slug) {
+                        $wider_providers = null === $wider_providers ? $this->provider_index($by_slug) : $wider_providers;
+                        $provider_slug = $this->provider_slug_for($requirement, $wider_providers);
+                    }
+
+                    if ($provider_slug && !isset($by_slug[$provider_slug])) {
+                        // The provider is on this site but the setup wizard does not offer it:
+                        // an extension that exists to serve other extensions. It counts when it
+                        // is actually running here. When it is not, the site owner needs the
+                        // name of the thing to switch on, not a capability string.
+                        if ($this->provider_is_running($provider_slug, $wider_providers)) {
+                            continue;
+                        }
+
+                        $errors[] = sprintf(
+                            /* translators: 1: extension name, 2: extension it needs */
+                            __('%1$s needs %2$s switched on. Activate it from Extensions, or deselect %1$s.', 'million-dollar-script'),
+                            (string) ($item['name'] ?? $slug),
+                            (string) ($wider_providers[$provider_slug]['name'] ?? $provider_slug)
+                        );
+                        continue;
+                    }
+
                     if ($provider_slug) {
                         if (!in_array($provider_slug, $selected, true)) {
                             $selected[] = $provider_slug;
@@ -176,10 +204,10 @@ final class ExtensionSetup {
                                 (string) ($item['name'] ?? $slug)
                             );
                         }
-                    } elseif (!$provider_slug && !$this->core_satisfies($requirement)) {
+                    } elseif (!$this->core_satisfies($requirement)) {
                         $errors[] = sprintf(
-                            /* translators: 1: extension name, 2: missing capability */
-                            __('%1$s requires missing capability %2$s.', 'million-dollar-script'),
+                            /* translators: 1: extension name, 2: capability it needs */
+                            __('%1$s needs %2$s, which this site does not provide. Install the extension that offers it from Extensions, or deselect %1$s.', 'million-dollar-script'),
                             (string) ($item['name'] ?? $slug),
                             $requirement
                         );
@@ -336,6 +364,59 @@ final class ExtensionSetup {
         }
 
         return array_values(array_unique($known));
+    }
+
+    /**
+     * What a requirement may be resolved against when the offered choices cannot satisfy it.
+     *
+     * The setup wizard deliberately offers a subset of a site's extensions: an extension that
+     * exists to serve other extensions is not a choice to make here. Requirements name those
+     * by slug, so resolving only against the offered list reported an installed, active
+     * extension as a missing capability. What this adds is read-only: it can satisfy a
+     * requirement, it is never added to the selection.
+     */
+    private function provider_index(array $by_slug) {
+        $providers = $by_slug;
+        foreach ($this->installed_providers() as $slug => $item) {
+            if (!isset($providers[$slug])) {
+                $providers[$slug] = $item;
+            }
+        }
+
+        return \MillionDollarScript\Core\Hooks::apply('million-dollar-script/setup/extension/providers', $providers, $by_slug);
+    }
+
+    /**
+     * Every extension installed on this site, by slug, whether or not the setup wizard offers it.
+     */
+    private function installed_providers() {
+        if (!function_exists('get_plugins')) {
+            return [];
+        }
+
+        try {
+            $catalog = (new ExtensionCatalog())->catalog();
+        } catch (\Throwable $throwable) {
+            return [];
+        }
+
+        $providers = [];
+        foreach ((array) ($catalog['installed'] ?? []) as $item) {
+            $slug = sanitize_key((string) ($item['slug'] ?? ''));
+            if ($slug) {
+                $providers[$slug] = $item;
+            }
+        }
+
+        return $providers;
+    }
+
+    private function provider_is_running($slug, array $providers) {
+        if (!empty($providers[$slug]['active'])) {
+            return true;
+        }
+
+        return (new ExtensionRuntime())->is_enabled((string) $slug);
     }
 
     private function provider_slug_for($capability, array $by_slug) {

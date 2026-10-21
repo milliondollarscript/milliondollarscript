@@ -34,6 +34,13 @@ $move_notice = is_array($move_notice ?? null) ? $move_notice : [];
         <p><strong><?php esc_html_e('Total', 'million-dollar-script'); ?>:</strong> <?php echo esc_html(\MillionDollarScript\V3\Commerce\Currency::format((float) ($order['total'] ?? 0), $order['currency'] ?? '')); ?></p>
         <p><strong><?php esc_html_e('Customer', 'million-dollar-script'); ?>:</strong> <?php echo esc_html(($order['email'] ?? '') ?: '-'); ?></p>
         <p><strong><?php esc_html_e('Commerce', 'million-dollar-script'); ?>:</strong> <?php echo esc_html((($order['commerce_provider'] ?? '') ?: 'standalone') . (!empty($order['commerce_order_id']) ? ' #' . $order['commerce_order_id'] : '')); ?></p>
+        <?php
+        // What the store paid and what the order asked for are both on the record. The
+        // difference is only ever shown here - it does not change the order's status.
+        $amount_evidence = \MillionDollarScript\V3\Commerce\PaymentAmountEvidence::describe(is_array($metadata ?? null) ? $metadata : array());
+        if ($amount_evidence) : ?>
+            <div class="notice notice-warning inline mds3-payment-amount-mismatch"><p><?php echo esc_html($amount_evidence['text']); ?></p></div>
+        <?php endif; ?>
         <?php if ($manage_url) : ?>
             <p><strong><?php esc_html_e('Customer Manage Link', 'million-dollar-script'); ?>:</strong> <a href="<?php echo esc_url($manage_url); ?>"><?php esc_html_e('Open upload manager', 'million-dollar-script'); ?></a></p>
         <?php endif; ?>
@@ -55,6 +62,83 @@ $move_notice = is_array($move_notice ?? null) ? $move_notice : [];
             <p><strong><?php esc_html_e('Placement Rectangle', 'million-dollar-script'); ?>:</strong> <?php echo esc_html($rect['x'] . ',' . $rect['y'] . ' ' . $rect['width'] . 'x' . $rect['height']); ?></p>
         <?php endif; ?>
     </div>
+
+    <?php
+    // What the customer typed alongside the artwork. The form questions come from the
+    // Fields extension; the answers are part of the order record.
+    $advertiser_answers = is_array($advertiser_answers ?? null) ? $advertiser_answers : array();
+    if ($advertiser_answers) : ?>
+        <div class="mds3-order-advertiser-answers">
+            <h3><?php esc_html_e('Advertiser answers', 'million-dollar-script'); ?></h3>
+            <table class="widefat striped">
+                <tbody>
+                    <?php foreach ($advertiser_answers as $answer) : ?>
+                        <tr>
+                            <th scope="row"><?php echo esc_html($answer['label'] ?? ''); ?></th>
+                            <td>
+                                <?php if (!empty($answer['url'])) : ?>
+                                    <a href="<?php echo esc_url($answer['url']); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($answer['value'] ?? ''); ?></a>
+                                <?php else : ?>
+                                    <?php echo esc_html($answer['value'] ?? ''); ?>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+
+    <?php
+    // Payment and publication are different facts. This block answers only the second one,
+    // and only once an order has paid - before that there is nothing to show.
+    $publication = is_array($publication ?? null) ? $publication : [];
+    if ($publication) :
+        $is_live = !empty($publication['published']);
+    ?>
+        <div class="mds3-order-publication <?php echo esc_attr($is_live ? 'is-live' : 'is-held'); ?>">
+            <div class="mds3-order-publication-copy">
+                <h3><?php esc_html_e('Ad visibility', 'million-dollar-script'); ?></h3>
+                <p>
+                    <?php if ($is_live) : ?>
+                        <?php esc_html_e('Published — this artwork is showing on the grid.', 'million-dollar-script'); ?>
+                    <?php else : ?>
+                        <?php esc_html_e('Not published — this artwork is not showing on the grid.', 'million-dollar-script'); ?>
+                    <?php endif; ?>
+                </p>
+                <?php $reason = (string) ($publication['reason'] ?? ''); ?>
+                <?php if ('' !== $reason) : ?>
+                    <p class="mds3-order-publication-reason">
+                        <?php
+                        if ('reviews' === $reason) {
+                            esc_html_e('This grid reviews paid uploads before they appear.', 'million-dollar-script');
+                        } else {
+                            esc_html_e('This artwork stopped showing when its listing ended, and will not come back on its own.', 'million-dollar-script');
+                        }
+                        ?>
+                    </p>
+                <?php endif; ?>
+            </div>
+            <div class="mds3-order-publication-actions">
+                <?php if (!empty($publication['can_publish'])) : ?>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="mds3-inline-form">
+                        <input type="hidden" name="action" value="mds3_publish_placement" />
+                        <input type="hidden" name="order_id" value="<?php echo esc_attr(absint($order['id'] ?? 0)); ?>" />
+                        <input type="hidden" name="_wpnonce" value="<?php echo esc_attr((string) ($publication['nonce_publish'] ?? '')); ?>" />
+                        <button type="submit" class="button"><?php esc_html_e('Publish', 'million-dollar-script'); ?></button>
+                    </form>
+                <?php endif; ?>
+                <?php if (!empty($publication['can_unpublish'])) : ?>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="mds3-inline-form">
+                        <input type="hidden" name="action" value="mds3_unpublish_placement" />
+                        <input type="hidden" name="order_id" value="<?php echo esc_attr(absint($order['id'] ?? 0)); ?>" />
+                        <input type="hidden" name="_wpnonce" value="<?php echo esc_attr((string) ($publication['nonce_unpublish'] ?? '')); ?>" />
+                        <button type="submit" class="button"><?php esc_html_e('Unpublish', 'million-dollar-script'); ?></button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <?php if ($placement_maps) : ?>
         <div class="mds3-order-placement-maps">

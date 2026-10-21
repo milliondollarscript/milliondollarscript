@@ -41,7 +41,7 @@ final class PageRepository {
             'manage' => __('Manage Pixels', 'million-dollar-script'),
             'thank-you' => __('Thank You', 'million-dollar-script'),
             'list' => __('Advertiser List', 'million-dollar-script'),
-            'upload' => __('Upload', 'million-dollar-script'),
+            'upload' => __('My order', 'million-dollar-script'),
             'no-orders' => __('No Orders', 'million-dollar-script'),
             'stats' => __('Statistics Page', 'million-dollar-script'),
         ];
@@ -52,6 +52,45 @@ final class PageRepository {
         unset($labels['stats']);
 
         return $labels;
+    }
+
+    /**
+     * The page roles a store cannot work without.
+     *
+     * The grid page, the page a customer buys pixels on, the page they manage
+     * their ads on, and the page their own order lives on. Every other role
+     * hosts a step a site may not use.
+     *
+     * @return list<string>
+     */
+    public static function core_types() {
+        return array('grid', 'order', 'manage', 'upload');
+    }
+
+    /**
+     * Page roles the standard-pages step offers and creates only when asked.
+     *
+     * @return array<string,string> type => label
+     */
+    public static function optional_labels() {
+        return array_diff_key(self::standard_labels(), array_flip(self::core_types()));
+    }
+
+    /**
+     * What a page is for, for whoever decides whether to create it.
+     */
+    public static function creation_hint($type) {
+        $hints = [
+            'write-ad' => __('A page for the ad text, apart from the page where pixels are chosen.', 'million-dollar-script'),
+            'confirm-order' => __('Asks the customer to check the order before the ad goes on the grid.', 'million-dollar-script'),
+            'payment' => __('Shows the payment of an order on its own page.', 'million-dollar-script'),
+            'thank-you' => __('The page an order lands on when it is finished.', 'million-dollar-script'),
+            'list' => __('A public list of advertisers and the ads they have up.', 'million-dollar-script'),
+            'no-orders' => __('Shown in place of the grid when no advertiser has an ad up.', 'million-dollar-script'),
+            'stats' => __('Report pages and ad performance.', 'million-dollar-script'),
+        ];
+
+        return isset($hints[sanitize_key($type)]) ? $hints[sanitize_key($type)] : '';
     }
 
     public static function option_aliases() {

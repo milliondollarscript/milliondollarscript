@@ -44,6 +44,7 @@ trait BuildsGridAjaxPayloads {
             'click_mode' => $direct_links ? 'direct' : 'redirect',
             'enable_mouseover' => SettingsSchema::sanitize('enable-mouseover', $settings['enable-mouseover'] ?? 'yes'),
             'tooltip_trigger' => SettingsSchema::sanitize('tooltip-trigger', $settings['tooltip-trigger'] ?? 'click'),
+            'controls_button' => SettingsSchema::sanitize('grid-controls-button', $settings['grid-controls-button'] ?? 'yes'),
             'max_popup_size' => absint(SettingsSchema::sanitize('max-popup-size', $settings['max-popup-size'] ?? 320)),
             'max_image_size' => absint(SettingsSchema::sanitize('max-image-size', $settings['max-image-size'] ?? 300)),
         ];
@@ -57,6 +58,7 @@ trait BuildsGridAjaxPayloads {
         return [
             'block_selection_mode' => SettingsSchema::sanitize('block-selection-mode', $settings['block-selection-mode'] ?? 'YES'),
             'selection_adjacency_mode' => SettingsSchema::sanitize('selection-adjacency-mode', $settings['selection-adjacency-mode'] ?? 'ADJACENT'),
+            'selection_interior_click' => SettingsSchema::sanitize('selection-interior-click', $settings['selection-interior-click'] ?? 'EDGE'),
             'accounts_optional' => $accounts_optional,
             'guest_email_required' => !$user_logged_in && 'yes' === $accounts_optional,
             'login_url' => esc_url_raw(wp_login_url(wp_get_referer() ?: home_url('/'))),
@@ -154,7 +156,14 @@ trait BuildsGridAjaxPayloads {
     }
 
     private function placement_payload(array $placement, array $settings = [], $mask = null, $order = null) {
-        $source = (new OriginalImage())->resolve($placement['attachment_id'] ?? 0);
+        // The cell size is passed so the resolver can offer the copy to draw with. The original
+        // stays in the payload unchanged: it is what the full-size view shows and what a person
+        // gets when they open the ad.
+        $source = (new OriginalImage())->resolve(
+            $placement['attachment_id'] ?? 0,
+            absint($placement['width'] ?? 0),
+            absint($placement['height'] ?? 0)
+        );
         $manage_url = $this->placement_manage_url($placement, $order);
         $link_url = PlacementFieldContract::advertiser_url($placement['link_url'] ?? '');
         $popup_text = (string) ($placement['popup_text'] ?? '');
@@ -199,6 +208,11 @@ trait BuildsGridAjaxPayloads {
                 'height' => absint($source['height'] ?? 0),
                 'megapixels' => (float) ($source['megapixels'] ?? 0),
                 'mime_type' => sanitize_text_field($source['mime_type'] ?? ''),
+                'display' => isset($source['display']) ? array(
+                    'url' => esc_url_raw((string) ($source['display']['url'] ?? '')),
+                    'width' => absint($source['display']['width'] ?? 0),
+                    'height' => absint($source['display']['height'] ?? 0),
+                ) : null,
             ],
         ];
         $payload['popover_html'] = $this->popover_html($payload, $settings);

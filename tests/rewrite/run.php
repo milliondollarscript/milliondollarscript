@@ -792,6 +792,50 @@ mds3_assert_same(1000, $geometry->rows(), 'Expected 1000 rows.');
 mds3_assert_same(1000000, $geometry->total_blocks(), 'Expected sparse million-block grid.');
 mds3_assert_same(['x' => 70, 'y' => 40, 'width' => 10, 'height' => 10], $geometry->rect(4, 7), 'Expected block rectangle.');
 
+// Grid and block sizes are chosen by the admin, so every size has to behave the same:
+// small tiles, large tiles, non-square tiles, and grids far from square.
+foreach ([[10, 10, 10, 10], [5, 5, 5, 5], [20, 20, 20, 20], [25, 200, 32, 32], [46, 98, 5, 7], [460, 98, 3, 3], [500, 500, 1, 1], [1000, 4217, 10, 10]] as $size_case) {
+    list($blocks_wide, $blocks_high, $block_w, $block_h) = $size_case;
+    $size_label = $blocks_wide . 'x' . $blocks_high . ' blocks of ' . $block_w . 'x' . $block_h . ' pixels';
+    $converted = \MillionDollarScript\V3\Migration\Importer::banner_pixel_dimensions([
+        'grid_width' => $blocks_wide,
+        'grid_height' => $blocks_high,
+        'block_width' => $block_w,
+        'block_height' => $block_h,
+    ]);
+    mds3_assert_same($blocks_wide * $block_w, $converted['width'], 'Expected grid pixels for a ' . $size_label . '.');
+    mds3_assert_same($blocks_high * $block_h, $converted['height'], 'Expected grid pixels for a ' . $size_label . '.');
+    $sized = new \MillionDollarScript\V3\Grid\Geometry($converted['width'], $converted['height'], $converted['block_width'], $converted['block_height']);
+    mds3_assert_same($blocks_wide, $sized->columns(), 'Expected every block column of a ' . $size_label . ' to survive conversion.');
+    mds3_assert_same($blocks_high, $sized->rows(), 'Expected every block row of a ' . $size_label . ' to survive conversion.');
+    mds3_assert_same($blocks_wide * $blocks_high, $sized->total_blocks(), 'Expected the block count of a ' . $size_label . ' to survive conversion.');
+    // The older plugin positions a block at x = (block_id % grid_width) * block_width, so the
+    // converted grid has to agree with that at every size, not only on square 10x10 grids.
+    $sample_ids = array_unique([0, 1, $blocks_wide - 1, $blocks_wide, intdiv($blocks_wide * $blocks_high, 2), $blocks_wide * $blocks_high - 1]);
+    foreach ($sample_ids as $block_id) {
+        $legacy_x = ($block_id % $blocks_wide) * $block_w;
+        $legacy_y = intdiv($block_id, $blocks_wide) * $block_h;
+        $expected = ['row' => intdiv($block_id, $blocks_wide), 'col' => $block_id % $blocks_wide];
+        mds3_assert_same($expected, $sized->coordinate_from_pixel($legacy_x, $legacy_y), 'Expected block ' . $block_id . ' of a ' . $size_label . ' to resolve where the older plugin placed it.');
+        mds3_assert_same(['x' => $legacy_x, 'y' => $legacy_y, 'width' => $block_w, 'height' => $block_h], $sized->rect($expected['row'], $expected['col']), 'Expected the block rectangle of a ' . $size_label . ' to match the older pixel position.');
+    }
+}
+
+// Pixel sizes that do not divide evenly are allowed; the leftover strip sells nothing and no
+// cell sticks outside the canvas.
+$uneven = new \MillionDollarScript\V3\Grid\Geometry(1000, 1000, 32, 7);
+mds3_assert_same(31, $uneven->columns(), 'Expected a 1000 pixel canvas with 32 pixel blocks to sell 31 columns.');
+mds3_assert_same(142, $uneven->rows(), 'Expected a 1000 pixel canvas with 7 pixel blocks to sell 142 rows.');
+mds3_assert_same(['x' => 960, 'y' => 987, 'width' => 32, 'height' => 7], $uneven->rect(141, 30), 'Expected the last sellable cell to stay inside the canvas.');
+mds3_assert_same(null, $uneven->coordinate_from_pixel(995, 999), 'Expected the leftover strip to sell nothing.');
+
+// A source grid that recorded zero dimensions is already broken in the older plugin. The
+// conversion keeps it to one block instead of dividing by zero later; it is reported as a
+// placeholder grid rather than repaired with invented dimensions.
+$empty_source_grid = \MillionDollarScript\V3\Migration\Importer::banner_pixel_dimensions(['grid_width' => 0, 'grid_height' => 0, 'block_width' => 10, 'block_height' => 10]);
+mds3_assert_same(1, $empty_source_grid['blocks_wide'], 'Expected a zero-dimension source grid to stay one block wide.');
+mds3_assert_same(10, $empty_source_grid['width'], 'Expected a zero-dimension source grid to stay one block wide in pixels.');
+
 $estimate = \MillionDollarScript\V3\Rendering\Estimate::grid(
     ['width' => 10000, 'height' => 10000],
     [['width' => 4000, 'height' => 3000]],
@@ -1525,6 +1569,81 @@ mds3_assert_same(true, in_array('mds-grid', $setup_plan['selected'], true), 'Exp
 mds3_assert_same(true, in_array('mds-imagegrid', $setup_plan['selected'], true), 'Expected setup plan to auto-select required providers.');
 mds3_assert_same(true, isset($setup_plan['locked']['mds-imagegrid']), 'Expected auto-selected dependencies to be locked.');
 mds3_assert_same(1, count($setup_plan['skipped']), 'Expected unavailable selected extensions to be reported as install follow-ups.');
+
+// An extension can require another extension by slug. The setup wizard offers only part of
+// what a site has - an extension that exists to serve other extensions is not a choice to
+// make here - so the requirement has to be checked against the whole installed set, and the
+// message has to name the extension instead of a capability string.
+$hidden_helper_choices = [
+    [
+        'slug' => 'mds-grid',
+        'name' => 'Classic Pixel Grid',
+        'provides' => ['inventory.grid'],
+        'requires' => ['platform.core'],
+        'installed' => true,
+        'active' => true,
+        'locked' => true,
+        'setup_source' => 'core',
+    ],
+    [
+        'slug' => 'mds-needs-helper',
+        'name' => 'Needs Helper',
+        'requires' => ['platform.core', 'mds-hidden-helper'],
+        'installed' => true,
+        'active' => false,
+        'setup_source' => 'installed',
+    ],
+];
+$provide_hidden_helper = [];
+add_filter('million-dollar-script/setup/extension/providers', static function ($providers) use (&$provide_hidden_helper) {
+    if (empty($provide_hidden_helper)) {
+        return $providers;
+    }
+
+    $providers['mds-hidden-helper'] = [
+        'slug' => 'mds-hidden-helper',
+        'name' => 'Hidden Helper',
+        'installed' => true,
+        'active' => !empty($provide_hidden_helper['active']),
+        'setup_source' => 'installed',
+    ];
+
+    return $providers;
+});
+
+$no_helper_anywhere = $setup->selection_plan(['mds-needs-helper'], $hidden_helper_choices);
+mds3_assert_same(true, count($no_helper_anywhere['errors']) > 0, 'Expected a requirement nothing on the site provides to be reported.');
+mds3_assert_same(
+    true,
+    [] === array_filter((array) $no_helper_anywhere['errors'], static function ($error) {
+        return false !== strpos((string) $error, 'requires missing capability');
+    }),
+    'Expected an unmet requirement to name the extension and the next step, not a capability string: ' . json_encode($no_helper_anywhere['errors'])
+);
+
+$provide_hidden_helper = ['active' => true];
+$helper_running = $setup->selection_plan(['mds-needs-helper'], $hidden_helper_choices);
+mds3_assert_same(
+    0,
+    count((array) $helper_running['errors']),
+    'Expected a requirement met by an installed, active extension the setup does not offer to pass: ' . json_encode($helper_running['errors'])
+);
+mds3_assert_same(
+    false,
+    in_array('mds-hidden-helper', (array) $helper_running['selected'], true),
+    'Expected a provider the setup does not offer to stay out of the selection it writes.'
+);
+
+$provide_hidden_helper = ['active' => false];
+$helper_installed_but_off = $setup->selection_plan(['mds-needs-helper'], $hidden_helper_choices);
+mds3_assert_same(
+    true,
+    [] !== array_filter((array) $helper_installed_but_off['errors'], static function ($error) {
+        return false !== strpos((string) $error, 'Hidden Helper') && false !== stripos((string) $error, 'switched on');
+    }),
+    'Expected an extension that is installed but not switched on to be named, with what to do about it: ' . json_encode($helper_installed_but_off['errors'])
+);
+$provide_hidden_helper = [];
 
 update_option(\MillionDollarScript\V3\Extensions\ExtensionSetup::SELECTED_EXTENSIONS_OPTION, ['mds-grid', 'mds-imagegrid'], false);
 $activation_settings_backup = get_option('mds3_settings', []);

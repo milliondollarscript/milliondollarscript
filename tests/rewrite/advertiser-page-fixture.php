@@ -82,8 +82,18 @@ try {
         throw new RuntimeException('Advertiser pages must publish without exposing an administrator as the author.');
     }
     $url = Placements::public_url($placement_id);
-    if (false === strpos($url, '/advertisers/private-fixture-advertiser-' . $placement_id . '/')) {
-        throw new RuntimeException('The public URL facade did not return the configured advertiser page URL.');
+    // What the facade owes the site is the address of this placement's own page, with the slug
+    // the site's settings asked for. The path shape depends on the site's permalink setting - a
+    // site on plain permalinks writes the same page as a query string - so the page is checked
+    // for its name and the URL for the address this site gives that page.
+    $expected = (string) get_permalink($post_id);
+    $named = sanitize_title('private-fixture-advertiser-' . $placement_id);
+    $actual_slug = (string) get_post_field('post_name', $post_id);
+    if ('' === $url || $url !== $expected) {
+        throw new RuntimeException('The public URL facade did not return the configured advertiser page URL: ' . var_export($url, true) . ' expected ' . var_export($expected, true));
+    }
+    if ($named !== $actual_slug) {
+        throw new RuntimeException('The advertiser page was saved under "' . $actual_slug . '", not the configured slug "' . $named . '".');
     }
     $view = Placements::public_view($placement_id);
     if (!is_array($view) || array_key_exists('order_id', $view) || array_key_exists('user_id', $view) || false !== strpos(wp_json_encode($view), 'private-fixture@example.test')) {
@@ -95,6 +105,7 @@ try {
     }
     $component = new AdvertiserPages();
     $invalid_settings = $component->validate_settings(new WP_Error(), [
+        'mds-pixel-template' => 'yes',
         'mds-pixel-base' => 'wp-json',
         'mds-pixel-slug-structure' => '%placement_id%',
     ], []);
@@ -138,7 +149,10 @@ try {
     if ($old_slug !== get_post_field('post_name', $post_id)) {
         throw new RuntimeException('A normal placement save changed its URL before the explicit slug migration.');
     }
-    $migration = $manager->migrate_slugs(10, 0);
+    // The migration works through the site's pages in placement-id order, so ask
+    // for the batch that contains this fixture's own placement rather than hoping
+    // the site has few other pages. (llm-task c1c3bb16)
+    $migration = $manager->migrate_slugs(500, absint($placement_id) - 1);
     if (empty($migration['changed']) || 'placement-' . $placement_id !== get_post_field('post_name', $post_id)) {
         throw new RuntimeException('The explicit advertiser slug migration did not apply the configured pattern.');
     }

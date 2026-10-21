@@ -8,6 +8,7 @@
 namespace MillionDollarScript\V3\Migration\Concerns;
 
 use MillionDollarScript\V3\Support\DB;
+use MillionDollarScript\V3\Migration\LegacyValue;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -188,12 +189,12 @@ trait ResolvesLegacyAdMetadata {
 
     private function legacy_ad_meta_value($values) {
         if (!is_array($values)) {
-            return maybe_unserialize($values);
+            return LegacyValue::read($values);
         }
 
         $normalized = [];
         foreach ($values as $value) {
-            $normalized[] = maybe_unserialize($value);
+            $normalized[] = LegacyValue::read($value);
         }
 
         return 1 === count($normalized) ? $normalized[0] : $normalized;

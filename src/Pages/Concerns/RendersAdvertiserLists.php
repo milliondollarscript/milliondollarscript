@@ -8,6 +8,7 @@
 namespace MillionDollarScript\V3\Pages\Concerns;
 
 use MillionDollarScript\V3\Grid\GridRepository;
+use MillionDollarScript\V3\Media\AdvertiserPageManager;
 use MillionDollarScript\V3\Media\PlacementRepository;
 use MillionDollarScript\V3\Support\Template;
 
@@ -147,8 +148,17 @@ trait RendersAdvertiserLists {
             $url = esc_url_raw((string) ($placement['link_url'] ?? ''));
             $host = $url ? wp_parse_url($url, PHP_URL_HOST) : '';
             $alt_text = sanitize_text_field((string) ($placement['alt_text'] ?? ''));
+            // The public page already carries the name this advertiser is known
+            // by, including on a site migrated from MDS2 where the short
+            // description was blank because it duplicated the ad copy. Show the
+            // list and the page as the same advertiser, not one of them.
+            $page_id = absint($placement['public_post_id'] ?? 0);
+            $page_title = '';
+            if ($page_id && AdvertiserPageManager::POST_TYPE === get_post_type($page_id) && 'publish' === get_post_status($page_id)) {
+                $page_title = sanitize_text_field((string) get_the_title($page_id));
+            }
             /* translators: %d: advertiser placement ID. */
-            $title = $alt_text ?: ($host ?: sprintf(__('Advertiser #%d', 'million-dollar-script'), absint($placement['id'] ?? 0)));
+            $title = $page_title ?: ($alt_text ?: ($host ?: sprintf(__('Advertiser #%d', 'million-dollar-script'), absint($placement['id'] ?? 0))));
             $popup_text = wp_strip_all_tags((string) ($placement['popup_text'] ?? ''), true);
             $popup_text = '' !== $popup_text ? wp_trim_words($popup_text, 40, '...') : '';
             $grid_title = sanitize_text_field((string) ($placement['grid_title'] ?? ''));

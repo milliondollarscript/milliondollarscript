@@ -33,7 +33,7 @@ final class StarterSite implements Component {
      *
      * @return array<string,mixed>
      */
-    public function create() {
+    public function create(array $args = array()) {
         $result = [
             'created' => [],
             'errors' => [],
@@ -101,7 +101,18 @@ final class StarterSite implements Component {
             $result
         );
 
+        // Ryan asked for a choice rather than a surprise: leaving the site's own
+        // navigation alone is the default, and overwriting it has to be asked for
+        // (llm-task efdcfa60).
+        $stored = is_array($state['navigation'] ?? null) ? $state['navigation'] : [];
+        $mode = sanitize_key((string) ($args['navigation_mode'] ?? ($stored['mode'] ?? 'keep')));
+        $mode = in_array($mode, array('keep', 'replace'), true) ? $mode : 'keep';
+        $state['navigation_mode'] = $mode;
+
         $navigation = (new StarterNavigation())->ensure($pages, $state, $result);
+        if (is_array($navigation)) {
+            $navigation['mode'] = $mode;
+        }
         $state = [
             'pages' => array_map('absint', array_filter($pages)),
             'navigation' => $navigation,
@@ -141,6 +152,10 @@ final class StarterSite implements Component {
                 !empty($navigation['preserved'])
                 || ('classic' === ($navigation['type'] ?? '') && empty($navigation['location']))
             ),
+            // Set when the option was left off: nothing about navigation was written at all,
+            // so the step tells the site owner what is still missing rather than claiming it
+            // is ready (Ryan, 2026-10-18).
+            'navigation_untouched' => !empty($navigation['untouched']),
             'pages' => $pages,
         ];
     }

@@ -2,7 +2,7 @@
   "schema": 1,
   "package": "million-dollar-script",
   "type": "core",
-  "version": "3.0.0",
+  "version": "3.0.0-alpha.7",
   "channel": "main",
   "title": "Million Dollar Script",
   "docs": [

@@ -62,6 +62,7 @@ final class Admin implements Component {
         add_action('admin_post_mds3_create_extension_onboarding_pages', [$this, 'create_extension_onboarding_pages']);
         add_action('admin_post_mds3_run_migration_import', [$this, 'run_migration_import']);
         add_action('admin_post_mds3_pause_migration_import', [$this, 'pause_migration_import']);
+        add_action('admin_post_mds3_migration_recheck', [$this, 'run_migration_recheck']);
         add_action('admin_post_mds3_clear_cache', [$this, 'clear_cache']);
         add_action('wp_ajax_mds3_migration_step', [$this, 'ajax_migration_step']);
 
@@ -79,6 +80,10 @@ final class Admin implements Component {
             add_action('admin_post_mds3_archive_price_rule', [$this, 'archive_price_rule']);
             add_action('admin_post_mds3_set_region_status', [$this, 'set_region_status']);
             add_action('admin_post_mds3_update_order_status', [$this, 'update_order_status']);
+            // Publication is a separate control from payment status on purpose - see
+            // HandlesOrderAdminActions::set_placement_publication.
+            add_action('admin_post_mds3_publish_placement', [$this, 'publish_placement']);
+            add_action('admin_post_mds3_unpublish_placement', [$this, 'unpublish_placement']);
             add_action('admin_post_mds3_bulk_order_status', [$this, 'bulk_order_status']);
             add_action('admin_post_mds3_start_order_renewal', [$this, 'start_order_renewal']);
             add_action('admin_post_mds3_move_order_placement', [$this, 'move_order_placement']);
@@ -151,6 +156,9 @@ final class Admin implements Component {
                 'loading' => __('Loading...', 'million-dollar-script'),
                 'error' => __('Unable to load order details.', 'million-dollar-script'),
                 'migrationError' => __('Migration progress could not be updated.', 'million-dollar-script'),
+                /* translators: 1: retry number, 2: retry limit. */
+                'migrationRetrying' => __('Trying again on its own (%1$d of %2$d).', 'million-dollar-script'),
+                'migrationRetryStopped' => __('The batch stopped. Choose Process next batch to try again.', 'million-dollar-script'),
                 'installing' => __('Installing...', 'million-dollar-script'),
                 'dependencyReady' => __('Plugin installed and activated. You can continue setup.', 'million-dollar-script'),
                 'dependencyFailed' => __('The plugin could not be installed automatically.', 'million-dollar-script'),
@@ -274,6 +282,14 @@ final class Admin implements Component {
 
     public function maybe_redirect_to_setup() {
         if (!current_user_can('manage_options') || wp_doing_ajax() || 'yes' === get_option('mds3_setup_complete', 'no')) {
+            return;
+        }
+
+        // A site that has finished an import is trying to look at migrated data,
+        // and the wizard has no Finish control to let it out - every MDS screen
+        // bounced back (Vikunja #31 item 5). Keep the wizard reachable from its
+        // own menu item; stop forcing it once real migrated data exists.
+        if ($this->latest_completed_migration_import()) {
             return;
         }
 

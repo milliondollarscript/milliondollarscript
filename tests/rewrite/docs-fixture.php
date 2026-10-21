@@ -193,6 +193,11 @@ try {
             'valid' => true,
         ],
     ], false);
+    // The manual-refresh section below replaces the cache index, which orphans every key this
+    // run creates: the transients stay in the store, the next run finds them, makes no requests
+    // at all, and the request-count assertion then fails for the wrong reason (llm-task 51dde7ab).
+    // Keep the original value and every key the run registers so cleanup can remove them.
+    $docs_cache_index_original = get_option('mds3_remote_docs_cache_keys', false);
     \MillionDollarScript\V3\Docs\RemoteDocsClient::purge_extension('mds-paid-docs-fixture');
     \MillionDollarScript\V3\Docs\RemoteDocsClient::purge_extension('mds-paid-docs-unlicensed-fixture');
 
@@ -400,6 +405,8 @@ try {
         throw new RuntimeException('Remote docs manifest and document endpoints were not requested.');
     }
 
+    $docs_cache_index_run = get_option('mds3_remote_docs_cache_keys', []);
+    $docs_cache_index_run = is_array($docs_cache_index_run) ? $docs_cache_index_run : [];
     $refresh_cache_key = 'mds3_remote_docs_manual_refresh_fixture';
     set_transient($refresh_cache_key, ['content_markdown' => 'stale'], 300);
     update_option('mds3_remote_docs_cache_keys', [
@@ -482,6 +489,24 @@ try {
         'warnings' => count($registry->warnings()),
     ], JSON_PRETTY_PRINT) . PHP_EOL;
 } finally {
+    // The index no longer names the manifest and document keys this run wrote, because the
+    // section above overwrote it - so cleanup has to use the snapshot as well (llm-task 51dde7ab).
+    $docs_index_keys = [];
+    foreach ([$docs_cache_index_run ?? [], get_option('mds3_remote_docs_cache_keys', [])] as $docs_index_group) {
+        foreach ((array) $docs_index_group as $docs_index_group_keys) {
+            foreach ((array) $docs_index_group_keys as $docs_cache_key) {
+                $docs_index_keys[(string) $docs_cache_key] = true;
+            }
+        }
+    }
+    foreach (array_keys($docs_index_keys) as $docs_cache_key) {
+        delete_transient($docs_cache_key);
+    }
+    if (false === ($docs_cache_index_original ?? false)) {
+        delete_option('mds3_remote_docs_cache_keys');
+    } else {
+        update_option('mds3_remote_docs_cache_keys', $docs_cache_index_original, false);
+    }
     if (isset($previous_licenses)) {
         update_option('mds3_extension_licenses', $previous_licenses, false);
     } else {

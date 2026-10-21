@@ -189,6 +189,22 @@
         return value || fallback;
     }
 
+    function withAlpha(color, alpha) {
+        var text = String(color || '').trim();
+        var hex = text.match(/^#([0-9a-f]{6})$/i);
+        if (hex) {
+            var value = parseInt(hex[1], 16);
+            return 'rgba(' + ((value >> 16) & 255) + ', ' + ((value >> 8) & 255) + ', ' + (value & 255) + ', ' + alpha + ')';
+        }
+
+        var rgb = text.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+        if (rgb) {
+            return 'rgba(' + rgb[1] + ', ' + rgb[2] + ', ' + rgb[3] + ', ' + alpha + ')';
+        }
+
+        return text || 'rgba(37, 99, 235, ' + alpha + ')';
+    }
+
     function forceLightThemeChrome() {
         var controls;
         var buttons;
@@ -701,10 +717,7 @@
     function validatePlacementForm(form, normalizeUrls, uploadRules) {
         var result = placementFormValidation(form, normalizeUrls, uploadRules);
         if (result.message) {
-            showFormMessage(form, result.message, result.field);
-            if (result.field && typeof richTextFocusTarget(result.field).focus === 'function') {
-                richTextFocusTarget(result.field).focus({ preventScroll: false });
-            }
+            rejectPlacementForm(form, result, true);
             return false;
         }
 
@@ -1370,7 +1383,12 @@
 
         return request(payload).then(function (response) {
             if (!response || !response.success || !response.data || !response.data.draft) {
-                throw new Error(response && response.data && response.data.message ? response.data.message : gridConfig.i18n.actionFailed);
+                var message = response && response.data && response.data.message ? response.data.message : gridConfig.i18n.actionFailed;
+                var error = new Error(message);
+                // The server names the control a rejection belongs to; without this the
+                // form could mark it but the reason would still only sit in the status bar.
+                error.field = response && response.data && response.data.field ? response.data.field : 'image';
+                throw error;
             }
 
             return response.data.draft;
@@ -1449,6 +1467,11 @@
         this.gridId = element.getAttribute('data-grid-id');
         this.readOnly = element.getAttribute('data-read-only') === 'true';
         this.rendererMode = element.getAttribute('data-renderer-mode') || 'auto';
+        // What a window change does to the view. On shows the whole grid again, which
+        // is what a site presenting the board as a whole wants; off leaves the visitor
+        // on the part of the grid they had zoomed in to. A missing attribute means on,
+        // so a shell built by an older build behaves like the setting's own default.
+        this.fitOnResize = element.getAttribute('data-fit-on-resize') !== 'false';
         this.actions = element.querySelector('.mds3-grid-actions');
         this.selectionSizeButton = element.querySelector('.mds3-selection-size');
         this.selectionSize = 1;
@@ -1476,6 +1499,15 @@
         this.viewAllButton = element.querySelector('.mds3-view-all');
         this.viewImagesButton = element.querySelector('.mds3-view-images');
         this.selected = [];
+        // Pointer gestures over the grid. A press inside the current selection moves
+        // it; shift+press draws a rectangle. Both must not fight with map panning,
+        // so the pan interaction is parked for the duration of the gesture.
+        this.moveDrag = null;
+        this.bandDrag = null;
+        // The last cell a gesture was over. A pointer that leaves the grid mid-drag has no cell to
+        // report, and the gesture must hold its last position rather than jump to a corner.
+        this.lastGestureCell = null;
+        this.suppressClickUntil = 0;
         this.state = null;
         this.currentOrder = null;
         this.currentOrderKey = '';
@@ -1504,6 +1536,8 @@
         this.resizeObserver = null;
         this.resizeFrame = 0;
         this.lastResponsiveHeight = 0;
+        this.refitTimer = 0;
+        this.lastRefitSize = null;
         this.element.mds3Grid = this;
         this.load();
     }
@@ -1602,7 +1636,7 @@
                 this.interactionObserver = new window.IntersectionObserver(function (entries) {
                     entries.forEach(function (entry) {
                         if (entry.target === self.viewport && !entry.isIntersecting) {
-                            self.setInteractionFocused(false);
+                            self.resetInteractionState();
                         }
                     });
                 }, { threshold: 0 });
@@ -1617,7 +1651,12 @@
             if (self.popover.contains(event.target)) {
                 return;
             }
-            if (self.element.contains(event.target)) {
+            // Only the map has its own popover handling - a press there either opens the
+            // popup for the placement under the pointer or closes the current one. Every
+            // other press inside the widget (Restore progress, the order form, the
+            // toolbar) has to dismiss the popup, and hidePopover takes the backdrop too.
+            var mapTarget = self.mapElement || self.element;
+            if (mapTarget.contains(event.target)) {
                 return;
             }
             self.hidePopover();
@@ -1903,11 +1942,15 @@
         }));
 
         this.previewSource = new window.ol.source.Vector();
+        // The outline describes the shape the person is about to place, so it has to
+        // be drawn in the same colour the placed shape uses - not a fixed blue that
+        // belongs to a theme this site may not have.
+        var accentColor = themeVariable(this.element, '--mds3-grid-accent', '#2563eb');
         layers.push(new window.ol.layer.Vector({
             source: this.previewSource,
             style: new window.ol.style.Style({
-                stroke: new window.ol.style.Stroke({ color: 'rgba(37, 99, 235, 0.95)', width: 2, lineDash: [6, 4] }),
-                fill: new window.ol.style.Fill({ color: 'rgba(37, 99, 235, 0.1)' })
+                stroke: new window.ol.style.Stroke({ color: accentColor, width: 2, lineDash: [6, 4] }),
+                fill: new window.ol.style.Fill({ color: withAlpha(accentColor, 0.1) })
             }),
             zIndex: 10
         }));
@@ -1924,9 +1967,17 @@
                 // A two-finger gesture must never tilt the grid: this pins the
                 // view rotation to 0 whatever interaction tries to change it.
                 enableRotation: false
-            })
+            }),
+            // The control rail below is the only control UI: one place, one style,
+            // in the order a person reads it. OpenLayers' own controls would sit in
+            // their own boxes at their own offsets.
+            controls: []
         });
         this.captureWheelZoomInteractions();
+        this.capturePanInteraction();
+        this.removeShiftDragZoom();
+        this.resetInteractionState();
+        this.addControlRail();
         this.addFitControl();
         this.applyMapThemeOverrides();
 
@@ -1938,6 +1989,12 @@
         });
 
         this.map.on('singleclick', function (event) {
+            // A drag that moved has already committed its selection; the click the
+            // browser fires afterwards must not then toggle a block off.
+            if (self.suppressClickUntil && Date.now() < self.suppressClickUntil) {
+                return;
+            }
+
             var placement = self.placementAt(event.coordinate[0], -event.coordinate[1]);
             if (placement) {
                 self.activatePlacement(placement, event.originalEvent);
@@ -1951,12 +2008,18 @@
         });
 
         this.map.on('pointermove', function (event) {
+            if (self.moveDrag || self.bandDrag) {
+                self.updateDragGesture(event);
+                return;
+            }
+
             if (event.dragging) {
                 return;
             }
 
             var placement = self.placementAt(event.coordinate[0], -event.coordinate[1]);
-            self.mapElement.style.cursor = placement ? 'pointer' : (self.readOnly ? '' : 'crosshair');
+            var overSelection = self.selectedCellAtGridPoint(event.coordinate[0], -event.coordinate[1]);
+            self.setHoverCursor(self.mapElement, placement ? 'open' : (overSelection ? 'remove' : (self.readOnly ? 'none' : 'select')));
             if (!self.readOnly) {
                 self.updateSelectionPreview(event, placement);
             }
@@ -1970,6 +2033,52 @@
                 }
                 self.showPopover(placement, event.originalEvent.clientX, event.originalEvent.clientY, { pinned: false });
             }
+        });
+
+        this.map.on('pointerdown', function (event) {
+            // A finger is used to pan this map, exactly as it is anywhere else on the
+            // grid; the drag gestures below belong to a mouse or a pen.
+            if (self.readOnly || self.currentOrder || !event.originalEvent || event.originalEvent.pointerType === 'touch') {
+                return;
+            }
+
+            var cell = self.cellFromCoordinate(event.coordinate);
+            if (!cell || (!self.isCoordAvailable(cell.row, cell.col) && !self.isSelectedCell(cell.row, cell.col))) {
+                return;
+            }
+
+            if (event.originalEvent.shiftKey) {
+                if (!self.multiBlockEnabled() || self.bandDrag) {
+                    return;
+                }
+
+                self.bandDrag = { originRow: cell.row, originCol: cell.col, row: cell.row, col: cell.col };
+                self.lastGestureCell = { row: cell.row, col: cell.col };
+                self.setPanActive(false);
+                return;
+            }
+
+            if (self.selected.length && self.isSelectedCell(cell.row, cell.col)) {
+                // Pressing inside the selection is a request to move it, not to pan
+                // the grid or to toggle that block off.
+                self.moveDrag = { row: cell.row, col: cell.col, dRow: 0, dCol: 0, moved: false };
+                self.lastGestureCell = { row: cell.row, col: cell.col };
+                self.setPanActive(false);
+            }
+        });
+
+        this.map.on('pointercancel', function () {
+            self.cancelDragGesture();
+        });
+
+        this.map.on('pointerup', function (event) {
+            self.finishDragGesture(event.originalEvent);
+        });
+
+        // The release can land outside the map after the pointer has left it; the
+        // gesture must not be left holding the pan interaction parked.
+        this.element.ownerDocument.addEventListener('pointerup', function (event) {
+            self.finishDragGesture(event);
         });
 
         this.mapElement.addEventListener('mouseleave', function (event) {
@@ -1997,12 +2106,80 @@
         });
     };
 
-    Grid.prototype.setInteractionFocused = function (active) {
+    /**
+     * Holding shift and dragging is how a rectangular area gets drawn out on a grid a
+     * person can buy from. OpenLayers gives that same gesture to zooming the map into
+     * the dragged box, which fights the drawing: the grid changes scale under the shape
+     * being drawn. The map builds its own gestures, so this takes that one back after
+     * construction - and only where drawing a shape is something a person can do here.
+     */
+    Grid.prototype.removeShiftDragZoom = function () {
+        var self = this;
+        var DragZoom = window.ol && window.ol.interaction ? window.ol.interaction.DragZoom : null;
+        var found = [];
+
+        if (this.readOnly || !this.map || !this.map.getInteractions) {
+            return;
+        }
+
+        this.map.getInteractions().forEach(function (interaction) {
+            var name = interaction.getClassName ? interaction.getClassName() : '';
+            if ((DragZoom && interaction instanceof DragZoom) || /DragZoom$/.test(name)) {
+                found.push(interaction);
+            }
+        });
+
+        found.forEach(function (interaction) {
+            self.map.removeInteraction(interaction);
+        });
+    };
+
+    Grid.prototype.capturePanInteraction = function () {
+        var self = this;
+        var DragPan = window.ol && window.ol.interaction ? window.ol.interaction.DragPan : null;
+
+        this.panInteraction = null;
+        if (!this.map || !DragPan || !this.map.getInteractions) {
+            return;
+        }
+
+        this.map.getInteractions().forEach(function (interaction) {
+            if (interaction instanceof DragPan) {
+                self.panInteraction = interaction;
+            }
+        });
+    };
+
+    Grid.prototype.setPanActive = function (active) {
+        if (this.panInteraction) {
+            this.panInteraction.setActive(!!active);
+        }
+    };
+
+    /**
+     * The state a grid goes back to when nothing is holding it: a grid you can buy from
+     * is used to choose blocks first, so its wheel is already live and the first press
+     * can go to the selection. A display-only grid leaves the wheel with the page until
+     * someone presses it. The line under the grid says which of the two the person is in,
+     * so the sentence and the gesture agree.
+     */
+    Grid.prototype.resetInteractionState = function () {
+        if (!this.map || !this.wheelZoomInteractions.length) {
+            return;
+        }
+
+        this.setInteractionFocused(!this.readOnly, false);
+    };
+
+    Grid.prototype.setInteractionFocused = function (active, withRing) {
         var hint = this.element.querySelector('.mds3-grid-interaction-hint');
 
         this.interactionFocused = !!active;
+        // The ring marks a state someone can change: on a display-only grid it appears when
+        // a press hands the wheel to the grid. A grid you buy from already has the wheel, so
+        // a ring there would say nothing and sit there on every block click.
         if (this.viewport) {
-            this.viewport.classList.toggle('mds3-grid-interaction-active', this.interactionFocused);
+            this.viewport.classList.toggle('mds3-grid-interaction-active', this.interactionFocused && false !== withRing && this.readOnly);
         }
         this.wheelZoomInteractions.forEach(function (interaction) {
             interaction.setActive(this.interactionFocused);
@@ -2079,12 +2256,200 @@
         button.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
+            // The note that explained why the first view was a part of the grid has
+            // done its job once the visitor asks for the whole grid.
+            self.setStatus('');
             self.fitGrid();
+            self.revealInView();
         });
 
         element.appendChild(button);
-        this.map.addControl(new window.ol.control.Control({ element: element }));
+        if (this.controlsGroup) {
+            this.controlsGroup.appendChild(element);
+        } else {
+            this.map.addControl(new window.ol.control.Control({ element: element }));
+        }
         this.fitControl = element;
+    };
+
+    /**
+     * The grid's control rail: one container at the top-left of the map holding
+     * zoom in, zoom out, and fit. Zoom and fit stay put - a person can always pan,
+     * and the controls only get in the way at an absurdly small window - so what
+     * this adds is the choice to fold them away. That choice is not in the rail:
+     * it sits with the other grid controls above the grid, because looking for it
+     * inside the map is a hunt.
+     */
+    Grid.prototype.addControlRail = function () {
+        var self = this;
+        var rail;
+        var group;
+
+        if (!this.map || this.controlRail) {
+            return;
+        }
+
+        rail = document.createElement('div');
+        rail.className = 'mds3-grid-controls ol-unselectable ol-control';
+
+        group = document.createElement('div');
+        group.className = 'mds3-grid-controls-group';
+
+        group.appendChild(this.createZoomControls());
+        rail.appendChild(group);
+
+        this.controlRail = rail;
+        this.controlsGroup = group;
+        this.controlsHidden = this.readControlsHiddenPref();
+        this.map.addControl(new window.ol.control.Control({ element: rail }));
+        this.placeControlsToggle();
+        this.applyControlsVisibility();
+    };
+
+    /**
+     * The fold control goes at the left end of the row that already carries the
+     * grid's controls. A display-only grid has no such row, so it shows its zoom
+     * and fit controls and offers no fold: the controls are never hidden inside the
+     * grid area itself.
+     */
+    Grid.prototype.placeControlsToggle = function () {
+        var row;
+
+        if (!this.controlsButtonAllowed() || this.controlsToggle || !this.element) {
+            return;
+        }
+
+        row = this.element.querySelector('.mds3-grid-actions');
+        if (!row) {
+            return;
+        }
+
+        row.insertBefore(this.createControlsToggleButton(), row.firstChild);
+    };
+
+    Grid.prototype.createZoomControls = function () {
+        var self = this;
+        var holder = document.createElement('div');
+        var zoomIn = document.createElement('button');
+        var zoomOut = document.createElement('button');
+
+        holder.className = 'ol-zoom';
+        zoomIn.type = 'button';
+        zoomIn.className = 'ol-zoom-in';
+        zoomOut.type = 'button';
+        zoomOut.className = 'ol-zoom-out';
+
+        [zoomIn, zoomOut].forEach(function (button) {
+            button.setAttribute('data-tooltip', button.className.indexOf('ol-zoom-in') >= 0
+                ? i18n('zoomIn', 'Zoom in')
+                : i18n('zoomOut', 'Zoom out'));
+            button.setAttribute('aria-label', button.getAttribute('data-tooltip'));
+            button.textContent = button.className.indexOf('ol-zoom-in') >= 0 ? '+' : '\u2212';
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                self.zoomBy(button.className.indexOf('ol-zoom-in') >= 0 ? 1 : -1);
+            });
+        });
+
+        holder.appendChild(zoomIn);
+        holder.appendChild(zoomOut);
+
+        return holder;
+    };
+
+    Grid.prototype.zoomBy = function (delta) {
+        var view = this.map ? this.map.getView() : null;
+
+        if (!view || typeof view.adjustZoom !== 'function') {
+            return;
+        }
+
+        view.adjustZoom(delta);
+    };
+
+    Grid.prototype.createControlsToggleButton = function () {
+        var self = this;
+        var button = document.createElement('button');
+
+        button.type = 'button';
+        button.className = 'mds3-grid-controls-toggle';
+        button.innerHTML = '<span class="mds3-grid-controls-toggle-icon" aria-hidden="true"></span>';
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            self.setControlsHidden(!self.controlsHidden, true);
+        });
+
+        this.controlsToggle = button;
+
+        return button;
+    };
+
+    /**
+     * Whether the site wants the show/hide control offered at all. Zoom and fit are
+     * not affected by this - hiding the control does not hide them.
+     */
+    Grid.prototype.controlsButtonAllowed = function () {
+        return String(this.interactionSettings().controls_button || 'yes').toLowerCase() !== 'no';
+    };
+
+    Grid.prototype.controlsHiddenStorageKey = function () {
+        return this.gridId ? draftStorageKey(null, 'grid:' + this.gridId + ':controls-hidden') : '';
+    };
+
+    Grid.prototype.readControlsHiddenPref = function () {
+        var key = this.controlsHiddenStorageKey();
+        var parsed;
+
+        if (!key || !window.localStorage) {
+            return false;
+        }
+
+        try {
+            parsed = JSON.parse(window.localStorage.getItem(key) || 'null');
+        } catch (error) {
+            return false;
+        }
+
+        return !!(parsed && parsed.hidden === true);
+    };
+
+    Grid.prototype.setControlsHidden = function (hidden, persist) {
+        this.controlsHidden = !!hidden;
+        this.applyControlsVisibility();
+
+        if (!persist) {
+            return;
+        }
+
+        var key = this.controlsHiddenStorageKey();
+        if (!key || !window.localStorage) {
+            return;
+        }
+
+        try {
+            window.localStorage.setItem(key, JSON.stringify({ hidden: this.controlsHidden, savedAt: Date.now() }));
+        } catch (error) {}
+    };
+
+    Grid.prototype.applyControlsVisibility = function () {
+        var label;
+
+        if (this.controlRail) {
+            this.controlRail.hidden = !!this.controlsHidden;
+            this.controlRail.classList.toggle('mds3-grid-controls-mode-hidden', !!this.controlsHidden);
+        }
+
+        if (this.controlsToggle) {
+            label = this.controlsHidden
+                ? i18n('showGridControls', 'Show grid controls')
+                : i18n('hideGridControls', 'Hide grid controls');
+            this.controlsToggle.setAttribute('aria-expanded', this.controlsHidden ? 'false' : 'true');
+            this.controlsToggle.setAttribute('aria-label', label);
+            this.controlsToggle.setAttribute('title', label);
+            this.controlsToggle.classList.toggle('is-folded', !!this.controlsHidden);
+        }
     };
 
     Grid.prototype.hasRemoteTiles = function () {
@@ -2284,6 +2649,24 @@
         return this.element && this.element.getAttribute('data-responsive-height') === 'true';
     };
 
+    /**
+     * How tall a grid box may be on the screen the visitor is actually using.
+     *
+     * A grid box taller than the window cannot be taken in as a whole: the visitor
+     * sees a band of the grid with the rest below the fold, the page scrolls under
+     * the map's own wheel capture, and the Fit control looks dead because the view
+     * it produces is off-screen. That was measured on a fresh site at a 1440x1000
+     * window, where a default grid produced a 1000px box starting 615px down the
+     * page (llm-task 6c838ad8). The box is therefore capped at the window, with
+     * enough left over for the page's header and the grid's own controls, and with
+     * a floor so a short window still gets a usable map.
+     */
+    Grid.prototype.availableViewportHeight = function () {
+        var win = Math.max(320, Number(window.innerHeight || 0));
+
+        return Math.round(Math.max(360, Math.min(win - 140, win * 0.85)));
+    };
+
     Grid.prototype.updateResponsiveViewport = function () {
         if (!this.shouldUseResponsiveHeight() || !this.viewport || !this.state || !this.state.grid) {
             return false;
@@ -2293,7 +2676,7 @@
         var gridWidth = Math.max(1, Number(grid.width || 0));
         var gridHeight = Math.max(1, Number(grid.height || 0));
         var viewportWidth = Math.max(1, this.viewport.getBoundingClientRect().width || this.element.clientWidth || 0);
-        var targetHeight = Math.round(Math.min(gridHeight, viewportWidth * (gridHeight / gridWidth)));
+        var targetHeight = Math.round(Math.min(gridHeight, viewportWidth * (gridHeight / gridWidth), this.availableViewportHeight()));
 
         if (!Number.isFinite(targetHeight) || targetHeight <= 0) {
             return false;
@@ -2323,7 +2706,81 @@
                 self.map.updateSize();
             }
             self.redraw();
+            self.scheduleRefit();
         });
+    };
+
+    /**
+     * Show the whole grid again after the window changed, when the site asks for it.
+     *
+     * A phone rotating is a window change like any other - the page gets a resize for
+     * it too - so there is one path here rather than a second listener for a
+     * deprecated orientation event. The delay is not decoration: Android fires several
+     * resizes during one rotation, and iOS reports the new dimensions only after the
+     * rotation animation, so fitting on the first event aims the view at a window that
+     * no longer exists. Only a real change in the drawn box triggers a refit, and a
+     * placement popup is left alone: it is anchored to a block, and refitting would
+     * slide the block out from under it while the visitor is reading it.
+     */
+    Grid.prototype.scheduleRefit = function () {
+        var self = this;
+
+        if (!this.fitOnResize || !this.map || !this.state || !this.state.grid) {
+            return;
+        }
+
+        var size = this.mapViewportSize();
+        if (!size || size.length !== 2) {
+            return;
+        }
+
+        if (this.lastRefitSize
+            && Math.abs(size[0] - this.lastRefitSize[0]) < 2
+            && Math.abs(size[1] - this.lastRefitSize[1]) < 2) {
+            return;
+        }
+
+        this.lastRefitSize = size;
+
+        if (this.activePopoverPlacementId) {
+            return;
+        }
+
+        if (this.refitTimer) {
+            window.clearTimeout(this.refitTimer);
+        }
+
+        this.refitTimer = window.setTimeout(function () {
+            self.refitTimer = 0;
+            self.fitGrid();
+        }, 220);
+    };
+
+    // Fitting is only useful if a person can see what it produced. On a page with
+    // a header and a how-to-order section the grid box can start 600px down, so a
+    // box no taller than the window still hangs below the fold and the whole-grid
+    // view arrives off screen - which is what "Fit grid does nothing visible"
+    // reported (llm-task 6c838ad8, measured at 1440x1000: the box ran 639 to 1489
+    // in a 1000px window). Only an explicit Fit asks for this; a refit after a
+    // window change leaves the page exactly where it was.
+    Grid.prototype.revealInView = function () {
+        var box = this.mapElement || this.viewport;
+        if (!box) {
+            return;
+        }
+
+        var rect = box.getBoundingClientRect();
+        if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+            return; // already entirely visible - do not move the page
+        }
+
+        var top = window.scrollY + rect.top - 16;
+        var behavior = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+        try {
+            window.scrollTo({ top: top, behavior: behavior });
+        } catch (error) {
+            window.scrollTo(0, top); // older browsers: no options object
+        }
     };
 
     Grid.prototype.fitGrid = function () {
@@ -2362,6 +2819,57 @@
         this.updateResponsiveViewport();
         this.map.updateSize();
         this.fitGrid();
+
+        // A customer has to be able to press one block. Fitting a default 100x100
+        // block grid into a phone leaves about 3 px per block, which no thumb can
+        // aim at, and at a short desktop window it is under 6 px. So an ordering
+        // grid opens on a legible part of the grid and says what it is doing; one
+        // press of Fit grid gives the whole thing back, and dragging and the zoom
+        // controls move around it. A display grid keeps the whole-grid view: there
+        // is nothing to press on it, and seeing the whole grid is the point of the
+        // page (llm-task 6c838ad8, measured at 1440x1000 and 390x844).
+        if (this.readOnly || !this.state.grid) {
+            return;
+        }
+
+        if (this.cellSizeOnScreenPx() >= 22) {
+            return;
+        }
+
+        this.startAtLegibleRegion();
+    };
+
+    /**
+     * How wide one block is on the screen, in CSS pixels.
+     */
+    Grid.prototype.cellSizeOnScreenPx = function () {
+        var grid = this.state && this.state.grid;
+        if (!grid || !this.map) {
+            return 0;
+        }
+
+        var resolution = Number(this.map.getView().getResolution()) || 0;
+
+        return resolution > 0 ? Number(grid.block_width) / resolution : 0;
+    };
+
+    /**
+     * Open on a part of the grid that a finger can press, centred on the grid.
+     */
+    Grid.prototype.startAtLegibleRegion = function () {
+        var grid = this.state.grid;
+        var view = this.map.getView();
+        // Comfortably past the legibility floor, so the first press is not a
+        // near-miss, and never below the zoom the map allows.
+        var resolution = Number(grid.block_width) / 40;
+        var minResolution = Number(view.getMinResolution()) || 0;
+        if (minResolution > 0 && resolution < minResolution) {
+            resolution = minResolution;
+        }
+
+        view.setResolution(resolution);
+        view.setCenter([grid.width / 2, -(grid.height / 2)]);
+        this.setStatus(i18n('startingRegionHint', 'Showing a part of the grid at a size you can press. Use Fit grid to see all of it, or drag to move around.'));
     };
 
     Grid.prototype.fitPlacementOverview = function () {
@@ -2588,9 +3096,46 @@
         ctx.restore();
     };
 
+    /**
+     * Million Dollar Script 2 often kept no picture bigger than one grid cell - a 10 by
+     * 10 copy of a logo, say, because the old grid generator cut the uploaded image into
+     * per-cell crops. Drawing that across a square several times its size with the canvas
+     * smoothing turned on makes the ad a soft smudge, which is what a tester described as
+     * "squares instead of pictures". Past a modest up-scale, hard edges are both truer and
+     * easier to read: the ad looks like the small picture it actually is rather than like a
+     * broken large one. Anything nearer to its own size is drawn normally.
+     */
+    Grid.prototype.hardEdgesIfUpscaling = function (ctx, scale) {
+        if (!(scale >= 3)) {
+            return;
+        }
+
+        ctx.imageSmoothingEnabled = false;
+        ctx.mozImageSmoothingEnabled = false;
+        ctx.webkitImageSmoothingEnabled = false;
+    };
+
+    /**
+     * The image to draw for an ad: the copy made for this size when the site has one, and the
+     * original when it does not.
+     *
+     * A grid with a few thousand live ads asks for one image per ad, and on a site whose pictures
+     * came over from the older plugin those are often far bigger than any cell they are drawn in.
+     * This chooses the smaller copy for drawing only: the original stays what the full-size view
+     * opens, and what a site keeps when no smaller copy exists.
+     */
+    Grid.prototype.placementDrawUrl = function (placement) {
+        var source = placement && placement.source;
+        if (!source) {
+            return '';
+        }
+
+        return (source.display && source.display.url) || source.url || '';
+    };
+
     Grid.prototype.drawImagePlacement = function (ctx, transform, placement, options) {
         options = options || {};
-        var url = placement.source && placement.source.url;
+        var url = this.placementDrawUrl(placement);
         var image = url ? this.imageCache[url] : null;
         var rect = this.placementDisplayRect(transform, placement, false);
 
@@ -2626,8 +3171,10 @@
             var containScale = Math.min(rect.width / image.naturalWidth, rect.height / image.naturalHeight);
             var dw = image.naturalWidth * containScale;
             var dh = image.naturalHeight * containScale;
+            this.hardEdgesIfUpscaling(ctx, containScale);
             ctx.drawImage(image, rect.x + (rect.width - dw) / 2, rect.y + (rect.height - dh) / 2, dw, dh);
         } else {
+            this.hardEdgesIfUpscaling(ctx, Math.max(rect.width / sw, rect.height / sh));
             ctx.drawImage(image, sx, sy, sw, sh, rect.x, rect.y, rect.width, rect.height);
         }
 
@@ -3190,6 +3737,36 @@
         return ['ADJACENT', 'RECTANGLE', 'NONE'].indexOf(mode) >= 0 ? mode : 'ADJACENT';
     };
 
+    /**
+     * Whether a click on a block that is already selected may remove it.
+     *
+     * The default keeps the inside of a shape whole. Removing an interior block leaves a
+     * hole the customer did not ask for, and under the adjacency or rectangle rule they
+     * often cannot put it back - which is what a tester hit on the dev site while dragging
+     * a sized selection and clicking without moving (llm-task bf221898).
+     */
+    Grid.prototype.interiorClickMode = function () {
+        var selection = this.state && this.state.selection ? this.state.selection : {};
+        var mode = String(selection.selection_interior_click || 'EDGE').toUpperCase();
+
+        return ['EDGE', 'ANY'].indexOf(mode) >= 0 ? mode : 'EDGE';
+    };
+
+    /**
+     * A selected block is on the outer edge when any side of it faces out of the shape.
+     * A single selected block is always edge, so clicking it off still works.
+     */
+    Grid.prototype.isCellOnSelectionEdge = function (row, col) {
+        var sides = [[row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]];
+        for (var i = 0; i < sides.length; i++) {
+            if (!this.isSelectedCell(sides[i][0], sides[i][1])) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     Grid.prototype.multiBlockEnabled = function () {
         var selection = this.state && this.state.selection ? this.state.selection : {};
         return String(selection.block_selection_mode || 'YES').toUpperCase() !== 'NO';
@@ -3701,8 +4278,382 @@
 
     // Hover preview of the first-click block area (mouse/pen only; touch has
     // no hover, so taps keep the current behavior).
+    Grid.prototype.cellFromCoordinate = function (coordinate) {
+        var grid = this.state && this.state.grid ? this.state.grid : null;
+        var point = grid ? this.normalizeGridPoint(coordinate[0], -coordinate[1]) : null;
+        if (!point) {
+            return null;
+        }
+
+        return {
+            row: Math.floor(point.y / grid.block_height),
+            col: Math.floor(point.x / grid.block_width)
+        };
+    };
+
+    Grid.prototype.isSelectedCell = function (row, col) {
+        var key = this.coordKey(row, col);
+
+        return this.selected.some(function (coord) {
+            return coord.key === key;
+        });
+    };
+
+    /**
+     * Would a click at this grid point remove a block from the current selection?
+     *
+     * @param {number} x Grid x.
+     * @param {number} y Grid y.
+     * @return {boolean} True when the point lands on a block this order selected.
+     */
+    Grid.prototype.selectedCellAtGridPoint = function (x, y) {
+        var grid = this.state && this.state.grid ? this.state.grid : null;
+        var point;
+
+        if (!grid || this.readOnly || !this.selected.length) {
+            return false;
+        }
+
+        point = this.normalizeGridPoint(x, y);
+        if (!point) {
+            return false;
+        }
+
+        return this.isSelectedCell(Math.floor(point.y / grid.block_height), Math.floor(point.x / grid.block_width));
+    };
+
+    /**
+     * Say what a click at the pointer would do, before the customer clicks it.
+     *
+     * The hand that offers to move the map could not show which placed block a click would
+     * drop, so removing a block was a guess. "remove" hands the pointer to the stylesheet, so
+     * the pointing cursor can follow the grid's own colours; dragging still shows the grabbing
+     * hand, because a press is a drag and a rest is a click.
+     *
+     * @param {Element} element Map or canvas element the pointer is over.
+     * @param {string}  state   open, remove, select, or none.
+     */
+    Grid.prototype.setHoverCursor = function (element, state) {
+        if (!element) {
+            return;
+        }
+
+        element.classList.remove('mds3-grid-open-target', 'mds3-grid-remove-target', 'mds3-grid-select-target');
+        element.style.cursor = '';
+
+        if ('open' === state) {
+            element.style.cursor = 'pointer';
+            return;
+        }
+
+        if ('select' === state) {
+            element.style.cursor = 'crosshair';
+            return;
+        }
+
+        if ('remove' === state) {
+            element.classList.add('mds3-grid-remove-target');
+        }
+    };
+
+    /**
+     * Move the shape being held so that it sits on the clicked block.
+     *
+     * This is what a click elsewhere does when the held shape is no longer the plain size from the
+     * control: the customer's own edits - the blocks they clicked out - are what travels, so the
+     * order they are building cannot quietly change size under their hand. Returns null when the
+     * shape cannot land there, which is answered with the same message a dragged shape gets.
+     */
+    Grid.prototype.movedSelectionToward = function (row, col) {
+        var self = this;
+        var bounds = { minRow: Infinity, maxRow: -Infinity, minCol: Infinity, maxCol: -Infinity };
+
+        this.selected.forEach(function (coord) {
+            if (coord.row < bounds.minRow) { bounds.minRow = coord.row; }
+            if (coord.row > bounds.maxRow) { bounds.maxRow = coord.row; }
+            if (coord.col < bounds.minCol) { bounds.minCol = coord.col; }
+            if (coord.col > bounds.maxCol) { bounds.maxCol = coord.col; }
+        });
+
+        if (!isFinite(bounds.minRow)) {
+            return null;
+        }
+
+        var shift = this.clampShiftForShape(
+            row - Math.round((bounds.minRow + bounds.maxRow) / 2),
+            col - Math.round((bounds.minCol + bounds.maxCol) / 2)
+        );
+        var cells = this.translateSelected(shift.dRow, shift.dCol);
+        var blocked = null;
+
+        cells.forEach(function (coord) {
+            if (!blocked && !self.canOccupyCell(coord.row, coord.col)) {
+                blocked = coord;
+            }
+        });
+
+        if (blocked) {
+            return null;
+        }
+
+        return cells.length ? cells : null;
+    };
+
+    Grid.prototype.translateSelected = function (dRow, dCol) {
+        var self = this;
+
+        return this.selected.map(function (coord) {
+            var row = coord.row + dRow;
+            var col = coord.col + dCol;
+
+            return { row: row, col: col, key: self.coordKey(row, col) };
+        });
+    };
+
+    Grid.prototype.rectangleCells = function (rowA, colA, rowB, colB) {
+        var minRow = Math.min(rowA, rowB);
+        var maxRow = Math.max(rowA, rowB);
+        var minCol = Math.min(colA, colB);
+        var maxCol = Math.max(colA, colB);
+        var cells = [];
+
+        for (var row = minRow; row <= maxRow; row += 1) {
+            for (var col = minCol; col <= maxCol; col += 1) {
+                cells.push({ row: row, col: col, key: this.coordKey(row, col) });
+            }
+        }
+
+        return cells;
+    };
+
+    // A cell the move or the drawn rectangle may land on: a free block, or one the
+    // moving selection is vacating. Off-grid cells are refused by isCoordAvailable.
+    Grid.prototype.canOccupyCell = function (row, col) {
+        return this.isSelectedCell(row, col) || this.isCoordAvailable(row, col);
+    };
+
+    /**
+     * How many rows the grid is laid out in, and columns. The grid states its own
+     * count when it has one; otherwise the block size says it.
+     */
+    Grid.prototype.gridShape = function () {
+        var grid = this.state.grid;
+        var virtual = grid ? grid.virtual_blocks : null;
+        if (virtual) {
+            return { rows: virtual.rows, columns: virtual.columns };
+        }
+        if (grid && grid.height && grid.block_height && grid.width && grid.block_width) {
+            return {
+                rows: Math.floor(grid.height / grid.block_height),
+                columns: Math.floor(grid.width / grid.block_width)
+            };
+        }
+        return null;
+    };
+
+    Grid.prototype.clampCell = function (cell) {
+        var shape = this.gridShape();
+        if (!shape) {
+            return cell;
+        }
+
+        return {
+            row: Math.max(0, Math.min(shape.rows - 1, cell.row)),
+            col: Math.max(0, Math.min(shape.columns - 1, cell.col))
+        };
+    };
+
+    /**
+     * A shape dragged past the edge of the grid belongs at the edge, not in an error
+     * message: the intent is unambiguous, so the shift stops at the last position where
+     * the whole shape still fits. Landing on blocks someone already took is the case
+     * that does have to be refused, and that is decided separately.
+     */
+    Grid.prototype.clampShiftForShape = function (dRow, dCol) {
+        var shape = this.gridShape();
+        var bounds = { minRow: Infinity, maxRow: -Infinity, minCol: Infinity, maxCol: -Infinity };
+        var row = dRow;
+        var col = dCol;
+        if (!shape || !this.selected.length) {
+            return { dRow: row, dCol: col };
+        }
+
+        this.selected.forEach(function (coord) {
+            if (coord.row < bounds.minRow) { bounds.minRow = coord.row; }
+            if (coord.row > bounds.maxRow) { bounds.maxRow = coord.row; }
+            if (coord.col < bounds.minCol) { bounds.minCol = coord.col; }
+            if (coord.col > bounds.maxCol) { bounds.maxCol = coord.col; }
+        });
+
+        if (bounds.minRow + row < 0) {
+            row = -bounds.minRow;
+        }
+        if (bounds.maxRow + row > shape.rows - 1) {
+            row = shape.rows - 1 - bounds.maxRow;
+        }
+        if (bounds.minCol + col < 0) {
+            col = -bounds.minCol;
+        }
+        if (bounds.maxCol + col > shape.columns - 1) {
+            col = shape.columns - 1 - bounds.maxCol;
+        }
+
+        return { dRow: row, dCol: col };
+    };
+
+    Grid.prototype.updateDragGesture = function (event) {
+        var cell = this.cellFromCoordinate(event.coordinate);
+        if (cell) {
+            this.lastGestureCell = cell;
+        }
+        if (!this.lastGestureCell) {
+            return;
+        }
+        cell = this.clampCell(this.lastGestureCell);
+
+        if (this.moveDrag) {
+            var shift = this.clampShiftForShape(cell.row - this.moveDrag.row, cell.col - this.moveDrag.col);
+            var dRow = shift.dRow;
+            var dCol = shift.dCol;
+            if (dRow === this.moveDrag.dRow && dCol === this.moveDrag.dCol) {
+                return;
+            }
+
+            this.moveDrag.dRow = dRow;
+            this.moveDrag.dCol = dCol;
+            if (cell.row !== this.moveDrag.row || cell.col !== this.moveDrag.col) {
+                this.moveDrag.moved = true;
+            }
+
+            if (this.mapElement) {
+                this.mapElement.style.cursor = 'grabbing';
+            }
+
+            this.drawDragPreview(this.translateSelected(dRow, dCol));
+            return;
+        }
+
+        if (this.bandDrag) {
+            this.bandDrag.row = cell.row;
+            this.bandDrag.col = cell.col;
+            this.drawDragPreview(this.rectangleCells(this.bandDrag.originRow, this.bandDrag.originCol, cell.row, cell.col));
+        }
+    };
+
+    Grid.prototype.cancelDragGesture = function () {
+        this.moveDrag = null;
+        this.bandDrag = null;
+        this.lastGestureCell = null;
+        this.setPanActive(true);
+        this.clearSelectionPreview();
+    };
+
+    /**
+     * Finish a move or a drawn rectangle: commit it only when every block the shape
+     * would occupy is genuinely free. A shape that would land on a taken block goes
+     * back where it was, with the same message a click on that block gets.
+     */
+    Grid.prototype.finishDragGesture = function (originalEvent) {
+        var self = this;
+        var move = this.moveDrag;
+        var band = this.bandDrag;
+
+        if (!move && !band) {
+            return;
+        }
+
+        this.moveDrag = null;
+        this.bandDrag = null;
+        this.lastGestureCell = null;
+        this.setPanActive(true);
+
+        if (move && !move.moved) {
+            // A press without movement is the ordinary click: the existing handler
+            // decides whether that block is added or removed.
+            this.clearSelectionPreview();
+            return;
+        }
+
+        var cells = move ? this.translateSelected(move.dRow, move.dCol) : this.rectangleCells(band.originRow, band.originCol, band.row, band.col);
+        var blocked = null;
+        cells.forEach(function (coord) {
+            if (!blocked && !self.canOccupyCell(coord.row, coord.col)) {
+                blocked = coord;
+            }
+        });
+
+        this.clearSelectionPreview();
+
+        if (blocked) {
+            this.rejectSelection(this.unavailableBlockMessage(blocked.row, blocked.col), originalEvent);
+            return;
+        }
+
+        if (!cells.length) {
+            return;
+        }
+
+        this.suppressClickUntil = Date.now() + 500;
+        this.commitSelection(cells);
+    };
+
+    Grid.prototype.commitSelection = function (coords) {
+        this.selected = coords;
+        this.setStatus('');
+        this.hideSelectionMessage();
+        this.clearSelectionPreview();
+        this.redraw();
+    };
+
+    Grid.prototype.drawDragPreview = function (coords) {
+        if (!this.previewSource || !coords || !coords.length) {
+            this.clearSelectionPreview();
+            return;
+        }
+
+        var minRow = coords[0].row;
+        var maxRow = coords[0].row;
+        var minCol = coords[0].col;
+        var maxCol = coords[0].col;
+        coords.forEach(function (coord) {
+            if (coord.row < minRow) { minRow = coord.row; }
+            if (coord.row > maxRow) { maxRow = coord.row; }
+            if (coord.col < minCol) { minCol = coord.col; }
+            if (coord.col > maxCol) { maxCol = coord.col; }
+        });
+
+        this.drawPreviewRectangle(minRow, maxRow, minCol, maxCol);
+    };
+
+    Grid.prototype.drawPreviewRectangle = function (minRow, maxRow, minCol, maxCol) {
+        var grid = this.state.grid;
+        var x0 = minCol * grid.block_width;
+        var x1 = (maxCol + 1) * grid.block_width;
+        var y0 = minRow * grid.block_height;
+        var y1 = (maxRow + 1) * grid.block_height;
+        var ring = [
+            [x0, -y1],
+            [x1, -y1],
+            [x1, -y0],
+            [x0, -y0],
+            [x0, -y1]
+        ];
+
+        if (!this.previewFeature) {
+            this.previewFeature = new window.ol.Feature({
+                geometry: new window.ol.geom.Polygon([ring])
+            });
+            this.previewSource.addFeature(this.previewFeature);
+        } else {
+            this.previewFeature.getGeometry().setCoordinates([ring]);
+        }
+    };
+
     Grid.prototype.updateSelectionPreview = function (event, placement) {
-        if (!this.previewSource || event.pointerType === 'touch' || placement) {
+        // The moving outline is for choosing where to start. Once a selection exists
+        // it reads as a second selection following the cursor, and the shape the
+        // person already placed is what they want to act on instead.
+        if (!this.previewSource || event.pointerType === 'touch' || placement || this.selected.length) {
             this.clearSelectionPreview();
             return;
         }
@@ -3728,37 +4679,7 @@
             return;
         }
 
-        var minRow = area[0].row;
-        var maxRow = area[0].row;
-        var minCol = area[0].col;
-        var maxCol = area[0].col;
-        area.forEach(function (coord) {
-            if (coord.row < minRow) { minRow = coord.row; }
-            if (coord.row > maxRow) { maxRow = coord.row; }
-            if (coord.col < minCol) { minCol = coord.col; }
-            if (coord.col > maxCol) { maxCol = coord.col; }
-        });
-
-        var x0 = minCol * grid.block_width;
-        var x1 = (maxCol + 1) * grid.block_width;
-        var y0 = minRow * grid.block_height;
-        var y1 = (maxRow + 1) * grid.block_height;
-        var ring = [
-            [x0, -y1],
-            [x1, -y1],
-            [x1, -y0],
-            [x0, -y0],
-            [x0, -y1]
-        ];
-
-        if (!this.previewFeature) {
-            this.previewFeature = new window.ol.Feature({
-                geometry: new window.ol.geom.Polygon([ring])
-            });
-            this.previewSource.addFeature(this.previewFeature);
-        } else {
-            this.previewFeature.getGeometry().setCoordinates([ring]);
-        }
+        this.drawDragPreview(area);
     };
 
     Grid.prototype.clearSelectionPreview = function () {
@@ -3989,7 +4910,7 @@
             return;
         }
 
-        this.canvas.style.cursor = this.placementAt(point.x, point.y) ? 'pointer' : (this.readOnly ? '' : 'crosshair');
+        this.setHoverCursor(this.canvas, this.placementAt(point.x, point.y) ? 'open' : (this.selectedCellAtGridPoint(point.x, point.y) ? 'remove' : (this.readOnly ? 'none' : 'select')));
     };
 
     Grid.prototype.updateCanvasPopover = function (event) {
@@ -4676,6 +5597,13 @@
         var next = [];
 
         if (index >= 0) {
+            if ('EDGE' === this.interiorClickMode() && !this.isCellOnSelectionEdge(row, col)) {
+                // A click in the middle of a shape the customer is holding is a mistaken
+                // press, not a request to punch a hole in it. Say what to do instead.
+                this.rejectSelection(i18n('interiorClickHeld', 'Drag the selection to move it, or click a block on its outer edge to take that one out.'), event);
+                return;
+            }
+
             next = this.selected.filter(function (coord) {
                 return coord.key !== key;
             });
@@ -4693,16 +5621,27 @@
             // to the next click instead of forcing a Clear first. selectionAreaAt()
             // returns null at size 1, so plain block-by-block clicks are unchanged.
             var area = this.multiBlockEnabled() ? this.selectionAreaAt(row, col) : null;
-            next = area || (this.multiBlockEnabled() ? this.uniqueCoords(this.selected.concat([{ row: row, col: col, key: key }])) : [{ row: row, col: col, key: key }]);
-            if (mode === 'RECTANGLE') {
-                next = this.rectangleFromCoords(next);
+            if (area && this.selected.length && this.selected.length !== area.length) {
+                // The person has taken blocks out of the shape they are holding. A click
+                // somewhere else moves that shape: it does not hand back the blocks they
+                // removed, and the count they are ordering does not change on its own.
+                next = this.movedSelectionToward(row, col);
                 if (!next) {
                     this.rejectSelection(gridConfig.i18n.selectionUnavailable, event);
                     return;
                 }
-            } else if (mode === 'ADJACENT' && next.length > 1 && !this.isContiguous(next)) {
-                this.rejectSelection(gridConfig.i18n.adjacentRequired, event);
-                return;
+            } else {
+                next = area || (this.multiBlockEnabled() ? this.uniqueCoords(this.selected.concat([{ row: row, col: col, key: key }])) : [{ row: row, col: col, key: key }]);
+                if (mode === 'RECTANGLE') {
+                    next = this.rectangleFromCoords(next);
+                    if (!next) {
+                        this.rejectSelection(gridConfig.i18n.selectionUnavailable, event);
+                        return;
+                    }
+                } else if (mode === 'ADJACENT' && next.length > 1 && !this.isContiguous(next)) {
+                    this.rejectSelection(gridConfig.i18n.adjacentRequired, event);
+                    return;
+                }
             }
         }
 
@@ -4929,7 +5868,7 @@
 
     Grid.prototype.preloadPlacementImage = function (placement) {
         var self = this;
-        var url = placement && placement.source && placement.source.url;
+        var url = this.placementDrawUrl(placement);
         if (!url || this.imageCache[url]) {
             return;
         }
@@ -5017,9 +5956,34 @@
             if (token !== self.draftUploadToken) {
                 return;
             }
-            self.clearDraftImage();
-            self.setErrorStatus(error.message || gridConfig.i18n.actionFailed);
+            self.keepRejectedDraftImage(localUrl, error.message || gridConfig.i18n.actionFailed, error.field || 'image');
         });
+    };
+
+    /**
+     * A refused file: keep the picture they chose visible at the field and mark the
+     * control instead of clearing both. A preview that appears and then disappears reads
+     * as the upload having worked, and the reason for the refusal was off-screen.
+     */
+    Grid.prototype.keepRejectedDraftImage = function (sourceUrl, message, field) {
+        if (!this.form || !sourceUrl) {
+            this.clearDraftImage();
+            return;
+        }
+
+        // It is not a saved ad image: no draft fields, and nothing drawn on the grid.
+        this.draftPlacement = null;
+        clearDraftImageFields(this.form);
+        setDraftImageControlState(this.form, false);
+        updateOrderUploadPreview(this.form, {
+            source: { url: sourceUrl },
+            alt_text: namedFieldValue(this.form, 'alt_text'),
+            fit_mode: namedFieldValue(this.form, 'fit_mode') || 'cover'
+        });
+        this.updateUploadValidity(false);
+        this.redraw();
+        this.focusRejectedField(field || 'image', message);
+        this.setErrorStatus(message);
     };
 
     Grid.prototype.restoreServerDraftImage = function () {
@@ -5349,18 +6313,51 @@
         return input.closest('.mds3-placement-field') || richTextFocusTarget(input).parentElement;
     }
 
-    Grid.prototype.focusRejectedField = function (field, message) {
-        if (!this.form || !field) {
+    /**
+     * Mark a control as rejected and put the reason beside it. Shared by the grid form
+     * and the standalone order page - the same form outside the grid - because the message
+     * belongs next to the thing it is about, not only in the status line at the bottom.
+     */
+    /**
+     * Say why a placement form was refused, next to the control the reason is about.
+     *
+     * A banner at the top of the form is right when the form itself is the problem - an
+     * order that no longer takes uploads. When one control is at fault the sentence
+     * belongs beside that control: it is marked, the reason is placed under it, and on a
+     * submit the page moves to it. A long ad form with a message at its head and an
+     * untouched box halfway down tells the customer nothing about which box to fix.
+     */
+    function rejectPlacementForm(form, result, move) {
+        var message = result && result.message ? String(result.message) : '';
+        var field = result && result.field ? result.field : null;
+        if (!message) {
+            hideFormMessage(form);
             return;
         }
-        var input = this.form.querySelector('[name="' + field + '"]');
-        if (!input) {
+        if (field && field.name) {
+            hideFormMessage(form);
+            showFieldError(form, field.name, message);
+            if (move) {
+                var target = richTextFocusTarget(field);
+                target.scrollIntoView({ block: 'center' });
+                if (!field.disabled) {
+                    target.focus({ preventScroll: true });
+                }
+            }
             return;
+        }
+        showFormMessage(form, message, null);
+    }
+
+    function showFieldError(form, field, message) {
+        if (!form || !field) {
+            return null;
+        }
+        var input = form.querySelector('[name="' + field + '"]');
+        if (!input) {
+            return null;
         }
         setFieldValidity(input, message || ' ');
-        var target = richTextFocusTarget(input);
-        // The message belongs next to the thing it is about, not only in the
-        // status bar at the bottom of the form.
         var wrap = fieldErrorContainer(input);
         if (wrap && message && !wrap.querySelector('.field-error-message')) {
             // An extension field may already show its own note next to the input;
@@ -5376,6 +6373,15 @@
             note.textContent = message;
             input.setAttribute('aria-describedby', note.id);
         }
+        return input;
+    }
+
+    Grid.prototype.focusRejectedField = function (field, message) {
+        var input = showFieldError(this.form, field, message);
+        if (!input) {
+            return;
+        }
+        var target = richTextFocusTarget(input);
         target.scrollIntoView({ block: 'center' });
         if (!input.disabled) {
             target.focus({ preventScroll: true });
@@ -5510,10 +6516,7 @@
         if (valid) {
             hideFormMessage(this.form);
         } else if (open) {
-            showFormMessage(this.form, message, result.field);
-            if (result.field && typeof result.field.focus === 'function') {
-                result.field.focus({ preventScroll: false });
-            }
+            rejectPlacementForm(this.form, result, true);
         }
 
         return valid;
@@ -5646,6 +6649,11 @@
                     return;
                 }
 
+                if (form.mds3RejectedDraftUrl) {
+                    URL.revokeObjectURL(form.mds3RejectedDraftUrl);
+                    form.mds3RejectedDraftUrl = '';
+                }
+
                 localUrl = URL.createObjectURL(file);
                 applyOrderUploadDraftImage(form, null, localUrl, { preserveExistingFields: true });
                 if (status) {
@@ -5661,12 +6669,14 @@
                         status.textContent = i18n('draftImageSaved', 'Image saved for this order.');
                     }
                 }).catch(function (error) {
-                    URL.revokeObjectURL(localUrl);
-                    clearDraftImageFields(form);
-                    setDraftImageControlState(form, false);
-                    restoreOrderUploadPreview(form);
+                    var message = error.message || gridConfig.i18n.actionFailed;
+                    // Same rule as the grid: the chosen file stays on screen so the reason
+                    // shown beside it is about something the customer can still see.
+                    form.mds3RejectedDraftUrl = localUrl;
+                    applyOrderUploadDraftImage(form, null, localUrl, { preserveExistingFields: true });
+                    showFieldError(form, error.field || 'image', message);
                     if (status) {
-                        status.textContent = error.message || gridConfig.i18n.actionFailed;
+                        status.textContent = message;
                     }
                 });
             });
@@ -5684,6 +6694,10 @@
         if (remove) {
             remove.addEventListener('click', function () {
                 removeDraftImage(form, '').then(function () {
+                    if (form.mds3RejectedDraftUrl) {
+                        URL.revokeObjectURL(form.mds3RejectedDraftUrl);
+                        form.mds3RejectedDraftUrl = '';
+                    }
                     clearDraftImageFields(form);
                     setDraftImageControlState(form, false);
                     restoreOrderUploadPreview(form);
@@ -5723,7 +6737,7 @@
                 }
                 result = placementFormValidation(form, false, null);
                 if (result.message) {
-                    showFormMessage(form, result.message, result.field);
+                    rejectPlacementForm(form, result, false);
                 } else {
                     hideFormMessage(form);
                 }

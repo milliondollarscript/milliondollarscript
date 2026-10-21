@@ -53,11 +53,13 @@ trait ImportsLegacyOrders {
         $user = $user_id ? get_userdata($user_id) : false;
         $created = $this->valid_mysql_date($row['order_date'] ?? '') ?: $now;
         $metadata = $this->legacy_order_metadata($row);
+        $paid = $this->legacy_order_paid($legacy_id, absint($row['ad_id'] ?? 0));
+        $status = self::order_status($row['status'] ?? '', $paid);
         $payload = [
             'order_key' => $order_key,
             'user_id' => $user_id ?: null,
             'email' => $user ? sanitize_email($user->user_email) : '',
-            'status' => self::order_status($row['status'] ?? ''),
+            'status' => $status,
             'currency' => strtoupper(substr(sanitize_text_field((string) ($row['currency'] ?? 'USD')), 0, 3)),
             'subtotal' => (float) ($row['price'] ?? 0),
             'total' => (float) ($row['price'] ?? 0),
@@ -79,15 +81,17 @@ trait ImportsLegacyOrders {
             }
         }
         if ($target_id && $this->target_exists('orders', $target_id)) {
-            $wpdb->update(DB::table('orders'), $payload, ['id' => $target_id]);
+            if (!$this->migration_update(DB::table('orders'), $payload, ['id' => $target_id], 'order', $legacy_id)) {
+                return 0;
+            }
         } else {
             $payload['created_at'] = $created;
-            $wpdb->insert(DB::table('orders'), $payload);
-            $target_id = absint($wpdb->insert_id);
+            $target_id = $this->migration_insert(DB::table('orders'), $payload, 'order', $legacy_id);
         }
 
         if ($target_id) {
             $this->map->remember($this->source->source_prefix(), 'order', $legacy_id, 'order', $target_id, ['legacy_grid_id' => absint($row['banner_id'] ?? 0)]);
+            $this->record_order_status_outcome($status, (string) ($row['status'] ?? ''));
         }
 
         return $target_id;

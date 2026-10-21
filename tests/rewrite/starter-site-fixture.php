@@ -35,6 +35,7 @@ $original_contact_shortcode = $GLOBALS['shortcode_tags']['mds_contact_form'] ?? 
 $original_stylesheet = get_option('stylesheet');
 $registered_locations_before = null;
 $fixture_menu_ids = [];
+$fixture_navigation_ids = [];
 
 foreach (get_posts([
     'post_status' => 'publish',
@@ -195,7 +196,14 @@ try {
     } else {
         switch_theme($classic_theme);
         $registered_locations_before = $GLOBALS['_wp_registered_nav_menus'] ?? [];
-        $GLOBALS['_wp_registered_nav_menus'] = array_merge(['primary' => 'Primary location'], (array) $registered_locations_before);
+        $GLOBALS['_wp_registered_nav_menus'] = array_merge(
+            ['primary' => 'Primary location', 'secondary' => 'Secondary location'],
+            (array) $registered_locations_before
+        );
+        // The location assignments belong to the theme, so a fixture that moves them has to
+        // put them back: a leftover pointing at a fixture menu that is deleted afterwards is
+        // exactly the broken header this next case is about.
+        $fixture_nav_locations = get_theme_mod('nav_menu_locations', []);
 
         $site_menu_id = wp_create_nav_menu('Fixture Existing Site Menu');
         if (is_wp_error($site_menu_id)) {
@@ -203,12 +211,13 @@ try {
         }
         $site_menu_id = absint($site_menu_id);
         $fixture_menu_ids[] = $site_menu_id;
-        if (is_wp_error(wp_update_nav_menu_item($site_menu_id, 0, [
+        $site_item_id = wp_update_nav_menu_item($site_menu_id, 0, [
             'menu-item-object' => 'page',
             'menu-item-object-id' => $existing_front_id,
             'menu-item-status' => 'publish',
             'menu-item-type' => 'post_type',
-        ]))) {
+        ]);
+        if (is_wp_error($site_item_id)) {
             throw new RuntimeException('Could not add an item to the fixture site menu.');
         }
 
@@ -217,33 +226,312 @@ try {
         set_theme_mod('nav_menu_locations', $locations);
 
         $nav_result = [];
-        $joined = (new StarterNavigation())->ensure($status['pages'], [], $nav_result);
-        if ('classic' !== ($joined['type'] ?? '')) {
+        $untouched = (new StarterNavigation())->ensure($status['pages'], ['navigation' => []], $nav_result);
+        if ('classic' !== ($untouched['type'] ?? '')) {
             throw new RuntimeException('Classic theme did not take the classic navigation path.');
         }
-        if (absint($joined['id'] ?? 0) !== $site_menu_id) {
-            throw new RuntimeException('Starter links did not join the menu the theme already shows.');
+        if (absint($untouched['id'] ?? 0) !== $site_menu_id) {
+            throw new RuntimeException('With the option off the step pointed at a menu other than the one the theme shows.');
         }
-        if ('primary' !== ($joined['location'] ?? '')) {
-            throw new RuntimeException('Starter navigation moved the visible menu out of its location.');
+        // The rule Ryan set on 2026-10-18: unless the box is ticked, this step writes no menu,
+        // adds nothing to one, and rewrites nothing it wrote before. The fixture menu holds one
+        // item of the site's own, so the menu must still hold exactly that one.
+        if (empty($nav_result['navigation_untouched'])) {
+            throw new RuntimeException('The step did not report that it wrote no navigation.');
         }
-        if (!empty($nav_result['errors'])) {
-            throw new RuntimeException('Starter navigation reported errors: ' . implode('; ', array_map('strval', $nav_result['errors'])));
+        if (isset($nav_result['navigation_note'])) {
+            throw new RuntimeException('The step announced a menu change it was never asked to make.');
         }
         $item_count = count((array) wp_get_nav_menu_items($site_menu_id));
-        if ($item_count < 7) {
-            throw new RuntimeException('Starter links were not added to the existing site menu.');
+        if (1 !== $item_count) {
+            throw new RuntimeException('The step changed a menu it was not asked to touch: ' . $item_count . ' items instead of 1.');
         }
 
-        (new StarterNavigation())->ensure($status['pages'], $joined, $nav_result);
+        $repeat_result = [];
+        (new StarterNavigation())->ensure($status['pages'], ['navigation' => $untouched], $repeat_result);
         if (count((array) wp_get_nav_menu_items($site_menu_id)) !== $item_count) {
-            throw new RuntimeException('A second starter-site run duplicated menu items.');
+            throw new RuntimeException('A second run with the option off changed the menu.');
         }
+
+        // Ticked, the site's own links are replaced by the starter pages. The page itself stays;
+        // only the link goes.
+        $replace_result = [];
+        $replaced = (new StarterNavigation())->ensure(
+            $status['pages'],
+            ['navigation' => $untouched, 'navigation_mode' => 'replace'],
+            $replace_result
+        );
+        if (empty($replace_result['navigation_replaced'])) {
+            throw new RuntimeException('Ticking the option did not report a replaced menu.');
+        }
+        $after_replace = (array) wp_get_nav_menu_items($site_menu_id);
+        $kept_ids = array_map('intval', array_map(static function ($item) {
+            return absint($item->ID ?? $item->_ID ?? 0);
+        }, $after_replace));
+        // The starter pages may legitimately point at the same page again (a Home link does) -
+        // what must not survive is the site's own link, which was the item just created.
+        if (in_array(absint($site_item_id), $kept_ids, true)) {
+            throw new RuntimeException('The site’s own link survived a replacement it agreed to.');
+        }
+        if (count($after_replace) < 5) {
+            throw new RuntimeException('The replaced menu holds fewer starter pages than it should: ' . count($after_replace));
+        }
+
+        // The recorded location is only a promise until the theme actually holds it. A theme
+        // switch or a menu edit can clear that assignment; this block checks what the step does
+        // about it - which, with the option off, is nothing at all.
+        $cleared_locations = (array) get_theme_mod('nav_menu_locations', []);
+        $cleared_locations['primary'] = 0;
+        set_theme_mod('nav_menu_locations', $cleared_locations);
+        // With the option off, nothing about navigation moves - not its content, and not which
+        // header slot it sits in (Ryan, 2026-10-18). A cleared assignment is reported, not
+        // silently repaired behind the site owner; ticking the option is what puts it back.
+        $reclaim_result = [];
+        $untouched_after_clear = (new StarterNavigation())->ensure(
+            $status['pages'],
+            ['navigation' => ['id' => $site_menu_id, 'location' => 'primary', 'type' => 'classic']],
+            $reclaim_result
+        );
+        if (absint($untouched_after_clear['id'] ?? 0) !== $site_menu_id) {
+            throw new RuntimeException('With the option off the step pointed at a menu other than the one already recorded.');
+        }
+        if (empty($reclaim_result['navigation_untouched'])) {
+            throw new RuntimeException('A run that wrote nothing did not say so.');
+        }
+        $held_locations = (array) get_theme_mod('nav_menu_locations', []);
+        if (0 !== absint($held_locations['primary'] ?? 0)) {
+            throw new RuntimeException('The step claimed a header location it was not asked to touch.');
+        }
+
+        $reclaim_result = [];
+        $reclaimed = (new StarterNavigation())->ensure(
+            $status['pages'],
+            ['navigation' => ['id' => $site_menu_id, 'location' => 'primary', 'type' => 'classic'], 'navigation_mode' => 'replace'],
+            $reclaim_result
+        );
+        if (absint($reclaimed['id'] ?? 0) !== $site_menu_id) {
+            throw new RuntimeException('A second run made a new menu instead of putting the existing one back where it belonged.');
+        }
+        if ('primary' !== ($reclaimed['location'] ?? '')) {
+            throw new RuntimeException('A menu whose location had been cleared was not put back there.');
+        }
+        $held_locations = (array) get_theme_mod('nav_menu_locations', []);
+        if (absint($held_locations['primary'] ?? 0) !== $site_menu_id) {
+            throw new RuntimeException('The header location was left empty after a run that claimed to fill it.');
+        }
+
+        // A header location left pointing at a menu that has since been deleted: the theme
+        // shows its fallback there and the owner reads that as the menu having gone. With the
+        // option off the step reports that and writes nothing; with it ticked it claims the
+        // empty header spot, and does not extend a menu parked in a utility area - which is
+        // what the header was doing under Kadence on 2026-10-16.
+        $utility_menu_id = absint(wp_create_nav_menu('Fixture Utility Site Menu'));
+        $fixture_menu_ids[] = $utility_menu_id;
+        $dangling_menu_id = absint(wp_create_nav_menu('Fixture Deleted Site Menu'));
+        $moved_locations = (array) get_theme_mod('nav_menu_locations', []);
+        $moved_locations['secondary'] = $utility_menu_id;
+        $moved_locations['primary'] = $dangling_menu_id;
+        set_theme_mod('nav_menu_locations', $moved_locations);
+        wp_delete_nav_menu($dangling_menu_id);
+
+        $nothing_written = [];
+        $no_menu = (new StarterNavigation())->ensure($status['pages'], [], $nothing_written);
+        if (!empty($no_menu['id'])) {
+            throw new RuntimeException('The step wrote a menu it was never asked to write.');
+        }
+        if (empty($nothing_written['navigation_untouched'])) {
+            throw new RuntimeException('A run that wrote no menu did not say so.');
+        }
+        if (absint(((array) get_theme_mod('nav_menu_locations', []))['secondary'] ?? 0) !== $utility_menu_id) {
+            throw new RuntimeException('The site’s own menu moved out of its location during a run that touched nothing.');
+        }
+
+        $repaired_result = [];
+        $repaired_menu = (new StarterNavigation())->ensure($status['pages'], ['navigation_mode' => 'replace'], $repaired_result);
+        $repaired_id = absint($repaired_menu['id'] ?? 0);
+        if ('classic' !== ($repaired_menu['type'] ?? '') || !$repaired_id) {
+            throw new RuntimeException('A classic theme with a broken header menu did not make one.');
+        }
+        $fixture_menu_ids[] = $repaired_id;
+        if ('primary' !== ($repaired_menu['location'] ?? '')) {
+            throw new RuntimeException('The new menu did not take the header location that had no menu in it.');
+        }
+        $written_locations = (array) get_theme_mod('nav_menu_locations', []);
+        if (absint($written_locations['primary'] ?? 0) !== $repaired_id) {
+            throw new RuntimeException('The header location was still left pointing at a menu that does not exist.');
+        }
+        if (absint($written_locations['secondary'] ?? 0) !== $utility_menu_id) {
+            throw new RuntimeException('The site’s own menu was moved out of the location it was in.');
+        }
+        set_theme_mod('nav_menu_locations', $fixture_nav_locations);
         if (get_option('stylesheet') !== $original_stylesheet) {
             switch_theme($original_stylesheet);
         }
     }
+
+    // A block theme with a navigation the site built for itself. The starter links join it and
+    // the links the site wrote stay in it; replacing the content used to delete a menu its
+    // owner had made, which is worse than not making one (task 7b70c157, from Ryan's
+    // 2026-10-16 report about the starter site and menus).
+    if (wp_is_block_theme() && post_type_exists('wp_navigation')) {
+        $owner_link = [
+            'attrs' => ['kind' => 'custom', 'label' => 'Fixture Owner Link', 'url' => home_url('/fixture-owner-page/')],
+            'blockName' => 'core/navigation-link',
+            'innerBlocks' => [],
+            'innerContent' => [],
+            'innerHTML' => ['', ''],
+        ];
+        $owner_navigation_id = absint(wp_insert_post([
+            'post_content' => serialize_block([
+                'attrs' => [],
+                'blockName' => 'core/navigation',
+                'innerHTML' => ['<!-- wp:navigation -->', '<!-- /wp:navigation -->'],
+                'innerBlocks' => [$owner_link],
+                'innerContent' => ['', null, ''],
+            ]),
+            'post_status' => 'publish',
+            'post_title' => 'Fixture Owner Navigation',
+            'post_type' => 'wp_navigation',
+        ]));
+        $fixture_navigation_ids[] = $owner_navigation_id;
+
+        delete_option(StarterSite::OPTION);
+        $owner_result = [];
+        $owner_left_alone = (new StarterNavigation())->ensure($status['pages'], [], $owner_result);
+        if (absint($owner_left_alone['id'] ?? 0) !== $owner_navigation_id) {
+            throw new RuntimeException('The step pointed at a navigation other than the one the site made.');
+        }
+        if (!empty($owner_result['errors'])) {
+            throw new RuntimeException('Reading the site navigation reported errors: ' . implode('; ', array_map('strval', $owner_result['errors'])));
+        }
+        if (empty($owner_result['navigation_untouched'])) {
+            throw new RuntimeException('A run that changed no navigation did not say so.');
+        }
+        $owner_content = (string) get_post_field('post_content', $owner_navigation_id);
+        if (false === strpos($owner_content, 'Fixture Owner Link')) {
+            throw new RuntimeException('The site’s own navigation link did not survive a run that was not asked to touch it.');
+        }
+        // The rule as Ryan set it on 2026-10-18: with the option off, nothing is written into
+        // a navigation the site owns - not even the pages the customer needs.
+        foreach (['Order Pixels', 'Manage Pixels'] as $starter_label) {
+            if (false !== strpos($owner_content, $starter_label)) {
+                throw new RuntimeException('The ' . $starter_label . ' link was written into a navigation the option left alone.');
+            }
+        }
+        if (isset($owner_result['navigation_note'])) {
+            throw new RuntimeException('The step announced a navigation change it did not make.');
+        }
+
+        // Ticked, the same navigation is written with the starter pages and the site's own link
+        // goes with it - the choice the option exists to offer.
+        $replace_owner_result = [];
+        (new StarterNavigation())->ensure(
+            $status['pages'],
+            ['navigation' => $owner_left_alone, 'navigation_mode' => 'replace'],
+            $replace_owner_result
+        );
+        $replaced_owner = (string) get_post_field('post_content', $owner_navigation_id);
+        if (false !== strpos($replaced_owner, 'Fixture Owner Link')) {
+            throw new RuntimeException('Ticking the option left the site’s own link in place.');
+        }
+        foreach (['Order Pixels', 'Manage Pixels'] as $starter_label) {
+            if (false === strpos($replaced_owner, $starter_label)) {
+                throw new RuntimeException('The ' . $starter_label . ' link was not written when the option was ticked.');
+            }
+        }
+        if (empty($replace_owner_result['navigation_replaced'])) {
+            throw new RuntimeException('Writing the site navigation did not report what it replaced.');
+        }
+
+        $again_result = [];
+        (new StarterNavigation())->ensure($status['pages'], ['navigation' => $owner_left_alone], $again_result);
+        if (1 !== substr_count((string) get_post_field('post_content', $owner_navigation_id), 'Order Pixels')) {
+            throw new RuntimeException('A run with the option off changed the navigation content.');
+        }
+        if (isset($again_result['navigation_note'])) {
+            throw new RuntimeException('A second starter-site run re-announced a navigation change it did not make.');
+        }
+
+        // A navigation that lists pages by itself already shows these pages, so it is left
+        // exactly as the site built it and the step asks for a look instead.
+        $page_list_navigation_id = absint(wp_insert_post([
+            'post_content' => serialize_block([
+                'attrs' => [],
+                'blockName' => 'core/navigation',
+                'innerHTML' => ['<!-- wp:navigation -->', '<!-- /wp:navigation -->'],
+                'innerBlocks' => [
+                    ['attrs' => [], 'blockName' => 'core/page-list', 'innerHTML' => '', 'innerBlocks' => [], 'innerContent' => []],
+                ],
+                'innerContent' => ['', null, ''],
+            ]),
+            'post_status' => 'publish',
+            'post_title' => 'Fixture Page List Navigation',
+            'post_type' => 'wp_navigation',
+        ]));
+        $fixture_navigation_ids[] = $page_list_navigation_id;
+        $page_list_before = (string) get_post_field('post_content', $page_list_navigation_id);
+        delete_option(StarterSite::OPTION);
+        $kept_result = [];
+        $kept = (new StarterNavigation())->ensure($status['pages'], [], $kept_result);
+        if (absint($kept['id'] ?? 0) !== $page_list_navigation_id || empty($kept['preserved'])) {
+            throw new RuntimeException('A navigation that lists pages automatically was not left alone.');
+        }
+        if ($page_list_before !== (string) get_post_field('post_content', $page_list_navigation_id)) {
+            throw new RuntimeException('A navigation that lists pages automatically was edited.');
+        }
+    }
+
+    // A site owner who already wrote a navigation asked for a choice: links added behind
+    // their back is one answer, overwriting it is another, and neither should happen by
+    // accident (llm-task efdcfa60). Both answers are checked against one fixture navigation.
+    delete_option(StarterSite::OPTION);
+    $foreign_nav_id = absint(wp_insert_post([
+        'post_content' => '<nav><ul class="wp-block-navigation__navigation-menu-container"><li><a href="https://example.test/mine">The owner wrote this</a></li></ul></nav>',
+        'post_status' => 'publish',
+        'post_title' => 'Fixture Navigation Under Test',
+        'post_type' => 'wp_navigation',
+    ]));
+    $fixture_navigation_ids[] = $foreign_nav_id;
+
+    $kept_by_default = $service->create();
+    if (absint($kept_by_default['status']['navigation']['id'] ?? 0) !== $foreign_nav_id) {
+        throw new RuntimeException('Left alone, the starter site did not use the site\'s own navigation.');
+    }
+    if (strpos((string) get_post_field('post_content', $foreign_nav_id), 'The owner wrote this') === false) {
+        throw new RuntimeException('The default answer removed a link the site owner had written.');
+    }
+    if (get_post_meta($foreign_nav_id, '_million_dollar_script_starter_navigation', true)) {
+        throw new RuntimeException('The default answer claimed a navigation it had only linked into.');
+    }
+
+    $replaced = $service->create(['navigation_mode' => 'replace']);
+    if (empty($replaced['navigation_replaced'])) {
+        throw new RuntimeException('Replacing the navigation was not reported to the caller.');
+    }
+    $replaced_content = (string) get_post_field('post_content', $foreign_nav_id);
+    if (strpos($replaced_content, 'The owner wrote this') !== false) {
+        throw new RuntimeException('Replacing the navigation left the previous links in place.');
+    }
+    $replaced_pages = is_array($service->status()['pages'] ?? null) ? $service->status()['pages'] : [];
+    // The six pages are what the screen promises. The grid page is the Home entry, which is
+    // why there is no separate grid link to look for.
+    foreach (['home', 'blog', 'order', 'manage', 'contact', 'about'] as $expected_key) {
+        $expected_link = (string) get_permalink(absint($replaced_pages[$expected_key] ?? 0));
+        if ($expected_link === '' || strpos($replaced_content, $expected_link) === false) {
+            throw new RuntimeException('Replacing the navigation did not list the ' . $expected_key . ' page.');
+        }
+    }
+    if ('yes' !== get_post_meta($foreign_nav_id, '_million_dollar_script_starter_navigation', true)) {
+        throw new RuntimeException('A replaced navigation was not marked as the plugin\'s, so a later Repair would not rewrite it.');
+    }
+    if ('replace' !== (string) ($service->status()['navigation']['mode'] ?? '')) {
+        throw new RuntimeException('The chosen answer was not remembered, so a later run would silently change it.');
+    }
+    echo "PASS navigation mode: the owner's link survives by default and is replaced only on request\n";
 } finally {
+    foreach ($fixture_navigation_ids as $navigation_id) {
+        wp_delete_post(absint($navigation_id), true);
+    }
     if (null !== $registered_locations_before) {
         $GLOBALS['_wp_registered_nav_menus'] = $registered_locations_before;
     }

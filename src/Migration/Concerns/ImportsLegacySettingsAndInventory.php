@@ -24,6 +24,9 @@ trait ImportsLegacySettingsAndInventory {
         $legacy_options = $this->source->option_values();
         $settings = get_option('mds3_settings', []);
         $settings = is_array($settings) ? $settings : [];
+        // Which answer is the later one depends on whether this source has been imported here
+        // before. It is asked once, up front, because more than one setting has to agree on it.
+        $was_imported = $this->source_was_imported_before();
         $schema_mapped = SettingsSchema::map_legacy_options($legacy_options, $settings);
 
         $mapped = array_merge($schema_mapped, [
@@ -33,6 +36,10 @@ trait ImportsLegacySettingsAndInventory {
                 $settings['currency'] ?? 'USD',
             ], 'USD'),
             'payment_provider' => sanitize_key((string) ($schema_mapped['payment_provider'] ?? 'standalone')),
+            'confirm-orders' => SettingsSchema::legacy_confirm_orders($legacy_options, $settings),
+            // The same precedence, for the money that arrives later: a choice made on this site
+            // outranks a fact about the old one, because it is the later decision.
+            'auto-approve' => SettingsSchema::legacy_auto_approve($legacy_options, $settings, $was_imported),
             'legacy_mds2_source_prefix' => $this->source->source_prefix(),
             'legacy_mds2_options' => $this->normalize_legacy_options($legacy_options),
             'legacy_mds2_page_options' => (new LegacySource($this->source->source_prefix()))->options_report()['page_options'] ?? [],
@@ -40,7 +47,120 @@ trait ImportsLegacySettingsAndInventory {
 
         update_option('mds3_settings', array_merge($settings, $mapped), false);
 
+        // Say what the new site will do to its customers, and where that came from.
+        // The two plugins default this option differently, so "it was carried over" or
+        // "it was left alone" is the part a site owner cannot work out for themselves.
+        $confirm_choice = SettingsSchema::confirm_orders_choice($legacy_options, $settings);
+        $this->settings_outcomes['confirm-orders'] = [
+            'key' => 'confirm-orders',
+            'value' => $confirm_choice['value'],
+            'source' => $confirm_choice['source'],
+            'note' => SettingsSchema::describe_confirm_orders_choice($legacy_options, $settings),
+        ];
+
+        $manual_choice = SettingsSchema::auto_approve_choice($legacy_options, $settings, $was_imported);
+        $this->settings_outcomes['auto-approve'] = [
+            'key' => 'auto-approve',
+            'value' => $manual_choice['value'],
+            'source' => $manual_choice['source'],
+            'note' => SettingsSchema::describe_auto_approve_choice($legacy_options, $settings, $was_imported),
+        ];
+
+        $this->import_payment_permissions();
+
         return count($legacy_options);
+    }
+
+    /**
+     * Has this source been imported here before?
+     *
+     * The migration map is the record of that, and it is already written for every entity the
+     * import touched - so this asks the map rather than keeping a second copy of the answer that
+     * could fall out of step with the first.
+     */
+    private function source_was_imported_before() {
+        global $wpdb;
+
+        return null !== $wpdb->get_var($wpdb->prepare(
+            'SELECT 1 FROM ' . DB::ident(DB::table('migration_map')) . ' WHERE source_prefix = %s LIMIT 1',
+            $this->source->source_prefix()
+        ));
+    }
+
+    /**
+     * Carry across the old site's permission for one named person to order without paying.
+     *
+     * Million Dollar Script 2 kept it as Carbon Fields user meta whose field name was
+     * "privileged", and read it alongside the price when deciding whether to finish an order
+     * (src/Classes/Orders/Orders.php:1172 and Classes/Admin/AdminPostHandlers.php:179-182,
+     * which accept 1, yes, true or privileged). The stored key carries the container prefix,
+     * which is the same set of prefixes the settings resolver already looks for - so the answer
+     * is searched for the same way rather than guessed at here.
+     *
+     * The word is not kept. A site owner cannot tell from "privileged" what it still does, and
+     * a person who used it has no way to work out why a new site started asking them to pay, so
+     * the new site stores it under Orders/PaymentBypass, which is named after the behaviour and
+     * shown on that person's profile screen.
+     */
+    private function import_payment_permissions() {
+        $keys = [
+            '_milliondollarscript_privileged',
+            'milliondollarscript_privileged',
+            '_mds_privileged',
+            'mds_privileged',
+        ];
+        $answers = ['1', 'yes', 'true', 'on', 'privileged'];
+
+        $carried = [];
+        foreach ($keys as $key) {
+            $found = get_users([
+                'number' => -1,
+                'fields' => 'ID',
+                'meta_query' => [[
+                    'key' => $key,
+                    'value' => $answers,
+                    'compare' => 'IN',
+                ]],
+            ]);
+            foreach ((array) $found as $user_id) {
+                $user_id = absint($user_id);
+                if ($user_id) {
+                    $carried[$user_id] = true;
+                }
+            }
+        }
+
+        $bypass = new \MillionDollarScript\V3\Orders\PaymentBypass();
+        $granted = 0;
+        foreach (array_keys($carried) as $user_id) {
+            if ($bypass->allowed($user_id)) {
+                continue;
+            }
+            $bypass->allow($user_id, true);
+            $granted++;
+        }
+
+        // Three honest answers: people were carried across now, they were carried across by an
+        // earlier run, or the old site never had them. Saying "nobody" on a second run would
+        // contradict the first run's report for no reason a site owner could follow.
+        $found = count($carried);
+        $this->settings_outcomes['order-without-payment'] = [
+            'key' => 'order-without-payment',
+            'value' => $found > 0 ? 'yes' : 'no',
+            'source' => $found > 0 ? 'mds2' : 'none',
+            'note' => 0 === $found
+                ? __('No one on the old site had the ability to order without paying, so no one has it here either.', 'million-dollar-script')
+                : sprintf(
+                    /* translators: %d: number of people. */
+                    _n(
+                        '%d person who could order without paying in Million Dollar Script 2 keeps that here, on their profile screen. Nothing else about ordering changes.',
+                        '%d people who could order without paying in Million Dollar Script 2 keep that here, on their profile screens. Nothing else about ordering changes.',
+                        $found,
+                        'million-dollar-script'
+                    ),
+                    $found
+                ),
+        ];
     }
 
     private function import_grids() {
@@ -214,11 +334,12 @@ trait ImportsLegacySettingsAndInventory {
 
         $target_id = $this->map->target_id($this->source->source_prefix(), 'package', $legacy_id, 'package');
         if ($target_id && $this->target_exists('packages', $target_id)) {
-            $wpdb->update(DB::table('packages'), $payload, ['id' => $target_id]);
+            if (!$this->migration_update(DB::table('packages'), $payload, ['id' => $target_id], 'package', $legacy_id)) {
+                return 0;
+            }
         } else {
             $payload['created_at'] = $now;
-            $wpdb->insert(DB::table('packages'), $payload);
-            $target_id = absint($wpdb->insert_id);
+            $target_id = $this->migration_insert(DB::table('packages'), $payload, 'package', $legacy_id);
         }
 
         if ($target_id) {
@@ -277,11 +398,12 @@ trait ImportsLegacySettingsAndInventory {
 
         $target_id = $this->map->target_id($this->source->source_prefix(), 'price', $legacy_id, 'price_rule');
         if ($target_id && $this->target_exists('price_rules', $target_id)) {
-            $wpdb->update(DB::table('price_rules'), $payload, ['id' => $target_id]);
+            if (!$this->migration_update(DB::table('price_rules'), $payload, ['id' => $target_id], 'price_rule', $legacy_id)) {
+                return 0;
+            }
         } else {
             $payload['created_at'] = $now;
-            $wpdb->insert(DB::table('price_rules'), $payload);
-            $target_id = absint($wpdb->insert_id);
+            $target_id = $this->migration_insert(DB::table('price_rules'), $payload, 'price_rule', $legacy_id);
         }
 
         if ($target_id) {

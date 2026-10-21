@@ -182,9 +182,9 @@ try {
     wp_set_current_user($previous_user);
 
     // Grid-level auto approve is tri-state: '' inherits the global setting, 'Y'/'N' override it.
-    $auto_host = new class {
-        use \MillionDollarScript\V3\Grid\Concerns\HandlesPlacementAjaxSubmission;
-    };
+    // The decision moved out of the grid's AJAX concern into OrderConfirmation, which is where an
+    // order's completion is actually decided - so the fixture asks the object that answers it.
+    $auto_host = new \MillionDollarScript\V3\Orders\OrderConfirmation();
     $auto_method = new ReflectionMethod($auto_host, 'auto_approve_for_grids');
     $auto_method->setAccessible(true);
     $set_auto_approve = static function ($choice) use ($grid) {

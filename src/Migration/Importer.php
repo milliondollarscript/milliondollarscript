@@ -11,8 +11,10 @@ use MillionDollarScript\V3\Extensions\ExtensionSetup;
 use MillionDollarScript\V3\Migration\Concerns\ResolvesLegacyAdMetadata;
 use MillionDollarScript\V3\Migration\Concerns\ImportsLegacyOrdersAndBlocks;
 use MillionDollarScript\V3\Migration\Concerns\ImportsLegacySettingsAndInventory;
+use MillionDollarScript\V3\Migration\Concerns\ReportsMigrationCoverage;
 use MillionDollarScript\V3\Migration\Concerns\ResolvesLegacyMedia;
 use MillionDollarScript\V3\Migration\Concerns\TracksMigrationImportState;
+use MillionDollarScript\V3\Migration\Concerns\ReadsLegacyOrderPayments;
 use MillionDollarScript\V3\Migration\Concerns\RecordsMigrationReconciliation;
 use MillionDollarScript\V3\Setup\Installer;
 
@@ -23,8 +25,10 @@ if (!defined('ABSPATH')) {
 final class Importer {
     use ImportsLegacySettingsAndInventory;
     use ImportsLegacyOrdersAndBlocks;
+    use ReadsLegacyOrderPayments;
     use ResolvesLegacyAdMetadata;
     use ResolvesLegacyMedia;
+    use ReportsMigrationCoverage;
     use TracksMigrationImportState;
     use RecordsMigrationReconciliation;
 
@@ -32,11 +36,40 @@ final class Importer {
     private MigrationMap $map;
     private array $legacy_grids = [];
     private array $warnings = [];
+    /**
+     * What this run did that needs no action. Kept apart from warnings on purpose: a
+     * warning is a record that needs attention, a notice explains the run. Counting them
+     * together made a finished import look like it had a problem.
+     */
+    private array $notices = [];
     private array $migration_skips = [];
     private array $migration_repairs = [];
     private array $page_options = [];
     private array $grid_page_disposition = [];
     private array $page_outcomes = [];
+    private array $settings_outcomes = [];
+    /** MDS3 order states the migrated orders arrived in, counted. */
+    private array $order_status_outcomes = [];
+    /** Legacy orders whose ad picture could only be recovered at cell size. */
+    private array $cell_size_copies = [];
+    /**
+     * Legacy blocks whose stored position sits off their grid while their own block number
+     * names a position on it, grouped by grid and order so the report says once what happened.
+     */
+    private array $undrawn_positions = [];
+
+    /**
+     * Post meta keys Million Dollar Script 2 has used to point an ad record at its
+     * image. One list, because the importer follows them in order and the coverage
+     * check has to count the same places when it asks whether an image existed.
+     */
+    public const IMAGE_META_KEYS = [
+        '_milliondollarscript_image',
+        'milliondollarscript_image',
+        '_mds_image',
+        'mds_image',
+        '_thumbnail_id',
+    ];
 
     private const JOB_STAGES = [
         'settings',
@@ -49,6 +82,41 @@ final class Importer {
         'placements',
         'pages',
     ];
+
+    /**
+     * Format version of the resumable job blob kept in a run report.
+     *
+     * A paused import stores which stage and which row it had reached, and both are
+     * positions in JOB_STAGES. If that list is ever reordered, renamed, merged or
+     * narrowed, a checkpoint saved by an older build means something different under the
+     * new one and could silently skip or repeat a stage. Bump this constant in the same
+     * change that alters JOB_STAGES, or the meaning of a cursor: a checkpoint written in
+     * another format then restarts from the first stage instead of being re-read, and the
+     * report says so. Re-processing records that are already imported is safe because each
+     * write is keyed by the migration map.
+     *
+     * @see self::normalize_job_state()
+     * @see tests/rewrite/migration-cross-version-resume-fixture.php
+     */
+    private const JOB_FORMAT_VERSION = 1;
+
+    /**
+     * The steps an import works through, in order.
+     *
+     * A standing rule names the steps it needs re-read (Recheck::stages()); this is the
+     * list those names are checked against.
+     *
+     * @return list<string>
+     */
+    public static function import_stages() {
+        return self::JOB_STAGES;
+    }
+
+    /**
+     * Set when a saved checkpoint turned out to be written in another job format, so the
+     * run can say so once. @see self::normalize_job_state()
+     */
+    private $job_format_restarted = false;
 
     /**
      * Per-page upgrade choices; used by the one-shot import(). The resumable
@@ -101,6 +169,7 @@ final class Importer {
             $totals['order_items'] = $this->import_order_items();
             $totals['placements'] = $this->import_placements();
             $totals['pages'] = $this->import_pages();
+            $this->record_database_rejection_warning();
             $totals['skipped'] = count($this->migration_skips);
             $totals['repaired'] = count($this->migration_repairs);
             $totals['warnings'] = count($this->warnings);
@@ -117,6 +186,7 @@ final class Importer {
                 'will_drop_mds2_tables' => false,
             ];
         } catch (\Throwable $throwable) {
+            $this->record_database_rejection_warning();
             $totals['skipped'] = count($this->migration_skips);
             $totals['repaired'] = count($this->migration_repairs);
             $totals['warnings'] = count($this->warnings);
@@ -164,11 +234,21 @@ final class Importer {
         $report = is_array($run['report'] ?? null) ? $run['report'] : [];
         $job = $this->normalize_job_state($report['job'] ?? [], $report);
         $this->warnings = is_array($report['warnings'] ?? null) ? array_values(array_unique($report['warnings'])) : [];
+        $this->notices = is_array($report['notices'] ?? null) ? array_values(array_unique($report['notices'])) : [];
         $this->migration_skips = $this->reconciliation_entries($report['skipped'] ?? []);
         $this->migration_repairs = $this->reconciliation_entries($report['repairs'] ?? []);
+        $this->database_rejections = self::normalize_database_rejections($job['database_rejections'] ?? []);
         $this->page_options = self::normalize_page_options((array) ($job['page_options'] ?? []));
         $this->grid_page_disposition = (array) ($job['grid_page_disposition'] ?? []);
         $this->page_outcomes = (array) ($job['page_outcomes'] ?? []);
+        $this->settings_outcomes = (array) ($job['settings_outcomes'] ?? []);
+        $this->order_status_outcomes = (array) ($job['order_status_outcomes'] ?? []);
+
+        if ($this->job_format_restarted) {
+            // An import that starts again looks like it is losing its place, so the run
+            // has to say why. This explains what happened; it is not a record needing a fix.
+            $this->migration_notice(__('The saved progress of this import was written in another format by a different version of Million Dollar Script 3.0, so this import started again from its first step. Nothing that was already imported is created a second time.', 'million-dollar-script'));
+        }
 
         $batch_size = max(1, min(500, absint($args['batch_size'] ?? $job['batch_size'] ?? 100)));
         $time_budget = max(1, min(20, (float) ($args['time_budget'] ?? $job['time_budget'] ?? 8)));
@@ -186,6 +266,14 @@ final class Importer {
                 $job['processed'][$stage] = absint($job['processed'][$stage] ?? 0) + absint($result['processed'] ?? 0);
                 $job['cursor'] = is_array($result['cursor'] ?? null) ? $result['cursor'] : [];
                 $job['last_message'] = $this->stage_label($stage);
+
+                if ('settings' === $stage) {
+                    $job['settings_outcomes'] = array_values($this->settings_outcomes);
+                }
+
+                if ('orders' === $stage) {
+                    $job['order_status_outcomes'] = $this->order_status_outcomes;
+                }
 
                 if ('pages' === $stage) {
                     $job['grid_page_disposition'] = $this->grid_page_disposition;
@@ -208,6 +296,20 @@ final class Importer {
             $status = $completed ? 'completed' : 'running';
             $job['status'] = $status;
             $job['updated_at'] = current_time('mysql', true);
+            if ($completed) {
+                $this->record_database_rejection_warning();
+            }
+            $job['database_rejections'] = $this->database_rejections;
+            if ($completed && '' !== (string) ($job['recheck'] ?? '')) {
+                // A standing rule counts as applied only for a run that reached the end. A
+                // batch that stopped at the host leaves it offered again.
+                \MillionDollarScript\V3\Migration\Recheck\Runner::recordCompletion(
+                    $this->source->source_prefix(),
+                    $job,
+                    $totals,
+                    absint($run['id'] ?? 0)
+                );
+            }
             $totals['warnings'] = count(array_values(array_unique($this->warnings)));
             $totals['skipped'] = count($this->migration_skips);
             $totals['repaired'] = count($this->migration_repairs);
@@ -221,6 +323,8 @@ final class Importer {
             $job['status'] = 'failed';
             $job['last_error'] = $throwable->getMessage();
             $job['updated_at'] = current_time('mysql', true);
+            $this->record_database_rejection_warning();
+            $job['database_rejections'] = $this->database_rejections;
             $totals['warnings'] = count(array_values(array_unique($this->warnings)));
             $totals['skipped'] = count($this->migration_skips);
             $totals['repaired'] = count($this->migration_repairs);
@@ -266,10 +370,43 @@ final class Importer {
         $this->map = new MigrationMap();
         $this->legacy_grids = [];
         $this->warnings = [];
+        $this->notices = [];
         $this->migration_skips = [];
         $this->migration_repairs = [];
         $this->grid_page_disposition = [];
         $this->page_outcomes = [];
+        $this->settings_outcomes = [];
+        $this->order_status_outcomes = [];
+        $this->cell_size_copies = [];
+        $this->undrawn_positions = [];
+        $this->database_rejections = [];
+    }
+
+    /**
+     * Keep the tallies of values the database could not store across the steps of a
+     * resumable run. A step boundary must not lose the count, or a large site reports
+     * nothing for a truncated write that happened two requests ago.
+     */
+    private static function normalize_database_rejections($raw): array {
+        $normalized = [];
+        foreach (is_array($raw) ? $raw : [] as $key => $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $table = sanitize_text_field((string) ($entry['table'] ?? ''));
+            if ('' === $table) {
+                continue;
+            }
+            $column = sanitize_text_field((string) ($entry['column'] ?? ''));
+            $normalized[$table . '.' . ('' !== $column ? $column : '?')] = [
+                'table' => $table,
+                'column' => $column,
+                'kind' => sanitize_text_field((string) ($entry['kind'] ?? '')),
+                'count' => absint($entry['count'] ?? 0),
+            ];
+        }
+
+        return $normalized;
     }
 
     private function empty_totals() {
@@ -299,10 +436,21 @@ final class Importer {
     }
 
     private function new_job_state(array $dry_run, array $args = []) {
+        // A re-check does not re-read the whole older site: it starts at the first step its
+        // rule touches. Anything earlier is already on the site and unchanged by the rule.
+        $stage_index = 0;
+        $start_stage = sanitize_key((string) ($args['start_stage'] ?? ''));
+        if ('' !== $start_stage) {
+            $position = array_search($start_stage, self::JOB_STAGES, true);
+            if (false !== $position) {
+                $stage_index = $position;
+            }
+        }
+
         return [
-            'version' => 1,
+            'version' => self::JOB_FORMAT_VERSION,
             'status' => 'running',
-            'stage_index' => 0,
+            'stage_index' => $stage_index,
             'cursor' => [],
             'processed' => array_fill_keys(self::JOB_STAGES, 0),
             'completed_stages' => [],
@@ -311,6 +459,14 @@ final class Importer {
             'page_options' => self::normalize_page_options($args),
             'grid_page_disposition' => [],
             'page_outcomes' => [],
+            'settings_outcomes' => [],
+            'order_status_outcomes' => [],
+            'database_rejections' => [],
+            // Which standing rule this run is applying, and the steps it asked for. Kept on
+            // the job so the run can be recognised as a re-check, and so a rule counts as
+            // applied only once the run reaches the end.
+            'recheck' => sanitize_key((string) ($args['recheck'] ?? '')),
+            'recheck_stages' => array_values(array_map('sanitize_key', (array) ($args['recheck_stages'] ?? []))),
             'time_budget' => max(1, min(20, (float) ($args['time_budget'] ?? 8))),
             'started_by' => get_current_user_id(),
             'last_message' => '',
@@ -321,19 +477,43 @@ final class Importer {
 
     private function normalize_job_state($job, array $report) {
         $job = is_array($job) ? $job : [];
-        $source_totals = is_array($job['source_totals'] ?? null) ? $job['source_totals'] : $this->job_source_totals($report);
+        // A checkpoint from another build may record source totals for fewer stages than this
+        // one has. Fill what the run's own dry run can still answer, and leave the rest
+        // unknown rather than inventing zero: a zero makes the progress figures on the
+        // migration screen claim the older site had nothing to import.
+        $stored_totals = is_array($job['source_totals'] ?? null) ? $job['source_totals'] : [];
+        $reported_totals = is_array($report['tables'] ?? null) ? $this->job_source_totals($report) : [];
+        $source_totals = [];
+        foreach (self::JOB_STAGES as $stage) {
+            if (array_key_exists($stage, $stored_totals)) {
+                $source_totals[$stage] = absint($stored_totals[$stage]);
+            } elseif (array_key_exists($stage, $reported_totals)) {
+                $source_totals[$stage] = absint($reported_totals[$stage]);
+            } else {
+                $source_totals[$stage] = null;
+            }
+        }
         $processed = is_array($job['processed'] ?? null) ? $job['processed'] : [];
         $normalized_processed = [];
         foreach (self::JOB_STAGES as $stage) {
             $normalized_processed[$stage] = absint($processed[$stage] ?? 0);
-            $source_totals[$stage] = absint($source_totals[$stage] ?? 0);
         }
 
         $stage_index = absint($job['stage_index'] ?? 0);
+        // A checkpoint written in another job format describes positions in a stage list
+        // that no longer applies, so its position is not trusted: the import starts again
+        // from its first stage. Records that are already imported are recognised through
+        // the migration map, so re-processing them changes nothing.
+        if ((absint($job['version'] ?? 1) ?: 1) !== self::JOB_FORMAT_VERSION) {
+            $stage_index = 0;
+            $job['completed_stages'] = [];
+            $job['cursor'] = [];
+            $this->job_format_restarted = true;
+        }
         $stage_index = min(count(self::JOB_STAGES), $stage_index);
 
         return [
-            'version' => absint($job['version'] ?? 1) ?: 1,
+            'version' => self::JOB_FORMAT_VERSION,
             'status' => sanitize_key((string) ($job['status'] ?? 'running')),
             'stage_index' => $stage_index,
             'cursor' => is_array($job['cursor'] ?? null) ? $job['cursor'] : [],
@@ -344,6 +524,11 @@ final class Importer {
             'page_options' => self::normalize_page_options((array) ($job['page_options'] ?? [])),
             'grid_page_disposition' => (array) ($job['grid_page_disposition'] ?? []),
             'page_outcomes' => (array) ($job['page_outcomes'] ?? []),
+            'settings_outcomes' => (array) ($job['settings_outcomes'] ?? []),
+            'order_status_outcomes' => (array) ($job['order_status_outcomes'] ?? []),
+            'database_rejections' => self::normalize_database_rejections($job['database_rejections'] ?? []),
+            'recheck' => sanitize_key((string) ($job['recheck'] ?? '')),
+            'recheck_stages' => array_values(array_map('sanitize_key', (array) ($job['recheck_stages'] ?? []))),
             'time_budget' => max(1, min(20, (float) ($job['time_budget'] ?? 8))),
             'started_by' => absint($job['started_by'] ?? 0),
             'last_message' => sanitize_text_field((string) ($job['last_message'] ?? '')),
@@ -565,14 +750,14 @@ final class Importer {
         ];
     }
 
-    public static function block_status($legacy_status, $fallback_order_status = '') {
+    public static function block_status($legacy_status, $fallback_order_status = '', $legacy_order_paid = false) {
         $status = sanitize_key($legacy_status);
         $order_status = sanitize_key($fallback_order_status);
 
         // MDS2 keeps block rows 'ordered' long after their order has expired, so the
         // order status is authoritative when a block is tied to an order.
         if ('' !== $order_status) {
-            switch (self::order_status($order_status)) {
+            switch (self::order_status($order_status, $legacy_order_paid)) {
                 case 'paid':
                     return 'sold';
                 case 'reserved':
@@ -600,9 +785,25 @@ final class Importer {
         }
     }
 
-    public static function order_status($legacy_status) {
+    /**
+     * The MDS3 order status for one Million Dollar Script 2 order row.
+     *
+     * "confirmed" is not a paid state in the older plugin: it is what a customer's own
+     * confirmation produces before payment. MDS2 says so itself - a confirmed order with no
+     * WooCommerce order should still show "Pay Now" (src/Classes/Orders/Orders.php:2994), and
+     * only a completed order counts there as having payment (same method, line 3001). A
+     * confirmed row therefore arrives as paid only when the older site recorded payment for it
+     * (see ReadsLegacyOrderPayments); otherwise it arrives as an order the customer can still
+     * finish, and its blocks stay reserved instead of sold. Guessing paid would overstate this
+     * site's revenue and leave the customer with no way to complete what they started.
+     *
+     * @param string $legacy_status   The status stored by the older plugin.
+     * @param bool   $legacy_order_paid Whether that site recorded payment for this order.
+     */
+    public static function order_status($legacy_status, $legacy_order_paid = false) {
         switch (sanitize_key($legacy_status)) {
             case 'confirmed':
+                return $legacy_order_paid ? 'paid' : 'pending_payment';
             case 'paid':
             case 'completed':
             case 'renew_paid':
@@ -626,8 +827,8 @@ final class Importer {
         }
     }
 
-    public static function placement_status($legacy_order_status) {
-        $status = self::order_status($legacy_order_status);
+    public static function placement_status($legacy_order_status, $legacy_order_paid = false) {
+        $status = self::order_status($legacy_order_status, $legacy_order_paid);
         if ('paid' === $status) {
             return 'active';
         }

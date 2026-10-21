@@ -47,11 +47,14 @@ foreach ($cols as $suffix => $definition) {
     $wpdb->query('CREATE TABLE ' . DB::ident($source_prefix . $suffix) . " ($definition) {$charset}");
 }
 
-// A real small PNG, encoded exactly the way the legacy GridImageGenerator does.
+// A real small PNG, encoded exactly the way the legacy GridImageGenerator does:
+// one cell of the grid, because that generator cut the ad image to block size
+// before storing it in blocks.image_data. The point of the fixture is what the
+// import says about a picture whose only remaining copy is that crop.
 if (function_exists('imagecreatetruecolor')) {
-    $image = imagecreatetruecolor(120, 60);
+    $image = imagecreatetruecolor(10, 10);
     $red = imagecolorallocate($image, 200, 40, 40);
-    imagefilledrectangle($image, 0, 0, 119, 59, $red);
+    imagefilledrectangle($image, 0, 0, 9, 9, $red);
     ob_start();
     imagepng($image);
     $png = ob_get_clean();
@@ -116,12 +119,14 @@ $wpdb->insert($source_prefix . 'orders', [
     'block_info' => '',
 ]);
 foreach ([0, 1, 2, 3] as $bid) {
+    // MDS2 stores block x/y as pixel offsets (x = (block_id % grid_width) * block_width),
+    // so the fixture writes them the same way the plugin did rather than as a bare index.
     $wpdb->insert($source_prefix . 'blocks', [
         'block_id' => $bid,
         'user_id' => 1,
         'status' => 'sold',
-        'x' => $bid,
-        'y' => 0,
+        'x' => ($bid % 1000) * 10,
+        'y' => intdiv($bid, 1000) * 10,
         'image_data' => $image_b64,
         'url' => 'https://example.com/flattened',
         'alt_text' => 'Flattened fixture alt text',
@@ -141,6 +146,10 @@ foreach ([0, 1, 2, 3] as $bid) {
 
 // --- import -----------------------------------------------------------------
 $attachment_id = 0;
+$kept_attachment_id = 0;
+$secured_attachment_id = 0;
+$kept_path = '';
+$secured_path = '';
 $relative = '';
 $file_path = '';
 
@@ -180,6 +189,24 @@ try {
             $check($png_sha === sha1((string) file_get_contents($file_path)), 'recovered image bytes do not match the original');
         }
 
+        // A picture recovered from image_data is a crop at cell size, and that is
+        // the whole point of the report entry: the ad looks soft, so the owner
+        // hears it here rather than on the site. The fixture seeds a 10x10 cell
+        // and a 10x10 payload, which is exactly that case.
+        $repairs = array_column((array) ($result['verification']['repairs'] ?? []), 'reason');
+        $cell_size_reported = false;
+        foreach ($repairs as $repair) {
+            if (false !== strpos((string) $repair, 'restored from a copy kept at cell size (10 by 10 pixels)')) {
+                $cell_size_reported = true;
+                break;
+            }
+        }
+        $check($cell_size_reported, 'the run did not report that the only image available was cell size');
+        $check(
+            1 === absint($result['verification']['coverage']['images']['cell_size_only'] ?? 0),
+            'coverage did not count the ad whose only copy is cell size: ' . wp_json_encode($result['verification']['coverage']['images'] ?? [])
+        );
+
         // Second import: recovery must stay idempotent (no duplicate attachment/row).
         $result2 = (new Importer())->import($source_prefix);
         if (is_wp_error($result2)) {
@@ -197,6 +224,113 @@ try {
                 $target_order_id
             )));
             $check(1 === $dup_placements, 're-import changed placement count (' . $dup_placements . ')');
+        }
+
+        // The other side of the threshold: a payload bigger than one cell is a
+        // usable picture, so it must not be reported as a cell-sized copy. A
+        // flipped comparison here would call every migrated ad soft.
+        $larger = '';
+        if (function_exists('imagecreatetruecolor')) {
+            $bigger = imagecreatetruecolor(20, 20);
+            $blue = imagecolorallocate($bigger, 40, 40, 200);
+            imagefilledrectangle($bigger, 0, 0, 19, 19, $blue);
+            ob_start();
+            imagepng($bigger);
+            $larger = (string) ob_get_clean();
+            imagedestroy($bigger);
+        } else {
+            $larger = (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+        }
+        $wpdb->query($wpdb->prepare(
+            'UPDATE ' . DB::ident($source_prefix . 'blocks') . ' SET image_data = %s WHERE order_id = %d',
+            base64_encode($larger),
+            96
+        ));
+        $result3 = (new Importer())->import($source_prefix);
+        if (is_wp_error($result3)) {
+            $fails[] = 'third import failed: ' . $result3->get_error_message();
+        } else {
+            $larger_coverage = (array) ($result3['verification']['coverage']['images'] ?? []);
+            $check(0 === absint($larger_coverage['cell_size_only'] ?? 0), 'an image larger than one cell was reported as cell size: ' . wp_json_encode($larger_coverage));
+        }
+    }
+
+    // A site that still has the order's own upload but records nothing about it. MDS2 named
+    // that file tmp_<order id>_<timestamp>_<random>.<ext> in its own images folder, and on the
+    // customer copy blocks.file_name is empty on every one of 2,446 rows - so the order number
+    // in the file name is the only link left to the real picture, and without it the import
+    // settles for the cell-size copy kept inside the block rows.
+    $uploads_dir = wp_get_upload_dir();
+    $kept_dir = trailingslashit((string) $uploads_dir['basedir']) . 'milliondollarscript/images';
+    if (!wp_mkdir_p($kept_dir)) {
+        $fails[] = 'could not create ' . $kept_dir . ' to leave an upload behind';
+    } else {
+        $kept_relative = 'milliondollarscript/images/tmp_96_' . time() . '_abcdef.png';
+        $kept_path = trailingslashit((string) $uploads_dir['basedir']) . $kept_relative;
+        $kept_bytes = (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+        if (false === file_put_contents($kept_path, $kept_bytes)) {
+            $fails[] = 'could not write ' . $kept_path;
+        } else {
+            $found_run = (new Importer())->import($source_prefix);
+            if (is_wp_error($found_run)) {
+                $fails[] = 'import with the order upload present failed: ' . $found_run->get_error_message();
+            } else {
+                $found_placement = $wpdb->get_row($wpdb->prepare(
+                    'SELECT * FROM ' . DB::ident(DB::table('placements')) . ' WHERE order_id = %d LIMIT 1',
+                    absint($target_order_id)
+                ), ARRAY_A);
+                $kept_attachment_id = absint($found_placement['attachment_id'] ?? 0);
+                $check($kept_attachment_id > 0, 'the placement lost its attachment when the order upload was present');
+                $found_relative = $kept_attachment_id ? (string) get_post_meta($kept_attachment_id, '_wp_attached_file', true) : '';
+                $check($kept_relative === $found_relative, 'the placement did not use the upload the older plugin left behind: ' . $found_relative);
+                $found_reasons = wp_json_encode(array_column((array) ($found_run['verification']['repairs'] ?? []), 'reason'));
+                $check(false !== strpos($found_reasons, 'order number in its name'), 'the run did not say where the ad picture came from: ' . $found_reasons);
+
+                $kept_again = (new Importer())->import($source_prefix);
+                if (!is_wp_error($kept_again)) {
+                    $same_file = absint($wpdb->get_var($wpdb->prepare(
+                        'SELECT COUNT(*) FROM ' . DB::ident($wpdb->postmeta) . ' WHERE meta_key = %s AND meta_value = %s',
+                        '_wp_attached_file',
+                        $kept_relative
+                    )));
+                    $check(1 === $same_file, 're-import registered the left-behind upload twice (' . $same_file . ' rows)');
+                }
+
+                // The other folder that build put ad pictures in: its form upload flow used
+                // FileValidator::get_secure_upload_path('images'), a folder protected by its own
+                // .htaccess. The name it gave the file is the same, so the import has to look in
+                // both places rather than only where its own media lives.
+                $secured_relative = 'mds-secure/images/tmp_96_' . (time() + 7) . '_fedcba.png';
+                $secured_path = trailingslashit((string) $uploads_dir['basedir']) . $secured_relative;
+                if (!wp_mkdir_p(dirname($secured_path))) {
+                    $fails[] = 'could not create ' . dirname($secured_path);
+                } elseif (false === file_put_contents($secured_path, $kept_bytes)) {
+                    $fails[] = 'could not write ' . $secured_path;
+                } else {
+                    @unlink($kept_path);
+                    $wpdb->query($wpdb->prepare(
+                        'DELETE FROM ' . DB::ident($wpdb->postmeta) . " WHERE post_id = %d AND (meta_key = '_thumbnail_id' OR meta_key LIKE '%%milliondollarscript_image%%')",
+                        $ad_id
+                    ));
+                    $wpdb->query($wpdb->prepare(
+                        'UPDATE ' . DB::ident(DB::table('placements')) . ' SET attachment_id = 0 WHERE id = %d',
+                        absint($found_placement['id'])
+                    ));
+
+                    $secured_run = (new Importer())->import($source_prefix);
+                    if (is_wp_error($secured_run)) {
+                        $fails[] = 'import with the picture in the protected folder failed: ' . $secured_run->get_error_message();
+                    } else {
+                        $secured_placement = $wpdb->get_row($wpdb->prepare(
+                            'SELECT * FROM ' . DB::ident(DB::table('placements')) . ' WHERE order_id = %d LIMIT 1',
+                            absint($target_order_id)
+                        ), ARRAY_A);
+                        $secured_attachment_id = absint($secured_placement['attachment_id'] ?? 0);
+                        $secured_found = $secured_attachment_id ? (string) get_post_meta($secured_attachment_id, '_wp_attached_file', true) : '';
+                        $check($secured_found === $secured_relative, 'the picture in the protected folder was not used: ' . $secured_found);
+                    }
+                }
+            }
         }
     }
 } finally {
@@ -252,6 +386,18 @@ try {
             @unlink($file_path);
         }
         wp_delete_post($attachment_id, true);
+    }
+    if ($kept_attachment_id) {
+        wp_delete_post($kept_attachment_id, true);
+    }
+    if ($secured_attachment_id) {
+        wp_delete_post($secured_attachment_id, true);
+    }
+    if ('' !== $kept_path && is_file($kept_path)) {
+        @unlink($kept_path);
+    }
+    if ('' !== $secured_path && is_file($secured_path)) {
+        @unlink($secured_path);
     }
     wp_delete_post($ad_id, true);
     foreach ($cols as $suffix => $_) {

@@ -247,15 +247,32 @@ final class PlacementDraftRepository {
         return (bool) wp_delete_attachment($attachment_id, true);
     }
 
-    private function attachment_used_by_placement($attachment_id) {
-        global $wpdb;
+    /**
+     * Attachment ids uploaded for this order's placement draft.
+     *
+     * A person erasing their data also wants the picture they sent gone. The mark
+     * tying an upload to an order is written on upload, so this asks the same
+     * question the upload answered.
+     *
+     * @return int[]
+     */
+    public function uploads_for_order($order_id) {
+        $ids = get_posts([
+            'post_type' => 'attachment',
+            'post_status' => 'any',
+            'fields' => 'ids',
+            'posts_per_page' => 50,
+            'meta_key' => self::ATTACHMENT_ORDER_ID,
+            'meta_value' => absint($order_id),
+        ]);
 
-        return (int) $wpdb->get_var(
-            $wpdb->prepare(
-                'SELECT COUNT(*) FROM ' . DB::ident(DB::table('placements')) . ' WHERE attachment_id = %d',
-                absint($attachment_id)
-            )
-        ) > 0;
+        return array_values(array_unique(array_map('absint', is_array($ids) ? $ids : [])));
+    }
+
+    private function attachment_used_by_placement($attachment_id) {
+        // One rule about whether an image is still in use, asked of the table that
+        // holds the answer.
+        return (new PlacementRepository())->attachments_still_used([absint($attachment_id)]) !== [];
     }
 
     private function save_order_draft(OrderRepository $orders, array $order, ?array $draft) {

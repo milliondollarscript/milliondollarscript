@@ -125,6 +125,16 @@ trait RendersAdminPages {
             $starter_site_result = [];
         }
 
+        // Which extensions the last setup save activated, which it could not, and which are
+        // simply not installed yet. Named, because a count gave the admin nothing to act on.
+        $extension_setup_result_key = 'mds3_setup_extension_result_' . get_current_user_id();
+        $extension_setup_result = get_transient($extension_setup_result_key);
+        if (is_array($extension_setup_result)) {
+            delete_transient($extension_setup_result_key);
+        } else {
+            $extension_setup_result = [];
+        }
+
         Template::display('admin/pages/setup.php', [
             'active_payment_provider' => $active_payment_provider,
             'extension_choices' => $extension_choices,
@@ -132,6 +142,7 @@ trait RendersAdminPages {
             'extension_onboarding_items' => $extension_onboarding->items($selected_extensions),
             'extension_page_result' => $extension_page_result,
             'extension_setup' => $extension_setup,
+            'extension_setup_result' => $extension_setup_result,
             'grid' => $grid,
             'grid_enabled' => $grid_enabled,
             'legacy_plugins' => $legacy_plugins,

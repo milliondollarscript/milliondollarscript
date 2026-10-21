@@ -57,6 +57,20 @@ If a guide appears outdated after documentation has been published, use **Millio
 
 Manual refreshes have a short site-wide cooldown to prevent repeated remote requests. Routine refreshing is unnecessary; use the button after a documentation release, an entitlement change, or recovery from a temporary extension-server problem.
 
+## Pages And Links
+
+**A grid, order or upload page shows blog posts, a Not Found page, or the same page as every other address.** WordPress is addressing pages as `?page_id=` rather than by name. Open **Settings > Permalinks** and choose **Post name**, then save. A fresh WordPress install leaves this on **Plain**, and every page address the plugin builds — including the links in order emails and customer notices, advertiser pages, and the pages a migrated site brings over — depends on a usable structure. Re-open the pages afterwards to confirm.
+
+**The header lists every page on the site.** A theme with no menu assigned falls back to listing published pages, which on an advertising site includes a page per advertiser. Assign a menu with the pages customers need: the public grid page, the order page, and Manage Pixels and Upload. In a block theme that is **Appearance > Editor** and the navigation area; the **Appearance > Menus** screen only exists in a classic theme.
+
+**A customer cannot get back to an ad they already have.** There are three ways in, and a customer who lost the email needs the other two:
+
+- The order page shows **Continue the order you already have on this grid** to a signed-in customer whose order is still open.
+- The **Manage Pixels** page lists the orders connected to the customer's account once they are signed in.
+- The private link in the order confirmation opens that order directly, without an account.
+
+An ad that is already published, or an order that was cancelled or expired, is not offered as something to continue; the customer finds those on the Manage Pixels page.
+
 ## Checkout
 
 If checkout fails:

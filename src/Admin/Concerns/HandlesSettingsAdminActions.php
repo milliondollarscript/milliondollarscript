@@ -12,10 +12,12 @@ use MillionDollarScript\V3\Commerce\Payments;
 use MillionDollarScript\V3\Extensions\ExtensionOnboarding;
 use MillionDollarScript\V3\Extensions\ExtensionCleanupPolicy;
 use MillionDollarScript\V3\Extensions\ExtensionSetup;
+use MillionDollarScript\V3\Pages\PageRepository;
 use MillionDollarScript\V3\Settings\SettingsSchema;
 use MillionDollarScript\V3\Settings\SettingsTransfer;
 use MillionDollarScript\V3\Setup\PluginDependencyInstaller;
 use MillionDollarScript\V3\Setup\StarterSite;
+use MillionDollarScript\V3\Support\PageUrls;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -39,6 +41,31 @@ trait HandlesSettingsAdminActions {
             $return_url = add_query_arg('tab', $tab, $return_url);
         }
         $errors = \MillionDollarScript\Core\Hooks::apply('million-dollar-script/admin/validate/settings', new \WP_Error(), $raw_post, $current);
+        foreach ([
+            'checkout-url' => '',
+            'thank-you-page' => 'thank-you',
+        ] as $setting_key => $allowed_type) {
+            $conflict = $this->page_url_conflict($raw_post, $current, $setting_key, $allowed_type);
+            if ('' === $conflict) {
+                continue;
+            }
+            if (!is_wp_error($errors)) {
+                $errors = new \WP_Error();
+            }
+            $errors->add('mds3_' . str_replace('-', '_', $setting_key) . '_conflict', $conflict);
+        }
+        $number_errors = SettingsSchema::validate_number_fields($raw_post, $this->settings_fields_for_save());
+        if ($number_errors->has_errors()) {
+            if (!is_wp_error($errors)) {
+                $errors = new \WP_Error();
+            }
+            foreach ((array) $number_errors->errors as $code => $messages) {
+                foreach ((array) $messages as $message) {
+                    $errors->add((string) $code, (string) $message);
+                }
+            }
+        }
+
         if (is_wp_error($errors) && $errors->has_errors()) {
             wp_safe_redirect(add_query_arg('settings_error', wp_strip_all_tags($errors->get_error_message()), $return_url));
             exit;
@@ -46,7 +73,13 @@ trait HandlesSettingsAdminActions {
 
         $next = [];
         foreach ($this->settings_fields_for_save() as $key => $field) {
-            $next[$key] = SettingsSchema::sanitize($key, $raw_post[$key] ?? ($field['default'] ?? ''));
+            $raw_value = $raw_post[$key] ?? null;
+            if ('number' === ($field['type'] ?? '') && is_string($raw_value) && '' === trim($raw_value)) {
+                // A blank box is not a choice of zero. For these settings 0 means "off",
+                // so an accidental empty submit would quietly stop releasing reservations.
+                $raw_value = $field['default'] ?? '';
+            }
+            $next[$key] = SettingsSchema::sanitize($key, $raw_value ?? ($field['default'] ?? ''));
         }
         $next = Currency::settings_with_effective_values($next);
         $next = \MillionDollarScript\Core\Hooks::apply('million-dollar-script/admin/sanitize/settings', $next, $raw_post, $current);
@@ -61,6 +94,64 @@ trait HandlesSettingsAdminActions {
 
         wp_safe_redirect(add_query_arg('updated', '1', $return_url));
         exit;
+    }
+
+    /**
+     * Reject a settings URL that names one of this plugin's own pages when that page cannot
+     * do the job the setting asks for.
+     *
+     * Payment cannot happen on the Payment, Thank You, Upload or My Pixels page: setting the
+     * Checkout URL to the Payment page produced a "Continue payment" link that reloaded the
+     * screen it was on. The same trap the other way round: a Thank You Page URL aimed at the
+     * Payment page sends a customer back to payment when their order is already finished.
+     * Only a changed value is checked, so saving unrelated settings is never blocked by a
+     * value that was already stored.
+     *
+     * @param string $allowed_type '' when none of this plugin's pages may be named, or the
+     *                             one page type that is allowed.
+     */
+    private function page_url_conflict(array $submitted, array $current, $setting_key, $allowed_type) {
+        if (!isset($submitted[$setting_key])) {
+            return '';
+        }
+
+        $proposed = esc_url_raw((string) $submitted[$setting_key]);
+        if ('' === $proposed || $proposed === esc_url_raw((string) ($current[$setting_key] ?? ''))) {
+            return '';
+        }
+
+        $proposed_key = PageUrls::page_key($proposed);
+        if ('' === $proposed_key) {
+            return '';
+        }
+
+        $labels = PageRepository::labels();
+        foreach (array_keys(PageRepository::standard_labels()) as $type) {
+            $page_id = absint(get_option('mds3_page_' . $type . '_id', 0));
+            $permalink = $page_id ? (string) get_permalink($page_id) : '';
+            if ('' === $permalink || PageUrls::page_key($permalink) !== $proposed_key) {
+                continue;
+            }
+            if ($type === $allowed_type) {
+                return '';
+            }
+
+            if ('' === $allowed_type) {
+                return sprintf(
+                    /* translators: %s: name of the page the Checkout URL currently points at */
+                    __('The Checkout URL is this site’s %s page. Payment happens somewhere else, so use the address of your own payment page or payment provider.', 'million-dollar-script'),
+                    (string) ($labels[$type] ?? $type)
+                );
+            }
+
+            return sprintf(
+                /* translators: %s: name of the page the Thank You Page URL currently points at */
+                __('The Thank You Page URL is this site’s %s page, which already has another job. Use your Thank You page, so a finished order ends where the customer can see what happens next.', 'million-dollar-script'),
+                (string) ($labels[$type] ?? $type)
+            );
+        }
+
+        return '';
     }
 
     public function export_settings() {
@@ -173,12 +264,22 @@ trait HandlesSettingsAdminActions {
         $requested_payment_provider = SettingsSchema::sanitize('payment_provider', $post['payment_provider'] ?? 'standalone');
         $extension_result = (new ExtensionSetup())->save_selection(is_array($post['mds3_setup_extensions'] ?? null) ? $post['mds3_setup_extensions'] : []);
 
+        // What the save did, said per extension. A count on its own ("1 selected extension
+        // needs attention") could not be acted on, and it counted "install it when you are
+        // ready" next to a real blocker. The names come from the plan itself, which already
+        // says what to do about each one.
+        set_transient('mds3_setup_extension_result_' . get_current_user_id(), [
+            'activated' => array_values(array_map('strval', (array) ($extension_result['activated'] ?? []))),
+            'not_installed' => array_values(array_map('strval', (array) ($extension_result['skipped'] ?? []))),
+            'blocked' => array_values(array_map('strval', (array) ($extension_result['errors'] ?? []))),
+        ], 60);
+
         if ('standalone' !== $requested_payment_provider && !Payments::provider_ready($requested_payment_provider, array_merge($settings, ['payment_provider' => $requested_payment_provider]))) {
             wp_safe_redirect(add_query_arg([
                 'page' => 'mds3-setup',
                 'payment_error' => rawurlencode(__('That payment provider is not ready yet. Install and activate its required plugins, or choose standalone/manual checkout.', 'million-dollar-script')),
                 'extensions_activated' => count($extension_result['activated'] ?? []),
-                'extension_errors' => count($extension_result['errors'] ?? []) + count($extension_result['skipped'] ?? []),
+                'extension_attention' => count($extension_result['errors'] ?? []),
             ], admin_url('admin.php')));
             exit;
         }
@@ -199,7 +300,7 @@ trait HandlesSettingsAdminActions {
             'page' => 'mds3-setup',
             'saved' => '1',
             'extensions_activated' => count($extension_result['activated'] ?? []),
-            'extension_errors' => count($extension_result['errors'] ?? []) + count($extension_result['skipped'] ?? []),
+            'extension_attention' => count($extension_result['errors'] ?? []),
             'starter_site' => $starter_site_requested ? '1' : '0',
             'starter_site_errors' => count($starter_site_result['errors'] ?? []),
         ], admin_url('admin.php')));
@@ -212,11 +313,17 @@ trait HandlesSettingsAdminActions {
             wp_send_json_error(['message' => __('Permission denied.', 'million-dollar-script')], 403);
         }
 
-        $result = (new StarterSite())->create();
+        $result = (new StarterSite())->create([
+            'navigation_mode' => isset($_POST['navigation_mode'])
+                ? sanitize_key(wp_unslash($_POST['navigation_mode']))
+                : 'keep',
+        ]);
         set_transient('mds3_starter_site_result_' . get_current_user_id(), $result, 60);
         wp_send_json_success([
             'errors' => array_values(array_map('strval', (array) ($result['errors'] ?? []))),
             'navigation_needs_review' => !empty($result['status']['navigation_needs_review']),
+            'navigation_untouched' => !empty($result['status']['navigation_untouched']),
+            'navigation_replaced' => !empty($result['navigation_replaced']),
             'configured' => !empty((new StarterSite())->status()['configured']),
         ]);
     }

@@ -50,6 +50,18 @@ $second_grid = null;
 $imported_grid_ids = [];
 
 try {
+    // A grid's stored currency depends on the site's payment settings: a provider that locks
+    // currency (WooCommerce is one) overrides what the grid asks for. That is correct behaviour
+    // and not what this fixture tests, and on a WooCommerce-configured site it turned the
+    // currency assertion below into a false alarm (llm-task 51dde7ab). Pin the setting the
+    // assertion depends on, and restore it afterwards.
+    $settings_before = get_option('mds3_settings', false);
+    $settings_for_run = is_array($settings_before) ? $settings_before : [];
+    $settings_for_run['payment_provider'] = 'standalone';
+    $settings_for_run['currency'] = 'CAD';
+    $settings_for_run['currency-symbol'] = '$';
+    update_option('mds3_settings', $settings_for_run, false);
+
     $source_grid = (new GridRepository())->create([
         'title' => 'Grid Transfer Fixture',
         'slug' => 'grid-transfer-fixture',
@@ -121,6 +133,11 @@ try {
     if (!$source_grid) {
         throw new RuntimeException('Transfer fixture source grid could not be reloaded.');
     }
+    // State the dependency instead of letting it surface as a mismatch several steps later:
+    // if a site's settings still override grid currency, this fixture cannot test transfer.
+    if ('CAD' !== (string) $source_grid->get('currency')) {
+        throw new RuntimeException('This site\'s payment settings override grid currency, so grid currency cannot be checked here - stored ' . var_export((string) $source_grid->get('currency'), true) . ' instead of CAD.');
+    }
 
     $second_grid = (new GridRepository())->create([
         'title' => 'Grid Transfer Fixture Secondary',
@@ -180,6 +197,11 @@ try {
     $assert_same('Grid Transfer Fixture Secondary', (string) $imported_second->get('title'), 'Second imported grid title was incorrect.');
     $assert_same('paused', (string) $imported_second->get('status'), 'Second imported grid status was incorrect.');
 } finally {
+    if (false === ($settings_before ?? false)) {
+        delete_option('mds3_settings');
+    } else {
+        update_option('mds3_settings', $settings_before, false);
+    }
     foreach ($imported_grid_ids as $grid_id) {
         $cleanup_grid($grid_id);
     }

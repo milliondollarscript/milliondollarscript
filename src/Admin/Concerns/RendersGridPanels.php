@@ -15,11 +15,13 @@ use MillionDollarScript\V3\Grid\PackageRepository;
 use MillionDollarScript\V3\Grid\PriceRuleRepository;
 use MillionDollarScript\V3\Migration\LegacySource;
 use MillionDollarScript\V3\Media\AdvertiserPageManager;
+use MillionDollarScript\V3\Media\PlacementFieldContract;
 use MillionDollarScript\V3\Media\PlacementRepository;
 use MillionDollarScript\V3\Orders\OrderPlacementMovePlanner;
 use MillionDollarScript\V3\Orders\OrderRepository;
 use MillionDollarScript\V3\Orders\OrderRenewal;
 use MillionDollarScript\V3\Pages\PageRepository;
+use MillionDollarScript\V3\Setup\PageOptionAudit;
 use MillionDollarScript\V3\Support\Template;
 
 if (!defined('ABSPATH')) {
@@ -172,6 +174,7 @@ trait RendersGridPanels {
 
         Template::display('admin/partials/standard-pages-panel.php', [
             'grid_enabled' => $this->grid_enabled(),
+            'page_rows' => $this->standard_page_rows(),
             'standalone' => $standalone,
             'candidates' => $candidates,
             'redirect_to' => $redirect_to,
@@ -179,12 +182,72 @@ trait RendersGridPanels {
         ], $this);
     }
 
+    /**
+     * The page roles a store cannot work without, and what each one points at now.
+     *
+     * The step reports how many roles are missing; this says which. Without it the
+     * pending state is not answerable from the screen: the only list rendered under
+     * it is the opt-in chooser, which covers different pages and can mark every one
+     * of them Created while a required role sits empty (Ryan, 2026-10-16, while
+     * working through the setup wizard by hand).
+     *
+     * @return array<int,array{edit_url:string,label:string,missing:bool,page_id:int,title:string}>
+     */
+    private function standard_page_rows() {
+        $rows = [];
+        // The same test as missing_standard_pages() and the repair, so the list,
+        // the step's state and the create action cannot disagree about a page.
+        foreach (PageRepository::core_types() as $type) {
+            $page_id = absint(get_option(PageOptionAudit::option_name($type), 0));
+            $usable = PageOptionAudit::is_usable_page($page_id);
+            $rows[] = [
+                'edit_url' => $usable ? (string) get_edit_post_link($page_id, 'raw') : '',
+                'label' => (string) (PageRepository::labels()[$type] ?? $type),
+                'missing' => !$usable,
+                'page_id' => $usable ? $page_id : 0,
+                'title' => $usable ? (string) get_the_title($page_id) : '',
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The page an order ends on, when this site has not created one.
+     *
+     * A site without it is not broken: the customer is sent to their own order
+     * page, which shows the order but carries no thank-you. This is the page the
+     * order flow would rather end on, and Setup is where a site chooses which pages
+     * exist - so the step names what is absent and offers the box, instead of
+     * telling the site every role is mapped.
+     *
+     * The pay and confirm pages are deliberately not listed here. Whether those
+     * steps happen on this site at all depends on how the site takes payment, which
+     * is the site's choice and not a gap to report.
+     *
+     * @return list<string>
+     */
+    private function order_flow_pages_missing() {
+        $missing = array();
+        // Same test as the page audit and the create action, so the sentence, the list
+        // and the button cannot disagree about whether a page exists.
+        if (!PageOptionAudit::is_usable_page(absint(get_option(PageOptionAudit::option_name('thank-you'), 0)))) {
+            $missing[] = (string) (PageRepository::labels()['thank-you'] ?? 'thank-you');
+        }
+
+        return $missing;
+    }
+
     private function missing_standard_pages() {
         $missing = [];
-        foreach (PageRepository::standard_labels() as $type => $label) {
-            $post_id = absint(get_option('mds3_page_' . $type . '_id', 0));
-            if (!$post_id || !get_post($post_id)) {
-                $missing[$type] = $label;
+        // Only the pages a store cannot work without count as missing. The others
+        // are offered in the create-pages chooser, so a site that never asked for
+        // a standalone payment page is not told it is broken.
+        // Same test the audit uses, so the screen and the repair cannot disagree about
+        // what counts as a page. A trashed page is not linked anywhere either.
+        foreach (PageRepository::core_types() as $type) {
+            if (!PageOptionAudit::is_usable_page(absint(get_option(PageOptionAudit::option_name($type), 0)))) {
+                $missing[$type] = PageRepository::labels()[$type];
             }
         }
 
@@ -193,12 +256,14 @@ trait RendersGridPanels {
 
     private function settings_page_map() {
         $types = PageRepository::labels();
+        $cleared = PageOptionAudit::cleared_types();
         $rows = [];
         foreach ($types as $type => $label) {
             $post_id = absint(get_option('mds3_page_' . $type . '_id', 0));
             $title = $post_id ? get_the_title($post_id) : '';
 
             $rows[] = [
+                'cleared' => isset($cleared[$type]),
                 'edit_url' => $post_id && $title ? get_edit_post_link($post_id) : '',
                 'label' => $label,
                 'permalink' => $post_id && $title ? get_permalink($post_id) : '',
@@ -260,6 +325,82 @@ trait RendersGridPanels {
         return array_intersect_key($this->order_status_labels(), array_flip($this->order_bulk_statuses()));
     }
 
+    /**
+     * Whether this order's artwork is showing, and what the admin may do about it.
+     *
+     * Deliberately not part of the payment state. A settled order can be held back from the
+     * grid for two different reasons, and an admin needs to know which one they are looking
+     * at: the grid reviews every upload before it appears, or this one record arrived held -
+     * from the older site, where a paid order could sit unapproved, or because the customer
+     * has not uploaded yet. "Published" and "paid" are not the same sentence and should not
+     * be made to look like they are.
+     *
+     * @return array<string,mixed> empty when there is nothing to offer
+     */
+    /**
+     * Whether a settled order's artwork is showing, and what the order screen may offer to
+     * change about it.
+     *
+     * Two rules keep this honest. Anything that is not showing gets a way forward: a paid
+     * order can hold a creative for review, have it taken down, or lose it when a listing
+     * ends and then pay again, and an admin with no button in front of them can do nothing
+     * about any of it. And the panel only names a cause it can prove: the grid's own review
+     * setting and the placement's status are facts this screen can see, while why a record
+     * first arrived held is not, so that story stays in the migration report that recorded it.
+     */
+    private function order_publication_state(array $order, array $placements) {
+        $order_id = absint($order['id'] ?? 0);
+        if (!$order_id || 'paid' !== (string) ($order['status'] ?? '') || !$placements) {
+            return [];
+        }
+
+        $shown = 0;
+        $awaiting = 0;
+        $ended = 0;
+        $grid_ids = [];
+        foreach ($placements as $placement) {
+            $state = sanitize_key((string) ($placement['status'] ?? ''));
+            if ('active' === $state) {
+                $shown++;
+            } elseif ('pending' === $state) {
+                $awaiting++;
+            } else {
+                // cancelled / archived: it was showing and stopped, usually with the listing.
+                $ended++;
+            }
+            $grid_ids[] = absint($placement['grid_id'] ?? 0);
+        }
+
+        $grid_repo = new GridRepository();
+        $reviews_uploads = false;
+        foreach (array_unique($grid_ids) as $grid_id) {
+            $grid = $grid_id ? $grid_repo->find($grid_id) : null;
+            if ($grid && !PlacementFieldContract::auto_publish($grid->settings())) {
+                $reviews_uploads = true;
+                break;
+            }
+        }
+
+        $held = $awaiting + $ended;
+        $reason = '';
+        if ($held > 0 && $reviews_uploads) {
+            $reason = 'reviews';
+        } elseif ($awaiting === 0 && $ended > 0) {
+            $reason = 'ended';
+        }
+
+        return [
+            'can_publish' => ($held > 0),
+            'can_unpublish' => ($shown > 0),
+            'held' => $held,
+            'published' => ($shown > 0),
+            'reviews_uploads' => $reviews_uploads,
+            'reason' => $reason,
+            'nonce_publish' => wp_create_nonce('mds3_publish_placement_' . $order_id),
+            'nonce_unpublish' => wp_create_nonce('mds3_unpublish_placement_' . $order_id),
+        ];
+    }
+
     private function order_detail_panel(array $order, $inline = false) {
         $repo = new OrderRepository();
         $items = $repo->items($order['id']);
@@ -276,6 +417,7 @@ trait RendersGridPanels {
         $advertiser_page_url = $first_placement_id
             ? $page_manager->public_url($first_placement_id)
             : '';
+        $publication = $this->order_publication_state($order, (array) $order_placements);
         $item_rows = [];
         $placement_events = [];
         $status_events = [];
@@ -343,6 +485,7 @@ trait RendersGridPanels {
         }
 
         Template::display('admin/partials/order-detail-panel.php', [
+            'advertiser_answers' => $this->order_advertiser_answers($metadata),
             'advertiser_page_url' => $advertiser_page_url,
             'inline' => $inline,
             'item_rows' => $item_rows,
@@ -350,6 +493,7 @@ trait RendersGridPanels {
             'metadata' => $metadata,
             'move_notice' => $move_notice,
             'order' => $order,
+            'publication' => $publication,
             'placement_events' => $placement_events,
             'placement_maps' => $this->order_placement_maps($items, $order),
             'rect' => $rect,
@@ -357,6 +501,136 @@ trait RendersGridPanels {
             'renewal_nonce' => wp_create_nonce('mds3_start_order_renewal_' . absint($order['id'] ?? 0)),
             'status_events' => $status_events,
         ], $this);
+    }
+
+    /**
+     * The advertiser's own answers from the ad form, in the order they were asked.
+     *
+     * The order stores what a customer submits; the Fields extension is what asks the
+     * questions. An owner reads an ad with both in front of them, so the answers belong
+     * on the order and not only in the copy the customer gets back.
+     *
+     * @return list<array{label: string, value: string, url: string}>
+     */
+    private function order_advertiser_answers(array $metadata) {
+        $fields = isset($metadata['mds_fields']) && is_array($metadata['mds_fields']) ? $metadata['mds_fields'] : array();
+        $answers = array();
+
+        foreach ($fields as $field_key => $entry) {
+            if (!is_array($entry)) {
+                $entry = array('value' => $entry);
+            }
+
+            $type = strtolower(sanitize_key((string) ($entry['type'] ?? '')));
+            // The customer copy builds markup around an answer; an owner reads the answer.
+            $raw = $entry['value'] ?? $entry['formatted_value'] ?? '';
+            $value = $this->order_answer_text($raw, $type);
+            if ('' === $value) {
+                continue;
+            }
+
+            $label = trim((string) ($entry['label'] ?? ''));
+            if ('' === $label) {
+                $label = ucwords(str_replace(array('-', '_'), ' ', (string) $field_key));
+            }
+
+            $answers[] = array(
+                'label' => $label,
+                'url' => $this->order_answer_url($raw, $type),
+                'value' => $value,
+            );
+        }
+
+        return $answers;
+    }
+
+    /**
+     * Reads one stored answer as plain text: text, a choice, or a list of choices.
+     */
+    private function order_answer_text($value, $type = '') {
+        if (is_bool($value)) {
+            return $value ? __('Yes', 'million-dollar-script') : __('No', 'million-dollar-script');
+        }
+
+        if (is_scalar($value)) {
+            return trim((string) $value);
+        }
+
+        if (!is_array($value)) {
+            return '';
+        }
+
+        // A choice list stores its options as arrays; the label is what a person reads.
+        if (in_array($type, array('file', 'upload', 'image', 'attachment'), true)) {
+            $attachment = $this->order_answer_attachment((int) reset($value));
+            return $attachment ? $attachment['name'] : '';
+        }
+
+        $parts = array();
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                foreach (array('label', 'name', 'text', 'title') as $key) {
+                    if (isset($item[$key]) && is_scalar($item[$key]) && trim((string) $item[$key]) !== '') {
+                        $parts[] = trim((string) $item[$key]);
+                        break;
+                    }
+                }
+                continue;
+            }
+
+            $text = $this->order_answer_text($item, $type);
+            if ('' !== $text) {
+                $parts[] = $text;
+            }
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /**
+     * A file answer is worth opening, so it is shown as a link when the site holds the file.
+     */
+    private function order_answer_url($value, $type = '') {
+        $text = is_scalar($value) ? trim((string) $value) : '';
+        if ('' === $text && is_array($value)) {
+            $first = reset($value);
+            $text = is_scalar($first) ? trim((string) $first) : '';
+        }
+
+        if (preg_match('#^https?://#i', $text)) {
+            return $text;
+        }
+
+        if (in_array($type, array('file', 'upload', 'image', 'attachment'), true)) {
+            $attachment = $this->order_answer_attachment(absint($text));
+            return $attachment ? $attachment['url'] : '';
+        }
+
+        return '';
+    }
+
+    /**
+     * Resolve an attachment ID to something an owner can open, or null when it is not a file.
+     */
+    private function order_answer_attachment($attachment_id) {
+        if ($attachment_id < 1) {
+            return null;
+        }
+
+        $path = get_attached_file($attachment_id);
+        if (!$path) {
+            return null;
+        }
+
+        $url = wp_get_attachment_url($attachment_id);
+        if (!$url) {
+            return null;
+        }
+
+        return array(
+            'name' => (string) get_the_title($attachment_id) ?: basename((string) $path),
+            'url' => (string) $url,
+        );
     }
 
     private function order_placement_maps(array $items, array $order) {

@@ -75,7 +75,7 @@ final class PlacementRepository {
         $page = min($page, $total_pages);
         $offset = ($page - 1) * $per_page;
 
-        $sql = 'SELECT p.id, p.grid_id, p.attachment_id, p.link_url, p.alt_text, p.popup_text, p.sort_order, '
+        $sql = 'SELECT p.id, p.grid_id, p.attachment_id, p.link_url, p.alt_text, p.popup_text, p.public_post_id, p.sort_order, '
             . 'g.title grid_title, g.slug grid_slug'
             . $from . $where_sql . ' ORDER BY p.sort_order ASC, p.id ASC LIMIT %d OFFSET %d';
         $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, [$per_page, $offset])), ARRAY_A);
@@ -245,6 +245,64 @@ final class PlacementRepository {
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * Remove placements for good.
+     *
+     * Every other path here changes a status, because a placement that is not
+     * showing is still a record the site sold. Deleting is a different question,
+     * asked by a person who wants their data gone, and it is deliberately separate
+     * so nothing else can reach it by accident.
+     *
+     * @param int[] $ids
+     * @return int how many rows were removed
+     */
+    public function delete_permanently(array $ids) {
+        global $wpdb;
+
+        $ids = array_values(array_unique(array_filter(array_map('absint', $ids))));
+        if (!$ids) {
+            return 0;
+        }
+
+        $removed = 0;
+        foreach ($ids as $id) {
+            // wpdb quotes the identifier itself here, so the plain table name is what
+            // this call wants - DB::ident() is for SQL this class writes out.
+            $affected = $wpdb->delete(DB::table('placements'), ['id' => $id], ['%d']);
+            $removed += absint($affected);
+        }
+
+        return $removed;
+    }
+
+    /**
+     * Which of these images are still used by a placement that remains.
+     *
+     * An uploaded image can sit in more than one order - the same artwork reused,
+     * or one order replaced by the next - so an erasure may only delete the copy
+     * nothing else is pointing at.
+     *
+     * @param int[] $attachment_ids
+     * @return int[]
+     */
+    public function attachments_still_used(array $attachment_ids) {
+        global $wpdb;
+
+        $wanted = array_values(array_unique(array_filter(array_map('absint', $attachment_ids))));
+        if (!$wanted) {
+            return [];
+        }
+
+        $found = $wpdb->get_col(
+            $wpdb->prepare(
+                'SELECT DISTINCT attachment_id FROM ' . DB::ident(DB::table('placements')) . ' WHERE attachment_id IN (' . implode(',', array_fill(0, count($wanted), '%d')) . ')',
+                $wanted
+            )
+        );
+
+        return array_values(array_unique(array_map('absint', is_array($found) ? $found : [])));
+    }
+
     /** @return array<int,array<string,mixed>> */
     public function for_orders(array $order_ids) {
         global $wpdb;
@@ -354,7 +412,17 @@ final class PlacementRepository {
         return false === $result ? new \WP_Error('mds3_placement_update_failed', $wpdb->last_error) : $this->find($id);
     }
 
-    public function update_status_by_order($order_id, $status) {
+    /**
+     * Set the status of every creative belonging to an order.
+     *
+     * @param bool $explicit True when a person made this decision rather than a payment
+     *        arriving on its own. A grid with "Auto Publish Uploads" off holds a paid upload
+     *        back for review, but that hold must not also refuse the review decision it exists
+     *        to lead to: on such a grid the order screen's Publish action would otherwise
+     *        change nothing while the panel says the artwork is awaiting review (llm-task
+     *        3720081e).
+     */
+    public function update_status_by_order($order_id, $status, $explicit = false) {
         global $wpdb;
 
         $status = sanitize_key($status);
@@ -365,7 +433,7 @@ final class PlacementRepository {
         $order_id = absint($order_id);
         $where = 'order_id = %d';
         $where_args = [$order_id];
-        if ('active' === $status) {
+        if ('active' === $status && !$explicit) {
             // A grid with "Auto Publish Uploads" off keeps a paid upload pending
             // until an admin approves it.
             $held = $this->grids_holding_paid_uploads($order_id);

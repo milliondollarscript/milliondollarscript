@@ -111,7 +111,7 @@ $missing_pages = $categories[0]['missing_count'];
 $missing_documents = $categories[1]['missing_count'];
 ?>
 <li class="<?php echo esc_attr($missing_pages || $missing_documents ? 'is-pending' : 'is-complete'); ?>">
-    <h2><?php esc_html_e('Extension Setup', 'million-dollar-script'); ?></h2>
+    <h2><?php esc_html_e('Extension Setup', 'million-dollar-script'); ?><?php $this->step_status($missing_pages || $missing_documents ? 'pending' : 'complete'); ?></h2>
     <p><?php esc_html_e('Select whole categories or expand a category to choose individual extension pages. Published pages are shown for review but are not overwritten by setup.', 'million-dollar-script'); ?></p>
 
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="mds3-extension-onboarding-form" data-mds3-extension-onboarding>
